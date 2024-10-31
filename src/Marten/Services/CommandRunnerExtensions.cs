@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Npgsql;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services;
 

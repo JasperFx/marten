@@ -5,6 +5,7 @@ using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Xunit.Abstractions;
 

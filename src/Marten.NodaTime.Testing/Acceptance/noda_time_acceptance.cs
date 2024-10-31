@@ -11,6 +11,7 @@ using Marten.Testing.Harness;
 using NodaTime;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Xunit;
 
 namespace Marten.NodaTimePlugin.Testing.Acceptance;

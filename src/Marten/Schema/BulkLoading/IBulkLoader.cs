@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core.Serialization;
 
 namespace Marten.Schema.BulkLoading;
 

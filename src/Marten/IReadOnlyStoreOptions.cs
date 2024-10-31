@@ -5,6 +5,7 @@ using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 
 namespace Marten;
 

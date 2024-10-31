@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

@@ -14,6 +14,7 @@ using Marten.Schema;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables.Partitioning;
 

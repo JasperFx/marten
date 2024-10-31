@@ -9,6 +9,7 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Polly;
+using Weasel.Core.Serialization;
 
 namespace Marten.Internal.Sessions;
 

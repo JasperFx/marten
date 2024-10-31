@@ -5,6 +5,7 @@ using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
 using NpgsqlTypes;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

@@ -12,6 +12,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services;
 

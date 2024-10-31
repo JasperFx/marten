@@ -7,6 +7,7 @@ using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Serialization;
 
 namespace LinqTests.ChildCollections;
 

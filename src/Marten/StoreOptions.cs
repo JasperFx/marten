@@ -30,6 +30,7 @@ using Npgsql;
 using Polly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
 using Weasel.Postgresql.Tables.Partitioning;

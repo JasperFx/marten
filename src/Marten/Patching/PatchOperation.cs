@@ -9,6 +9,7 @@ using Marten.Schema.Identity;
 using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

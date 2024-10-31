@@ -7,6 +7,7 @@ using System.Transactions;
 using JasperFx.Core.Reflection;
 using Marten.Schema.BulkLoading;
 using Npgsql;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 
 namespace Marten.Storage;

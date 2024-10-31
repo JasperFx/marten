@@ -1,5 +1,6 @@
 #nullable enable
 using Weasel.Core;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services.Json;
 

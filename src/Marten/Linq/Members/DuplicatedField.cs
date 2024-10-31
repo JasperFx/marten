@@ -15,6 +15,7 @@ using Marten.Schema.Arguments;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using Weasel.Postgresql.Tables;

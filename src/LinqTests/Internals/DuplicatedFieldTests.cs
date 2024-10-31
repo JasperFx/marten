@@ -8,6 +8,7 @@ using Marten.Testing.Documents;
 using NpgsqlTypes;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 
 namespace LinqTests.Internals;
 

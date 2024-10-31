@@ -17,6 +17,7 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;

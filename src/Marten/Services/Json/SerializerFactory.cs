@@ -1,4 +1,5 @@
 ﻿using System;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services.Json;
 

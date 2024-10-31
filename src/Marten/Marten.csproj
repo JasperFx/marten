@@ -1,11 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
-<<<<<<< HEAD
         <TargetFrameworks>net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
-=======
-        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -26,15 +22,12 @@
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
 
-<<<<<<< HEAD
     <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
     </ItemGroup>
 
-=======
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
     <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
@@ -55,26 +48,19 @@
     </ItemGroup>
 
     <ItemGroup>
-<<<<<<< HEAD
         <PackageReference Include="JasperFx.Core" Version="1.9.0" />
         <PackageReference Include="JasperFx.CodeGeneration" Version="3.7.1" />
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="3.7.1" />
-=======
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-        <!-- This is forced by Npgsql peer dependency -->
 
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="8.0.0" />
         <PackageReference Include="OpenTelemetry.API" Version="1.8.0" />
         <PackageReference Include="Polly.Core" Version="8.5.0" />
         <PackageReference Include="System.Threading.Tasks.Dataflow" Version="8.0.0" />
-<<<<<<< HEAD
         <PackageReference Include="System.Text.Json" Version="8.0.5" />
         <PackageReference Include="Weasel.Postgresql" Version="7.12.1" />
-=======
         <PackageReference Include="System.Text.Json" Version="8.0.4" />
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
     </ItemGroup>
 
     <!--SourceLink specific settings-->

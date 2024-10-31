@@ -8,6 +8,7 @@ using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.SqlGeneration;
 using Marten.Util;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

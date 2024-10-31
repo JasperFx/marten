@@ -7,6 +7,7 @@ using Jil;
 using Marten.Services;
 using Marten.Util;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 
 #nullable enable

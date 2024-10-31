@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Newtonsoft.Json.Linq;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services.Json.Transformations.JsonNet;
 

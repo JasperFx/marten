@@ -2,6 +2,7 @@
 using System.Reflection;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing.Operators;
+using Weasel.Core.Serialization;
 
 namespace Marten.Linq.Members;
 

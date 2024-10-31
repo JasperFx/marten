@@ -1,5 +1,6 @@
 #nullable enable
 using System.Reflection;
+using Weasel.Core.Serialization;
 
 namespace Marten.Linq.Members;
 

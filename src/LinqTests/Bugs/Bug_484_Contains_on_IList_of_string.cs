@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Serialization;
 
 namespace LinqTests.Bugs;
 

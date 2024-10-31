@@ -7,6 +7,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;

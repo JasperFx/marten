@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Schema.BulkLoading;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core.Serialization;
 
 namespace Marten.Internal.CodeGeneration;
 

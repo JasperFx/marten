@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Marten.Schema;
+using Weasel.Core.Serialization;
 
 namespace Marten.Internal.CodeGeneration;
 

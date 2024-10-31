@@ -2,6 +2,7 @@
 using System.Reflection;
 using Marten.Linq.Members.ValueCollections;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.Members;

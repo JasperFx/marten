@@ -5,6 +5,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Weasel.Core.Serialization;
 
 namespace Marten.Util;
 

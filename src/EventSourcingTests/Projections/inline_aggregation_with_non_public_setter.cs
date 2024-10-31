@@ -7,6 +7,7 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Xunit;
 
 namespace EventSourcingTests.Projections;

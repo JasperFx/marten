@@ -12,6 +12,7 @@ using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 
 namespace Marten.Services;
 

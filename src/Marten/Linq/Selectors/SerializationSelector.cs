@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Weasel.Core.Serialization;
 
 namespace Marten.Linq.Selectors;
 

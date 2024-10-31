@@ -5,6 +5,7 @@ using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;

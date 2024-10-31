@@ -21,6 +21,7 @@ using Microsoft.CodeAnalysis.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Core.Migrations;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
 

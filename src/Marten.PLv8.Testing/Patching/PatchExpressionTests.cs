@@ -15,6 +15,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
+using Weasel.Core.Serialization;
 using Xunit;
 
 namespace Marten.PLv8.Testing.Patching;

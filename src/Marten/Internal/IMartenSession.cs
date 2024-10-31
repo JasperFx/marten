@@ -10,6 +10,7 @@ using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core.Serialization;
 
 namespace Marten.Internal;
 

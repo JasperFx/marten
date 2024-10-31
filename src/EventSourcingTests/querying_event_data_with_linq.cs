@@ -10,6 +10,7 @@ using Marten.Testing.Harness;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -10,6 +10,7 @@ using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
 using NpgsqlTypes;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

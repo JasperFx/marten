@@ -11,6 +11,7 @@ using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Util;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

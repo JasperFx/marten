@@ -7,6 +7,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Weasel.Core;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 
 namespace Marten.Testing.Examples;

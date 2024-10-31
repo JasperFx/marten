@@ -10,6 +10,7 @@ using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

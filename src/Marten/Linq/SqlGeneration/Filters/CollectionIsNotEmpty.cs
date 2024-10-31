@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

@@ -5,6 +5,7 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 

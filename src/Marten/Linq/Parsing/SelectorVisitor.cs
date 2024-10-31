@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
+using Weasel.Core.Serialization;
 
 namespace Marten.Linq.Parsing;
 

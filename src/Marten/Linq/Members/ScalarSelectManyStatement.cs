@@ -1,5 +1,6 @@
 #nullable enable
 using Marten.Linq.SqlGeneration;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.Members;
