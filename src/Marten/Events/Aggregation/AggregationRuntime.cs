@@ -224,13 +224,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         return slice.Events().First().Version == 1;
     }
 
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-#pragma warning disable VSTHRD002
-        ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-    }
-
     public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
     {

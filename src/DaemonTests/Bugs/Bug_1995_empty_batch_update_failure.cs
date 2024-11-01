@@ -57,7 +57,7 @@ public class IssueAggregate
 
 public class IssueAggregateProjection : IProjection
 {
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
     {
         var events = streams
             .SelectMany(x => x.Events)
@@ -67,11 +67,6 @@ public class IssueAggregateProjection : IProjection
             .ToList();
 
         operations.Store(events.Select(x => new IssueAggregate { Id = x.Id }));
-    }
-
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
-    {
-        Apply(operations, streams);
         return Task.CompletedTask;
     }
 }

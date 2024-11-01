@@ -27,14 +27,6 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-        using var scope = _serviceProvider.CreateScope();
-        var sp = scope.ServiceProvider;
-        var projection = sp.GetRequiredService<TProjection>();
-        projection.Apply(operations, streams);
-    }
-
     public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
     {
         using var scope = _serviceProvider.CreateScope();

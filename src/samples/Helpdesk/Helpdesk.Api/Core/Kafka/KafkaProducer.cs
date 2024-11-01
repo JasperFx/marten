@@ -27,9 +27,6 @@ public class KafkaProducer: IProjection
         }
     }
 
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams) =>
-        throw new NotImplementedException("Producer should be only used in the AsyncDaemon");
-
     private async Task Publish(object @event, CancellationToken ct)
     {
         try

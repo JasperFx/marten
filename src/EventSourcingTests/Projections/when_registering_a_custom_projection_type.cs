@@ -61,11 +61,6 @@ public class when_registering_a_custom_projection_type: IDisposable
 
     public class MyProjection: IProjection
     {
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-        {
-            throw new System.NotSupportedException();
-        }
-
         public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
         {
             throw new System.NotSupportedException();

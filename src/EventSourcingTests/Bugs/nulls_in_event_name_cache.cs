@@ -53,12 +53,6 @@ public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedO
 
 public class CustomProjection: IProjection
 {
-
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
     {
         return Task.CompletedTask;

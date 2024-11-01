@@ -60,9 +60,6 @@ public class CustomProjection_follow_up_operations: DaemonContext
             typeof(EntityPublished), typeof(SomeOtherEntityWithNestedIdentifierPublished)
         };
 
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streamActions) =>
-            throw new NotImplementedException();
-
         public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streamActions,
             CancellationToken cancellation)
         {

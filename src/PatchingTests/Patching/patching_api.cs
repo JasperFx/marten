@@ -881,7 +881,8 @@ public class patching_api: OneOffConfigurationsContext
 
         public string Name { get; set; }
 
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+            CancellationToken cancellation)
         {
             var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
 
@@ -896,12 +897,6 @@ public class patching_api: OneOffConfigurationsContext
                     operations.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
                 }
             }
-        }
-
-        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-            CancellationToken cancellation)
-        {
-            Apply(operations, streams);
             return Task.CompletedTask;
         }
     }

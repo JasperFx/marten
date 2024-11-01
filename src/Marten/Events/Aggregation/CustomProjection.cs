@@ -72,13 +72,6 @@ public abstract class CustomProjection<TDoc, TId>:
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
 
-    void IProjection.Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-#pragma warning disable VSTHRD002
-        this.As<IProjection>().ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-    }
-
     // Holy fugly code Batman!
     private async Task<IReadOnlyList<EventSlice<TDoc, TId>>> sliceForInlineUsage(IDocumentOperations operations, IReadOnlyList<StreamAction> filteredStreams)
     {
