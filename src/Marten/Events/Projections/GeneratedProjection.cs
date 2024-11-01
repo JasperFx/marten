@@ -95,13 +95,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
         } };
     }
 
-    [Obsolete("Use AsyncOptions.TeardownDataOnRebuild instead")]
-    public override bool TeardownDataOnRebuild
-    {
-        get => Options.TeardownDataOnRebuild;
-        set => Options.TeardownDataOnRebuild = value;
-    }
-
     public AsyncOptions Options { get; } = new();
 
     ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store,

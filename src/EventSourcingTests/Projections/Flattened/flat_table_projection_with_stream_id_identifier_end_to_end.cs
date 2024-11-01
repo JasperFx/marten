@@ -235,7 +235,7 @@ public class SiteProjection : FlatTableProjection
     {
         _ = Table.AddColumn<Guid>("id").AsPrimaryKey();
 
-        TeardownDataOnRebuild = true;
+        Options.TeardownDataOnRebuild = true;
 
         Project<SiteCreated>(map =>
         {
