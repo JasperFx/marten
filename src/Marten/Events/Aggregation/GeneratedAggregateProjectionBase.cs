@@ -120,11 +120,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         return slice.Events().Select(x => x.EventType).Intersect(DeleteEvents).Any();
     }
 
-    public bool MatchesAnyDeleteType(StreamAction action)
-    {
-        return action.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
-    }
-
     /// <summary>
     ///     Designate or override the aggregate version member for this aggregate type
     /// </summary>

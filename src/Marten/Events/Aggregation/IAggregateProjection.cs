@@ -44,7 +44,6 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
 
     ProjectionLifecycle Lifecycle { get; set; }
 
-    bool MatchesAnyDeleteType(StreamAction action);
     bool MatchesAnyDeleteType(IEventSlice slice);
     bool AppliesTo(IEnumerable<Type> eventTypes);
 

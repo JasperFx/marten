@@ -326,10 +326,6 @@ public abstract class CustomProjection<TDoc, TId>:
     }
 
     public Type[] AllEventTypes { get; set; }
-    public bool MatchesAnyDeleteType(StreamAction action)
-    {
-        return false; // just no way of knowing
-    }
 
     public bool MatchesAnyDeleteType(IEventSlice slice)
     {
@@ -376,7 +372,7 @@ public abstract class CustomProjection<TDoc, TId>:
         var slice = new EventSlice<TDoc, TId>(default, session, events);
         await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
 
-        ApplyMetadata(slice.Aggregate, events.Last());
+        slice.Aggregate = ApplyMetadata(slice.Aggregate, events.Last());
 
         return slice.Aggregate;
     }
