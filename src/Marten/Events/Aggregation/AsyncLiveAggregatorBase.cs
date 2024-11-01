@@ -18,11 +18,6 @@ public abstract class AsyncLiveAggregatorBase<T>: ILiveAggregator<T> where T : c
     public abstract ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot,
         CancellationToken cancellation);
 
-    public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot)
-    {
-        throw new NotSupportedException();
-    }
-
     public T CreateDefault(IEvent @event)
     {
         try

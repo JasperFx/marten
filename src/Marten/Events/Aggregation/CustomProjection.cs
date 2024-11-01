@@ -359,11 +359,6 @@ public abstract class CustomProjection<TDoc, TId>:
             Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
 
-    TDoc ILiveAggregator<TDoc>.Build(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot)
-    {
-        throw new NotSupportedException("It's not supported to do a synchronous, live aggregation with a custom projection");
-    }
-
     async ValueTask<TDoc> ILiveAggregator<TDoc>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)
     {
         if (!events.Any()) return default;

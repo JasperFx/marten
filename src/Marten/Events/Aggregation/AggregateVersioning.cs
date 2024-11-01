@@ -108,13 +108,6 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
         _setValue.Value(aggregate, lastEvent);
     }
 
-    public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot)
-    {
-        var aggregate = Inner.Build(events, session, snapshot);
-        TrySetVersion(aggregate, events.LastOrDefault());
-        return aggregate;
-    }
-
     public async ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot,
         CancellationToken cancellation)
     {
