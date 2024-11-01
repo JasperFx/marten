@@ -18,17 +18,6 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 {
     public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
     {
-        public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(
-            IQuerySession querySession, IEnumerable<StreamAction> streams)
-        {
-            var allEvents = streams.SelectMany(x => x.Events).ToList();
-            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
-            group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
-            group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, allEvents);
-
-            return new(group.Slices.ToList());
-        }
-
         public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
             IQuerySession querySession, List<IEvent> events)
         {

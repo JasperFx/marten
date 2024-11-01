@@ -16,16 +16,6 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
     private bool _groupByTenant;
 
-
-    public async ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
-        IEnumerable<StreamAction> streams)
-    {
-        var events = streams.SelectMany(x => x.Events).ToList();
-
-        var groups = await SliceAsyncEvents(querySession, events).ConfigureAwait(false);
-        return groups.SelectMany(x => x.Slices).ToList();
-    }
-
     public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {

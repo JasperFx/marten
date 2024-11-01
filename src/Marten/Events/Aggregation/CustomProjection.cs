@@ -79,10 +79,25 @@ public abstract class CustomProjection<TDoc, TId>:
 #pragma warning restore VSTHRD002
     }
 
+    // Holy fugly code Batman!
+    private async Task<IReadOnlyList<EventSlice<TDoc, TId>>> sliceForInlineUsage(IDocumentOperations operations, IReadOnlyList<StreamAction> filteredStreams)
+    {
+        if (Slicer is ISingleStreamSlicer<TDoc, TId> single)
+        {
+            return single.Transform(operations, filteredStreams);
+        }
+
+        var allEvents = filteredStreams.SelectMany(x => x.Events).ToList();
+        var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
+
+        return groups.SelectMany(x => x.Slices).ToList();
+    }
+
     async Task IProjection.ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
     {
-        var slices = await Slicer.SliceInlineActions(operations, streams).ConfigureAwait(false);
+        // TODO -- should streams be filtered here???
+        var slices = await sliceForInlineUsage(operations, streams).ConfigureAwait(false);
 
         var martenSession = (DocumentSessionBase)operations;
 

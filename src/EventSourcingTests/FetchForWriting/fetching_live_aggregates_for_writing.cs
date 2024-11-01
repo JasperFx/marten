@@ -588,12 +588,6 @@ public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer
     }
 
     [MartenIgnore]
-    public async ValueTask<IReadOnlyList<EventSlice<Totals, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
-
-    [MartenIgnore]
     public ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
         var group = new TenantSliceGroup<Totals, Guid>(querySession, querySession.TenantId);

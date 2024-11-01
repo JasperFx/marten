@@ -15,11 +15,6 @@ namespace Marten.Events.Projections;
 
 public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 {
-    public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
-    {
-        throw new NotSupportedException("This is not supported in Inline projections");
-    }
-
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
         var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(Tenancy.DefaultTenantId, querySession.Database));

@@ -11,20 +11,25 @@ namespace Marten.Events.Aggregation;
 
 public interface ISingleStreamSlicer{}
 
+public interface ISingleStreamSlicer<TDoc, TId> : ISingleStreamSlicer
+{
+    IReadOnlyList<EventSlice<TDoc, TId>> Transform(IQuerySession querySession,
+        IEnumerable<StreamAction> streams);
+}
+
 /// <summary>
 ///     Slicer strategy by stream id (Guid identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
+public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDoc, Guid>
 {
-    public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession,
-        IEnumerable<StreamAction> streams)
+    public IReadOnlyList<EventSlice<TDoc, Guid>> Transform(IQuerySession querySession, IEnumerable<StreamAction> streams)
     {
-        return new ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>>(streams.Select(s =>
+        return streams.Select(s =>
         {
             var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events){ActionType = s.ActionType};
-        }).ToList());
+            return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events) { ActionType = s.ActionType };
+        }).ToList();
     }
 
 
@@ -55,7 +60,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
 ///     Slicer strategy by stream id (Guid identified streams) and a custom value type
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
+public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer<TDoc, TId>
 {
     private readonly Func<Guid, TId> _converter;
 
@@ -64,14 +69,13 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
         _converter = valueType.CreateConverter<TId, Guid>();
     }
 
-    public ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
-        IEnumerable<StreamAction> streams)
+    public IReadOnlyList<EventSlice<TDoc, TId>> Transform(IQuerySession querySession, IEnumerable<StreamAction> streams)
     {
-        return new ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>>(streams.Select(s =>
+        return streams.Select(s =>
         {
             var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, TId>(_converter(s.Id), tenant, s.Events){ActionType = s.ActionType};
-        }).ToList());
+            return new EventSlice<TDoc, TId>(_converter(s.Id), tenant, s.Events) { ActionType = s.ActionType };
+        }).ToList();
     }
 
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,

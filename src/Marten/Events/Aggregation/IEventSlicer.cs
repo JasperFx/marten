@@ -1,21 +1,11 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Marten.Events.Projections;
 
 namespace Marten.Events.Aggregation;
 
 public interface IEventSlicer<TDoc, TId>
 {
-    /// <summary>
-    ///     This is called by inline projections
-    /// </summary>
-    /// <param name="querySession"></param>
-    /// <param name="streams"></param>
-    /// <returns></returns>
-    ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
-        IEnumerable<StreamAction> streams);
-
     /// <summary>
     ///     This is called by the asynchronous projection runner
     /// </summary>

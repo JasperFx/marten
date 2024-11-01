@@ -240,7 +240,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
             .ToArray();
 
-        var slices = await Slicer.SliceInlineActions(operations, filteredStreams).ConfigureAwait(false);
+        var slices = await sliceForInlineUsage(operations, filteredStreams).ConfigureAwait(false);
 
         var martenSession = (DocumentSessionBase)operations;
 
@@ -250,6 +250,20 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
         }
+    }
+
+    // Holy fugly code Batman!
+    private async Task<IReadOnlyList<EventSlice<TDoc, TId>>> sliceForInlineUsage(IDocumentOperations operations, StreamAction[] filteredStreams)
+    {
+        if (Slicer is ISingleStreamSlicer<TDoc, TId> single)
+        {
+            return single.Transform(operations, filteredStreams);
+        }
+
+        var allEvents = filteredStreams.SelectMany(x => x.Events).ToList();
+        var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
+
+        return groups.SelectMany(x => x.Slices).ToList();
     }
 
     public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,

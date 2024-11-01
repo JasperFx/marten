@@ -31,12 +31,6 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
         return false;
     }
 
-    public virtual ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,
-        IEnumerable<StreamAction> streams)
-    {
-        throw new NotSupportedException("This projection can only be used with the Async lifecycle");
-    }
-
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(
         IQuerySession querySession, List<IEvent> events)
     {
