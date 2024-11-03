@@ -8,4 +8,4 @@ This page outlines all the tools and libraries built around Marten by the commun
 
 GitHub Repository: [https://github.com/bloomberg/sable](https://github.com/bloomberg/sable)
 
-Documentation: [https://github.com/bloomberg/sable](https://bloomberg.github.io/sable/)
+Documentation: [https://bloomberg.github.io/sable/](https://bloomberg.github.io/sable/)
