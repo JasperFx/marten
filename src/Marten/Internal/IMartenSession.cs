@@ -19,6 +19,7 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IOperationSessio
 {
     Dictionary<Type, object> ItemMap { get; }
 
+    // TODO -- try to encapsulate this
     IMartenDatabase Database { get; }
 
     VersionTracker Versions { get; }
