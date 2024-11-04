@@ -36,6 +36,26 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         aggregate.CCount.ShouldBe(3);
         aggregate.Id.ShouldBe(streamId);
     }
+
+    [Fact]
+    public async Task using_a_custom_projection_for_live_aggregation_with_query_session()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Live);
+        });
+
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
+        await theSession.SaveChangesAsync();
+
+        using var query = theStore.QuerySession();
+
+        var aggregate = await query.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        aggregate.ACount.ShouldBe(2);
+        aggregate.BCount.ShouldBe(1);
+        aggregate.CCount.ShouldBe(3);
+        aggregate.Id.ShouldBe(streamId);
+    }
 }
 
 #region sample_using_simple_explicit_code_for_live_aggregation
