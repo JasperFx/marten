@@ -29,10 +29,8 @@ internal class EventJsonDataColumn: TableColumn, IEventTableColumn
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Data)}));",
+        method.Frames.Code($"parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendJsonParameter)}({{0}}.Serializer, {{1}}.Data);",
              Use.Type<IMartenSession>(), Use.Type<IEvent>());
-
-        method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
     }
 
     public string ValueSql(EventGraph graph, AppendMode mode)
