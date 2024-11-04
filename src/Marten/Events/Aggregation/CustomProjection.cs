@@ -357,7 +357,7 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         if (!events.Any()) return default;
 
-        var documentSessionBase = session.As<DocumentSessionBase>();
+        var documentSessionBase = session as DocumentSessionBase ?? (DocumentSessionBase)session.DocumentStore.LightweightSession();
 
         var slice = new EventSlice<TDoc, TId>(default, session, events);
         await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
