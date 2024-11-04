@@ -41,7 +41,6 @@ public class TenantIdArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code($"var parameter{{0}} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(_tenantId);", i);
-        method.Frames.Code("parameter{0}.NpgsqlDbType = {1};", i, DbType);
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

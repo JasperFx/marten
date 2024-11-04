@@ -67,11 +67,9 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_upsert_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            parameterBuilder.AppendJsonParameter(session.Serializer, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
-            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
             var parameter2 = parameterBuilder.AppendParameter(document.Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
@@ -130,11 +128,9 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_insert_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            parameterBuilder.AppendJsonParameter(session.Serializer, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
-            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
             var parameter2 = parameterBuilder.AppendParameter(document.Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
@@ -199,11 +195,9 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_update_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            parameterBuilder.AppendJsonParameter(session.Serializer, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
-            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
             var parameter2 = parameterBuilder.AppendParameter(document.Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
@@ -450,11 +444,9 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_overwrite_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            parameterBuilder.AppendJsonParameter(session.Serializer, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
-            parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
             var parameter2 = parameterBuilder.AppendParameter(document.Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');

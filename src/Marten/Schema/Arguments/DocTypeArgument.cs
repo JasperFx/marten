@@ -50,7 +50,6 @@ internal class DocTypeArgument: UpsertArgument
     {
         load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
 
-        load.Frames.Code("writer.Write(docType, {0});", DbType);
         if (mapping.Metadata.DocumentType.Member != null)
         {
             load.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);

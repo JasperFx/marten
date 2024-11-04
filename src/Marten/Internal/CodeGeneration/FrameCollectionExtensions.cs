@@ -263,7 +263,6 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
     {
         var member = MemberFinder.Determine(memberExpression).Single();
         method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{1}}.{member.Name});", Use.Type<T>());
-        method.Frames.Code($"parameter{index}.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;");
     }
 
     public static void SetParameterFromMember<T>(this GeneratedMethod method, int index,
@@ -278,13 +277,10 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
             method.Frames.Code(
                 $"var parameter{index} = {{0}}.{member.Name} != null ? parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.{member.Name}) : parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);",
                 Use.Type<T>());
-            method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", pgType);
         }
         else
         {
             method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.{member.Name});", Use.Type<T>());
-            method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", pgType);
-
         }
     }
 
