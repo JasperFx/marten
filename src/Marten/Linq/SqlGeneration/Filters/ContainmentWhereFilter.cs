@@ -143,7 +143,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         }
 
         builder.Append($"{_locator} @> ");
-        builder.AppendParameter(json, NpgsqlDbType.Jsonb);
+        builder.AppendJsonParameter(json);
 
         ParameterName = builder.LastParameterName;
 

@@ -23,6 +23,6 @@ internal class AggregateTypeFilter: ISqlFragment
     public void Apply(ICommandBuilder builder)
     {
         builder.Append("s.type = ");
-        builder.AppendParameter(Alias, NpgsqlDbType.Varchar);
+        builder.AppendParameter(Alias);
     }
 }

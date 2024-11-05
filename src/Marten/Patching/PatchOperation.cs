@@ -65,7 +65,7 @@ internal class PatchFragment: IOperationFragment
         builder.Append(" as d set data = ");
         builder.Append(_function.QualifiedName);
         builder.Append("(data, ");
-        builder.AppendParameter("[" + string.Join(",", patchSetStr.ToArray()) + "]", NpgsqlDbType.Jsonb);
+        builder.AppendJsonParameter("[" + string.Join(",", patchSetStr.ToArray()) + "]");
         builder.Append(")");
 
         if (_storage is IHaveMetadataColumns metadata)

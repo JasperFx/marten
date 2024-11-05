@@ -246,7 +246,6 @@ internal static class EventDocumentStorageGenerator
 
         configureCommand.Frames.AppendSql(sql);
 
-        var idDbType = graph.StreamIdentity == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
         configureCommand.Frames.Code($"builder.{nameof(CommandBuilder.AppendParameter)}(_streamId);");
 
         if (graph.TenancyStyle == TenancyStyle.Conjoined)

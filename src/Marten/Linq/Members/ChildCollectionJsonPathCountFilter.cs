@@ -56,7 +56,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         else
         {
             builder.Append(")', ");
-            builder.AppendParameter(_serializer.ToCleanJson(_dict), NpgsqlDbType.Jsonb);
+            builder.AppendJsonParameter(_serializer.ToCleanJson(_dict));
             ParameterName = builder.LastParameterName;
 
             builder.Append(")) ");

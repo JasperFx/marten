@@ -21,7 +21,7 @@ internal class TenantIsOneOfFilter: ISqlFragment, ITenantFilter
     {
         builder.Append(TenantIdColumn.Name);
         builder.Append(" = ANY(");
-        builder.AppendParameter(_values, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+        builder.AppendStringArrayParameter(_values);
         builder.Append(')');
     }
 

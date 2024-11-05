@@ -65,11 +65,11 @@ internal class AggregatePageHandler<TDoc, TId>
 
         if (_store.Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid)
         {
-            builder.AppendParameter(ids.Select(x => x.Id).ToArray(), NpgsqlDbType.Array | NpgsqlDbType.Uuid);
+            builder.AppendGuidArrayParameter(ids.Select(x => x.Id).ToArray());
         }
         else
         {
-            builder.AppendParameter(ids.Select(x => x.Key).ToArray(), NpgsqlDbType.Array | NpgsqlDbType.Text);
+            builder.AppendStringArrayParameter(ids.Select(x => x.Key).ToArray());
         }
 
         builder.Append($") and d.seq_id <= {ceiling}");

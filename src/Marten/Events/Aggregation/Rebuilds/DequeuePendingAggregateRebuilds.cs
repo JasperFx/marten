@@ -28,7 +28,7 @@ internal class DequeuePendingAggregateRebuilds: IStorageOperation, NoDataReturne
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         builder.Append($"delete from {_schemaName}.{AggregateRebuildTable.Name} where number = ANY(");
-        builder.AppendParameter(_numbers, NpgsqlDbType.Array | NpgsqlDbType.Bigint);
+        builder.AppendLongArrayParameter(_numbers);
         builder.Append(")");
     }
 

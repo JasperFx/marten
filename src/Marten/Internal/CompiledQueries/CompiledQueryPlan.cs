@@ -14,6 +14,7 @@ using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
+using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
@@ -192,6 +193,33 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.CommandText += ParameterPlaceholder;
 
         return usage.Parameter;
+    }
+
+    public void AppendLongArrayParameter(long[] values)
+    {
+        appendParameter(values, NpgsqlDbType.Array | NpgsqlDbType.Bigint);
+    }
+
+    public void AppendJsonParameter(string json)
+    {
+        appendParameter(json, NpgsqlDbType.Jsonb);
+    }
+
+
+    public void AppendStringArrayParameter(string[] values)
+    {
+        appendParameter(values, NpgsqlDbType.Array | NpgsqlDbType.Varchar);
+    }
+
+    public void AppendGuidArrayParameter(Guid[] values)
+    {
+        appendParameter(values, NpgsqlDbType.Array | NpgsqlDbType.Uuid);
+    }
+
+    public void AppendJsonParameter(ISerializer serializer, object value)
+    {
+        var json = serializer.ToJson(value);
+        appendParameter(json, NpgsqlDbType.Jsonb);
     }
 
     public void AppendParameters(params object[] parameters)

@@ -59,7 +59,7 @@ internal class PatchFragment: IOperationFragment
         builder.Append(" as d set data = ");
         builder.Append(_transform.Identifier.QualifiedName);
         builder.Append("(data, ");
-        builder.AppendParameter(json, NpgsqlDbType.Jsonb);
+        builder.AppendJsonParameter(json);
         builder.Append("), ");
         builder.Append(SchemaConstants.LastModifiedColumn);
         builder.Append(" = (now() at time zone 'utc'), ");

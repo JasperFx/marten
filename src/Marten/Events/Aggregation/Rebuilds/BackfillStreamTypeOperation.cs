@@ -49,7 +49,7 @@ internal class BackfillStreamTypeOperation: IStorageOperation
         }
 
         builder.Append($" and s.type is NULL and e.type = ANY(");
-        builder.AppendParameter(_eventTypeNames, NpgsqlDbType.Array | NpgsqlDbType.Text);
+        builder.AppendStringArrayParameter(_eventTypeNames);
         builder.Append(") and s.is_archived = FALSE and e.seq_id > ");
         builder.AppendParameter(_floor);
         builder.Append(" and e.seq_id <= ");
