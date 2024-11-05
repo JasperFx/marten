@@ -48,8 +48,7 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)}));", Use.Type<IMartenSession>(), Use.Type<IEvent>());
-        method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
+        method.Frames.Code($"parameterBuilder.{nameof(IGroupedParameterBuilder.AppendJsonParameter)}({{0}}.Serializer, {{1}}.{nameof(IEvent.Headers)});", Use.Type<IMartenSession>(), Use.Type<IEvent>());
     }
 
     internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,

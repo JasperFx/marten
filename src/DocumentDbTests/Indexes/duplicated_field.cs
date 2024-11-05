@@ -236,6 +236,11 @@ public class duplicated_field: OneOffConfigurationsContext
             _.Schema.For<Target>().Duplicate(x => x.Inner.Color);
         });
 
+        var target = Target.Random();
+        target.Inner = null;
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
         targets.Each(x => theSession.Store(x));
         await theSession.SaveChangesAsync();
 

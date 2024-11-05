@@ -22,6 +22,6 @@ internal class CurrentVersionArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code("setCurrentVersionParameter({0});", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
+        method.Frames.Code("setCurrentVersionParameter({0});", Use.Type<IGroupedParameterBuilder>());
     }
 }

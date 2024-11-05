@@ -71,55 +71,40 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         }
     }
 
-    protected void writeId(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void writeId(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Id);
-        param.NpgsqlDbType = NpgsqlDbType.Uuid;
+        builder.AppendParameter(Stream.Id);
     }
 
-    protected void writeKey(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void writeKey(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Key);
-        param.NpgsqlDbType = NpgsqlDbType.Varchar;
+        builder.AppendParameter(Stream.Key);
     }
 
-    protected void writeBasicParameters(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
+    protected void writeBasicParameters(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
-        param1.NpgsqlDbType = NpgsqlDbType.Varchar;
+        builder.AppendTextParameter(Stream.AggregateTypeName);
+        builder.AppendTextParameter(Stream.TenantId);
 
-        var param2 = builder.AppendParameter(Stream.TenantId);
-        param2.NpgsqlDbType = NpgsqlDbType.Varchar;
-
-        var param3 = builder.AppendParameter(Stream.Events.Select(x => x.Id).ToArray());
-        param3.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Uuid;
-
-        var param4 = builder.AppendParameter(Stream.Events.Select(x => x.EventTypeName).ToArray());
-        param4.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-
-        var param5 = builder.AppendParameter(Stream.Events.Select(x => x.DotNetTypeName).ToArray());
-        param5.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
-
-        var param6 = builder.AppendParameter(Stream.Events.Select(e => session.Serializer.ToJson(e.Data)).ToArray());
-        param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+        builder.AppendGuidArrayParameter(Stream.Events.Select(x => x.Id).ToArray());
+        builder.AppendStringArrayParameter(Stream.Events.Select(x => x.EventTypeName).ToArray());
+        builder.AppendStringArrayParameter(Stream.Events.Select(x => x.DotNetTypeName).ToArray());
+        builder.AppendJsonArrayParameter(session.Serializer, Stream.Events.Select(x => x.Data).ToArray());
     }
 
-    protected void writeCausationIds(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void writeCausationIds(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.CausationId).ToArray());
-        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+        builder.AppendStringArrayParameter(Stream.Events.Select(x => x.CausationId).ToArray());
     }
 
-    protected void writeCorrelationIds(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void writeCorrelationIds(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.CorrelationId).ToArray());
-        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+        builder.AppendStringArrayParameter(Stream.Events.Select(x => x.CorrelationId).ToArray());
     }
 
-    protected void writeHeaders(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
+    protected void writeHeaders(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => session.Serializer.ToJson(x.Headers)).ToArray());
-        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+        builder.AppendJsonArrayParameter(session.Serializer, Stream.Events.Select(x => x.Headers ?? new()).ToArray());
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)

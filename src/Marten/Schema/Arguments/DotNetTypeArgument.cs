@@ -35,7 +35,7 @@ internal class DotNetTypeArgument: UpsertArgument
         var version = type.AllInjectedFields[0];
 
         method.Frames.Code("// .Net Class Type");
-        method.Frames.Code($"var parameter{{0}} = {{1}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}({{2}}.GetType().FullName);", i, Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>(), version);
+        method.Frames.Code($"{{1}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({{2}}.GetType().FullName);", i, Use.Type<IGroupedParameterBuilder>(), version);
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

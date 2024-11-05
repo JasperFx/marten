@@ -42,8 +42,7 @@ internal class DocTypeArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(docType);", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
-        method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", DbType);
+        method.Frames.Code($"{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(docType);", Use.Type<IGroupedParameterBuilder>());
     }
 
     public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

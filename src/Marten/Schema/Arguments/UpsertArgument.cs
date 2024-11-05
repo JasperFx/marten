@@ -122,17 +122,16 @@ public class UpsertArgument
             {
                 method.Frames.Code($@"
 BLOCK:if (document.{memberPath} != null)
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{ParameterValue});
-parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};
+{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});
 END
 BLOCK:else
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);
+{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value);
 END
-", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
+", Use.Type<IGroupedParameterBuilder>());
             }
             else
             {
-                method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
+                method.Frames.Code($"{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder>());
             }
         }
     }
@@ -145,32 +144,24 @@ END
             if (DotNetType.IsNullable())
             {
                 method.Frames.Code(
-                    $"var parameter{i} = document.{memberPath} == null ? {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}<object>({typeof(DBNull).FullNameInCode()}.Value) : {{0}}.{nameof(CommandBuilder.AppendParameter)}((int)document.{memberPath});",
-                    Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
-
-                method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", NpgsqlDbType.Integer);
+                    $"{{0}}.{nameof(IGroupedParameterBuilder.AppendEnumAsInteger)}(document.{memberPath});",
+                    Use.Type<IGroupedParameterBuilder>());
             }
             else
             {
                 method.Frames.Code(
-                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}((int)document.{memberPath});", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
-                method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                    NpgsqlDbType.Integer);
+                    $"{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}((int)document.{memberPath});", Use.Type<IGroupedParameterBuilder>());
             }
         }
         else if (DotNetType.IsNullable())
         {
             method.Frames.Code(
-                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}((document.{memberPath}).ToString());", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
-            method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                NpgsqlDbType.Varchar);
+                $"{{0}}.{nameof(IGroupedParameterBuilder.AppendEnumAsString)}((document.{memberPath}));", Use.Type<IGroupedParameterBuilder>());
         }
         else
         {
             method.Frames.Code(
-                $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendParameter)}(document.{memberPath}.ToString());", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>());
-            method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};",
-                NpgsqlDbType.Varchar);
+                $"{{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{memberPath}.ToString());", Use.Type<IGroupedParameterBuilder>());
         }
     }
 

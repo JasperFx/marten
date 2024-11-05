@@ -78,12 +78,11 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public abstract NpgsqlDbType DbType();
 
-    public abstract void ConfigureParameters(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
+    public abstract void ConfigureParameters(IGroupedParameterBuilder parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
 
-    protected void setVersionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void setVersionParameter(IGroupedParameterBuilder builder)
     {
-        var parameter = builder.AppendParameter(_version);
-        parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
+        builder.AppendParameter(_version);
     }
 
     protected void storeVersion()
@@ -91,24 +90,21 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         _versions[_id] = _version;
     }
 
-    protected void setCurrentVersionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void setCurrentVersionParameter(IGroupedParameterBuilder builder)
     {
         if (_versions.TryGetValue(_id, out var version))
         {
-            var parameter = builder.AppendParameter(version);
-            parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
+            builder.AppendParameter(version);
         }
         else
         {
-            var parameter = builder.AppendParameter<object>(DBNull.Value);
-            parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
+            builder.AppendNull(System.Data.DbType.Guid);
         }
     }
 
-    protected void setCurrentRevisionParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder)
+    protected void setCurrentRevisionParameter(IGroupedParameterBuilder builder)
     {
-        var parameter = builder.AppendParameter(Revision);
-        parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+        builder.AppendParameter(Revision);
     }
 
     protected bool postprocessConcurrency(DbDataReader reader, IList<Exception> exceptions)
@@ -266,31 +262,13 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return false;
     }
 
-    protected void setStringParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, string value)
+    protected void setStringParameter(IGroupedParameterBuilder builder, string value)
     {
-        if (value == null)
-        {
-            var parameter = builder.AppendParameter<object>(DBNull.Value);
-            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
-        }
-        else
-        {
-            var parameter = builder.AppendParameter(value);
-            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
-        }
+        builder.AppendTextParameter(value);
     }
 
-    protected void setHeaderParameter(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType> builder, IMartenSession session)
+    protected void setHeaderParameter(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        if (session.Headers == null)
-        {
-            var parameter = builder.AppendParameter<object>(DBNull.Value);
-            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-        }
-        else
-        {
-            var parameter = builder.AppendParameter(session.Serializer.ToJson(session.Headers));
-            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
-        }
+        builder.AppendJsonParameter(session.Serializer, session.Headers);
     }
 }

@@ -39,6 +39,6 @@ internal class DocJsonBodyArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"{{0}}.{nameof(IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>.AppendJsonParameter)}({{1}}.Serializer, _document);", Use.Type<IGroupedParameterBuilder<NpgsqlParameter, NpgsqlDbType>>(), Use.Type<IMartenSession>());
+        method.Frames.Code($"{{0}}.{nameof(IGroupedParameterBuilder.AppendJsonParameter)}({{1}}.Serializer, _document);", Use.Type<IGroupedParameterBuilder>(), Use.Type<IMartenSession>());
     }
 }

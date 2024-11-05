@@ -247,14 +247,12 @@ internal static class EventDocumentStorageGenerator
         configureCommand.Frames.AppendSql(sql);
 
         var idDbType = graph.StreamIdentity == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
-        configureCommand.Frames.Code($"var parameter1 = builder.{nameof(CommandBuilder.AppendParameter)}(_streamId);");
-        configureCommand.Frames.Code("parameter1.DbType = {0};", idDbType);
+        configureCommand.Frames.Code($"builder.{nameof(CommandBuilder.AppendParameter)}(_streamId);");
 
         if (graph.TenancyStyle == TenancyStyle.Conjoined)
         {
             configureCommand.Frames.AppendSql($" and {TenantIdColumn.Name} = ");
-            configureCommand.Frames.Code($"var parameter2 = builder.{nameof(CommandBuilder.AppendParameter)}(_tenantId);");
-            configureCommand.Frames.Code("parameter2.DbType = {0};", DbType.String);
+            configureCommand.Frames.Code($"builder.{nameof(CommandBuilder.AppendParameter)}(_tenantId);");
         }
     }
 
