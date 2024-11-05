@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -13,6 +14,7 @@ using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core;
 using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
@@ -140,7 +142,7 @@ public class CompiledQueryPlan : ICommandBuilder
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
         _parameterIndex++;
-        var usage = new ParameterUsage(_current.Parameters.Count, name, value);
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value, DbTypeMapper.Lookup(typeof(T)));
         _current.Parameters.Add(usage);
 
         _current.CommandText += ParameterPlaceholder;
@@ -148,7 +150,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    public NpgsqlParameter AppendParameter<T>(T value, NpgsqlDbType? dbType)
+    public NpgsqlParameter AppendParameter<T>(T value, DbType? dbType)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -162,6 +164,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
+
     private int _parameterIndex = 0;
 
     public NpgsqlParameter AppendParameter(object value)
@@ -169,7 +172,9 @@ public class CompiledQueryPlan : ICommandBuilder
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
         _parameterIndex++;
-        var usage = new ParameterUsage(_current.Parameters.Count, name, value);
+
+        // TODO -- this is going to cause problems! Try to eliminate NpgsqlDbType usage
+        var usage = new ParameterUsage(_current.Parameters.Count, name, value, DbTypeMapper.Lookup(value.GetType()));
         _current.Parameters.Add(usage);
 
         _current.CommandText += ParameterPlaceholder;

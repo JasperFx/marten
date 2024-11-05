@@ -1,4 +1,5 @@
 using System;
+using System.Data;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
@@ -17,6 +18,18 @@ internal class ParameterUsage
     public int Index { get; }
     public NpgsqlParameter Parameter { get; }
 
+    public ParameterUsage(int index, string name, object value, DbType? dbType = null)
+    {
+        Index = index;
+        Parameter = new NpgsqlParameter { Value = value, ParameterName = name};
+        if (dbType.HasValue) Parameter.DbType = dbType.Value;
+
+        if (value is int) Parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+
+        Name = name;
+    }
+
+    [Obsolete("Try to eliminate this")]
     public ParameterUsage(int index, string name, object value, NpgsqlDbType? dbType = null)
     {
         Index = index;
