@@ -36,7 +36,7 @@ public class SimpleElementMember: IQueryableMember, IComparableMember
 
     public Type MemberType { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("data");
     }

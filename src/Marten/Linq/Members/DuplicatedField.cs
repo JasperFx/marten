@@ -189,7 +189,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     public string TypedLocator { get; set; }
 
-    void ISqlFragment.Apply(ICommandBuilder builder)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(TypedLocator);
     }

@@ -9,7 +9,6 @@ using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Archiving;
 
@@ -24,15 +23,14 @@ internal class ArchiveStreamOperation: IStorageOperation
         _streamId = streamId;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         if (_events.TenancyStyle == TenancyStyle.Conjoined)
         {
             var parameters = builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?, ?)");
             parameters[0].Value = _streamId;
-            parameters[0].NpgsqlDbType = _events.StreamIdDbType;
+            parameters[0].DbType = _events.StreamIdDbType;
             parameters[1].Value = session.TenantId;
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
         }
         else
         {
@@ -40,7 +38,7 @@ internal class ArchiveStreamOperation: IStorageOperation
                 builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?)")[0];
             parameter.Value = _streamId;
 
-            parameter.NpgsqlDbType = _events.StreamIdDbType;
+            parameter.DbType = _events.StreamIdDbType;
         }
 
 

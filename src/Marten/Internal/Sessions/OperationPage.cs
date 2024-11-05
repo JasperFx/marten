@@ -5,11 +5,10 @@ using Marten.Internal.Operations;
 using Npgsql;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Sessions;
 
-public class OperationPage: OperationPage<IMartenSession, ICommandBuilder, IStorageOperation>
+public class OperationPage: OperationPage<IMartenSession, IPostgresqlCommandBuilder, IStorageOperation>
 {
     public OperationPage(IMartenSession session): base(session, new BatchBuilder())
     {

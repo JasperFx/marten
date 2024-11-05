@@ -14,7 +14,7 @@ public class IsNullFilter: IReversibleWhereFragment
 
     public IQueryableMember Member { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(Member.NullTestLocator);
         builder.Append(" is null");

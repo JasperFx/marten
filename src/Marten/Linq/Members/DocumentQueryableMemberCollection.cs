@@ -28,7 +28,7 @@ internal class DocumentQueryableMemberCollection: IQueryableMemberCollection, IQ
 
     public string JsonPathSegment => "";
 
-    void ISqlFragment.Apply(ICommandBuilder builder)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("d.data");
     }

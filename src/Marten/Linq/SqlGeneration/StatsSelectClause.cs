@@ -32,7 +32,7 @@ internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStat
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(Inner.SelectFields().Join(", "));

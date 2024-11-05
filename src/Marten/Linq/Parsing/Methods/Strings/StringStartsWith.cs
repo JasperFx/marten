@@ -42,7 +42,7 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
             : StringComparisonParser.CaseSensitiveLike;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_member.RawLocator);
         builder.Append(_operator);
@@ -66,9 +66,6 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
     {
         var maskedValue = $"StartsWith(_query.{_queryMember.Name})";
 
-        method.Frames.Code($@"
-{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
-{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
-", NpgsqlDbType.Varchar);
+        method.Frames.Code($"{parametersVariableName}[{parameterIndex}].Value = {maskedValue};");
     }
 }

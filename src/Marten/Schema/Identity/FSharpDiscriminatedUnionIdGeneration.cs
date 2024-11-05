@@ -211,7 +211,7 @@ internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectCl
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         if (MemberName.IsNotEmpty())
         {

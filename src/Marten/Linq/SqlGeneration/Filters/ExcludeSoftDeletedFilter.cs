@@ -17,7 +17,7 @@ internal class ExcludeSoftDeletedFilter: ISoftDeletedFilter
 
     private static string _sql = $"d.{SchemaConstants.DeletedColumn} = False";
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

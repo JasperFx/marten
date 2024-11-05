@@ -225,7 +225,7 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     Type ISelectClause.SelectedType => typeof(T);
 
-    void ISqlFragment.Apply(ICommandBuilder sql)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select data from ");
         sql.Append(_tableName);

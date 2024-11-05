@@ -8,7 +8,6 @@ using Marten.Internal.Operations;
 using Marten.Services;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 
@@ -29,7 +28,7 @@ public abstract class AppendEventOperationBase: IStorageOperation, NoDataReturne
     public StreamAction Stream { get; }
     public IEvent Event { get; }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session);
 
     public Type DocumentType => typeof(IEvent);
 

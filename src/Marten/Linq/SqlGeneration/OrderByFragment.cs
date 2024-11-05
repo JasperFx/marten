@@ -10,7 +10,7 @@ public class OrderByFragment: ISqlFragment
 {
     public List<string> Expressions { get; } = new();
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         if (!Expressions.Any())
         {

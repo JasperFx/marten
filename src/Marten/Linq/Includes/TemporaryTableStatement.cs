@@ -26,7 +26,7 @@ public class TemporaryTableStatement: Statement
 
     public Statement Inner { get; }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         sql.Append("drop table if exists ");
         sql.Append(ExportName);

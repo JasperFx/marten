@@ -19,7 +19,7 @@ internal class DistinctSelectionStatement: Statement
         InsertAfter(selector);
     }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         startCommonTableExpression(sql);
         sql.Append("select distinct(data) from ");

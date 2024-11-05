@@ -29,7 +29,7 @@ internal class QueryForNextAggregateIds: IQueryHandler<IReadOnlyList<AggregateId
         _streamIdentity = options.EventGraph.StreamIdentity;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append($"select number, id from {_schemaName}.{AggregateRebuildTable.Name} where stream_type = ");
         builder.AppendParameter(_streamAlias);

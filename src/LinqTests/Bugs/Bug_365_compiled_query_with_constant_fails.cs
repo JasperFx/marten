@@ -14,10 +14,10 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
     public class Route
     {
         public Guid ID { get; set; }
-        public DateTime Date { get; private set; }
+        public DateTimeOffset Date { get; private set; }
         public RouteStatus Status { get; private set; }
 
-        public void Plan(DateTime date)
+        public void Plan(DateTimeOffset date)
         {
             if (date < DateTime.Today.AddDays(1))
             {
@@ -49,11 +49,11 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
 
     public class RoutesPlannedAfter: ICompiledQuery<Route, IEnumerable<Route>>
     {
-        public DateTime DateTime { get; }
+        public DateTimeOffset DateTime { get; }
 
-        public RoutesPlannedAfter(DateTime dateTime)
+        public RoutesPlannedAfter(DateTimeOffset dateTime)
         {
-            DateTime = dateTime;
+            DateTime = dateTime.ToUniversalTime();
         }
 
         public Expression<Func<IMartenQueryable<Route>, IEnumerable<Route>>> QueryIs()
@@ -67,7 +67,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
     {
         await AddRoutes(30);
 
-        var from = DateTime.Today.AddDays(5);
+        var from = new DateTimeOffset(DateTime.Today.AddDays(5)).ToUniversalTime();
 
         using (var session = theStore.QuerySession())
         {

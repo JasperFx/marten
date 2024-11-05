@@ -12,7 +12,7 @@ namespace Marten.Linq.SqlGeneration;
 // TODO -- move this to Weasel itself
 public record LiteralSql(string Text) : ISqlFragment
 {
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(Text);
     }

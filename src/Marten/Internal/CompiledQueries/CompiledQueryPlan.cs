@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -18,11 +19,10 @@ using Weasel.Core;
 using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.CompiledQueries;
 
-public class CompiledQueryPlan : ICommandBuilder
+public class CompiledQueryPlan : IPostgresqlCommandBuilder
 {
     public Type QueryType { get; }
     public Type OutputType { get; }
@@ -114,6 +114,12 @@ public class CompiledQueryPlan : ICommandBuilder
 
     private CommandPlan _current;
 
+    public void SetParameterAsJson(DbParameter parameter, string json)
+    {
+        parameter.As<NpgsqlParameter>().NpgsqlDbType = NpgsqlDbType.Jsonb;
+        parameter.Value = json;
+    }
+
     public string LastParameterName => _current.Parameters.LastOrDefault()?.Parameter.ParameterName;
 
     private CommandPlan appendCommand()
@@ -137,7 +143,7 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.CommandText += character;
     }
 
-    public NpgsqlParameter AppendParameter<T>(T value)
+    public void AppendParameter<T>(T value)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -146,11 +152,9 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.Parameters.Add(usage);
 
         _current.CommandText += ParameterPlaceholder;
-
-        return usage.Parameter;
     }
 
-    public NpgsqlParameter AppendParameter<T>(T value, DbType? dbType)
+    public void AppendParameter<T>(T value, DbType? dbType)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -160,14 +164,12 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.Parameters.Add(usage);
 
         _current.CommandText += ParameterPlaceholder;
-
-        return usage.Parameter;
     }
 
 
     private int _parameterIndex = 0;
 
-    public NpgsqlParameter AppendParameter(object value)
+    public void AppendParameter(object value)
     {
         _current ??= appendCommand();
         var name = "p" + _parameterIndex;
@@ -178,8 +180,6 @@ public class CompiledQueryPlan : ICommandBuilder
         _current.Parameters.Add(usage);
 
         _current.CommandText += ParameterPlaceholder;
-
-        return usage.Parameter;
     }
 
     public NpgsqlParameter AppendParameter(object value, NpgsqlDbType? dbType)
@@ -238,7 +238,7 @@ public class CompiledQueryPlan : ICommandBuilder
         throw new NotSupportedException();
     }
 
-    public NpgsqlParameter[] AppendWithParameters(string text)
+    public DbParameter[] AppendWithParameters(string text)
     {
         _current ??= appendCommand();
         var split = text.Split('?');
@@ -256,7 +256,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return parameters;
     }
 
-    public NpgsqlParameter[] AppendWithParameters(string text, char placeholder)
+    public DbParameter[] AppendWithParameters(string text, char placeholder)
     {
         _current ??= appendCommand();
         var split = text.Split(placeholder);
@@ -396,7 +396,7 @@ public class CompiledQueryPlan : ICommandBuilder
         {
             if (number != 1)
             {
-                method.Frames.Code($"{{0}}.{nameof(ICommandBuilder.StartNewCommand)}();", Use.Type<ICommandBuilder>());
+                method.Frames.Code($"{{0}}.{nameof(IPostgresqlCommandBuilder.StartNewCommand)}();", Use.Type<IPostgresqlCommandBuilder>());
             }
 
             var parameters = $"parameters{number}";
@@ -404,7 +404,7 @@ public class CompiledQueryPlan : ICommandBuilder
             if (command.Parameters.Any())
             {
                 method.Frames.Code($"var {parameters} = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}}, '{ParameterPlaceholder}');",
-                    Use.Type<ICommandBuilder>(), command.CommandText);
+                    Use.Type<IPostgresqlCommandBuilder>(), command.CommandText);
 
                 foreach (var usage in command.Parameters)
                 {
@@ -413,7 +413,7 @@ public class CompiledQueryPlan : ICommandBuilder
             }
             else
             {
-                method.Frames.Code($"{{0}}.Append({{1}});", Use.Type<ICommandBuilder>(), command.CommandText);
+                method.Frames.Code($"{{0}}.Append({{1}});", Use.Type<IPostgresqlCommandBuilder>(), command.CommandText);
             }
 
             number++;

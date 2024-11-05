@@ -16,7 +16,7 @@ internal class SelectCtidSelectClause: ISelectClause
         FromObject = parent.ExportName;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("select distinct ctid from ");
         builder.Append(FromObject);

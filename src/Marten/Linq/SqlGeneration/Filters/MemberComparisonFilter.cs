@@ -49,7 +49,7 @@ public class MemberComparisonFilter: ComparisonFilter, ICollectionAware
         return Right is CommandParameter;
     }
 
-    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(IPostgresqlCommandBuilder builder, Dictionary<string, object> parameters)
     {
         var rawValue = Right.As<CommandParameter>().Value!;
         var parameter = parameters.AddJsonPathParameter(rawValue);

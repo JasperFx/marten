@@ -5,7 +5,6 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.PLv8.Transforms;
 
@@ -20,7 +19,7 @@ internal class DocumentTransformOperationFragment : IOperationFragment
         _function = function;
     }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         var version = CombGuidIdGeneration.NewGuid();
 

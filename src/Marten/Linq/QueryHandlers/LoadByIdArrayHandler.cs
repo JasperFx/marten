@@ -25,7 +25,7 @@ internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> wh
         _ids = ids;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder sql, IMartenSession session)
     {
         sql.Append("select ");
 

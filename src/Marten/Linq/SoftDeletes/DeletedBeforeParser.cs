@@ -54,7 +54,7 @@ internal class DeletedBeforeFilter: ISoftDeletedFilter
         _time = time;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
         builder.AppendParameter(_time);

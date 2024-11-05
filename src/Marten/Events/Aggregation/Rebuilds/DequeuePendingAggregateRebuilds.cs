@@ -10,7 +10,6 @@ using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
@@ -25,7 +24,7 @@ internal class DequeuePendingAggregateRebuilds: IStorageOperation, NoDataReturne
         _schemaName = options.Events.DatabaseSchemaName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append($"delete from {_schemaName}.{AggregateRebuildTable.Name} where number = ANY(");
         builder.AppendLongArrayParameter(_numbers);

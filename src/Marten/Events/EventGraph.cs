@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,7 +87,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// </summary>
     public bool UseArchivedStreamPartitioning { get; set; }
 
-    internal NpgsqlDbType StreamIdDbType { get; private set; }
+    internal DbType StreamIdDbType { get; private set; }
 
     internal StoreOptions Options { get; }
 
@@ -122,7 +123,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         set
         {
             _streamIdentity = value;
-            StreamIdDbType = value == StreamIdentity.AsGuid ? NpgsqlDbType.Uuid : NpgsqlDbType.Varchar;
+            StreamIdDbType = value == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
         }
     }
 

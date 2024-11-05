@@ -3,7 +3,6 @@ using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -16,7 +15,7 @@ internal class HardDelete: IOperationFragment
         _sql = $"delete from {storage.TableName} as d";
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

@@ -14,7 +14,7 @@ internal class IsArchivedMember: IQueryableMember, IComparableMember, IBooleanMe
 {
     private static readonly string _locator = "d.is_archived";
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_locator);
     }

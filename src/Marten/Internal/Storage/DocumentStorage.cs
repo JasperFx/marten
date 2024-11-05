@@ -358,7 +358,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public abstract TId Identity(T document);
 
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append(_selectClause);
     }
@@ -499,7 +499,7 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
         SelectedType = selectedType;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("select ");
         builder.Append(_selectFields.Join(", "));

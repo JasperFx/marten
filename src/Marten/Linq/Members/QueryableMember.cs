@@ -106,7 +106,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
         return ordering.Direction == OrderingDirection.Desc ? $"{TypedLocator} desc" : TypedLocator;
     }
 
-    void ISqlFragment.Apply(ICommandBuilder builder)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(TypedLocator);
     }

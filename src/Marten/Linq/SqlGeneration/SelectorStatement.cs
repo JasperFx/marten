@@ -29,7 +29,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         Wheres.Add(fragment);
     }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         startCommonTableExpression(sql);
 

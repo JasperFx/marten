@@ -13,7 +13,6 @@ using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Patching;
 
@@ -38,7 +37,7 @@ internal class PatchFragment: IOperationFragment
         _storage = storage;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         var patchSetStr = new List<string>();
         foreach (var patch in _patchSet)
@@ -103,14 +102,14 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         return OperationRole.Patch;
     }
 
-    protected override void configure(ICommandBuilder builder)
+    protected override void configure(IPostgresqlCommandBuilder builder)
     {
         if (_patchSet.Count == 0) return;
         base.configure(builder);
         applyUpdates(builder);
     }
 
-    private void applyUpdates(ICommandBuilder builder)
+    private void applyUpdates(IPostgresqlCommandBuilder builder)
     {
         var fields = _storage.DuplicatedFields;
         if (!fields.Any())

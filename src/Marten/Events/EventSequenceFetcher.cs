@@ -22,7 +22,7 @@ internal class EventSequenceFetcher: IQueryHandler<Queue<long>>
         _sql = $"select nextval('{graph.DatabaseSchemaName}.mt_events_sequence') from generate_series(1,{number})";
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append(_sql);
     }

@@ -12,6 +12,7 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.QueryHandlers;
@@ -36,7 +37,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
     public bool SqlContainsCustomSelect { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         if (!SqlContainsCustomSelect)
         {
@@ -78,8 +79,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
                 else
                 {
                     cmdParameters[i].Value = _parameters[i];
-                    cmdParameters[i].NpgsqlDbType =
-                        PostgresqlProvider.Instance.ToParameterType(_parameters[i].GetType());
+                    cmdParameters[i].DbType = DbTypeMapper.Lookup(_parameters[i].GetType()).Value;
                 }
             }
         }

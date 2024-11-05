@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 
@@ -25,7 +25,7 @@ internal class EstablishTombstoneStream: IStorageOperation
 {
     public static readonly string StreamKey = "mt_tombstone";
     public static readonly Guid StreamId = Guid.NewGuid();
-    private readonly Action<NpgsqlParameter> _configureParameter;
+    private readonly Action<DbParameter> _configureParameter;
     private readonly string _sessionTenantId;
 
     private readonly string _sql;
@@ -55,7 +55,7 @@ DO NOTHING
             _configureParameter = p =>
             {
                 p.Value = StreamId;
-                p.NpgsqlDbType = NpgsqlDbType.Uuid;
+                p.DbType = DbType.Guid;
             };
         }
         else
@@ -63,12 +63,12 @@ DO NOTHING
             _configureParameter = p =>
             {
                 p.Value = StreamKey;
-                p.NpgsqlDbType = NpgsqlDbType.Varchar;
+                p.DbType = DbType.String;
             };
         }
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters = builder.AppendWithParameters(_sql);
         _configureParameter(parameters[0]);

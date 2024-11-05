@@ -92,7 +92,7 @@ public abstract class MetadataColumn: TableColumn
         });
     }
 
-    public virtual void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    public virtual void WriteMetadataInUpdateStatement(IPostgresqlCommandBuilder builder, DocumentSessionBase session)
     {
         throw new NotSupportedException();
     }

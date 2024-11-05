@@ -6,7 +6,7 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 public record EqualsFilter(string Locator, object Value): ISqlFragment
 {
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(Locator);
         builder.Append(" = ");

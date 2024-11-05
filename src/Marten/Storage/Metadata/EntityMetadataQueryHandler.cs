@@ -38,7 +38,7 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
     public Type SourceType { get; }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder sql, IMartenSession session)
     {
         sql.Append("select id, ");
 

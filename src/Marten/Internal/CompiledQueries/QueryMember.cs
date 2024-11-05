@@ -23,8 +23,6 @@ internal abstract class QueryMember<T>: IQueryMember<T>
         Member = member;
     }
 
-    public string Mask { get; set; }
-
     public Type Type => typeof(T);
 
     public object GetValueAsObject(object query)

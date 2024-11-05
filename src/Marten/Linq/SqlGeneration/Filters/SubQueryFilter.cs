@@ -36,7 +36,7 @@ internal class SubQueryFilter: ISubQueryFilter
         return this;
     }
 
-    void ISqlFragment.Apply(ICommandBuilder builder)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder builder)
     {
         if (Not)
         {

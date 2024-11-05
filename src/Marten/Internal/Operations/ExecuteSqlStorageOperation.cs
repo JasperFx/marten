@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Storage;
+using Weasel.Core;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Operations;
 
@@ -22,7 +22,7 @@ internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
         _parameterValues = parameterValues;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters = builder.AppendWithParameters(_commandText);
         if (parameters.Length != _parameterValues.Length)
@@ -39,10 +39,10 @@ internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
             }
             else
             {
-                var dbType = PostgresqlProvider.Instance.TryGetDbType(_parameterValues[i].GetType());
+                var dbType = DbTypeMapper.Lookup(_parameterValues[i].GetType());
                 if (dbType != null)
                 {
-                    parameters[i].NpgsqlDbType = dbType.Value;
+                    parameters[i].DbType = dbType.Value;
                 }
 
                 parameters[i].Value = _parameterValues[i];

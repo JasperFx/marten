@@ -8,7 +8,6 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Daemon.Progress;
 
@@ -23,13 +22,12 @@ internal class DeleteProjectionProgress: IStorageOperation
         _shardName = shardName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters($"delete from {_events.ProgressionTable} where name = ?");
 
         parameters[0].Value = _shardName;
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
     public Type DocumentType => typeof(IEvent);

@@ -62,7 +62,7 @@ internal class CorrelationIdColumn: MetadataColumn<string>, ISelectableColumn, I
         return new CorrelationIdArgument();
     }
 
-    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    public override void WriteMetadataInUpdateStatement(IPostgresqlCommandBuilder builder, DocumentSessionBase session)
     {
         builder.Append(ColumnName);
         builder.Append(" = ");

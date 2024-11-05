@@ -46,7 +46,7 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler wher
         return new OneResultHandler<T>(null, selector, _canBeNull, _canBeMultiples);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         _statement?.Apply(builder);
     }

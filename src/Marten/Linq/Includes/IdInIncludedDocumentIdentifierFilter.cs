@@ -18,7 +18,7 @@ internal class IdInIncludedDocumentIdentifierFilter: ISqlFragment
         _identifyingMember = identifyingMember;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_identifyingMember is null ? "d.id" : _identifyingMember.LocatorForIncludedDocumentId);
         builder.Append(" in (select ");

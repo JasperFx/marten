@@ -48,11 +48,11 @@ public static class CodeGenerationExtensions
 
     public static void AppendSql(this FramesCollection collection, string sql)
     {
-        collection.Code($"{{0}}.{nameof(CommandBuilder.Append)}(\"{sql}\");", Use.Type<ICommandBuilder>());
+        collection.Code($"{{0}}.{nameof(CommandBuilder.Append)}(\"{sql}\");", Use.Type<IPostgresqlCommandBuilder>());
     }
 
     public static void AppendSql(this FramesCollection collection, char sql)
     {
-        collection.Code($"{{0}}.{nameof(CommandBuilder.Append)}('{sql}');", Use.Type<ICommandBuilder>());
+        collection.Code($"{{0}}.{nameof(CommandBuilder.Append)}('{sql}');", Use.Type<IPostgresqlCommandBuilder>());
     }
 }

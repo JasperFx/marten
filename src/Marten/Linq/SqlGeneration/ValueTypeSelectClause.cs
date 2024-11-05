@@ -48,7 +48,7 @@ public class ValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelect
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         if (MemberName.IsNotEmpty())
         {
@@ -160,7 +160,7 @@ public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarS
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         if (MemberName.IsNotEmpty())
         {

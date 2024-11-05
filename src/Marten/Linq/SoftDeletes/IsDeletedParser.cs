@@ -42,7 +42,7 @@ internal class IsDeletedFilter: ISoftDeletedFilter, IReversibleWhereFragment
 
     private static readonly string _sql = $"d.{SchemaConstants.DeletedColumn} = True";
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }
@@ -64,7 +64,7 @@ internal class IsNotDeletedFilter: ISoftDeletedFilter, IReversibleWhereFragment
 
     private static readonly string _sql = $"d.{SchemaConstants.DeletedColumn} = False";
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

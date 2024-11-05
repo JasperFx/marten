@@ -20,7 +20,7 @@ internal class AllValuesAreNullFilter: ISubQueryFilter
 
     public ICollectionMember Member { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         if (Not)
         {

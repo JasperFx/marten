@@ -74,7 +74,7 @@ internal class LiteralSqlWithJsonPath : ISqlFragment
         _parameters = parameters;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         var parameters = builder.AppendWithParameters(_sql, '^');
         for (var i = 0; i < parameters.Length; i++)

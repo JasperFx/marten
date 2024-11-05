@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Daemon.Progress;
 
@@ -24,15 +24,14 @@ internal class InsertProjectionProgress: IStorageOperation
         _progress = progress;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id) values (?, ?)");
 
         parameters[0].Value = _progress.ShardName.Identity;
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
         parameters[1].Value = _progress.SequenceCeiling;
-        parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[1].DbType = DbType.Int64;
     }
 
     public Type DocumentType => typeof(IEvent);

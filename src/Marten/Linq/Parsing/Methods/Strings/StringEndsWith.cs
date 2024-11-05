@@ -48,7 +48,7 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
             : StringComparisonParser.CaseSensitiveLike;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_member.RawLocator);
         builder.Append(_operator);
@@ -75,10 +75,7 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
     {
         var maskedValue = $"EndsWith(_query.{_queryMember.Name})";
 
-        method.Frames.Code($@"
-{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
-{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
-", NpgsqlDbType.Varchar);
+        method.Frames.Code($"{parametersVariableName}[{parameterIndex}].Value = {maskedValue};");
     }
 
     public string ParameterName { get; private set; }

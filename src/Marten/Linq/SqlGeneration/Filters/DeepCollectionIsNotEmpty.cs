@@ -17,7 +17,7 @@ internal class DeepCollectionIsNotEmpty: ISqlFragment
 
     public List<IQueryableMember> Path { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("jsonb_array_length(jsonb_path_query_array(d.data, '$");
         foreach (var member in Path.Where(x => x.JsonPathSegment.IsNotEmpty()))

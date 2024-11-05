@@ -122,7 +122,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         return false;
     }
 
-    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(IPostgresqlCommandBuilder builder, Dictionary<string, object> parameters)
     {
         throw new NotSupportedException();
     }
@@ -131,7 +131,7 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
 
 
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         var json = Usage == ContainmentUsage.Singular
             ? _serializer.ToCleanJson(_data)

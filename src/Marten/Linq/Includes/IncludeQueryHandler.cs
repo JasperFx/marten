@@ -31,7 +31,7 @@ public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
 
     public IQueryHandler<T> Inner { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         Inner.ConfigureCommand(builder, session);
     }

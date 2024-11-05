@@ -34,7 +34,7 @@ internal class ExplodeCollectionStatement: Statement
 
     public ISqlFragment? Where { get; set; }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         startCommonTableExpression(sql);
 

@@ -9,7 +9,6 @@ using Marten.Internal.Operations;
 using Marten.Storage.Metadata;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
@@ -24,7 +23,7 @@ internal class SeedAggregateRebuildTable: IStorageOperation
         _schemaName = options.Events.DatabaseSchemaName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append($"delete from {_schemaName}.{AggregateRebuildTable.Name} where stream_type = ");
         builder.AppendParameter(_streamAlias);

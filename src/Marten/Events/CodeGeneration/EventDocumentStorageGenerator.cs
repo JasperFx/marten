@@ -120,7 +120,7 @@ internal static class EventDocumentStorageGenerator
 
         configureCommand.Frames.AppendSql(sql);
 
-        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}();", Use.Type<ICommandBuilder>());
+        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}();", Use.Type<IPostgresqlCommandBuilder>());
 
         configureCommand.Frames.AppendSql("set version = ");
         configureCommand.SetParameterFromMember<StreamAction>(0, x => x.Version);
@@ -286,7 +286,7 @@ internal static class EventDocumentStorageGenerator
 
         configure.Frames.AppendSql(sql);
 
-        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
+        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<IPostgresqlCommandBuilder>());
 
         for (var i = 0; i < columns.Count; i++)
         {
@@ -314,7 +314,7 @@ internal static class EventDocumentStorageGenerator
 
         configure.Frames.AppendSql(sql);
 
-        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
+        configure.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<IPostgresqlCommandBuilder>());
 
         if (graph.StreamIdentity == StreamIdentity.AsGuid)
         {
@@ -367,7 +367,7 @@ internal static class EventDocumentStorageGenerator
 
         configureCommand.Frames.AppendSql(sql);
 
-        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
+        configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<IPostgresqlCommandBuilder>());
 
         for (var i = 0; i < columns.Length; i++)
         {

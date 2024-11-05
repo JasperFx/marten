@@ -21,7 +21,7 @@ public class IsSoftDeletedMember : IQueryableMember, IComparableMember, IBoolean
         MemberName = member.Name;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_locator);
     }

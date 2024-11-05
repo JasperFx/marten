@@ -21,7 +21,7 @@ internal class QueryForTenantIds: IQueryHandler<IReadOnlyList<string>>
         _schemaName = options.Events.DatabaseSchemaName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         // TODO -- what about an extreme number of tenants?
         builder.Append($"select distinct(tenant_id) from {_schemaName}.{AggregateRebuildTable.Name} where stream_type = ");

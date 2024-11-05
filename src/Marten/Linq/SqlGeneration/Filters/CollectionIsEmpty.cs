@@ -25,7 +25,7 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
         return _member.NotEmpty;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_text);
     }

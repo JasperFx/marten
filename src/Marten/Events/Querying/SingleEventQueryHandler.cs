@@ -20,7 +20,7 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         _selector = selector;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder sql, IMartenSession session)
     {
         _selector.Apply(sql);
 

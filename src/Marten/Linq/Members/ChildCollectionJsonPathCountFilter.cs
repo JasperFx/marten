@@ -33,7 +33,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         _filters = filters.ToArray();
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("jsonb_array_length(jsonb_path_query_array(d.data, '$.");
         _member.WriteJsonPath(builder);

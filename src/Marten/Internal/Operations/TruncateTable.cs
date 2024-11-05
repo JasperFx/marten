@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Weasel.Core;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Operations;
 
@@ -24,7 +23,7 @@ internal class TruncateTable: IStorageOperation
         DocumentType = documentType;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var name = _name ?? session.StorageFor(DocumentType).TableName;
         builder.Append($"truncate table {name} CASCADE");

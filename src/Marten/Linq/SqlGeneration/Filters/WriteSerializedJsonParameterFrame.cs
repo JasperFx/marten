@@ -5,11 +5,14 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Npgsql;
 using NpgsqlTypes;
+using Weasel.Core.Operations;
+using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration.Filters;
 
@@ -18,6 +21,7 @@ internal class WriteSerializedJsonParameterFrame: SyncFrame
     private readonly string _parametersVariableName;
     private readonly int _parameterIndex;
     private readonly IDictionaryPart _declaration;
+    private Variable _builder;
 
     public WriteSerializedJsonParameterFrame(string parametersVariableName, int parameterIndex,
         IDictionaryPart declaration)
@@ -29,10 +33,16 @@ internal class WriteSerializedJsonParameterFrame: SyncFrame
 
     public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
     {
-        writer.WriteLine($"{_parametersVariableName}[{_parameterIndex}].Value = session.Serializer.ToCleanJson({_declaration.Write()});");
-        writer.WriteLine($"{_parametersVariableName}[{_parameterIndex}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Jsonb};");
+        writer.WriteLine($"{_builder.Usage}.{nameof(ICommandBuilder.SetParameterAsJson)}({_parametersVariableName}[{_parameterIndex}], session.Serializer.ToCleanJson({_declaration.Write()}));");
 
         Next?.GenerateCode(method, writer);
+    }
+
+    public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
+    {
+        // TODO -- use ICommandBuilder instead
+        _builder = chain.FindVariable(typeof(IPostgresqlCommandBuilder));
+        yield return _builder;
     }
 }
 

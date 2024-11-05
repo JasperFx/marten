@@ -186,7 +186,7 @@ public interface IAggregateFetchPlan<TDoc, TId>
 public interface IEventIdentityStrategy<TId>
 {
     Task<IEventStorage> EnsureEventStorageExists<T>(DocumentSessionBase session, CancellationToken cancellation);
-    void BuildCommandForReadingVersionForStream(ICommandBuilder builder, TId id, bool forUpdate);
+    void BuildCommandForReadingVersionForStream(IPostgresqlCommandBuilder builder, TId id, bool forUpdate);
 
     IEventStream<TDoc> StartStream<TDoc>(TDoc document, DocumentSessionBase session, TId id,
         CancellationToken cancellation) where TDoc : class;

@@ -10,7 +10,7 @@ namespace Marten.Events;
 
 internal partial class EventStore
 {
-    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, Guid streamId, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(IPostgresqlCommandBuilder builder, Guid streamId, bool forUpdate)
     {
         builder.Append("select version from ");
         builder.Append(_store.Events.DatabaseSchemaName);
@@ -30,7 +30,7 @@ internal partial class EventStore
         }
     }
 
-    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, string streamKey, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(IPostgresqlCommandBuilder builder, string streamKey, bool forUpdate)
     {
         builder.Append("select version from ");
         builder.Append(_store.Events.DatabaseSchemaName);

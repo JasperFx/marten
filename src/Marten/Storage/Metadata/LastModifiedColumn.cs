@@ -43,7 +43,7 @@ internal class LastModifiedColumn: MetadataColumn<DateTimeOffset>, ISelectableCo
         return Member != null;
     }
 
-    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    public override void WriteMetadataInUpdateStatement(IPostgresqlCommandBuilder builder, DocumentSessionBase session)
     {
         builder.Append(SchemaConstants.LastModifiedColumn);
         builder.Append(" = (now() at time zone 'utc')");

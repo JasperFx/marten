@@ -162,7 +162,7 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
 
 internal static class DocumentStoreExtensions
 {
-    public static void AddTenancyFilter(this IDocumentStorage storage, ICommandBuilder sql, string tenantId)
+    public static void AddTenancyFilter(this IDocumentStorage storage, IPostgresqlCommandBuilder sql, string tenantId)
     {
         if (storage.TenancyStyle == TenancyStyle.Conjoined)
         {

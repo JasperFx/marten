@@ -17,7 +17,7 @@ internal class TenantIsOneOfFilter: ISqlFragment, ITenantFilter
         _values = values;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(TenantIdColumn.Name);
         builder.Append(" = ANY(");

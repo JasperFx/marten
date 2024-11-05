@@ -18,7 +18,7 @@ public abstract class ComplexCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
         _query = query;
     }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session);
 
     public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
     {

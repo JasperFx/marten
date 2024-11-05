@@ -20,7 +20,7 @@ internal class AggregateTypeFilter: ISqlFragment
 
     public string Alias { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("s.type = ");
         builder.AppendParameter(Alias);

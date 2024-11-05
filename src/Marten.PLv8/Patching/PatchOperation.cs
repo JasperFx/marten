@@ -13,7 +13,6 @@ using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.PLv8.Patching;
 
@@ -37,7 +36,7 @@ internal class PatchFragment: IOperationFragment
 
     public bool PossiblyPolymorphic { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         var json = _serializer.ToCleanJson(_patch);
         if (_patch.TryGetValue("value", out var document))
@@ -91,13 +90,13 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         return OperationRole.Patch;
     }
 
-    protected override void configure(ICommandBuilder builder)
+    protected override void configure(IPostgresqlCommandBuilder builder)
     {
         base.configure(builder);
         applyUpdates(builder);
     }
 
-    private void applyUpdates(ICommandBuilder builder)
+    private void applyUpdates(IPostgresqlCommandBuilder builder)
     {
         var fields = _storage.DuplicatedFields;
         if (!fields.Any())

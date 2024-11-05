@@ -67,7 +67,7 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
         return true;
     }
 
-    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(IPostgresqlCommandBuilder builder, Dictionary<string, object> parameters)
     {
         var parameter = parameters.AddJsonPathParameter(Value);
 
@@ -77,7 +77,7 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
         builder.Append(parameter);
     }
 
-    void ISqlFragment.Apply(ICommandBuilder builder)
+    void ISqlFragment.Apply(IPostgresqlCommandBuilder builder)
     {
         throw new NotSupportedException();
     }

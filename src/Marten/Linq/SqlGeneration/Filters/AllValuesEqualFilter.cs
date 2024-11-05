@@ -17,7 +17,7 @@ internal class AllValuesEqualFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.AppendParameter(_constant.Value!);
         builder.Append(" = ALL(");

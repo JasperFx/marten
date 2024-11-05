@@ -10,7 +10,7 @@ public class CurrentTenantFilter: ISqlFragment
 {
     public static readonly CurrentTenantFilter Instance = new();
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         if (builder.TenantId.IsEmpty())
         {

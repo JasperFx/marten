@@ -25,7 +25,6 @@ using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace EventSourcingTests.QuickAppend;
 
@@ -376,7 +375,7 @@ public class quick_appending_events_workflow_specs
 
     public class FailingOperation: IStorageOperation
     {
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
         {
             builder.Append("select 1");
         }

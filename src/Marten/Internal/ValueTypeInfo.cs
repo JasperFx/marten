@@ -142,7 +142,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
         _unwrapper = valueTypeInfo.ValueAccessor<TValueType, TSimple>();
     }
 
-    public void Apply(ICommandBuilder builder) => _inner.Apply(builder);
+    public void Apply(IPostgresqlCommandBuilder builder) => _inner.Apply(builder);
 
     public string FromObject => _inner.FromObject;
     public Type SelectedType => _inner.SelectedType;

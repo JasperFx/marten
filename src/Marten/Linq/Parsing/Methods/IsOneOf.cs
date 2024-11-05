@@ -51,7 +51,7 @@ internal class IsOneOfFilter: ISqlFragment
         _parameter = parameter;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         _member.Apply(builder);
         builder.Append(" = ANY(");

@@ -51,7 +51,7 @@ internal class ParameterUsage
     {
         if (IsTenant)
         {
-            method.Frames.Code($"{parametersVariableName}[{Index}].Value = {{0}}.{nameof(ICommandBuilder.TenantId)};", Use.Type<ICommandBuilder>());
+            method.Frames.Code($"{parametersVariableName}[{Index}].Value = {{0}}.{nameof(IPostgresqlCommandBuilder.TenantId)};", Use.Type<IPostgresqlCommandBuilder>());
         }
         else if (Member != null)
         {
@@ -76,7 +76,7 @@ internal class ParameterUsage
         else
         {
             method.Frames.Code($"{parametersVariableName}[{Index}].Value = {{0}};", Constant.For(Parameter.Value));
-            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{Parameter.NpgsqlDbType};");
+            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.DbType)} = {typeof(DbType).FullNameInCode()}.{Parameter.DbType};");
         }
     }
 
@@ -84,9 +84,9 @@ internal class ParameterUsage
         string parametersVariableName)
     {
         method.Frames.Code($@"
-{parametersVariableName}[{Index}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{Index}].DbType = {{0}};
 {parametersVariableName}[{Index}].Value = _query.{member.Name};
-", PostgresqlProvider.Instance.ToParameterType(memberType));
+", DbTypeMapper.Lookup(memberType));
     }
 
     private void generateEnumCode(GeneratedMethod method, StoreOptions storeOptions, MemberInfo member,
@@ -95,16 +95,16 @@ internal class ParameterUsage
         if (storeOptions.Serializer().EnumStorage == EnumStorage.AsInteger)
         {
             method.Frames.Code($@"
-{parametersVariableName}[{Index}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{Index}].DbType = {{0}};
 {parametersVariableName}[{Index}].Value = (int)_query.{member.Name};
-", NpgsqlDbType.Integer);
+", DbType.Int32);
         }
         else
         {
             method.Frames.Code($@"
-{parametersVariableName}[{Index}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{Index}].DbType = {{0}};
 {parametersVariableName}[{Index}].Value = _query.{member.Name}.ToString();
-", NpgsqlDbType.Varchar);
+", DbType.String);
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
@@ -26,16 +26,15 @@ internal class MarkShardModeAsContinuous : IStorageOperation
         _lastSequenceId = lastSequenceId;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters($"update {_events.ProgressionTable} set mode = '{ShardMode.continuous}', last_seq_id = ?, rebuild_threshold = 0 where name = ?");
 
         parameters[0].Value = _lastSequenceId;
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
-
+        parameters[0].DbType = DbType.Int64;
         parameters[1].Value = _shardName.Identity;
-        parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
+        parameters[1].DbType = DbType.String;
     }
 
     public Type DocumentType => typeof(IEvent);

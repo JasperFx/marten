@@ -33,7 +33,7 @@ internal class MaybeDeletedParser: IMethodCallParser, ISoftDeletedFilter
         return this;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

@@ -30,7 +30,7 @@ internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, IC
         _text = value is string s ? s : serializer.ToCleanJson(value);
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("jsonb_path_query_array(");
         builder.Append(_member.TypedLocator);
@@ -66,7 +66,7 @@ internal class DictionaryValuesContainFilter: ISqlFragment, ICollectionAware, IC
         throw new System.NotSupportedException();
     }
 
-    public void BuildJsonPathFilter(ICommandBuilder builder, Dictionary<string, object> parameters)
+    public void BuildJsonPathFilter(IPostgresqlCommandBuilder builder, Dictionary<string, object> parameters)
     {
         throw new System.NotSupportedException();
     }

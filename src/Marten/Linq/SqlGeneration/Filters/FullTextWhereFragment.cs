@@ -29,7 +29,7 @@ internal class FullTextWhereFragment: ISqlFragment
     private string Sql =>
         $"to_tsvector('{_regConfig}'::regconfig, {_dataConfig}) @@ {_searchFunction}('{_regConfig}'::regconfig, ?)";
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.AppendWithParameters(Sql)[0].Value = _searchTerm;
     }

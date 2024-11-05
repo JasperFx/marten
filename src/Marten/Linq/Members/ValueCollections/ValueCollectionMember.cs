@@ -197,7 +197,7 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
         throw new NotSupportedException();
     }
 
-    public void Apply(ICommandBuilder builder, ISerializer serializer)
+    public void Apply(IPostgresqlCommandBuilder builder, ISerializer serializer)
     {
         builder.Append(RawLocator);
     }

@@ -16,7 +16,7 @@ internal class PassthroughSelectStatement: SelectorStatement
 
     public string TableName { get; set; }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         if (SelectClause is IDocumentStorage || (SelectClause is IStatsSelectClause stats && (stats.Inner is IDocumentStorage || stats.Inner is DuplicatedFieldSelectClause)))
         {

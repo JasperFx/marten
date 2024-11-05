@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
@@ -37,7 +36,7 @@ internal class BackfillStreamTypeOperation: IStorageOperation
         _eventTypeNames = projection.AllEventTypes.Select(x => events.EventMappingFor((Type)x).EventTypeName).ToArray();
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append($"update {_schemaName}.mt_streams s set type = ");
         builder.AppendParameter(_streamType);

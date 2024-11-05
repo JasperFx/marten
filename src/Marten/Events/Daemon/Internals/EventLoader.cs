@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,9 +23,9 @@ internal sealed class EventLoader: IEventLoader
 {
     private readonly int _aggregateIndex;
     private readonly int _batchSize;
-    private readonly NpgsqlParameter _ceiling;
+    private readonly DbParameter _ceiling;
     private readonly NpgsqlCommand _command;
-    private readonly NpgsqlParameter _floor;
+    private readonly DbParameter _floor;
     private readonly IEventStorage _storage;
     private readonly IDocumentStore _store;
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncProjectionShard shard, AsyncOptions options) : this(store, database, options, shard.BuildFilters(store).ToArray())
@@ -54,7 +56,7 @@ internal sealed class EventLoader: IEventLoader
         var parameters = builder.AppendWithParameters(" where d.seq_id > ? and d.seq_id <= ?");
         _floor = parameters[0];
         _ceiling = parameters[1];
-        _floor.NpgsqlDbType = _ceiling.NpgsqlDbType = NpgsqlDbType.Bigint;
+        _floor.DbType = _ceiling.DbType = DbType.Int64;
 
         foreach (var filter in filters)
         {

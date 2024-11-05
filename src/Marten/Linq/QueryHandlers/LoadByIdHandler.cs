@@ -24,7 +24,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
         _id = id;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder sql, IMartenSession session)
     {
         sql.Append("select ");
 

@@ -24,7 +24,7 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select ");
 

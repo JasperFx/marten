@@ -44,7 +44,7 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifya
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         if (MemberName.IsNotEmpty())
         {

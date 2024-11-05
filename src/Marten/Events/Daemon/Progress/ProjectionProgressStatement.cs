@@ -15,7 +15,7 @@ internal class ProjectionProgressStatement: Statement
 
     public ShardName Name { get; set; }
 
-    protected override void configure(ICommandBuilder builder)
+    protected override void configure(IPostgresqlCommandBuilder builder)
     {
         if (_events.UseOptimizedProjectionRebuilds)
         {

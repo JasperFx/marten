@@ -14,7 +14,7 @@ public class BooleanFieldIsTrue: IReversibleWhereFragment
         _member = member;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("(");
         builder.Append(_member.RawLocator);

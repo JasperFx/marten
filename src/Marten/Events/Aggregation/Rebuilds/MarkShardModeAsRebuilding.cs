@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Aggregation.Rebuilds;
 
@@ -26,17 +26,16 @@ internal class MarkShardModeAsRebuilding : IStorageOperation
         _rebuildThreshold = rebuildThreshold;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id, mode, rebuild_threshold) values (?, 0, '{ShardMode.rebuilding}', ?) on conflict (name) do update set mode = '{ShardMode.rebuilding}', last_seq_id = 0, rebuild_threshold = ?");
 
         parameters[0].Value = _shardName.Identity;
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Varchar;
         parameters[1].Value = _rebuildThreshold;
-        parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[1].DbType = DbType.Int64;
         parameters[2].Value = _rebuildThreshold;
-        parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[2].DbType = DbType.Int64;
     }
 
     public Type DocumentType => typeof(IEvent);

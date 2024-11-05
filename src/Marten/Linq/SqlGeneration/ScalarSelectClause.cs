@@ -53,7 +53,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
 
     public string FromObject { get; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select ");
         sql.Append(MemberName);

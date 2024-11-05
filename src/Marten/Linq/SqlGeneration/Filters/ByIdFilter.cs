@@ -15,7 +15,7 @@ public class ByIdFilter: ISqlFragment
         _parameter = new CommandParameter(value, dbType);
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("id = ");
         _parameter.Apply(builder);
@@ -31,7 +31,7 @@ public class ByIdFilter<T>: ISqlFragment where T: notnull
         _parameter = new CommandParameter(value, dbType);
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("id = ");
         _parameter.Apply(builder);

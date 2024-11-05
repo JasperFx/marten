@@ -7,7 +7,6 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 
@@ -23,7 +22,7 @@ internal class IncrementStreamVersionById: IStorageOperation
 
     public StreamAction Stream { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         builder.Append("update ");
         builder.Append(_events.DatabaseSchemaName);

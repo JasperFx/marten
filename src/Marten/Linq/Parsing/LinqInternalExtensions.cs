@@ -244,7 +244,7 @@ public static class LinqInternalExtensions
     /// </summary>
     /// <param name="member"></param>
     /// <param name="builder"></param>
-    public static void WriteJsonPath(this IQueryableMember member, ICommandBuilder builder)
+    public static void WriteJsonPath(this IQueryableMember member, IPostgresqlCommandBuilder builder)
     {
         foreach (var ancestor in member.Ancestors)
         {

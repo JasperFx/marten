@@ -75,7 +75,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public string FromObject { get; }
     public Type SelectedType => typeof(T);
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         _parent.Apply(sql);
     }

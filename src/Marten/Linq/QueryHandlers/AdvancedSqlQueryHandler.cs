@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Linq.QueryHandlers;
@@ -124,7 +125,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 
     public List<Type> DocumentTypes { get; } = new();
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var firstParameter = Parameters.FirstOrDefault();
 
@@ -150,8 +151,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
                 else
                 {
                     cmdParameters[i].Value = Parameters[i];
-                    cmdParameters[i].NpgsqlDbType =
-                        PostgresqlProvider.Instance.ToParameterType(Parameters[i].GetType());
+                    cmdParameters[i].DbType = DbTypeMapper.Lookup(Parameters[i].GetType()).Value;
                 }
             }
         }

@@ -4,7 +4,6 @@ using Marten.Internal.Storage;
 using Marten.Schema;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -18,7 +17,7 @@ internal class SoftDelete: IOperationFragment
             $"update {storage.TableName.QualifiedName} as d set {SchemaConstants.DeletedColumn} = True, {SchemaConstants.DeletedAtColumn} = now()";
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

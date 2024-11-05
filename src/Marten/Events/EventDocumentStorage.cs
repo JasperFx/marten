@@ -123,7 +123,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public string FromObject { get; }
     public Type SelectedType => typeof(IEvent);
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append(_selectClause);
     }

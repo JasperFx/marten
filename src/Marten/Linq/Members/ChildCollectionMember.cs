@@ -177,7 +177,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
 
     public List<ISqlFragment> Wheres { get; } = new();
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         if (Not)
         {
@@ -252,7 +252,7 @@ internal class CompareAllWithinCollectionFilter: ISqlFragment
         _inner = inner;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         _inner.Right.Apply(builder);
         builder.Append(" ");
@@ -275,7 +275,7 @@ internal class AllMembersAreNullFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("true = ALL (select unnest(array(select ");
         var locator = _member.TypedLocator.Replace("d.data", "unnest(data)");
@@ -293,7 +293,7 @@ internal class AllMembersAreNotNullFilter: ISqlFragment
         _member = member;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("true = ALL (array(select ");
         var locator = _member.TypedLocator.Replace("d.data", "unnest(data)");

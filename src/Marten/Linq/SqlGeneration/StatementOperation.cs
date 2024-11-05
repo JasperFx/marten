@@ -13,7 +13,6 @@ using Marten.Internal.Storage;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Linq.SqlGeneration;
 
@@ -35,7 +34,7 @@ internal class StatementOperation: Statement, IStorageOperation
         Wheres.Add(where);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         Apply(builder);
     }
@@ -57,13 +56,13 @@ internal class StatementOperation: Statement, IStorageOperation
         return _operation.Role();
     }
 
-    protected override void configure(ICommandBuilder sql)
+    protected override void configure(IPostgresqlCommandBuilder sql)
     {
         _operation.Apply(sql);
         writeWhereClause(sql);
     }
 
-    protected void writeWhereClause(ICommandBuilder sql)
+    protected void writeWhereClause(IPostgresqlCommandBuilder sql)
     {
         if (Wheres.Any())
         {

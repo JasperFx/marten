@@ -12,7 +12,7 @@ namespace Marten.Linq.QueryHandlers;
 
 public interface IQueryHandler
 {
-    void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session);
 }
 
 public interface IQueryHandler<T>: IQueryHandler

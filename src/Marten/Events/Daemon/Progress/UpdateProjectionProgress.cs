@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,7 +12,6 @@ using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Daemon.Progress;
 
@@ -27,18 +27,17 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters(
                 $"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
 
         parameters[0].Value = Range.SequenceCeiling;
-        parameters[0].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[0].DbType = DbType.Int64;
         parameters[1].Value = Range.ShardName.Identity;
-        parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
         parameters[2].Value = Range.SequenceFloor;
-        parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
+        parameters[2].DbType = DbType.Int64;
     }
 
     public Type DocumentType => typeof(IEvent);

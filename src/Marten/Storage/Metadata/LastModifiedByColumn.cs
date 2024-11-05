@@ -39,7 +39,7 @@ internal class LastModifiedByColumn: MetadataColumn<string>, ISelectableColumn
         return new LastModifiedByArgument();
     }
 
-    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    public override void WriteMetadataInUpdateStatement(IPostgresqlCommandBuilder builder, DocumentSessionBase session)
     {
         builder.Append(ColumnName);
         builder.Append(" = ");

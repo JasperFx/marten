@@ -18,7 +18,7 @@ internal class SpecificTenantFilter: ISqlFragment
         _tenantId = tenantId;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append($"d.{TenantIdColumn.Name} = ");
         builder.AppendParameter(_tenantId);
@@ -35,7 +35,7 @@ internal class DefaultTenantFilter: ISqlFragment
         _tenantId = tenantId;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append($"d.{TenantIdColumn.Name} = ");
         builder.AppendParameter(_tenantId);

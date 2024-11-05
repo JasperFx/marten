@@ -31,7 +31,7 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
         FromObject = parent.ExportName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         _topStatement.Apply(builder);
     }
@@ -61,7 +61,7 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
 
     public string FromObject { get; set; }
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select count(*) as number");
         sql.Append(" from ");

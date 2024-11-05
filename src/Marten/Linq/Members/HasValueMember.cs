@@ -58,7 +58,7 @@ internal class HasValueMember: IQueryableMember, IComparableMember, IBooleanMemb
 
     public string NullTestLocator => RawLocator;
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_isNotNullSql);
     }

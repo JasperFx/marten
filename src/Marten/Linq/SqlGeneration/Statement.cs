@@ -25,7 +25,7 @@ public abstract partial class Statement: ISqlFragment
     public bool ReturnDefaultWhenEmpty { get; set; }
     public bool CanBeMultiples { get; set; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         configure(builder);
         if (Next != null)
@@ -108,9 +108,9 @@ public abstract partial class Statement: ISqlFragment
         Mode = StatementMode.CommonTableExpression;
     }
 
-    protected abstract void configure(ICommandBuilder sql);
+    protected abstract void configure(IPostgresqlCommandBuilder sql);
 
-    protected void startCommonTableExpression(ICommandBuilder sql)
+    protected void startCommonTableExpression(IPostgresqlCommandBuilder sql)
     {
         if (Mode == StatementMode.CommonTableExpression)
         {
@@ -121,7 +121,7 @@ public abstract partial class Statement: ISqlFragment
         }
     }
 
-    protected void endCommonTableExpression(ICommandBuilder sql, string suffix = null)
+    protected void endCommonTableExpression(IPostgresqlCommandBuilder sql, string suffix = null)
     {
         switch (Mode)
         {

@@ -52,7 +52,7 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
 
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_member.RawLocator);
         builder.Append(_caseInsensitive ? StringComparisonParser.CaseInSensitiveLike : StringComparisonParser.CaseSensitiveLike);
@@ -77,10 +77,7 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
     {
         var maskedValue = $"ContainsString(_query.{_queryMember.Name})";
 
-        method.Frames.Code($@"
-{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
-{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
-", NpgsqlDbType.Varchar);
+        method.Frames.Code($"{parametersVariableName}[{parameterIndex}].Value = {maskedValue};");
     }
 
     public string ParameterName { get; private set; }

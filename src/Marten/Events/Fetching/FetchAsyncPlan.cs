@@ -266,7 +266,7 @@ internal class AggregateEventFloor<TId>: ISqlFragment
         _id = id;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("version > (select mt_version from ");
         builder.Append(_tableName.QualifiedName);

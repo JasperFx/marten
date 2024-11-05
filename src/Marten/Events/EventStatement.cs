@@ -40,7 +40,7 @@ internal class EventStatement: SelectorStatement
 
     public long FromVersion { get; set; }
 
-    protected override void configure(ICommandBuilder builder)
+    protected override void configure(IPostgresqlCommandBuilder builder)
     {
         _storage.Apply(builder);
 

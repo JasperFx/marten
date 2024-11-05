@@ -26,11 +26,10 @@ internal sealed class EventTypeFilter: ISqlFragment
 
     public IReadOnlyCollection<Type> EventTypes { get; }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("d.type = ANY(");
-        var parameter = builder.AppendParameter(_typeNames);
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
+        builder.AppendStringArrayParameter(_typeNames);
         builder.Append(')');
     }
 

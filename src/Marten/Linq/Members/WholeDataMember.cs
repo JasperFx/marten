@@ -16,7 +16,7 @@ internal class WholeDataMember: IQueryableMember
 
     public IQueryableMember[] Ancestors { get; } = Array.Empty<IQueryableMember>();
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("data");
     }
@@ -65,7 +65,7 @@ internal class RootMember: IQueryableMember
 
     public IQueryableMember[] Ancestors { get; set; } = Array.Empty<IQueryableMember>();
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append("d.data");
     }

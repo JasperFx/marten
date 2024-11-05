@@ -27,7 +27,7 @@ internal class ModuloOperator: IComparableMember, ISqlFragment
         return this;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         _left.Apply(builder);
         builder.Append(" % ");

@@ -19,7 +19,7 @@ internal class IsArchivedFilter: IArchiveFilter, IReversibleWhereFragment
         return IsNotArchivedFilter.Instance;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_sql);
     }

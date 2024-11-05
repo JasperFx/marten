@@ -13,7 +13,6 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Events.Operations;
 
@@ -40,7 +39,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         return $"Append {Stream.Events.Select(x => x.EventTypeName).Join(", ")} to event stream {Stream}";
     }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session);
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {

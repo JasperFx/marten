@@ -20,7 +20,7 @@ internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject
         FromObject = inner.FromObject;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append($"select {_inner.SelectFields().Concat(["d.id"]).Join(", ")} from ");
         builder.Append(FromObject);

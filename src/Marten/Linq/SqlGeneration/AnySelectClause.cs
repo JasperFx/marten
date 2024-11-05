@@ -21,7 +21,7 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         FromObject = from;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         _topStatement.Apply(builder);
     }
@@ -53,7 +53,7 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
 
     public Type SelectedType => typeof(bool);
 
-    public void Apply(ICommandBuilder sql)
+    public void Apply(IPostgresqlCommandBuilder sql)
     {
         sql.Append("select TRUE as result");
         sql.Append(" from ");

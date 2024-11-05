@@ -162,7 +162,7 @@ internal class ArrayIsEmptyFilter: IReversibleWhereFragment
         _text = $"({member.RawLocator} is null or coalesce(array_length({member.RawLocator}, 1), 0) = 0)";
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_text);
     }
@@ -184,7 +184,7 @@ internal class ArrayIsNotEmptyFilter: IReversibleWhereFragment
         _member = member;
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(_text);
     }

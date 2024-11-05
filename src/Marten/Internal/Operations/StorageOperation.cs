@@ -12,7 +12,6 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
 using Weasel.Postgresql;
-using ICommandBuilder = Weasel.Postgresql.ICommandBuilder;
 
 namespace Marten.Internal.Operations;
 
@@ -55,7 +54,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return new ChangeTracker<T>(session, _document);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
         var groupedParameters = builder.CreateGroupedParameterBuilder(',');
         // this is gross
@@ -78,7 +77,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public abstract NpgsqlDbType DbType();
 
-    public abstract void ConfigureParameters(IGroupedParameterBuilder parameterBuilder, ICommandBuilder builder, T document, IMartenSession session);
+    public abstract void ConfigureParameters(IGroupedParameterBuilder parameterBuilder, IPostgresqlCommandBuilder builder, T document, IMartenSession session);
 
     protected void setVersionParameter(IGroupedParameterBuilder builder)
     {

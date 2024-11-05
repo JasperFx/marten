@@ -61,7 +61,7 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
         return actual.Type.EqualsIgnoreCase("uuid");
     }
 
-    public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
+    public override void WriteMetadataInUpdateStatement(IPostgresqlCommandBuilder builder, DocumentSessionBase session)
     {
         builder.Append(SchemaConstants.VersionColumn);
         builder.Append(" = ");

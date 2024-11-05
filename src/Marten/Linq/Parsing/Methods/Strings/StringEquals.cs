@@ -37,7 +37,7 @@ internal class StringEqualsIgnoreCaseFilter : ISqlFragment
         Value = new CommandParameter(StringComparisonParser.EscapeValue(value.Value?.ToString() ?? string.Empty));
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(Member.RawLocator);
         builder.Append(StringComparisonParser.CaseInSensitiveLike);

@@ -48,7 +48,7 @@ public class IdMember: IQueryableMember, IComparableMember
         throw new NotSupportedException();
     }
 
-    public void Apply(ICommandBuilder builder)
+    public void Apply(IPostgresqlCommandBuilder builder)
     {
         builder.Append(TypedLocator);
     }
