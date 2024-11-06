@@ -69,7 +69,6 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var eventStream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
-        await theSession.SaveChangesAsync();
         var tables = theStore.Storage.AllObjects().OfType<Table>();
         tables.ShouldNotContain(x => x.Identifier.Name.Contains(nameof(SimpleAggregate), StringComparison.OrdinalIgnoreCase));
     }
