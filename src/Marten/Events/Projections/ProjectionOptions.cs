@@ -165,6 +165,11 @@ public class ProjectionOptions: DaemonSettings
                 throw new ArgumentOutOfRangeException(nameof(lifecycle),
                     $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
             }
+
+            if (projection is IAggregateProjection aggregateProjection)
+            {
+                _options.Storage.MappingFor(aggregateProjection.AggregateType).SkipSchemaGeneration = true;
+            }
         }
 
         if (projection is ProjectionBase p)
