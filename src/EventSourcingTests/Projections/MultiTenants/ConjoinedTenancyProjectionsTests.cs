@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -226,8 +227,8 @@ public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation,
 
         // The session and the slice should be for the same tenant
         session.TenantId.ShouldBe(ExpectedTenant);
-        slice.Tenant.TenantId.ShouldBe(ExpectedTenant);
-        session.TenantId.ShouldBe(slice.Tenant.TenantId);
+        slice.TenantId.ShouldBe(ExpectedTenant);
+        session.TenantId.ShouldBe(slice.TenantId);
 
         foreach (var data in slice.AllData())
         {

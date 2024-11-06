@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Spectre.Console;
 

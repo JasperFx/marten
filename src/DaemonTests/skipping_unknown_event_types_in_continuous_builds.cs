@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Coordination;

@@ -14,6 +14,7 @@ using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Internals;
 using Weasel.Postgresql;
 

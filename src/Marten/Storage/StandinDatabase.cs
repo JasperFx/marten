@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;
@@ -21,6 +22,8 @@ internal class StandinDatabase: IMartenDatabase
     {
         Providers = new ProviderGraph(options);
     }
+
+    string IProjectionStorage.StorageIdentifier => Identifier;
 
     public IFeatureSchema[] BuildFeatureSchemas()
     {

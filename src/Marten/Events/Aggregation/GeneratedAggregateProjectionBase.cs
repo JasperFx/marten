@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;

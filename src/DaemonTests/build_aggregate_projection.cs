@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -63,7 +64,7 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
@@ -90,7 +91,7 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
@@ -116,7 +117,7 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await PublishSingleThreaded();
 
@@ -143,7 +144,7 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await PublishSingleThreaded();
 

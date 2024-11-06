@@ -3,6 +3,7 @@ using System.Linq;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Storage;
 using NSubstitute;
@@ -17,7 +18,7 @@ public class EventSliceTests
     public void add_event_on_guid_no_identifer()
     {
         var slice = new EventSlice<SimpleAggregate, Guid>(Guid.NewGuid(),
-            new Tenant("foo", Substitute.For<IMartenDatabase>()));
+            "foo");
 
         slice.As<IEventSlice<SimpleAggregate>>().AppendEvent(new AEvent());
 
@@ -30,7 +31,7 @@ public class EventSliceTests
     public void add_event_on_string_no_identifer()
     {
         var slice = new EventSlice<SimpleAggregate, string>(Guid.NewGuid().ToString(),
-            new Tenant("foo", Substitute.For<IMartenDatabase>()));
+            "foo");
 
         slice.As<IEventSlice<SimpleAggregate>>().AppendEvent(new AEvent());
 
@@ -43,7 +44,7 @@ public class EventSliceTests
     public void raise_event_on_supplied_guid_identifier()
     {
         var slice = new EventSlice<SimpleAggregate, string>(Guid.NewGuid().ToString(),
-            new Tenant("foo", Substitute.For<IMartenDatabase>()));
+            "foo");
 
         var streamId = Guid.NewGuid();
         slice.As<IEventSlice<SimpleAggregate>>().AppendEvent(streamId, new AEvent());
@@ -58,7 +59,7 @@ public class EventSliceTests
     public void raise_event_on_supplied_string_identifier()
     {
         var slice = new EventSlice<SimpleAggregate, string>(Guid.NewGuid().ToString(),
-            new Tenant("foo", Substitute.For<IMartenDatabase>()));
+            "foo");
 
         var streamKey = Guid.NewGuid().ToString();
         slice.As<IEventSlice<SimpleAggregate>>().AppendEvent(streamKey, new AEvent());

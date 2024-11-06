@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Progress;
 using Marten.Events.Projections;
 using Marten.Services;
@@ -179,7 +180,7 @@ public partial class ProjectionDaemon
 
         if (source.Options.TeardownDataOnRebuild)
         {
-            source.Options.Teardown(session);
+            source.Options.RegisterTeardownActions((IProjectionStorageSession)session);
         }
 
         foreach (var agent in agents)

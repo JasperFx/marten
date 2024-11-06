@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx;
+using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Internal.Sessions;
@@ -22,7 +24,6 @@ internal class SubscriptionExecution: ISubscriptionExecution
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _cancellation = new();
     private readonly ActionBlock<EventRange> _executionBlock;
-    private readonly SubscriptionMetrics _metrics;
 
     public SubscriptionExecution(ShardName shard, ISubscription subscription, DocumentStore store, IMartenDatabase database,
         ILogger logger)

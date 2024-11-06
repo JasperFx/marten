@@ -2,6 +2,7 @@
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Linq.Selectors;
 
 namespace Marten.Events.Daemon.Progress;

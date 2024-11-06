@@ -1,3 +1,4 @@
+using JasperFx.Events.Projections;
 using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;

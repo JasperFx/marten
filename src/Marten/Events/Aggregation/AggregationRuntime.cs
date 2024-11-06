@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -21,6 +22,7 @@ using Marten.Storage;
 using Marten.Util;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using Weasel.Core.Operations;
 
 namespace Marten.Events.Aggregation;
 
@@ -94,7 +96,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         if (Projection.MatchesAnyDeleteType(slice))
         {
-            var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+            var operation = Storage.DeleteForId(slice.Id, slice.TenantId);
 
             if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
             {
@@ -173,14 +175,14 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             if (exists)
             {
-                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                var operation = Storage.DeleteForId(slice.Id, slice.TenantId);
                 session.QueueOperation(operation);
             }
 
             return;
         }
 
-        var storageOperation = Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
+        var storageOperation = Storage.Upsert(aggregate, session, slice.TenantId);
         if (Slicer is ISingleStreamSlicer && lastEvent != null && storageOperation is IRevisionedOperation op)
         {
             op.Revision = (int)lastEvent.Version;
@@ -199,7 +201,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             if (slice.RaisedEvents != null)
             {
                 var storage = session.EventStorage();
-                var ops = slice.BuildOperations(Options.EventGraph, session, storage, sideEffects.IsSingleStream());
+                var ops = BuildOperations(slice, Options.EventGraph, session, storage, sideEffects.IsSingleStream());
                 foreach (var op in ops)
                 {
                     session.QueueOperation(op);
@@ -212,6 +214,89 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
                 foreach (var message in slice.PublishedMessages)
                 {
                     await batch.PublishAsync(message).ConfigureAwait(false);
+                }
+            }
+        }
+    }
+
+    public IEnumerable<IStorageOperation> BuildOperations(IEventSlice<TDoc> slice, EventGraph eventGraph, DocumentSessionBase session,
+        IEventStorage storage, bool isSingleStream)
+    {
+        if (slice.RaisedEvents() == null) yield break;
+
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var e in slice.RaisedEvents())
+        {
+            var mapping = eventGraph.EventMappingFor(e.EventType);
+            e.DotNetTypeName = mapping.DotNetTypeName;
+            e.EventTypeName = mapping.EventTypeName;
+            e.TenantId = slice.TenantId;
+            e.Timestamp = now;
+            // Dont assign e.Id so StreamAction.Append can auto assign a CombGuid
+        }
+
+        if (eventGraph.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            var groups = slice.RaisedEvents()
+                .GroupBy(x => x.StreamId);
+
+            foreach (var group in groups)
+            {
+                var action = StreamAction.Append(group.Key, slice.RaisedEvents().ToArray());
+                action.TenantId = slice.TenantId;
+
+                if (isSingleStream && slice.ActionType == StreamActionType.Start)
+                {
+                    var version = slice.Events().Count;
+                    action.ExpectedVersionOnServer = version;
+
+                    foreach (var @event in slice.RaisedEvents())
+                    {
+                        @event.Version = ++version;
+                        yield return storage.QuickAppendEventWithVersion(eventGraph, session, action, @event);
+                    }
+
+                    action.Version = version;
+
+                    yield return storage.UpdateStreamVersion(action);
+                }
+                else
+                {
+                    action.TenantId = slice.TenantId;
+                    yield return storage.QuickAppendEvents(action);
+                }
+            }
+        }
+        else
+        {
+            var groups = slice.RaisedEvents()
+                .GroupBy(x => x.StreamKey);
+
+            foreach (var group in groups)
+            {
+                var action = StreamAction.Append(group.Key, slice.RaisedEvents().ToArray());
+                action.TenantId = slice.TenantId;
+
+                if (isSingleStream && slice.ActionType == StreamActionType.Start)
+                {
+                    var version = slice.Events().Count;
+                    action.ExpectedVersionOnServer = version;
+
+                    foreach (var @event in slice.RaisedEvents())
+                    {
+                        @event.Version = ++version;
+                        yield return storage.QuickAppendEventWithVersion(eventGraph, session, action, @event);
+                    }
+
+                    action.Version = version;
+
+                    yield return storage.UpdateStreamVersion(action);
+                }
+                else
+                {
+                    action.TenantId = slice.TenantId;
+                    yield return storage.QuickAppendEvents(action);
                 }
             }
         }

@@ -38,7 +38,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
     public TenantSliceGroup(Tenant tenant)
     {
         Tenant = tenant;
-        Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant));
+        Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant.TenantId));
     }
 
     public TenantSliceGroup(Tenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices): this(tenant)

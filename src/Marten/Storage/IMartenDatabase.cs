@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;
@@ -18,7 +19,7 @@ namespace Marten.Storage;
 /// <summary>
 ///     Governs the database structure and migration path for a single Marten database
 /// </summary>
-public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IDisposable
+public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IProjectionStorage, IDisposable
 {
     /// <summary>
     ///     Used to create new Hilo sequences
@@ -97,28 +98,7 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     Task<IReadOnlyList<ShardState>> AllProjectionProgress(
         CancellationToken token = default);
 
-    /// <summary>
-    ///     Check the current progress of a single projection or projection shard
-    /// </summary>
-    /// <param name="tenantId">
-    ///     Specify the database containing this tenant id. If omitted, this method uses the default
-    ///     database
-    /// </param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<long> ProjectionProgressFor(ShardName name,
-        CancellationToken token = default);
-
     NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite);
-
-    /// <summary>
-    /// Find the position of the event store sequence just below the supplied timestamp. Will
-    /// return null if there are no events below that time threshold
-    /// </summary>
-    /// <param name="timestamp"></param>
-    /// <param name="token"></param>
-    /// <returns></returns>
-    Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
 }
 
 public enum ConnectionUsage

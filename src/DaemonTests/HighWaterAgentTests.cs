@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Testing;
 using Microsoft.Extensions.Logging;

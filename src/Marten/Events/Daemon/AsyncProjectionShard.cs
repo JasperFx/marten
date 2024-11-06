@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;

@@ -5,10 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using JasperFx.Core;
-using Marten.Internal.OpenTelemetry;
-using Microsoft.Extensions.Logging;
+using JasperFx.Events.Projections;
 using OpenTelemetry.Trace;
-using Timer = System.Timers.Timer;
 
 namespace Marten.Events.Daemon.HighWater;
 

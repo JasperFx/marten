@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Fetching;
@@ -11,25 +12,6 @@ using Marten.Exceptions;
 using Marten.Subscriptions;
 
 namespace Marten.Events.Projections;
-
-public class ErrorHandlingOptions
-{
-    /// <summary>
-    /// Should the daemon skip any "poison pill" events that fail in user projection code?
-    /// </summary>
-    public bool SkipApplyErrors { get; set; }
-
-    /// <summary>
-    /// Should the daemon skip any unknown event types encountered when trying to
-    /// fetch events?
-    /// </summary>
-    public bool SkipUnknownEvents { get; set; }
-
-    /// <summary>
-    /// Should the daemon skip any events that experience serialization errors?
-    /// </summary>
-    public bool SkipSerializationErrors { get; set; }
-}
 
 /// <summary>
 ///     Used to register projections with Marten

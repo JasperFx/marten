@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
@@ -194,12 +195,12 @@ internal class AggregatePageHandler<TDoc, TId>
         await foreach (var e in events)
         {
             var aggregateId = _runtime.IdentityFromEvent(e);
-            slice ??= new EventSlice<TDoc, TId>(aggregateId, _session);
+            slice ??= new EventSlice<TDoc, TId>(aggregateId, _session.TenantId);
 
             if (!slice.Id.Equals(aggregateId))
             {
                 block.Post(slice);
-                slice = new EventSlice<TDoc, TId>(aggregateId, _session);
+                slice = new EventSlice<TDoc, TId>(aggregateId, _session.TenantId);
             }
 
             slice.AddEvent(e);

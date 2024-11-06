@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Internal.Sessions;
@@ -120,4 +121,6 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         DataSource?.Dispose();
         ((IDisposable)Tracker)?.Dispose();
     }
+
+    string IProjectionStorage.StorageIdentifier => Identifier;
 }

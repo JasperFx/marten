@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Internal.Operations;
@@ -27,11 +28,11 @@ public class AsyncOptionsTests
         options.DeleteViewTypeOnTeardown(typeof(User));
 
 
-        var operations = Substitute.For<IDocumentOperations>();
-        options.Teardown(operations);
+        var operations = Substitute.For<IProjectionStorageSession>();
+        options.RegisterTeardownActions(operations);
 
-        operations.Received().QueueOperation(new TruncateTable(typeof(Target)));
-        operations.Received().QueueOperation(new TruncateTable(typeof(User)));
+        operations.Received().DeleteForType(typeof(Target));
+        operations.Received().DeleteForType(typeof(User));
     }
 
     [Fact]
@@ -81,6 +82,7 @@ public class AsyncOptionsTests
     {
         theDatabase.ProjectionProgressFor(theName, theToken).Returns(111L);
         theDatabase.Identifier.Returns("One");
+        theDatabase.StorageIdentifier.Returns("One");
 
         var options = new AsyncOptions();
         options.SubscribeFromPresent("One");

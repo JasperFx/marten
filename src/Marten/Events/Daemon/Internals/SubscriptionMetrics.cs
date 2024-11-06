@@ -3,18 +3,10 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Internal.OpenTelemetry;
 
 namespace Marten.Events.Daemon.Internals;
-
-public interface ISubscriptionMetrics
-{
-    Activity? TrackExecution(EventRange page);
-    Activity? TrackLoading(EventRequest request);
-    void UpdateGap(long highWaterMark, long lastCeiling);
-    void UpdateProcessed(long count);
-    Activity? TrackGrouping(EventRange page);
-}
 
 internal class SubscriptionMetrics: ISubscriptionMetrics
 {

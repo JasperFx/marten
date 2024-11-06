@@ -1,4 +1,5 @@
 using System.Linq;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Testing.Harness;

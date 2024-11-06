@@ -16,7 +16,7 @@ public class TestEventScenario
 
 public class TestEventSlice: EventSlice<MyAggregate, Guid>
 {
-    public TestEventSlice(Guid id) : base(id, new Tenant("SomeName", Substitute.For<IMartenDatabase>()))
+    public TestEventSlice(Guid id) : base(id, "SomeName")
     {
     }
 

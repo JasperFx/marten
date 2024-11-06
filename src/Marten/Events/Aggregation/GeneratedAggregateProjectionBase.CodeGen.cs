@@ -249,8 +249,8 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
         method.DerivedVariables.Add(new Variable(_aggregateMapping.IdType,
             $"slice.{nameof(EventSlice<string, string>.Id)}"));
-        method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
-        method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
+        // method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
+        // method.DerivedVariables.Add(Variable.For<Tenant>($"slice.{nameof(EventSlice<string, string>.Tenant)}"));
         method.DerivedVariables.Add(Variable.For<IEvent>("@event"));
         method.DerivedVariables.Add(
             Variable.For<IMartenSession>($"({typeof(IMartenSession).FullNameInCode()})session"));

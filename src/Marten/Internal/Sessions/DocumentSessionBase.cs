@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Internals;
@@ -19,7 +20,7 @@ using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 
-public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
+public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession, IProjectionStorageSession
 {
     internal readonly ISessionWorkTracker _workTracker;
 
@@ -431,5 +432,15 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             foreach (var document in objects.OfType<T>()) session.Delete(document);
         }
+    }
+
+    void IProjectionStorageSession.DeleteForType(Type documentType)
+    {
+        QueueOperation(new TruncateTable(documentType));
+    }
+
+    void IProjectionStorageSession.DeleteNamedResource(string resourceName)
+    {
+        QueueSqlCommand($"delete from {resourceName};");
     }
 }

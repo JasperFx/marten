@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -370,7 +371,7 @@ public abstract class CustomProjection<TDoc, TId>:
 
         var documentSessionBase = session as DocumentSessionBase ?? (DocumentSessionBase)session.DocumentStore.LightweightSession();
 
-        var slice = new EventSlice<TDoc, TId>(default, session, events);
+        var slice = new EventSlice<TDoc, TId>(default, session.TenantId, events);
         await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
 
         slice.Aggregate = ApplyMetadata(slice.Aggregate, events.Last());

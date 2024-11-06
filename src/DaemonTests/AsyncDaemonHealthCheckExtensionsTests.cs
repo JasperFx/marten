@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.AsyncDaemon.Testing;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;

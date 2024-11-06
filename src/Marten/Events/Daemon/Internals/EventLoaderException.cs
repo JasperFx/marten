@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Events.Projections;
 using Marten.Exceptions;
 using Marten.Storage;
 

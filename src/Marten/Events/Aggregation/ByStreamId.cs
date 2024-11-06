@@ -29,7 +29,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDo
         return streams.Select(s =>
         {
             var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events) { ActionType = s.ActionType };
+            return new EventSlice<TDoc, Guid>(s.Id, tenant.TenantId, s.Events) { ActionType = s.ActionType };
         }).ToList();
     }
 
@@ -46,7 +46,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDo
 
             var slices = tenantGroup
                 .GroupBy(x => x.StreamId)
-                .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenant, x));
+                .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenant.TenantId, x));
 
             var group = new TenantSliceGroup<TDoc, Guid>(tenant, slices);
 
@@ -75,7 +75,7 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
         return streams.Select(s =>
         {
             var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, TId>(_converter(s.Id), tenant, s.Events) { ActionType = s.ActionType };
+            return new EventSlice<TDoc, TId>(_converter(s.Id), tenant.TenantId, s.Events) { ActionType = s.ActionType };
         }).ToList();
     }
 
@@ -91,7 +91,7 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
 
             var slices = tenantGroup
                 .GroupBy(x => x.StreamId)
-                .Select(x => new EventSlice<TDoc, TId>( _converter(x.Key), tenant, x));
+                .Select(x => new EventSlice<TDoc, TId>( _converter(x.Key), tenant.TenantId, x));
 
             var group = new TenantSliceGroup<TDoc, TId>(tenant, slices);
 

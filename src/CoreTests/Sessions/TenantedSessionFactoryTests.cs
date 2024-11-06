@@ -1,5 +1,6 @@
 ﻿using System;
 using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -153,7 +154,7 @@ public class TenantedSessionFactoryTests
         var slice = Substitute.For<IEventSlice>();
 
         // ReSharper disable once ConstantConditionalAccessQualifier
-        slice.Tenant.Returns(new Tenant(setup.SliceTenant, Substitute.For<IMartenDatabase>()));
+        slice.TenantId.Returns(setup.SliceTenant);
 
         return slice;
     }

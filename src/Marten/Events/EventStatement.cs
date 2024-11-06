@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;

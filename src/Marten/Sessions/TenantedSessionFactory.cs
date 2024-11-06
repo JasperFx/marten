@@ -1,4 +1,5 @@
 ﻿using JasperFx;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -28,16 +29,16 @@ internal static class TenantedSessionFactory
     )
     {
         var shouldApplyConjoinedTenancy =
-            session.TenantId != slice.Tenant.TenantId
-            && slice.Tenant.TenantId != StorageConstants.DefaultTenantId
+            session.TenantId != slice.TenantId
+            && slice.TenantId != StorageConstants.DefaultTenantId
             && storage.TenancyStyle == TenancyStyle.Conjoined
             && session.DocumentStore.Options.Tenancy.IsTenantStoredInCurrentDatabase(
                 session.Database,
-                slice.Tenant.TenantId
+                slice.TenantId
             );
 
         if (shouldApplyConjoinedTenancy)
-            return session.WithTenant(slice.Tenant.TenantId);
+            return session.WithTenant(slice.TenantId);
 
         var isDefaultTenantAllowed =
             session.SessionOptions.AllowAnyTenant

@@ -1,6 +1,7 @@
 using System;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
 using Marten.Util;

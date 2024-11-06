@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
@@ -135,7 +136,7 @@ public class SingleStreamRebuilder<TDoc, TId>: IReplayExecutor
             var state = await tryFindExistingState(shardName, session, token).ConfigureAwait(false);
             if (state == null || state.Mode != ShardMode.rebuilding)
             {
-                asyncOptions.Teardown(session);
+                asyncOptions.RegisterTeardownActions(session);
                 session.QueueOperation(new SeedAggregateRebuildTable(_store.Options, typeof(TDoc)));
                 session.QueueOperation(new MarkShardModeAsRebuilding(shardName, _store.Events, _ceiling));
                 await session.SaveChangesAsync(token).ConfigureAwait(false);
