@@ -1,4 +1,5 @@
 ﻿using System;
+using JasperFx;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -95,7 +96,7 @@ public class TenantedSessionFactoryTests
             TheSame(NonDefault, NonDefault, TenancyStyle.Conjoined),
         };
 
-    private static readonly string Default = Tenancy.DefaultTenantId;
+    private static readonly string Default = TenancyConstants.DefaultTenantId;
     private static readonly string NonDefault = "NON_DEFAULT";
 
     public record Configuration(

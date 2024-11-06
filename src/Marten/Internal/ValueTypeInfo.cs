@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using FastExpressionCompiler;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;

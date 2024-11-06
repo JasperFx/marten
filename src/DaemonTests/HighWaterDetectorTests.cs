@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Weasel.Postgresql;

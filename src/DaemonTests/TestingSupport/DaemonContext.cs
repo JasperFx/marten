@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar.Microsoft.DependencyInjection;
@@ -315,7 +316,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     protected async Task PublishSingleThreaded<T>() where T : class
     {
         var groups = _streams.GroupBy(x => x.TenantId).ToArray();
-        if (groups.Length > 1 || groups.Single().Key != Tenancy.DefaultTenantId)
+        if (groups.Length > 1 || groups.Single().Key != TenancyConstants.DefaultTenantId)
         {
             foreach (var @group in groups)
             {

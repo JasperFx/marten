@@ -8,6 +8,7 @@ using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Exceptions;

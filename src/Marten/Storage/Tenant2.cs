@@ -1,4 +1,5 @@
 using System;
+using JasperFx;
 
 namespace Marten.Storage;
 
@@ -16,7 +17,7 @@ public class Tenant
 
     public static Tenant ForDatabase(IMartenDatabase database)
     {
-        return new Tenant(Tenancy.DefaultTenantId, database);
+        return new Tenant(TenancyConstants.DefaultTenantId, database);
     }
 
     protected bool Equals(Tenant other)

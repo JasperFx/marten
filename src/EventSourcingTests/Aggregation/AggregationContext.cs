@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;

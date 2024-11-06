@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Internal.Operations;

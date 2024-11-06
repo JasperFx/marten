@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Operations;
 using Marten.Internal;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -88,7 +89,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
 
         async Task AssertGlobalProjectionUpdatedForTenant()
         {
-            var resource = await theSession.ForTenant(Tenancy.DefaultTenantId)
+            var resource = await theSession.ForTenant(TenancyConstants.DefaultTenantId)
                 .Query<ResourcesGlobalSummary>().SingleOrDefaultAsync(r => r.Id == organisationId);
 
             resource.ShouldNotBeNull();

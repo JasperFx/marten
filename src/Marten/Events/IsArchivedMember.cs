@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using JasperFx.Events;
 using Marten.Events.Archiving;
 using Marten.Linq;
 using Marten.Linq.Members;

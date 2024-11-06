@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Storage;
 using Weasel.Postgresql;

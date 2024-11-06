@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Aggregation.Rebuilds;

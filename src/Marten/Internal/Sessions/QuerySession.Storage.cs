@@ -2,6 +2,7 @@
 using System;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Storage;

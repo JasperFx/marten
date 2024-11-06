@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -17,7 +19,7 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 {
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
-        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(Tenancy.DefaultTenantId, querySession.Database));
+        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(TenancyConstants.DefaultTenantId, querySession.Database));
         var groups = events.GroupBy(x => x.TenantId);
         foreach (var @group in groups)
         {

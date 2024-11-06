@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using Marten.Schema;
 using Npgsql;
@@ -165,7 +166,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         public DatabaseExpression AsDefault()
         {
-            _parent.Default = new Tenant(DefaultTenantId, _database);
+            _parent.Default = new Tenant(TenancyConstants.DefaultTenantId, _database);
             return this;
         }
     }

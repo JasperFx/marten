@@ -1,5 +1,6 @@
 using System;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;

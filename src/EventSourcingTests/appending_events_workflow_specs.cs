@@ -9,6 +9,7 @@ using JasperFx.Core;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.CodeGeneration;
@@ -156,7 +157,7 @@ public class appending_events_workflow_specs
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-        var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
+        var operation = new EstablishTombstoneStream(@case.Store.Events, TenancyConstants.DefaultTenantId);
         await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
@@ -180,7 +181,7 @@ public class appending_events_workflow_specs
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-        var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
+        var operation = new EstablishTombstoneStream(@case.Store.Events, TenancyConstants.DefaultTenantId);
         await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});

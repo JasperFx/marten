@@ -22,7 +22,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
-    private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
+    private static readonly string[] DefaultTenant = { TenancyConstants.DefaultTenantId };
 
     public end_to_end_event_capture_and_fetching_the_stream(ITestOutputHelper output)
     {

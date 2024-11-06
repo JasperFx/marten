@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -322,7 +324,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     }
 
     public IQuerySession QuerySession() =>
-        QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
+        QuerySession(TenancyConstants.DefaultTenantId);
 
     public IQuerySession QuerySession(string tenantId) =>
         QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
@@ -339,7 +341,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     }
 
     public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default) =>
-        QuerySerializableSessionAsync(Marten.Storage.Tenancy.DefaultTenantId, cancellation);
+        QuerySerializableSessionAsync(TenancyConstants.DefaultTenantId, cancellation);
 
     public Task<IQuerySession> QuerySerializableSessionAsync(
         string tenantId,

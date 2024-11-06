@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Microsoft.Extensions.Logging;

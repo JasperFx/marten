@@ -1,3 +1,4 @@
+using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;

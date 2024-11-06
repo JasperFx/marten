@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
 using Marten.Schema;
 using Marten.Storage;
@@ -75,7 +77,7 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
         List<IEvent> events)
     {
         // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
-        var group = new TenantSliceGroup<TDoc, TId>(querySession, Tenancy.DefaultTenantId);
+        var group = new TenantSliceGroup<TDoc, TId>(querySession, TenancyConstants.DefaultTenantId);
         await GroupEvents(group, querySession, events).ConfigureAwait(false);
 
         return new List<TenantSliceGroup<TDoc, TId>> { group };
