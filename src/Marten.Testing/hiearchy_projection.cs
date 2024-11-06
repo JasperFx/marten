@@ -34,8 +34,6 @@ public class hierarchy_projection
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Thing));
-
         using var session = store.LightweightSession();
         var id1 = session.Events.StartStream<Thing>(new ThingStarted("small"), new ThingFed()).Id;
         var id2 = session.Events.StartStream<Thing>(new ThingStarted("big"), new ThingFed()).Id;
