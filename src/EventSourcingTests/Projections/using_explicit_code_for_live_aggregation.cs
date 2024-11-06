@@ -1,15 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
-using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -31,11 +28,14 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         await theSession.SaveChangesAsync();
 
         var aggregate = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+            .ShouldNotContain(typeof(SimpleAggregate));
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
         aggregate.Id.ShouldBe(streamId);
     }
+
 
     [Fact]
     public async Task using_a_custom_projection_for_live_aggregation_with_query_session()
