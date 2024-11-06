@@ -1,5 +1,6 @@
 using Marten.Internal.Operations;
 using Newtonsoft.Json.Linq;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.DirtyTracking;
 
@@ -8,7 +9,7 @@ public class ChangeTracker<T>: IChangeTracker
     private readonly T _document;
     private string _json;
 
-    public ChangeTracker(IMartenSession session, T document)
+    public ChangeTracker(IOperationSession session, T document)
     {
         _document = document;
         _json = session.Serializer.ToCleanJson(document);

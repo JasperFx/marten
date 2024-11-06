@@ -55,10 +55,18 @@ public partial class QuerySession: IMartenSession, IQuerySession
         return Options.Storage.MappingFor(documentType).TableName;
     }
 
-    public IEnumerable<object> DetectChangedDocuments()
+    IEnumerable<object> IOperationSession.DetectChangedDocuments()
     {
         return ChangeTrackers
             .Where(x => x.DetectChanges(this, out var _)).Select(x => x.Document);
+    }
+
+    void IOperationSession.UpsertDirtyCheckedDocument<T>(T document)
+    {
+        Database
+            .Providers.StorageFor<T>()
+            .DirtyTracking
+            .Upsert(document, this, TenantId);
     }
 
 #nullable enable

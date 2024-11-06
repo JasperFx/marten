@@ -50,14 +50,6 @@ public class DirtyCheckingDocumentSession: DocumentSessionBase
         }
     }
 
-
-    private void removeTrackerFor<T>(T document)
-    {
-        ChangeTrackers.RemoveAll(x => ReferenceEquals(x.Document, document));
-    }
-
-    // NEED TO REMOVE TRACKER TOO!
-
     protected internal override void ejectById<T>(long id)
     {
         var documentStorage = StorageFor<T>();
