@@ -318,7 +318,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             session.Query<User>().Count().ShouldBe(2);
 
             // Query documents in default tenant from a session using tenant Green
-            session.Query<Issue>().Count(x => x.TenantIsOneOf(TenancyConstants.DefaultTenantId)).ShouldBe(2);
+            session.Query<Issue>().Count(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId)).ShouldBe(2);
 
             // Query documents from tenant Red from a session using tenant Green
             session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);

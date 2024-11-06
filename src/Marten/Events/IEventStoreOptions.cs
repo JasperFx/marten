@@ -50,7 +50,7 @@ namespace Marten.Events
         /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
         /// in testing
         /// </summary>
-        TimeProvider TimeProvider { get; set; }
+        public TimeProvider TimeProvider { get; set; }
 
         /// <summary>
         /// Opt into having Marten create a unique index on Event.Id. The default is false. This may

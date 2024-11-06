@@ -93,8 +93,8 @@ public partial class EventGraph
                     Sequence = x.Sequence,
                     Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
                     TenantId = x.TenantId,
-                    StreamId = EstablishTombstoneStream.StreamId,
-                    StreamKey = EstablishTombstoneStream.StreamKey,
+                    StreamId = StorageConstants.TombstoneStreamId,
+                    StreamKey = StorageConstants.TombstoneStreamKey,
                     Id = CombGuidIdGeneration.NewGuid(),
                     EventTypeName = mapping.EventTypeName,
                     DotNetTypeName = mapping.DotNetTypeName

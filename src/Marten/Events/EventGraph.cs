@@ -28,7 +28,21 @@ using static Marten.Events.EventMappingExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
+public interface IEventGraph
+{
+    IEvent BuildEvent(object eventData);
+    EventAppendMode AppendMode { get; set; }
+
+    /// <summary>
+    /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
+    /// in testing
+    /// </summary>
+    TimeProvider TimeProvider { get; set; }
+
+    string AggregateAliasFor(Type aggregateType);
+}
+
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IEventGraph, IDisposable, IAsyncDisposable
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -363,7 +377,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return _aggregateTypeByName[aggregateTypeName];
     }
 
-    internal string AggregateAliasFor(Type aggregateType)
+    public string AggregateAliasFor(Type aggregateType)
     {
         var alias = _aggregateNameByType[aggregateType];
 
@@ -420,7 +434,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return session.EventStorage();
     }
 
-    internal IEvent BuildEvent(object eventData)
+    public IEvent BuildEvent(object eventData)
     {
         if (eventData == null)
         {

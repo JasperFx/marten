@@ -29,7 +29,7 @@ internal static class TenantedSessionFactory
     {
         var shouldApplyConjoinedTenancy =
             session.TenantId != slice.Tenant.TenantId
-            && slice.Tenant.TenantId != TenancyConstants.DefaultTenantId
+            && slice.Tenant.TenantId != StorageConstants.DefaultTenantId
             && storage.TenancyStyle == TenancyStyle.Conjoined
             && session.DocumentStore.Options.Tenancy.IsTenantStoredInCurrentDatabase(
                 session.Database,
@@ -45,7 +45,7 @@ internal static class TenantedSessionFactory
 
         var shouldApplyDefaultTenancy =
             isDefaultTenantAllowed
-            && session.TenantId != TenancyConstants.DefaultTenantId
+            && session.TenantId != StorageConstants.DefaultTenantId
             && storage.TenancyStyle == TenancyStyle.Single;
 
         if (shouldApplyDefaultTenancy)
@@ -58,5 +58,5 @@ internal static class TenantedSessionFactory
         (DocumentSessionBase)session.ForTenant(tenantId);
 
     private static DocumentSessionBase WithDefaultTenant(this IDocumentSession session) =>
-        (DocumentSessionBase)session.ForTenant(TenancyConstants.DefaultTenantId);
+        (DocumentSessionBase)session.ForTenant(StorageConstants.DefaultTenantId);
 }

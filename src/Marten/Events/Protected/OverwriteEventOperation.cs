@@ -27,7 +27,7 @@ internal class OverwriteEventOperation : IStorageOperation
         _e = e;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         if (_graph.MetadataConfig.HeadersEnabled)
         {

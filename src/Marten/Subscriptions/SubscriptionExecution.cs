@@ -62,7 +62,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 new SessionOptions
                 {
                     Tracking = DocumentTracking.IdentityOnly,
-                    Tenant = new Tenant(TenancyConstants.DefaultTenantId, _database)
+                    Tenant = new Tenant(StorageConstants.DefaultTenantId, _database)
                 }, Mode);
 
 

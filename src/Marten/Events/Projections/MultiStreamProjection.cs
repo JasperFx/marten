@@ -19,7 +19,7 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 {
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
-        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(TenancyConstants.DefaultTenantId, querySession.Database));
+        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(StorageConstants.DefaultTenantId, querySession.Database));
         var groups = events.GroupBy(x => x.TenantId);
         foreach (var @group in groups)
         {

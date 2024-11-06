@@ -49,12 +49,12 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public object Document => _document;
 
-    public IChangeTracker ToTracker(IOperationSession session)
+    public IChangeTracker ToTracker(IStorageSession session)
     {
         return new ChangeTracker<T>(session, _document);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var groupedParameters = builder.CreateGroupedParameterBuilder(',');
         // this is gross

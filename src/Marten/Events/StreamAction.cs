@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx;
 using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Exceptions;
@@ -148,7 +149,7 @@ public class StreamAction
     /// <param name="events"></param>
     /// <returns></returns>
     /// <exception cref="EmptyEventStreamException"></exception>
-    public static StreamAction Start(EventGraph graph, Guid streamId, params object[] events)
+    public static StreamAction Start(IEventGraph graph, Guid streamId, params object[] events)
     {
         if (!events.Any())
         {
@@ -182,7 +183,7 @@ public class StreamAction
     /// <param name="events"></param>
     /// <returns></returns>
     /// <exception cref="EmptyEventStreamException"></exception>
-    public static StreamAction Start(EventGraph graph, string streamKey, params object[] events)
+    public static StreamAction Start(IEventGraph graph, string streamKey, params object[] events)
     {
         if (!events.Any())
         {
@@ -215,7 +216,7 @@ public class StreamAction
     /// <param name="streamId"></param>
     /// <param name="events"></param>
     /// <returns></returns>
-    public static StreamAction Append(EventGraph graph, Guid streamId, params object[] events)
+    public static StreamAction Append(IEventGraph graph, Guid streamId, params object[] events)
     {
         var stream = new StreamAction(streamId, StreamActionType.Append);
         stream.AddEvents(events.Select(graph.BuildEvent).ToArray());
@@ -241,7 +242,7 @@ public class StreamAction
     /// <param name="streamKey"></param>
     /// <param name="events"></param>
     /// <returns></returns>
-    public static StreamAction Append(EventGraph graph, string streamKey, params object[] events)
+    public static StreamAction Append(IEventGraph graph, string streamKey, params object[] events)
     {
         var stream = new StreamAction(streamKey, StreamActionType.Append);
         stream._events.AddRange(events.Select(graph.BuildEvent));
@@ -270,7 +271,7 @@ public class StreamAction
     /// <param name="sequences"></param>
     /// <param name="session"></param>
     /// <exception cref="EventStreamUnexpectedMaxEventIdException"></exception>
-    internal void PrepareEvents(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session)
+    internal void PrepareEvents(long currentVersion, IEventGraph graph, Queue<long> sequences, IOperationContext session)
     {
         var timestamp = graph.TimeProvider.GetUtcNow();
 
@@ -331,7 +332,7 @@ public class StreamAction
         Version = Events.Last().Version;
     }
 
-    private void applyQuickMetadata(EventGraph graph, IMartenSession session, DateTimeOffset timestamp)
+    private void applyQuickMetadata(IEventGraph graph, IOperationContext session, DateTimeOffset timestamp)
     {
         foreach (var @event in _events)
         {
@@ -343,11 +344,11 @@ public class StreamAction
             @event.TenantId = session.TenantId;
             @event.Timestamp = timestamp;
 
-            ProcessMetadata(@event, graph, session);
+            ProcessMetadata(@event, session);
         }
     }
 
-    private void applyRichMetadata(long currentVersion, EventGraph graph, Queue<long> sequences, IMartenSession session,
+    private void applyRichMetadata(long currentVersion, IEventGraph graph, Queue<long> sequences, IOperationContext session,
         DateTimeOffset timestamp)
     {
         var i = currentVersion;
@@ -367,7 +368,7 @@ public class StreamAction
             @event.TenantId = session.TenantId;
             @event.Timestamp = timestamp;
 
-            ProcessMetadata(@event, graph, session);
+            ProcessMetadata(@event, session);
         }
     }
 
@@ -383,26 +384,14 @@ public class StreamAction
 
     internal static StreamAction ForTombstone(DocumentSessionBase documentSessionBase)
     {
-        return new StreamAction(EstablishTombstoneStream.StreamId, EstablishTombstoneStream.StreamKey,
+        return new StreamAction(StorageConstants.TombstoneStreamId, StorageConstants.TombstoneStreamKey,
             StreamActionType.Append) { TenantId = documentSessionBase.TenantId };
     }
 
-    private static void ProcessMetadata(IEvent @event, EventGraph graph, IMartenSession session)
+    private static void ProcessMetadata(IEvent @event, IOperationContext session)
     {
-        if (graph.Metadata.CausationId.Enabled)
-        {
-            @event.CausationId ??= session.CausationId;
-        }
-
-        if (graph.Metadata.CorrelationId.Enabled)
-        {
-            @event.CorrelationId = session.CorrelationId;
-        }
-
-        if (!graph.Metadata.Headers.Enabled)
-        {
-            return;
-        }
+        @event.CausationId ??= session.CausationId;
+        @event.CorrelationId = session.CorrelationId;
 
         if (!(session.Headers?.Count > 0))
         {
@@ -433,8 +422,8 @@ public class StreamAction
             Sequence = x.Sequence,
             Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
             TenantId = TenantId,
-            StreamId = EstablishTombstoneStream.StreamId,
-            StreamKey = EstablishTombstoneStream.StreamKey,
+            StreamId = StorageConstants.TombstoneStreamId,
+            StreamKey = StorageConstants.TombstoneStreamKey,
             Id = CombGuidIdGeneration.NewGuid(),
             EventTypeName = mapping.EventTypeName,
             DotNetTypeName = mapping.DotNetTypeName

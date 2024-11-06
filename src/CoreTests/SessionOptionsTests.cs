@@ -53,7 +53,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = SessionOptions.ForDatabase(database);
 
         options.Tenant?.Database.ShouldBeSameAs(database);
-        options.Tenant?.TenantId.ShouldBe(TenancyConstants.DefaultTenantId);
+        options.Tenant?.TenantId.ShouldBe(StorageConstants.DefaultTenantId);
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }

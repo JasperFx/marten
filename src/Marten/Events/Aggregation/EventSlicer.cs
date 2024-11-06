@@ -40,7 +40,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         }
 
         // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
-        var group = await groupSingleTenant(new Tenant(TenancyConstants.DefaultTenantId, querySession.Database), querySession,
+        var group = await groupSingleTenant(new Tenant(StorageConstants.DefaultTenantId, querySession.Database), querySession,
             events).ConfigureAwait(false);
 
         return new List<TenantSliceGroup<TDoc, TId>> { group };

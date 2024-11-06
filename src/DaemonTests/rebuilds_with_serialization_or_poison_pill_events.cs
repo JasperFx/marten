@@ -99,7 +99,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
 
     [Theory]
-    [InlineData(TenancyConstants.DefaultTenantId)]
+    [InlineData(StorageConstants.DefaultTenantId)]
     [InlineData("CustomTenant")]
     public async Task rebuild_the_projection_skip_failed_events(string tenantId)
     {
@@ -113,7 +113,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         StoreOptions(x =>
         {
-            if (tenantId != TenancyConstants.DefaultTenantId)
+            if (tenantId != StorageConstants.DefaultTenantId)
             {
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
                 x.Policies.AllDocumentsAreMultiTenanted();

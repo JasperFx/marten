@@ -40,7 +40,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         return $"Append {Stream.Events.Select(x => x.EventTypeName).Join(", ")} to event stream {Stream}";
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, (IMartenSession)session);
     }

@@ -26,6 +26,7 @@ public static class CodeGenerationExtensions
             var candidates = method
                 .GetParameters()
                 .Where(x => x.ParameterType.Assembly != typeof(IMartenSession).Assembly)
+                .Where(x => x.ParameterType.Assembly != typeof(IEvent).Assembly)
                 .Where(x => x.ParameterType != aggregateType).ToList();
 
             if (candidates.Count == 1)

@@ -37,7 +37,7 @@ internal class BackfillStreamTypeOperation: IStorageOperation
         _eventTypeNames = projection.AllEventTypes.Select(x => events.EventMappingFor((Type)x).EventTypeName).ToArray();
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append($"update {_schemaName}.mt_streams s set type = ");
         builder.AppendParameter(_streamType);

@@ -77,7 +77,7 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
         List<IEvent> events)
     {
         // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
-        var group = new TenantSliceGroup<TDoc, TId>(querySession, TenancyConstants.DefaultTenantId);
+        var group = new TenantSliceGroup<TDoc, TId>(querySession, StorageConstants.DefaultTenantId);
         await GroupEvents(group, querySession, events).ConfigureAwait(false);
 
         return new List<TenantSliceGroup<TDoc, TId>> { group };

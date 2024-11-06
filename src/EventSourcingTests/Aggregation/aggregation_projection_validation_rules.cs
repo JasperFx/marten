@@ -176,7 +176,7 @@ public class aggregation_projection_validation_rules
         ex.InvalidMethods.Single()
             .Errors
             .ShouldContain(
-                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, JasperFx.Events.IEvent, JasperFx.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
         ex.InvalidMethods.Single()
             .Errors.ShouldContain(
-                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>",
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, JasperFx.Events.IEvent, JasperFx.Events.IEvent<{typeof(AEvent).FullNameInCode()}>",
                 "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
     }
 

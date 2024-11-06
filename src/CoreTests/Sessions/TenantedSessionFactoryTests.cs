@@ -96,7 +96,7 @@ public class TenantedSessionFactoryTests
             TheSame(NonDefault, NonDefault, TenancyStyle.Conjoined),
         };
 
-    private static readonly string Default = TenancyConstants.DefaultTenantId;
+    private static readonly string Default = StorageConstants.DefaultTenantId;
     private static readonly string NonDefault = "NON_DEFAULT";
 
     public record Configuration(

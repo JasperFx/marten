@@ -24,7 +24,7 @@ internal class ArchiveStreamOperation: IStorageOperation
         _streamId = streamId;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         if (_events.TenancyStyle == TenancyStyle.Conjoined)
         {

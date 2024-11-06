@@ -23,7 +23,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         return this;
     }
 
-    public ITenantDatabaseCreationExpressions ForTenant(string tenantId = TenancyConstants.DefaultTenantId)
+    public ITenantDatabaseCreationExpressions ForTenant(string tenantId = StorageConstants.DefaultTenantId)
     {
         var configurator = new TenantDatabaseCreationExpressions();
         _configurationPerTenant.Add(tenantId, configurator);

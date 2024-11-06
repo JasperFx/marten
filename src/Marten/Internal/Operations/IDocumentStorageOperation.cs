@@ -7,5 +7,5 @@ namespace Marten.Internal.Operations;
 public interface IDocumentStorageOperation: IStorageOperation
 {
     object Document { get; }
-    IChangeTracker ToTracker(IOperationSession session);
+    IChangeTracker ToTracker(IStorageSession session);
 }

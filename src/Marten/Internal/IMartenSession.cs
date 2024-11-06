@@ -15,7 +15,7 @@ using Weasel.Core.Serialization;
 
 namespace Marten.Internal;
 
-public interface IMartenSession: IDisposable, IAsyncDisposable, IOperationSession
+public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
 {
     Dictionary<Type, object> ItemMap { get; }
 
@@ -32,29 +32,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IOperationSessio
     ///     Override whether or not this session honors optimistic concurrency checks
     /// </summary>
     ConcurrencyChecks Concurrency { get; }
-
-    /// <summary>
-    ///     Optional metadata describing the causation id for this
-    ///     unit of work
-    /// </summary>
-    string? CausationId { get; set; }
-
-    /// <summary>
-    ///     Optional metadata describing the correlation id for this
-    ///     unit of work
-    /// </summary>
-    string? CorrelationId { get; set; }
-
-    /// <summary>
-    ///     Optional metadata describing the user name or
-    ///     process name for this unit of work
-    /// </summary>
-    string? LastModifiedBy { get; set; }
-
-    /// <summary>
-    ///     Optional metadata values. This may be null.
-    /// </summary>
-    Dictionary<string, object>? Headers { get; }
 
     IDocumentStorage StorageFor(Type documentType);
 

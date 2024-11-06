@@ -161,8 +161,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public string MaybeCorrectTenantId(string tenantId)
     {
-        if (tenantId.IsEmpty()) return TenancyConstants.DefaultTenantId;
-        if (tenantId == TenancyConstants.DefaultTenantId) return tenantId;
+        if (tenantId.IsEmpty()) return StorageConstants.DefaultTenantId;
+        if (tenantId == StorageConstants.DefaultTenantId) return tenantId;
 
         switch (TenantIdStyle)
         {

@@ -17,7 +17,7 @@ public class Tenant
 
     public static Tenant ForDatabase(IMartenDatabase database)
     {
-        return new Tenant(TenancyConstants.DefaultTenantId, database);
+        return new Tenant(StorageConstants.DefaultTenantId, database);
     }
 
     protected bool Equals(Tenant other)

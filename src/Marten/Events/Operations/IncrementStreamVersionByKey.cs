@@ -23,7 +23,7 @@ internal class IncrementStreamVersionByKey: IStorageOperation
 
     public StreamAction Stream { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("update ");
         builder.Append(_events.DatabaseSchemaName);

@@ -56,7 +56,7 @@ internal class DefaultTenancy: Tenancy, ITenancy
             martenDatabase.AddInitializer(Options.TenantPartitions.Partitions);
         }
 
-        Default = new Tenant(TenancyConstants.DefaultTenantId, martenDatabase);
+        Default = new Tenant(StorageConstants.DefaultTenantId, martenDatabase);
     }
 
     public void Dispose()

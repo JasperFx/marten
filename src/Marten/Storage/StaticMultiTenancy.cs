@@ -166,7 +166,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         public DatabaseExpression AsDefault()
         {
-            _parent.Default = new Tenant(TenancyConstants.DefaultTenantId, _database);
+            _parent.Default = new Tenant(StorageConstants.DefaultTenantId, _database);
             return this;
         }
     }

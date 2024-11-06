@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -24,8 +25,6 @@ internal class Tombstone
 
 internal class EstablishTombstoneStream: IStorageOperation
 {
-    public static readonly string StreamKey = "mt_tombstone";
-    public static readonly Guid StreamId = Guid.NewGuid();
     private readonly Action<DbParameter> _configureParameter;
     private readonly string _sessionTenantId;
 
@@ -55,7 +54,7 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamId;
+                p.Value = StorageConstants.TombstoneStreamId;
                 p.DbType = DbType.Guid;
             };
         }
@@ -63,13 +62,13 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamKey;
+                p.Value = StorageConstants.TombstoneStreamKey;
                 p.DbType = DbType.String;
             };
         }
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_sql);
         _configureParameter(parameters[0]);

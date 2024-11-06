@@ -23,7 +23,7 @@ internal class DeleteProjectionProgress: IStorageOperation
         _shardName = shardName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters =
             builder.AppendWithParameters($"delete from {_events.ProgressionTable} where name = ?");

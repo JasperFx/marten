@@ -42,7 +42,7 @@ public interface IReadOnlyEventStoreOptions
     /// </summary>
     bool EnableUniqueIndexOnEventId { get; set; }
 
-    EventAppendMode AppendMode { get; set; }
+    public EventAppendMode AppendMode { get; set; }
 
     /// <summary>
     ///     Configuration for all event store projections

@@ -34,7 +34,7 @@ internal class StatementOperation: Statement, IStorageOperation
         Wheres.Add(where);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         Apply((IPostgresqlCommandBuilder)builder);
     }

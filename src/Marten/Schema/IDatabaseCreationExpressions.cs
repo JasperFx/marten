@@ -7,7 +7,7 @@ namespace Marten.Schema;
 public interface IDatabaseCreationExpressions
 {
     /// <param name="tenantId">If omitted, configure for default tenancy</param>
-    ITenantDatabaseCreationExpressions ForTenant(string tenantId = TenancyConstants.DefaultTenantId);
+    ITenantDatabaseCreationExpressions ForTenant(string tenantId = StorageConstants.DefaultTenantId);
 
     /// <summary>
     ///     Setup the maintenance database to which to connect to prior to database creation.

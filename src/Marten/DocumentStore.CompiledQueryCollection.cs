@@ -67,7 +67,7 @@ public partial class DocumentStore: ICodeFileCollection
 
     IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
     {
-        var tenant = new Tenant(TenancyConstants.DefaultTenantId, new StandinDatabase(Options));
+        var tenant = new Tenant(StorageConstants.DefaultTenantId, new StandinDatabase(Options));
         using var lightweight =
             (QuerySession)LightweightSession(
                 new SessionOptions { AllowAnyTenant = true, Tenant = tenant });

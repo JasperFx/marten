@@ -46,7 +46,7 @@ public sealed class SessionOptions
     /// <summary>
     ///     Override the tenant id for the requested session
     /// </summary>
-    public string TenantId { get; set; } = TenancyConstants.DefaultTenantId;
+    public string TenantId { get; set; } = StorageConstants.DefaultTenantId;
 
     /// <summary>
     ///     Use to enable or disable optimistic concurrency for just this session
@@ -88,10 +88,10 @@ public sealed class SessionOptions
         OpenTelemetryOptions telemetryOptions)
     {
         Mode = mode;
-        Tenant ??= TenantId != TenancyConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
+        Tenant ??= TenantId != StorageConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
-            (Tenant == null || Tenant.TenantId == TenancyConstants.DefaultTenantId))
+            (Tenant == null || Tenant.TenantId == StorageConstants.DefaultTenantId))
         {
             throw new DefaultTenantUsageDisabledException();
         }
@@ -156,12 +156,12 @@ public sealed class SessionOptions
         CancellationToken token)
     {
         Mode = mode;
-        Tenant ??= TenantId != TenancyConstants.DefaultTenantId
+        Tenant ??= TenantId != StorageConstants.DefaultTenantId
             ? await store.Tenancy.GetTenantAsync(store.Options.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
             : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
-            Tenant.TenantId == TenancyConstants.DefaultTenantId)
+            Tenant.TenantId == StorageConstants.DefaultTenantId)
         {
             throw new DefaultTenantUsageDisabledException();
         }
@@ -220,7 +220,7 @@ public sealed class SessionOptions
     /// <param name="database"></param>
     /// <returns></returns>
     public static SessionOptions ForDatabase(IMartenDatabase database) =>
-        ForDatabase(TenancyConstants.DefaultTenantId, database);
+        ForDatabase(StorageConstants.DefaultTenantId, database);
 
     /// <summary>
     ///     Create a session for tenant within the supplied database

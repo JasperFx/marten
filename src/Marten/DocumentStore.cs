@@ -324,7 +324,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     }
 
     public IQuerySession QuerySession() =>
-        QuerySession(TenancyConstants.DefaultTenantId);
+        QuerySession(StorageConstants.DefaultTenantId);
 
     public IQuerySession QuerySession(string tenantId) =>
         QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
@@ -341,7 +341,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
     }
 
     public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default) =>
-        QuerySerializableSessionAsync(TenancyConstants.DefaultTenantId, cancellation);
+        QuerySerializableSessionAsync(StorageConstants.DefaultTenantId, cancellation);
 
     public Task<IQuerySession> QuerySerializableSessionAsync(
         string tenantId,

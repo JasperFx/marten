@@ -45,7 +45,7 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public IMartenDatabase Database { get; protected set; }
 
     public string TenantId { get; protected set; }
-    int IOperationSession.UpdateBatchSize()
+    int IStorageSession.UpdateBatchSize()
     {
         return Options.UpdateBatchSize;
     }
@@ -55,13 +55,13 @@ public partial class QuerySession: IMartenSession, IQuerySession
         return Options.Storage.MappingFor(documentType).TableName;
     }
 
-    IEnumerable<object> IOperationSession.DetectChangedDocuments()
+    IEnumerable<object> IStorageSession.DetectChangedDocuments()
     {
         return ChangeTrackers
             .Where(x => x.DetectChanges(this, out var _)).Select(x => x.Document);
     }
 
-    void IOperationSession.UpsertDirtyCheckedDocument<T>(T document)
+    void IStorageSession.UpsertDirtyCheckedDocument<T>(T document)
     {
         Database
             .Providers.StorageFor<T>()

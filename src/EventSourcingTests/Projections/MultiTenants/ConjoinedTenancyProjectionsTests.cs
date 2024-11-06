@@ -89,7 +89,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
 
         async Task AssertGlobalProjectionUpdatedForTenant()
         {
-            var resource = await theSession.ForTenant(TenancyConstants.DefaultTenantId)
+            var resource = await theSession.ForTenant(StorageConstants.DefaultTenantId)
                 .Query<ResourcesGlobalSummary>().SingleOrDefaultAsync(r => r.Id == organisationId);
 
             resource.ShouldNotBeNull();
