@@ -26,7 +26,7 @@ internal class MarkShardModeAsContinuous : IStorageOperation
         _lastSequenceId = lastSequenceId;
     }
 
-    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters($"update {_events.ProgressionTable} set mode = '{ShardMode.continuous}', last_seq_id = ?, rebuild_threshold = 0 where name = ?");

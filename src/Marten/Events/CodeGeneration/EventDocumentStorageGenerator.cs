@@ -114,7 +114,7 @@ internal static class EventDocumentStorageGenerator
 
         var sql = $"update {graph.DatabaseSchemaName}.mt_streams ";
 
-        var configureCommand = operationType.MethodFor("ConfigureCommand");
+        var configureCommand = operationType.MethodFor("ConfigureCommandSpecific");
         configureCommand.DerivedVariables.Add(
             new Variable(typeof(StreamAction), nameof(UpdateStreamVersion.Stream)));
 
@@ -267,7 +267,7 @@ internal static class EventDocumentStorageGenerator
         var baseType = typeof(AppendEventOperationBase);
         var operationType = assembly.AddType(typeName, baseType);
 
-        var configure = operationType.MethodFor(nameof(AppendEventOperationBase.ConfigureCommand));
+        var configure = operationType.MethodFor(nameof(AppendEventOperationBase.ConfigureCommandSpecific));
         configure.DerivedVariables.Add(new Variable(typeof(IEvent), nameof(AppendEventOperationBase.Event)));
         configure.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(AppendEventOperationBase.Stream)));
 
@@ -309,7 +309,7 @@ internal static class EventDocumentStorageGenerator
 
         var sql = $"select {graph.DatabaseSchemaName}.mt_quick_append_events(";
 
-        var configure = operationType.MethodFor(nameof(QuickAppendEventsOperationBase.ConfigureCommand));
+        var configure = operationType.MethodFor(nameof(QuickAppendEventsOperationBase.ConfigureCommandSpecific));
         configure.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(QuickAppendEventsOperationBase.Stream)));
 
         configure.Frames.AppendSql(sql);
@@ -362,7 +362,7 @@ internal static class EventDocumentStorageGenerator
             $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values (";
 
 
-        var configureCommand = operationType.MethodFor("ConfigureCommand");
+        var configureCommand = operationType.MethodFor("ConfigureCommandSpecific");
         configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 
         configureCommand.Frames.AppendSql(sql);

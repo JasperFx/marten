@@ -10,7 +10,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Internal.Operations;
 
-public interface IStorageOperation: IStorageOperation<IPostgresqlCommandBuilder, IMartenSession>
+public interface IStorageOperation: IStorageOperation<ICommandBuilder, IMartenSession>
 {
 
 }

@@ -23,7 +23,12 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
 
     public StreamAction Stream { get; }
 
-    public abstract void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session);
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    {
+        ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, session);
+    }
+
+    public abstract void ConfigureCommandSpecific(IPostgresqlCommandBuilder builder, IMartenSession session);
 
     public Type DocumentType => typeof(IEvent);
 

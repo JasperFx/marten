@@ -26,7 +26,7 @@ internal class OverwriteEventOperation : IStorageOperation
         _e = e;
     }
 
-    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         if (_graph.MetadataConfig.HeadersEnabled)
         {

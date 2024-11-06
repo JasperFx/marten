@@ -22,7 +22,7 @@ internal class IncrementStreamVersionById: IStorageOperation
 
     public StreamAction Stream { get; }
 
-    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         builder.Append("update ");
         builder.Append(_events.DatabaseSchemaName);

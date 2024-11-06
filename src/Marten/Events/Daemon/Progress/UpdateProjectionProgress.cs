@@ -27,7 +27,7 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         var parameters =
             builder.AppendWithParameters(

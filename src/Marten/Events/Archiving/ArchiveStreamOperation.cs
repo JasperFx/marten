@@ -23,7 +23,7 @@ internal class ArchiveStreamOperation: IStorageOperation
         _streamId = streamId;
     }
 
-    public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         if (_events.TenancyStyle == TenancyStyle.Conjoined)
         {
