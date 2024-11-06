@@ -58,7 +58,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     {
         var groupedParameters = builder.CreateGroupedParameterBuilder(',');
         // this is gross
-        ConfigureParameters(groupedParameters, builder, _document, session);
+        ConfigureParameters(groupedParameters, builder, _document, (IMartenSession)session);
     }
 
     public Type DocumentType => typeof(T);

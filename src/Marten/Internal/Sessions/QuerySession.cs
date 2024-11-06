@@ -9,6 +9,7 @@ using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Polly;
+using Weasel.Core;
 using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 
@@ -46,6 +47,11 @@ public partial class QuerySession: IMartenSession, IQuerySession
     int IOperationSession.UpdateBatchSize()
     {
         return Options.UpdateBatchSize;
+    }
+
+    public DbObjectName TableNameFor(Type documentType)
+    {
+        return Options.Storage.MappingFor(documentType).TableName;
     }
 
 #nullable enable

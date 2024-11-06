@@ -25,7 +25,7 @@ internal class TruncateTable: IStorageOperation
 
     public void ConfigureCommand(IPostgresqlCommandBuilder builder, IMartenSession session)
     {
-        var name = _name ?? session.StorageFor(DocumentType).TableName;
+        var name = _name ?? session.TableNameFor(DocumentType);
         builder.Append($"truncate table {name} CASCADE");
     }
 
