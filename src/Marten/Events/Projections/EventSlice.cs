@@ -7,6 +7,7 @@ using Marten.Events.Aggregation;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Storage;
+using Weasel.Core.Operations;
 
 namespace Marten.Events.Projections;
 

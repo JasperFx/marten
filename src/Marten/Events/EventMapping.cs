@@ -26,6 +26,7 @@ using Marten.Storage;
 using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;

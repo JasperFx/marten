@@ -23,9 +23,9 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
 
     public StreamAction Stream { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
-        ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, session);
+        ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, (IMartenSession)session);
     }
 
     public abstract void ConfigureCommandSpecific(IPostgresqlCommandBuilder builder, IMartenSession session);

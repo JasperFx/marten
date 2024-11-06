@@ -24,7 +24,7 @@ internal class InsertProjectionProgress: IStorageOperation
         _progress = progress;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
         var parameters =
             builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id) values (?, ?)");

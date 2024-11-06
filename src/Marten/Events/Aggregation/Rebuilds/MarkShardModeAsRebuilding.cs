@@ -26,7 +26,7 @@ internal class MarkShardModeAsRebuilding : IStorageOperation
         _rebuildThreshold = rebuildThreshold;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
         var parameters =
             builder.AppendWithParameters($"insert into {_events.ProgressionTable} (name, last_seq_id, mode, rebuild_threshold) values (?, 0, '{ShardMode.rebuilding}', ?) on conflict (name) do update set mode = '{ShardMode.rebuilding}', last_seq_id = 0, rebuild_threshold = ?");

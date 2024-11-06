@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
+using Weasel.Core.Operations;
 
 namespace Marten.Events.Daemon.Internals;
 

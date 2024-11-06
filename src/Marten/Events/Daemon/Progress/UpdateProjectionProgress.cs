@@ -27,7 +27,7 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
         var parameters =
             builder.AppendWithParameters(

@@ -1,4 +1,5 @@
 using Marten.Internal.Operations;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.DirtyTracking;
 

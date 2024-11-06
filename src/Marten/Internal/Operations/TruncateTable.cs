@@ -23,7 +23,7 @@ internal class TruncateTable: IStorageOperation
         DocumentType = documentType;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
         var name = _name ?? session.TableNameFor(DocumentType);
         builder.Append($"truncate table {name} CASCADE");

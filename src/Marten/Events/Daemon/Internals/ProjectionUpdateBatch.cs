@@ -10,6 +10,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
+using Weasel.Core.Operations;
 
 namespace Marten.Events.Daemon.Internals;
 #nullable enable

@@ -11,6 +11,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Schema.Identity;
 using Weasel.Core;
+using Weasel.Core.Operations;
 
 namespace Marten.Events;
 

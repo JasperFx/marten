@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal;
 

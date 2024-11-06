@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Marten.Events;
 using Marten.Internal.Operations;
+using Weasel.Core.Operations;
 
 namespace Marten.Services;
 

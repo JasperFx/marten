@@ -28,9 +28,9 @@ public abstract class AppendEventOperationBase: IStorageOperation, NoDataReturne
     public StreamAction Stream { get; }
     public IEvent Event { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
-        ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, session);
+        ConfigureCommandSpecific((IPostgresqlCommandBuilder)builder, (IMartenSession)session);
     }
 
     public abstract void ConfigureCommandSpecific(IPostgresqlCommandBuilder builder, IMartenSession session);

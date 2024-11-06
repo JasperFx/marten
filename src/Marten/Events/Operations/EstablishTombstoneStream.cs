@@ -68,7 +68,7 @@ DO NOTHING
         }
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IOperationSession session)
     {
         var parameters = builder.AppendWithParameters(_sql);
         _configureParameter(parameters[0]);

@@ -3,6 +3,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Weasel.Core.Operations;
 
 namespace Marten.Events;
 

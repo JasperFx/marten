@@ -22,6 +22,7 @@ using Marten.Linq.SqlGeneration.Filters;
 using Marten.Services;
 using Marten.Storage;
 using Weasel.Core;
+using Weasel.Core.Operations;
 using Weasel.Core.Serialization;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;

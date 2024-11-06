@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using Marten.Events;
 using Marten.Internal.Operations;
+using Weasel.Core.Operations;
 
 namespace Marten;
 

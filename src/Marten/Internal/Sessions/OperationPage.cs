@@ -8,7 +8,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Internal.Sessions;
 
-public class OperationPage: OperationPage<IMartenSession, IStorageOperation>
+public class OperationPage: OperationPage<IMartenSession>
 {
     public OperationPage(IMartenSession session): base(session, new BatchBuilder())
     {
