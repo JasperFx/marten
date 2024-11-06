@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Lamar.Microsoft.DependencyInjection;
 using Marten;
 using Marten.Events;

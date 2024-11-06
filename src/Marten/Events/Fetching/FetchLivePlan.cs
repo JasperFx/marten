@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;

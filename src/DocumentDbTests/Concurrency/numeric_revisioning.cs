@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten.Exceptions;

@@ -3,6 +3,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Xunit;
 using Xunit.Abstractions;
 

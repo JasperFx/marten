@@ -5,6 +5,7 @@ using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;

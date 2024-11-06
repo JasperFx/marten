@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal.DirtyTracking;

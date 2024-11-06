@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Confluent.Kafka;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;

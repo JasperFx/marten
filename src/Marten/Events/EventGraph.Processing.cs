@@ -16,21 +16,6 @@ using Weasel.Core.Operations;
 
 namespace Marten.Events;
 
-public enum EventAppendMode
-{
-    /// <summary>
-    /// Default behavior that ensures that all inline projections will have full access to all event
-    /// metadata including intended event sequences, versions, and timestamps
-    /// </summary>
-    Rich,
-
-    /// <summary>
-    /// Stripped down, more performant mode of appending events that will omit some event metadata within
-    /// inline projections
-    /// </summary>
-    Quick
-}
-
 public partial class EventGraph
 {
     private RetryBlock<UpdateBatch> _tombstones;
@@ -115,5 +100,26 @@ public partial class EventGraph
     public Task PostTombstonesAsync(UpdateBatch tombstoneBatch)
     {
         return _tombstones.PostAsync(tombstoneBatch);
+    }
+
+
+
+}
+
+internal static class StreamActionExtensions
+{
+    internal static IEnumerable<Event<Tombstone>> ToTombstoneEvents(this StreamAction action, EventMapping mapping, Tombstone tombstone)
+    {
+        return action.Events.Select(x => new Event<Tombstone>(tombstone)
+        {
+            Sequence = x.Sequence,
+            Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
+            TenantId = action.TenantId,
+            StreamId = StorageConstants.TombstoneStreamId,
+            StreamKey = StorageConstants.TombstoneStreamKey,
+            Id = CombGuidIdGeneration.NewGuid(),
+            EventTypeName = mapping.EventTypeName,
+            DotNetTypeName = mapping.DotNetTypeName
+        });
     }
 }

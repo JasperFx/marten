@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Schema;

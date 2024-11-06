@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Metadata;
 using Marten.Schema;
 

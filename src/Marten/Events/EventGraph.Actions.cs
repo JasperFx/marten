@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 

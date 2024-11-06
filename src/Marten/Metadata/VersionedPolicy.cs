@@ -1,4 +1,5 @@
 #nullable enable
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;

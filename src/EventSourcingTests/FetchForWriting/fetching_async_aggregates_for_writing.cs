@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
