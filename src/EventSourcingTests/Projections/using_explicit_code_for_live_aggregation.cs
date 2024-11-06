@@ -9,6 +9,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace EventSourcingTests.Projections;
@@ -28,8 +29,6 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         await theSession.SaveChangesAsync();
 
         var aggregate = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
-            .ShouldNotContain(typeof(SimpleAggregate));
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
@@ -48,13 +47,31 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
         await theSession.SaveChangesAsync();
 
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var aggregate = await query.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
         aggregate.Id.ShouldBe(streamId);
+    }
+
+    [Fact]
+    public async Task does_not_create_tables()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Live);
+        });
+
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
+        await theSession.SaveChangesAsync();
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var eventStream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await theSession.SaveChangesAsync();
+        var tables = theStore.Storage.AllObjects().OfType<Table>();
+        tables.ShouldNotContain(x => x.Identifier.Name.Contains(nameof(SimpleAggregate), StringComparison.OrdinalIgnoreCase));
     }
 }
 
