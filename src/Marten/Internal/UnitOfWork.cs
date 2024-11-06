@@ -83,8 +83,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
     IEnumerable<object> IUnitOfWork.Updates()
     {
-        var fromTrackers = _parent.ChangeTrackers
-            .Where(x => x.DetectChanges(_parent, out var _)).Select(x => x.Document);
+        var fromTrackers = _parent.DetectChangedDocuments();
 
         return _operations
             .OfType<IDocumentStorageOperation>()

@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -52,6 +53,12 @@ public partial class QuerySession: IMartenSession, IQuerySession
     public DbObjectName TableNameFor(Type documentType)
     {
         return Options.Storage.MappingFor(documentType).TableName;
+    }
+
+    public IEnumerable<object> DetectChangedDocuments()
+    {
+        return ChangeTrackers
+            .Where(x => x.DetectChanges(this, out var _)).Select(x => x.Document);
     }
 
 #nullable enable
