@@ -10,6 +10,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Schema;
@@ -140,6 +141,8 @@ public abstract class CustomProjection<TDoc, TId>:
         var snapshot = slice.Aggregate;
         snapshot = await BuildAsync(session, snapshot, slice.Events()).ConfigureAwait(false);
         ApplyMetadata(snapshot, slice.Events().Last());
+
+        session.StorageFor<TDoc, TId>().SetIdentity(snapshot, slice.Id);
 
         slice.Aggregate = snapshot;
         session.Store(snapshot);
@@ -293,6 +296,14 @@ public abstract class CustomProjection<TDoc, TId>:
         else if (typeof(TId) == typeof(string))
         {
             Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
+        }
+        else if (typeof(TId).GetProperties().Any(x => x.PropertyType == typeof(Guid)))
+        {
+            Slicer = new ByStreamId<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
+        }
+        else if (typeof(TId).GetProperties().Any(x => x.PropertyType == typeof(string)))
+        {
+            Slicer = new ByStreamKey<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
         }
         else
         {
