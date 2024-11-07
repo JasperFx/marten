@@ -66,7 +66,7 @@ public class AgentFactory : IAgentFactory
         if (shard.SubscriptionSource != null)
         {
             var subscription = shard.SubscriptionSource.Build(_store);
-            var execution = new SubscriptionExecution(shard.Name, subscription, _store, database, logger);
+            var execution = new SubscriptionExecution(new SubscriptionRunner(shard.Name, subscription, _store, database), logger);
             var options = shard.SubscriptionSource.Options;
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);

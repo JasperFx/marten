@@ -42,12 +42,15 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         _building = new ActionBlock<EventRangeGroup>(processRange, singleFileOptions);
         _grouping.LinkTo(_building, x => x != null);
 
+        ShardIdentity = shard.Name.Identity;
         ProjectionShardIdentity = shard.Name.Identity;
         if (database.Identifier != "Marten")
         {
             ProjectionShardIdentity += $"@{database.Identifier}";
         }
     }
+
+    public string ShardIdentity { get; }
 
     public ShardExecutionMode Mode { get; set; }
     public bool TryBuildReplayExecutor(out IReplayExecutor executor)
