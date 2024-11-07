@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -300,6 +303,46 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
                 DCount = 1
             });
     }
+
+    [Fact]
+    public async Task use_strong_typed_guid_based_identifier()
+    {
+        var mapping = new DocumentMapping(typeof(MyCustomGuidAggregate), new StoreOptions());
+        mapping.IdMember.Name.ShouldBe("Id");
+
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new MyCustomGuidProjection(), ProjectionLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<MyCustomGuidAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.LoadAsync<MyCustomGuidAggregate>(new MyCustomGuidId(streamId));
+        aggregate.A.ShouldBe(1);
+        aggregate.B.ShouldBe(2);
+        aggregate.C.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task use_strong_typed_string_based_identifier()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Add(new MyCustomStreamProjection(), ProjectionLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<MyCustomStringAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.LoadAsync<MyCustomStringAggregate>(new MyCustomStringId(streamId));
+        aggregate.A.ShouldBe(1);
+        aggregate.B.ShouldBe(2);
+        aggregate.C.ShouldBe(0);
+    }
 }
 
 public class CustomEvent: INumbered
@@ -343,6 +386,94 @@ public class MySingleStreamProjection: CustomProjection<CustomAggregate, Guid>
         throw new NotImplementedException();
     }
 }
+
+public record struct MyCustomStringId(string Value);
+
+public class MyCustomStringAggregate
+{
+    public MyCustomStringId Id { get; set; }
+    public int A { get; set; }
+    public int B { get; set; }
+    public int C { get; set; }
+    public int D { get; set; }
+}
+
+public class MyCustomStreamProjection: CustomProjection<MyCustomStringAggregate, MyCustomStringId>
+{
+    public MyCustomStreamProjection()
+    {
+        AggregateByStream();
+    }
+
+    public override MyCustomStringAggregate Apply(MyCustomStringAggregate snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new MyCustomStringAggregate();
+        foreach (var e in events.Select(x => x.Data))
+        {
+            switch (e)
+            {
+                case AEvent:
+                    snapshot.A++;
+                    break;
+                case BEvent:
+                    snapshot.B++;
+                    break;
+                case CEvent:
+                    snapshot.C++;
+                    break;
+                case DEvent:
+                    snapshot.D++;
+                    break;
+            }
+        }
+
+        return snapshot;
+    }
+}
+
+public class MyCustomGuidAggregate
+{
+    public MyCustomGuidId Id { get; set; }
+    public int A { get; set; }
+    public int B { get; set; }
+    public int C { get; set; }
+    public int D { get; set; }
+}
+
+public class MyCustomGuidProjection: CustomProjection<MyCustomGuidAggregate, MyCustomGuidId>
+{
+    public MyCustomGuidProjection()
+    {
+        AggregateByStream();
+    }
+
+    public override MyCustomGuidAggregate Apply(MyCustomGuidAggregate snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new MyCustomGuidAggregate();
+        foreach (var e in events.Select(x => x.Data))
+        {
+            switch (e)
+            {
+                case AEvent:
+                    snapshot.A++;
+                    break;
+                case BEvent:
+                    snapshot.B++;
+                    break;
+                case CEvent:
+                    snapshot.C++;
+                    break;
+                case DEvent:
+                    snapshot.D++;
+                    break;
+            }
+        }
+
+        return snapshot;
+    }
+}
+
+public record struct MyCustomGuidId(Guid Value);
 
 public class MyCustomProjection: CustomProjection<CustomAggregate, int>
 {
