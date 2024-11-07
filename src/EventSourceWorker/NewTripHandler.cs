@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Marten;
 using DaemonTests.TestingSupport;
+using Marten;
 
 namespace EventSourceWorker;
 
@@ -24,22 +24,11 @@ public class NewTripHandler
 
     public async Task Handle(CreateNewTrip trip)
     {
-        var started = new TripStarted
-        {
-            Day = trip.Day
-        };
+        var started = new TripStarted { Day = trip.Day };
 
-        var departure = new Departure
-        {
-            Day = trip.Day,
-            State = trip.State
-        };
+        var departure = new Departure { Day = trip.Day, State = trip.State };
 
-        var travel = new Travel
-        {
-            Day = trip.Day,
-            Movements = new List<Movement>(trip.Movements)
-        };
+        var travel = new Travel { Day = trip.Day, Movements = new List<Movement>(trip.Movements) };
 
         // This will create a new event stream and
         // append the three events to that new stream

@@ -7,9 +7,6 @@ namespace Marten.Linq.Parsing.Operators;
 
 public class Ordering
 {
-    public string? MemberName { get; set; }
-    private readonly string? _literal;
-
     public Ordering(Expression expression, OrderingDirection direction)
     {
         Expression = expression;
@@ -18,7 +15,7 @@ public class Ordering
 
     public Ordering(string literal)
     {
-        _literal = literal;
+        Literal = literal;
     }
 
     public Ordering(string memberName, OrderingDirection direction)
@@ -27,7 +24,9 @@ public class Ordering
         Direction = direction;
     }
 
-    public string? Literal => _literal;
+    public string? MemberName { get; set; }
+
+    public string? Literal { get; }
 
     public Expression Expression { get; }
 
@@ -36,14 +35,17 @@ public class Ordering
     public CasingRule CasingRule { get; set; } = CasingRule.CaseSensitive;
 
     /// <summary>
-    /// Refers to whether or not this ordering is transformed such that it cannot
-    /// be combined with a Distinct(Select()) usage
+    ///     Refers to whether or not this ordering is transformed such that it cannot
+    ///     be combined with a Distinct(Select()) usage
     /// </summary>
     public bool IsTransformed { get; set; }
 
     public string BuildExpression(IQueryableMemberCollection collection)
     {
-        if (_literal.IsNotEmpty()) return _literal;
+        if (Literal.IsNotEmpty())
+        {
+            return Literal;
+        }
 
         var member = MemberName.IsNotEmpty()
             ? collection.MemberFor(MemberName)

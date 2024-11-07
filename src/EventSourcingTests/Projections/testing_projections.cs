@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -30,15 +29,22 @@ public enum InvoiceStatus
 public record InvoiceCreated(string Description, decimal Amount);
 
 public record InvoiceApproved;
+
 public record InvoiceCancelled;
+
 public record InvoicePaid;
+
 public record InvoiceRejected;
 
 public class Invoice
 {
-    public Invoice()
-    {
-    }
+    public int Version { get; set; }
+
+    public decimal Amount { get; set; }
+    public string Description { get; set; }
+    public Guid Id { get; set; }
+    public DateTimeOffset Created { get; set; }
+    public InvoiceStatus Status { get; set; }
 
     #region sample_using_event_metadata_in_Invoice
 
@@ -58,22 +64,28 @@ public class Invoice
 
     #endregion
 
-    public int Version { get; set; }
+    public void Apply(InvoiceCancelled _)
+    {
+        Status = InvoiceStatus.Cancelled;
+    }
 
-    public decimal Amount { get; set; }
-    public string Description { get; set; }
-    public Guid Id { get; set; }
-    public DateTimeOffset Created { get; set; }
-    public InvoiceStatus Status { get; set; }
+    public void Apply(InvoiceRejected _)
+    {
+        Status = InvoiceStatus.Rejected;
+    }
 
-    public void Apply(InvoiceCancelled _) => Status = InvoiceStatus.Cancelled;
-    public void Apply(InvoiceRejected _) => Status = InvoiceStatus.Rejected;
-    public void Apply(InvoicePaid _) => Status = InvoiceStatus.Paid;
-    public void Apply(InvoiceApproved _) => Status = InvoiceStatus.Approved;
+    public void Apply(InvoicePaid _)
+    {
+        Status = InvoiceStatus.Paid;
+    }
+
+    public void Apply(InvoiceApproved _)
+    {
+        Status = InvoiceStatus.Approved;
+    }
 }
 
 #endregion
-
 
 public class testing_projections
 {
@@ -94,12 +106,11 @@ public class testing_projections
         // Pump in events
         using (var session = store.LightweightSession())
         {
-
             session.Events.StartStream<Invoice>(invoiceId, new InvoiceCreated("Blue Shoes", 112.24m));
             await session.SaveChangesAsync();
 
-            session.Events.Append(invoiceId,new InvoiceApproved());
-            session.Events.Append(invoiceId,new InvoicePaid());
+            session.Events.Append(invoiceId, new InvoiceApproved());
+            session.Events.Append(invoiceId, new InvoicePaid());
             await session.SaveChangesAsync();
         }
 
@@ -133,12 +144,11 @@ public class testing_projections
         // Pump in events
         using (var session = store.LightweightSession())
         {
-
             session.Events.StartStream<Invoice>(invoiceId, new InvoiceCreated("Blue Shoes", 112.24m));
             await session.SaveChangesAsync();
 
-            session.Events.Append(invoiceId,new InvoiceApproved());
-            session.Events.Append(invoiceId,new InvoicePaid());
+            session.Events.Append(invoiceId, new InvoiceApproved());
+            session.Events.Append(invoiceId, new InvoicePaid());
             await session.SaveChangesAsync();
         }
 
@@ -183,8 +193,8 @@ public class testing_projections
             session.Events.StartStream<Invoice>(invoiceId, new InvoiceCreated("Blue Shoes", 112.24m));
             await session.SaveChangesAsync();
 
-            session.Events.Append(invoiceId,new InvoiceApproved());
-            session.Events.Append(invoiceId,new InvoicePaid());
+            session.Events.Append(invoiceId, new InvoiceApproved());
+            session.Events.Append(invoiceId, new InvoicePaid());
             await session.SaveChangesAsync();
         }
 
@@ -243,8 +253,8 @@ public class testing_projections
             session.Events.StartStream<Invoice>(invoiceId, new InvoiceCreated("Blue Shoes", 112.24m));
             await session.SaveChangesAsync();
 
-            session.Events.Append(invoiceId,new InvoiceApproved());
-            session.Events.Append(invoiceId,new InvoicePaid());
+            session.Events.Append(invoiceId, new InvoiceApproved());
+            session.Events.Append(invoiceId, new InvoicePaid());
             await session.SaveChangesAsync();
         }
 
@@ -308,8 +318,8 @@ public class testing_projections
             session.Events.StartStream<Invoice>(invoiceId, new InvoiceCreated("Blue Shoes", 112.24m));
             await session.SaveChangesAsync();
 
-            session.Events.Append(invoiceId,new InvoiceApproved());
-            session.Events.Append(invoiceId,new InvoicePaid());
+            session.Events.Append(invoiceId, new InvoiceApproved());
+            session.Events.Append(invoiceId, new InvoicePaid());
             await session.SaveChangesAsync();
         }
 

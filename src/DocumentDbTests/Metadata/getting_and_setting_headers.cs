@@ -5,9 +5,9 @@ using Xunit;
 
 namespace DocumentDbTests.Metadata;
 
-public class getting_and_setting_headers : IntegrationContext
+public class getting_and_setting_headers: IntegrationContext
 {
-    public getting_and_setting_headers(DefaultStoreFixture fixture) : base(fixture)
+    public getting_and_setting_headers(DefaultStoreFixture fixture): base(fixture)
     {
     }
 
@@ -20,7 +20,6 @@ public class getting_and_setting_headers : IntegrationContext
         session.SetHeader("a", 1);
         session.Headers.ShouldNotBeNull();
         session.GetHeader("a").ShouldBe(1);
-
     }
 
     [Fact]

@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Marten.Storage;
@@ -254,11 +252,17 @@ internal class UnitOfWork: ISessionWorkTracker
             .Where(x => x != typeof(StorageFeatures))
             .Distinct().ToArray();
 
-        if (rawTypes.Length <= 1) return false;
+        if (rawTypes.Length <= 1)
+        {
+            return false;
+        }
 
         var hasRelationship = rawTypes.Any(x => options.Storage.GetTypeDependencies(x).Intersect(rawTypes).Any());
 
-        if (!hasRelationship) return false;
+        if (!hasRelationship)
+        {
+            return false;
+        }
 
         var types = rawTypes
             .TopologicalSort(type => options.Storage.GetTypeDependencies(type)).ToArray();

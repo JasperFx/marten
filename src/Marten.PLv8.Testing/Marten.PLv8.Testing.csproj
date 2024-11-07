@@ -42,6 +42,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="AssemblyInfo.cs" />
+        <Compile Remove="AssemblyInfo.cs"/>
     </ItemGroup>
 </Project>

@@ -1,10 +1,8 @@
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
-using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
-using Weasel.Postgresql;
 
 namespace Marten.Schema.Arguments;
 

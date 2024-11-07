@@ -1,6 +1,4 @@
-#nullable disable
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using Marten.Exceptions;
@@ -16,9 +14,11 @@ namespace Marten.Linq.Parsing;
 
 internal class SelectParser: ExpressionVisitor
 {
-    private readonly ISerializer _serializer;
     private readonly IQueryableMemberCollection _members;
+    private readonly ISerializer _serializer;
     private string _currentField;
+
+    private bool _hasStarted;
 
     public SelectParser(ISerializer serializer, IQueryableMemberCollection members, Expression expression)
     {
@@ -92,10 +92,7 @@ internal class SelectParser: ExpressionVisitor
     protected override Expression VisitMemberInit(MemberInitExpression node)
     {
         var child = new SelectParser(_serializer, _members, node.NewExpression);
-        foreach (var binding in node.Bindings.OfType<MemberAssignment>())
-        {
-            child.ReadBinding(binding);
-        }
+        foreach (var binding in node.Bindings.OfType<MemberAssignment>()) child.ReadBinding(binding);
 
         if (_currentField == null)
         {
@@ -141,7 +138,10 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression node)
     {
-        if (_currentField == null) return base.VisitMember(node);
+        if (_currentField == null)
+        {
+            return base.VisitMember(node);
+        }
 
         if (node.TryToParseConstant(out var constant))
         {
@@ -155,8 +155,6 @@ internal class SelectParser: ExpressionVisitor
 
         return base.VisitMember(node);
     }
-
-    private bool _hasStarted;
 
     protected override Expression VisitNew(NewExpression node)
     {
@@ -180,16 +178,14 @@ internal class SelectParser: ExpressionVisitor
 
         return node;
     }
-
 }
-
 
 public interface ISelectableMember
 {
     void Apply(IPostgresqlCommandBuilder builder, ISerializer serializer);
 }
 
-internal class NewObject : ISqlFragment
+internal class NewObject: ISqlFragment
 {
     private readonly ISerializer _serializer;
 
@@ -205,7 +201,7 @@ internal class NewObject : ISqlFragment
         builder.Append(" jsonb_build_object(");
 
         var pairs = Members.ToArray();
-        for (int i = 0; i < pairs.Length - 1; i++)
+        for (var i = 0; i < pairs.Length - 1; i++)
         {
             writeMember(builder, pairs[i]);
             builder.Append(", ");
@@ -228,5 +224,4 @@ internal class NewObject : ISqlFragment
             pair.Value.Apply(builder);
         }
     }
-
 }

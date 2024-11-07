@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +19,7 @@ public interface IProjectionDaemon: IDisposable
     ShardStateTracker Tracker { get; }
 
     /// <summary>
-    /// Indicates if this daemon is currently running any subscriptions
+    ///     Indicates if this daemon is currently running any subscriptions
     /// </summary>
     bool IsRunning { get; }
 
@@ -119,19 +118,19 @@ public interface IProjectionDaemon: IDisposable
     AgentStatus StatusFor(string shardName);
 
     /// <summary>
-    /// List of agents that are currently running or paused
+    ///     List of agents that are currently running or paused
     /// </summary>
     /// <returns></returns>
     IReadOnlyList<ISubscriptionAgent> CurrentAgents();
 
     /// <summary>
-    /// Are there any paused agents?
+    ///     Are there any paused agents?
     /// </summary>
     /// <returns></returns>
     bool HasAnyPaused();
 
     /// <summary>
-    /// Will eject a Paused
+    ///     Will eject a Paused
     /// </summary>
     /// <param name="shardName"></param>
     void EjectPausedShard(string shardName);
@@ -245,21 +244,21 @@ public interface IProjectionDaemon: IDisposable
     Task PauseHighWaterAgent();
 
     /// <summary>
-    /// Starts the underlying "high water agent" running if it is not already running. This is an advanced usage
-    /// that's handled automatically for the most part by Marten
+    ///     Starts the underlying "high water agent" running if it is not already running. This is an advanced usage
+    ///     that's handled automatically for the most part by Marten
     /// </summary>
     /// <returns></returns>
     Task StartHighWaterDetectionAsync();
 
     /// <summary>
-    /// Manually stop the "high water agent" inside of this daemon. This is an advanced usage
-    /// that's handled automatically for the most part by Marten
+    ///     Manually stop the "high water agent" inside of this daemon. This is an advanced usage
+    ///     that's handled automatically for the most part by Marten
     /// </summary>
     /// <returns></returns>
     Task PauseHighWaterAgentAsync();
 
     /// <summary>
-    /// Wait until the named shard has been started
+    ///     Wait until the named shard has been started
     /// </summary>
     /// <param name="shardName"></param>
     /// <param name="timeout"></param>
@@ -268,13 +267,16 @@ public interface IProjectionDaemon: IDisposable
 
 
     /// <summary>
-    /// Rewinds a subscription (or projection, so be careful with this usage) to a certain point
-    /// and allows it to restart at that point
+    ///     Rewinds a subscription (or projection, so be careful with this usage) to a certain point
+    ///     and allows it to restart at that point
     /// </summary>
     /// <param name="subscriptionName">Name of the subscription</param>
     /// <param name="token"></param>
     /// <param name="sequenceFloor">The point at which to rewind the subscription. The default is zero</param>
-    /// <param name="timestamp">Optional parameter to rewind the subscription to rerun any events that were posted on or after this time. If Marten cannot determine the sequence, it will do nothing</param>
+    /// <param name="timestamp">
+    ///     Optional parameter to rewind the subscription to rerun any events that were posted on or after
+    ///     this time. If Marten cannot determine the sequence, it will do nothing
+    /// </param>
     /// <returns></returns>
     Task RewindSubscriptionAsync(string subscriptionName, CancellationToken token, long? sequenceFloor = 0,
         DateTimeOffset? timestamp = null);

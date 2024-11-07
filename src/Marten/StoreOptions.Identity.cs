@@ -7,7 +7,6 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
-using Marten.Linq.Members;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
@@ -16,17 +15,24 @@ namespace Marten;
 
 public partial class StoreOptions
 {
+    internal List<ValueTypeInfo> ValueTypes { get; } = new();
+
     internal IDocumentStorage<TDoc, TId> ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking tracking)
     {
         var provider = Providers.StorageFor<TDoc>();
         var raw = provider.Select(tracking);
 
-        if (raw is IDocumentStorage<TDoc, TId> storage) return storage;
+        if (raw is IDocumentStorage<TDoc, TId> storage)
+        {
+            return storage;
+        }
 
         var valueTypeInfo = TryFindValueType(raw.IdType);
         if (valueTypeInfo == null)
+        {
             throw new InvalidOperationException(
                 $"Invalid identifier type for aggregate {typeof(TDoc).FullNameInCode()}. Id type is {raw.IdType.FullNameInCode()}");
+        }
 
         return typeof(ValueTypeIdentifiedDocumentStorage<,,>).CloseAndBuildAs<IDocumentStorage<TDoc, TId>>(
             valueTypeInfo, raw, typeof(TDoc), typeof(TId),
@@ -38,7 +44,8 @@ public partial class StoreOptions
     {
         var idType = idMember.GetMemberType();
 
-        if (!idMemberIsSettable(idMember) && !FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
+        if (!idMemberIsSettable(idMember) &&
+            !FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
             return new NoOpIdGeneration();
         }
@@ -76,8 +83,15 @@ public partial class StoreOptions
 
     private bool idMemberIsSettable(MemberInfo idMember)
     {
-        if (idMember is FieldInfo f) return f.IsPublic;
-        if (idMember is PropertyInfo p) return p.CanWrite && p.SetMethod != null;
+        if (idMember is FieldInfo f)
+        {
+            return f.IsPublic;
+        }
+
+        if (idMember is PropertyInfo p)
+        {
+            return p.CanWrite && p.SetMethod != null;
+        }
 
         return false;
     }
@@ -94,10 +108,10 @@ public partial class StoreOptions
     }
 
     /// <summary>
-    /// Register a custom value type with Marten. Doing this enables Marten
-    /// to use this type correctly within LINQ expressions. The "value type"
-    /// should wrap a single, primitive value with a single public get-able
-    /// property
+    ///     Register a custom value type with Marten. Doing this enables Marten
+    ///     to use this type correctly within LINQ expressions. The "value type"
+    ///     should wrap a single, primitive value with a single public get-able
+    ///     property
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
@@ -113,14 +127,18 @@ public partial class StoreOptions
             valueProperty = type.GetProperties().SingleOrDefaultIfMany();
         }
 
-        if (valueProperty == null || !valueProperty.CanRead) throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
+        if (valueProperty == null || !valueProperty.CanRead)
+        {
+            throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
+        }
 
         var ctor = type.GetConstructors()
-            .FirstOrDefault(x => x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
+            .FirstOrDefault(x =>
+                x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
 
         if (ctor != null)
         {
-            var valueType = new Internal.ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -138,6 +156,4 @@ public partial class StoreOptions
         throw new InvalidValueTypeException(type,
             "Unable to determine either a builder static method or a constructor to use");
     }
-
-    internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
 }

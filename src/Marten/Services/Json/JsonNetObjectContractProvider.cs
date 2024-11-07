@@ -1,108 +1,119 @@
-﻿using System;
+﻿#nullable enable
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-#nullable enable
 
-namespace Marten.Services.Json
+namespace Marten.Services.Json;
+
+public static class JsonNetObjectContractProvider
 {
-    public static class JsonNetObjectContractProvider
+    private static readonly Type ConstructorAttributeType = typeof(JsonConstructorAttribute);
+
+    private static readonly Ref<ImHashMap<string, JsonObjectContract>> Constructors =
+        Ref.Of(ImHashMap<string, JsonObjectContract>.Empty);
+
+    public static JsonObjectContract UsingNonDefaultConstructor(
+        JsonObjectContract contract,
+        Type objectType,
+        Func<ConstructorInfo, JsonPropertyCollection, IList<JsonProperty>> createConstructorParameters)
     {
-        private static readonly Type ConstructorAttributeType = typeof(JsonConstructorAttribute);
-
-        private static readonly Ref<ImHashMap<string, JsonObjectContract>> Constructors =
-            Ref.Of(ImHashMap<string, JsonObjectContract>.Empty);
-
-        public static JsonObjectContract UsingNonDefaultConstructor(
-            JsonObjectContract contract,
-            Type objectType,
-            Func<ConstructorInfo, JsonPropertyCollection, IList<JsonProperty>> createConstructorParameters)
+        var typeName = objectType.AssemblyQualifiedName!;
+        if (Constructors.Value!.TryFind(typeName, out var value))
         {
-            var typeName = objectType.AssemblyQualifiedName!;
-            if (Constructors.Value!.TryFind(typeName, out var value))
-                return value;
-
-            value = OnUsingNonDefaultConstructor(contract, objectType, createConstructorParameters);
-            Constructors.Swap(d => d.AddOrUpdate(typeName, value));
-
             return value;
         }
 
-        private static JsonObjectContract OnUsingNonDefaultConstructor(
-            JsonObjectContract contract,
-            Type objectType,
-            Func<ConstructorInfo, JsonPropertyCollection, IList<JsonProperty>> createConstructorParameters)
+        value = OnUsingNonDefaultConstructor(contract, objectType, createConstructorParameters);
+        Constructors.Swap(d => d.AddOrUpdate(typeName, value));
+
+        return value;
+    }
+
+    private static JsonObjectContract OnUsingNonDefaultConstructor(
+        JsonObjectContract contract,
+        Type objectType,
+        Func<ConstructorInfo, JsonPropertyCollection, IList<JsonProperty>> createConstructorParameters)
+    {
+        var nonDefaultConstructor = GetNonDefaultConstructor(objectType);
+
+        if (nonDefaultConstructor == null)
         {
-            var nonDefaultConstructor = GetNonDefaultConstructor(objectType);
-
-            if (nonDefaultConstructor == null) return contract;
-
-            contract.OverrideCreator = GetObjectConstructor(nonDefaultConstructor);
-            contract.CreatorParameters.Clear();
-            foreach (var constructorParameter in
-                     createConstructorParameters(nonDefaultConstructor, contract.Properties))
-            {
-                contract.CreatorParameters.Add(constructorParameter);
-            }
-
             return contract;
         }
 
+        contract.OverrideCreator = GetObjectConstructor(nonDefaultConstructor);
+        contract.CreatorParameters.Clear();
+        foreach (var constructorParameter in
+                 createConstructorParameters(nonDefaultConstructor, contract.Properties))
+            contract.CreatorParameters.Add(constructorParameter);
 
-        private static ObjectConstructor<object> GetObjectConstructor(MethodBase method)
+        return contract;
+    }
+
+
+    private static ObjectConstructor<object> GetObjectConstructor(MethodBase method)
+    {
+        var c = method as ConstructorInfo;
+
+        if (c == null)
         {
-            var c = method as ConstructorInfo;
-
-            if (c == null)
-                return a => method.Invoke(null, a)!;
-
-            if (!c.GetParameters().Any())
-                return _ => c.Invoke(Array.Empty<object?>());
-
-            return a => c.Invoke(a);
+            return a => method.Invoke(null, a)!;
         }
 
-        private static ConstructorInfo? GetNonDefaultConstructor(Type objectType)
+        if (!c.GetParameters().Any())
         {
-            // Use default contract for non-object types.
-            if (objectType.IsPrimitive || objectType.IsEnum)
-                return null;
-
-            return GetAttributeConstructor(objectType)
-                   ?? GetTheMostSpecificConstructor(objectType);
+            return _ => c.Invoke(Array.Empty<object?>());
         }
 
-        private static ConstructorInfo? GetAttributeConstructor(Type objectType)
-        {
-            var constructors = objectType
-                .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .Where(c => c.GetCustomAttributes().Any(a => a.GetType() == ConstructorAttributeType)).ToList();
+        return a => c.Invoke(a);
+    }
 
-            return constructors.Count switch
+    private static ConstructorInfo? GetNonDefaultConstructor(Type objectType)
+    {
+        // Use default contract for non-object types.
+        if (objectType.IsPrimitive || objectType.IsEnum)
+        {
+            return null;
+        }
+
+        return GetAttributeConstructor(objectType)
+               ?? GetTheMostSpecificConstructor(objectType);
+    }
+
+    private static ConstructorInfo? GetAttributeConstructor(Type objectType)
+    {
+        var constructors = objectType
+            .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .Where(c => c.GetCustomAttributes().Any(a => a.GetType() == ConstructorAttributeType)).ToList();
+
+        return constructors.Count switch
+        {
+            1 => constructors[0],
+            > 1 => throw new JsonException($"Multiple constructors with a {ConstructorAttributeType.Name}."),
+            _ => null
+        };
+    }
+
+    private static ConstructorInfo? GetTheMostSpecificConstructor(Type objectType)
+    {
+        return objectType
+            .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+            .OrderByDescending(e => e.GetParameters().Length)
+            .ThenBy(c =>
             {
-                1 => constructors[0],
-                > 1 => throw new JsonException($"Multiple constructors with a {ConstructorAttributeType.Name}."),
-                _ => null
-            };
-        }
+                var parameters = c.GetParameters();
 
-        private static ConstructorInfo? GetTheMostSpecificConstructor(Type objectType) =>
-            objectType
-                .GetConstructors(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .OrderByDescending(e => e.GetParameters().Length)
-                .ThenBy(c =>
-                {
-                    var parameters = c.GetParameters();
-
-                    // Records have a generated by the compiler private copy constructor
-                    // with a single parameter equal to the record type.
-                    // Let's give it a lower priority.
-                    return parameters.Length == 1 && parameters.Single().ParameterType == objectType;
-                })
-                .ThenBy(c => c.IsPublic)
-                .FirstOrDefault();
+                // Records have a generated by the compiler private copy constructor
+                // with a single parameter equal to the record type.
+                // Let's give it a lower priority.
+                return parameters.Length == 1 && parameters.Single().ParameterType == objectType;
+            })
+            .ThenBy(c => c.IsPublic)
+            .FirstOrDefault();
     }
 }

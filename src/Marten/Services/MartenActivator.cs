@@ -6,7 +6,6 @@ using Marten.Schema;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 
@@ -33,33 +32,39 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
     public async Task<AttainLockResult> TryAttainLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct)
+        var result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, ct)
             .ConfigureAwait(false);
 
         if (result.Succeeded || result.ShouldReconnect)
+        {
             return result;
+        }
 
         await Task.Delay(50, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, ct).ConfigureAwait(false);
 
         if (result.Succeeded || result.ShouldReconnect)
+        {
             return result;
+        }
 
         await Task.Delay(100, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, ct).ConfigureAwait(false);
 
         if (result.Succeeded || result.ShouldReconnect)
+        {
             return result;
+        }
 
         await Task.Delay(250, ct).ConfigureAwait(false);
-        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct).ConfigureAwait(false);
+        result = await conn.TryGetGlobalLock(Store.Options.ApplyChangesLockId, ct).ConfigureAwait(false);
 
         return result;
     }
 
     public Task ReleaseLock(NpgsqlConnection conn, CancellationToken ct = default)
     {
-        return conn.ReleaseGlobalLock(Store.Options.ApplyChangesLockId, cancellation: ct);
+        return conn.ReleaseGlobalLock(Store.Options.ApplyChangesLockId, ct);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -87,9 +92,7 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
         if (Store.Options.ShouldAssertDatabaseMatchesConfigurationOnStartup)
         {
             foreach (var database in databases)
-            {
                 await database.AssertDatabaseMatchesConfigurationAsync(cancellationToken).ConfigureAwait(false);
-            }
         }
 
         foreach (var initialData in Store.Options.InitialData)

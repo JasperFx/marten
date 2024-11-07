@@ -12,9 +12,13 @@ public class GenericTypeToPersist<T>
     public Guid Id { get; set; } = Guid.NewGuid();
 }
 
-public class TypeA { }
+public class TypeA
+{
+}
 
-public class TypeB { }
+public class TypeB
+{
+}
 
 public class ability_to_persist_generic_types: BugIntegrationContext
 {
@@ -32,10 +36,6 @@ public class ability_to_persist_generic_types: BugIntegrationContext
         var doc2B = await theSession.LoadAsync<GenericTypeToPersist<TypeA>>(doc2A.Id);
         doc2A.ShouldNotBeNull();
         doc2B.ShouldNotBeNull();
-    }
-
-    public ability_to_persist_generic_types()
-    {
     }
 }
 
@@ -58,5 +58,4 @@ public class ability_to_persist_nested_generic_types: BugIntegrationContext
     {
         public Guid Id = Guid.NewGuid();
     }
-
 }

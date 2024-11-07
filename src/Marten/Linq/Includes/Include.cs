@@ -39,7 +39,8 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary) where T : notnull where TId : notnull
+    public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary)
+        where T : notnull where TId : notnull
     {
         var storage = session.StorageFor<T>();
         if (storage is IDocumentStorage<T, TId> s)

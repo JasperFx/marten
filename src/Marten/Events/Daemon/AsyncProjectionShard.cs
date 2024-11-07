@@ -33,20 +33,14 @@ public class AsyncProjectionShard
         SubscriptionSource = source;
     }
 
-    public ShardRole Role => Source != null ? ShardRole.Projection : ShardRole.Subscription;
-
-    public ISubscriptionSource SubscriptionSource { get; }
-
     public AsyncProjectionShard(IProjectionSource source): this(ShardName.All,
         source)
     {
     }
 
-    internal void OverrideProjectionName(string projectionName)
-    {
-        var name = new ShardName(projectionName, Name.Key);
-        Name = name;
-    }
+    public ShardRole Role => Source != null ? ShardRole.Projection : ShardRole.Subscription;
+
+    public ISubscriptionSource SubscriptionSource { get; }
 
     public IProjectionSource Source { get; }
 
@@ -55,6 +49,17 @@ public class AsyncProjectionShard
     public IReadOnlyList<Type> EventTypes { get; init; }
 
     public bool IncludeArchivedEvents { get; set; }
+
+    /// <summary>
+    ///     The identity of this projection shard
+    /// </summary>
+    public ShardName Name { get; private set; }
+
+    internal void OverrideProjectionName(string projectionName)
+    {
+        var name = new ShardName(projectionName, Name.Key);
+        Name = name;
+    }
 
     // TODO -- reuse this somewhere
     public IEnumerable<ISqlFragment> BuildFilters(DocumentStore store)
@@ -74,9 +79,4 @@ public class AsyncProjectionShard
             yield return IsNotArchivedFilter.Instance;
         }
     }
-
-    /// <summary>
-    ///     The identity of this projection shard
-    /// </summary>
-    public ShardName Name { get; private set; }
 }

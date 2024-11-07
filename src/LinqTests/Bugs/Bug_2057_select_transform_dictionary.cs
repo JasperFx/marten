@@ -6,7 +6,6 @@ using JasperFx;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 
 namespace LinqTests.Bugs;
 
@@ -26,12 +25,7 @@ public class Bug_2057_select_transform_dictionary: BugIntegrationContext
         await using var session = documentStore.LightweightSession();
         session.Store(new TestEntity
         {
-            Name = "Test",
-            Values = new Dictionary<string, string>
-            {
-                { "Key", "Value" },
-                { "Key2", "Value2" }
-            }
+            Name = "Test", Values = new Dictionary<string, string> { { "Key", "Value" }, { "Key2", "Value2" } }
         });
 
         await session.SaveChangesAsync();
@@ -39,12 +33,8 @@ public class Bug_2057_select_transform_dictionary: BugIntegrationContext
         await using var querySession = documentStore.QuerySession();
 
         var results = await querySession.Query<TestEntity>()
-            .Select(x => new TestDto
-            {
-                Name = x.Name,
-                Values = x.Values
-            })
-            .ToListAsync<TestDto>();
+            .Select(x => new TestDto { Name = x.Name, Values = x.Values })
+            .ToListAsync();
 
         results.Count.ShouldBe(1);
         results[0].Name.ShouldBe("Test");
@@ -63,8 +53,6 @@ public class TestEntity
     public Dictionary<string, string> Values { get; set; }
     public List<Guid> OtherIds { get; set; }
 }
-
-
 
 public class TestDto
 {

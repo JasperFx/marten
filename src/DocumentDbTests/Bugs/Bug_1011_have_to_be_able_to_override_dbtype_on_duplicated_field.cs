@@ -15,8 +15,8 @@ public class Bug_1011_have_to_be_able_to_override_dbtype_on_duplicated_field: Bu
     {
         StoreOptions(_ =>
         {
-            _.Schema.For<DocWithDateTimeField>().Duplicate(x => x.Date, pgType: "timestamp without time zone",
-                dbType: NpgsqlDbType.Timestamp);
+            _.Schema.For<DocWithDateTimeField>().Duplicate(x => x.Date, "timestamp without time zone",
+                NpgsqlDbType.Timestamp);
         });
 
         var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
@@ -31,8 +31,8 @@ public class Bug_1011_have_to_be_able_to_override_dbtype_on_duplicated_field: Bu
     {
         StoreOptions(_ =>
         {
-            _.Schema.For<DocWithDateTimeField>().Duplicate(x => x.Date, pgType: "timestamp without time zone",
-                dbType: NpgsqlDbType.Timestamp);
+            _.Schema.For<DocWithDateTimeField>().Duplicate(x => x.Date, "timestamp without time zone",
+                NpgsqlDbType.Timestamp);
         });
 
         var field = theStore.StorageFeatures.MappingFor(typeof(DocWithDateTimeField))
@@ -55,5 +55,4 @@ public class Bug_1011_have_to_be_able_to_override_dbtype_on_duplicated_field: Bu
         [DuplicateField(DbType = NpgsqlDbType.Timestamp, PgType = "timestamp without time zone")]
         public DateTime Date { get; set; }
     }
-
 }

@@ -13,9 +13,15 @@
     <img src="https://github.com/user-attachments/assets/f052d5a7-1f49-4aa7-91f6-cba415988d14" alt="marten logo" width="70%">
 </div>
 
-The Marten library provides .NET developers with the ability to use the proven [PostgreSQL database engine](http://www.postgresql.org/) and its [fantastic JSON support](https://web.archive.org/web/20230127180328/https://www.compose.com/articles/is-postgresql-your-next-json-database/) as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team believes that a document database has far reaching benefits for developer productivity over relational databases with or without an ORM tool.
+The Marten library provides .NET developers with the ability to use the
+proven [PostgreSQL database engine](http://www.postgresql.org/) and
+its [fantastic JSON support](https://web.archive.org/web/20230127180328/https://www.compose.com/articles/is-postgresql-your-next-json-database/)
+as a fully fledged [document database](https://en.wikipedia.org/wiki/Document-oriented_database). The Marten team
+believes that a document database has far reaching benefits for developer productivity over relational databases with or
+without an ORM tool.
 
-Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
+Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event
+streams.
 
 Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
 
@@ -25,7 +31,8 @@ Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.i
     <img src="https://www.jasperfx.net/logo.png" alt="JasperFx logo" width="70%">
 </div>
 
-While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2) for Marten.
+While Marten is open source, [JasperFx Software offers paid support and consulting contracts](https://bit.ly/3szhwT2)
+for Marten.
 
 ## Help us keep working on this project 💚
 
@@ -52,48 +59,63 @@ Available [here](https://dotnet.microsoft.com/download)
 
 ### 2. PostgreSQL 12 or above database
 
-The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
+The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have
+Docker running on your local box, type:
 `docker-compose up`
 or
 `dotnet run --framework net6.0 -- init-db`
-at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this database if no
+at the command line to spin up a Postgresql database withThe default Marten test configuration tries to find this
+database if no
 PostgreSQL database connection string is explicitly configured following the steps below:
 
 ### Native Partial Updates/Patching
 
-Marten supports native patching since v7.x. you can refer to [patching api](https://martendb.io/documents/partial-updates-patching.html) for more details.
+Marten supports native patching since v7.x. you can refer
+to [patching api](https://martendb.io/documents/partial-updates-patching.html) for more details.
 
 ### PLV8
 
-If you'd like to use [PLV8 Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
+If you'd like to use [PLV8 Patching Api](https://martendb.io/documents/plv8.html#the-patching-api) you need to enable
+the PLV8 extension inside of PostgreSQL for running JavaScript stored procedures for the nascent projection support.
 
-Note that PLV8 patching will be deprecated in future versions and native patching is the drop in replacement for it. You can easily migrate to native patching, refer [here](https://martendb.io/documents/partial-updates-patching.html#patching-api) for more details.
+Note that PLV8 patching will be deprecated in future versions and native patching is the drop in replacement for it. You
+can easily migrate to native patching,
+refer [here](https://martendb.io/documents/partial-updates-patching.html#patching-api) for more details.
 
 Ensure the following:
 
 - The login you are using to connect to your database is a member of the `postgres` role
-- An environment variable of `marten_testing_database` is set to the connection string for the database you want to use as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more information about PostgreSQL connection strings ).
+- An environment variable of `marten_testing_database` is set to the connection string for the database you want to use
+  as a testbed. (See the [Npgsql documentation](http://www.npgsql.org/doc/connection-string-parameters.html) for more
+  information about PostgreSQL connection strings ).
 
 _Help with PSQL/PLV8_
 
-- On Windows, see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html) for pre-built binaries of PLV8
-- On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance including PLV8.
+- On Windows,
+  see [this link](http://www.postgresonline.com/journal/archives/360-PLV8-binaries-for-PostgreSQL-9.5-windows-both-32-bit-and-64-bit.html)
+  for pre-built binaries of PLV8
+- On *nix, check [marten-local-db](https://github.com/eouw0o83hf/marten-local-db) for a Docker based PostgreSQL instance
+  including PLV8.
 
 ### Test Config Customization
 
-Some of our tests are run against a particular PostgreSQL version. If you'd like to run different database versions, you can do it by setting `POSTGRES_IMAGE` env variables, for instance:
+Some of our tests are run against a particular PostgreSQL version. If you'd like to run different database versions, you
+can do it by setting `POSTGRES_IMAGE` env variables, for instance:
 
 ```bash
 POSTGRES_IMAGE=postgres:15.3-alpine docker compose up
 ```
 
-Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce it by setting `postgresql_version` to a specific one (e.g.)
+Tests explorer should be able to detect database version automatically, but if it's not able to do it, you can enforce
+it by setting `postgresql_version` to a specific one (e.g.)
 
 ```shell
 postgresql_version=15.3
 ```
 
-Once you have the codebase and the connection string file, run the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the solution.
+Once you have the codebase and the connection string file, run
+the [build command](https://github.com/JasperFx/marten#build-commands) or use the dotnet CLI to restore and build the
+solution.
 
 You are now ready to contribute to Marten.
 
@@ -153,7 +175,8 @@ to run in parallel for better throughput.
 
 ### Mocha Specs
 
-Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the mocha specifications
+Refer to the build commands section to look up the commands to run Mocha tests. There is also `npm run tdd` to run the
+mocha specifications
 in a watched mode with growl turned on.
 
 > Note: remember to run `npm install`
@@ -177,13 +200,17 @@ Refer to build commands section to look up the commands to open the StoryTeller 
 
 ## Documentation
 
-All the documentation is written in Markdown and the docs are published as a static site hosted in Netlify. v4.x and v3.x use different documentation tools hence are detailed below in separate sub-sections.
+All the documentation is written in Markdown and the docs are published as a static site hosted in Netlify. v4.x and
+v3.x use different documentation tools hence are detailed below in separate sub-sections.
 
 ### v4.x and above
 
-[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with this, [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) is used for adding code snippets to docs from source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
+[VitePress](https://vitepress.vuejs.org/) is used as documentation tool. Along with
+this, [MarkdownSnippets](https://github.com/SimonCropp/MarkdownSnippets) is used for adding code snippets to docs from
+source code and [Algolia DocSearch](https://docsearch.algolia.com/) is used for searching the docs via the search box.
 
-The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the docs locally use `npm run docs` with auto-refresh on any changes.
+The documentation content is the Markdown files in the `/docs` directory directly under the project root. To run the
+docs locally use `npm run docs` with auto-refresh on any changes.
 
 To add code samples/snippets from the tests in docs, follow the steps below:
 
@@ -196,7 +223,8 @@ Use C# named regions to mark a code block as described in the sample below
 #endregion
 ```
 
-All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use snake case for the identifiers with words in lower case.
+All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds
+to a sample code/snippet used in docs. Recommend to use snake case for the identifiers with words in lower case.
 
 Use the below to include the code snippet in a docs page
 
@@ -205,22 +233,30 @@ Use the below to include the code snippet in a docs page
 &#60;!-- endSnippet -->
 </pre>
 
-Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with the actual code snippet from the source code. Please commit the changes with the auto-generated inline code snippet as-is after you preview the docs page. This helps with easier change tracking when you send PR's.
+Note that when you run the docs locally, the above placeholder block in the Markdown file will get updated inline with
+the actual code snippet from the source code. Please commit the changes with the auto-generated inline code snippet
+as-is after you preview the docs page. This helps with easier change tracking when you send PR's.
 
 Few gotchas:
 
-- Any changes to the code snippets will need to done in the source code. Do not edit/update any of the auto-generated inline code snippet directly in the Markdown files.
-- The latest snippet are always pulled into the docs while we publish the docs. Hence do not worry about the inline code snippet in Markdown file getting out of sync with the snippet in source code.
+- Any changes to the code snippets will need to done in the source code. Do not edit/update any of the auto-generated
+  inline code snippet directly in the Markdown files.
+- The latest snippet are always pulled into the docs while we publish the docs. Hence do not worry about the inline code
+  snippet in Markdown file getting out of sync with the snippet in source code.
 
 ### v3.x
 
-[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to done in [3.14 branch](https://github.com/JasperFx/marten/tree/3.14). To run the documentation website locally with auto-refresh, refer to the build commands section above.
+[stdocs](https://www.nuget.org/packages/dotnet-stdocs/) is used as documentation tool. The documentation content is the
+markdown files in the `/documentation` directory directly under the project root. Any updates to v3.x docs will need to
+done in [3.14 branch](https://github.com/JasperFx/marten/tree/3.14). To run the documentation website locally with
+auto-refresh, refer to the build commands section above.
 
 If you wish to insert code samples/snippet to a documentation page from the tests, wrap the code you wish to insert with
 `// SAMPLE: name-of-sample` and `// ENDSAMPLE`.
 Then to insert that code to the documentation, add `<[sample:name-of-sample]>`.
 
-> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the command for publishing docs.
+> Note: content is published to the `gh-pages` branch of this repository. Refer to build commands section to lookup the
+> command for publishing docs.
 
 ## License
 
@@ -230,4 +266,5 @@ Marten is provided as-is under the MIT license. For more information see [LICENS
 
 ## Code of Conduct
 
-This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to clarify expected behavior in our community.
+This project has adopted the code of conduct defined by the [Contributor Covenant](http://contributor-covenant.org/) to
+clarify expected behavior in our community.

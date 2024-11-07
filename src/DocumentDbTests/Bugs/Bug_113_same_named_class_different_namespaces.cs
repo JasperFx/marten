@@ -9,6 +9,7 @@ namespace DocumentDbTests.Bugs
     public class Bug_113_same_named_class_different_namespaces: BugIntegrationContext
     {
         #region sample_can_select_from_the_same_table
+
         [Fact]
         public async Task can_select_from_the_same_table()
         {
@@ -23,10 +24,10 @@ namespace DocumentDbTests.Bugs
         }
 
         #endregion
-
     }
 
     #region sample_structural_typing_classes
+
     namespace Area1
     {
         public class Product

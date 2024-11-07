@@ -105,6 +105,7 @@ public class PagedList<T>: IPagedList<T>
     /// <summary>
     ///     Static method to create a new instance of the <see cref="PagedList{T}
     /// 
+    /// 
     /// </summary>
     /// <param name="queryable"></param>
     /// <param name="pageNumber"></param>
@@ -118,6 +119,7 @@ public class PagedList<T>: IPagedList<T>
 
     /// <summary>
     ///     Async static method to create a new instance of the <see cref="PagedList{T}
+    /// 
     /// 
     /// </summary>
     /// <param name="queryable"></param>

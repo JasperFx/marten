@@ -1,7 +1,7 @@
 # Marten LINQ Notes
 
 A LINQ provider is an awesomely useful arrow in the .NET quiver, and arguably the one single thing that .NET has for development that no
-other ecosystem can truly match. That said, it's also an unholy nightmare for us, the maintainers of Marten, to adequately support. 
+other ecosystem can truly match. That said, it's also an unholy nightmare for us, the maintainers of Marten, to adequately support.
 This guide is attempting to explain the LINQ subsystem for whoever is brave enough to delve into the LINQ support for whatever random
 "why would you try to do that?" use case that's currently broken.
 
@@ -40,7 +40,7 @@ All told, the LINQ provider consists of these related models:
 ## Entry Point Model
 
 The entry point for all LINQ queries with Marten is the `MartenLinqQueryable<T>` class. As users make subsequent calls to chain
-operators on `MartenLinqQueryable<T>` the internal .NET LINQ mechanics are 
+operators on `MartenLinqQueryable<T>` the internal .NET LINQ mechanics are
 creating one big [Expression](https://learn.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression?view=net-8.0) model, that will later be parsed to create a query handler.
 
 ```mermaid
@@ -119,8 +119,8 @@ classDiagram
 
 ## Compiling to Statement Model
 
-The translation step to compile the `CollectionUsage` model and bits and bobs of the `Expression` elements to an executable `Statement` is the 
-most complex part of the LINQ provider. 
+The translation step to compile the `CollectionUsage` model and bits and bobs of the `Expression` elements to an executable `Statement` is the
+most complex part of the LINQ provider.
 
 ```mermaid
 classDiagram
@@ -187,7 +187,6 @@ Some notes:
 * `IQueryableMember` represents a usable field (or duplicated field) inside the serialized JSON document body, and memoizes information about locators. We encapsulate
   variable type specific handling in the implementations of this interface
 * The `Statement` model is a double linked list structure. Most LINQ queries can be done with one statement, but more complex queries within child collections, `Include()` operator usage, or `SelectMany()` usage will force Marten to need multiple SQL statements. `Distinct()` will frequently require the usage of multiple statements as well
-
 
 ## Execution Model
 

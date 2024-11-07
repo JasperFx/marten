@@ -1,32 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-<<<<<<< HEAD
         <TargetFrameworks>net7.0;net8.0;net9.0</TargetFrameworks>
-=======
-        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten\Marten.csproj" />
-        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
-        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+        <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
     <ItemGroup>
-<<<<<<< HEAD
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
         <PackageReference Include="Lamar" Version="14.0.1" />
-=======
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <PrivateAssets>all</PrivateAssets>
@@ -35,6 +28,16 @@
         <PackageReference Include="xunit" Version="2.9.2" />
         <PackageReference Include="NSubstitute" Version="5.1.0" />
         <PackageReference Include="Shouldly" Version="4.2.1" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="xunit" Version="2.8.1"/>
+        <PackageReference Include="NSubstitute" Version="5.1.0"/>
+        <PackageReference Include="Shouldly" Version="4.2.1"/>
     </ItemGroup>
 
     <ItemGroup>
@@ -122,40 +125,40 @@
         <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
             <Link>Harness\TestsSettings.cs</Link>
         </Compile>
-        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameWithFieldsCompiledQuerySource1406914266.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameCompiledQuerySource1731835173.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserProjectionToLoginPayloadCompiledQuerySource644855229.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameStartsWithCompiledQuerySource1368662454.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameEndsWithCompiledQuerySource575560707.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsInsensitiveCompiledQuerySource1149292827.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsCompiledQuerySource1819506690.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserCountByFirstNameCompiledQuerySource635059239.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameWithFieldsCompiledQuerySource32749610.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameSingleOrDefaultCompiledQuerySource375016023.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameCompiledQuerySource372230447.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\TestQueryCompiledQuerySource2107566787.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\FindUserByAllTheThingsCompiledQuerySource1212126941.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\FindJsonUsersByUsernameCompiledQuerySource857172819.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery2CompiledQuerySource1513358228.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery1CompiledQuerySource1513358227.cs" />
+        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameWithFieldsCompiledQuerySource1406914266.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UsersByFirstNameCompiledQuerySource1731835173.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserProjectionToLoginPayloadCompiledQuerySource644855229.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserNameStartsWithCompiledQuerySource1368662454.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserNameEndsWithCompiledQuerySource575560707.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsInsensitiveCompiledQuerySource1149292827.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserNameContainsCompiledQuerySource1819506690.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserCountByFirstNameCompiledQuerySource635059239.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameWithFieldsCompiledQuerySource32749610.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameSingleOrDefaultCompiledQuerySource375016023.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\UserByUsernameCompiledQuerySource372230447.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\TestQueryCompiledQuerySource2107566787.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\FindUserByAllTheThingsCompiledQuerySource1212126941.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\FindJsonUsersByUsernameCompiledQuerySource857172819.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery2CompiledQuerySource1513358228.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\CompiledQuery1CompiledQuerySource1513358227.cs"/>
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>
-        <Compile Remove="Internal\Generated\DocumentStorage\TaskProvider74835621.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\RouteDetailsProvider784762106.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\RootProvider493946136.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\MyClassProvider52903863.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\DocWithUintProvider1372666391.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\DocWithArraysProvider1391541541.cs" />
-        <Compile Remove="Internal\Generated\DocumentStorage\CarProvider343829114.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameStartsWithCompiledQuerySource2116019653.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameEndsWithCompiledQuerySource628653900.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameContainsCompiledQuerySource893470325.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersCompiledQuerySource272805147.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersAndParamCompiledQuerySource813614947.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyFunnyTargetQueryCompiledQuerySource1643467126.cs" />
-        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyCompiledNestedQueryCompiledQuerySource970855369.cs" />
-        <Compile Remove="AssemblyInfo.cs" />
+        <Compile Remove="Internal\Generated\DocumentStorage\TaskProvider74835621.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\RouteDetailsProvider784762106.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\RootProvider493946136.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\MyClassProvider52903863.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\DocWithUintProvider1372666391.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\DocWithArraysProvider1391541541.cs"/>
+        <Compile Remove="Internal\Generated\DocumentStorage\CarProvider343829114.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameStartsWithCompiledQuerySource2116019653.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameEndsWithCompiledQuerySource628653900.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyWhereUsernameContainsCompiledQuerySource893470325.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersCompiledQuerySource272805147.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyIssueWithUsersAndParamCompiledQuerySource813614947.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyFunnyTargetQueryCompiledQuerySource1643467126.cs"/>
+        <Compile Remove="Internal\Generated\CompiledQueries\QueryOnlyCompiledNestedQueryCompiledQuerySource970855369.cs"/>
+        <Compile Remove="AssemblyInfo.cs"/>
     </ItemGroup>
 
     <PropertyGroup>

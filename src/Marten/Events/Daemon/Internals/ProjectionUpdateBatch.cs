@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
+using Marten.Storage;
 using Weasel.Core.Operations;
 
 namespace Marten.Events.Daemon.Internals;
@@ -20,19 +21,21 @@ namespace Marten.Events.Daemon.Internals;
 /// <summary>
 ///     Incrementally built batch command for projection updates
 /// </summary>
-public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable, ISessionWorkTracker
+public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable, ISessionWorkTracker, IProjectionBatch
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
     private readonly DaemonSettings _settings;
     private readonly CancellationToken _token;
     private OperationPage? _current;
-    private DocumentSessionBase? _session;
+    private readonly DocumentSessionBase _session;
 
     private IMartenSession Session
     {
         get => _session ?? throw new InvalidOperationException("Session already released");
     }
+
+    public IMartenDatabase Database => _session.Database;
 
     public List<IChangeListener> Listeners { get; } = new();
 
@@ -40,8 +43,12 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public bool ShouldApplyListeners { get; set; }
 
-    internal ProjectionUpdateBatch(DaemonSettings settings,
-        DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
+    public Task ExecuteAsync(CancellationToken token)
+    {
+        return _session.ExecuteBatchAsync(this, token);
+    }
+
+    internal ProjectionUpdateBatch(DaemonSettings settings, DocumentSessionBase session, ShardExecutionMode mode, CancellationToken token)
     {
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
@@ -53,7 +60,23 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
                 MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token
             });
 
-        startNewPage(session);
+        startNewPage(_session);
+    }
+
+    internal ProjectionUpdateBatch(DocumentStore store, IMartenDatabase database, ShardExecutionMode mode,
+        CancellationToken token)
+    {
+        _settings = store.Options.Projections;
+        _session = (DocumentSessionBase)store.OpenSession(SessionOptions.ForDatabase(database));
+        _token = token;
+        Mode = mode;
+        Queue = new ActionBlock<IStorageOperation>(processOperation,
+            new ExecutionDataflowBlockOptions
+            {
+                MaxDegreeOfParallelism = 1, EnsureOrdered = true, CancellationToken = token
+            });
+
+        startNewPage(_session);
     }
 
     public Task WaitForCompletion()
@@ -296,7 +319,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         if (_session != null)
         {
             await _session.DisposeAsync().ConfigureAwait(true);
-            _session = null;
         }
 
         Dispose(disposing: false);
@@ -313,8 +335,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         foreach (var page in _pages) page.ReleaseSession();
 
         _session?.Dispose();
-
-        _session = null;
     }
 
     private IMessageBatch? _batch;

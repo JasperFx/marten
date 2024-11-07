@@ -1,10 +1,8 @@
 #nullable enable
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
-using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -31,9 +29,11 @@ internal class IsOneOf: IMethodCallParser
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
-        else if (queryableMember is IValueTypeMember valueTypeMember)
+
+        if (queryableMember is IValueTypeMember valueTypeMember)
         {
-            return new IsOneOfFilter(queryableMember, new CommandParameter(valueTypeMember.ConvertFromWrapperArray(values)));
+            return new IsOneOfFilter(queryableMember,
+                new CommandParameter(valueTypeMember.ConvertFromWrapperArray(values)));
         }
 
         return new IsOneOfFilter(queryableMember, new CommandParameter(values));
@@ -58,5 +58,4 @@ internal class IsOneOfFilter: ISqlFragment
         _parameter.Apply(builder);
         builder.Append(')');
     }
-
 }

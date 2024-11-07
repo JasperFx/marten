@@ -45,11 +45,17 @@ public class Version2: SingleStreamProjection<MyAggregate>
         ProjectionVersion = 2;
     }
 
-    public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount++;
+    public void Apply(MyAggregate aggregate, AEvent e)
+    {
+        aggregate.ACount++;
+    }
 }
 
 [ProjectionVersion(3)]
 public class OtherAggregate: MyAggregate
 {
-    public void Apply(AEvent e) => ACount++;
+    public void Apply(AEvent e)
+    {
+        ACount++;
+    }
 }

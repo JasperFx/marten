@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.PLv8.Transforms;
@@ -15,9 +14,8 @@ public class TargetNumbers
     public long two { get; set; }
 }
 
-public class select_many_with_transform : OneOffConfigurationsContext
+public class select_many_with_transform: OneOffConfigurationsContext
 {
-
     [Fact]
     public async Task project_select_many_with_javascript()
     {
@@ -43,5 +41,4 @@ public class select_many_with_transform : OneOffConfigurationsContext
 
         jsonList.Count.ShouldBe(count);
     }
-
 }

@@ -3,9 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -15,14 +12,16 @@ namespace DaemonTests;
 
 public class SubscriptionAgentTests
 {
-    private IEventLoader theLoader = Substitute.For<IEventLoader>();
-    private AsyncOptions theOptions = new();
-    private ISubscriptionExecution theExecution = Substitute.For<ISubscriptionExecution>();
-    private SubscriptionAgent theAgent;
+    private readonly SubscriptionAgent theAgent;
+    private readonly ISubscriptionExecution theExecution = Substitute.For<ISubscriptionExecution>();
+    private readonly IEventLoader theLoader = Substitute.For<IEventLoader>();
+    private readonly AsyncOptions theOptions = new();
 
     public SubscriptionAgentTests()
     {
-        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, TimeProvider.System, theLoader, theExecution, new ShardStateTracker(NullLogger.Instance), Substitute.For<ISubscriptionMetrics>(), NullLogger.Instance);
+        theAgent = new SubscriptionAgent(new ShardName("Projection1"), theOptions, TimeProvider.System, theLoader,
+            theExecution, new ShardStateTracker(NullLogger.Instance), Substitute.For<ISubscriptionMetrics>(),
+            NullLogger.Instance);
     }
 
     [Fact]
@@ -55,13 +54,11 @@ public class SubscriptionAgentTests
 
         var request = new EventRequest
         {
-            HighWater = highWaterMark,
-            BatchSize = theOptions.BatchSize,
-            Floor = lastCommitted
+            HighWater = highWaterMark, BatchSize = theOptions.BatchSize, Floor = lastCommitted
         };
 
         // Little messy here
-        var page = new EventPage(lastCommitted) { new Event<AEvent>(new AEvent()){Sequence = 4} };
+        var page = new EventPage(lastCommitted) { new Event<AEvent>(new AEvent()) { Sequence = 4 } };
         page.CalculateCeiling(theOptions.BatchSize, highWaterMark);
 
         theLoader.LoadAsync(request, theAgent.CancellationToken).Returns(page);
@@ -77,20 +74,19 @@ public class SubscriptionAgentTests
     }
 
     [Fact]
-    public async Task when_starting_and_the_high_water_mark_is_non_zero_but_the_last_committed_is_zero_bigger_high_water()
+    public async Task
+        when_starting_and_the_high_water_mark_is_non_zero_but_the_last_committed_is_zero_bigger_high_water()
     {
         var highWaterMark = 1000;
         var lastCommitted = 0;
 
         var expectedRequest = new EventRequest
         {
-            HighWater = highWaterMark,
-            BatchSize = theOptions.BatchSize,
-            Floor = lastCommitted
+            HighWater = highWaterMark, BatchSize = theOptions.BatchSize, Floor = lastCommitted
         };
 
         // Little messy here
-        var page = new EventPage(lastCommitted) { new Event<AEvent>(new AEvent()){Sequence = 4} };
+        var page = new EventPage(lastCommitted) { new Event<AEvent>(new AEvent()) { Sequence = 4 } };
         page.CalculateCeiling(theOptions.BatchSize, highWaterMark);
 
         theLoader.LoadAsync(expectedRequest, theAgent.CancellationToken).Returns(page);
@@ -116,13 +112,11 @@ public class SubscriptionAgentTests
 
         var expectedRequest = new EventRequest
         {
-            HighWater = highWaterMark,
-            BatchSize = theOptions.BatchSize,
-            Floor = 500
+            HighWater = highWaterMark, BatchSize = theOptions.BatchSize, Floor = 500
         };
 
         // Little messy here
-        var page = new EventPage(500) { new Event<AEvent>(new AEvent()){Sequence = 698} };
+        var page = new EventPage(500) { new Event<AEvent>(new AEvent()) { Sequence = 698 } };
         page.CalculateCeiling(theOptions.BatchSize, highWaterMark);
 
         theLoader.LoadAsync(expectedRequest, theAgent.CancellationToken).Returns(page);
@@ -148,13 +142,11 @@ public class SubscriptionAgentTests
 
         var expectedRequest = new EventRequest
         {
-            HighWater = highWaterMark,
-            BatchSize = theOptions.BatchSize,
-            Floor = 400
+            HighWater = highWaterMark, BatchSize = theOptions.BatchSize, Floor = 400
         };
 
         // Little messy here
-        var page = new EventPage(500) { new Event<AEvent>(new AEvent()){Sequence = 698} };
+        var page = new EventPage(500) { new Event<AEvent>(new AEvent()) { Sequence = 698 } };
         page.CalculateCeiling(theOptions.BatchSize, highWaterMark);
 
         theLoader.LoadAsync(expectedRequest, theAgent.CancellationToken).Returns(page);
@@ -221,13 +213,11 @@ public class SubscriptionAgentTests
 
         var expectedRequest = new EventRequest
         {
-            HighWater = highWaterMark,
-            BatchSize = theOptions.BatchSize,
-            Floor = 400
+            HighWater = highWaterMark, BatchSize = theOptions.BatchSize, Floor = 400
         };
 
         // Little messy here
-        var page = new EventPage(500) { new Event<AEvent>(new AEvent()){Sequence = 498} };
+        var page = new EventPage(500) { new Event<AEvent>(new AEvent()) { Sequence = 498 } };
         page.CalculateCeiling(theOptions.BatchSize, highWaterMark);
 
         theLoader.LoadAsync(expectedRequest, theAgent.CancellationToken).Returns(page);

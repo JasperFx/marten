@@ -1,13 +1,12 @@
 using System.Threading.Tasks;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Testing.Harness;
-using Xunit;
 using Shouldly;
+using Xunit;
 
 namespace EventSourcingTests.QuickAppend;
 
-public class quick_append_end_to_end : OneOffConfigurationsContext
+public class quick_append_end_to_end: OneOffConfigurationsContext
 {
     public quick_append_end_to_end()
     {
@@ -28,10 +27,11 @@ public class quick_append_end_to_end : OneOffConfigurationsContext
         theSession.SetHeader("color", "blue");
 
         var streamId =
-            theSession.Events.StartStream<Quest>(new QuestStarted(), new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
+            theSession.Events.StartStream<Quest>(new QuestStarted(), new MembersJoined(1, "Hobbiton", "Frodo", "Sam"))
+                .Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = new[] { "Frodo" } });
         await theSession.SaveChangesAsync();
 
         var events = await theSession.Events.FetchStreamAsync(streamId);

@@ -8,18 +8,25 @@ namespace DocumentDbTests.Reading.BatchedQuerying;
 
 public class batched_querying_with_order_functions: IntegrationContext
 {
+    public batched_querying_with_order_functions(DefaultStoreFixture fixture): base(fixture)
+    {
+    }
+
     [Fact]
     public async Task orderby_thenby()
     {
         var batch = theSession.CreateBatchQuery();
 
-        var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+        var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenBy(x => x.LastName)
+            .Select(x => new { x.FirstName, x.LastName }).ToList();
 
         await batch.Execute();
 
         var names = await toList;
-        names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
-        names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Smith", "Somerset", "Houston", "White", "Bean", "Brown");
+        names.Select(x => x.FirstName)
+            .ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
+        names.Select(x => x.LastName)
+            .ShouldHaveTheSameElementsAs("Smith", "Somerset", "Houston", "White", "Bean", "Brown");
     }
 
     [Fact]
@@ -27,13 +34,16 @@ public class batched_querying_with_order_functions: IntegrationContext
     {
         var batch = theSession.CreateBatchQuery();
 
-        var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenBy(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+        var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenBy(x => x.LastName)
+            .Select(x => new { x.FirstName, x.LastName }).ToList();
 
         await batch.Execute();
 
         var names = await toList;
-        names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
-        names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Bean", "Brown", "Houston", "White", "Smith", "Somerset");
+        names.Select(x => x.FirstName)
+            .ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
+        names.Select(x => x.LastName)
+            .ShouldHaveTheSameElementsAs("Bean", "Brown", "Houston", "White", "Smith", "Somerset");
     }
 
     [Fact]
@@ -41,13 +51,16 @@ public class batched_querying_with_order_functions: IntegrationContext
     {
         var batch = theSession.CreateBatchQuery();
 
-        var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+        var toList = batch.Query<User>().OrderBy(x => x.FirstName).ThenByDescending(x => x.LastName)
+            .Select(x => new { x.FirstName, x.LastName }).ToList();
 
         await batch.Execute();
 
         var names = await toList;
-        names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
-        names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Somerset", "Smith", "White", "Houston", "Brown", "Bean");
+        names.Select(x => x.FirstName)
+            .ShouldHaveTheSameElementsAs("Harry", "Harry", "Justin", "Justin", "Michael", "Michael");
+        names.Select(x => x.LastName)
+            .ShouldHaveTheSameElementsAs("Somerset", "Smith", "White", "Houston", "Brown", "Bean");
     }
 
     [Fact]
@@ -55,13 +68,16 @@ public class batched_querying_with_order_functions: IntegrationContext
     {
         var batch = theSession.CreateBatchQuery();
 
-        var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenByDescending(x => x.LastName).Select(x => new { x.FirstName, x.LastName }).ToList();
+        var toList = batch.Query<User>().OrderByDescending(x => x.FirstName).ThenByDescending(x => x.LastName)
+            .Select(x => new { x.FirstName, x.LastName }).ToList();
 
         await batch.Execute();
 
         var names = await toList;
-        names.Select(x => x.FirstName).ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
-        names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
+        names.Select(x => x.FirstName)
+            .ShouldHaveTheSameElementsAs("Michael", "Michael", "Justin", "Justin", "Harry", "Harry");
+        names.Select(x => x.LastName)
+            .ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
     }
 
     protected override Task fixtureSetup()
@@ -76,9 +92,5 @@ public class batched_querying_with_order_functions: IntegrationContext
         );
 
         return theSession.SaveChangesAsync();
-    }
-
-    public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)
-    {
     }
 }

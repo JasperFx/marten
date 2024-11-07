@@ -8,9 +8,14 @@ using Xunit;
 
 namespace DocumentDbTests.Reading.Json;
 
-public class get_raw_json_Tests : IntegrationContext
+public class get_raw_json_Tests: IntegrationContext
 {
+    public get_raw_json_Tests(DefaultStoreFixture fixture): base(fixture)
+    {
+    }
+
     #region sample_get-raw-json
+
     [Fact]
     public async Task when_get_json_then_raw_json_should_be_returned()
     {
@@ -26,9 +31,11 @@ public class get_raw_json_Tests : IntegrationContext
         json = await theSession.Query<Issue>().ToJsonSingle();
         json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
     }
+
     #endregion
 
     #region sample_get-raw-json-async
+
     [Fact]
     public async Task when_get_json_then_raw_json_should_be_returned_async()
     {
@@ -44,8 +51,6 @@ public class get_raw_json_Tests : IntegrationContext
         json = await theSession.Query<Issue>().ToJsonSingle();
         json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
     }
+
     #endregion
-    public get_raw_json_Tests(DefaultStoreFixture fixture) : base(fixture)
-    {
-    }
 }

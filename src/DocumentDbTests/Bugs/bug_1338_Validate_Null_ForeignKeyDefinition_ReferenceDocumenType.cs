@@ -1,11 +1,8 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Npgsql;
-using NSubstitute.ClearExtensions;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -14,13 +11,6 @@ namespace DocumentDbTests.Bugs;
 
 public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: BugIntegrationContext, IAsyncLifetime
 {
-    [Fact]
-    public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
-    {
-        theStore.StorageFeatures.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null)
-            .ShouldBeTrue();
-    }
-
     public async Task InitializeAsync()
     {
         var table = new Table(new PostgresqlObjectName(SchemaName, "external_table"));
@@ -47,6 +37,13 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
     {
         Dispose();
         return Task.CompletedTask;
+    }
+
+    [Fact]
+    public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
+    {
+        theStore.StorageFeatures.AllActiveFeatures(theStore.Tenancy.Default.Database).All(x => x != null)
+            .ShouldBeTrue();
     }
 
     [Fact]

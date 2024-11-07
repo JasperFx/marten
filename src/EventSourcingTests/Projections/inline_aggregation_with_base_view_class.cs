@@ -5,15 +5,14 @@ using JasperFx;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace EventSourcingTests.Projections;
 
 public class inline_aggregation_with_base_view_class: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
-    private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
+    private readonly MonsterSlayed slayed1 = new() { Name = "Troll" };
+    private readonly MonsterSlayed slayed2 = new() { Name = "Dragon" };
     private Guid streamId;
 
     public inline_aggregation_with_base_view_class()

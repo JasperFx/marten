@@ -1,10 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-<<<<<<< HEAD
         <TargetFrameworks>net7.0;net8.0;net9.0</TargetFrameworks>
-=======
-        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
@@ -16,22 +12,19 @@
         <None Update="bin\**\*">
             <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </None>
-        <None Include="App.config" />
+        <None Include="App.config"/>
     </ItemGroup>
     <ItemGroup>
-        <ProjectReference Include="..\..\..\lamar\src\Lamar\Lamar.csproj" />
-        <ProjectReference Include="..\Marten\Marten.csproj" />
-        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
-        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <ProjectReference Include="..\..\..\lamar\src\Lamar\Lamar.csproj"/>
+        <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj"/>
+        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0" />
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
-<<<<<<< HEAD
         <PackageReference Include="Lamar" Version="14.0.1" />
-=======
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <PrivateAssets>all</PrivateAssets>
@@ -40,18 +33,30 @@
         <PackageReference Include="xunit" Version="2.9.2" />
         <PackageReference Include="NSubstitute" Version="5.1.0" />
         <PackageReference Include="Shouldly" Version="4.2.1" />
+        <PackageReference Include="Microsoft.Extensions.FileProviders.Physical" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
+        <PackageReference Include="Jil" Version="3.0.0-alpha2"/>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="xunit" Version="2.8.1"/>
+        <PackageReference Include="NSubstitute" Version="5.1.0"/>
+        <PackageReference Include="Shouldly" Version="4.2.1"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+        <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}"/>
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="Properties" />
+        <Folder Include="Properties"/>
     </ItemGroup>
 
     <ItemGroup>
-      <Compile Remove="AssemblyInfo.cs" />
+        <Compile Remove="AssemblyInfo.cs"/>
     </ItemGroup>
 
     <PropertyGroup>

@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
-using Marten.Events.Aggregation;
 
 namespace EventSourcingTests.Projections;
-
 
 public class QuestParty
 {
@@ -19,16 +17,26 @@ public class QuestParty
 
 
     // These methods take in events and update the QuestParty
-    public void Apply(MembersJoined joined) => Members.Fill(joined.Members);
-    public void Apply(MembersDeparted departed) => Members.RemoveAll(x => departed.Members.Contains(x));
-    public void Apply(QuestStarted started) => Name = started.Name;
+    public void Apply(MembersJoined joined)
+    {
+        Members.Fill(joined.Members);
+    }
+
+    public void Apply(MembersDeparted departed)
+    {
+        Members.RemoveAll(x => departed.Members.Contains(x));
+    }
+
+    public void Apply(QuestStarted started)
+    {
+        Name = started.Name;
+    }
 
     public override string ToString()
     {
         return $"Quest party '{Name}' is {Members.Join(", ")}";
     }
 }
-
 
 public class QuestFinishingParty: QuestParty
 {

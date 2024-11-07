@@ -2,7 +2,6 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -13,8 +12,6 @@ namespace DocumentDbTests.Reading.Loading;
 
 public class document_session_load_document: OneOffConfigurationsContext
 {
-
-
     [Fact]
     public async Task when_collectionstorage_asarray_and_with_readonlycollection_with_integers_and_private_setter()
     {
@@ -39,9 +36,5 @@ public class document_session_load_document: OneOffConfigurationsContext
         userFromDb.Id.ShouldBe(user.Id);
         userFromDb.Name.ShouldBe(user.Name);
         userFromDb.Collection.ShouldHaveTheSameElementsAs(user.Collection);
-    }
-
-    public document_session_load_document()
-    {
     }
 }

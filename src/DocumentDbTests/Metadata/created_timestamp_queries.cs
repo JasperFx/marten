@@ -1,11 +1,11 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Marten.Linq.CreatedAt;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using System.Linq;
-using System.Threading.Tasks;
-using Marten.Linq.CreatedAt;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -13,22 +13,20 @@ namespace DocumentDbTests.Metadata;
 
 public class created_timestamp_queries: OneOffConfigurationsContext
 {
+    public created_timestamp_queries()
+    {
+        StoreOptions(options => options.Policies.ForAllDocuments(o => o.Metadata.CreatedAt.Enabled = true));
+    }
+
     [Fact]
     public void creates_btree_index_for_mt_created_at()
     {
         var mapping = DocumentMapping.For<Customer>();
-        var indexDefinition = mapping.Indexes.Cast<DocumentIndex>().Single(x => x.Columns.First() == SchemaConstants.CreatedAtColumn);
+        var indexDefinition = mapping.Indexes.Cast<DocumentIndex>()
+            .Single(x => x.Columns.First() == SchemaConstants.CreatedAtColumn);
 
         indexDefinition.Method.ShouldBe(IndexMethod.btree);
     }
-
-    #region sample_index-created-timestamp-via-attribute
-    [IndexedCreatedAt]
-    public class Customer
-    {
-        public Guid Id { get; set; }
-    }
-    #endregion
 
 
     [Fact]
@@ -103,8 +101,13 @@ public class created_timestamp_queries: OneOffConfigurationsContext
             .ShouldBe("jack");
     }
 
-    public created_timestamp_queries()
+    #region sample_index-created-timestamp-via-attribute
+
+    [IndexedCreatedAt]
+    public class Customer
     {
-        StoreOptions(options => options.Policies.ForAllDocuments(o => o.Metadata.CreatedAt.Enabled = true));
+        public Guid Id { get; set; }
     }
+
+    #endregion
 }

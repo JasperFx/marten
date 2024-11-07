@@ -9,6 +9,10 @@ namespace DocumentDbTests.Bugs;
 
 public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
 {
+    public Bug_187_not_assigning_id_in_BulkInsert_Tests(DefaultStoreFixture fixture): base(fixture)
+    {
+    }
+
     [Fact]
     public async Task does_indeed_assign_the_id_during_bulk_insert()
     {
@@ -24,9 +28,5 @@ public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
         {
             session.Query<IntDoc>().Count().ShouldBe(50);
         }
-    }
-
-    public Bug_187_not_assigning_id_in_BulkInsert_Tests(DefaultStoreFixture fixture) : base(fixture)
-    {
     }
 }

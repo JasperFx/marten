@@ -132,7 +132,7 @@ public abstract class EventUpcaster: IEventUpcaster
     public virtual ValueTask<object>
         FromDbDataReaderAsync(ISerializer serializer, DbDataReader dbDataReader, int index, CancellationToken ct)
     {
-        return new(FromDbDataReader(serializer, dbDataReader, index));
+        return new ValueTask<object>(FromDbDataReader(serializer, dbDataReader, index));
     }
 }
 

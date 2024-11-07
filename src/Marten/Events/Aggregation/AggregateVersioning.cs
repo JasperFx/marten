@@ -13,7 +13,6 @@ using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Linq.Parsing;
 using Marten.Schema;
-using Marten.Util;
 
 namespace Marten.Events.Aggregation;
 

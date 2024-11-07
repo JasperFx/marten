@@ -33,11 +33,7 @@ internal class SubscriptionRunner : ISubscriptionRunner
     public string ShardIdentity { get; }
     public async Task ExecuteAsync(EventRange range, ShardExecutionMode mode, CancellationToken cancellation)
     {
-        // START HERE -->
-        // Encapsulate this
-        await using var parent = (DocumentSessionBase)_store.OpenSession(SessionOptions.ForDatabase(_database));
-
-        var batch = new ProjectionUpdateBatch(_store.Options.Projections, parent, mode, cancellation)            {
+        await using var batch = new ProjectionUpdateBatch(_store, _database, mode, cancellation)            {
             ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
         };;
 

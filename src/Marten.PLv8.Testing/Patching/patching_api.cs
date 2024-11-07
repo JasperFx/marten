@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Events.Projections;
 using Marten.PLv8.Patching;
 using Marten.Storage;
@@ -13,7 +12,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
@@ -38,7 +36,6 @@ public class patching_api: OneOffConfigurationsContext
         var entity = Target.Random();
         theSession.Store(entity);
         await theSession.SaveChangesAsync();
-
 
 
         var store = SeparateStore(o =>
@@ -85,6 +82,7 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_initialise_a_new_property_by_expression
+
         const string where = "(data ->> 'UpdatedAt') is null";
         theSession.Query<Target>(where).Count.ShouldBe(3);
         theSession.Patch<Target>(new WhereFragment(where)).Set("UpdatedAt", DateTime.UtcNow);
@@ -94,6 +92,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             query.Query<Target>(where).Count.ShouldBe(0);
         }
+
         #endregion
     }
 
@@ -129,8 +128,10 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_set_an_immediate_property_by_where_clause
+
         // Change every Target document where the Color is Blue
         theSession.Patch<Target>(x => x.Color == Colors.Blue).Set(x => x.Number, 2);
+
         #endregion
 
         await theSession.SaveChangesAsync();
@@ -153,6 +154,7 @@ public class patching_api: OneOffConfigurationsContext
     public async Task duplicate_to_new_field()
     {
         #region sample_plv8_duplicate_to_new_field
+
         var target = Target.Random();
         target.AnotherString = null;
         theSession.Store(target);
@@ -166,6 +168,7 @@ public class patching_api: OneOffConfigurationsContext
             var result = await query.LoadAsync<Target>(target.Id);
             result.AnotherString.ShouldBe(target.String);
         }
+
         #endregion
     }
 
@@ -179,11 +182,14 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_duplicate_to_multiple_new_fields
+
         theSession.Patch<Target>(target.Id).Duplicate(t => t.String,
             t => t.StringField,
             t => t.Inner.String,
             t => t.Inner.AnotherString);
+
         #endregion
+
         await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
@@ -198,6 +204,7 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #region sample_plv8_increment_for_int
+
     [Fact]
     public async Task increment_for_int()
     {
@@ -219,6 +226,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     #region sample_plv8_increment_for_int_with_explicit_increment
+
     [Fact]
     public async Task increment_for_int_with_explicit_increment()
     {
@@ -341,6 +349,7 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #region sample_plv8_append_complex_element
+
     [Fact]
     public async Task append_complex_element()
     {
@@ -497,6 +506,7 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #region sample_plv8_insert_first_complex_element
+
     [Fact]
     public async Task insert_first_complex_element()
     {
@@ -589,6 +599,7 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #region sample_plv8_rename_deep_prop
+
     [Fact]
     public async Task rename_deep_prop()
     {
@@ -613,6 +624,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     #region sample_plv8_remove_primitive_element
+
     [Fact]
     public async Task remove_primitive_element()
     {
@@ -643,6 +655,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     #region sample_plv8_remove_repeated_primitive_element
+
     [Fact]
     public async Task remove_repeated_primitive_elements()
     {
@@ -681,6 +694,7 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     #region sample_plv8_remove_complex_element
+
     [Fact]
     public async Task remove_complex_element()
     {
@@ -715,8 +729,11 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_redundant_property
+
         theSession.Patch<Target>(target.Id).Delete("String");
+
         #endregion
+
         await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
@@ -735,8 +752,11 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_redundant_nested_property
+
         theSession.Patch<Target>(target.Id).Delete("String", t => t.Inner);
+
         #endregion
+
         await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
@@ -755,8 +775,11 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_existing_property
+
         theSession.Patch<Target>(target.Id).Delete(t => t.Inner);
+
         #endregion
+
         await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())
@@ -774,9 +797,11 @@ public class patching_api: OneOffConfigurationsContext
         {
             theSession.Store(Target.Random());
         }
+
         await theSession.SaveChangesAsync();
 
         #region sample_plv8_delete_property_from_many_documents
+
         const string where = "(data ->> 'String') is not null";
         theSession.Query<Target>(where).Count.ShouldBe(15);
         theSession.Patch<Target>(new WhereFragment(where)).Delete("String");
@@ -786,6 +811,7 @@ public class patching_api: OneOffConfigurationsContext
         {
             query.Query<Target>(where).Count(t => t.String != null).ShouldBe(0);
         }
+
         #endregion
     }
 
@@ -873,15 +899,8 @@ public class patching_api: OneOffConfigurationsContext
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var aggregateId = Guid.NewGuid();
-        var quest = new Quest
-        {
-            Id = aggregateId,
-        };
-        var questStarted = new QuestStarted
-        {
-            Id = aggregateId,
-            Name = "New Quest",
-        };
+        var quest = new Quest { Id = aggregateId };
+        var questStarted = new QuestStarted { Id = aggregateId, Name = "New Quest" };
 
         theSession.Events.Append(aggregateId, quest, questStarted);
         await theSession.SaveChangesAsync();
@@ -934,8 +953,10 @@ internal static class EnumerableExtensions
                 encountered = true;
                 continue;
             }
+
             expected.Add(val);
         }
+
         return expected;
     }
 }
@@ -962,10 +983,22 @@ public class QuestStarted
 
     public override bool Equals(object obj)
     {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((QuestStarted) obj);
+        if (ReferenceEquals(null, obj))
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        return Equals((QuestStarted)obj);
     }
 
     public override int GetHashCode()

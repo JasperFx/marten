@@ -1,16 +1,15 @@
 using JasperFx.Events.Projections;
-using Marten.Events.Daemon;
 
 namespace Marten.CommandLine.Commands.Projection;
 
 internal class CurrentShardState
 {
-    public string ShardName { get; }
-
     public CurrentShardState(string shardName)
     {
         ShardName = shardName;
     }
+
+    public string ShardName { get; }
 
     public ShardExecutionState State { get; set; } = ShardExecutionState.Running;
 

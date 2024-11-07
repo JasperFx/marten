@@ -10,12 +10,6 @@ namespace DocumentDbTests.Bugs;
 
 public class Bug_1563_user_friendly_warning_about_public_type: BugIntegrationContext
 {
-    [DocumentAlias("internal_doc")]
-    internal class InternalDoc
-    {
-        public Guid Id { get; set; }
-    }
-
     [Fact]
     public async Task good_error_on_non_public_type()
     {
@@ -29,6 +23,12 @@ public class Bug_1563_user_friendly_warning_about_public_type: BugIntegrationCon
             await theSession.SaveChangesAsync();
         });
 
-        ex.Message.ShouldContain(expectedMessage, Case.Insensitive);
+        ex.Message.ShouldContain(expectedMessage);
+    }
+
+    [DocumentAlias("internal_doc")]
+    internal class InternalDoc
+    {
+        public Guid Id { get; set; }
     }
 }

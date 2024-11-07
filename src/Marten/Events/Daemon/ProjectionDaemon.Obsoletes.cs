@@ -6,32 +6,63 @@ namespace Marten.Events.Daemon;
 
 public partial class ProjectionDaemon
 {
-    public Task RebuildProjection(string projectionName, CancellationToken token) =>
-        RebuildProjectionAsync(projectionName, token);
+    public Task RebuildProjection(string projectionName, CancellationToken token)
+    {
+        return RebuildProjectionAsync(projectionName, token);
+    }
 
-    public Task RebuildProjection<TView>(CancellationToken token) => RebuildProjectionAsync<TView>(token);
+    public Task RebuildProjection<TView>(CancellationToken token)
+    {
+        return RebuildProjectionAsync<TView>(token);
+    }
 
-    public Task RebuildProjection(Type projectionType, CancellationToken token) =>
-        RebuildProjectionAsync(projectionType, token);
+    public Task RebuildProjection(Type projectionType, CancellationToken token)
+    {
+        return RebuildProjectionAsync(projectionType, token);
+    }
 
-    public Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token) =>
-        RebuildProjectionAsync(projectionType, shardTimeout, token);
+    public Task RebuildProjection(Type projectionType, TimeSpan shardTimeout, CancellationToken token)
+    {
+        return RebuildProjectionAsync(projectionType, shardTimeout, token);
+    }
 
-    public Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token) =>
-        RebuildProjectionAsync(projectionName, shardTimeout, token);
+    public Task RebuildProjection(string projectionName, TimeSpan shardTimeout, CancellationToken token)
+    {
+        return RebuildProjectionAsync(projectionName, shardTimeout, token);
+    }
 
-    public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token) =>
-        RebuildProjectionAsync<TView>(shardTimeout, token);
+    public Task RebuildProjection<TView>(TimeSpan shardTimeout, CancellationToken token)
+    {
+        return RebuildProjectionAsync<TView>(shardTimeout, token);
+    }
 
-    public Task StartShard(string shardName, CancellationToken token) => StartAgentAsync(shardName, token);
+    public Task StartShard(string shardName, CancellationToken token)
+    {
+        return StartAgentAsync(shardName, token);
+    }
 
-    public Task StopShard(string shardName, Exception ex = null) => StopAgentAsync(shardName, ex);
+    public Task StopShard(string shardName, Exception ex = null)
+    {
+        return StopAgentAsync(shardName, ex);
+    }
 
-    public Task StartAllShards() => StartAllAsync();
+    public Task StartAllShards()
+    {
+        return StartAllAsync();
+    }
 
-    public Task StopAll() => StopAllAsync();
+    public Task StopAll()
+    {
+        return StopAllAsync();
+    }
 
-    public Task StartDaemon() => StartHighWaterDetectionAsync();
+    public Task StartDaemon()
+    {
+        return StartHighWaterDetectionAsync();
+    }
 
-    public Task PauseHighWaterAgent() => PauseHighWaterAgentAsync();
+    public Task PauseHighWaterAgent()
+    {
+        return PauseHighWaterAgentAsync();
+    }
 }
