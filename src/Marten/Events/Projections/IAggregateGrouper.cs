@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten.Events.Aggregation;
 
 namespace Marten.Events.Projections;
@@ -19,5 +20,5 @@ public interface IAggregateGrouper<TId>
     /// <param name="events"></param>
     /// <param name="grouping"></param>
     /// <returns></returns>
-    Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping);
+    Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<TId> grouping);
 }

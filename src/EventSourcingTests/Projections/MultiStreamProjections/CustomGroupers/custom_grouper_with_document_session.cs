@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -16,7 +17,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 #region sample_view-projection-custom-grouper-with-querysession
 public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var licenseFeatureTogglesEvents = events
             .OfType<IEvent<LicenseFeatureToggled>>()

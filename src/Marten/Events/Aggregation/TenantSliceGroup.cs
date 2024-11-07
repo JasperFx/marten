@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -16,17 +17,12 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public interface ITenantSliceGroup<TId>: IEventGrouping<TId>, IDisposable
-{
-
-}
-
 /// <summary>
 ///     Intermediate grouping of events by tenant within the asynchronous projection support. Really for aggregations
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
+public class TenantSliceGroup<TDoc, TId>: IEventGrouping<TId>
 {
     private ActionBlock<EventSlice<TDoc, TId>> _builder;
 

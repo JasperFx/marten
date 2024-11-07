@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -101,7 +102,7 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         public class EventGrouper: IAggregateGrouper<string>
         {
             public async Task Group(IQuerySession session, IEnumerable<IEvent> events,
-                ITenantSliceGroup<string> grouping)
+                IEventGrouping<string> grouping)
             {
                 var resetEvents = events.OfType<IEvent<ResetEvent>>().ToList();
                 if (!resetEvents.Any())

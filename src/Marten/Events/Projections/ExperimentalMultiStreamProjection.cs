@@ -7,6 +7,7 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten.Events.Aggregation;
 using Marten.Schema;
 using Marten.Storage;

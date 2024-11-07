@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten.Events.Projections;
 using Marten.Storage;
 

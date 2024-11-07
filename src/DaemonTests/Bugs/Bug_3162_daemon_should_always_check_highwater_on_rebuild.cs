@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -129,7 +130,7 @@ public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
     public async Task Group(
         IQuerySession session,
         IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
+        IEventGrouping<Guid> grouping)
     {
         var eventsArray = events.ToArray();
         MembershipGroup(eventsArray, grouping);
@@ -138,7 +139,7 @@ public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
 
     private void MembershipGroup(
         IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
+        IEventGrouping<Guid> grouping)
     {
         var filteredEvents = events
             .Where(ev => eventTypes.Contains(ev.EventType))
@@ -159,7 +160,7 @@ public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
     private async Task TeamGroup(
         IQuerySession session,
         IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
+        IEventGrouping<Guid> grouping)
     {
         var teamEvents = events
             .OfType<IEvent<TeamNameChanged>>()

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -70,7 +71,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
         public Task Group(
             IQuerySession session,
             IEnumerable<IEvent> events,
-            ITenantSliceGroup<string> grouping
+            IEventGrouping<string> grouping
         )
         {
             var allocations = events

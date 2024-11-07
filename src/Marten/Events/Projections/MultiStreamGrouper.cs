@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten.Events.Aggregation;
 
 namespace Marten.Events.Projections;
@@ -19,7 +20,7 @@ internal class MultiStreamGrouper<TId, TEvent>: IGrouper<TId>
         _func = expression;
     }
 
-    public void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping)
+    public void Apply(IEnumerable<IEvent> events, IEventGrouping<TId> grouping)
     {
         grouping.AddEvents(_func, events);
     }
@@ -39,7 +40,7 @@ internal class MultiStreamGrouperWithMetadata<TId, TEvent>: IGrouper<TId>
         _func = expression;
     }
 
-    public void Apply(IEnumerable<IEvent> events, ITenantSliceGroup<TId> grouping)
+    public void Apply(IEnumerable<IEvent> events, IEventGrouping<TId> grouping)
     {
         grouping.AddEventsWithMetadata(_func, events);
     }
