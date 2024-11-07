@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
-using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
@@ -22,7 +20,7 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public class TenantSliceGroup<TDoc, TId>: IEventGrouping<TId>
+public class TenantSliceGroup<TDoc, TId>: EventGrouping<TDoc, TId>
 {
     private ActionBlock<EventSlice<TDoc, TId>> _builder;
 
@@ -32,10 +30,10 @@ public class TenantSliceGroup<TDoc, TId>: IEventGrouping<TId>
     {
     }
 
-    public TenantSliceGroup(Tenant tenant)
+    public TenantSliceGroup(Tenant tenant) : base(tenant.TenantId)
     {
         Tenant = tenant;
-        Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant.TenantId));
+
     }
 
     public TenantSliceGroup(Tenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices): this(tenant)
@@ -44,70 +42,6 @@ public class TenantSliceGroup<TDoc, TId>: IEventGrouping<TId>
     }
 
     public Tenant Tenant { get; }
-    public LightweightCache<TId, EventSlice<TDoc, TId>> Slices { get; }
-
-    public void AddEvents<TEvent>(Func<TEvent, TId> singleIdSource, IEnumerable<IEvent> events)
-    {
-        AddEventsWithMetadata<TEvent>(e => singleIdSource(e.Data), events);
-    }
-
-    /// <summary>
-    ///     Add events to the grouping based on the outer IEvent<TEvent> envelope type
-    /// </summary>
-    /// <param name="singleIdSource"></param>
-    /// <param name="events"></param>
-    /// <typeparam name="TEvent"></typeparam>
-    public void AddEventsWithMetadata<TEvent>(Func<IEvent<TEvent>, TId> singleIdSource, IEnumerable<IEvent> events)
-    {
-        var matching = events.OfType<IEvent<TEvent>>();
-        foreach (var @event in matching)
-        {
-            var id = singleIdSource(@event);
-            AddEvent(id, @event);
-        }
-    }
-
-    public void FanOutOnEach<TSource, TChild>(Func<TSource, IEnumerable<TChild>> fanOutFunc)
-    {
-        foreach (var slice in Slices) slice.FanOut(fanOutFunc);
-    }
-
-    public void AddEvents<TEvent>(Func<TEvent, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
-    {
-        AddEventsWithMetadata<TEvent>(e => multipleIdSource(e.Data), events);
-    }
-
-    /// <summary>
-    ///     Add events to the grouping based on the outer IEvent<TEvent> envelope type
-    /// </summary>
-    /// <param name="singleIdSource"></param>
-    /// <param name="events"></param>
-    /// <typeparam name="TEvent"></typeparam>
-    public void AddEventsWithMetadata<TEvent>(Func<IEvent<TEvent>, IEnumerable<TId>> multipleIdSource, IEnumerable<IEvent> events)
-    {
-        var matching = events.OfType<IEvent<TEvent>>()
-            .SelectMany(e => multipleIdSource(e).Select(id => (id, @event: e)));
-
-        var groups = matching.GroupBy(x => x.id);
-        foreach (var group in groups) AddEvents(group.Key, group.Select(x => x.@event));
-    }
-
-    public void AddEvent(TId id, IEvent @event)
-    {
-        if (id != null)
-        {
-            Slices[id].AddEvent(@event);
-        }
-
-    }
-
-    public void AddEvents(TId id, IEnumerable<IEvent> events)
-    {
-        if (id != null)
-        {
-            Slices[id].AddEvents(events);
-        }
-    }
 
     public void Dispose()
     {

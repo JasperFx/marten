@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JasperFx.Core;
 using Marten.Testing.Harness;
 using Marten.Util;
 using Shouldly;
