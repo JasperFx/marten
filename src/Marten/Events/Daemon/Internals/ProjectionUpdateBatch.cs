@@ -5,9 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -359,4 +362,117 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             _semaphore.Release();
         }
     }
+
+
+    public async Task ProcessAggregationAsync<TDoc, TId>(EventGrouping<TDoc, TId> grouping, CancellationToken token)
+    {
+        // TODO -- put this logic of finding the runtime somewhere a bit more encapsulated
+        if (!_session.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
+        {
+            throw new ArgumentOutOfRangeException(
+                $"No known aggregation runtime for document type {typeof(TDoc).FullNameInCode()}");
+        }
+
+        var store = (DocumentStore)_session.DocumentStore;
+        var runtime = (IAggregationRuntime<TDoc, TId>)projection.BuildRuntime(store);
+
+        using var session = new ProjectionDocumentSession(store, this,
+            new SessionOptions { Tracking = DocumentTracking.None, Tenant = new Tenant(grouping.TenantId, _session.Database) }, Mode);
+
+        var builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
+        {
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // TODO -- emit exceptions in one place
+            await runtime.ApplyChangesAsync(session, slice, token, ProjectionLifecycle.Async)
+                .ConfigureAwait(false);
+        }, new ExecutionDataflowBlockOptions { CancellationToken = token });
+
+        await processEventSlices(builder, runtime, store, grouping, token).ConfigureAwait(false);
+
+        if (builder != null)
+        {
+            builder.Complete();
+            await builder.Completion.ConfigureAwait(false);
+        }
+    }
+
+        private async Task processEventSlices<TDoc, TId>(ActionBlock<EventSlice<TDoc, TId>> builder, IAggregationRuntime<TDoc, TId> runtime,
+            IDocumentStore store, EventGrouping<TDoc, TId> grouping, CancellationToken token)
+        {
+            var tenant = new Tenant(grouping.TenantId, _session.Database);
+
+        var cache = runtime.CacheFor(tenant);
+        var beingFetched = new List<EventSlice<TDoc, TId>>();
+        foreach (var slice in grouping.Slices)
+        {
+            if (token.IsCancellationRequested)
+            {
+                builder.Complete();
+                break;
+            }
+
+            if (runtime.IsNew(slice))
+            {
+                builder.Post(slice);
+
+                // Don't use it any farther, it's ready to do its thing
+                grouping.Slices.Remove(slice.Id);
+            }
+            else if (cache.TryFind(slice.Id, out var aggregate))
+            {
+                slice.Aggregate = aggregate;
+                builder.Post(slice);
+
+                // Don't use it any farther, it's ready to do its thing
+                grouping.Slices.Remove(slice.Id);
+            }
+            else
+            {
+                beingFetched.Add(slice);
+            }
+        }
+
+        if (token.IsCancellationRequested || !beingFetched.Any())
+        {
+            cache.CompactIfNecessary();
+            return;
+        }
+
+        // Minor optimization
+        if (!beingFetched.Any())
+        {
+            return;
+        }
+
+        var ids = beingFetched.Select(x => x.Id).ToArray();
+
+        var options = new SessionOptions { Tenant = tenant, AllowAnyTenant = true };
+
+        await using var session = (IMartenSession)store.LightweightSession(options);
+        var aggregates = await runtime.Storage
+            .LoadManyAsync(ids, session, token).ConfigureAwait(false);
+
+        if (token.IsCancellationRequested || aggregates == null)
+        {
+            return;
+        }
+
+        var dict = aggregates.ToDictionary(x => runtime.Storage.Identity(x));
+
+        foreach (var slice in grouping.Slices)
+        {
+            if (dict.TryGetValue(slice.Id, out var aggregate))
+            {
+                slice.Aggregate = aggregate;
+                cache.Store(slice.Id, aggregate);
+            }
+
+            builder?.Post(slice);
+        }
+    }
+
 }

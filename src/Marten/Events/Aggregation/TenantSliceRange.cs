@@ -46,7 +46,7 @@ internal class TenantSliceRange<TDoc, TId>: EventRangeGroup
     {
         await Parallel.ForEachAsync(Groups, CancellationToken.None,
                 async (group, _) =>
-                    await group.Start(batch, _runtime, _store, this).ConfigureAwait(false))
+                    await batch.ProcessAggregationAsync(group, Cancellation).ConfigureAwait(false))
             .ConfigureAwait(false);
     }
 

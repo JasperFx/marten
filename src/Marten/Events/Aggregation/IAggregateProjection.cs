@@ -74,4 +74,6 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     /// projection. Use this to potentially improve async projection throughput
     /// </summary>
     public int CacheLimitPerTenant { get; set; }
+
+    IAggregationRuntime BuildRuntime(DocumentStore store);
 }

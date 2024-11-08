@@ -53,6 +53,11 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
+    public IAggregationRuntime BuildRuntime(DocumentStore store)
+    {
+        return this;
+    }
+
     public IAggregateProjection Projection => this;
 
     public bool IsSingleStream()

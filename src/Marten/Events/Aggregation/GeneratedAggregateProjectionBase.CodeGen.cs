@@ -176,7 +176,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         return _versioning;
     }
 
-    internal IAggregationRuntime BuildRuntime(DocumentStore store)
+    public IAggregationRuntime BuildRuntime(DocumentStore store)
     {
         // You have to have the inlineGeneratedType built out to apply
         // setter values
