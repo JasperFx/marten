@@ -30,7 +30,7 @@ public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRunti
     where TDoc : notnull where TId : notnull
 {
     public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection,
-        IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage): base(store, projection, slicer, storage)
+        IMartenEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage): base(store, projection, slicer, storage)
     {
     }
 
@@ -50,7 +50,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 {
     private readonly Func<IEvent, TId> _identitySource;
 
-    public AggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer,
+    public AggregationRuntime(IDocumentStore store, IAggregateProjection projection, IMartenEventSlicer<TDoc, TId> slicer,
         IDocumentStorage<TDoc, TId> storage)
     {
         Projection = projection;
@@ -85,7 +85,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     internal StoreOptions Options { get; }
 
     public IAggregateProjection Projection { get; }
-    public IEventSlicer<TDoc, TId> Slicer { get; }
+    public IMartenEventSlicer<TDoc, TId> Slicer { get; }
     public IDocumentStorage<TDoc, TId> Storage { get; }
 
     public async ValueTask ApplyChangesAsync(DocumentSessionBase session,

@@ -38,7 +38,7 @@ public class cross_stream_aggregation: DaemonContext
 
         var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
 
-        var slicer = new CrossStreamDayProjection().As<IEventSlicer<Day, int>>();
+        var slicer = new CrossStreamDayProjection().As<IMartenEventSlicer<Day, int>>();
 
         var slices = await slicer.SliceAsyncEvents(theSession, allEvents.ToList());
 

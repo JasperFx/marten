@@ -15,7 +15,7 @@ namespace Marten.Events.Aggregation;
 ///     Slicer strategy by stream key (string identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer<TDoc, string>
+public class ByStreamKey<TDoc>: IMartenEventSlicer<TDoc, string>, ISingleStreamSlicer<TDoc, string>
 {
     public IReadOnlyList<EventSlice<TDoc, string>> Transform(IQuerySession querySession, IEnumerable<StreamAction> streams)
     {
@@ -54,7 +54,7 @@ public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer<
 ///     Slicer strategy by stream key (string identified streams) for strong typed identifiers
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamKey<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer<TDoc, TId>
+public class ByStreamKey<TDoc, TId>: IMartenEventSlicer<TDoc, TId>, ISingleStreamSlicer<TDoc, TId>
 {
     private readonly Func<string,TId> _converter;
 

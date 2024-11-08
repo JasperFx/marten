@@ -583,7 +583,7 @@ public class Totals
     public int Count { get; set; }
 }
 
-public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer<Totals, Guid>
+public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IMartenEventSlicer<Totals, Guid>
 {
     public TotalsProjection()
     {

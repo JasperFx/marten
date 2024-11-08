@@ -21,7 +21,7 @@ namespace Marten.Events.Projections;
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
 public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>,
-    IEventSlicer<TDoc, TId>
+    IMartenEventSlicer<TDoc, TId>
 {
     private TenancyStyle _tenancyStyle;
 

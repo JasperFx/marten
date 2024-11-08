@@ -16,7 +16,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Projections;
 
-public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
+public class TenantRollupSlicer<TDoc>: IMartenEventSlicer<TDoc, string>
 {
     public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
@@ -41,9 +41,9 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 /// <typeparam name="TId"></typeparam>
 public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>
 {
-    private readonly EventSlicer<TDoc, TId> _defaultSlicer = new();
+    private readonly MartenEventSlicer<TDoc, TId> _defaultSlicer = new();
 
-    private IEventSlicer<TDoc, TId>? _customSlicer;
+    private IMartenEventSlicer<TDoc, TId>? _customSlicer;
 
     protected MultiStreamProjection(): base(AggregationScope.MultiStream)
     {
@@ -63,10 +63,10 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
         if (typeof(TId) != typeof(string))
             throw new InvalidOperationException("Rolling up by Tenant Id requires the identity type to be string");
 
-        _customSlicer = (IEventSlicer<TDoc, TId>)new TenantRollupSlicer<TDoc>();
+        _customSlicer = (IMartenEventSlicer<TDoc, TId>)new TenantRollupSlicer<TDoc>();
     }
 
-    internal IEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
+    internal IMartenEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
 
     protected override Type[] determineEventTypes()
     {
@@ -117,7 +117,7 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     ///     directly by ViewProjection, supply your own "let me do whatever I want" event slicer
     /// </summary>
     /// <param name="slicer"></param>
-    public void CustomGrouping(IEventSlicer<TDoc, TId> slicer)
+    public void CustomGrouping(IMartenEventSlicer<TDoc, TId> slicer)
     {
         _customSlicer = slicer;
     }

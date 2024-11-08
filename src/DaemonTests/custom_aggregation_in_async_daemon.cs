@@ -145,7 +145,7 @@ public class MyCustomProjection: CustomProjection<CustomAggregate, int>
     {
         ProjectionName = "Custom";
 
-        Slicer = new EventSlicer<CustomAggregate, int>().Identity<INumbered>(x =>
+        Slicer = new MartenEventSlicer<CustomAggregate, int>().Identity<INumbered>(x =>
             x.Number);
     }
 

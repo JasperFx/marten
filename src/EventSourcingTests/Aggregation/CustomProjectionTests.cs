@@ -149,7 +149,7 @@ public class CustomProjectionTests
         var projection = new MyCustomAggregateWithNoSlicer();
         projection.AggregateEvents(x => x.Identity<INumbered>(n => n.Number));
 
-        projection.Slicer.ShouldBeOfType<EventSlicer<CustomAggregate, int>>();
+        projection.Slicer.ShouldBeOfType<MartenEventSlicer<CustomAggregate, int>>();
     }
 
     [Fact]

@@ -11,7 +11,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
+public class MartenEventSlicer<TDoc, TId>: IMartenEventSlicer<TDoc, TId>
 {
     private readonly List<IFanOutRule> _afterGroupingFanoutRules = new();
     private readonly List<IFanOutRule> _beforeGroupingFanoutRules = new();
@@ -47,7 +47,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         return new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>> { group };
     }
 
-    public EventSlicer<TDoc, TId> GroupByTenant()
+    public MartenEventSlicer<TDoc, TId> GroupByTenant()
     {
         _groupByTenant = true;
         return this;
@@ -65,7 +65,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         foreach (var rule in _afterGroupingFanoutRules) yield return rule.OriginatingType;
     }
 
-    public EventSlicer<TDoc, TId> Identity<TEvent>(Func<TEvent, TId> identityFunc)
+    public MartenEventSlicer<TDoc, TId> Identity<TEvent>(Func<TEvent, TId> identityFunc)
     {
         var eventType = typeof(TEvent);
         // Check if we are actually dealing with an IEvent<EventType>
@@ -81,7 +81,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         return this;
     }
 
-    public EventSlicer<TDoc, TId> Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
+    public MartenEventSlicer<TDoc, TId> Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
     {
         var eventType = typeof(TEvent);
         // Check if we are actually dealing with an IEvent<EventType>
@@ -102,7 +102,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     /// </summary>
     /// <param name="grouper"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    public EventSlicer<TDoc, TId> CustomGrouping(IAggregateGrouper<TId> grouper)
+    public MartenEventSlicer<TDoc, TId> CustomGrouping(IAggregateGrouper<TId> grouper)
     {
         _lookupGroupers.Add(grouper);
 
@@ -118,7 +118,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="TChild"></typeparam>
-    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc,
+    public MartenEventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc,
         FanoutMode mode = FanoutMode.AfterGrouping)
     {
         return FanOut(new FanOutEventDataOperator<TEvent, TChild>(fanOutFunc) { Mode = mode }, mode);
@@ -133,12 +133,12 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
     /// <typeparam name="TEvent"></typeparam>
     /// <typeparam name="TChild"></typeparam>
-    public EventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
+    public MartenEventSlicer<TDoc, TId> FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc, FanoutMode mode = FanoutMode.AfterGrouping)
     {
         return FanOut(new FanOutEventOperator<TEvent, TChild>(fanOutFunc) { Mode = mode }, mode);
     }
 
-    private EventSlicer<TDoc, TId> FanOut(IFanOutRule fanout, FanoutMode mode)
+    private MartenEventSlicer<TDoc, TId> FanOut(IFanOutRule fanout, FanoutMode mode)
     {
         switch (mode)
         {

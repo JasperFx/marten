@@ -46,11 +46,11 @@ public abstract class CustomProjection<TDoc, TId>:
 
         if (typeof(TId) == typeof(Guid))
         {
-            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
+            Slicer = (IMartenEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
         }
         else if (typeof(TId) == typeof(string))
         {
-            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
+            Slicer = (IMartenEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
         }
     }
 
@@ -78,7 +78,7 @@ public abstract class CustomProjection<TDoc, TId>:
         return new ValueTask();
     }
 
-    public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
+    public IMartenEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
 
     // Holy fugly code Batman!
     private async Task<IReadOnlyList<EventSlice<TDoc, TId>>> sliceForInlineUsage(IDocumentOperations operations, IReadOnlyList<StreamAction> filteredStreams)
@@ -264,14 +264,14 @@ public abstract class CustomProjection<TDoc, TId>:
                 $"Projection {GetType().FullNameInCode()} does not have a configured event slicer.");
         }
 
-        if (Slicer is EventSlicer<TDoc, TId> slicer && !slicer.HasAnyRules())
+        if (Slicer is MartenEventSlicer<TDoc, TId> slicer && !slicer.HasAnyRules())
         {
             throw new InvalidProjectionException(
                 $"Projection {GetType().FullNameInCode()} has incomplete event slicer configuration.");
         }
     }
 
-    public void UseCustomSlicer(IEventSlicer<TDoc, TId> custom)
+    public void UseCustomSlicer(IMartenEventSlicer<TDoc, TId> custom)
     {
         Slicer = custom;
     }
@@ -292,9 +292,9 @@ public abstract class CustomProjection<TDoc, TId>:
     ///     slicer
     /// </summary>
     /// <param name="configure"></param>
-    public void AggregateEvents(Action<EventSlicer<TDoc, TId>> configure)
+    public void AggregateEvents(Action<MartenEventSlicer<TDoc, TId>> configure)
     {
-        var slicer = new EventSlicer<TDoc, TId>();
+        var slicer = new MartenEventSlicer<TDoc, TId>();
         configure(slicer);
 
         Slicer = slicer;
@@ -307,11 +307,11 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         if (typeof(TId) == typeof(Guid))
         {
-            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
+            Slicer = (IMartenEventSlicer<TDoc, TId>)new ByStreamId<TDoc>();
         }
         else if (typeof(TId) == typeof(string))
         {
-            Slicer = (IEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
+            Slicer = (IMartenEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
         }
         else if (typeof(TId).GetProperties().Any(x => x.PropertyType == typeof(Guid)))
         {

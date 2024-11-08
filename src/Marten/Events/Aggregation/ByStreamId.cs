@@ -23,7 +23,7 @@ public interface ISingleStreamSlicer<TDoc, TId> : ISingleStreamSlicer
 ///     Slicer strategy by stream id (Guid identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDoc, Guid>
+public class ByStreamId<TDoc>: IMartenEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDoc, Guid>
 {
     public IReadOnlyList<EventSlice<TDoc, Guid>> Transform(IQuerySession querySession, IEnumerable<StreamAction> streams)
     {
@@ -62,7 +62,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDo
 ///     Slicer strategy by stream id (Guid identified streams) and a custom value type
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer<TDoc, TId>
+public class ByStreamId<TDoc, TId>: IMartenEventSlicer<TDoc, TId>, ISingleStreamSlicer<TDoc, TId>
 {
     private readonly Func<Guid, TId> _converter;
 

@@ -18,7 +18,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 #region sample_view-projection-custom-slicer
 public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
-    public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
+    public class CustomSlicer: IMartenEventSlicer<UserGroupsAssignment, Guid>
     {
         public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
             IQuerySession querySession, List<IEvent> events)

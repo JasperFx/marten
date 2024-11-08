@@ -32,7 +32,7 @@ public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc 
 {
     IDocumentStorage<TDoc, TId> Storage { get; }
 
-    IEventSlicer<TDoc, TId> Slicer { get; }
+    IMartenEventSlicer<TDoc, TId> Slicer { get; }
 
 
     ValueTask ApplyChangesAsync(DocumentSessionBase session,

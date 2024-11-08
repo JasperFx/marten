@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
+[Obsolete("Trying to generalize this and get it to JasperFx")]
 internal class EventSliceGroup<TDoc, TId>: EventRangeGroup
 {
     private readonly IAggregationRuntime<TDoc, TId> _runtime;
