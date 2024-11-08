@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 
 namespace Marten.Events.Aggregation;
 
@@ -13,6 +14,6 @@ public interface IEventSlicer<TDoc, TId>
     /// <param name="querySession"></param>
     /// <param name="events"></param>
     /// <returns></returns>
-    ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
+    ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events);
 }

@@ -364,7 +364,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     }
 
 
-    public async Task ProcessAggregationAsync<TDoc, TId>(EventGrouping<TDoc, TId> grouping, CancellationToken token)
+    public async Task ProcessAggregationAsync<TDoc, TId>(JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
     {
         // TODO -- put this logic of finding the runtime somewhere a bit more encapsulated
         if (!_session.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
@@ -401,7 +401,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     }
 
         private async Task processEventSlices<TDoc, TId>(ActionBlock<EventSlice<TDoc, TId>> builder, IAggregationRuntime<TDoc, TId> runtime,
-            IDocumentStore store, EventGrouping<TDoc, TId> grouping, CancellationToken token)
+            IDocumentStore store, JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
         {
             var tenant = new Tenant(grouping.TenantId, _session.Database);
 

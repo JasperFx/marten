@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
@@ -124,7 +125,7 @@ public abstract class CustomProjection<TDoc, TId>:
         await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
         var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
-        return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+        return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
@@ -213,7 +214,7 @@ public abstract class CustomProjection<TDoc, TId>:
     /// <param name="range"></param>
     /// <param name="cancellation"></param>
     /// <returns></returns>
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
         IMartenDatabase database,
         EventRange range, CancellationToken cancellation)
     {
@@ -246,7 +247,7 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         var groups = await GroupEventRange(store, daemonDatabase, range, cancellationToken).ConfigureAwait(false);
 
-        return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+        return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     IProjection IProjectionSource.Build(DocumentStore store)

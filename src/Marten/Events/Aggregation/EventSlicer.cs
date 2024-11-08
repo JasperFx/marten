@@ -19,7 +19,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
     private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
     private bool _groupByTenant;
 
-    public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
+    public async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {
         foreach (var fanOutRule in _beforeGroupingFanoutRules) fanOutRule.Apply(events);
@@ -34,7 +34,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
                     .ConfigureAwait(false);
             });
 
-            var list = new List<TenantSliceGroup<TDoc, TId>>();
+            var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>();
             foreach (var groupTask in groupTasks) list.Add(await groupTask.ConfigureAwait(false));
 
             return list;
@@ -44,7 +44,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         var group = await groupSingleTenant(new Tenant(StorageConstants.DefaultTenantId, querySession.Database), querySession,
             events).ConfigureAwait(false);
 
-        return new List<TenantSliceGroup<TDoc, TId>> { group };
+        return new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>> { group };
     }
 
     public EventSlicer<TDoc, TId> GroupByTenant()
@@ -154,10 +154,10 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         return this;
     }
 
-    private async Task<TenantSliceGroup<TDoc, TId>> groupSingleTenant(Tenant tenant, IQuerySession querySession,
+    private async Task<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>> groupSingleTenant(Tenant tenant, IQuerySession querySession,
         IList<IEvent> events)
     {
-        var group = new TenantSliceGroup<TDoc, TId>(tenant);
+        var group = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>(tenant.TenantId);
 
         foreach (var grouper in _groupers) grouper.Apply(events, group);
 

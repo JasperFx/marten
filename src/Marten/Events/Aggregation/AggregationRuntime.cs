@@ -351,7 +351,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
         var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
 
-        return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+        return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,

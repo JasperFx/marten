@@ -34,7 +34,7 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
         return false;
     }
 
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
         IQuerySession querySession, List<IEvent> events)
     {
         return _tenancyStyle == TenancyStyle.Conjoined
@@ -51,7 +51,7 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
         }
     }
 
-    private async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> groupByConjoinedTenancy(
+    private async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> groupByConjoinedTenancy(
         IQuerySession querySession, List<IEvent> events)
     {
         var byTenant = events.GroupBy(x => x.TenantId);
@@ -61,27 +61,27 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
             var tenant = new Tenant(tGroup.Key, querySession.Database);
 
             var tenantSession = querySession.ForTenant(tGroup.Key);
-            var group = new TenantSliceGroup<TDoc, TId>(tenant);
+            var group = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>(tGroup.Key);
 
             await GroupEvents(group, tenantSession, tGroup.ToList()).ConfigureAwait(false);
 
             return group;
         });
 
-        var list = new List<TenantSliceGroup<TDoc, TId>>();
+        var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>();
         foreach (var groupTask in groupTasks) list.Add(await groupTask.ConfigureAwait(false));
 
         return list;
     }
 
-    private async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> groupBySingleTenant(IQuerySession querySession,
+    private async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> groupBySingleTenant(IQuerySession querySession,
         List<IEvent> events)
     {
         // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
-        var group = new TenantSliceGroup<TDoc, TId>(querySession, StorageConstants.DefaultTenantId);
+        var group = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>(StorageConstants.DefaultTenantId);
         await GroupEvents(group, querySession, events).ConfigureAwait(false);
 
-        return new List<TenantSliceGroup<TDoc, TId>> { group };
+        return new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>> { group };
     }
 
     protected abstract ValueTask GroupEvents(IEventGrouping<TId> grouping, IQuerySession session, List<IEvent> events);

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -590,16 +591,16 @@ public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer
     }
 
     [MartenIgnore]
-    public ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
-        var group = new TenantSliceGroup<Totals, Guid>(querySession, querySession.TenantId);
+        var group = new JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>(querySession.TenantId);
 
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
 
-        return new ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>>([group]);
+        return new ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>>([group]);
     }
 
     public void Apply(AEvent e, Totals totals) => totals.Count++;

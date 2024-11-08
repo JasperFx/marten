@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Storage;
@@ -34,10 +35,10 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDo
     }
 
 
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {
-        var list = new List<TenantSliceGroup<TDoc, Guid>>();
+        var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>();
         var byTenant = events.GroupBy(x => x.TenantId);
 
         foreach (var tenantGroup in byTenant)
@@ -48,12 +49,12 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<TDo
                 .GroupBy(x => x.StreamId)
                 .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenant.TenantId, x));
 
-            var group = new TenantSliceGroup<TDoc, Guid>(tenant, slices);
+            var group = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>(tenantGroup.Key, slices);
 
             list.Add(group);
         }
 
-        return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, Guid>>>(list);
+        return new ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>>(list);
     }
 }
 
@@ -79,10 +80,10 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
         }).ToList();
     }
 
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
         List<IEvent> events)
     {
-        var list = new List<TenantSliceGroup<TDoc, TId>>();
+        var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>();
         var byTenant = events.GroupBy(x => x.TenantId);
 
         foreach (var tenantGroup in byTenant)
@@ -93,12 +94,12 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
                 .GroupBy(x => x.StreamId)
                 .Select(x => new EventSlice<TDoc, TId>( _converter(x.Key), tenant.TenantId, x));
 
-            var group = new TenantSliceGroup<TDoc, TId>(tenant, slices);
+            var group = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>(tenantGroup.Key, slices);
 
             list.Add(group);
         }
 
-        return new ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>>(list);
+        return new ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>>(list);
     }
 }
 

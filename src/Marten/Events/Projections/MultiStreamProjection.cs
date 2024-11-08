@@ -18,18 +18,18 @@ namespace Marten.Events.Projections;
 
 public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 {
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
-        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(StorageConstants.DefaultTenantId, querySession.Database));
+        var sliceGroup = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>();
         var groups = events.GroupBy(x => x.TenantId);
         foreach (var @group in groups)
         {
             sliceGroup.AddEvents(@group.Key, @group);
         }
 
-        var list = new List<TenantSliceGroup<TDoc, string>>{sliceGroup};
+        var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>{sliceGroup};
 
-        return ValueTask.FromResult<IReadOnlyList<TenantSliceGroup<TDoc, string>>>(list);
+        return ValueTask.FromResult<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>>(list);
     }
 }
 

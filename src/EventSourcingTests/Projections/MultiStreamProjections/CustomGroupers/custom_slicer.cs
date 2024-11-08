@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -19,14 +20,14 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 {
     public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
     {
-        public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
+        public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
             IQuerySession querySession, List<IEvent> events)
         {
-            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
+            var group = new JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>(querySession.TenantId);
             group.AddEvents<UserRegistered>(@event => @event.UserId, events);
             group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, events);
 
-            return new(new List<TenantSliceGroup<UserGroupsAssignment, Guid>>{group});
+            return new(new List<JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>>{group});
         }
     }
 
