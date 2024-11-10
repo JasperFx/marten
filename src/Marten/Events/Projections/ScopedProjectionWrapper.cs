@@ -11,6 +11,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Projections;
 
@@ -150,6 +151,12 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
     public IProjection Build(DocumentStore store)
     {
         return this;
+    }
+
+    public ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        throw new NotImplementedException();
     }
 
     public uint ProjectionVersion { get; set; }

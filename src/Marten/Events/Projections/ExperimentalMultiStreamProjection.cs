@@ -8,9 +8,13 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Projections;
 
@@ -20,6 +24,7 @@ namespace Marten.Events.Projections;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
+[Obsolete("Collapse into a new AggregationProjection<TDoc, TId>")]
 public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>,
     IMartenEventSlicer<TDoc, TId>
 {
@@ -27,6 +32,15 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
 
     protected ExperimentalMultiStreamProjection(): base(AggregationScope.MultiStream)
     {
+    }
+
+    public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, this);
+        var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
+
+        return new AggregationExecution<TDoc, TId>(runner, logger);
     }
 
     public override bool IsSingleStream()

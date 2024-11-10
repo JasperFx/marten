@@ -3,9 +3,14 @@ using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Schema;
+using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation;
 
@@ -19,10 +24,25 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
     {
     }
 
+    public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        var slicer = buildEventSlicer(store.Options);
+        var aggregateType = _aggregateMapping.DocumentType;
+        var identityType = _aggregateMapping.IdType;
+
+        var types = new Type[]{aggregateType, identityType};
+
+        var builder = typeof(ExecutionBuilder<,>).CloseAndBuildAs<IExecutionBuilder>(types);
+        return builder.Build(slicer, shard, store, database, logger);
+    }
+
     public override bool IsSingleStream()
     {
         return true;
     }
+
+
 
     protected sealed override object buildEventSlicer(StoreOptions options)
     {
@@ -89,5 +109,23 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
             yield return
                 $"At this point, Marten requires that identity members for strong typed identifiers be Nullable<T>. Change {mapping.DocumentType.FullNameInCode()}.{mapping.IdMember.Name} to a Nullable for Marten compliance";
         }
+    }
+}
+
+internal interface IExecutionBuilder
+{
+    ISubscriptionExecution Build(object rawSlicer, AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database, ILogger logger);
+}
+
+internal class ExecutionBuilder<TDoc, TId>: IExecutionBuilder
+{
+    public ISubscriptionExecution Build(object rawSlicer, AsyncProjectionShard shard, DocumentStore store,
+        IMartenDatabase database, ILogger logger)
+    {
+        var slicer = (IMartenEventSlicer<TDoc, TId>)rawSlicer;
+        var adapter = new MartenEventSlicerAdapter<TDoc, TId>(store, database, slicer);
+        var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, adapter);
+
+        return new AggregationExecution<TDoc, TId>(runner, logger);
     }
 }

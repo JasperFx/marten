@@ -4,7 +4,11 @@ using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
+using Marten.Events.Daemon;
+using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Projections.Flattened;
 
@@ -14,6 +18,12 @@ public partial class FlatTableProjection
     private Type? _generatedType;
     private GeneratedType _projectionType;
 
+
+    public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        throw new NotImplementedException();
+    }
 
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {

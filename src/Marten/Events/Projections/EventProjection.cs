@@ -9,6 +9,7 @@ using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
@@ -48,6 +49,12 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
 
             return projection;
         });
+    }
+
+    public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>

@@ -24,7 +24,7 @@ namespace Marten.Events.Daemon.Internals;
 /// <summary>
 ///     Incrementally built batch command for projection updates
 /// </summary>
-public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable, ISessionWorkTracker, IProjectionBatch
+public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISessionWorkTracker
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
@@ -375,6 +375,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
         var store = (DocumentStore)_session.DocumentStore;
         var runtime = (IAggregationRuntime<TDoc, TId>)projection.BuildRuntime(store);
+        // TODO -- encapsulate ending
 
         using var session = new ProjectionDocumentSession(store, this,
             new SessionOptions { Tracking = DocumentTracking.None, Tenant = new Tenant(grouping.TenantId, _session.Database) }, Mode);

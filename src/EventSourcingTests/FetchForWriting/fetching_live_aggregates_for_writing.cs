@@ -591,7 +591,8 @@ public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IMartenEvent
     }
 
     [MartenIgnore]
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>> SliceAsyncEvents(
+        IQuerySession querySession, List<IEvent> events)
     {
         var group = new JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>(querySession.TenantId);
 

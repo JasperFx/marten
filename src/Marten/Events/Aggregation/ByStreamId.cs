@@ -35,7 +35,8 @@ public class ByStreamId<TDoc>: IMartenEventSlicer<TDoc, Guid>, ISingleStreamSlic
     }
 
 
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>> SliceAsyncEvents(
+        IQuerySession querySession,
         List<IEvent> events)
     {
         var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, Guid>>();
@@ -80,7 +81,8 @@ public class ByStreamId<TDoc, TId>: IMartenEventSlicer<TDoc, TId>, ISingleStream
         }).ToList();
     }
 
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
+    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
+        IQuerySession querySession,
         List<IEvent> events)
     {
         var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>();

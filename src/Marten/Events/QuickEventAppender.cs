@@ -18,7 +18,9 @@ internal class QuickEventAppender: IEventAppender
         registerOperationsForStreams(eventGraph, session);
 
         foreach (var projection in inlineProjections)
+        {
             await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+        }
     }
 
     private static void registerOperationsForStreams(EventGraph eventGraph, DocumentSessionBase session)
@@ -37,7 +39,9 @@ internal class QuickEventAppender: IEventAppender
                 session.QueueOperation(storage.InsertStream(stream));
 
                 foreach (var @event in stream.Events)
+                {
                     session.QueueOperation(storage.QuickAppendEventWithVersion(eventGraph, session, stream, @event));
+                }
             }
             else
             {
@@ -47,8 +51,10 @@ internal class QuickEventAppender: IEventAppender
                     stream.PrepareEvents(stream.ExpectedVersionOnServer.Value, eventGraph, sequences, session);
                     session.QueueOperation(storage.UpdateStreamVersion(stream));
                     foreach (var @event in stream.Events)
+                    {
                         session.QueueOperation(
                             storage.QuickAppendEventWithVersion(eventGraph, session, stream, @event));
+                    }
                 }
                 else
                 {

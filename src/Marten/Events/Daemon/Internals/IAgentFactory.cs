@@ -71,7 +71,10 @@ public class AgentFactory: IAgentFactory
 
         if (shard.Source != null)
         {
-            var execution = new GroupedProjectionExecution<ProjectionUpdateBatch, IMartenDatabase, EventRangeGroup>(new GroupedProjectionRunner(shard, _store, database), logger);
+            // RIGHT HERE, HAVE IProjectionSource build the
+            //var execution = new GroupedProjectionExecution<ProjectionUpdateBatch, EventRangeGroup>(new GroupedProjectionRunner(shard, _store, database), logger);
+            var execution = shard.Source.BuildExecution(shard, _store, database, logger);
+
             var options = shard.Source.Options;
             var loader = new EventLoader(_store, database, shard, options);
             var wrapped = new ResilientEventLoader(_store.Options.ResiliencePipeline, loader);

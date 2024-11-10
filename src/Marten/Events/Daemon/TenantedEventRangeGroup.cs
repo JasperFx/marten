@@ -62,7 +62,7 @@ internal class TenantedEventRangeGroup: EventRangeGroup
         }
     }
 
-    public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
+    public override ValueTask SkipEventSequence(long eventSequence)
     {
         Range.SkipEventSequence(eventSequence);
         Groups.Clear();

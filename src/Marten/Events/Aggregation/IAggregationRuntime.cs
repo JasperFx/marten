@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -16,10 +17,11 @@ namespace Marten.Events.Aggregation;
 /// <summary>
 ///     Internal interface for runtime event aggregation
 /// </summary>
-public interface IAggregationRuntime: IProjection
+public interface IAggregationRuntime : IProjection
 {
     IAggregateVersioning Versioning { get; set; }
 
+    [Obsolete("Find a way to eliminate this")]
     ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
         CancellationToken cancellationToken);
 

@@ -3,35 +3,22 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Runtime.Versioning;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
+using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Projections;
-
-public class TenantRollupSlicer<TDoc>: IMartenEventSlicer<TDoc, string>
-{
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
-    {
-        var sliceGroup = new JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>();
-        var groups = events.GroupBy(x => x.TenantId);
-        foreach (var @group in groups)
-        {
-            sliceGroup.AddEvents(@group.Key, @group);
-        }
-
-        var list = new List<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>{sliceGroup};
-
-        return ValueTask.FromResult<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, string>>>(list);
-    }
-}
 
 /// <summary>
 ///     Project a single document view across events that may span across
@@ -52,6 +39,15 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
     public override bool IsSingleStream()
     {
         return Slicer is ISingleStreamSlicer;
+    }
+
+    public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, Slicer);
+        var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
+
+        return new AggregationExecution<TDoc, TId>(runner, logger);
     }
 
     /// <summary>

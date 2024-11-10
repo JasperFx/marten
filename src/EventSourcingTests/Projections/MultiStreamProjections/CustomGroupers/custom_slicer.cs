@@ -20,8 +20,8 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 {
     public class CustomSlicer: IMartenEventSlicer<UserGroupsAssignment, Guid>
     {
-        public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
-            IQuerySession querySession, List<IEvent> events)
+        public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>>>
+            SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
         {
             var group = new JasperFx.Events.Grouping.EventSliceGroup<UserGroupsAssignment, Guid>(querySession.TenantId);
             group.AddEvents<UserRegistered>(@event => @event.UserId, events);

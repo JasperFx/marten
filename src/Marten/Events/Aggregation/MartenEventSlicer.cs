@@ -19,7 +19,8 @@ public class MartenEventSlicer<TDoc, TId>: IMartenEventSlicer<TDoc, TId>
     private readonly IList<IAggregateGrouper<TId>> _lookupGroupers = new List<IAggregateGrouper<TId>>();
     private bool _groupByTenant;
 
-    public async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(IQuerySession querySession,
+    public async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
+        IQuerySession querySession,
         List<IEvent> events)
     {
         foreach (var fanOutRule in _beforeGroupingFanoutRules) fanOutRule.Apply(events);

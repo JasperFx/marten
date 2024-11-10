@@ -12,6 +12,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Projections;
 
@@ -28,6 +29,10 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
     }
 
     internal StoreOptions StoreOptions { get; set; }
+
+    public abstract ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store,
+        IMartenDatabase database,
+        ILogger logger);
 
     bool ICodeFile.AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
         string containingNamespace)

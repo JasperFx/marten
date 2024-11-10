@@ -21,6 +21,7 @@ using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
 using Marten.Util;
+using Microsoft.Extensions.Logging;
 
 namespace Marten.Events.Aggregation;
 
@@ -36,7 +37,8 @@ public abstract class CustomProjection<TDoc, TId>:
     IProjectionSource,
     IAggregateProjection,
     IAggregateProjectionWithSideEffects<TDoc>,
-    ILiveAggregator<TDoc>
+    ILiveAggregator<TDoc>,
+    IProjection
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
@@ -52,6 +54,15 @@ public abstract class CustomProjection<TDoc, TId>:
         {
             Slicer = (IMartenEventSlicer<TDoc, TId>)new ByStreamKey<TDoc>();
         }
+    }
+
+    ISubscriptionExecution IProjectionSource.BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, Slicer);
+        var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
+
+        return new AggregationExecution<TDoc, TId>(runner, logger);
     }
 
     public IAggregationRuntime BuildRuntime(DocumentStore store)
@@ -122,10 +133,11 @@ public abstract class CustomProjection<TDoc, TId>:
         EventRange range,
         CancellationToken cancellationToken)
     {
-        await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
-
-        return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
+        throw new NotImplementedException(); // Is this still necessary? Maybe for Inline projections?
+        // await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
+        // var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
+        //
+        // return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
@@ -247,7 +259,8 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         var groups = await GroupEventRange(store, daemonDatabase, range, cancellationToken).ConfigureAwait(false);
 
-        return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
+        throw new NotImplementedException();
+        //return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     IProjection IProjectionSource.Build(DocumentStore store)

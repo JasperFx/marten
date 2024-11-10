@@ -7,6 +7,7 @@ using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Projections;
@@ -39,6 +40,13 @@ internal class ProjectionWrapper: IProjectionSource
     IProjection IProjectionSource.Build(DocumentStore store)
     {
         return _projection;
+    }
+
+    public ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger)
+    {
+        // TODO -- how to allow this?
+        throw new NotImplementedException();
     }
 
     IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)

@@ -6,6 +6,7 @@ using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
+using Microsoft.Extensions.Logging;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
@@ -33,6 +34,9 @@ public interface IProjectionSource: IReadOnlyProjectionData
         CancellationToken cancellationToken);
 
     IProjection Build(DocumentStore store);
+
+    ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
+        ILogger logger);
 
     /// <summary>
     /// Specify that this projection is a non 1 version of the original projection definition to opt

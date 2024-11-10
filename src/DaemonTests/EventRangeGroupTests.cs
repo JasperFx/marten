@@ -57,7 +57,7 @@ internal class TestEventRangeGroup: EventRangeGroup
         throw new NotSupportedException();
     }
 
-    public override ValueTask SkipEventSequence(long eventSequence, IMartenDatabase database)
+    public override ValueTask SkipEventSequence(long eventSequence)
     {
         throw new NotSupportedException();
     }
