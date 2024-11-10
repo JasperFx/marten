@@ -9,6 +9,7 @@ using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using WalkReferencedAssemblies = JasperFx.Core.Reflection.WalkReferencedAssemblies;
 
 namespace Marten.Internal.CompiledQueries;
 
