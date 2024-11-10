@@ -28,28 +28,16 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
+    private readonly DocumentSessionBase _session;
     private readonly DaemonSettings _settings;
     private readonly CancellationToken _token;
+
+    private IMessageBatch? _batch;
     private OperationPage? _current;
-    private readonly DocumentSessionBase _session;
 
-    private IMartenSession Session
-    {
-        get => _session ?? throw new InvalidOperationException("Session already released");
-    }
-
-    public List<IChangeListener> Listeners { get; } = new();
-
-    public ShardExecutionMode Mode { get; }
-
-    public bool ShouldApplyListeners { get; set; }
-
-    public Task ExecuteAsync(CancellationToken token)
-    {
-        return _session.ExecuteBatchAsync(this, token);
-    }
-
-    internal ProjectionUpdateBatch(DaemonSettings settings, DocumentSessionBase session, ShardExecutionMode mode, CancellationToken token)
+    internal ProjectionUpdateBatch(DaemonSettings settings, DocumentSessionBase session, ShardExecutionMode mode,
+        CancellationToken token)
     {
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
@@ -80,14 +68,82 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         startNewPage(_session);
     }
 
-    public Task WaitForCompletion()
-    {
-        Queue.Complete();
-        return Queue.Completion;
-    }
+    private IMartenSession Session => _session ?? throw new InvalidOperationException("Session already released");
+
+    public List<IChangeListener> Listeners { get; } = new();
+
+    public ShardExecutionMode Mode { get; }
+
+    public bool ShouldApplyListeners { get; set; }
 
     // TODO -- make this private
     public ActionBlock<IStorageOperation> Queue { get; }
+
+    public Task ExecuteAsync(CancellationToken token)
+    {
+        return _session.ExecuteBatchAsync(this, token);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Queue.Complete();
+        foreach (var page in _pages) page.ReleaseSession();
+
+        if (_session != null)
+        {
+            await _session.DisposeAsync().ConfigureAwait(true);
+        }
+
+        Dispose(false);
+        GC.SuppressFinalize(this);
+    }
+
+
+    public async Task ProcessAggregationAsync<TDoc, TId>(EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
+    {
+        // TODO -- put this logic of finding the runtime somewhere a bit more encapsulated
+        if (!_session.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
+        {
+            throw new ArgumentOutOfRangeException(
+                $"No known aggregation runtime for document type {typeof(TDoc).FullNameInCode()}");
+        }
+
+        var store = (DocumentStore)_session.DocumentStore;
+        var runtime = (IAggregationRuntime<TDoc, TId>)projection.BuildRuntime(store);
+        // TODO -- encapsulate ending
+
+        using var session = new ProjectionDocumentSession(store, this,
+            new SessionOptions
+            {
+                Tracking = DocumentTracking.None, Tenant = new Tenant(grouping.TenantId, _session.Database)
+            }, Mode);
+
+        var builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
+        {
+            if (token.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // TODO -- emit exceptions in one place
+            await runtime.ApplyChangesAsync(session, slice, token, ProjectionLifecycle.Async)
+                .ConfigureAwait(false);
+        }, new ExecutionDataflowBlockOptions { CancellationToken = token });
+
+        await processEventSlices(builder, runtime, store, grouping, token).ConfigureAwait(false);
+
+        if (builder != null)
+        {
+            builder.Complete();
+            await builder.Completion.ConfigureAwait(false);
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
 
     IEnumerable<IDeletion> IUnitOfWork.Deletions()
     {
@@ -238,7 +294,10 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         }
 
         var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (!listeners.Any()) return;
+        if (!listeners.Any())
+        {
+            return;
+        }
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
         foreach (var listener in listeners)
@@ -256,37 +315,16 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         }
 
         var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (!listeners.Any()) return;
+        if (!listeners.Any())
+        {
+            return;
+        }
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
         foreach (var listener in listeners)
         {
             await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
-        }
-    }
-
-    private void startNewPage(IMartenSession session)
-    {
-        if (_token.IsCancellationRequested)
-            return;
-
-        _current = new OperationPage(session, new BatchBuilder());
-        _pages.Add(_current);
-    }
-
-    private void processOperation(IStorageOperation operation)
-    {
-        if (_token.IsCancellationRequested)
-            return;
-
-        _current.Append(operation);
-
-        _documentTypes.Fill(operation.DocumentType);
-
-        if (_session != null && !_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
-        {
-            startNewPage(Session);
         }
     }
 
@@ -301,33 +339,52 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         return _pages.Where(x => x.Operations.Any()).ToList();
     }
 
-
-    public ValueTask CloseSession() => DisposeAsync();
-
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    public async ValueTask DisposeAsync()
+    public Task WaitForCompletion()
     {
         Queue.Complete();
-        foreach (var page in _pages) page.ReleaseSession();
+        return Queue.Completion;
+    }
 
-        if (_session != null)
+    private void startNewPage(IMartenSession session)
+    {
+        if (_token.IsCancellationRequested)
         {
-            await _session.DisposeAsync().ConfigureAwait(true);
+            return;
         }
 
-        Dispose(disposing: false);
-        GC.SuppressFinalize(this);
+        _current = new OperationPage(session, new BatchBuilder());
+        _pages.Add(_current);
+    }
+
+    private void processOperation(IStorageOperation operation)
+    {
+        if (_token.IsCancellationRequested)
+        {
+            return;
+        }
+
+        _current.Append(operation);
+
+        _documentTypes.Fill(operation.DocumentType);
+
+        if (_session != null && !_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
+        {
+            startNewPage(Session);
+        }
+    }
+
+
+    public ValueTask CloseSession()
+    {
+        return DisposeAsync();
     }
 
     protected void Dispose(bool disposing)
     {
         if (!disposing)
+        {
             return;
+        }
 
         Queue.Complete();
 
@@ -336,15 +393,19 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         _session?.Dispose();
     }
 
-    private IMessageBatch? _batch;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
     public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
     {
-        if (_batch != null) return _batch;
+        if (_batch != null)
+        {
+            return _batch;
+        }
 
         await _semaphore.WaitAsync(_token).ConfigureAwait(false);
 
-        if (_batch != null) return _batch;
+        if (_batch != null)
+        {
+            return _batch;
+        }
 
         try
         {
@@ -359,48 +420,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         }
     }
 
-
-    public async Task ProcessAggregationAsync<TDoc, TId>(JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
+    private async Task processEventSlices<TDoc, TId>(ActionBlock<EventSlice<TDoc, TId>> builder,
+        IAggregationRuntime<TDoc, TId> runtime,
+        IDocumentStore store, EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
     {
-        // TODO -- put this logic of finding the runtime somewhere a bit more encapsulated
-        if (!_session.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
-        {
-            throw new ArgumentOutOfRangeException(
-                $"No known aggregation runtime for document type {typeof(TDoc).FullNameInCode()}");
-        }
-
-        var store = (DocumentStore)_session.DocumentStore;
-        var runtime = (IAggregationRuntime<TDoc, TId>)projection.BuildRuntime(store);
-        // TODO -- encapsulate ending
-
-        using var session = new ProjectionDocumentSession(store, this,
-            new SessionOptions { Tracking = DocumentTracking.None, Tenant = new Tenant(grouping.TenantId, _session.Database) }, Mode);
-
-        var builder = new ActionBlock<EventSlice<TDoc, TId>>(async slice =>
-        {
-            if (token.IsCancellationRequested)
-            {
-                return;
-            }
-
-            // TODO -- emit exceptions in one place
-            await runtime.ApplyChangesAsync(session, slice, token, ProjectionLifecycle.Async)
-                .ConfigureAwait(false);
-        }, new ExecutionDataflowBlockOptions { CancellationToken = token });
-
-        await processEventSlices(builder, runtime, store, grouping, token).ConfigureAwait(false);
-
-        if (builder != null)
-        {
-            builder.Complete();
-            await builder.Completion.ConfigureAwait(false);
-        }
-    }
-
-        private async Task processEventSlices<TDoc, TId>(ActionBlock<EventSlice<TDoc, TId>> builder, IAggregationRuntime<TDoc, TId> runtime,
-            IDocumentStore store, JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
-        {
-            var tenant = new Tenant(grouping.TenantId, _session.Database);
+        var tenant = new Tenant(grouping.TenantId, _session.Database);
 
         var cache = runtime.CacheFor(tenant);
         var beingFetched = new List<EventSlice<TDoc, TId>>();
@@ -471,5 +495,4 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
             builder?.Post(slice);
         }
     }
-
 }
