@@ -6,6 +6,7 @@ using JasperFx.Core;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Weasel.Core.Operations;
 
 namespace Marten;
 

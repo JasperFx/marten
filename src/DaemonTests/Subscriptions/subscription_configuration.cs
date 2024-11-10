@@ -13,6 +13,7 @@ using Marten.Services;
 using Marten.Subscriptions;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Operations;
 using Xunit;
 
 namespace DaemonTests.Subscriptions;

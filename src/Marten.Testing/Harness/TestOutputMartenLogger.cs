@@ -6,6 +6,7 @@ using System.Linq;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Weasel.Core.Operations;
 using Xunit.Abstractions;
 
 namespace Marten.Testing.Harness

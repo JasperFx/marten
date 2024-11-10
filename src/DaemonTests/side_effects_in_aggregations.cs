@@ -16,6 +16,7 @@ using Marten.Metadata;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core.Operations;
 using Xunit;
 using Xunit.Abstractions;
 

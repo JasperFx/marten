@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using Marten.Services;
 using Npgsql;
+using Weasel.Core.Operations;
 
 namespace Marten;
 

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using JasperFx.Core;
 using Marten.Services;
 using Marten.Testing.Documents;
+using Weasel.Core.Operations;
 
 namespace Marten.Testing.Examples;
 

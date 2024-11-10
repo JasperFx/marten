@@ -26,8 +26,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
 
     StoreOptions Options { get; }
 
-    IList<IChangeTracker> ChangeTrackers { get; }
-
     /// <summary>
     ///     Override whether or not this session honors optimistic concurrency checks
     /// </summary>

@@ -5,6 +5,7 @@ using JasperFx.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Weasel.Core.Operations;
 
 namespace Marten.Events.Daemon.Internals;
 

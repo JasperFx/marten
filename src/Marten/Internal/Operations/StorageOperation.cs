@@ -22,7 +22,7 @@ public interface IRevisionedOperation
     bool IgnoreConcurrencyViolation { get; set; }
 }
 
-public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation
+public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IStorageOperation<T, TId>, IExceptionTransform, IRevisionedOperation
 {
     private const string ExpectedMessage = "23505: duplicate key value violates unique constraint";
 

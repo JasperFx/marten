@@ -8,6 +8,7 @@ using Marten.Services;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
+using Weasel.Core.Operations;
 using Xunit;
 
 namespace EventSourcingTests;

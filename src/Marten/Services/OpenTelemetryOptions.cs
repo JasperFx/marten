@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
+using Weasel.Core.Operations;
 
 namespace Marten.Services;
 

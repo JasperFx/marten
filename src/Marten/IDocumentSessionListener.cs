@@ -2,6 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Weasel.Core.Operations;
 
 namespace Marten;
 

@@ -16,6 +16,7 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
+using Weasel.Core.Operations;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using Xunit.Abstractions;

@@ -36,7 +36,7 @@ public abstract partial class DocumentSessionBase
             throw;
         }
 
-        _workTracker.Sort(Options);
+        _workTracker.Sort();
 
         if (Options.AutoCreateSchemaObjects != AutoCreate.None)
         {

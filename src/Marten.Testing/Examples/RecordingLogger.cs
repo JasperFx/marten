@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using Marten.Services;
 using Npgsql;
+using Weasel.Core.Operations;
 
 namespace Marten.Testing.Examples;
 

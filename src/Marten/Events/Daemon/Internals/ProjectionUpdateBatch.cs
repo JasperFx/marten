@@ -184,7 +184,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         Queue.Post(operation);
     }
 
-    void ISessionWorkTracker.Sort(StoreOptions options)
+    void ISessionWorkTracker.Sort()
     {
         throw new NotSupportedException();
     }
