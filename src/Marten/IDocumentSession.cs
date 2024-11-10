@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Services;
+using Weasel.Core.Operations;
 
 namespace Marten;
 
