@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using JasperFx.Events;
 using Marten.Events;
+using Weasel.Core.Operations;
 
 namespace Marten.Services;
 
