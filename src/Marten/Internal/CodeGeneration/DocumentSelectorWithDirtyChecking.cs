@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Marten.Internal.DirtyTracking;
 using Marten.Schema;
 using Microsoft.CodeAnalysis;
+using Weasel.Core.Operations.DirtyTracking;
 using Weasel.Core.Serialization;
 
 namespace Marten.Internal.CodeGeneration;

@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
-using Marten.Internal.DirtyTracking;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core.Operations;
+using Weasel.Core.Operations.DirtyTracking;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.Operations;

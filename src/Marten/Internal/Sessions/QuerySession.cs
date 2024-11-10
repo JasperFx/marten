@@ -61,9 +61,9 @@ public partial class QuerySession: IMartenSession, IQuerySession
             .Where(x => x.DetectChanges(this, out var _)).Select(x => x.Document);
     }
 
-    void IStorageSession.UpsertDirtyCheckedDocument<T>(T document)
+    IStorageOperation IStorageSession.UpsertDirtyCheckedDocument<T>(T document)
     {
-        Database
+        return Database
             .Providers.StorageFor<T>()
             .DirtyTracking
             .Upsert(document, this, TenantId);

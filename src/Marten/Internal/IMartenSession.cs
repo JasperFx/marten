@@ -5,12 +5,12 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Internal.DirtyTracking;
 using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
 using Weasel.Core.Operations;
+using Weasel.Core.Operations.DirtyTracking;
 using Weasel.Core.Serialization;
 
 namespace Marten.Internal;

@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using Marten.Internal.DirtyTracking;
+using Weasel.Core.Operations.DirtyTracking;
 
 namespace Marten.Internal.Sessions;
 

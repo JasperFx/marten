@@ -5,6 +5,7 @@ using JasperFx.Core;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 
