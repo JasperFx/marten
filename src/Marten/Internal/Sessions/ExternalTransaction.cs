@@ -6,9 +6,12 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Exceptions;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Services;
 using Npgsql;
+using Weasel.Core.Operations;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.Sessions;
 
@@ -255,7 +258,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
             await BeginTransactionAsync(token).ConfigureAwait(false);
             foreach (var page in pages)
             {
-                var batch = page.Compile();
+                var batch = page.Builder.As<BatchBuilder>().Compile();
                 await using var reader = await ExecuteReaderAsync(batch, token).ConfigureAwait(false);
                 await page.ApplyCallbacksAsync(reader, exceptions, token).ConfigureAwait(false);
             }

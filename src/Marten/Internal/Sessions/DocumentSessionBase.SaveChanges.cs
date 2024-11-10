@@ -10,6 +10,7 @@ using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Npgsql;
 using Weasel.Core;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 

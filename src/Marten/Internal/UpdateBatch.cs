@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Weasel.Core.Operations;
+using Weasel.Postgresql;
 
 namespace Marten.Internal;
 
@@ -46,9 +47,9 @@ public class UpdateBatch: IUpdateBatch
             yield break;
         }
 
-        if (_operations.Count < session.Options.UpdateBatchSize)
+        if (_operations.Count < session.UpdateBatchSize())
         {
-            yield return new OperationPage(session, _operations);
+            yield return new OperationPage(session, new BatchBuilder(), _operations);
         }
         else
         {
@@ -61,7 +62,7 @@ public class UpdateBatch: IUpdateBatch
                     .Take(session.UpdateBatchSize())
                     .ToArray();
 
-                var page = new OperationPage(session, operations);
+                var page = new OperationPage(session, new BatchBuilder(), operations);
                 yield return page;
 
                 count += session.UpdateBatchSize();

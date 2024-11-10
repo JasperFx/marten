@@ -12,11 +12,11 @@ using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Internal;
-using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Weasel.Core.Operations;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Internals;
 #nullable enable
@@ -37,8 +37,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
     {
         get => _session ?? throw new InvalidOperationException("Session already released");
     }
-
-    public IMartenDatabase Database => _session.Database;
 
     public List<IChangeListener> Listeners { get; } = new();
 
@@ -90,8 +88,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
 
     // TODO -- make this private
     public ActionBlock<IStorageOperation> Queue { get; }
-
-
 
     IEnumerable<IDeletion> IUnitOfWork.Deletions()
     {
@@ -275,7 +271,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
         if (_token.IsCancellationRequested)
             return;
 
-        _current = new OperationPage(session);
+        _current = new OperationPage(session, new BatchBuilder());
         _pages.Add(_current);
     }
 

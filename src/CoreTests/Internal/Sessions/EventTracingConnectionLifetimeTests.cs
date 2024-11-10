@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Services;
+using Weasel.Core.Operations;
 using Weasel.Postgresql;
 using Xunit;
 

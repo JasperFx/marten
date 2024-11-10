@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
 using Npgsql;
+using Weasel.Core.Operations;
 
 namespace Marten.Internal.Sessions;
 

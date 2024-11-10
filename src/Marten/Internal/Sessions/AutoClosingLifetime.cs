@@ -8,10 +8,13 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Exceptions;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Npgsql;
+using Weasel.Core.Operations;
+using Weasel.Postgresql;
 
 namespace Marten.Internal.Sessions;
 
@@ -206,7 +209,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
             {
                 foreach (var page in pages)
                 {
-                    var batch = page.Compile();
+                    var batch = page.Builder.As<BatchBuilder>().Compile();
                     batch.Timeout = CommandTimeout;
                     batch.Connection = conn;
                     batch.Transaction = tx;
