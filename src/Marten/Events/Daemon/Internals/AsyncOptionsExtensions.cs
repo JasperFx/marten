@@ -1,3 +1,4 @@
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Weasel.Core;
 

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;

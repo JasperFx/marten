@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using OpenTelemetry.Trace;
 

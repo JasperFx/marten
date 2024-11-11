@@ -7,6 +7,7 @@ using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Lamar.IoC.Instances;
 using Marten;

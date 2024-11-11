@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Internal.OpenTelemetry;
 
