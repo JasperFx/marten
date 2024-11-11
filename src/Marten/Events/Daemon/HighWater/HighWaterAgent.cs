@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Timers;
 using JasperFx.Core;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Daemon.HighWater;
 using JasperFx.Events.Projections;
 using OpenTelemetry.Trace;
 

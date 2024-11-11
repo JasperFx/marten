@@ -1,5 +1,6 @@
 using System;
 using JasperFx.Core;
+using JasperFx.Events.Daemon.HighWater;
 using Marten.Events.Daemon.HighWater;
 using Shouldly;
 using Xunit;
