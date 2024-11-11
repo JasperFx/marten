@@ -16,7 +16,7 @@ public interface IMartenEventSlicer<TDoc, TId>
     /// <param name="querySession"></param>
     /// <param name="events"></param>
     /// <returns></returns>
-    ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
+    ValueTask<IReadOnlyList<EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
         IQuerySession querySession,
         List<IEvent> events);
 }
