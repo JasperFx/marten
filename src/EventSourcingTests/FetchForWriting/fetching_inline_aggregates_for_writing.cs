@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -30,7 +31,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
         var streamId = Guid.NewGuid();
 
@@ -55,7 +56,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline);
             opts.Events.AppendMode = EventAppendMode.Quick;
             opts.Events.UseIdentityMapForInlineAggregates = true;
         });
@@ -81,7 +82,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregate2>(SnapshotLifecycle.Inline).Metadata(m =>
+            opts.Projections.Snapshot<SimpleAggregate2>(ProjectionLifecycle.Inline).Metadata(m =>
             {
                 m.Revision.MapTo(x => x.Version);
             });
@@ -110,7 +111,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
         var streamId = Guid.NewGuid();
 
@@ -139,7 +140,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
         var streamId = Guid.NewGuid();
 
@@ -166,7 +167,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         StoreOptions(opts =>
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline).MultiTenanted();
+            opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline).MultiTenanted();
         });
 
         var streamId = Guid.NewGuid();
@@ -193,7 +194,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -220,7 +221,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -249,7 +250,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline).MultiTenanted();
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline).MultiTenanted();
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         });
@@ -277,7 +278,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_existing_stream_exclusively_happy_path_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
 
         var streamId = Guid.NewGuid();
@@ -302,7 +303,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_sad_path()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
 
         var streamId = Guid.NewGuid();
@@ -327,7 +328,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -355,7 +356,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -385,7 +386,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
 
         var streamId = Guid.NewGuid();
@@ -405,7 +406,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_immediate_sad_path()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
 
         var streamId = Guid.NewGuid();
@@ -423,7 +424,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_sad_path_on_save_changes()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline));
 
 
         var streamId = Guid.NewGuid();
@@ -457,7 +458,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -480,7 +481,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -501,7 +502,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -557,7 +558,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Inline);
             opts.Events.UseIdentityMapForInlineAggregates = true;
         });
 

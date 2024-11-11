@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;

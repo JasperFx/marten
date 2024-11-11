@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Bug1781;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -21,8 +22,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
-                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline)
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
             });
 
@@ -35,9 +36,9 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString;
-                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline)
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline)
                     .ForeignKey<DataImportAggregate>(y => y.ImportId);
-                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
             });
 
             await RunTest(documentStore);

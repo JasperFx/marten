@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.Events.Projections;
 using Lamar;
 using Marten;
 using Marten.Events.Projections;

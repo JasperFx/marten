@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -22,7 +23,7 @@ public class ProjectionCodeGenerationApplyOrderTests
         options.Connection(ConnectionSource.ConnectionString);
 
         // Given
-        options.Projections.Snapshot<Something>(SnapshotLifecycle.Inline);
+        options.Projections.Snapshot<Something>(ProjectionLifecycle.Inline);
 
         // When
         var store = new DocumentStore(options);

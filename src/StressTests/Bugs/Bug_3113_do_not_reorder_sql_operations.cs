@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;
@@ -23,7 +24,7 @@ public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationConte
         StoreOptions(opts =>
         {
             opts.Projections.LiveStreamAggregation<Thing>();
-            opts.Projections.Snapshot<MyProjection1>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<MyProjection1>(ProjectionLifecycle.Inline);
             opts.Projections.Add<MyTableProjection>(ProjectionLifecycle.Inline);
         });
 
@@ -36,8 +37,8 @@ public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationConte
         StoreOptions(opts =>
         {
             opts.Projections.LiveStreamAggregation<Thing>();
-            opts.Projections.Snapshot<MyProjection1>(SnapshotLifecycle.Inline);
-            opts.Projections.Snapshot<MyProjection2>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<MyProjection1>(ProjectionLifecycle.Inline);
+            opts.Projections.Snapshot<MyProjection2>(ProjectionLifecycle.Inline);
             opts.Projections.Add<MyTableProjection>(ProjectionLifecycle.Inline);
         });
 

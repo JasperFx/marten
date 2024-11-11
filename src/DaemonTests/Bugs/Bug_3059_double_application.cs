@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
@@ -39,7 +40,7 @@ public class Bug_3059_double_application
                     opts.DatabaseSchemaName = "bug3059";
 
                     opts.Projections.LiveStreamAggregation<Incident>();
-                    opts.Projections.Snapshot<IncidentDetailsSnapshotAsyncProjection>(SnapshotLifecycle.Async);
+                    opts.Projections.Snapshot<IncidentDetailsSnapshotAsyncProjection>(ProjectionLifecycle.Async);
                 })
                 .AddAsyncDaemon(DaemonMode.Solo);
             }).StartAsync();

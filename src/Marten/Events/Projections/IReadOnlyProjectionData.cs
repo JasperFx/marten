@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Events.Projections;
 
 namespace Marten.Events.Projections;
 

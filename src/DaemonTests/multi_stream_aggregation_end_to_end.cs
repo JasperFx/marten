@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Metadata;

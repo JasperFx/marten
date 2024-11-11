@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;

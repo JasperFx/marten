@@ -43,7 +43,7 @@ public abstract partial class EventProjection
         return _generatedType != null;
     }
 
-    internal override void AssembleAndAssertValidity()
+    public override void AssembleAndAssertValidity()
     {
         if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
         {

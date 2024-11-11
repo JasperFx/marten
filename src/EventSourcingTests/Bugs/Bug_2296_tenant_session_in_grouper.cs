@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;

@@ -2,6 +2,7 @@ using Marten;
 using DaemonTests;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

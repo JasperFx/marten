@@ -1,4 +1,5 @@
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ public class StringIdentifiedStreamsFixture: StoreFixture
     {
         Options.Events.AppendMode = EventAppendMode.Quick;
         Options.Events.StreamIdentity = StreamIdentity.AsString;
-        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(SnapshotLifecycle.Inline);
+        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(ProjectionLifecycle.Inline);
 
         Options.Events.AddEventType(typeof(MembersJoined));
         Options.Events.AddEventType(typeof(MembersDeparted));

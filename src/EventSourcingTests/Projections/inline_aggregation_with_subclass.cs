@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,7 +17,7 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
         {
             x.Schema.For<FooBase>().AddSubClass<FooA>();
 
-            x.Projections.Snapshot<FooA>(SnapshotLifecycle.Inline);
+            x.Projections.Snapshot<FooA>(ProjectionLifecycle.Inline);
         });
     }
 

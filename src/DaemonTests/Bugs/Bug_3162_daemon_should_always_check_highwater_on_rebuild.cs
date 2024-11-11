@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -30,7 +31,7 @@ public class Bug_3162_daemon_should_always_check_highwater_on_rebuild : BugInteg
     {
         StoreOptions(options =>
         {
-            options.Projections.Snapshot<Team>(SnapshotLifecycle.Inline);
+            options.Projections.Snapshot<Team>(ProjectionLifecycle.Inline);
             options.Projections.Add<InvitationProjection>(ProjectionLifecycle.Async);
             options.GeneratedCodeMode = TypeLoadMode.Auto;
         });

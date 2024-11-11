@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -79,7 +80,7 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
         StoreOptions(opts =>
         {
             opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
-            opts.Projections.Snapshot<Payment2>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<Payment2>(ProjectionLifecycle.Inline);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -103,7 +104,7 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
-            opts.Projections.Snapshot<Payment2>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<Payment2>(ProjectionLifecycle.Async);
             opts.DotNetLogger = testLogger;
         });
 

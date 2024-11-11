@@ -29,7 +29,7 @@ public partial class FlatTableProjection
         }
     }
 
-    internal override void AssembleAndAssertValidity()
+    public override void AssembleAndAssertValidity()
     {
         var messages = quickValidations().ToArray();
         if (messages.Any())

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -39,8 +40,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
             // every opportunity to make things work
             opts.Events.AddEventType<LoadTestEvent>();
             opts.Events.AddEventType<LoadTestUnrelatedEvent>();
-            opts.Projections.Snapshot<LoadTestInlineProjection>(SnapshotLifecycle.Inline);
-            opts.Projections.Snapshot<LoadTestUnrelatedInlineProjection>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<LoadTestInlineProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.Snapshot<LoadTestUnrelatedInlineProjection>(ProjectionLifecycle.Inline);
         });
     }
 

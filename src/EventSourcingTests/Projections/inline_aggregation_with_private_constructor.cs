@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -19,14 +20,14 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
-            _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<WithMultiplePublicNonDefaultConstructors>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructors>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePublicNonDefaultConstructors>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructors>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<WithMultiplePrivateNonDefaultConstructorsAndAttribute>(ProjectionLifecycle.Inline);
             _.Projections.Snapshot<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>(
-                SnapshotLifecycle.Inline);
+                ProjectionLifecycle.Inline);
         });
     }
 

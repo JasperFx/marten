@@ -6,6 +6,7 @@ using EventSourcingTests.Utils;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -629,7 +630,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
             opts.Connection(ConnectionSource.ConnectionString);
 
-            opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Inline);
 
             opts.Events.AddEventType(typeof(MembersJoined));
             opts.Events.AddEventType(typeof(MembersDeparted));

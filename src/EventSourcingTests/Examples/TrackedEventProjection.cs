@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -20,9 +21,9 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Projections.Snapshot<QuestMonstersWithBaseClass>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithBaseClass>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>(ProjectionLifecycle.Inline);
         });
     }
 

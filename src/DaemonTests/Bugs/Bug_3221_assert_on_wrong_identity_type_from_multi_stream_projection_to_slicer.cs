@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;

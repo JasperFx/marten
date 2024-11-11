@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.CommandLine;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;

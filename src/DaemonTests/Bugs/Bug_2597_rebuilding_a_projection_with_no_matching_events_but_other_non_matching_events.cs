@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
@@ -14,8 +15,8 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<UsesAEventOnly>(SnapshotLifecycle.Async);
-            opts.Projections.Snapshot<OtherAggregate>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<UsesAEventOnly>(ProjectionLifecycle.Async);
+            opts.Projections.Snapshot<OtherAggregate>(ProjectionLifecycle.Inline);
         });
 
         using (var session = theStore.LightweightSession())
@@ -39,8 +40,8 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<UsesAEventOnly>(SnapshotLifecycle.Async);
-            opts.Projections.Snapshot<OtherAggregate>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<UsesAEventOnly>(ProjectionLifecycle.Async);
+            opts.Projections.Snapshot<OtherAggregate>(ProjectionLifecycle.Inline);
         });
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();

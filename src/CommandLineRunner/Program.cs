@@ -5,6 +5,7 @@ using Marten;
 using DaemonTests;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;

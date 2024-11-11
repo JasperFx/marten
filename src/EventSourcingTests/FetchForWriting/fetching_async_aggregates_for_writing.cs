@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -28,7 +29,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
         var streamId = Guid.NewGuid();
 
@@ -51,7 +52,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
         var streamId = Guid.NewGuid();
 
@@ -80,7 +81,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
         var streamId = Guid.NewGuid();
 
@@ -109,7 +110,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async).MultiTenanted();
+            opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async).MultiTenanted();
         });
 
         var streamId = Guid.NewGuid();
@@ -136,7 +137,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -163,7 +164,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -192,7 +193,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async).MultiTenanted();
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async).MultiTenanted();
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         });
@@ -220,7 +221,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_existing_stream_exclusively_happy_path_for_writing_Guid_identifier()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
         var streamId = Guid.NewGuid();
 
@@ -246,7 +247,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_sad_path()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
 
         var streamId = Guid.NewGuid();
@@ -271,7 +272,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -299,7 +300,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -329,7 +330,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
 
         var streamId = Guid.NewGuid();
@@ -349,7 +350,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_immediate_sad_path()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
 
         var streamId = Guid.NewGuid();
@@ -367,7 +368,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_sad_path_on_save_changes()
     {
-        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(ProjectionLifecycle.Async));
 
 
         var streamId = Guid.NewGuid();
@@ -401,7 +402,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -424,7 +425,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -445,7 +446,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -478,7 +479,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -504,7 +505,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<SimpleAggregateAsString>(ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
@@ -548,7 +549,7 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
-            opts.Projections.Snapshot<TestProjection>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<TestProjection>(ProjectionLifecycle.Async);
         });
 
         var streamKey = Guid.NewGuid().ToString();

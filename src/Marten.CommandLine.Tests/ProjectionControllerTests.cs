@@ -1,4 +1,5 @@
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;

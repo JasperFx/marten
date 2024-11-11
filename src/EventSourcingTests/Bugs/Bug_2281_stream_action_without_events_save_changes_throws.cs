@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Bug2281;
-
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -21,7 +21,7 @@ namespace EventSourcingTests.Bugs
         {
             using var documentStore = SeparateStore(x =>
             {
-                x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<TestEntity>(ProjectionLifecycle.Inline);
             });
 
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 0);
@@ -53,7 +53,7 @@ namespace EventSourcingTests.Bugs
         {
             using var documentStore = SeparateStore(x =>
             {
-                x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<TestEntity>(ProjectionLifecycle.Inline);
             });
 
             var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 2);

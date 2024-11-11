@@ -7,6 +7,7 @@ using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;

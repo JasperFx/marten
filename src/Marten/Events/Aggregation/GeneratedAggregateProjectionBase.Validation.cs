@@ -40,7 +40,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         }
     }
 
-    internal override void AssembleAndAssertValidity()
+    public override void AssembleAndAssertValidity()
     {
         if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
         {

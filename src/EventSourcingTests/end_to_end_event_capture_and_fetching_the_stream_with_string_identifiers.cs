@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -463,7 +464,7 @@ public class StringIdentifiedStreamsFixture: StoreFixture
     public StringIdentifiedStreamsFixture(): base("string_identified_streams")
     {
         Options.Events.StreamIdentity = StreamIdentity.AsString;
-        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(SnapshotLifecycle.Inline);
+        Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(ProjectionLifecycle.Inline);
 
         Options.Events.AddEventType(typeof(MembersJoined));
         Options.Events.AddEventType(typeof(MembersDeparted));

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;

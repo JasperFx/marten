@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Resiliency;
@@ -136,7 +137,7 @@ public class testing_projections
             opts.DatabaseSchemaName = "incidents";
 
             // Notice that the "snapshot" is running inline
-            opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<Invoice>(ProjectionLifecycle.Inline);
         });
 
         var invoiceId = Guid.NewGuid();
@@ -179,7 +180,7 @@ public class testing_projections
             opts.DatabaseSchemaName = "incidents";
 
             // Notice that the "snapshot" is running inline
-            opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<Invoice>(ProjectionLifecycle.Async);
         });
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
@@ -236,7 +237,7 @@ public class testing_projections
                         opts.DatabaseSchemaName = "incidents";
 
                         // Notice that the "snapshot" is running inline
-                        opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
+                        opts.Projections.Snapshot<Invoice>(ProjectionLifecycle.Async);
                     })
 
                     // Using Solo in tests will help it start up a little quicker
@@ -299,7 +300,7 @@ public class testing_projections
                         opts.DatabaseSchemaName = "incidents";
 
                         // Notice that the "snapshot" is running inline
-                        opts.Projections.Snapshot<Invoice>(SnapshotLifecycle.Async);
+                        opts.Projections.Snapshot<Invoice>(ProjectionLifecycle.Async);
 
                         opts.Events.TimeProvider = eventsTimeProvider;
                     })

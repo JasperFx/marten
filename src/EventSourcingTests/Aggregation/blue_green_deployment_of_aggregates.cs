@@ -1,3 +1,4 @@
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -30,7 +31,7 @@ public class blue_green_deployment_of_aggregates
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.Projections.Add<Version2>(ProjectionLifecycle.Async);
-            opts.Projections.Snapshot<OtherAggregate>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<OtherAggregate>(ProjectionLifecycle.Async);
         });
 
         var mapping = store.Options.Storage.MappingFor(typeof(OtherAggregate));

@@ -5,6 +5,7 @@ using Bug1754;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Xunit;
@@ -19,8 +20,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
-                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline);
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
@@ -51,8 +52,8 @@ namespace EventSourcingTests.Bugs
             using var documentStore = SeparateStore(x =>
             {
                 x.Events.StreamIdentity = StreamIdentity.AsString; // easier to debug
-                x.Projections.Snapshot<DataImportAggregate>(SnapshotLifecycle.Inline);
-                x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
+                x.Projections.Snapshot<DataImportAggregate>(ProjectionLifecycle.Inline);
+                x.Projections.Snapshot<DataItemAggregate>(ProjectionLifecycle.Inline);
             });
 
             await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();

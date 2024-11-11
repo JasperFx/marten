@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Samples.Deleting3;
@@ -87,10 +88,10 @@ namespace TripProjection.StreamAggregation
                 opts.Connection("some connection string");
 
                 // Run the Trip as an inline projection
-                opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Inline);
+                opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Inline);
 
                 // Or run it as an asynchronous projection
-                opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Async);
+                opts.Projections.Snapshot<Trip>(ProjectionLifecycle.Async);
             });
 
             // Or more likely, use it as a live aggregation:

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -73,7 +74,7 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
         StoreOptions(opts =>
         {
             opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
-            opts.Projections.Snapshot<Payment>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<Payment>(ProjectionLifecycle.Inline);
         });
 
         var id = theSession.Events.StartStream<Payment>(new PaymentCreated(DateTimeOffset.UtcNow),
@@ -93,7 +94,7 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
         StoreOptions(opts =>
         {
             opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
-            opts.Projections.Snapshot<Payment>(SnapshotLifecycle.Async);
+            opts.Projections.Snapshot<Payment>(ProjectionLifecycle.Async);
             opts.DotNetLogger = testLogger;
         });
 

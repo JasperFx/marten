@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;

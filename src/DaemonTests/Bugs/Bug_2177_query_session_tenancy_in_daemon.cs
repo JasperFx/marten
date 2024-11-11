@@ -9,6 +9,7 @@ using Xunit;
 using Bug2177;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten;
 using Shouldly;
 

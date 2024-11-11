@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -214,7 +215,7 @@ public static class BootstrappingSample
 
             // The Order aggregate is updated Inline inside the
             // same transaction as the events being appended
-            opts.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<Order>(ProjectionLifecycle.Inline);
 
             // Opt into an optimization for the inline aggregates
             // used with FetchForWriting()

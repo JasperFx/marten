@@ -265,10 +265,10 @@ public class ProjectionOptions: DaemonSettings
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
-        SnapshotLifecycle lifecycle,
+        ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
-        singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
+        singleStreamProjection<T>(lifecycle, null, asyncConfiguration);
 
     /// <summary>
     /// Perform automated snapshot on each event for selected entity type
@@ -282,11 +282,11 @@ public class ProjectionOptions: DaemonSettings
     /// </param>
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
-        SnapshotLifecycle lifecycle,
+        ProjectionLifecycle lifecycle,
         Action<SingleStreamProjection<T>> configureProjection,
         Action<AsyncOptions> asyncConfiguration = null
     ) =>
-        singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
+        singleStreamProjection<T>(lifecycle, configureProjection, asyncConfiguration);
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle lifecycle,

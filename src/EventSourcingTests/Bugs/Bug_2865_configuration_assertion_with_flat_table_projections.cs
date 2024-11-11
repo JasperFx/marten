@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;

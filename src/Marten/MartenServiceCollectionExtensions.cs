@@ -11,6 +11,7 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;

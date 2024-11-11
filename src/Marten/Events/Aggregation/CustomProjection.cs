@@ -269,7 +269,7 @@ public abstract class CustomProjection<TDoc, TId>:
         return this;
     }
 
-    internal override void AssembleAndAssertValidity()
+    public override void AssembleAndAssertValidity()
     {
         if (Slicer == null)
         {

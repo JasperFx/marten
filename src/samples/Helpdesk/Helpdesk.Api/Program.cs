@@ -10,6 +10,7 @@ using Helpdesk.Api.Incidents.GetIncidentHistory;
 using Helpdesk.Api.Incidents.GetIncidentShortInfo;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.AspNetCore;
 using Marten.Events.Daemon.Resiliency;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;

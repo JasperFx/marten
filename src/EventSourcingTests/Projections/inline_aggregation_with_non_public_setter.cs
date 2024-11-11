@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -24,8 +25,8 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         {
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             opts.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
-            opts.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(SnapshotLifecycle.Inline);
-            opts.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(ProjectionLifecycle.Inline);
+            opts.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(ProjectionLifecycle.Inline);
         });
     }
 

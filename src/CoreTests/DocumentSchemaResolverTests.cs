@@ -1,5 +1,6 @@
 using System;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -168,8 +169,8 @@ public class DocumentSchemaResolverTests : OneOffConfigurationsContext
     {
         StoreOptions(options =>
         {
-            options.Projections.Snapshot<ProjectionA>(SnapshotLifecycle.Inline);
-            options.Projections.Snapshot<ProjectionB>(SnapshotLifecycle.Async);
+            options.Projections.Snapshot<ProjectionA>(ProjectionLifecycle.Inline);
+            options.Projections.Snapshot<ProjectionB>(ProjectionLifecycle.Async);
         }, false);
 
         var schema = theSession.DocumentStore.Options.Schema;

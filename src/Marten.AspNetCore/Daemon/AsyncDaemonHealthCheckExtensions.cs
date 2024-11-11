@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;

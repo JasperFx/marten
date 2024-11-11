@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -18,7 +19,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<CounterWithCreate>(SnapshotLifecycle.Async);
+            _.Projections.Snapshot<CounterWithCreate>(ProjectionLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
         await theAsyncDaemon.StartAllAsync();
@@ -41,7 +42,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<CounterWithDefaultCtor>(SnapshotLifecycle.Async);
+            _.Projections.Snapshot<CounterWithDefaultCtor>(ProjectionLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
         await theAsyncDaemon.StartAllAsync();
@@ -64,7 +65,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(SnapshotLifecycle.Async);
+            _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(ProjectionLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
         await theAsyncDaemon.StartAllAsync();
@@ -87,7 +88,7 @@ public class Bug_2666_create_or_apply_but_not_both_should_apply : BugIntegration
     {
         StoreOptions(_ =>
         {
-            _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(SnapshotLifecycle.Async);
+            _.Projections.Snapshot<CounterWithCreateAndDefaultCtor>(ProjectionLifecycle.Async);
         });
         using var theAsyncDaemon = await theStore.BuildProjectionDaemonAsync();
         await theAsyncDaemon.StartAllAsync();

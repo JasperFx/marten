@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;

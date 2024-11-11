@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Services;
@@ -23,9 +24,9 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
 
         using var documentStore = SeparateStore(x =>
         {
-            x.Projections.Snapshot<AggregateA>(SnapshotLifecycle.Inline);
-            x.Projections.Snapshot<AggregateB>(SnapshotLifecycle.Inline);
-            x.Projections.Snapshot<AggregateC>(SnapshotLifecycle.Inline);
+            x.Projections.Snapshot<AggregateA>(ProjectionLifecycle.Inline);
+            x.Projections.Snapshot<AggregateB>(ProjectionLifecycle.Inline);
+            x.Projections.Snapshot<AggregateC>(ProjectionLifecycle.Inline);
             x.Logger(logger);
         });
 

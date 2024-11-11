@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -43,7 +44,7 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
 
             // This is all you need to create the QuestParty projected
             // view
-            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Inline);
         });
 
         #endregion
@@ -51,8 +52,8 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
         StoreOptions(opts =>
         {
             opts.AutoCreateSchemaObjects = AutoCreate.All;
-            opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
-            opts.Projections.Snapshot<QuestMonsters>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Inline);
+            opts.Projections.Snapshot<QuestMonsters>(ProjectionLifecycle.Inline);
         });
 
         var streamId = theSession.Events
@@ -72,8 +73,8 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Projections.Snapshot<QuestMonsters>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+            _.Projections.Snapshot<QuestMonsters>(ProjectionLifecycle.Inline);
+            _.Projections.Snapshot<QuestParty>(ProjectionLifecycle.Inline);
         });
 
         var streamId = theSession.Events
