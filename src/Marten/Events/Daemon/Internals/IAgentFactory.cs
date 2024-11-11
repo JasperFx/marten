@@ -80,8 +80,6 @@ public class AgentFactory: IAgentFactory
 
         if (shard.Source != null)
         {
-            // RIGHT HERE, HAVE IProjectionSource build the
-            //var execution = new GroupedProjectionExecution<ProjectionUpdateBatch, EventRangeGroup>(new GroupedProjectionRunner(shard, _store, database), logger);
             var execution = shard.Source.BuildExecution(shard, _store, database, logger);
 
             var options = shard.Source.Options;
