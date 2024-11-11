@@ -4,6 +4,7 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Internal.OpenTelemetry;
 using Marten.Storage;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Logging;
@@ -68,7 +69,14 @@ public class AgentFactory: IAgentFactory
         var logger = _store.Options.LogFactory?.CreateLogger<SubscriptionAgent>() ?? _store.Options.DotNetLogger
             ?? NullLogger<SubscriptionAgent>.Instance;
 
-        var metrics = new SubscriptionMetrics(_store.Options.OpenTelemetry.Meter, shard.Name, database.Identifier);
+        var metricsNaming = new MetricsNaming
+        {
+            DatabaseName = database.Identifier,
+            DefaultDatabaseName = "Marten",
+            MetricsPrefix = "marten"
+        };
+
+        var metrics = new SubscriptionMetrics(MartenTracing.ActivitySource, _store.Options.OpenTelemetry.Meter, shard.Name, metricsNaming);
 
         if (shard.Source != null)
         {
