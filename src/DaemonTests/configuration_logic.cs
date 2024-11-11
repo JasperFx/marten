@@ -1,3 +1,4 @@
+using JasperFx.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Subscriptions;

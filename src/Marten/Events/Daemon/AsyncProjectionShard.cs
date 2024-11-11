@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon.Internals;
@@ -9,12 +10,6 @@ using Marten.Subscriptions;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events.Daemon;
-
-public enum ShardRole
-{
-    Subscription,
-    Projection
-}
 
 /// <summary>
 ///     Definition of a single projection shard to be executed asynchronously
