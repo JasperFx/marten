@@ -1,12 +1,12 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Lamar;
 using Lamar.Microsoft.DependencyInjection;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

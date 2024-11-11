@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Schema;
 using Microsoft.Extensions.Hosting;
 

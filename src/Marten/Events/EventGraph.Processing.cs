@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
-using Marten.Events.Daemon.Resiliency;
+using JasperFx.Events.Daemon;
 using Marten.Events.Operations;
 using Marten.Internal;
 using Marten.Internal.Operations;

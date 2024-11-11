@@ -14,7 +14,6 @@ using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;

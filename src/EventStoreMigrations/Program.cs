@@ -4,7 +4,6 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;

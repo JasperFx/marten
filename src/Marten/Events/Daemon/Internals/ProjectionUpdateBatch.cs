@@ -31,13 +31,13 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
     private readonly List<OperationPage> _pages = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private readonly DocumentSessionBase _session;
-    private readonly DaemonSettings _settings;
+    private readonly ProjectionOptions _settings;
     private readonly CancellationToken _token;
 
     private IMessageBatch? _batch;
     private OperationPage? _current;
 
-    internal ProjectionUpdateBatch(DaemonSettings settings, DocumentSessionBase session, ShardExecutionMode mode,
+    internal ProjectionUpdateBatch(ProjectionOptions settings, DocumentSessionBase session, ShardExecutionMode mode,
         CancellationToken token)
     {
         _settings = settings;

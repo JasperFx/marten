@@ -1,12 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Testing.Documents;

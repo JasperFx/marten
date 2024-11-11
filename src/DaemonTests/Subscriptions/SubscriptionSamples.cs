@@ -13,7 +13,6 @@ using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Configuration;

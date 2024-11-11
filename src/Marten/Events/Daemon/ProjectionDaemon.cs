@@ -12,7 +12,6 @@ using JasperFx.Events.Daemon.HighWater;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;

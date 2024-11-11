@@ -29,6 +29,13 @@ public class ProjectionOptions: DaemonSettings
 
     private readonly List<ISubscriptionSource> _subscriptions = new();
 
+
+    /// <summary>
+    ///     Register session listeners that will ONLY be applied within the asynchronous daemon updates.
+    /// </summary>
+    public readonly List<IChangeListener> AsyncListeners = new();
+
+
     internal ProjectionOptions(StoreOptions options)
     {
         _options = options;

@@ -14,7 +14,6 @@ using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Subscriptions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
