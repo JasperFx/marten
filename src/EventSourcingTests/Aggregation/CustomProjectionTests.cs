@@ -41,7 +41,7 @@ public class CustomProjectionTests
         mapping.StoreOptions.Events.AppendMode = appendMode;
         projection.Lifecycle = lifecycle;
 
-        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions.EventGraph);
 
         mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
     }

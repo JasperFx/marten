@@ -312,7 +312,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         callCreateAggregateFrame.CoalesceAssignTo(snapshot);
 
         buildMethod.Frames.Add(callCreateAggregateFrame);
-        buildMethod.Frames.Add(new CallApplyAggregateFrame(_applyMethods) { InsideForEach = true });
+        buildMethod.Frames.Add(new CallApplyAggregateFrame(_applyMethods, typeof(IDocumentSession)) { InsideForEach = true });
 
         buildMethod.Frames.Return(typeof(T));
 

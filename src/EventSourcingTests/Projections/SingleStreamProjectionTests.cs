@@ -26,7 +26,7 @@ public class SingleStreamProjectionTests
         mapping.StoreOptions.EventGraph.AppendMode = EventAppendMode.Quick;
         projection.Lifecycle = ProjectionLifecycle.Inline;
 
-        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions.EventGraph);
 
         mapping.UseVersionFromMatchingStream.ShouldBeTrue();
     }
@@ -39,7 +39,7 @@ public class SingleStreamProjectionTests
 
         mapping.StoreOptions.EventGraph.AppendMode = EventAppendMode.Rich;
 
-        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions.EventGraph);
 
         mapping.UseVersionFromMatchingStream.ShouldBeFalse();
     }

@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Projections;
-using Marten.Events.CodeGeneration;
-using Marten.Events.Daemon;
+using JasperFx.Events.Projections.Aggregation;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Storage;
-using CreateMethodCollection = Marten.Events.CodeGeneration.CreateMethodCollection;
+using CreateMethodCollection = JasperFx.Events.CodeGeneration.CreateMethodCollection;
 
 namespace Marten.Events.Aggregation;
 
@@ -24,7 +24,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     private readonly Lazy<Type[]> _allEventTypes;
     internal readonly ApplyMethodCollection _applyMethods;
 
-    internal readonly CreateMethodCollection _createMethods;
+    internal readonly JasperFx.Events.CodeGeneration.CreateMethodCollection _createMethods;
     private readonly string _inlineAggregationHandlerType;
     private readonly string _liveAggregationTypeName;
     internal readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
@@ -39,9 +39,9 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
 
     protected GeneratedAggregateProjectionBase(AggregationScope scope): base(typeof(T).NameInCode())
     {
-        _createMethods = new CreateMethodCollection(GetType(), typeof(T));
-        _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
-        _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
+        _createMethods = new CreateMethodCollection(GetType(), typeof(T), typeof(IQuerySession), typeof(IDocumentSession));
+        _applyMethods = new ApplyMethodCollection(GetType(), typeof(T), typeof(IQuerySession));
+        _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T), typeof(IQuerySession));
 
         Options.DeleteViewTypeOnTeardown<T>();
 
@@ -64,48 +64,25 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         }
     }
 
-    // TODO -- duplicated with AggregationRuntime, and that's an ick.
-    /// <summary>
-    /// If more than 0 (the default), this is the maximum number of aggregates
-    /// that will be cached in a 2nd level, most recently used cache during async
-    /// projection. Use this to potentially improve async projection throughput
-    /// </summary>
-    public int CacheLimitPerTenant { get; set; } = 0;
-
-    /// <summary>
-    /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
-    /// asynchronously in a continuous mode (i.e., not in rebuilds)
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="slice"></param>
-    /// <returns></returns>
-    public virtual ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<T> slice)
-    {
-        return new ValueTask();
-    }
-
-    public abstract bool IsSingleStream();
-
     internal IList<Type> DeleteEvents { get; } = new List<Type>();
     internal IList<Type> TransformedEvents { get; } = new List<Type>();
 
+    // TODO -- duplicated with AggregationRuntime, and that's an ick.
+    /// <summary>
+    ///     If more than 0 (the default), this is the maximum number of aggregates
+    ///     that will be cached in a 2nd level, most recently used cache during async
+    ///     projection. Use this to potentially improve async projection throughput
+    /// </summary>
+    public int CacheLimitPerTenant { get; set; } = 0;
+
     Type IAggregateProjection.AggregateType => typeof(T);
 
-    /// <summary>
-    /// Template method that is called on the last event in a slice of events that
-    /// are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
-    /// from the last event to an aggregate with user-defined logic. Override this for your own specific logic
-    /// </summary>
-    /// <param name="aggregate"></param>
-    /// <param name="lastEvent"></param>
-    public virtual T ApplyMetadata(T aggregate, IEvent lastEvent)
+    object IMetadataApplication.ApplyMetadata(object aggregate, IEvent lastEvent)
     {
-        return aggregate;
-    }
-
-    object IAggregateProjection.ApplyMetadata(object aggregate, IEvent lastEvent)
-    {
-        if (aggregate is T t) return ApplyMetadata(t, lastEvent);
+        if (aggregate is T t)
+        {
+            return ApplyMetadata(t, lastEvent);
+        }
 
         return aggregate;
     }
@@ -121,6 +98,37 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     public bool MatchesAnyDeleteType(IEventSlice slice)
     {
         return slice.Events().Select(x => x.EventType).Intersect(DeleteEvents).Any();
+    }
+
+    public virtual void ConfigureAggregateMapping(IStorageMapping mapping, IEventGraph eventGraph)
+    {
+        // nothing
+    }
+
+    /// <summary>
+    ///     Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
+    ///     asynchronously in a continuous mode (i.e., not in rebuilds)
+    /// </summary>
+    /// <param name="operations"></param>
+    /// <param name="slice"></param>
+    /// <returns></returns>
+    public virtual ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<T> slice)
+    {
+        return new ValueTask();
+    }
+
+    public abstract bool IsSingleStream();
+
+    /// <summary>
+    ///     Template method that is called on the last event in a slice of events that
+    ///     are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
+    ///     from the last event to an aggregate with user-defined logic. Override this for your own specific logic
+    /// </summary>
+    /// <param name="aggregate"></param>
+    /// <param name="lastEvent"></param>
+    public virtual T ApplyMetadata(T aggregate, IEvent lastEvent)
+    {
+        return aggregate;
     }
 
     /// <summary>
@@ -170,10 +178,5 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
             .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
         return eventTypes;
-    }
-
-    public virtual void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
-    {
-        // nothing
     }
 }

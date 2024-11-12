@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 

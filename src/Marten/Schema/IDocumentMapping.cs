@@ -1,10 +1,11 @@
 using System;
 using System.Reflection;
+using JasperFx.Events.CodeGeneration;
 using Weasel.Core;
 
 namespace Marten.Schema;
 
-internal interface IDocumentMapping
+internal interface IDocumentMapping : IStorageMapping
 {
     IDocumentMapping Root { get; }
 
@@ -17,10 +18,4 @@ internal interface IDocumentMapping
 
     public PropertySearching PropertySearching { get; }
     public DeleteStyle DeleteStyle { get; }
-
-    /// <summary>
-    /// This is a workaround for the quick append + inline projection
-    /// issue
-    /// </summary>
-    bool UseVersionFromMatchingStream { get; set; }
 }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
@@ -379,10 +380,10 @@ public abstract class CustomProjection<TDoc, TId>:
         return aggregate;
     }
 
-    public void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    public void ConfigureAggregateMapping(IStorageMapping mapping, IEventGraph eventGraph)
     {
         mapping.UseVersionFromMatchingStream =
-            Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
+            Lifecycle == ProjectionLifecycle.Inline && eventGraph.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
 
     async ValueTask<TDoc> ILiveAggregator<TDoc>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)

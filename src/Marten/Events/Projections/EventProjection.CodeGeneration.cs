@@ -96,7 +96,7 @@ public abstract partial class EventProjection
             _validReturnTypes.Add(typeof(Task));
         }
 
-        internal override void validateMethod(MethodSlot method)
+        protected override void validateMethod(MethodSlot method)
         {
             if (method.Method.GetParameters().All(x => x.ParameterType != typeof(IDocumentOperations)))
             {
@@ -105,7 +105,7 @@ public abstract partial class EventProjection
         }
 
         public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            IDocumentMapping aggregateMapping,
+            IStorageMapping aggregateMapping,
             MethodSlot slot)
         {
             return new ProjectMethodCall(slot);
@@ -188,13 +188,13 @@ internal class CreateMethodCollection: MethodCollection
     }
 
     public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-        IDocumentMapping aggregateMapping,
+        IStorageMapping aggregateMapping,
         MethodSlot slot)
     {
         return new CreateMethodFrame(slot);
     }
 
-    internal override void validateMethod(MethodSlot method)
+    protected override void validateMethod(MethodSlot method)
     {
         if (method.ReturnType == typeof(void))
         {

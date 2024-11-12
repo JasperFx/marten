@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
@@ -72,10 +73,10 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
         }
     }
 
-    public override void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    public override void ConfigureAggregateMapping(IStorageMapping mapping, IEventGraph eventGraph)
     {
         mapping.UseVersionFromMatchingStream = Lifecycle == ProjectionLifecycle.Inline &&
-                                               storeOptions.Events.AppendMode == EventAppendMode.Quick;
+                                               eventGraph.AppendMode == EventAppendMode.Quick;
     }
 
     protected sealed override Type baseTypeForAggregationRuntime()

@@ -3,8 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -37,7 +39,7 @@ public interface IAggregateProjectionWithSideEffects<T>
 /// <summary>
 ///     Internal service within aggregating projections
 /// </summary>
-public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
+public interface IAggregateProjection : IMetadataApplication // THIS NEEDS TO REMAIN PUBLIC
 {
     Type AggregateType { get; }
 
@@ -58,15 +60,13 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     /// </summary>
     uint ProjectionVersion { get; set; }
 
-    object ApplyMetadata(object aggregate, IEvent lastEvent);
-
     /// <summary>
     /// Apply any necessary configuration to the document mapping to work with the projection and append
     /// mode
     /// </summary>
     /// <param name="mapping"></param>
-    /// <param name="storeOptions"></param>
-    void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions);
+    /// <param name="eventGraph"></param>
+    void ConfigureAggregateMapping(IStorageMapping mapping, IEventGraph eventGraph);
 
     // TODO -- duplicated with AggregationRuntime, and that's an ick.
     /// <summary>
