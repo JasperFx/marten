@@ -9,6 +9,7 @@ using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.RuntimeCompiler;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;

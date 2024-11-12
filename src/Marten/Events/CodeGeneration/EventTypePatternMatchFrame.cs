@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 
 namespace Marten.Events.CodeGeneration;
 
@@ -116,7 +117,7 @@ internal class EventTypePatternMatchFrame: Frame
                 return;
 
             Graph.TryAdd(type, new List<Type>());
-            
+
             // Add base types to the graph
             var baseType = type.BaseType;
             if (baseType != null)

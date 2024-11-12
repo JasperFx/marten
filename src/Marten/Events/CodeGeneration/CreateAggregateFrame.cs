@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 
 namespace Marten.Events.CodeGeneration;
 

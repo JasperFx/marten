@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JasperFx.Events.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;

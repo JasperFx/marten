@@ -14,6 +14,7 @@ using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Storage;
+using CreateMethodCollection = Marten.Events.CodeGeneration.CreateMethodCollection;
 
 namespace Marten.Events.Aggregation;
 

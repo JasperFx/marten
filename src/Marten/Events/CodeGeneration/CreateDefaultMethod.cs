@@ -6,6 +6,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration;

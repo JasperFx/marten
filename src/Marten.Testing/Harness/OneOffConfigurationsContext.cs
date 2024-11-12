@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
 using Npgsql;
 using Weasel.Core;

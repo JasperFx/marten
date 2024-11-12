@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Weasel.Core;

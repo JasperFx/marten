@@ -8,6 +8,8 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -130,71 +132,73 @@ public abstract partial class EventProjection
             TrySetArgument(parent.DataOnly);
         }
     }
+}
 
-    /// <summary>
-    ///     This would be a helper for the open ended EventProjection
-    /// </summary>
-    internal class CreateMethodCollection: MethodCollection
+internal class CreateMethodFrame: MethodCall, IEventHandlingFrame
+{
+    private static int _counter;
+
+    private Variable _operations;
+
+    public CreateMethodFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
     {
-        public static readonly string MethodName = "Create";
-        public static readonly string TransformMethodName = "Transform";
-
-        public CreateMethodCollection(Type projectionType): base(new[] { MethodName, TransformMethodName },
-            projectionType, null)
-        {
-            _validArgumentTypes.Add(typeof(IDocumentOperations));
-        }
-
-        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            IDocumentMapping aggregateMapping,
-            MethodSlot slot)
-        {
-            return new CreateMethodFrame(slot);
-        }
-
-        internal override void validateMethod(MethodSlot method)
-        {
-            if (method.ReturnType == typeof(void))
-            {
-                method.AddError("The return value must be a new document");
-            }
-        }
+        EventType = Method.GetEventType(null);
+        ReturnVariable.OverrideName(ReturnVariable.Usage + ++_counter);
     }
 
-    internal class CreateMethodFrame: MethodCall, IEventHandlingFrame
+    public Type EventType { get; }
+
+    public void Configure(EventProcessingFrame parent)
     {
-        private static int _counter;
+        // Replace any arguments to IEvent<T>
+        TrySetArgument(parent.SpecificEvent);
 
-        private Variable _operations;
+        // Replace any arguments to the specific T event type
+        TrySetArgument(parent.DataOnly);
+    }
 
-        public CreateMethodFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
+    public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
+    {
+        foreach (var variable in base.FindVariables(chain)) yield return variable;
+
+        _operations = chain.FindVariable(typeof(IDocumentOperations));
+    }
+
+    public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
+    {
+        base.GenerateCode(method, writer);
+        writer.WriteLine($"{_operations.Usage}.Store({ReturnVariable.Usage});");
+    }
+}
+
+/// <summary>
+///     This would be a helper for the open ended EventProjection
+/// </summary>
+internal class CreateMethodCollection: MethodCollection
+{
+    public static readonly string MethodName = "Create";
+    public static readonly string TransformMethodName = "Transform";
+
+
+
+    public CreateMethodCollection(Type projectionType): base(new[] { MethodName, TransformMethodName },
+        projectionType, null)
+    {
+        _validArgumentTypes.Add(typeof(IDocumentOperations));
+    }
+
+    public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
+        IDocumentMapping aggregateMapping,
+        MethodSlot slot)
+    {
+        return new CreateMethodFrame(slot);
+    }
+
+    internal override void validateMethod(MethodSlot method)
+    {
+        if (method.ReturnType == typeof(void))
         {
-            EventType = Method.GetEventType(null);
-            ReturnVariable.OverrideName(ReturnVariable.Usage + ++_counter);
-        }
-
-        public Type EventType { get; }
-
-        public void Configure(EventProcessingFrame parent)
-        {
-            // Replace any arguments to IEvent<T>
-            TrySetArgument(parent.SpecificEvent);
-
-            // Replace any arguments to the specific T event type
-            TrySetArgument(parent.DataOnly);
-        }
-
-        public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
-        {
-            foreach (var variable in base.FindVariables(chain)) yield return variable;
-
-            _operations = chain.FindVariable(typeof(IDocumentOperations));
-        }
-
-        public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-        {
-            base.GenerateCode(method, writer);
-            writer.WriteLine($"{_operations.Usage}.Store({ReturnVariable.Usage});");
+            method.AddError("The return value must be a new document");
         }
     }
 }

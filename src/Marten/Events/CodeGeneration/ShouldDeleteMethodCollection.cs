@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using JasperFx.Events.CodeGeneration;
 using Marten.Schema;
 
 namespace Marten.Events.CodeGeneration;

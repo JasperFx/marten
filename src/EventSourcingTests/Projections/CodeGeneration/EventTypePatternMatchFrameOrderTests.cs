@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.Events.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Shouldly;
 using Xunit;
@@ -29,7 +30,7 @@ public class EventTypePatternMatchFrameOrderTests
             typeof(Base), typeof(IFoo), typeof(IBar),
             typeof(FooBase), typeof(FooA), typeof(FooX),
             typeof(BarBase), typeof(BarA), typeof(BarX),
-            typeof(FooBarA), typeof(FooBarX) 
+            typeof(FooBarA), typeof(FooBarX)
         );
 
 
