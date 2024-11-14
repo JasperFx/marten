@@ -1,14 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using JasperFx.Events;
 using JasperFx.Events.CodeGeneration;
 using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
@@ -50,7 +47,7 @@ public abstract partial class EventProjection
         if (!_projectMethods.Methods.Any() && !_createMethods.Methods.Any())
         {
             throw new InvalidProjectionException(
-                $"EventProjection {GetType().FullNameInCode()} has no valid projection operations. Either use the Lambda registrations, or expose methods named '{ProjectMethodCollection.MethodName}', '{CreateMethodCollection.MethodName}', or '{CreateMethodCollection.TransformMethodName}'");
+                $"EventProjection {GetType().FullNameInCode()} has no valid projection operations. Either use the Lambda registrations, or expose methods named '{ProjectMethodCollection.MethodName}', '{CreateMethodCollection.MethodName}', or '{CreateDocumentMethodCollection.TransformMethodName}'");
         }
 
         var invalidMethods = MethodCollection.FindInvalidMethods(GetType(), _projectMethods, _createMethods);
@@ -80,125 +77,6 @@ public abstract partial class EventProjection
     {
         return _generatedProjection.Value;
     }
-
-    /// <summary>
-    ///     This would be a helper for the open ended EventProjection
-    /// </summary>
-    internal class ProjectMethodCollection: MethodCollection
-    {
-        public static readonly string MethodName = "Project";
-
-
-        public ProjectMethodCollection(Type projectionType): base(MethodName, projectionType, null)
-        {
-            _validArgumentTypes.Add(typeof(IDocumentOperations));
-            _validReturnTypes.Add(typeof(void));
-            _validReturnTypes.Add(typeof(Task));
-        }
-
-        protected override void validateMethod(MethodSlot method)
-        {
-            if (method.Method.GetParameters().All(x => x.ParameterType != typeof(IDocumentOperations)))
-            {
-                method.AddError($"{typeof(IDocumentOperations).FullNameInCode()} is a required parameter");
-            }
-        }
-
-        public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-            IStorageMapping aggregateMapping,
-            MethodSlot slot)
-        {
-            return new ProjectMethodCall(slot);
-        }
-    }
-
-    internal class ProjectMethodCall: MethodCall, IEventHandlingFrame
-    {
-        public ProjectMethodCall(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
-        {
-            EventType = Method.GetEventType(null);
-            Target = slot.Setter;
-        }
-
-        public Type EventType { get; }
-
-        public void Configure(EventProcessingFrame parent)
-        {
-            // Replace any arguments to IEvent<T>
-
-            TrySetArgument(parent.SpecificEvent);
-
-            // Replace any arguments to the specific T event type
-            TrySetArgument(parent.DataOnly);
-        }
-    }
 }
 
-internal class CreateMethodFrame: MethodCall, IEventHandlingFrame
-{
-    private static int _counter;
 
-    private Variable _operations;
-
-    public CreateMethodFrame(MethodSlot slot): base(slot.HandlerType, (MethodInfo)slot.Method)
-    {
-        EventType = Method.GetEventType(null);
-        ReturnVariable.OverrideName(ReturnVariable.Usage + ++_counter);
-    }
-
-    public Type EventType { get; }
-
-    public void Configure(EventProcessingFrame parent)
-    {
-        // Replace any arguments to IEvent<T>
-        TrySetArgument(parent.SpecificEvent);
-
-        // Replace any arguments to the specific T event type
-        TrySetArgument(parent.DataOnly);
-    }
-
-    public override IEnumerable<Variable> FindVariables(IMethodVariables chain)
-    {
-        foreach (var variable in base.FindVariables(chain)) yield return variable;
-
-        _operations = chain.FindVariable(typeof(IDocumentOperations));
-    }
-
-    public override void GenerateCode(GeneratedMethod method, ISourceWriter writer)
-    {
-        base.GenerateCode(method, writer);
-        writer.WriteLine($"{_operations.Usage}.Store({ReturnVariable.Usage});");
-    }
-}
-
-/// <summary>
-///     This would be a helper for the open ended EventProjection
-/// </summary>
-internal class CreateMethodCollection: MethodCollection
-{
-    public static readonly string MethodName = "Create";
-    public static readonly string TransformMethodName = "Transform";
-
-
-
-    public CreateMethodCollection(Type projectionType): base(new[] { MethodName, TransformMethodName },
-        projectionType, null)
-    {
-        _validArgumentTypes.Add(typeof(IDocumentOperations));
-    }
-
-    public override IEventHandlingFrame CreateEventTypeHandler(Type aggregateType,
-        IStorageMapping aggregateMapping,
-        MethodSlot slot)
-    {
-        return new CreateMethodFrame(slot);
-    }
-
-    protected override void validateMethod(MethodSlot method)
-    {
-        if (method.ReturnType == typeof(void))
-        {
-            method.AddError("The return value must be a new document");
-        }
-    }
-}

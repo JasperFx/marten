@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
@@ -32,8 +33,8 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
 
     public EventProjection(): base("Projections")
     {
-        _projectMethods = new ProjectMethodCollection(GetType());
-        _createMethods = new CreateMethodCollection(GetType());
+        _projectMethods = new ProjectMethodCollection(GetType(), typeof(IDocumentOperations));
+        _createMethods = new CreateMethodCollection(GetType(), null, typeof(IQuerySession), typeof(IDocumentOperations));
 
         ProjectionName = GetType().FullNameInCode();
         _inlineTypeName = GetType().ToSuffixedTypeName("InlineProjection");
