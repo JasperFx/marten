@@ -157,7 +157,11 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             Versioning.TrySetVersion(aggregate, lastEvent);
 
-            Projection.ApplyMetadata(aggregate, lastEvent);
+            foreach (var @event in slice.Events())
+            {
+                Projection.ApplyMetadata(aggregate, @event);
+            }
+
         }
 
         // Delete the aggregate *if* it existed prior to these events

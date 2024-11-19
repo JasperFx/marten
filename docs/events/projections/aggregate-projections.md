@@ -688,6 +688,10 @@ public class TripProjection: SingleStreamProjection<Trip>
 
 ## Working with Event Metadata <Badge type="tip" text="7.12" />
 
+::: info
+As of Marten 7.33, this mechanism executes for every single event in the current event slice in order.
+:::
+
 At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
 or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically take your
 aggregated document with metadata from the very last event the projection is encountering at one time. _If_ you are using
