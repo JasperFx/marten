@@ -457,3 +457,24 @@ The `gap` metrics are a good health check on the performance of any given projec
 is growing, that's a sign that your projection or subscription isn't being able to keep up with the incoming
 events
 :::
+
+## High Water Mark <Badge type="tip" text="7.33" />
+
+One of the possible issues in Marten operation is "event skipping" in the async daemon where the high water mark
+detection grows "stale" because of gaps in the event sequence (generally caused by either very slow outstanding transactions or errors)
+and Marten emits an error message like this in the log file:
+
+*"High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime} for database {Name}"*
+
+With the recent prevalence of [Open Telemetry](https://opentelemetry.io/) tooling in the software industry, Marten
+is now emitting Open Telemetry spans and metrics around the high water mark detection in the async daemon.
+
+First off, Marten is emitting spans named either `marten.daemon.highwatermark` in the case of
+only targeting a single database, or `marten.[database name].daemon.highwatermark` in the case of 
+using multi-tenancy through a database per tenant. On these spans will be these tags:
+
+* `sequence` -- the largest event sequence that has been assigned to the database at this point
+* `status` -- either `CaughtUp`, `Changed`, or `Stale` meaning "all good", "proceeding normally", or "uh, oh, something is up with outstanding transactions"
+* `current.mark` -- the current, detected "high water mark" where Marten says is the ceiling on where events can be safely processed
+* `skipped` -- this tag will only be present as a "true" value if Marten is forcing the high water detection to skip stale gaps in the event sequence
+* `last.mark` -- if skipping event sequences, this will be the last good mark before the high water detection calculated the skip

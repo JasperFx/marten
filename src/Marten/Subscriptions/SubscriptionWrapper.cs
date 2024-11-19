@@ -38,10 +38,13 @@ internal class ScopedSubscriptionServiceWrapper<T>: SubscriptionBase where T : I
         var scope = _provider.CreateAsyncScope();
         var sp = scope.ServiceProvider;
 
-        var subscription = sp.GetRequiredService<T>().As<SubscriptionBase>();
-        IncludedEventTypes.AddRange(subscription.IncludedEventTypes);
-        StreamType = subscription.StreamType;
-        IncludeArchivedEvents = subscription.IncludeArchivedEvents;
+        var subscription = sp.GetRequiredService<T>() as SubscriptionBase;
+        if (subscription != null)
+        {
+            IncludedEventTypes.AddRange(subscription.IncludedEventTypes);
+            StreamType = subscription.StreamType;
+            IncludeArchivedEvents = subscription.IncludeArchivedEvents;
+        }
         scope.SafeDispose();
     }
 
