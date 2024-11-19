@@ -34,7 +34,7 @@ public partial class ProjectionDaemon : IProjectionDaemon, IObserver<ShardState>
         _factory = factory;
         Logger = logger;
         Tracker = Database.Tracker;
-        _highWater = new HighWaterAgent(detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
+        _highWater = new HighWaterAgent(store.Options.OpenTelemetry.Meter, detector, Tracker, logger, store.Options.Projections, _cancellation.Token);
 
         _breakSubscription = database.Tracker.Subscribe(this);
 
