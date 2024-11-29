@@ -100,7 +100,7 @@ With the configuration above, Marten will generate a foreign key constraint from
 ```sql
 ALTER TABLE public.mt_doc_issue
 ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
-REFERENCES bug-tracker.bugs (id);
+REFERENCES bugtracker.bugs (id);
 ```
 
 ## Cascading deletes
