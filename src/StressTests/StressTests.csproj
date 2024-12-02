@@ -1,10 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-<<<<<<< HEAD
         <TargetFrameworks>net7.0;net8.0;net9.0</TargetFrameworks>
-=======
-        <TargetFrameworks>net7.0;net8.0</TargetFrameworks>
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
@@ -18,14 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-<<<<<<< HEAD
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
-        <PackageReference Include="Lamar" Version="14.0.1" />
-=======
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
-        <PackageReference Include="Jil" Version="3.0.0-alpha2" />
->>>>>>> e6d343ae3 (First cut at putting JasperFx underneath Marten)
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
