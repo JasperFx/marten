@@ -129,10 +129,12 @@ public class compiled_queries: IntegrationContext
     [Fact]
     public async Task several_parameters_for_compiled_query()
     {
+        // theSession is an IQuerySession
         var user = await theSession.QueryAsync(new FindUserByAllTheThings
         {
             Username = "jdm", FirstName = "Jeremy", LastName = "Miller"
         });
+
         user.ShouldNotBeNull();
         user.UserName.ShouldBe("jdm");
         user = await theSession.QueryAsync(new FindUserByAllTheThings

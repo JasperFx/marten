@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -11,6 +12,7 @@ namespace Marten.Events.Projections;
 ///     as part of the sorting of events into aggregate slices
 /// </summary>
 /// <typeparam name="TId"></typeparam>
+[Obsolete]
 public interface IAggregateGrouper<TId>
 {
     /// <summary>
