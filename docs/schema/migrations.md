@@ -114,9 +114,9 @@ mechanism covers:
 1. The Hilo support table
 1. The Event Store schema objects
 
-### Include in your CICD pipeline
+### Include in your ci/cd pipeline
 
-While there are many options to include these exported scripts in your CICD pipeline, we have an example using [grate](https://erikbra.github.io/grate/) on the [DevOps page](/devops/devops).
+While there are many options to include these exported scripts in your ci/cd pipeline, we have an example using [grate](https://erikbra.github.io/grate/) on the [DevOps page](/devops/devops).
 
 ## Apply All Outstanding Changes Upfront
 
