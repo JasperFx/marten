@@ -99,7 +99,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
                         #region sample_view-custom-grouper-with-transformation-grouper-with-data
 
                         Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
-                        Event = monthlyAllocation.Key.Source.WithData(
+                        Event = monthlyAllocation.Key.Source.CloneEventWithNewData(
                             new EmployeeAllocatedInMonth(
                                 monthlyAllocation.Key.EmployeeId,
                                 monthlyAllocation.Key.Month,

@@ -14,7 +14,7 @@ public class BoardViewProjection: ExperimentalMultiStreamProjection<BoardView, G
 {
     protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
     {
-        grouping.AddEventsWithMetadata<BoardStateEvent>(e => e.StreamId, events);
+        grouping.AddEvents<IEvent<BoardStateEvent>>(e => e.StreamId, events);
         grouping.AddEvents<IBoardEvent>(x => x.BoardId, events);
 
         return ValueTask.CompletedTask;

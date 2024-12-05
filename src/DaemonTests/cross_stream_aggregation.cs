@@ -118,7 +118,7 @@ public class CrossStreamDayProjection: ExperimentalMultiStreamProjection<Day, in
     {
         // Tell the projection how to group the events
         // by Day document
-        grouping.AddEventsWithMetadata<IDayEvent>(e => e.Data.Day, events);
+        grouping.AddEvents<IEvent<IDayEvent>>(e => e.Data.Day, events);
 
         // This just lets the projection work independently
         // on each Movement child of the Travel event

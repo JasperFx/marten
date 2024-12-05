@@ -16,6 +16,7 @@ namespace Marten.Events.Daemon;
 ///     Used within the async daemon as a buffer for custom projections
 ///     to run events by tenant
 /// </summary>
+[Obsolete("Try to eliminate this!")]
 internal class TenantedEventRangeGroup: EventRangeGroup
 {
     private readonly IMartenDatabase _daemonDatabase;
@@ -29,7 +30,7 @@ internal class TenantedEventRangeGroup: EventRangeGroup
         IProjection projection,
         AsyncOptions asyncOptions,
         EventRange range,
-        CancellationToken shardCancellation): base(range, shardCancellation)
+        CancellationToken shardCancellation) //: base(range, shardCancellation)
     {
         _store = (DocumentStore)store;
         _daemonDatabase = daemonDatabase;
@@ -86,7 +87,7 @@ internal class TenantedEventRangeGroup: EventRangeGroup
         return $"Tenant Group Range for: {Range}";
     }
 
-    public override Task ConfigureUpdateBatch(ProjectionUpdateBatch batch)
+    public Task ConfigureUpdateBatch(ProjectionUpdateBatch batch)
     {
         return Parallel.ForEachAsync(Groups, Cancellation,
             async (tenantGroup, token) =>

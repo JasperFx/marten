@@ -12,13 +12,6 @@ using Marten.Storage;
 
 namespace Marten.Events.Daemon.Internals;
 
-public abstract class EventRangeGroup: EventRangeGroup<ProjectionUpdateBatch>
-{
-    protected EventRangeGroup(EventRange range, CancellationToken parent) : base(range)
-    {
-    }
-}
-
 internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRunner<TDoc, TId>
 {
     private readonly DocumentStore _store;
@@ -53,7 +46,7 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
         return new ValueTask();
     }
 
-    public async Task<IAggregation> BuildBatchAsync(TenantedSliceGroup<TDoc, TId> group)
+    public async Task<IProjectionBatch> BuildBatchAsync(TenantedSliceGroup<TDoc, TId> group)
     {
         var batch = new ProjectionUpdateBatch(_store, _database, group.Agent.Mode, group.Cancellation)
         {
@@ -112,7 +105,7 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
 }
 
 
-internal class GroupedProjectionRunner: IGroupedProjectionRunner<ProjectionUpdateBatch, EventRangeGroup>
+internal class GroupedProjectionRunner: IGroupedProjectionRunner<EventRangeGroup>
 {
     private readonly DocumentStore _store;
     private readonly IMartenDatabase _database;
@@ -144,7 +137,7 @@ internal class GroupedProjectionRunner: IGroupedProjectionRunner<ProjectionUpdat
         return new ValueTask();
     }
 
-    public async Task<ProjectionUpdateBatch> BuildBatchAsync(EventRangeGroup group)
+    public async Task<IProjectionBatch> BuildBatchAsync(EventRangeGroup group)
     {
         var batch = new ProjectionUpdateBatch(_store, _database, group.Agent.Mode, group.Cancellation)
         {

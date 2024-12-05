@@ -42,7 +42,7 @@ internal class MultiStreamGrouperWithMetadata<TId, TEvent>: IGrouper<TId>
 
     public void Apply(IEnumerable<IEvent> events, IEventGrouping<TId> grouping)
     {
-        grouping.AddEventsWithMetadata(_func, events);
+        grouping.AddEvents(_func, events);
     }
 }
 
