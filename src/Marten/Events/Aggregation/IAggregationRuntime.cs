@@ -22,10 +22,6 @@ public interface IAggregationRuntime : IProjection
 {
     IAggregateVersioning Versioning { get; set; }
 
-    [Obsolete("Find a way to eliminate this")]
-    ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
-        CancellationToken cancellationToken);
-
     bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor);
 
     IAggregateProjection Projection { get; }

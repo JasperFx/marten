@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
@@ -150,7 +151,7 @@ public class CustomProjectionTests
         var projection = new MyCustomAggregateWithNoSlicer();
         projection.AggregateEvents(x => x.Identity<INumbered>(n => n.Number));
 
-        projection.Slicer.ShouldBeOfType<MartenEventSlicer<CustomAggregate, int>>();
+        projection.Slicer.ShouldBeOfType<EventSlicer<CustomAggregate, int>>();
     }
 
     [Fact]

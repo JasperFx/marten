@@ -78,22 +78,6 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
         return _inlineType == null;
     }
 
-    protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _generatedProjection.Value,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
-    }
-
 
     [MartenIgnore]
     public void Project<TEvent>(Action<TEvent, IDocumentOperations> project)

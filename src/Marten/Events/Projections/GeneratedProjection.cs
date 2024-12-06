@@ -104,16 +104,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
 
     public AsyncOptions Options { get; } = new();
 
-    ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store,
-        IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        generateIfNecessary(store);
-
-        return groupEvents(store, daemonDatabase, range, cancellationToken);
-    }
-
     protected abstract void assembleTypes(GeneratedAssembly assembly, StoreOptions options);
     protected abstract bool tryAttachTypes(Assembly assembly, StoreOptions options);
 
@@ -171,8 +161,4 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
         yield break;
     }
 
-    protected abstract ValueTask<EventRangeGroup> groupEvents(DocumentStore store,
-        IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken);
 }

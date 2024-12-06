@@ -591,18 +591,16 @@ public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IMartenEvent
         CustomGrouping(this);
     }
 
+    // TODO -- redo with an override instead
     [MartenIgnore]
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>> SliceAsyncEvents(
-        IQuerySession querySession, List<IEvent> events)
+    public Task SliceEvents(IQuerySession querySession, IReadOnlyList<IEvent> events, SliceGroup<Totals, Guid> group)
     {
-        var group = new JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>(querySession.TenantId);
-
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
         group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
 
-        return new ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<Totals, Guid>>>([group]);
+        return Task.CompletedTask;
     }
 
     public void Apply(AEvent e, Totals totals) => totals.Count++;

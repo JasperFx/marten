@@ -5,6 +5,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.CodeGeneration;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -128,6 +129,6 @@ internal class ExecutionBuilder<TDoc, TId>: IExecutionBuilder
         var adapter = new MartenEventSlicerAdapter<TDoc, TId>(store, database, slicer);
         var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, adapter);
 
-        return new AggregationExecution<TDoc, TId>(runner, logger);
+        return new GroupedProjectionExecution(runner, logger);
     }
 }

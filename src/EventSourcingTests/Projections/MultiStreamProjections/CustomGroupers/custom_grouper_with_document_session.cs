@@ -16,36 +16,36 @@ using Xunit;
 namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 
 #region sample_view-projection-custom-grouper-with-querysession
-public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
-{
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
-    {
-        var licenseFeatureTogglesEvents = events
-            .OfType<IEvent<LicenseFeatureToggled>>()
-            .ToList();
-
-        if (!licenseFeatureTogglesEvents.Any())
-        {
-            return;
-        }
-
-        // TODO -- let's build more samples first, but see if there's a useful
-        // pattern for the next 3/4 operations later
-        var licenseIds = licenseFeatureTogglesEvents
-            .Select(e => e.Data.LicenseId)
-            .ToList();
-
-        var result = await session.Query<UserFeatureToggles>()
-            .Where(x => licenseIds.Contains(x.LicenseId))
-            .Select(x => new {x.Id, x.LicenseId})
-            .ToListAsync();
-
-        var streamIds = (IDictionary<Guid, List<Guid>>)result.GroupBy(ks => ks.LicenseId, vs => vs.Id)
-            .ToDictionary(ks => ks.Key, vs => vs.ToList());
-
-        grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenseFeatureTogglesEvents);
-    }
-}
+// public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
+// {
+//     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+//     {
+//         var licenseFeatureTogglesEvents = events
+//             .OfType<IEvent<LicenseFeatureToggled>>()
+//             .ToList();
+//
+//         if (!licenseFeatureTogglesEvents.Any())
+//         {
+//             return;
+//         }
+//
+//         // TODO -- let's build more samples first, but see if there's a useful
+//         // pattern for the next 3/4 operations later
+//         var licenseIds = licenseFeatureTogglesEvents
+//             .Select(e => e.Data.LicenseId)
+//             .ToList();
+//
+//         var result = await session.Query<UserFeatureToggles>()
+//             .Where(x => licenseIds.Contains(x.LicenseId))
+//             .Select(x => new {x.Id, x.LicenseId})
+//             .ToListAsync();
+//
+//         var streamIds = (IDictionary<Guid, List<Guid>>)result.GroupBy(ks => ks.LicenseId, vs => vs.Id)
+//             .ToDictionary(ks => ks.Key, vs => vs.ToList());
+//
+//         grouping.AddEvents<LicenseFeatureToggled>(e => streamIds[e.LicenseId], licenseFeatureTogglesEvents);
+//     }
+// }
 
 // projection with documentsession
 public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
@@ -55,7 +55,8 @@ public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureTogg
         Identity<UserRegistered>(@event => @event.UserId);
         Identity<UserLicenseAssigned>(@event => @event.UserId);
 
-        CustomGrouping(new LicenseFeatureToggledEventGrouper());
+        throw new NotImplementedException("Redo sample");
+        //CustomGrouping(new LicenseFeatureToggledEventGrouper());
     }
 
     public void Apply(UserRegistered @event, UserFeatureToggles view)

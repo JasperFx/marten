@@ -38,30 +38,31 @@ public class ViewProjectionTests: DaemonContext
 
         var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
 
-        var slicer = new DayProjection().Slicer;
-
-        var slices = await slicer.SliceAsyncEvents(theSession, allEvents.ToList());
-
-        foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
-        {
-            var events = slice.Events();
-            events.All(x => x.Data is IDayEvent || x.Data is Movement || x.Data is Stop).ShouldBeTrue();
-            events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
-                .ShouldBeTrue();
-
-            var travels = events.OfType<Event<Travel>>().ToArray();
-            foreach (var travel in travels)
-            {
-                var index = events.As<List<IEvent>>().IndexOf(travel);
-
-                for (var i = 0; i < travel.Data.Stops.Count; i++)
-                {
-                    events.ElementAt(index + i + 1).Data.ShouldBeSameAs(travel.Data.Stops[i]);
-                }
-            }
-        }
-
-        slices.ShouldNotBeNull();
+        throw new NotImplementedException("Redo");
+        // var slicer = new DayProjection().Slicer;
+        //
+        // var slices = await slicer.SliceAsyncEvents(theSession, allEvents.ToList());
+        //
+        // foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
+        // {
+        //     var events = slice.Events();
+        //     events.All(x => x.Data is IDayEvent || x.Data is Movement || x.Data is Stop).ShouldBeTrue();
+        //     events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
+        //         .ShouldBeTrue();
+        //
+        //     var travels = events.OfType<Event<Travel>>().ToArray();
+        //     foreach (var travel in travels)
+        //     {
+        //         var index = events.As<List<IEvent>>().IndexOf(travel);
+        //
+        //         for (var i = 0; i < travel.Data.Stops.Count; i++)
+        //         {
+        //             events.ElementAt(index + i + 1).Data.ShouldBeSameAs(travel.Data.Stops[i]);
+        //         }
+        //     }
+        // }
+        //
+        // slices.ShouldNotBeNull();
     }
 
     [Fact]

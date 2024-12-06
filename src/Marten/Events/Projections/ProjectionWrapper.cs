@@ -60,21 +60,6 @@ internal class ProjectionWrapper: IProjectionSource
         } };
     }
 
-    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _projection,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
-    }
-
     /// <summary>
     /// Specify that this projection is a non 1 version of the original projection definition to opt
     /// into Marten's parallel blue/green deployment of this projection.

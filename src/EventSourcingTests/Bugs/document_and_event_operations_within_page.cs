@@ -89,7 +89,8 @@ public class SampleProjection : MultiStreamProjection<SampleView, Guid>
 {
     public SampleProjection()
     {
-        CustomGrouping(new SampleGrouper());
+        throw new NotImplementedException("Redo below");
+        //CustomGrouping(new SampleGrouper());
         Identity<SampleAdded>(x => x.Id);
 
         CreateEvent<SampleAdded>(x=> new SampleView(x.Id, x.Value, false));
@@ -99,24 +100,24 @@ public class SampleProjection : MultiStreamProjection<SampleView, Guid>
     }
 }
 
-public sealed class SampleGrouper: IAggregateGrouper<Guid>
-{
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
-    {
-        var publishedEvents = events.OfType<IEvent<SamplesRolledUpPublished>>().ToArray();
-
-        foreach (var published in publishedEvents)
-        {
-            var sample =
-                await session.Events.AggregateStreamAsync<SamplesRolledUp>(published.Data.Id, published.Version);
-
-            foreach (var sampleEvent in sample!.Samples)
-            {
-                grouping.AddEvents(sampleEvent, publishedEvents);
-            }
-        }
-    }
-}
+// public sealed class SampleGrouper: IAggregateGrouper<Guid>
+// {
+//     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+//     {
+//         var publishedEvents = events.OfType<IEvent<SamplesRolledUpPublished>>().ToArray();
+//
+//         foreach (var published in publishedEvents)
+//         {
+//             var sample =
+//                 await session.Events.AggregateStreamAsync<SamplesRolledUp>(published.Data.Id, published.Version);
+//
+//             foreach (var sampleEvent in sample!.Samples)
+//             {
+//                 grouping.AddEvents(sampleEvent, publishedEvents);
+//             }
+//         }
+//     }
+// }
 
 public record SampleEventView(Guid Id);
 

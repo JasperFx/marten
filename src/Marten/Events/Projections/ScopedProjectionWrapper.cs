@@ -143,12 +143,6 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
         }
     }
 
-    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
-        CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
-
     public IProjection Build(DocumentStore store)
     {
         return this;

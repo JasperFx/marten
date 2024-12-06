@@ -164,15 +164,6 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         StreamType = typeof(T);
     }
 
-    protected sealed override ValueTask<EventRangeGroup> groupEvents(DocumentStore store,
-        IMartenDatabase daemonDatabase, EventRange range,
-        CancellationToken cancellationToken)
-    {
-        _runtime ??= BuildRuntime(store);
-
-        return _runtime.GroupEvents(store, daemonDatabase, range, cancellationToken);
-    }
-
     protected virtual Type[] determineEventTypes()
     {
         var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)

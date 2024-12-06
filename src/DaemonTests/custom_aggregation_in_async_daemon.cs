@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -146,8 +147,9 @@ public class MyCustomProjection: CustomProjection<CustomAggregate, int>
     {
         ProjectionName = "Custom";
 
-        Slicer = new MartenEventSlicer<CustomAggregate, int>().Identity<INumbered>(x =>
-            x.Number);
+        throw new NotImplementedException("Redo");
+        // Slicer = new EventSlicer<CustomAggregate, int>().Identity<INumbered>(x =>
+        //     x.Number);
     }
 
     public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice, CancellationToken cancellation,

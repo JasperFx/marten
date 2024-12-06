@@ -46,7 +46,8 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
     {
         public MonthlyAllocationProjection()
         {
-            CustomGrouping(new MonthlyAllocationGrouper());
+            throw new NotImplementedException("Redo example");
+            //CustomGrouping(new MonthlyAllocationGrouper());
             TransformsEvent<EmployeeAllocated>();
         }
 
@@ -67,60 +68,60 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     #region sample_view-custom-grouper-with-transformation-grouper
 
-    public class MonthlyAllocationGrouper: IAggregateGrouper<string>
-    {
-        public Task Group(
-            IQuerySession session,
-            IEnumerable<IEvent> events,
-            IEventGrouping<string> grouping
-        )
-        {
-            var allocations = events
-                .OfType<IEvent<EmployeeAllocated>>();
-
-            var monthlyAllocations = allocations
-                .SelectMany(@event =>
-                    @event.Data.Allocations.Select(
-                        allocation => new
-                        {
-                            @event.Data.EmployeeId,
-                            Allocation = allocation,
-                            Month = allocation.Day.ToStartOfMonth(),
-                            Source = @event
-                        }
-                    )
-                )
-                .GroupBy(allocation =>
-                    new { allocation.EmployeeId, allocation.Month, allocation.Source }
-                )
-                .Select(monthlyAllocation =>
-                    new
-                    {
-                        #region sample_view-custom-grouper-with-transformation-grouper-with-data
-
-                        Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
-                        Event = monthlyAllocation.Key.Source.CloneEventWithNewData(
-                            new EmployeeAllocatedInMonth(
-                                monthlyAllocation.Key.EmployeeId,
-                                monthlyAllocation.Key.Month,
-                                monthlyAllocation.Select(a => a.Allocation).ToList())
-                        )
-
-                        #endregion sample_view-custom-grouper-with-transformation-grouper-with-data
-                    }
-                );
-
-            foreach (var monthlyAllocation in monthlyAllocations)
-            {
-                grouping.AddEvents(
-                    monthlyAllocation.Key,
-                    new[] { monthlyAllocation.Event }
-                );
-            }
-
-            return Task.CompletedTask;
-        }
-    }
+    // public class MonthlyAllocationGrouper: IAggregateGrouper<string>
+    // {
+    //     public Task Group(
+    //         IQuerySession session,
+    //         IEnumerable<IEvent> events,
+    //         IEventGrouping<string> grouping
+    //     )
+    //     {
+    //         var allocations = events
+    //             .OfType<IEvent<EmployeeAllocated>>();
+    //
+    //         var monthlyAllocations = allocations
+    //             .SelectMany(@event =>
+    //                 @event.Data.Allocations.Select(
+    //                     allocation => new
+    //                     {
+    //                         @event.Data.EmployeeId,
+    //                         Allocation = allocation,
+    //                         Month = allocation.Day.ToStartOfMonth(),
+    //                         Source = @event
+    //                     }
+    //                 )
+    //             )
+    //             .GroupBy(allocation =>
+    //                 new { allocation.EmployeeId, allocation.Month, allocation.Source }
+    //             )
+    //             .Select(monthlyAllocation =>
+    //                 new
+    //                 {
+    //                     #region sample_view-custom-grouper-with-transformation-grouper-with-data
+    //
+    //                     Key = $"{monthlyAllocation.Key.EmployeeId}|{monthlyAllocation.Key.Month:yyyy-MM-dd}",
+    //                     Event = monthlyAllocation.Key.Source.CloneEventWithNewData(
+    //                         new EmployeeAllocatedInMonth(
+    //                             monthlyAllocation.Key.EmployeeId,
+    //                             monthlyAllocation.Key.Month,
+    //                             monthlyAllocation.Select(a => a.Allocation).ToList())
+    //                     )
+    //
+    //                     #endregion sample_view-custom-grouper-with-transformation-grouper-with-data
+    //                 }
+    //             );
+    //
+    //         foreach (var monthlyAllocation in monthlyAllocations)
+    //         {
+    //             grouping.AddEvents(
+    //                 monthlyAllocation.Key,
+    //                 new[] { monthlyAllocation.Event }
+    //             );
+    //         }
+    //
+    //         return Task.CompletedTask;
+    //     }
+    // }
 
     #endregion sample_view-custom-grouper-with-transformation-grouper
 

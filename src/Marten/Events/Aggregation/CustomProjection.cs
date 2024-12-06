@@ -24,6 +24,7 @@ using Marten.Sessions;
 using Marten.Storage;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
+using GroupedProjectionRunner = Marten.Events.Daemon.Internals.GroupedProjectionRunner;
 
 namespace Marten.Events.Aggregation;
 
@@ -64,7 +65,7 @@ public abstract class CustomProjection<TDoc, TId>:
         var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, Slicer);
         var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
 
-        return new AggregationExecution<TDoc, TId>(runner, logger);
+        return new GroupedProjectionExecution(runner, logger);
     }
 
     public IAggregationRuntime BuildRuntime(DocumentStore store)
@@ -102,9 +103,10 @@ public abstract class CustomProjection<TDoc, TId>:
         }
 
         var allEvents = filteredStreams.SelectMany(x => x.Events).ToList();
-        var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
-
-        return groups.SelectMany(x => x.Slices).ToList();
+        throw new NotImplementedException("come back here");
+        // var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
+        //
+        // return groups.SelectMany(x => x.Slices).ToList();
     }
 
     async Task IProjection.ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
@@ -129,17 +131,6 @@ public abstract class CustomProjection<TDoc, TId>:
             }
             await ApplyChangesAsync(tenantedSession, slice, cancellation).ConfigureAwait(false);
         }
-    }
-
-    async ValueTask<EventRangeGroup> IAggregationRuntime.GroupEvents(DocumentStore store, IMartenDatabase database,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException(); // Is this still necessary? Maybe for Inline projections?
-        // await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        // var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
-        //
-        // return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
 
     public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
@@ -218,24 +209,6 @@ public abstract class CustomProjection<TDoc, TId>:
 
     IDocumentStorage<TDoc, TId> IAggregationRuntime<TDoc, TId>.Storage => _storage;
 
-
-    /// <summary>
-    ///     Must be overridden to use as an async projection. Takes a range of events, and sorts them
-    ///     into an EventSlice for each detected aggregate document
-    /// </summary>
-    /// <param name="store"></param>
-    /// <param name="database"></param>
-    /// <param name="range"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    public ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
-        IMartenDatabase database,
-        EventRange range, CancellationToken cancellation)
-    {
-        using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        return Slicer.SliceAsyncEvents(session, range.Events);
-    }
-
     Type IReadOnlyProjectionData.ProjectionType => GetType();
 
     IEnumerable<Type> IProjectionSource.PublishedTypes()
@@ -255,16 +228,6 @@ public abstract class CustomProjection<TDoc, TId>:
         } };
     }
 
-    async ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        var groups = await GroupEventRange(store, daemonDatabase, range, cancellationToken).ConfigureAwait(false);
-
-        throw new NotImplementedException();
-        //return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
-    }
-
     IProjection IProjectionSource.Build(DocumentStore store)
     {
         readDocumentStorage(store);
@@ -279,7 +242,7 @@ public abstract class CustomProjection<TDoc, TId>:
                 $"Projection {GetType().FullNameInCode()} does not have a configured event slicer.");
         }
 
-        if (Slicer is MartenEventSlicer<TDoc, TId> slicer && !slicer.HasAnyRules())
+        if (Slicer is EventSlicer<TDoc, TId> slicer && !slicer.HasAnyRules())
         {
             throw new InvalidProjectionException(
                 $"Projection {GetType().FullNameInCode()} has incomplete event slicer configuration.");
@@ -307,12 +270,13 @@ public abstract class CustomProjection<TDoc, TId>:
     ///     slicer
     /// </summary>
     /// <param name="configure"></param>
-    public void AggregateEvents(Action<MartenEventSlicer<TDoc, TId>> configure)
+    public void AggregateEvents(Action<EventSlicer<TDoc, TId>> configure)
     {
-        var slicer = new MartenEventSlicer<TDoc, TId>();
-        configure(slicer);
-
-        Slicer = slicer;
+        throw new NotImplementedException();
+        // var slicer = new EventSlicer<TDoc, TId>();
+        // configure(slicer);
+        //
+        // Slicer = slicer;
     }
 
     /// <summary>
@@ -330,11 +294,13 @@ public abstract class CustomProjection<TDoc, TId>:
         }
         else if (typeof(TId).GetProperties().Any(x => x.PropertyType == typeof(Guid)))
         {
-            Slicer = new ByStreamId<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
+            throw new NotImplementedException();
+            //Slicer = new ByStreamId<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
         }
         else if (typeof(TId).GetProperties().Any(x => x.PropertyType == typeof(string)))
         {
-            Slicer = new ByStreamKey<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
+            throw new NotImplementedException();
+            //Slicer = new ByStreamKey<TDoc, TId>(new StoreOptions().RegisterValueType(typeof(TId)));
         }
         else
         {

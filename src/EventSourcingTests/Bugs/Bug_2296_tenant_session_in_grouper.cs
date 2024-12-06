@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -87,7 +88,8 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         public CountsByTagProjector()
         {
             Identity<CountEvent>(e => e.Tag);
-            CustomGrouping(new EventGrouper());
+            throw new NotImplementedException();
+            //CustomGrouping(new EventGrouper());
         }
 
         public void Apply(CountEvent @event, CountsByTag view)
@@ -100,32 +102,32 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
             view.Count = 0;
         }
 
-        public class EventGrouper: IAggregateGrouper<string>
-        {
-            public async Task Group(IQuerySession session, IEnumerable<IEvent> events,
-                IEventGrouping<string> grouping)
-            {
-                var resetEvents = events.OfType<IEvent<ResetEvent>>().ToList();
-                if (!resetEvents.Any())
-                {
-                    return;
-                }
-
-                foreach (var resetEvent in resetEvents)
-                {
-                    // DEBUG HERE
-                    // check session.TenantId and session.Events._tenant.TenantId
-                    // returns empty collection, should return all events in stream.
-                    var streamEvents =
-                        await session.Events.FetchStreamAsync(resetEvent.StreamKey!, version: resetEvent.Version);
-
-                    foreach (var tag in streamEvents.OfType<IEvent<CountEvent>>().GroupBy(foo => foo.Data.Tag)
-                                 .Select(g => g.Key))
-                    {
-                        grouping.AddEvent(tag, resetEvent);
-                    }
-                }
-            }
-        }
+        // public class EventGrouper: IAggregateGrouper<string>
+        // {
+        //     public async Task Group(IQuerySession session, IEnumerable<IEvent> events,
+        //         IEventGrouping<string> grouping)
+        //     {
+        //         var resetEvents = events.OfType<IEvent<ResetEvent>>().ToList();
+        //         if (!resetEvents.Any())
+        //         {
+        //             return;
+        //         }
+        //
+        //         foreach (var resetEvent in resetEvents)
+        //         {
+        //             // DEBUG HERE
+        //             // check session.TenantId and session.Events._tenant.TenantId
+        //             // returns empty collection, should return all events in stream.
+        //             var streamEvents =
+        //                 await session.Events.FetchStreamAsync(resetEvent.StreamKey!, version: resetEvent.Version);
+        //
+        //             foreach (var tag in streamEvents.OfType<IEvent<CountEvent>>().GroupBy(foo => foo.Data.Tag)
+        //                          .Select(g => g.Key))
+        //             {
+        //                 grouping.AddEvent(tag, resetEvent);
+        //             }
+        //         }
+        //     }
+        // }
     }
 }

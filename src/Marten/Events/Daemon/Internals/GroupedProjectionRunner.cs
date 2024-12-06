@@ -6,13 +6,12 @@ using JasperFx;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon.Internals;
 
-internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRunner<TDoc, TId>
+internal class AggregationProjectionRunner<TDoc, TId>: IGroupedProjectionRunner
 {
     private readonly DocumentStore _store;
     private readonly IMartenDatabase _database;
@@ -34,6 +33,9 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
         {
             ProjectionShardIdentity += $"@{database.Identifier}";
         }
+
+        // TODO -- let this be variable?
+        SliceBehavior = SliceBehavior.Preprocess;
     }
 
     public string ProjectionShardIdentity { get; }
@@ -46,17 +48,29 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
         return new ValueTask();
     }
 
-    public async Task<IProjectionBatch> BuildBatchAsync(TenantedSliceGroup<TDoc, TId> group)
+    public SliceBehavior SliceBehavior { get; }
+
+
+    public IEventSlicer Slicer { get; }
+
+    public async Task<IProjectionBatch> BuildBatchAsync(EventRange range)
     {
-        var batch = new ProjectionUpdateBatch(_store, _database, group.Agent.Mode, group.Cancellation)
+        // TODO -- NEED TO PASS THROUGH A CANCELLATION TOKEN
+        var cancellation = CancellationToken.None;
+        var batch = new ProjectionUpdateBatch(_store, _database, range.Agent.Mode, cancellation)
         {
-            ShouldApplyListeners = group.Agent.Mode == ShardExecutionMode.Continuous && group.Range.Events.Any()
+            ShouldApplyListeners = range.Agent.Mode == ShardExecutionMode.Continuous && range.Events.Any()
         };
 
         // Mark the progression
-        batch.Queue.Post(group.Range.BuildProgressionOperation(_store.Events));
+        batch.Queue.Post(range.BuildProgressionOperation(_store.Events));
 
-        await group.ConfigureUpdateBatch(batch).ConfigureAwait(false);
+        var groups = range.Groups.OfType<SliceGroup<TDoc, TId>>().ToArray();
+        await Parallel.ForEachAsync(groups, cancellation,
+                async (group, _) =>
+                    await batch.ProcessAggregationAsync<TDoc, TId>(group, cancellation).ConfigureAwait(false))
+            .ConfigureAwait(false);
+
         await batch.WaitForCompletion().ConfigureAwait(false);
 
         return batch;
@@ -74,13 +88,6 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
         return false;
     }
 
-    public async ValueTask<TenantedSliceGroup<TDoc, TId>> GroupEvents(EventRange range, CancellationToken cancellationToken)
-    {
-        var groups = await  _slicer.SliceAsyncEvents(range.Events).ConfigureAwait(false);
-        return new TenantedSliceGroup<TDoc, TId>(range, _slicer, groups);
-    }
-
-    public IAggregation Database { get; }
 
     public async Task EnsureStorageExists(CancellationToken token)
     {
@@ -105,7 +112,7 @@ internal class AggregationProjectionRunner<TDoc, TId>: IAggregationProjectionRun
 }
 
 
-internal class GroupedProjectionRunner: IGroupedProjectionRunner<EventRangeGroup>
+internal class GroupedProjectionRunner: IGroupedProjectionRunner
 {
     private readonly DocumentStore _store;
     private readonly IMartenDatabase _database;
@@ -137,20 +144,23 @@ internal class GroupedProjectionRunner: IGroupedProjectionRunner<EventRangeGroup
         return new ValueTask();
     }
 
-    public async Task<IProjectionBatch> BuildBatchAsync(EventRangeGroup group)
+    public SliceBehavior SliceBehavior { get; } = SliceBehavior.Preprocess;
+
+    public async Task<IProjectionBatch> BuildBatchAsync(EventRange range)
     {
-        var batch = new ProjectionUpdateBatch(_store, _database, group.Agent.Mode, group.Cancellation)
-        {
-            ShouldApplyListeners = group.Agent.Mode == ShardExecutionMode.Continuous && group.Range.Events.Any()
-        };
+        // var batch = new ProjectionUpdateBatch(_store, _database, range.Agent.Mode, range.Cancellation)
+        // {
+        //     ShouldApplyListeners = range.Agent.Mode == ShardExecutionMode.Continuous && range.Range.Events.Any()
+        // };
+        //
+        // // Mark the progression
+        // batch.Queue.Post(range.BuildProgressionOperation(_store.Events));
 
-        // Mark the progression
-        batch.Queue.Post(group.Range.BuildProgressionOperation(_store.Events));
-
-        await group.ConfigureUpdateBatch(batch).ConfigureAwait(false);
-        await batch.WaitForCompletion().ConfigureAwait(false);
-
-        return batch;
+        throw new NotImplementedException();
+        //await range.ConfigureUpdateBatch(batch).ConfigureAwait(false);
+        // await batch.WaitForCompletion().ConfigureAwait(false);
+        //
+        // return batch;
     }
 
     public bool TryBuildReplayExecutor(out IReplayExecutor executor)
@@ -165,10 +175,7 @@ internal class GroupedProjectionRunner: IGroupedProjectionRunner<EventRangeGroup
         return false;
     }
 
-    public ValueTask<EventRangeGroup> GroupEvents(EventRange range, CancellationToken cancellationToken)
-    {
-        return _source.GroupEvents(_store, _database, range, cancellationToken);
-    }
+    public IEventSlicer Slicer => throw new NotImplementedException();
 
     public async Task EnsureStorageExists(CancellationToken token)
     {

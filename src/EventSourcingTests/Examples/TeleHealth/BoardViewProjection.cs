@@ -10,15 +10,16 @@ using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-public class BoardViewProjection: ExperimentalMultiStreamProjection<BoardView, Guid>
+// TODO -- redo
+public class BoardViewProjection: MultiStreamProjection<BoardView, Guid>
 {
-    protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
-    {
-        grouping.AddEvents<IEvent<BoardStateEvent>>(e => e.StreamId, events);
-        grouping.AddEvents<IBoardEvent>(x => x.BoardId, events);
-
-        return ValueTask.CompletedTask;
-    }
+    // protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
+    // {
+    //     grouping.AddEvents<IEvent<BoardStateEvent>>(e => e.StreamId, events);
+    //     grouping.AddEvents<IBoardEvent>(x => x.BoardId, events);
+    //
+    //     return ValueTask.CompletedTask;
+    // }
 
     public BoardView Create(BoardOpened opened)
     {

@@ -30,10 +30,6 @@ public interface IProjectionSource: IReadOnlyProjectionData
 
     IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store);
 
-    ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken);
-
     IProjection Build(DocumentStore store);
 
     ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,

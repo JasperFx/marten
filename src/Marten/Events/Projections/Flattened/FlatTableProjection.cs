@@ -135,22 +135,6 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
         _handlers.Add(new EventDeleter(typeof(T), members));
     }
 
-    protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _generatedProjection.Value,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
-    }
-
     private void readSchema(EventGraph events)
     {
         switch (SchemaNameSource)

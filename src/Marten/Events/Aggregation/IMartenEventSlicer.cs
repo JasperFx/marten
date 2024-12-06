@@ -16,9 +16,7 @@ public interface IMartenEventSlicer<TDoc, TId>
     /// <param name="querySession"></param>
     /// <param name="events"></param>
     /// <returns></returns>
-    ValueTask<IReadOnlyList<EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
-        IQuerySession querySession,
-        List<IEvent> events);
+    Task SliceEvents(IQuerySession querySession, IReadOnlyList<IEvent> events, SliceGroup<TDoc, TId> grouping);
 }
 
 internal class MartenEventSlicerAdapter<TDoc, TId> : IEventSlicer<TDoc, TId>
@@ -34,10 +32,9 @@ internal class MartenEventSlicerAdapter<TDoc, TId> : IEventSlicer<TDoc, TId>
         _slicer = slicer;
     }
 
-    public async ValueTask<IReadOnlyList<JasperFx.Events.Grouping.EventSliceGroup<TDoc, TId>>> SliceAsyncEvents(
-        List<IEvent> events)
+    public async ValueTask SliceAsync(IReadOnlyList<IEvent> events, SliceGroup<TDoc, TId> grouping)
     {
         await using var session = _store.QuerySession(SessionOptions.ForDatabase(_database));
-        return await _slicer.SliceAsyncEvents(session, events).ConfigureAwait(false);
+        await _slicer.SliceEvents(session, events, grouping).ConfigureAwait(false);
     }
 }

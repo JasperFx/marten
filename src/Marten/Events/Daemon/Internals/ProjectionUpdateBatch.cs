@@ -25,7 +25,7 @@ namespace Marten.Events.Daemon.Internals;
 /// <summary>
 ///     Incrementally built batch command for projection updates
 /// </summary>
-public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISessionWorkTracker
+public class ProjectionUpdateBatch: IUpdateBatch, IDisposable, ISessionWorkTracker, IProjectionBatch
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
@@ -100,7 +100,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
     }
 
 
-    public async Task ProcessAggregationAsync<TDoc, TId>(EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
+    public async Task ProcessAggregationAsync<TDoc, TId>(SliceGroup<TDoc, TId> grouping, CancellationToken token)
     {
         // TODO -- put this logic of finding the runtime somewhere a bit more encapsulated
         if (!_session.Options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
@@ -423,7 +423,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAggregation, IDisposable, ISe
 
     private async Task processEventSlices<TDoc, TId>(ActionBlock<EventSlice<TDoc, TId>> builder,
         IAggregationRuntime<TDoc, TId> runtime,
-        IDocumentStore store, EventSliceGroup<TDoc, TId> grouping, CancellationToken token)
+        IDocumentStore store, SliceGroup<TDoc, TId> grouping, CancellationToken token)
     {
         var tenant = new Tenant(grouping.TenantId, _session.Database);
 

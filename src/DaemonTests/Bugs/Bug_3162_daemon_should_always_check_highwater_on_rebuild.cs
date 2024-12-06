@@ -120,80 +120,81 @@ public sealed class InvitationView
     public DateTimeOffset CreatedAt { get; set; }
 }
 
-public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
-{
-    private readonly Type[] eventTypes =
-    [
-        typeof(MemberInvited),
-        typeof(MemberJoined),
-    ];
-
-    public async Task Group(
-        IQuerySession session,
-        IEnumerable<IEvent> events,
-        IEventGrouping<Guid> grouping)
-    {
-        var eventsArray = events.ToArray();
-        MembershipGroup(eventsArray, grouping);
-        await TeamGroup(session, eventsArray, grouping);
-    }
-
-    private void MembershipGroup(
-        IEnumerable<IEvent> events,
-        IEventGrouping<Guid> grouping)
-    {
-        var filteredEvents = events
-            .Where(ev => eventTypes.Contains(ev.EventType))
-            .GroupBy(e => e.StreamId)
-            .Select(x => new
-            {
-                TeamMembershipId = x.Key,
-                Events = x.ToArray(),
-            })
-            .ToList();
-
-        foreach (var membershipEvents in filteredEvents)
-        {
-            grouping.AddEvents(membershipEvents.TeamMembershipId, membershipEvents.Events);
-        }
-    }
-
-    private async Task TeamGroup(
-        IQuerySession session,
-        IEnumerable<IEvent> events,
-        IEventGrouping<Guid> grouping)
-    {
-        var teamEvents = events
-            .OfType<IEvent<TeamNameChanged>>()
-            .ToArray();
-
-        if (teamEvents.Length == 0)
-        {
-            return;
-        }
-
-        var teamIds = teamEvents
-            .Select(e => e.StreamId)
-            .ToList();
-
-        var result = await session.Query<InvitationView>()
-            .Where(e => teamIds.Contains(e.TeamId))
-            .Select(x => new { x.Id, x.TeamId })
-            .ToListAsync();
-
-        var eventsPerTeam = result.Select(g =>
-            new
-            {
-                g.Id,
-                Events = teamEvents.Where(ev => ev.StreamId == g.TeamId),
-            });
-
-        foreach (var group in eventsPerTeam)
-        {
-            grouping.AddEvents(group.Id, group.Events);
-        }
-    }
-}
+// TODO -- convert to custom slicer?
+// public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
+// {
+//     private readonly Type[] eventTypes =
+//     [
+//         typeof(MemberInvited),
+//         typeof(MemberJoined),
+//     ];
+//
+//     public async Task Group(
+//         IQuerySession session,
+//         IEnumerable<IEvent> events,
+//         IEventGrouping<Guid> grouping)
+//     {
+//         var eventsArray = events.ToArray();
+//         MembershipGroup(eventsArray, grouping);
+//         await TeamGroup(session, eventsArray, grouping);
+//     }
+//
+//     private void MembershipGroup(
+//         IEnumerable<IEvent> events,
+//         IEventGrouping<Guid> grouping)
+//     {
+//         var filteredEvents = events
+//             .Where(ev => eventTypes.Contains(ev.EventType))
+//             .GroupBy(e => e.StreamId)
+//             .Select(x => new
+//             {
+//                 TeamMembershipId = x.Key,
+//                 Events = x.ToArray(),
+//             })
+//             .ToList();
+//
+//         foreach (var membershipEvents in filteredEvents)
+//         {
+//             grouping.AddEvents(membershipEvents.TeamMembershipId, membershipEvents.Events);
+//         }
+//     }
+//
+//     private async Task TeamGroup(
+//         IQuerySession session,
+//         IEnumerable<IEvent> events,
+//         IEventGrouping<Guid> grouping)
+//     {
+//         var teamEvents = events
+//             .OfType<IEvent<TeamNameChanged>>()
+//             .ToArray();
+//
+//         if (teamEvents.Length == 0)
+//         {
+//             return;
+//         }
+//
+//         var teamIds = teamEvents
+//             .Select(e => e.StreamId)
+//             .ToList();
+//
+//         var result = await session.Query<InvitationView>()
+//             .Where(e => teamIds.Contains(e.TeamId))
+//             .Select(x => new { x.Id, x.TeamId })
+//             .ToListAsync();
+//
+//         var eventsPerTeam = result.Select(g =>
+//             new
+//             {
+//                 g.Id,
+//                 Events = teamEvents.Where(ev => ev.StreamId == g.TeamId),
+//             });
+//
+//         foreach (var group in eventsPerTeam)
+//         {
+//             grouping.AddEvents(group.Id, group.Events);
+//         }
+//     }
+// }
 
 public sealed class InvitationProjection : MultiStreamProjection<InvitationView, Guid>
 {
@@ -203,7 +204,8 @@ public sealed class InvitationProjection : MultiStreamProjection<InvitationView,
         IncludeType<MemberInvited>();
         IncludeType<MemberJoined>();
 
-        CustomGrouping(new TeamInvitationGrouper());
+        throw new NotImplementedException("REDO sample");
+        //CustomGrouping(new TeamInvitationGrouper());
     }
 
     public async Task<InvitationView> Create(

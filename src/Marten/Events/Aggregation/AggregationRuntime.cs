@@ -335,26 +335,18 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     // Holy fugly code Batman!
     private async Task<IReadOnlyList<EventSlice<TDoc, TId>>> sliceForInlineUsage(IDocumentOperations operations, StreamAction[] filteredStreams)
     {
-        if (Slicer is ISingleStreamSlicer<TDoc, TId> single)
-        {
-            return single.Transform(operations, filteredStreams);
-        }
-
-        var allEvents = filteredStreams.SelectMany(x => x.Events).ToList();
-        var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
-
-        return groups.SelectMany(x => x.Slices).ToList();
-    }
-
-    public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
-        CancellationToken cancellationToken)
-    {
         throw new NotImplementedException();
-        // await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        // var groups = await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
+        // if (Slicer is ISingleStreamSlicer<TDoc, TId> single)
+        // {
+        //     return single.Transform(operations, filteredStreams);
+        // }
         //
-        // return new EventSliceGroup<TDoc, TId>(store, this, range, groups, cancellationToken);
+        // var allEvents = filteredStreams.SelectMany(x => x.Events).ToList();
+        // var groups = await Slicer.SliceAsyncEvents(operations, allEvents).ConfigureAwait(false);
+        //
+        // return groups.SelectMany(x => x.Slices).ToList();
     }
+
 
     public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
         IEvent evt, TDoc? aggregate,

@@ -29,7 +29,7 @@ namespace Marten.Events.Projections;
 /// <typeparam name="TId"></typeparam>
 public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>
 {
-    private readonly MartenEventSlicer<TDoc, TId> _defaultSlicer = new();
+    private readonly EventSlicer<TDoc, TId> _defaultSlicer = new();
 
     private IMartenEventSlicer<TDoc, TId>? _customSlicer;
 
@@ -39,16 +39,17 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     public override bool IsSingleStream()
     {
-        return Slicer is ISingleStreamSlicer;
+        return false;
     }
 
     public override ISubscriptionExecution BuildExecution(AsyncProjectionShard shard, DocumentStore store, IMartenDatabase database,
         ILogger logger)
     {
-        var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, Slicer);
-        var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
-
-        return new AggregationExecution<TDoc, TId>(runner, logger);
+        throw new NotImplementedException();
+        // var slicer = new MartenEventSlicerAdapter<TDoc, TId>(store, database, Slicer);
+        // var runner = new AggregationProjectionRunner<TDoc, TId>(shard, store, database, slicer);
+        //
+        // return new GroupedProjectionExecution(runner, logger);
     }
 
     /// <summary>
@@ -62,8 +63,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
         _customSlicer = (IMartenEventSlicer<TDoc, TId>)new TenantRollupSlicer<TDoc>();
     }
-
-    internal IMartenEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
 
     protected override Type[] determineEventTypes()
     {
@@ -91,22 +90,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
         }
 
         _defaultSlicer.Identities(identitiesFunc);
-    }
-
-    /// <summary>
-    ///     Apply a custom event grouping strategy for events. This is additive to Identity() or Identities()
-    /// </summary>
-    /// <param name="grouper"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public void CustomGrouping(IAggregateGrouper<TId> grouper)
-    {
-        if (_customSlicer != null)
-        {
-            throw new InvalidOperationException(
-                "There is already a custom event slicer registered for this projection");
-        }
-
-        _defaultSlicer.CustomGrouping(grouper);
     }
 
     /// <summary>
@@ -161,26 +144,27 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected override object buildEventSlicer(StoreOptions options)
     {
-        if (_customSlicer != null)
-        {
-            return _customSlicer;
-        }
-
-        var mapping = options.Storage.MappingFor(typeof(TDoc));
-        var aggregateStyle = mapping.TenancyStyle;
-        var eventStyle = options.Events.TenancyStyle;
-
-        switch (aggregateStyle)
-        {
-            case TenancyStyle.Conjoined when eventStyle == TenancyStyle.Conjoined:
-                _defaultSlicer.GroupByTenant();
-                break;
-            case TenancyStyle.Conjoined:
-                throw new InvalidProjectionException(
-                    $"Aggregate {typeof(TDoc).FullNameInCode()} is multi-tenanted, but the events are not");
-        }
-
-        return _defaultSlicer;
+        throw new NotImplementedException();
+        // if (_customSlicer != null)
+        // {
+        //     return _customSlicer;
+        // }
+        //
+        // var mapping = options.Storage.MappingFor(typeof(TDoc));
+        // var aggregateStyle = mapping.TenancyStyle;
+        // var eventStyle = options.Events.TenancyStyle;
+        //
+        // switch (aggregateStyle)
+        // {
+        //     case TenancyStyle.Conjoined when eventStyle == TenancyStyle.Conjoined:
+        //         _defaultSlicer.GroupByTenant();
+        //         break;
+        //     case TenancyStyle.Conjoined:
+        //         throw new InvalidProjectionException(
+        //             $"Aggregate {typeof(TDoc).FullNameInCode()} is multi-tenanted, but the events are not");
+        // }
+        //
+        // return _defaultSlicer;
     }
 
     protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
