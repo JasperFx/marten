@@ -128,6 +128,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         StoreOptions.applyPostPolicies(this);
 
+        QueryMembers.TenancyStyle = TenancyStyle;
+
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
 
         if (DisablePartitioningIfAny)
