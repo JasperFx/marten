@@ -6,8 +6,10 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing.Operators;
 using Marten.Schema;
+using Marten.Storage;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -23,6 +25,8 @@ internal class DocumentQueryableMemberCollection: IQueryableMemberCollection, IQ
         _options = options;
         ElementType = mapping.DocumentType;
     }
+
+    public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
     public string MemberName => string.Empty;
 
