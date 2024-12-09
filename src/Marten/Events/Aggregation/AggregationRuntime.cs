@@ -143,28 +143,13 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
-        if (aggregate != null)
-        {
-            Storage.SetIdentity(aggregate, slice.Id);
-        }
+        var lastEvent = tryApplyMetadata(slice, aggregate);
 
         if (session is ProjectionDocumentSession pds && pds.Mode == ShardExecutionMode.Continuous)
         {
             // Need to set the aggregate in case it didn't exist upfront
             slice.Aggregate = aggregate;
             await processPossibleSideEffects(session, slice).ConfigureAwait(false);
-        }
-
-        var lastEvent = slice.Events().LastOrDefault();
-        if (aggregate != null)
-        {
-            Versioning.TrySetVersion(aggregate, lastEvent);
-
-            foreach (var @event in slice.Events())
-            {
-                Projection.ApplyMetadata(aggregate, @event);
-            }
-
         }
 
         // Delete the aggregate *if* it existed prior to these events
@@ -187,6 +172,23 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
 
         session.QueueOperation(storageOperation);
+    }
+
+    private IEvent? tryApplyMetadata(EventSlice<TDoc, TId> slice, TDoc? aggregate)
+    {
+        var lastEvent = slice.Events().LastOrDefault();
+        if (aggregate != null)
+        {
+            Storage.SetIdentity(aggregate, slice.Id);
+            Versioning.TrySetVersion(aggregate, lastEvent);
+
+            foreach (var @event in slice.Events())
+            {
+                Projection.ApplyMetadata(aggregate, @event);
+            }
+        }
+
+        return lastEvent;
     }
 
     private async Task processPossibleSideEffects(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
