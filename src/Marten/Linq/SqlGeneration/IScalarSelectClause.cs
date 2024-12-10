@@ -1,7 +1,7 @@
 #nullable enable
 namespace Marten.Linq.SqlGeneration;
 
-internal interface IScalarSelectClause
+public interface IScalarSelectClause
 {
     string MemberName { get; }
     void ApplyOperator(string op);
