@@ -149,5 +149,23 @@ public partial class StoreOptions
             "Unable to determine either a builder static method or a constructor to use");
     }
 
+    public void RegisterFSharpOptionValueTypes()
+    {
+        RegisterValueType(typeof(FSharpOption<Guid>));
+        RegisterValueType(typeof(FSharpOption<string>));
+        RegisterValueType(typeof(FSharpOption<long>));
+        RegisterValueType(typeof(FSharpOption<int>));
+        RegisterValueType(typeof(FSharpOption<bool>));
+        RegisterValueType(typeof(FSharpOption<decimal>));
+        RegisterValueType(typeof(FSharpOption<char>));
+        RegisterValueType(typeof(FSharpOption<double>));
+        RegisterValueType(typeof(FSharpOption<float>));
+        RegisterValueType(typeof(FSharpOption<uint>));
+        RegisterValueType(typeof(FSharpOption<ulong>));
+        RegisterValueType(typeof(FSharpOption<short>));
+        RegisterValueType(typeof(FSharpOption<ushort>));
+        RegisterValueType(typeof(FSharpOption<DateTime>));
+    }
+
     internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
 }
