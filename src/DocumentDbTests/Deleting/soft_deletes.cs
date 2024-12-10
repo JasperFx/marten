@@ -708,7 +708,7 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var table = new DocumentTable(theStore.Options.Storage.MappingFor(typeof(SoftDeletedAndPartitionedDocument)));
 
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "true"));
 
     }
 }
@@ -1398,7 +1398,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         var table = new DocumentTable(theStore.Options.Storage.MappingFor(typeof(SoftDeletedAndPartitionedDocument)));
 
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "true"));
 
     }
 
