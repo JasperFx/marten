@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using JasperFx.Core;
+using Microsoft.FSharp.Core;
 
 #nullable enable
 namespace Marten.Testing.Documents;
@@ -46,6 +47,7 @@ public class Target
     {
         var target = new Target();
         target.String = _strings[_random.Next(0, 10)];
+        target.FSharpGuidOption = new FSharpOption<Guid>(Guid.NewGuid());
         target.PaddedString = " " + target.String + " ";
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
         target.Number = _random.Next();
@@ -141,6 +143,9 @@ public class Target
 
     public long Long { get; set; }
     public string String { get; set; }
+
+    public FSharpOption<Guid> FSharpGuidOption { get; set; }
+
     public string AnotherString { get; set; }
 
     public string[] StringArray { get; set; }

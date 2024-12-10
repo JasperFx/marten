@@ -16,13 +16,13 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-public interface IValueTypeMember: IQueryableMember
+public interface IValueTypeMember<TOuter, TInner>: IQueryableMember
 {
-    object ConvertFromWrapperArray(object values);
+    IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values);
     ISelectClause BuildSelectClause(string fromObject);
 }
 
-public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
+public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember<TOuter, TInner>
 {
     private readonly Func<TOuter, TInner> _valueSource;
     private readonly IScalarSelectClause _selector;
@@ -49,7 +49,6 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
                 valueTypeInfo.SimpleType);
         }
 
-
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,
@@ -75,7 +74,7 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
         return new MemberComparisonFilter(this, def, op);
     }
 
-    public object ConvertFromWrapperArray(object values)
+    public IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values)
     {
         if (values is IEnumerable e)
         {

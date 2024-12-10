@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
+using Marten.Util;
 
 namespace Marten.Linq.Parsing;
 
@@ -105,8 +106,8 @@ public class SelectorVisitor: ExpressionVisitor
         else
         {
             _statement.SelectClause =
-                member is IValueTypeMember valueTypeMember
-                ? valueTypeMember.BuildSelectClause(_statement.FromObject)
+                member.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>))
+                ? (ISelectClause)member.CallGenericInterfaceMethod(typeof(IValueTypeMember<,>), "BuildSelectClause", _statement.FromObject)
                 : typeof(DataSelectClause<>).CloseAndBuildAs<ISelectClause>(_statement.FromObject,
                     member.RawLocator,
                     member.MemberType);
