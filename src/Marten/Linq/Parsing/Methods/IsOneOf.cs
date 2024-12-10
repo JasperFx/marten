@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -31,13 +32,15 @@ internal class IsOneOf: IMethodCallParser
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
-        else if (queryableMember is IValueTypeMember valueTypeMember)
+        else if (queryableMember.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>)))
         {
-            return new IsOneOfFilter(queryableMember, new CommandParameter(valueTypeMember.ConvertFromWrapperArray(values)));
+            var commandParameter = queryableMember.CallGenericInterfaceMethod(typeof(IValueTypeMember<,>), "ConvertFromWrapperArray", values);
+            return new IsOneOfFilter(queryableMember, new CommandParameter(commandParameter));
         }
 
         return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }
+
 }
 
 internal class IsOneOfFilter: ISqlFragment

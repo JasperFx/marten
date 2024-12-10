@@ -19,7 +19,7 @@ internal interface IStrongTypedIdGeneration
     ISelectClause BuildSelectClause(string fromObject);
 }
 
-internal class StrongTypedIdMember<TOuter, TInner>: IdMember, IValueTypeMember
+internal class StrongTypedIdMember<TOuter, TInner>: IdMember, IValueTypeMember<TOuter, TInner>
 {
     private readonly IStrongTypedIdGeneration _idGeneration;
     private readonly Func<object, TInner> _innerValue;
@@ -31,7 +31,7 @@ internal class StrongTypedIdMember<TOuter, TInner>: IdMember, IValueTypeMember
     }
 
 
-    public object ConvertFromWrapperArray(object values)
+    public IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values)
     {
         if (values is IEnumerable e)
         {

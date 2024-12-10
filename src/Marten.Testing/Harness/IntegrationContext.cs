@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
+using Microsoft.FSharp.Core;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -69,6 +70,10 @@ namespace Marten.Testing.Harness
 
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 opts.ApplicationAssembly = GetType().Assembly;
+
+                opts.RegisterValueType(typeof(FSharpOption<Guid>));
+                opts.RegisterValueType(typeof(FSharpOption<string>));
+                opts.RegisterValueType(typeof(FSharpOption<long>));
             });
         }
 
