@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -23,10 +24,14 @@ public abstract class TargetSchemaFixture: IDisposable
 
     internal DocumentStore ProvisionStore(string schema, Action<StoreOptions> configure = null)
     {
+
         var store = DocumentStore.For(x =>
         {
             x.Connection(ConnectionSource.ConnectionString);
             x.DatabaseSchemaName = schema;
+            x.RegisterFSharpOptionValueTypes();
+            var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
+            x.UseSystemTextJsonForSerialization(serializerOptions);
 
             configure?.Invoke(x);
         });
