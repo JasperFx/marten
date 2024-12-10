@@ -52,4 +52,29 @@ public class partitioning_migrations : OneOffConfigurationsContext
         var migration = await store2.Storage.CreateMigrationAsync();
         migration.Difference.ShouldBe(SchemaPatchDifference.Update);
     }
+
+    [Fact]
+    public async Task partitioning_with_soft_deletes_multiple_migrations()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>();
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var store2 = SeparateStore(opts =>
+        {
+            opts.Schema.For<Target>().SoftDeletedWithPartitioning();
+        });
+
+        await store2.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var store3 = SeparateStore(opts =>
+        {
+            opts.Schema.For<Target>().SoftDeletedWithPartitioning();
+        });
+
+        await store3.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+    }
 }
