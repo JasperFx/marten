@@ -348,4 +348,24 @@ public interface IEventStore: IEventOperations, IQueryEventStore
     /// </summary>
     /// <param name="e"></param>
     void OverwriteEvent(IEvent e);
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id. This API functions regardless of the projection lifecycle,
+    /// and should be thought of as a lightweight, read-only version of FetchForWriting
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    ValueTask<T> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id. This API functions regardless of the projection lifecycle,
+    /// and should be thought of as a lightweight, read-only version of FetchForWriting
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    ValueTask<T> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
 }

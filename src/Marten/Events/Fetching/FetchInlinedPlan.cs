@@ -153,4 +153,36 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
             throw;
         }
     }
+
+    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        // TODO -- optimizations coming
+
+        IDocumentStorage<TDoc, TId> storage = null;
+        if (session.Options.Events.UseIdentityMapForInlineAggregates)
+        {
+            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>();
+            // Opt into the identity map mechanics for this aggregate type just in case
+            // you're using a lightweight session
+            session.UseIdentityMapFor<TDoc>();
+        }
+        else
+        {
+            storage = session.StorageFor<TDoc, TId>();
+        }
+
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        var builder = new BatchBuilder { TenantId = session.TenantId };
+        builder.Append(";");
+
+        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
+        handler.ConfigureCommand(builder, session);
+
+        await using var reader =
+            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+        var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+        return document;
+    }
 }
