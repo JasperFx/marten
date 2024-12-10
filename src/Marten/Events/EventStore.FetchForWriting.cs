@@ -136,6 +136,18 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.FetchForWriting(_session, key, true, cancellation);
     }
 
+    public ValueTask<T> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class
+    {
+        var plan = findFetchPlan<T, Guid>();
+        return plan.FetchForReading(_session, id, cancellation);
+    }
+
+    public ValueTask<T> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class
+    {
+        var plan = findFetchPlan<T, string>();
+        return plan.FetchForReading(_session, id, cancellation);
+    }
+
     private IAggregateFetchPlan<TDoc, TId> findFetchPlan<TDoc, TId>() where TDoc : class
     {
         if (typeof(TId) == typeof(Guid))
@@ -181,6 +193,8 @@ public interface IAggregateFetchPlan<TDoc, TId>
 
     Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion,
         CancellationToken cancellation = default);
+
+    ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
 }
 
 public interface IEventIdentityStrategy<TId>

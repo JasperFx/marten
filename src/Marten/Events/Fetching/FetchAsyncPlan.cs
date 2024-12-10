@@ -253,6 +253,51 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             throw;
         }
     }
+
+    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        _initialSql ??=
+            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+
+        // TODO -- use read only transaction????
+
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+
+        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        loadHandler.ConfigureCommand(builder, session);
+
+        builder.StartNewCommand();
+
+        writeEventFetchStatement(id, builder);
+
+        var batch = builder.Compile();
+        await using var reader =
+            await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+
+        // Fetch the existing aggregate -- if any!
+        var document = await loadHandler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+        // Read in any events from after the current state of the aggregate
+        await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+        var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        if (events.Any())
+        {
+            document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+        }
+
+        if (document != null)
+        {
+            _storage.SetIdentity(document, id);
+        }
+
+        return document;
+    }
 }
 
 internal class AggregateEventFloor<TId>: ISqlFragment

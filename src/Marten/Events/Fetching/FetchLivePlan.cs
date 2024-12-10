@@ -140,4 +140,22 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
             throw;
         }
     }
+
+    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        // TODO -- there will be optimizations later!!!
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+
+        var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
+        handler.ConfigureCommand(builder, session);
+
+        await using var reader =
+            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+
+        var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        return await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+    }
 }
