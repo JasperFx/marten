@@ -1,5 +1,10 @@
 # Marten Metadata
 
+::: tip
+Note that this content only applies to document storage and will have no impact on projected documents
+created through live aggregations of event data.
+:::
+
 A major goal of the Marten V4 release was to enable much richer document and event metadata collection based
 on user requests. To that end, Marten still supports the same basic metadata columns
 as Marten V2/V3, but adds other **opt in** columns.

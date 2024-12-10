@@ -134,6 +134,12 @@ var invoice = await theSession.Events.AggregateStreamAsync<Invoice>(invoiceId);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_samples.cs#L123-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: info
+Just to avoid some confusion, be aware that the live aggregation only uses the event metadata to produced the projected view. Customized
+metadata at the document storage level like `x.Schema.For<MyAggregate>().Metadata(configuration)` will not apply to the live
+aggregation. You may need to use the `ApplyMetadata` mechanism in your projection. 
+:::
+
 ## Time Travelling
 
 One of the most significant advantages of Event Sourcing is that you're not losing any data. Each event represents the change made at a certain point in time. This allows you to do time travelling to get the state at a specific date or stream version.
