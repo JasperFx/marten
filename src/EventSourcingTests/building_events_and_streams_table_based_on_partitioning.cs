@@ -29,7 +29,7 @@ public class building_events_and_streams_table_based_on_partitioning
         var table = new EventsTable(theGraph);
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
         partitioning.Columns.Single().ShouldBe(IsArchivedColumn.ColumnName);
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("archived", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("archived", "true"));
 
         table.PrimaryKeyColumns.ShouldContain(IsArchivedColumn.ColumnName);
     }
@@ -42,7 +42,7 @@ public class building_events_and_streams_table_based_on_partitioning
         var table = new StreamsTable(theGraph);
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
         partitioning.Columns.Single().ShouldBe(IsArchivedColumn.ColumnName);
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("archived", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("archived", "true"));
 
         table.PrimaryKeyColumns.ShouldContain(IsArchivedColumn.ColumnName);
     }
