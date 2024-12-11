@@ -23,7 +23,7 @@ internal static class GenericsExtensions
                 i.GetGenericArguments()[0].GetGenericTypeDefinition() == typeof(Nullable<>)))
         {
             // Get the underlying type of the Nullable<T>
-            var underlyingType = type.GetInterfaces()
+            var strongIdtype = type.GetInterfaces()
                 .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEnumerable<>))
                 .GetGenericArguments()[0]
                 .GetGenericArguments()[0];
@@ -35,10 +35,10 @@ internal static class GenericsExtensions
                 .Select(x => x.GetType().GetProperty("Value").GetValue(x));
 
             // Create an array of the underlying type
-            obj = Array.CreateInstance(underlyingType, unwrappedValues.Count());
+            obj = Array.CreateInstance(strongIdtype, unwrappedValues.Count());
             var stronglyTypedValues = unwrappedValues.Select(x =>
             {
-                var constructor = underlyingType.GetConstructor(new[] { x.GetType() });
+                var constructor = strongIdtype.GetConstructor(new[] { x.GetType() });
                 object strongTypedId;
                 if (constructor != null)
                 {
@@ -47,15 +47,15 @@ internal static class GenericsExtensions
                 else
                 {
                     // Use static builder method if no constructor is found. User can name the builder method anyway they want.
-                    var fromMethod = underlyingType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                    var fromMethod = strongIdtype.GetMethods(BindingFlags.Public | BindingFlags.Static)
                         .FirstOrDefault(m =>
-                            m.ReturnType == underlyingType &&
+                            m.ReturnType == strongIdtype &&
                             m.GetParameters().Length == 1 &&
                             m.GetParameters()[0].ParameterType == x.GetType()
                         );
                     if (fromMethod == null)
                     {
-                        throw new InvalidOperationException($"Type {underlyingType} does not have a constructor or a static 'From' method.");
+                        throw new InvalidOperationException($"Type {strongIdtype} does not have a constructor or a static 'From' method.");
                     }
                     strongTypedId = fromMethod.Invoke(null, new[] { x });
                 }
