@@ -63,7 +63,6 @@ internal static class GenericsExtensions
             }).ToArray();
             Array.Copy(stronglyTypedValues.ToArray(), (Array)obj, unwrappedValues.Count());
 
-            // Update the type after unwrapping
             return obj;
         }
 
