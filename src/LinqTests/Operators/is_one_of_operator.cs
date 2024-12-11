@@ -156,7 +156,7 @@ public class is_one_of_operator: IntegrationContext
     private void can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
 
-        var targets = Target.GenerateRandomData(100).ToArray();
+        var targets = Target.GenerateRandomData(100, true).ToArray();
         theStore.BulkInsert(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
@@ -201,7 +201,7 @@ public class is_one_of_operator: IntegrationContext
         Func<Target, T> select
     )
     {
-        var targets = Target.GenerateRandomData(100).ToArray();
+        var targets = Target.GenerateRandomData(100, true).ToArray();
         theStore.BulkInsert(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
@@ -240,7 +240,7 @@ public class is_one_of_operator: IntegrationContext
 
     private void can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
-        var targets = Target.GenerateRandomData(100).ToArray();
+        var targets = Target.GenerateRandomData(100, true).ToArray();
         theStore.BulkInsert(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
@@ -288,7 +288,7 @@ public class is_one_of_operator: IntegrationContext
         Func<Target, T> select
     )
     {
-        var targets = Target.GenerateRandomData(100).ToArray();
+        var targets = Target.GenerateRandomData(100, true).ToArray();
         theStore.BulkInsert(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();

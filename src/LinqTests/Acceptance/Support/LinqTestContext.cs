@@ -103,17 +103,27 @@ public abstract class LinqTestContext<TSelf>
         return _descriptions.Select(x => new object[] { x });
     }
 
-    protected async Task assertTestCase(string description, IDocumentStore store)
+    protected async Task assertTestCaseWithDocuments(string description, IDocumentStore store, Target[] documents)
     {
         var index = _descriptions.IndexOf(description);
 
         var testCase = testCases[index];
         await using var session = store.QuerySession();
 
-
         var logger = new TestOutputMartenLogger(TestOutput);
+
         session.Logger = logger;
 
-        await testCase.Compare(session, Fixture.Documents, logger);
+        await testCase.Compare(session, documents, logger);
+    }
+
+    protected Task assertTestCase(string description, IDocumentStore store)
+    {
+        return assertTestCaseWithDocuments(description, store, Fixture.Documents);
+    }
+
+    protected Task assertFSharpTestCase(string description, IDocumentStore store)
+    {
+        return assertTestCaseWithDocuments(description, store, Fixture.FSharpDocuments);
     }
 }

@@ -32,28 +32,32 @@ public class Target
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"
     };
 
-    public static IEnumerable<Target> GenerateRandomData(int number)
+    public static IEnumerable<Target> GenerateRandomData(int number, bool includeFSharpUnionTypes = false)
     {
         var i = 0;
         while (i < number)
         {
-            yield return Random(true);
+            yield return Random(true, includeFSharpUnionTypes);
 
             i++;
         }
     }
 
-    public static Target Random(bool deep = false)
+    public static Target Random(bool deep = false, bool includeFSharpUnionTypes = false)
     {
         var target = new Target();
         target.String = _strings[_random.Next(0, 10)];
-        target.FSharpGuidOption = new FSharpOption<Guid>(Guid.NewGuid());
-        target.FSharpIntOption = new FSharpOption<int>(_random.Next(0, 10));
-        target.FSharpDateOption = new FSharpOption<DateTime>(DateTime.Now);
-        target.FSharpDateTimeOffsetOption = new FSharpOption<DateTimeOffset>(new DateTimeOffset(DateTime.UtcNow));
-        target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
-        target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
-        target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
+
+        if (includeFSharpUnionTypes)
+        {
+            target.FSharpGuidOption = new FSharpOption<Guid>(Guid.NewGuid());
+            target.FSharpIntOption = new FSharpOption<int>(_random.Next(0, 10));
+            target.FSharpDateOption = new FSharpOption<DateTime>(DateTime.Now);
+            target.FSharpDateTimeOffsetOption = new FSharpOption<DateTimeOffset>(new DateTimeOffset(DateTime.UtcNow));
+            target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
+            target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
+            target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
+        }
 
         target.PaddedString = " " + target.String + " ";
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
@@ -107,6 +111,7 @@ public class Target
         target.HowLong = TimeSpan.FromSeconds(target.Long);
 
         target.Date = DateTime.Today.AddDays(_random.Next(-10000, 10000));
+        target.DateOffset = new DateTimeOffset(DateTime.Today.AddDays(_random.Next(-10000, 10000)));
 
         if (value > 15)
         {
@@ -211,6 +216,11 @@ public class Target
     public Guid[] GuidArray { get; set; }
 
     public TimeSpan HowLong { get; set; }
+}
+
+public class FSharpTarget: Target
+{
+
 }
 
 public class Address

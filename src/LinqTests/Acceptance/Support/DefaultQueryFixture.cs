@@ -25,14 +25,14 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.NumberArray);
         });
 
-        FSharpFriendlyStore = ProvisionStore("linq_querying", options =>
+        FSharpFriendlyStore = ProvisionStore("fsharp_linq_querying", options =>
         {
             options.RegisterFSharpOptionValueTypes();
             var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
             options.UseSystemTextJsonForSerialization(serializerOptions);
-        });
+        }, isFsharpTest: true);
 
-        FSharpFriendlyStoreWithDuplicatedField = ProvisionStore("duplicate_fields", options =>
+        FSharpFriendlyStoreWithDuplicatedField = ProvisionStore("fsharp_duplicated_fields", options =>
         {
             options.Schema.For<Target>()
                 .Duplicate(x => x.Number)
@@ -47,7 +47,7 @@ public class DefaultQueryFixture: TargetSchemaFixture
             options.RegisterFSharpOptionValueTypes();
             var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
             options.UseSystemTextJsonForSerialization(serializerOptions);
-        });
+        }, isFsharpTest: true);
 
         SystemTextJsonStore = ProvisionStore("stj_linq", o =>
         {
@@ -65,13 +65,3 @@ public class DefaultQueryFixture: TargetSchemaFixture
     public DocumentStore Store { get; set; }
 }
 
-public static class DefaultQueryFixtureExtensions
-{
-    public static void UseFSharp(this DocumentStore store)
-    {
-        var o = store.Options;
-        o.RegisterFSharpOptionValueTypes();
-        var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
-        o.UseSystemTextJsonForSerialization(serializerOptions);
-    }
-}

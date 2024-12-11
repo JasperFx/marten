@@ -36,13 +36,13 @@ public class where_clauses_fsharp: LinqTestContext<where_clauses_fsharp>
     [MemberData(nameof(GetDescriptions))]
     public Task run_query(string description)
     {
-        return assertTestCase(description, Fixture.FSharpFriendlyStore);
+        return assertFSharpTestCase(description, Fixture.FSharpFriendlyStore);
     }
 
     [Theory]
     [MemberData(nameof(GetDescriptions))]
     public Task with_duplicated_fields(string description)
     {
-        return assertTestCase(description, Fixture.FSharpFriendlyStoreWithDuplicatedField);
+        return assertFSharpTestCase(description, Fixture.FSharpFriendlyStoreWithDuplicatedField);
     }
 }
