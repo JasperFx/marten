@@ -23,11 +23,11 @@ public abstract class TargetSchemaFixture: IDisposable
 
     internal DocumentStore ProvisionStore(string schema, Action<StoreOptions> configure = null)
     {
-
         var store = DocumentStore.For(x =>
         {
             x.Connection(ConnectionSource.ConnectionString);
             x.DatabaseSchemaName = schema;
+
             configure?.Invoke(x);
         });
 
