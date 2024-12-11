@@ -55,7 +55,7 @@ internal static class GenericsExtensions
                         );
                     if (fromMethod == null)
                     {
-                        throw new InvalidOperationException($"Type {strongIdtype} does not have a constructor or a static 'From' method.");
+                        throw new InvalidOperationException($"Type {strongIdtype} does not have a constructor or a static builder method.");
                     }
                     strongTypedId = fromMethod.Invoke(null, new[] { x });
                 }
