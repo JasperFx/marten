@@ -165,6 +165,7 @@ public partial class StoreOptions
         RegisterValueType(typeof(FSharpOption<short>));
         RegisterValueType(typeof(FSharpOption<ushort>));
         RegisterValueType(typeof(FSharpOption<DateTime>));
+        RegisterValueType(typeof(FSharpOption<DateTimeOffset>));
     }
 
     internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();

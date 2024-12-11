@@ -141,13 +141,6 @@ public class where_clauses: LinqTestContext<where_clauses>
         @where(x => !x.Flag == true);
         @where(x => !x.Flag == false);
 
-        @where(x => x.FSharpBoolOption == FSharpOption<bool>.Some(true));
-        @where(x => x.FSharpBoolOption == FSharpOption<bool>.Some(false));
-        @where(x => x.FSharpDateOption == FSharpOption<DateTime>.Some(DateTime.Now));
-        @where(x => x.FSharpIntOption == FSharpOption<int>.Some(300));
-        @where(x => x.FSharpStringOption == FSharpOption<string>.Some("My String"));
-        @where(x => x.FSharpLongOption == FSharpOption<long>.Some(5_000_000));
-
         // Comparing multiple fields
         @where(x => x.Number == x.AnotherNumber);
         @where(x => x.Number < x.AnotherNumber);
@@ -198,3 +191,4 @@ public class where_clauses: LinqTestContext<where_clauses>
         return assertTestCase(description, Fixture.DuplicatedFieldStore);
     }
 }
+

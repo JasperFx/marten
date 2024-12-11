@@ -6,6 +6,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\FSharpTypes\FSharpTypes.fsproj" />
+        <ProjectReference Include="..\LinqTestsTypes\LinqTestsTypes.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
@@ -55,9 +57,6 @@
         </Compile>
         <Compile Include="..\Marten.Testing\Documents\StringDoc.cs">
             <Link>Documents\StringDoc.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\Documents\Target.cs">
-            <Link>Documents\Target.cs</Link>
         </Compile>
         <Compile Include="..\Marten.Testing\Documents\TargetIntId.cs">
             <Link>Documents\TargetIntId.cs</Link>
