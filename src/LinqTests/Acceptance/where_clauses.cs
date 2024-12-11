@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
-using Microsoft.FSharp.Core;
 using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
@@ -191,4 +190,3 @@ public class where_clauses: LinqTestContext<where_clauses>
         return assertTestCase(description, Fixture.DuplicatedFieldStore);
     }
 }
-
