@@ -29,6 +29,10 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.Flag)
                 .Duplicate(x => x.Color)
                 .Duplicate(x => x.NumberArray);
+
+            o.RegisterFSharpOptionValueTypes();
+            var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
+            o.UseSystemTextJsonForSerialization(serializerOptions);
         });
 
         SystemTextJsonStore = ProvisionStore("stj_linq", o =>
