@@ -35,7 +35,26 @@ internal static class GenericsExtensions
 
             // Create an array of the underlying type
             obj = Array.CreateInstance(underlyingType, unwrappedValues.Count());
-            var stronglyTypedValues = unwrappedValues.Select(x => Activator.CreateInstance(underlyingType,x)).ToArray();
+            var stronglyTypedValues = unwrappedValues.Select(x =>
+            {
+                var constructor = underlyingType.GetConstructor(new[] { x.GetType() });
+                object strongTypedId;
+                if (constructor != null)
+                {
+                    strongTypedId = constructor.Invoke(new[] { x });
+                }
+                else
+                {
+                    // Use static "From" method if no constructor is found
+                    var fromMethod = underlyingType.GetMethod("From", new[] { x.GetType() });
+                    if (fromMethod == null)
+                    {
+                        throw new InvalidOperationException($"Type {underlyingType} does not have a constructor or a static 'From' method.");
+                    }
+                    strongTypedId = fromMethod.Invoke(null, new[] { x });
+                }
+                return strongTypedId;
+            }).ToArray();
             Array.Copy(stronglyTypedValues.ToArray(), (Array)obj, unwrappedValues.Count());
 
             // Update the type after unwrapping
