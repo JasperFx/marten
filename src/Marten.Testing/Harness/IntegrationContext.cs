@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
+using Microsoft.FSharp.Core;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;

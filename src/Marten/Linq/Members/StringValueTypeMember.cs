@@ -14,7 +14,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-public class StringValueTypeMember<T>: StringMember, IValueTypeMember
+public class StringValueTypeMember<T>: StringMember, IValueTypeMember<T, string>
 {
     private readonly Func<T, string> _valueSource;
     private readonly IScalarSelectClause _selector;
@@ -61,7 +61,7 @@ public class StringValueTypeMember<T>: StringMember, IValueTypeMember
         return new MemberComparisonFilter(this, def, op);
     }
 
-    public object ConvertFromWrapperArray(object values)
+    public IEnumerable<string> ConvertFromWrapperArray(IEnumerable<T> values)
     {
         if (values is IEnumerable e)
         {

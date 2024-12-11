@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
+using Microsoft.FSharp.Core;
 using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
@@ -139,6 +140,13 @@ public class where_clauses: LinqTestContext<where_clauses>
         @where(x => !x.Flag);
         @where(x => !x.Flag == true);
         @where(x => !x.Flag == false);
+
+        @where(x => x.FSharpBoolOption == FSharpOption<bool>.Some(true));
+        @where(x => x.FSharpBoolOption == FSharpOption<bool>.Some(false));
+        @where(x => x.FSharpDateOption == FSharpOption<DateTime>.Some(DateTime.Now));
+        @where(x => x.FSharpIntOption == FSharpOption<int>.Some(300));
+        @where(x => x.FSharpStringOption == FSharpOption<string>.Some("My String"));
+        @where(x => x.FSharpLongOption == FSharpOption<long>.Some(5_000_000));
 
         // Comparing multiple fields
         @where(x => x.Number == x.AnotherNumber);

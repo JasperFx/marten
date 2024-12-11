@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -9,7 +10,12 @@ public class DefaultQueryFixture: TargetSchemaFixture
 {
     public DefaultQueryFixture()
     {
-        Store = ProvisionStore("linq_querying");
+        Store = ProvisionStore("linq_querying", options =>
+        {
+            options.RegisterFSharpOptionValueTypes();
+            var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
+            options.UseSystemTextJsonForSerialization(serializerOptions);
+        });
 
 
         DuplicatedFieldStore = ProvisionStore("duplicate_fields", o =>
@@ -23,6 +29,10 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.Flag)
                 .Duplicate(x => x.Color)
                 .Duplicate(x => x.NumberArray);
+
+            o.RegisterFSharpOptionValueTypes();
+            var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
+            o.UseSystemTextJsonForSerialization(serializerOptions);
         });
 
         SystemTextJsonStore = ProvisionStore("stj_linq", o =>

@@ -11,6 +11,7 @@ using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
+using Microsoft.FSharp.Core;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
 
@@ -148,15 +149,26 @@ internal class ValueTypeMemberSource: IMemberSource
         out IQueryableMember? member)
     {
         var valueType = options.ValueTypes.FirstOrDefault(x => x.OuterType == memberType);
+
         if (valueType == null)
         {
             member = default;
             return false;
         }
 
-        var baseType = valueType.SimpleType == typeof(string)
-            ? typeof(StringValueTypeMember<>).MakeGenericType(memberType)
-            : typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
+        Type baseType;
+        if (valueType.OuterType.IsGenericType && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        {
+            baseType = typeof(FSharpOptionValueTypeMember<>).MakeGenericType(valueType.SimpleType);
+        }
+        else if (valueType.SimpleType == typeof(string))
+        {
+            baseType = typeof(StringValueTypeMember<>).MakeGenericType(memberType);
+        }
+        else
+        {
+            baseType = typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
+        }
 
         member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType);
 

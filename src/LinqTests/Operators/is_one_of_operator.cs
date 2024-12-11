@@ -2,15 +2,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json.Serialization;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Microsoft.FSharp.Core;
 using Shouldly;
 
 namespace LinqTests.Operators;
 
 public class is_one_of_operator: IntegrationContext
 {
+
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntArray =
         new()
         {
@@ -95,6 +98,36 @@ public class is_one_of_operator: IntegrationContext
             validStrings => x => !x.String.In(validStrings)
         };
 
+    public static TheoryData<Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithFsharpGuidOptionArray =
+        new()
+        {
+            validGuids => x => x.FSharpGuidOption.IsOneOf(validGuids),
+            validGuids => x => x.FSharpGuidOption.In(validGuids)
+        };
+
+    public static TheoryData<Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithFsharpGuidOptionArray =
+        new()
+        {
+            validGuids => x => !x.FSharpGuidOption.IsOneOf(validGuids),
+            validGuids => x => !x.FSharpGuidOption.In(validGuids)
+        };
+
+    public static TheoryData<Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>>> SupportedIsOneOfWithFsharpGuidOptionList =
+        new()
+        {
+            validGuids => x => x.FSharpGuidOption.IsOneOf(validGuids),
+            validGuids => x => x.FSharpGuidOption.In(validGuids)
+        };
+
+    public static TheoryData<Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>>> SupportedNotIsOneOfWithFsharpGuidOptionList =
+        new()
+        {
+            validGuids => x => !x.FSharpGuidOption.IsOneOf(validGuids),
+            validGuids => x => !x.FSharpGuidOption.In(validGuids)
+        };
+
+
+
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithIntArray))]
     public void can_query_against_integers(Func<int[], Expression<Func<Target, bool>>> isOneOf) =>
@@ -110,8 +143,19 @@ public class is_one_of_operator: IntegrationContext
     public void can_query_against_strings(Func<string[], Expression<Func<Target, bool>>> isOneOf) =>
         can_query_against_array(isOneOf, x => x.String);
 
+    [Theory]
+    [MemberData(nameof(SupportedIsOneOfWithFsharpGuidOptionArray))]
+    public void can_query_against_fsharp_guid_option_array(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> isOneOf) =>
+        can_query_against_array(isOneOf, x => x.FSharpGuidOption);
+
+    [Theory]
+    [MemberData(nameof(SupportedIsOneOfWithFsharpGuidOptionArray))]
+    public void can_query_against_fsharp_guid_option_array_with_unwrapped_guid(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> isOneOf) =>
+        can_query_against_array(isOneOf, x => x.FSharpGuidOption);
+
     private void can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
+
         var targets = Target.GenerateRandomData(100).ToArray();
         theStore.BulkInsert(targets);
 
@@ -146,6 +190,11 @@ public class is_one_of_operator: IntegrationContext
     [MemberData(nameof(SupportedNotIsOneOfWithStringArray))]
     public void can_query_against_strings_with_not_operator(Func<string[], Expression<Func<Target, bool>>> notIsOneOf)
         => can_query_against_array_with_not_operator(notIsOneOf, x => x.String);
+
+    [Theory]
+    [MemberData(nameof(SupportedNotIsOneOfWithFsharpGuidOptionArray))]
+    public void can_query_against_fsharp_guid_option_with_not_operator(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> notIsOneOf)
+        => can_query_against_array_with_not_operator(notIsOneOf, x => x.FSharpGuidOption);
 
     private void can_query_against_array_with_not_operator<T>(
         Func<T[], Expression<Func<Target, bool>>> notIsOneOf,
@@ -183,6 +232,11 @@ public class is_one_of_operator: IntegrationContext
     [MemberData(nameof(SupportedIsOneOfWithStringList))]
     public void can_query_against_strings_list(Func<List<string>, Expression<Func<Target, bool>>> isOneOf)
         => can_query_against_list(isOneOf, x => x.String);
+
+    [Theory]
+    [MemberData(nameof(SupportedIsOneOfWithFsharpGuidOptionList))]
+    public void can_query_against_fsharp_guid_option_list(Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>> isOneOf)
+        => can_query_against_list(isOneOf, x => x.FSharpGuidOption);
 
     private void can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
@@ -223,6 +277,12 @@ public class is_one_of_operator: IntegrationContext
         Func<List<string>, Expression<Func<Target, bool>>> notIsOneOf) =>
         can_query_against_list_with_not_operator(notIsOneOf, x => x.String);
 
+    [Theory]
+    [MemberData(nameof(SupportedNotIsOneOfWithFsharpGuidOptionList))]
+    public void can_query_against_fsharp_guid_option_with_not_operator_list(
+        Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>> notIsOneOf) =>
+        can_query_against_list_with_not_operator(notIsOneOf, x => x.FSharpGuidOption);
+
     private void can_query_against_list_with_not_operator<T>(
         Func<List<T>, Expression<Func<Target, bool>>> notIsOneOf,
         Func<Target, T> select
@@ -249,5 +309,13 @@ public class is_one_of_operator: IntegrationContext
 
     public is_one_of_operator(DefaultStoreFixture fixture): base(fixture)
     {
+        StoreOptions(_ =>
+        {
+            //_.Logger(new ConsoleMartenLogger());
+            _.RegisterValueType(typeof(FSharpOption<Guid>));
+            _.DisableNpgsqlLogging = false;
+            var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
+            _.UseSystemTextJsonForSerialization(serializerOptions);
+        });
     }
 }

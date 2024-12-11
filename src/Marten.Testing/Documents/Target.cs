@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using JasperFx.Core;
+using Microsoft.FSharp.Core;
 
 #nullable enable
 namespace Marten.Testing.Documents;
@@ -46,6 +47,13 @@ public class Target
     {
         var target = new Target();
         target.String = _strings[_random.Next(0, 10)];
+        target.FSharpGuidOption = new FSharpOption<Guid>(Guid.NewGuid());
+        target.FSharpIntOption = new FSharpOption<int>(_random.Next(0, 10));
+        target.FSharpDateOption = new FSharpOption<DateTime>(DateTime.Now);
+        target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
+        target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
+        target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
+
         target.PaddedString = " " + target.String + " ";
         target.AnotherString = _otherStrings[_random.Next(0, 10)];
         target.Number = _random.Next();
@@ -141,6 +149,15 @@ public class Target
 
     public long Long { get; set; }
     public string String { get; set; }
+
+    public FSharpOption<Guid> FSharpGuidOption { get; set; }
+    public FSharpOption<int> FSharpIntOption { get; set; }
+    public FSharpOption<bool> FSharpBoolOption { get; set; }
+    public FSharpOption<long> FSharpLongOption { get; set; }
+    public FSharpOption<decimal> FSharpDecimalOption { get; set; }
+    public FSharpOption<string> FSharpStringOption { get; set; }
+    public FSharpOption<DateTime> FSharpDateOption { get; set; }
+
     public string AnotherString { get; set; }
 
     public string[] StringArray { get; set; }

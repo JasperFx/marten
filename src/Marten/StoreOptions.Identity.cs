@@ -10,6 +10,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Members;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
+using Microsoft.FSharp.Core;
 using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace Marten;
@@ -108,6 +109,15 @@ public partial class StoreOptions
         {
             valueProperty = type.GetProperties().Where(x => x.Name != "Tag").SingleOrDefaultIfMany();
         }
+        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        {
+            var innerType = type.GetGenericArguments().Single();
+            valueProperty = type.GetProperty("Value");
+            var optionBuilder = type.GetMethod("Some", BindingFlags.Static | BindingFlags.Public);
+            var valueType = new ValueTypeInfo(type, innerType, valueProperty, optionBuilder);
+            ValueTypes.Add(valueType);
+            return valueType;
+        }
         else
         {
             valueProperty = type.GetProperties().SingleOrDefaultIfMany();
@@ -137,6 +147,24 @@ public partial class StoreOptions
 
         throw new InvalidValueTypeException(type,
             "Unable to determine either a builder static method or a constructor to use");
+    }
+
+    public void RegisterFSharpOptionValueTypes()
+    {
+        RegisterValueType(typeof(FSharpOption<Guid>));
+        RegisterValueType(typeof(FSharpOption<string>));
+        RegisterValueType(typeof(FSharpOption<long>));
+        RegisterValueType(typeof(FSharpOption<int>));
+        RegisterValueType(typeof(FSharpOption<bool>));
+        RegisterValueType(typeof(FSharpOption<decimal>));
+        RegisterValueType(typeof(FSharpOption<char>));
+        RegisterValueType(typeof(FSharpOption<double>));
+        RegisterValueType(typeof(FSharpOption<float>));
+        RegisterValueType(typeof(FSharpOption<uint>));
+        RegisterValueType(typeof(FSharpOption<ulong>));
+        RegisterValueType(typeof(FSharpOption<short>));
+        RegisterValueType(typeof(FSharpOption<ushort>));
+        RegisterValueType(typeof(FSharpOption<DateTime>));
     }
 
     internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
