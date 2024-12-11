@@ -70,10 +70,6 @@ namespace Marten.Testing.Harness
 
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 opts.ApplicationAssembly = GetType().Assembly;
-
-                opts.RegisterValueType(typeof(FSharpOption<Guid>));
-                opts.RegisterValueType(typeof(FSharpOption<string>));
-                opts.RegisterValueType(typeof(FSharpOption<long>));
             });
         }
 
