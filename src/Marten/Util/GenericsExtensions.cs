@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Marten.Util;
 
@@ -45,8 +46,13 @@ internal static class GenericsExtensions
                 }
                 else
                 {
-                    // Use static "From" method if no constructor is found
-                    var fromMethod = underlyingType.GetMethod("From", new[] { x.GetType() });
+                    // Use static builder method if no constructor is found. User can name the builder method anyway they want.
+                    var fromMethod = underlyingType.GetMethods(BindingFlags.Public | BindingFlags.Static)
+                        .FirstOrDefault(m =>
+                            m.ReturnType == underlyingType &&
+                            m.GetParameters().Length == 1 &&
+                            m.GetParameters()[0].ParameterType == x.GetType()
+                        );
                     if (fromMethod == null)
                     {
                         throw new InvalidOperationException($"Type {underlyingType} does not have a constructor or a static 'From' method.");
