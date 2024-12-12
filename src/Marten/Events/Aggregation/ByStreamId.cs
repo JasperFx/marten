@@ -9,14 +9,27 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public interface ISingleStreamSlicer{}
+public interface ISingleStreamSlicer
+{
+
+}
+
+public interface ISingleStreamSlicer<TId> : ISingleStreamSlicer
+{
+    void ArchiveStream(IDocumentOperations operations, TId id);
+}
 
 /// <summary>
 ///     Slicer strategy by stream id (Guid identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
+public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<Guid>
 {
+    public void ArchiveStream(IDocumentOperations operations, Guid id)
+    {
+        operations.Events.ArchiveStream(id);
+    }
+
     public ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)
     {
@@ -55,13 +68,21 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer
 ///     Slicer strategy by stream id (Guid identified streams) and a custom value type
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
+public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer<TId>
 {
     private readonly Func<Guid, TId> _converter;
+    private readonly Func<TId,Guid> _unwrapper;
 
     public ByStreamId(ValueTypeInfo valueType)
     {
         _converter = valueType.CreateConverter<TId, Guid>();
+        _unwrapper = valueType.ValueAccessor<TId, Guid>();
+    }
+
+    public void ArchiveStream(IDocumentOperations operations, TId id)
+    {
+        var streamId = _unwrapper(id);
+        operations.Events.ArchiveStream(streamId);
     }
 
     public ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,

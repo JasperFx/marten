@@ -99,6 +99,8 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
                 await processPossibleSideEffects(session, slice).ConfigureAwait(false);
             }
 
+            maybeArchiveStream(session, slice);
+
             session.QueueOperation(operation);
             return;
         }
@@ -144,6 +146,8 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         var lastEvent = tryApplyMetadata(slice, aggregate);
 
+        maybeArchiveStream(session, slice);
+
         if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
         {
             // Need to set the aggregate in case it didn't exist upfront
@@ -177,6 +181,14 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
 
         session.QueueOperation(storageOperation);
+    }
+
+    private void maybeArchiveStream(DocumentSessionBase session, EventSlice<TDoc, TId> slice)
+    {
+        if (Slicer is ISingleStreamSlicer<TId> singleStreamSlicer && slice.Events().OfType<IEvent<Archived>>().Any())
+        {
+            singleStreamSlicer.ArchiveStream(session, slice.Id);
+        }
     }
 
     private IEvent? tryApplyMetadata(EventSlice<TDoc, TId> slice, TDoc? aggregate)

@@ -13,7 +13,7 @@ namespace Marten.Events.Aggregation;
 ///     Slicer strategy by stream key (string identified streams)
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer
+public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer<string>
 {
     public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession,
         IEnumerable<StreamAction> streams)
@@ -23,6 +23,11 @@ public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer
             var tenant = new Tenant(s.TenantId, querySession.Database);
             return new EventSlice<TDoc, string>(s.Key!, tenant, s.Events){ActionType = s.ActionType};
         }).ToList());
+    }
+
+    public void ArchiveStream(IDocumentOperations operations, string id)
+    {
+        operations.Events.ArchiveStream(id);
     }
 
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(
@@ -53,13 +58,20 @@ public class ByStreamKey<TDoc>: IEventSlicer<TDoc, string>, ISingleStreamSlicer
 ///     Slicer strategy by stream key (string identified streams) for strong typed identifiers
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class ByStreamKey<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
+public class ByStreamKey<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer<TId>
 {
     private readonly Func<string,TId> _converter;
+    private readonly Func<TId,string> _unwrapper;
 
     public ByStreamKey(ValueTypeInfo valueType)
     {
         _converter = valueType.CreateConverter<TId, string>();
+        _unwrapper = valueType.ValueAccessor<TId, string>();
+    }
+
+    public void ArchiveStream(IDocumentOperations operations, TId id)
+    {
+        operations.Events.ArchiveStream(_unwrapper(id));
     }
 
     public ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>> SliceInlineActions(IQuerySession querySession,

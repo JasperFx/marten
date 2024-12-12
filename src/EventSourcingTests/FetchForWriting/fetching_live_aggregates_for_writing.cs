@@ -492,7 +492,9 @@ public class SimpleAggregate : IRevisioned
     {
         ECount++;
     }
+
 }
+
 
 
 public class SimpleAggregate2
