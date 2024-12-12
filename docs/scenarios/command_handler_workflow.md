@@ -12,11 +12,19 @@ will probably need to evaluate the incoming command against the current state of
 the incoming command altogether if the system is not in the proper state for the command. And by the way, you probably also need to be concerned with concurrent access to the
 business data represented by a single event stream.
 
-## FetchForWriting
+## FetchForWriting <Badge type="tip" text="7.0" />
 
 ::: tip
-As of Marten 7, this API is usable with aggregation projections that are running with an asynchronous lifecycle. This 
+This API is usable with aggregation projections that are running with an asynchronous lifecycle. This 
 is key to create "zero downtime deployments" for projection changes.
+:::
+
+::: tip
+The more recent [FetchLatest](/events/projections/read-aggregates) API is a lighter weight, read
+only version of `FetchForWriting` that may be slightly more performant if all you care about
+is getting the latest data. Do note that there are significant optimizations for using
+`FetchForWriting`, then appending new events, saving the session, and using `FetchLatest` to get the current
+state of the aggregate being updated.
 :::
 
 ::: warning
@@ -156,13 +164,13 @@ builder.Services.AddMarten(opts =>
         // an Inline projection for the "T". Saves on Marten doing an extra
         // database fetch of the same data you already fetched from FetchForWriting()
         // when Marten needs to apply the Inline projection as part of SaveChanges()
-        opts.Events.UseIdentityMapForInlineAggregates = true;
+        opts.Events.UseIdentityMapForAggregates = true;
     })
     // This is non-trivial performance optimization if you never
     // need identity map mechanics in your commands or query handlers
     .UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/fetching_inline_aggregates_for_writing.cs#L529-L547' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_identity_map_for_inline_aggregates' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_inline_aggregates_for_writing.cs#L532-L550' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_identity_map_for_inline_aggregates' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization

@@ -143,9 +143,17 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
                 _storage.SetIdentity(document, id);
             }
 
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
@@ -234,9 +242,17 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
                 _storage.SetIdentity(document, id);
             }
 
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
@@ -256,6 +272,18 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
 
     public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
+        // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
+        if (session.Options.Events.UseIdentityMapForAggregates)
+        {
+            if (session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var stream))
+            {
+                var starting = stream.Aggregate;
+                var appendedEvents = stream.Events;
+
+                return await _aggregator.BuildAsync(appendedEvents, session, starting, cancellation).ConfigureAwait(false);
+            }
+        }
+
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
 

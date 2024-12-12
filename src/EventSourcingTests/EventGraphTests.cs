@@ -134,7 +134,7 @@ public class EventGraphTests
     [Fact]
     public void use_identity_map_for_inline_aggregates_is_false_by_default()
     {
-        theGraph.UseIdentityMapForInlineAggregates.ShouldBeFalse();
+        theGraph.UseIdentityMapForAggregates.ShouldBeFalse();
     }
 
     public class HouseRemodeling

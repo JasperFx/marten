@@ -63,9 +63,17 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
                 _documentStorage.SetIdentity(document, id);
             }
 
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
@@ -120,10 +128,17 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
             var document = await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
 
-
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
@@ -143,7 +158,18 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
     public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
-        // TODO -- there will be optimizations later!!!
+        // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
+        if (session.Options.Events.UseIdentityMapForAggregates)
+        {
+            if (session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var stream))
+            {
+                var starting = stream.Aggregate;
+                var appendedEvents = stream.Events;
+
+                return await _aggregator.BuildAsync(appendedEvents, session, starting, cancellation).ConfigureAwait(false);
+            }
+        }
+
         var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
             .ConfigureAwait(false);
 

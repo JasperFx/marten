@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -25,7 +27,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         CancellationToken cancellation = default)
     {
         IDocumentStorage<TDoc, TId> storage = null;
-        if (session.Options.Events.UseIdentityMapForInlineAggregates)
+        if (session.Options.Events.UseIdentityMapForAggregates)
         {
             storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
             // Opt into the identity map mechanics for this aggregate type just in case
@@ -66,6 +68,12 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
+            // As an optimization, put the document in the identity map for later
+            if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, document);
+            }
+
             return version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
@@ -90,7 +98,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         long expectedStartingVersion, CancellationToken cancellation = default)
     {
         IDocumentStorage<TDoc, TId> storage = null;
-        if (session.Options.Events.UseIdentityMapForInlineAggregates)
+        if (session.Options.Events.UseIdentityMapForAggregates)
         {
             storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>();
             // Opt into the identity map mechanics for this aggregate type just in case
@@ -134,6 +142,12 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
+            // As an optimization, put the document in the identity map for later
+            if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, document);
+            }
+
             return version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
@@ -156,12 +170,10 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
 
     public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
-        // TODO -- optimizations coming
-
         IDocumentStorage<TDoc, TId> storage = null;
-        if (session.Options.Events.UseIdentityMapForInlineAggregates)
+        if (session.Options.Events.UseIdentityMapForAggregates)
         {
-            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>();
+            storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>().IdentityMap;
             // Opt into the identity map mechanics for this aggregate type just in case
             // you're using a lightweight session
             session.UseIdentityMapFor<TDoc>();
@@ -169,6 +181,12 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         else
         {
             storage = session.StorageFor<TDoc, TId>();
+        }
+
+        // Opting into optimizations here
+        if (session.TryGetAggregateFromIdentityMap<TDoc, TId>(id, out var doc))
+        {
+            return doc;
         }
 
         await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
