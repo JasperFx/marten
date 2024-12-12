@@ -71,7 +71,7 @@ builder.Services.AddMarten(opts =>
     opts.Projections.LiveStreamAggregation<Projections.Invoice>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L17-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_live' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L18-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_live' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then we could use the `AggregateStreamAsync` API to read the current `Invoice` state for any
@@ -88,7 +88,7 @@ public static async Task read_live_invoice(
         .Events.AggregateStreamAsync<Invoice>(invoiceId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L35-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_live_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L36-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_live_invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: info
@@ -110,7 +110,7 @@ builder.Services.AddMarten(opts =>
     opts.Projections.Snapshot<Projections.Invoice>(SnapshotLifecycle.Inline);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L49-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_inline' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L50-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then we can just treat the `Invoice` as any old Marten document (because it is) and use
@@ -127,7 +127,7 @@ public static async Task read_inline_invoice(
         .LoadAsync<Invoice>(invoiceId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L62-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_inline_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L63-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_inline_invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And lastly, if we wanted to run the `Invoice` snapshot updates as an asynchronous projection (maybe to take advantage
@@ -145,7 +145,7 @@ builder.Services.AddMarten(opts =>
     })
     .AddAsyncDaemon(DaemonMode.HotCold);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L76-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L77-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We would still just the same `LoadAsync()` API, but you just hope that 
@@ -166,7 +166,7 @@ builder.Services.AddMarten(opts =>
     opts.Projections.Snapshot<Projections.Invoice>(SnapshotLifecycle.Inline);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L49-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_inline' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L50-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## FetchLatest <Badge type="tip" text="7.34" />
@@ -196,7 +196,7 @@ public static async Task read_latest(
         .Events.FetchLatest<Projections.Invoice>(invoiceId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L90-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_latest_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L91-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_read_latest_invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just to understand how this API works, under the covers, if `Invoice` is registered as:
@@ -225,7 +225,7 @@ builder.Services.AddMarten(opts =>
     opts.Projections.Snapshot<Projections.Invoice>(SnapshotLifecycle.Inline);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L105-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_with_optimizations' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L106-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure_aggregate_with_optimizations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
@@ -247,10 +247,10 @@ fun, let's say we wrote a helper function like this:
 ```cs
 public static class MutationExtensions
 {
-    public static async Task<T> Mutate<T>(this IDocumentSession session, Guid id, Func<T, object[]> decider,
-        CancellationToken token = default) where T : class
+    public static async Task<Projections.Invoice> MutateInvoice(this IDocumentSession session, Guid id, Func<Projections.Invoice, IEnumerable<object>> decider,
+        CancellationToken token = default)
     {
-        var stream = await session.Events.FetchForWriting<T>(id, token);
+        var stream = await session.Events.FetchForWriting<Projections.Invoice>(id, token);
 
         // Decide what new events should be appended based on the current
         // state of the aggregate and application logic
@@ -260,11 +260,11 @@ public static class MutationExtensions
         // Persist any new events
         await session.SaveChangesAsync(token);
 
-        return await session.Events.FetchLatest<T>(id, token);
+        return await session.Events.FetchLatest<Projections.Invoice>(id, token);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L139-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mutation_extensions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L140-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mutation_extensions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And used it for a command handler something like this:
@@ -272,20 +272,20 @@ And used it for a command handler something like this:
 <!-- snippet: sample_invoice_approval_workflow_with_mutate -->
 <a id='snippet-sample_invoice_approval_workflow_with_mutate'></a>
 ```cs
-public static Task<Projections.Invoice> Approve(IDocumentSession session, Guid invoiceId)
+public static Task Approve(IDocumentSession session, Guid invoiceId)
 {
-    return session.Mutate<Projections.Invoice>(invoiceId, invoice =>
+    return session.MutateInvoice(invoiceId, invoice =>
     {
         if (invoice.Status != InvoiceStatus.Approved)
         {
-            return new object[] { new InvoiceApproved() };
+            return [new InvoiceApproved()];
         }
 
-        return Array.Empty<object>();
+        return [];
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L121-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_approval_workflow_with_mutate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/FetchLatest.cs#L122-L137' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_approval_workflow_with_mutate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, so for some context, if using the full fledged `UseIdentityMapForAggregates` + `FetchForWriting`, then `FetchLatest`

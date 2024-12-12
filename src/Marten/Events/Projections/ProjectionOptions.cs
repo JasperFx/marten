@@ -93,10 +93,22 @@ public class ProjectionOptions: DaemonSettings
     /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
     /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
     /// </summary>
+    [Obsolete("Prefer UseIdentityMapForAggregates")]
     public bool UseIdentityMapForInlineAggregates
     {
-        get => _options.Events.UseIdentityMapForInlineAggregates;
-        set => _options.Events.UseIdentityMapForInlineAggregates = value;
+        get => _options.Events.UseIdentityMapForAggregates;
+        set => _options.Events.UseIdentityMapForAggregates = value;
+    }
+
+    /// <summary>
+    /// Opt into a performance optimization that directs Marten to always use the identity map for an
+    /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
+    /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+    /// </summary>
+    public bool UseIdentityMapForAggregates
+    {
+        get => _options.Events.UseIdentityMapForAggregates;
+        set => _options.Events.UseIdentityMapForAggregates = value;
     }
 
     internal bool HasAnyAsyncProjections()

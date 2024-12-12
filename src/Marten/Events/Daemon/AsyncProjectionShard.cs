@@ -60,7 +60,9 @@ public class AsyncProjectionShard
     {
         if (EventTypes.Any() && !EventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {
-            yield return new EventTypeFilter(store.Options.EventGraph, EventTypes);
+            // We want to explicitly add in the archived event
+            var allTypes = EventTypes.Concat([typeof(Archived)]).ToArray();
+            yield return new EventTypeFilter(store.Options.EventGraph, allTypes);
         }
 
         if (StreamType != null)

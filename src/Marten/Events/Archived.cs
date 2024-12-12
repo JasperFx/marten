@@ -1,3 +1,5 @@
+#region sample_Archived_event
+
 namespace Marten.Events;
 
 /// <summary>
@@ -5,3 +7,5 @@ namespace Marten.Events;
 /// by a single stream projection of any sort
 /// </summary>
 public record Archived(string Reason);
+
+#endregion

@@ -146,6 +146,11 @@ public abstract class CustomProjection<TDoc, TId>:
 
         slice.Aggregate = snapshot;
         session.Store(snapshot);
+
+        if (Slicer is ISingleStreamSlicer<TId> singleStreamSlicer && slice.Events().OfType<IEvent<Archived>>().Any())
+        {
+            singleStreamSlicer.ArchiveStream(session, slice.Id);
+        }
     }
 
     /// <summary>
