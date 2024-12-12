@@ -583,13 +583,13 @@ public class ErrorHandlingSubscription: SubscriptionBase
     {
         public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
-            Console.WriteLine("Marten just made a commit for any changes");
+            Console.WriteLine("Marten is about to make a commit for any changes");
             return Task.CompletedTask;
         }
 
         public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
-            Console.WriteLine("Marten is about to make a commit for any changes");
+            Console.WriteLine("Marten just made a commit for any changes");
             return Task.CompletedTask;
         }
     }

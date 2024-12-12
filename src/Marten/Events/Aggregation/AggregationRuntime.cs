@@ -18,13 +18,12 @@ using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
 using Marten.Util;
-using Microsoft.Extensions.Options;
 using Npgsql;
 
 namespace Marten.Events.Aggregation;
 
 public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId>
-    where TDoc : notnull where TId : notnull
+    where TDoc : class where TId : notnull
 {
     public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection,
         IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage): base(store, projection, slicer, storage)
@@ -43,7 +42,7 @@ public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRunti
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
 public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, TId>
-    where TDoc : notnull where TId : notnull
+    where TDoc : class where TId : notnull
 {
     private readonly Func<IEvent, TId> _identitySource;
 
@@ -108,7 +107,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         // do not load if sliced by stream and the stream does not yet exist
         if (slice.Aggregate == null && lifecycle == ProjectionLifecycle.Inline && (Slicer is not ISingleStreamSlicer || slice.ActionType != StreamActionType.Start))
         {
-            if (session.Options.Events.UseIdentityMapForInlineAggregates)
+            if (session.Options.Events.UseIdentityMapForAggregates)
             {
                 // It's actually important to go in through the front door and use the session so that
                 // the identity map can kick in here
@@ -162,6 +161,12 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
 
             return;
+        }
+
+        // TODO -- make this method virtual so we don't have to know about what document session is
+        if (session is not ProjectionDocumentSession && Options.Events.UseIdentityMapForAggregates)
+        {
+            session.StoreDocumentInItemMap(slice.Id, aggregate);
         }
 
         var storageOperation = Storage.Upsert(aggregate, session, slice.Tenant.TenantId);

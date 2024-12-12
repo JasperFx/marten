@@ -29,10 +29,9 @@ builder.Services.AddMarten(opts =>
     opts.Events.AppendMode = EventAppendMode.Quick;
 
     // Little more involved, but this can reduce the number
-    // of database queries necessary to process inline projections
-    // during command handling with some significant
-    // caveats
-    opts.Events.UseIdentityMapForInlineAggregates = true;
+    // of database queries necessary to process projections
+    // during CQRS command handling with certain workflows
+    opts.Events.UseIdentityMapForAggregates = true;
 
     // Opts into a mode where Marten is able to rebuild single
     // stream projections faster by building one stream at a time
@@ -40,7 +39,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseOptimizedProjectionRebuilds = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The archived stream option is further described in the section on [Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning).

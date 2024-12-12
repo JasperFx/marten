@@ -1,5 +1,13 @@
 # Aggregate Projections
 
+::: tip
+Definitely check out the content on [CQRS Command Handler Workflow for Capturing Events](/scenarios/command_handler_workflow)
+and [Reading Aggregates](/events/projections/read-aggregates) to get the best possible performance and
+development usability for aggregate projections with Marten. Also see the combination with [Wolverine](https://wolverinefx.net)
+in its [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/marten/event-sourcing.html) for literally the 
+lowest code ceremony possible to use Marten within a CQRS architecture.
+:::
+
 _Aggregate Projections_ in Marten combine some sort of grouping of events and process them to create a single
 aggregated document representing the state of those events. To jump into a simple example, here's a simple aggregated
 view called `QuestParty` that creates an aggregated view of `MembersJoined`, `MembersDeparted`, and `QuestStarted` events related to a group of heroes traveling on a quest in your favorite fantasy novel:

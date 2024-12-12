@@ -58,10 +58,33 @@ public class fetch_latest_async_aggregate: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task from_after_fetch_for_writing_guid_centric_brand_new()
+    public async Task from_after_fetch_for_writing_guid_centric_brand_new_1()
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.AppendMany(new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        aggregate.ACount.ShouldBe(1);
+        aggregate.BCount.ShouldBe(2);
+        aggregate.CCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task from_after_fetch_for_writing_guid_centric_brand_new_no_optimization()
+    {
+        StoreOptions(opts =>
+        {
+            //opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
         });
 

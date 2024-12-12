@@ -18,7 +18,7 @@ builder.ConfigureServices(services =>
         opts.DisableNpgsqlLogging = true;
 
         opts.Events.AppendMode = EventAppendMode.Quick;
-        opts.Events.UseIdentityMapForInlineAggregates = true;
+        opts.Events.UseIdentityMapForAggregates = true;
 
         opts.Projections.Add<DaemonTests.TestingSupport.TripProjection>(ProjectionLifecycle.Inline);
     });

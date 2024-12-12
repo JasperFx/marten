@@ -16,6 +16,7 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
         });
 
@@ -62,6 +63,7 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
         });
 
@@ -84,6 +86,7 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
         });
 
@@ -98,8 +101,7 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
         stream.AppendMany(new DEvent(), new DEvent());
         await session.SaveChangesAsync();
 
-        await using var query = theStore.LightweightSession();
-        var document = await query.Events.FetchLatest<SimpleAggregate>(streamId);
+        var document = await session.Events.FetchLatest<SimpleAggregate>(streamId);
 
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(2);
@@ -134,6 +136,7 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
         });

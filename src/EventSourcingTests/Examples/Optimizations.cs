@@ -45,10 +45,9 @@ public class Optimizations
             opts.Events.AppendMode = EventAppendMode.Quick;
 
             // Little more involved, but this can reduce the number
-            // of database queries necessary to process inline projections
-            // during command handling with some significant
-            // caveats
-            opts.Events.UseIdentityMapForInlineAggregates = true;
+            // of database queries necessary to process projections
+            // during CQRS command handling with certain workflows
+            opts.Events.UseIdentityMapForAggregates = true;
 
             // Opts into a mode where Marten is able to rebuild single
             // stream projections faster by building one stream at a time

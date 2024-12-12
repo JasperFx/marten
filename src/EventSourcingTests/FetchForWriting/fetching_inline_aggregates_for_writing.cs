@@ -55,7 +55,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         {
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
             opts.Events.AppendMode = EventAppendMode.Quick;
-            opts.Events.UseIdentityMapForInlineAggregates = true;
+            opts.Events.UseIdentityMapForAggregates = true;
         });
 
         var streamId = Guid.NewGuid();
@@ -85,7 +85,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
             });
 
             opts.Events.AppendMode = EventAppendMode.Quick;
-            opts.Events.UseIdentityMapForInlineAggregates = true;
+            opts.Events.UseIdentityMapForAggregates = true;
         });
 
         var streamId = Guid.NewGuid();
@@ -541,7 +541,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
                 // an Inline projection for the "T". Saves on Marten doing an extra
                 // database fetch of the same data you already fetched from FetchForWriting()
                 // when Marten needs to apply the Inline projection as part of SaveChanges()
-                opts.Events.UseIdentityMapForInlineAggregates = true;
+                opts.Events.UseIdentityMapForAggregates = true;
             })
             // This is non-trivial performance optimization if you never
             // need identity map mechanics in your commands or query handlers
@@ -555,8 +555,8 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
+            opts.Events.UseIdentityMapForAggregates = true;
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
-            opts.Events.UseIdentityMapForInlineAggregates = true;
         });
 
         var streamId = Guid.NewGuid();

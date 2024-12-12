@@ -36,7 +36,26 @@ namespace Marten.Events
         /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
         /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
         /// </summary>
-        bool UseIdentityMapForInlineAggregates { get; set; }
+        [Obsolete("Use the UseIdentityMapForAggregates property instead")]
+        bool UseIdentityMapForInlineAggregates
+        {
+            get
+            {
+                return UseIdentityMapForAggregates;
+            }
+            set
+            {
+                UseIdentityMapForAggregates = value;
+            }
+        }
+
+        /// <summary>
+        /// Opt into a performance optimization that directs Marten to always use the identity map for an
+        /// as much as possible for FetchForWriting() or FetchLatest(). Note that this optimization is only
+        /// appropriate if using either immutable aggregations or when you do not mutate the aggregate yourself
+        /// outside of Marten internals
+        /// </summary>
+        bool UseIdentityMapForAggregates { get; set; }
 
         /// <summary>
         ///     Override the database schema name for event related tables. By default this

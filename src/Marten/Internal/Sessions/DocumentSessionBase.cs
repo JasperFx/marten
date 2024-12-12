@@ -8,6 +8,7 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Internals;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -338,7 +339,6 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         // Nothing
     }
 
-
     private void store<T>(IEnumerable<T> entities) where T : notnull
     {
         assertNotDisposed();
@@ -429,5 +429,40 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             foreach (var document in objects.OfType<T>()) session.Delete(document);
         }
+    }
+
+    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class
+    {
+        if (ItemMap.ContainsKey(typeof(TDoc)))
+        {
+            ItemMap[typeof(TDoc)].As<Dictionary<TId, TDoc>>()[id] = document;
+        }
+        else
+        {
+            var dict = new Dictionary<TId, TDoc>();
+            dict[id] = document;
+            ItemMap[typeof(TDoc)] = dict;
+        }
+    }
+
+    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, out TDoc document)
+    {
+        if (Options.EventGraph.UseIdentityMapForAggregates)
+        {
+            if (ItemMap.TryGetValue(typeof(TDoc), out var raw))
+            {
+                if (raw is Dictionary<TId, TDoc> dict)
+                {
+                    if (dict.TryGetValue(id, out var doc))
+                    {
+                        document = doc;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        document = default;
+        return false;
     }
 }
