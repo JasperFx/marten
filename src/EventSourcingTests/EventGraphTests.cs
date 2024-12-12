@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using EventSourcingTests.Projections;
 using Marten;
 using Marten.Events;
@@ -11,7 +12,12 @@ namespace EventSourcingTests;
 
 public class EventGraphTests
 {
-    private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
+    private readonly EventGraph theGraph;
+
+    public EventGraphTests()
+    {
+        theGraph = new StoreOptions().EventGraph;
+    }
 
     [Fact]
     public void use_optimized_projection_rebuilds_is_false_by_default()
@@ -135,6 +141,12 @@ public class EventGraphTests
     public void use_identity_map_for_inline_aggregates_is_false_by_default()
     {
         theGraph.UseIdentityMapForAggregates.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void archived_event_type_is_registered_by_default()
+    {
+        theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(Archived));
     }
 
     public class HouseRemodeling

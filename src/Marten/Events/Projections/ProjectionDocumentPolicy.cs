@@ -9,6 +9,8 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
 {
     public void Apply(DocumentMapping mapping)
     {
+        if (mapping.StoreOptions.Projections == null) return;
+
         if (mapping.StoreOptions.Projections.TryFindAggregate(mapping.DocumentType, out var projection))
         {
             if (projection.ProjectionVersion > 1)
