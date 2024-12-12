@@ -109,3 +109,7 @@ by hand rather than trying to let Marten do it automatically. The data migration
 will probably require system downtime because it actually has to copy the old table data, drop the old table, create the new 
 table, copy all the existing data from the temp table to the new partitioned table, and finally drop the temporary table.
 :::
+
+## Archived Event <Badge type="tip" text="7.34" />
+
+
