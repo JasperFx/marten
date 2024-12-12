@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
@@ -120,16 +121,16 @@ public static class FetchLatest
 
     #region sample_invoice_approval_workflow_with_mutate
 
-    public static Task<Projections.Invoice> Approve(IDocumentSession session, Guid invoiceId)
+    public static Task Approve(IDocumentSession session, Guid invoiceId)
     {
-        return session.Mutate<Projections.Invoice>(invoiceId, invoice =>
+        return session.MutateInvoice(invoiceId, invoice =>
         {
             if (invoice.Status != InvoiceStatus.Approved)
             {
-                return new object[] { new InvoiceApproved() };
+                return [new InvoiceApproved()];
             }
 
-            return Array.Empty<object>();
+            return [];
         });
     }
 
@@ -140,10 +141,10 @@ public static class FetchLatest
 
 public static class MutationExtensions
 {
-    public static async Task<T> Mutate<T>(this IDocumentSession session, Guid id, Func<T, object[]> decider,
-        CancellationToken token = default) where T : class
+    public static async Task<Projections.Invoice> MutateInvoice(this IDocumentSession session, Guid id, Func<Projections.Invoice, IEnumerable<object>> decider,
+        CancellationToken token = default)
     {
-        var stream = await session.Events.FetchForWriting<T>(id, token);
+        var stream = await session.Events.FetchForWriting<Projections.Invoice>(id, token);
 
         // Decide what new events should be appended based on the current
         // state of the aggregate and application logic
@@ -153,7 +154,7 @@ public static class MutationExtensions
         // Persist any new events
         await session.SaveChangesAsync(token);
 
-        return await session.Events.FetchLatest<T>(id, token);
+        return await session.Events.FetchLatest<Projections.Invoice>(id, token);
     }
 }
 
