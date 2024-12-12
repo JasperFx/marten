@@ -144,7 +144,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         var lastEvent = tryApplyMetadata(slice, aggregate);
 
-        if (session is ProjectionDocumentSession pds && pds.Mode == ShardExecutionMode.Continuous)
+        if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
         {
             // Need to set the aggregate in case it didn't exist upfront
             slice.Aggregate = aggregate;

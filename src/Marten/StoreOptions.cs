@@ -130,13 +130,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public StoreOptions()
     {
-        _eventGraph = new EventGraph(this);
         Schema = new MartenRegistry(this);
         _storage = new StorageFeatures(this);
 
         _providers = new ProviderGraph(this);
         _advanced = new AdvancedOptions(this);
 
+        _eventGraph = new EventGraph(this);
         _projections = new ProjectionOptions(this);
 
         _linq = new LinqParsing(this);

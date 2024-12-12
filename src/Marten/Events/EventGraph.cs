@@ -64,6 +64,8 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
 
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
+
+        AddEventType<Archived>();
     }
 
     /// <summary>
@@ -367,7 +369,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     internal bool IsActive(StoreOptions options)
     {
-        return _events.Any() || Options.Projections.All.Any();
+        return _events.Any(x => x.DocumentType != typeof(Archived)) || Options.Projections.All.Any();
     }
 
     internal Type AggregateTypeFor(string aggregateTypeName)
