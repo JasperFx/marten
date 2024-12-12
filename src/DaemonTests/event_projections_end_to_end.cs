@@ -37,7 +37,7 @@ public class event_projections_end_to_end : DaemonContext
             .OfType<EventTypeFilter>()
             .Single();
 
-        filter.EventTypes.Single().ShouldBe(typeof(Travel));
+        filter.EventTypes.Where(x => x != typeof(Archived)).Single().ShouldBe(typeof(Travel));
     }
 
     #region sample_using_WaitForNonStaleProjectionDataAsync
