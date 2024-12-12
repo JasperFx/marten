@@ -127,7 +127,7 @@ public async Task Handle1(MarkItemReady command, IDocumentSession session)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L68-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_naive' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L70-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_naive' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this usage, `FetchForWriting<Order>()` is finding the current state of the stream based on the stream id we passed in. If the `Order` aggregate
@@ -219,7 +219,7 @@ public async Task Handle2(MarkItemReady command, IDocumentSession session)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L101-L135' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_explicit_optimistic_concurrency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L103-L137' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetch_for_writing_explicit_optimistic_concurrency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this case, Marten will throw a `ConcurrencyException` if the expected starting version being passed to `FetchForWriting()` has
@@ -265,7 +265,7 @@ public async Task Handle3(MarkItemReady command, IDocumentSession session)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L137-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample_fetch_for_writing_exclusive_lock' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L139-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample_fetch_for_writing_exclusive_lock' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case, Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or the `IDocumentSession` is disposed.
@@ -303,7 +303,7 @@ public Task Handle4(MarkItemReady command, IDocumentSession session)
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L173-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_writetoaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L175-L202' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_writetoaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Optimizing FetchForWriting with Inline Aggregates
@@ -324,7 +324,7 @@ builder.Services.AddMarten(opts =>
 
     // Opt into an optimization for the inline aggregates
     // used with FetchForWriting()
-    opts.Projections.UseIdentityMapForInlineAggregates = true;
+    opts.Projections.UseIdentityMapForAggregates = true;
 })
 
 // This is also a performance optimization in Marten to disable the
@@ -332,7 +332,7 @@ builder.Services.AddMarten(opts =>
 // need that tracking at runtime
 .UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L207-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L209-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can potentially gain some significant performance optimization by using the `UseIdentityMapForInlineAggregates` flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:

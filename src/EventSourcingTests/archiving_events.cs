@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
+using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -387,6 +389,55 @@ public class archiving_events: OneOffConfigurationsContext
 
 
     [Fact]
+    public async Task capture_archived_event_with_inline_custom_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new SimpleAggregateProjection2(), ProjectionLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public async Task capture_archived_event_with_async_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(5.Seconds());
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
     public async Task capture_archived_event_with_inline_projection_will_archive_the_stream_string_identified()
     {
         StoreOptions(opts =>
@@ -512,6 +563,35 @@ public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
     public void Apply(SimpleAggregate aggregate, AEvent e) => aggregate.ACount++;
 
     public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
+}
+
+public class SimpleAggregateProjection2: CustomProjection<SimpleAggregate, Guid>
+{
+    public SimpleAggregateProjection2()
+    {
+        AggregateByStream();
+    }
+
+    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new SimpleAggregate();
+
+        foreach (var @event in events)
+        {
+            switch (@event.Data)
+            {
+                case AEvent _:
+                    snapshot.ACount++;
+                    break;
+
+                case BEvent _:
+                    snapshot.BCount++;
+                    break;
+            }
+        }
+
+        return snapshot;
+    }
 }
 
 public record Deleted;
