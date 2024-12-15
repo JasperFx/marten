@@ -375,10 +375,89 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
 
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_using_identity_map()
+    {
+        StoreOptions(
+            opts =>
+            {
+                opts.Events.UseIdentityMapForAggregates = true;
+                opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        stream.AppendOne(new EEvent());
+        await theSession.SaveChangesAsync();
+
+        var latest = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        latest.Version.ShouldBe(7);
+    }
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_using_identity_map_immediate_sad_path()
+    {
+        StoreOptions(
+            opts =>
+            {
+                opts.Events.UseIdentityMapForAggregates = true;
+                opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            });
 
 
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 5);
+        });
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_using_identity_map_sad_path_on_save_changes()
+    {
+        StoreOptions(
+            opts =>
+            {
+                opts.Events.UseIdentityMapForAggregates = true;
+                opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            });
 
 
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        // This should be fine
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        stream.AppendOne(new EEvent());
+
+        // Get in between and run other events in a different session
+        await using (var otherSession = theStore.LightweightSession())
+        {
+            otherSession.Events.Append(streamId, new EEvent());
+            await otherSession.SaveChangesAsync();
+        }
+
+        // The version is now off
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
+    }
 
         [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version()
