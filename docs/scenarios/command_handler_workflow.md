@@ -170,7 +170,7 @@ builder.Services.AddMarten(opts =>
     // need identity map mechanics in your commands or query handlers
     .UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_inline_aggregates_for_writing.cs#L532-L550' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_identity_map_for_inline_aggregates' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_inline_aggregates_for_writing.cs#L611-L629' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_identity_map_for_inline_aggregates' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization

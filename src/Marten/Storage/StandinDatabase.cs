@@ -233,6 +233,11 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)
     {
         throw new NotImplementedException();
