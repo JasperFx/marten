@@ -5,6 +5,7 @@ using EventSourcingTests.Examples;
 using EventSourcingTests.FetchForWriting;
 using EventSourcingTests.Projections;
 using JasperFx.Core;
+using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -94,5 +95,33 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
             progression.Sequence.ShouldBeGreaterThan(0);
         }
 
+    }
+
+    [Fact]
+    public async Task try_to_query_for_non_stale_data_by_aggregate_type()
+    {
+        var task = Task.Run(async () =>
+        {
+            using var session = theStore.LightweightSession();
+
+            for (int i = 0; i < 20; i++)
+            {
+                session.Events.StartStream(new AEvent(), new BEvent());
+                session.Events.StartStream(new CEvent(), new BEvent());
+                session.Events.StartStream(new DEvent(), new AEvent());
+                var streamId = session.Events.StartStream(new DEvent(), new CEvent());
+                await session.SaveChangesAsync();
+            }
+        });
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+
+        await Task.Delay(1.Seconds());
+
+        var items = await theSession.QueryForNonStaleData<SimpleAggregate>(30.Seconds()).ToListAsync();
+        items.Count.ShouldBeGreaterThan(0);
+
+        await task;
     }
 }

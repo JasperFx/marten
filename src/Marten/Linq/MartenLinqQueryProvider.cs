@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
@@ -15,6 +16,8 @@ using Marten.Linq.Selectors;
 using Marten.Util;
 
 namespace Marten.Linq;
+
+internal record WaitForAggregate(TimeSpan Timeout);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -27,6 +30,8 @@ internal class MartenLinqQueryProvider: IQueryProvider
     }
 
     public Type SourceType { get; }
+
+    internal WaitForAggregate? Waiter { get; set; }
 
     internal QueryStatistics Statistics { get; set; } = null!;
 
@@ -69,6 +74,11 @@ internal class MartenLinqQueryProvider: IQueryProvider
         foreach (var documentType in parser.DocumentTypes())
         {
             await _session.Database.EnsureStorageExistsAsync(documentType, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (Waiter != null)
+        {
+            await _session.Database.WaitForNonStaleProjectionDataAsync(SourceType, Waiter.Timeout, cancellationToken).ConfigureAwait(false);
         }
     }
 
