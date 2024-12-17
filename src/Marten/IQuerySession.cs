@@ -166,6 +166,17 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     #endregion
 
     /// <summary>
+    /// If you are querying for data against a projected event aggregation that is updated asynchronously
+    /// through the async daemon, this method will ensure that you are querying against the latest events appended
+    /// to the system by waiting for the aggregate to catch up to the current "high water mark" of the event store
+    /// at the time this query is executed.
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout);
+
+    /// <summary>
     ///     Queries the document storage table for the document type T by supplied SQL. See
     ///     https://martendb.io/documents/querying/sql.html for more information on usage.
     /// </summary>
@@ -763,4 +774,6 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<T> QueryByPlanAsync<T>(IQueryPlan<T> plan, CancellationToken token = default);
+
+
 }

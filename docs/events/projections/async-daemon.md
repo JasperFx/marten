@@ -483,3 +483,48 @@ using multi-tenancy through a database per tenant. On these spans will be these 
 
 There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
 that just emits and update every time that Marten has to "skip" stale events.
+
+## Querying for Non Stale Data
+
+There are some potential benefits to running projections asynchronously, namely:
+
+* Avoiding concurrent updates to aggregated documents so that the results are accurate, especially when the aggregation is "multi-stream"
+* Putting the work of building aggregates into a background process so you don't take the performance "hit" of doing that work during requests from a client
+
+All that being said, using asynchronous projections means you're going into the realm of [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency), and sometimes
+that's really inconvenient when your users or clients expect up to date information about the projected aggregate data. 
+
+Not to worry though, because Marten will allow you to "wait" for an asynchronous projection to catch up so that you
+can query the latest information as all the events captured at the time of the query are processed through the asynchronous
+projection like so:
+
+<!-- snippet: sample_using_query_for_non_stale_data -->
+<a id='snippet-sample_using_query_for_non_stale_data'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+    opts.Projections.Add<TripProjection>(ProjectionLifecycle.Async);
+}).AddAsyncDaemon(DaemonMode.HotCold);
+
+using var host = builder.Build();
+await host.StartAsync();
+
+// DocumentStore() is an extension method in Marten just
+// as a convenience method for test automation
+await using var session = host.DocumentStore().LightweightSession();
+
+// This query operation will first "wait" for the asynchronous projection building the
+// Trip aggregate document to catch up to at least the highest event sequence number assigned
+// at the time this method is called
+var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
+    .OrderByDescending(x => x.Started)
+    .Take(10)
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L133-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to
+be both cautious with using this in general, and also cautious especially with the timeout setting. 

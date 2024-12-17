@@ -535,6 +535,12 @@ public class ProjectionOptions: DaemonSettings
     {
         return All.Where(x => x.Lifecycle != ProjectionLifecycle.Live).SelectMany(x => x.PublishedTypes()).Distinct();
     }
+
+    internal ShardName[] AsyncShardsPublishingType(Type aggregationType)
+    {
+        var sources = All.Where(x => x.Lifecycle == ProjectionLifecycle.Async && x.PublishedTypes().Contains(aggregationType)).Select(x => x.ProjectionName).ToArray();
+        return _asyncShards.Value.Values.Where(x => sources.Contains(x.Name.ProjectionName)).Select(x => x.Name).ToArray();
+    }
 }
 
 public class DuplicateSubscriptionNamesException: MartenException

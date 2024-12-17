@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,6 +21,14 @@ public partial class QuerySession
     public IMartenQueryable<T> Query<T>()
     {
         return new MartenLinqQueryable<T>(this);
+    }
+
+    public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout)
+    {
+        var queryable = new MartenLinqQueryable<T>(this);
+        queryable.MartenProvider.Waiter = new WaitForAggregate(timeout);
+
+        return queryable;
     }
 
     public IReadOnlyList<T> Query<T>(string sql, params object[] parameters)

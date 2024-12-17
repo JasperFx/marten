@@ -39,6 +39,24 @@ public partial class MartenDatabase
     }
 
     /// <summary>
+    /// Fetch the highest assigned event sequence number in this database
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        var highest = (long)await conn
+            .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
+            .ExecuteScalarAsync(token).ConfigureAwait(false);
+
+        return highest;
+    }
+
+
+    /// <summary>
     ///     Fetch the current size of the event store tables, including the current value
     ///     of the event sequence number
     /// </summary>
@@ -106,6 +124,24 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
             new ProjectionProgressStatement(Options.EventGraph),
+            new ShardStateSelector(Options.EventGraph));
+
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        var builder = new CommandBuilder();
+        handler.ConfigureCommand(builder, null);
+
+        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+        return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
+            new ProjectionProgressStatement(Options.EventGraph){Names = names},
             new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();
