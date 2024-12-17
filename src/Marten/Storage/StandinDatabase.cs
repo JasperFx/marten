@@ -218,6 +218,11 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
     {
         throw new NotImplementedException();

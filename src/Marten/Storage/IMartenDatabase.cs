@@ -98,6 +98,18 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
         CancellationToken token = default);
 
     /// <summary>
+    ///     Check the current progress of all asynchronous projections
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantId">
+    ///     Specify the database containing this tenant id. If omitted, this method uses the default
+    ///     database
+    /// </param>
+    /// <returns></returns>
+    Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names,
+        CancellationToken token = default);
+
+    /// <summary>
     ///     Check the current progress of a single projection or projection shard
     /// </summary>
     /// <param name="tenantId">

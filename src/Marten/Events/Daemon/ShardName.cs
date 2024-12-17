@@ -22,6 +22,11 @@ public class ShardName
             Identity = $"{projectionName}:{key}";
         }
 
+        if (projectionName == ShardState.HighWaterMark)
+        {
+            Identity = ShardState.HighWaterMark;
+        }
+
     }
 
     public ShardName(string projectionName, string key) : this(projectionName, key, 1)
@@ -50,6 +55,7 @@ public class ShardName
     public string Identity { get; }
 
     public uint Version { get; } = 1;
+    public static ShardName HighWaterMark { get; } = new(ShardState.HighWaterMark);
 
     public override string ToString()
     {
