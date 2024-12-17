@@ -8,8 +8,11 @@ using JasperFx.Core;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -124,4 +127,35 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
 
         await task;
     }
+
+    public static async Task ExampleUsage()
+    {
+        #region sample_using_query_for_non_stale_data
+
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection(builder.Configuration.GetConnectionString("marten"));
+            opts.Projections.Add<TripProjection>(ProjectionLifecycle.Async);
+        }).AddAsyncDaemon(DaemonMode.HotCold);
+
+        using var host = builder.Build();
+        await host.StartAsync();
+
+        // DocumentStore() is an extension method in Marten just
+        // as a convenience method for test automation
+        await using var session = host.DocumentStore().LightweightSession();
+
+        // This query operation will first "wait" for the asynchronous projection building the
+        // Trip aggregate document to catch up to at least the highest event sequence number assigned
+        // at the time this method is called
+        var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
+            .OrderByDescending(x => x.Started)
+            .Take(10)
+            .ToListAsync();
+
+        #endregion
+    }
 }
+
+

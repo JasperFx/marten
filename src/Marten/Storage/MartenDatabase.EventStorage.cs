@@ -39,6 +39,24 @@ public partial class MartenDatabase
     }
 
     /// <summary>
+    /// Fetch the highest assigned event sequence number in this database
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        var highest = (long)await conn
+            .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
+            .ExecuteScalarAsync(token).ConfigureAwait(false);
+
+        return highest;
+    }
+
+
+    /// <summary>
     ///     Fetch the current size of the event store tables, including the current value
     ///     of the event sequence number
     /// </summary>

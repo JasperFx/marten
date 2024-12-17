@@ -131,6 +131,13 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
+
+    /// <summary>
+    /// Fetch the highest assigned event sequence number in this database
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default);
 }
 
 public enum ConnectionUsage
