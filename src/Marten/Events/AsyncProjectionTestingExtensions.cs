@@ -140,9 +140,7 @@ public static class TestingExtensions
     {
         // Number of active projection shards, plus the high water mark
         var shards = database.As<MartenDatabase>().Options.Projections.AsyncShardsPublishingType(aggregationType);
-        if (!shards.Any())
-            throw new InvalidOperationException(
-                $"Cannot find any registered async projection shards for aggregate type {aggregationType.FullNameInCode()}");
+        if (!shards.Any()) throw new InvalidOperationException($"Cannot find any registered async projection shards for aggregate type {aggregationType.FullNameInCode()}");
 
         var all = shards.Concat([ShardName.HighWaterMark]).ToArray();
         var tracking = new Dictionary<string, long>();
