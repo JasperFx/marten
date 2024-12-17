@@ -130,4 +130,63 @@ public static class TestingExtensions
                 $"The projections timed out before reaching the initial sequence of {initial.EventSequenceNumber}");
         }
     }
+
+    private static bool isComplete(this Dictionary<string, long> tracking, long highWaterMark)
+    {
+        return tracking.Values.All(x => x >= highWaterMark);
+    }
+
+    public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, Type aggregationType, TimeSpan timeout, CancellationToken token)
+    {
+        // Number of active projection shards, plus the high water mark
+        var shards = database.As<MartenDatabase>().Options.Projections.AsyncShardsPublishingType(aggregationType);
+        if (!shards.Any())
+            throw new InvalidOperationException(
+                $"Cannot find any registered async projection shards for aggregate type {aggregationType.FullNameInCode()}");
+
+        var all = shards.Concat([ShardName.HighWaterMark]).ToArray();
+        var tracking = new Dictionary<string, long>();
+        foreach (var shard in shards)
+        {
+            tracking[shard.Identity] = 0;
+        }
+
+        long highWaterMark = long.MaxValue;
+        var initial = await database.FetchProjectionProgressFor(all, token).ConfigureAwait(false);
+        foreach (var state in initial)
+        {
+            if (state.ShardName == ShardState.HighWaterMark)
+            {
+                highWaterMark = state.Sequence;
+            }
+            else
+            {
+                tracking[state.ShardName] = state.Sequence;
+            }
+        }
+
+        if (tracking.isComplete(highWaterMark)) return;
+
+        using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token);
+        cancellationSource.CancelAfter(timeout);
+
+        while (!cancellationSource.Token.IsCancellationRequested)
+        {
+            var current = await database.FetchProjectionProgressFor(shards, cancellationSource.Token).ConfigureAwait(false);
+            foreach (var state in current)
+            {
+                tracking[state.ShardName] = state.Sequence;
+            }
+
+            if (tracking.isComplete(highWaterMark)) return;
+
+            await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
+        }
+
+        if (cancellationSource.IsCancellationRequested)
+        {
+            throw new TimeoutException(
+                $"The projections timed out before reaching the initial sequence of {highWaterMark}");
+        }
+    }
 }
