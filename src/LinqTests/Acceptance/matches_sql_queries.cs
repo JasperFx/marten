@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq.MatchesSql;
@@ -19,7 +20,10 @@ public class matches_sql_queries: IntegrationContext
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
 
-        using var session = theStore.LightweightSession();
+        var paramObject = new { Name1 = "foo", Name2 = "bar" };
+        var paramDict = new Dictionary<string, object> { { "Name1", "foo" }, { "Name2", "bar" } };
+
+        await using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
         await session.SaveChangesAsync();
 
@@ -33,6 +37,26 @@ public class matches_sql_queries: IntegrationContext
             .ToList()
             .Select(x => x.UserName)
             .Single().ShouldBe("jack");
+
+
+
+        // no where clause, named params
+        session.Query<User>().Where(x => x.MatchesSql("d.data ->> 'UserName' = @Name1 or d.data ->> 'UserName' = @Name2", paramObject)).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
+        session.Query<User>().Where(x => x.MatchesSql("d.data ->> 'UserName' = @Name1 or d.data ->> 'UserName' = @Name2", paramDict)).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
+
+        // with a where clause, named params
+        session.Query<User>().Where(x => x.UserName != "baz" && x.MatchesSql("d.data ->> 'UserName' != @Name1 and d.data ->> 'UserName' != @Name2", paramObject))
+            .OrderBy(x => x.UserName)
+            .ToList()
+            .Select(x => x.UserName)
+            .Single().ShouldBe("jack");
+        session.Query<User>().Where(x => x.UserName != "baz" && x.MatchesSql("d.data ->> 'UserName' != @Name1 and d.data ->> 'UserName' != @Name2", paramDict))
+            .OrderBy(x => x.UserName)
+            .ToList()
+            .Select(x => x.UserName)
+            .Single().ShouldBe("jack");
     }
 
     [Fact]
@@ -42,14 +66,16 @@ public class matches_sql_queries: IntegrationContext
         var user2 = new User { UserName = "bar" };
         var user3 = new User { UserName = "baz" };
         var user4 = new User { UserName = "jack" };
+        var user5 = new User { UserName = "jill" };
 
-        using var session = theStore.LightweightSession();
-        session.Store(user1, user2, user3, user4);
+        await using var session = theStore.LightweightSession();
+        session.Store(user1, user2, user3, user4, user5);
         await session.SaveChangesAsync();
 
         var whereFragment = CompoundWhereFragment.And();
         whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "baz"));
-        whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "jack"));
+        whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != @Name1", new { Name1 = "jack" }));
+        whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != @Name2", new Dictionary<string, string> { { "Name2", "jill" } }));
 
         // no where clause
         session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
