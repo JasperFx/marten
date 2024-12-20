@@ -362,6 +362,60 @@ public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureTogg
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Resolving Missing Shared Identifiers with Custom Grouper and Flat Table Projection
+
+When follow-up events lack a shared identifier like `ProjectId`, you can combine a **custom `IAggregateGrouper`** with a **flat table projection** to handle grouping efficiently. The flat table projection manages the mapping between `UserId` and `ProjectId` in the database, enabling the custom grouper to resolve the `ProjectId` dynamically.
+
+#### Step 1: Define the Flat Table Projection
+
+Use a `FlatTableProjection` to store the mapping between `UserId` and `ProjectId`:
+
+::: tip
+Note that you should register this projection as inline, such that you are sure it's available when projecting starts.
+:::
+
+```cs
+public class UserProjectFlatTableProjection : FlatTableProjection
+{
+    public UserProjectFlatTableProjection() : base("user_project_mapping", SchemaNameSource.EventSchema)
+    {
+        Table.AddColumn<Guid>("user_id").AsPrimaryKey();
+        Table.AddColumn<Guid>("project_id").NotNull();
+
+        TeardownDataOnRebuild = true;
+
+        Project<UserJoinedProject>(map =>
+        {
+            map.Map(x => x.UserId);
+            map.Map(x => x.ProjectId);
+        });
+    }
+}
+```
+
+#### Step 2: Use the Mapping in a Custom Grouper
+
+The custom grouper resolves the `ProjectId` dynamically based on the `UserId` stored in the flat table:
+
+```cs
+public class ProjectEventGrouper : IAggregateGrouper<Guid>
+{
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    {
+        foreach (var @event in userEvents)
+        {
+            if(@event.Data is TaskCompleted taskCompleted)
+            {
+                var mapping = await session.Query<UserJoinedProject>()
+                    .Where(mapping => mapping.UserId == @event.StreamId)
+                    .SingleAsync();
+                grouping.AddEvent(mapping.ProjectId, @event);
+            }
+        }
+    }
+}
+```
+
 ## View Projection with Custom Slicer
 
 ::: tip
