@@ -109,7 +109,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         {
             var sequences = new SequenceFactory(Options, this);
 
-            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).AsTask().GetAwaiter().GetResult();
+            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter().GetResult();
 
             return sequences;
         });

@@ -29,6 +29,10 @@ builder.Services.AddMarten(opts =>
     opts.RegisterDocumentType<User>();
     opts.DatabaseSchemaName = "cli";
 
+    opts.Events.UseArchivedStreamPartitioning = true;
+
+    opts.Schema.For<Target>().SoftDeletedWithPartitioningAndIndex();
+
     // Register all event store projections ahead of time
     opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
     opts.Projections.Add(new DayProjection(), ProjectionLifecycle.Async);
