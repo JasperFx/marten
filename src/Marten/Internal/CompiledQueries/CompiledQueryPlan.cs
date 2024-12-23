@@ -103,6 +103,11 @@ public class CompiledQueryPlan : ICommandBuilder
 
     #endregion
 
+    public void AddParameters<T>(IDictionary<string, T> parameters)
+    {
+        throw new NotImplementedException();
+    }
+
     public string TenantId { get; set; }
 
     #region ICommandBuilder implementation
@@ -248,6 +253,11 @@ public class CompiledQueryPlan : ICommandBuilder
     {
         throw new NotSupportedException(
             "No, just no. Marten does not support parameters via anonymous objects in compiled queries");
+    }
+
+    public void AddParameters(IDictionary<string, object> parameters)
+    {
+        throw new NotImplementedException();
     }
 
     #endregion
