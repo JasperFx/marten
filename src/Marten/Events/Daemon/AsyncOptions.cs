@@ -149,6 +149,23 @@ public class AsyncOptions
         _strategies.Add(new FromSequence(databaseIdentifier, sequenceFloor));
         return this;
     }
+
+    /// <summary>
+    /// Use this option to prevent having to rebuild a projection when you are
+    /// simply changing the projection lifecycle from "Inline" to "Async" but are
+    /// making no other changes that would force a rebuild
+    ///
+    /// Direct that this projection had previously been running with an "Inline"
+    /// lifecycle now run as "Async". This will cause Marten to first check if there
+    /// is any previous async progress, and if not, start the projection from the highest
+    /// event sequence for the system.
+    /// </summary>
+    /// <returns></returns>
+    public AsyncOptions SubscribeAsInlineToAsync()
+    {
+        _strategies.Add(new InlineToAsync());
+        return this;
+    }
 }
 
 internal record Position(long Floor, bool ShouldUpdateProgressFirst);
@@ -160,6 +177,24 @@ internal interface IPositionStrategy
     Task<Position> DetermineStartingPositionAsync(long highWaterMark, ShardName name, ShardExecutionMode mode,
         IMartenDatabase database,
         CancellationToken token);
+}
+
+internal class InlineToAsync(): IPositionStrategy
+{
+    public string? DatabaseName => null;
+
+    public async Task<Position> DetermineStartingPositionAsync(long highWaterMark, ShardName name, ShardExecutionMode mode,
+        IMartenDatabase database, CancellationToken token)
+    {
+        var current = await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
+        if (current > 0)
+        {
+            return new Position(current, false);
+        }
+
+        var highest = await database.FetchHighestEventSequenceNumber(token).ConfigureAwait(false);
+        return new Position(highest, true);
+    }
 }
 
 internal class FromSequence(string? databaseName, long sequence): IPositionStrategy
