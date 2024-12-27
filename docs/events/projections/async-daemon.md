@@ -528,3 +528,40 @@ var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
 
 Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to
 be both cautious with using this in general, and also cautious especially with the timeout setting. 
+
+## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />
+
+::: warning
+This will only work correctly *if* you have system downtime before migrating the new version of the code with this option
+enabled. This feature cannot support a "blue/green" deployment model. Marten needs to system to be at rest before it starts
+up the projection asynchronously or there's a chance you may "skip" events in the projection.
+:::
+
+During the course of a system's lifetime, you may find that you want to change a projection that's currently running
+with a lifecycle of `Inline` to running asynchronously instead. If you need to do this *and* there is no structural change
+to the projection that would require a projection rebuild, you can direct Marten to start that projection at the highest
+sequence number assigned by the system (not the high water mark, but the event sequence number which may be higher).
+
+To do so, use this option when registering the projection:
+
+<!-- snippet: sample_using_subscribe_as_inline_to_async -->
+<a id='snippet-sample_using_subscribe_as_inline_to_async'></a>
+```cs
+opts
+    .Projections
+    .Snapshot<SimpleAggregate>(SnapshotLifecycle.Async, o =>
+    {
+        // This option tells Marten to start the async projection at the highest
+        // event sequence assigned as the processing floor if there is no previous
+        // async daemon progress for this projection
+        o.SubscribeAsInlineToAsync();
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/converting_projection_from_inline_to_async.cs#L31-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_subscribe_as_inline_to_async' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Just to be clear, when Marten's async daemon starts a projection with this starting option:
+
+1. If there is no previously recorded progression, Marten will start processing this projection with the highest assigned event sequence
+   in the database as the floor and record that value as the current progress
+2. If there is a previously recorded progression, Marten will start processing this projection at the recorded sequence as normal
