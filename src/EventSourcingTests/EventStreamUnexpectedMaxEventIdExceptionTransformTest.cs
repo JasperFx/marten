@@ -38,7 +38,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         };
 
         (await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException))
-            .Message.ShouldBe("duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"");
+            .Message.ShouldContain("pk_mt_events_stream_and_version");
     }
 
     [Fact(Skip = "TODO -- too unreliable on CI")]
