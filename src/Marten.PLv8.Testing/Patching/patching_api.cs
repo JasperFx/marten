@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.PLv8.Patching;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -830,6 +834,139 @@ public class patching_api: OneOffConfigurationsContext
                               $"where data->>'String' = '{newval}' and {field.ColumnName} = '{newval}'";
         var count = (long)(command.ExecuteScalar() ?? 0);
         count.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task duplicated_fields_only_update_when_source_is_modified()
+    {
+        // Set up duplicate field in the schema
+        var t = Target.Random();
+        var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
+        var duplicateField = mapping.DuplicateField("String");
+
+        // Setup a document
+        var target = Target.Random();
+        target.Inner = Target.Random();
+        target.Inner.String = "original";
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        // First verify that modifying the source updates the duplicate
+        var newValue = "modified source";
+        theSession.Patch<Target>(target.Id).Set(x => x.String, newValue);
+        await theSession.SaveChangesAsync();
+
+        // Verify both fields are updated
+        await using (var command = theSession.Connection.CreateCommand())
+        {
+            command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
+                                  $"where data->>'String' = '{newValue}' and {duplicateField.ToColumn().Name} = '{newValue}'";
+            var count = (long)(command.ExecuteScalar() ?? 0);
+            count.ShouldBe(1);
+        }
+
+        // Now modify an unrelated field and capture the SQL
+        var capturedCommands = new List<string>();
+        theSession.Logger = new TestLogger(capturedCommands).StartSession(theSession);
+
+        theSession.Patch<Target>(target.Id).Set(x => x.Number, 42);
+        await theSession.SaveChangesAsync();
+
+        // Verify no update to the duplicate field was executed
+        capturedCommands.Any(sql => sql.Contains($"set {duplicateField.ColumnName}")).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task duplicated_fields_only_update_when_nested_source_is_modified()
+    {
+        // Set up duplicate field in the schema
+        var t = Target.Random();
+        var mapping = theStore.StorageFeatures.MappingFor(typeof(Target));
+        MemberInfo[] props =
+        [
+            ReflectionHelper.GetProperty<Target>(x => x.Inner),
+            ReflectionHelper.GetProperty<Target>(x => x.String)
+        ];
+        var duplicateField = mapping.DuplicateField(props, columnName: "String");
+
+        // Setup a document
+        var target = Target.Random();
+        target.Inner = Target.Random();
+        target.Inner.String = "original";
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        // First verify that modifying the source updates the duplicate
+        var newValue = "modified source";
+        theSession.Patch<Target>(target.Id).Set(x => x.Inner.String, newValue);
+        await theSession.SaveChangesAsync();
+
+        // Verify both fields are updated
+        await using (var command = theSession.Connection.CreateCommand())
+        {
+            command.CommandText = $"select count(*) from {mapping.TableName.QualifiedName} " +
+                                $"where data->'Inner'->>'String' = '{newValue}' and {duplicateField.ToColumn().Name} = '{newValue}'";
+            var count = (long)(command.ExecuteScalar() ?? 0);
+            count.ShouldBe(1);
+        }
+
+        // Now modify an unrelated field and capture the SQL
+        var capturedCommands = new List<string>();
+        theSession.Logger = new TestLogger(capturedCommands).StartSession(theSession);
+
+        theSession.Patch<Target>(target.Id).Set(x => x.Number, 42);
+        await theSession.SaveChangesAsync();
+
+        // Verify no update to the duplicate field was executed
+        capturedCommands.Any(sql => sql.Contains($"set {duplicateField.ColumnName}")).ShouldBeFalse();
+    }
+
+    private class TestLogger(List<string> capturedCommands): IMartenLogger
+    {
+        public IMartenSessionLogger StartSession(IQuerySession session) => new TestSessionLogger(capturedCommands);
+        public void SchemaChange(string sql)
+        {
+        }
+    }
+
+    private class TestSessionLogger(List<string> capturedCommands): IMartenSessionLogger
+    {
+        public void LogFailure(NpgsqlCommand command, Exception ex)
+        {
+        }
+
+        public void LogFailure(NpgsqlBatch batch, Exception ex)
+        {
+        }
+
+        public void LogFailure(Exception ex, string message)
+        {
+        }
+
+        public void LogSuccess(NpgsqlBatch batch)
+        {
+            foreach (var command in batch.BatchCommands)
+            {
+                capturedCommands.Add(command.CommandText);
+            }
+        }
+
+        public void LogSuccess(NpgsqlCommand command)
+        {
+            capturedCommands.Add(command.CommandText);
+        }
+
+        public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
+        {
+        }
+
+        public void OnBeforeExecute(NpgsqlCommand command)
+        {
+        }
+
+        public void OnBeforeExecute(NpgsqlBatch batch)
+        {
+        }
     }
 
     public async Task SampleSetup()
