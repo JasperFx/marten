@@ -1,12 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
-using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Services;
+using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -86,6 +87,7 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
     private readonly ISqlFragment _fragment;
     private readonly IDocumentStorage _storage;
     private readonly List<PatchData> _patchSet;
+    private readonly ISerializer _serializer;
 
     public PatchOperation(DocumentSessionBase session, DbObjectName function, IDocumentStorage storage,
         List<PatchData> patchSet, ISerializer serializer):
@@ -93,6 +95,7 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
     {
         _storage = storage;
         _patchSet = patchSet;
+        _serializer = serializer;
     }
 
     public OperationRole Role()
@@ -115,18 +118,38 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
             return;
         }
 
+        // Get the paths being modified by this patch operation
+        var modifiedPaths = _patchSet
+            .Select(patch => patch.Items["path"].ToString())
+            .ToHashSet(System.StringComparer.Ordinal);
+
+        // Only update duplicated fields where their mapping path is affected by the patch path
+        var affectedFields = fields.Where(f => IsFieldAffectedByPatchPath(f, modifiedPaths)).ToList();
+
+        if (affectedFields.Count == 0)
+        {
+            return;
+        }
+
         builder.StartNewCommand();
         builder.Append("update ");
         builder.Append(_storage.TableName.QualifiedName);
         builder.Append(" as d set ");
 
-        builder.Append(fields[0].UpdateSqlFragment());
-        for (var i = 1; i < fields.Count; i++)
+        builder.Append(affectedFields[0].UpdateSqlFragment());
+        for (var i = 1; i < affectedFields.Count; i++)
         {
             builder.Append(", ");
-            builder.Append(fields[i].UpdateSqlFragment());
+            builder.Append(affectedFields[i].UpdateSqlFragment());
         }
 
         writeWhereClause(builder);
+    }
+
+    private bool IsFieldAffectedByPatchPath(DuplicatedField field, HashSet<string> modifiedPaths)
+    {
+        // get the dot seperated path derived from field Members info
+        var path = string.Join('.', field.Members.Select(x => x.Name.FormatCase(_serializer.Casing)));
+        return modifiedPaths.Any(p => p.StartsWith(path, StringComparison.Ordinal));
     }
 }
