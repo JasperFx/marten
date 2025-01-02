@@ -239,6 +239,30 @@ public class AsyncOptionsTests
             .ShouldBe(new Position(222L, true));
     }
 
+    [Fact]
+    public async Task transition_from_inline_to_async_no_initial_progress()
+    {
+        theDatabase.ProjectionProgressFor(theName, theToken).Returns(0);
+        theDatabase.FetchHighestEventSequenceNumber().Returns(1234L);
+        var options = new AsyncOptions();
+        options.SubscribeAsInlineToAsync();
+
+        (await options.DetermineStartingPositionAsync(1000L, theName, ShardExecutionMode.Continuous, theDatabase, theToken))
+            .ShouldBe(new Position(1234L, true));
+    }
+
+    [Fact]
+    public async Task transition_from_inline_to_async_but_there_is_initial_progress()
+    {
+        theDatabase.ProjectionProgressFor(theName, theToken).Returns(1000L);
+        theDatabase.FetchHighestEventSequenceNumber().Returns(2005L);
+        var options = new AsyncOptions();
+        options.SubscribeAsInlineToAsync();
+
+        (await options.DetermineStartingPositionAsync(2003L, theName, ShardExecutionMode.Continuous, theDatabase, theToken))
+            .ShouldBe(new Position(1000L, false));
+    }
+
 
 
 

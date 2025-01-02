@@ -63,8 +63,25 @@ internal class ParameterUsage
         else
         {
             method.Frames.Code($"{parametersVariableName}[{Index}].Value = {{0}};", Constant.For(Parameter.Value));
-            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {typeof(NpgsqlDbType).FullNameInCode()}.{Parameter.NpgsqlDbType};");
+
+            method.Frames.Code($"{parametersVariableName}[{Index}].{nameof(NpgsqlParameter.NpgsqlDbType)} = {npgsqlDataTypeInCodeFor(Parameter)};");
         }
+    }
+
+    // Hack for part of GH-3610
+    private static string npgsqlDataTypeInCodeFor(NpgsqlParameter parameter)
+    {
+        if (parameter.Value is string[])
+        {
+            return $"{typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Array} | {typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Varchar}";
+        }
+
+        if (parameter.Value is int[])
+        {
+            return $"{typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Array} | {typeof(NpgsqlDbType).FullNameInCode()}.{NpgsqlDbType.Integer}";
+        }
+
+        return $"{typeof(NpgsqlDbType).FullNameInCode()}.{parameter.NpgsqlDbType}";
     }
 
     private void generateSimpleCode(GeneratedMethod method, MemberInfo member, Type memberType,

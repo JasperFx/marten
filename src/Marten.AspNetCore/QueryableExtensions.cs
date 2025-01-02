@@ -76,6 +76,41 @@ public static class QueryableExtensions
     /// <typeparam name="T"></typeparam>
     public static async Task WriteById<T>(
         this IJsonLoader json,
+        object id,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    ) where T : class
+    {
+        var stream = new MemoryStream();
+        var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
+        if (found)
+        {
+            context.Response.StatusCode = onFoundStatus;
+            context.Response.ContentLength = stream.Length;
+            context.Response.ContentType = contentType;
+
+            stream.Position = 0;
+            await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        }
+        else
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentLength = 0;
+        }
+    }
+
+    /// <summary>
+    /// Quickly write the JSON for a document by Id to an HttpContext. Will also handle status code mechanics
+    /// </summary>
+    /// <param name="json"></param>
+    /// <param name="id"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <typeparam name="T"></typeparam>
+    public static async Task WriteById<T>(
+        this IJsonLoader json,
         string id,
         HttpContext context,
         string contentType = "application/json",
