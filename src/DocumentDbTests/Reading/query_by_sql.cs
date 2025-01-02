@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -276,6 +276,25 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
 
         var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
         user.LastName.ShouldBe("Smith");
+        user.Id.ShouldBe(u.Id);
+    }
+
+    #endregion
+
+    #region sample_query_with_matches_sql_parameters
+
+    [Fact]
+    public async Task query_with_matches_sql_and_parameters()
+    {
+        using var session = theStore.LightweightSession();
+        var u = new User { FirstName = "Eric", LastName = "Smith" };
+        session.Store(u);
+        await session.SaveChangesAsync();
+
+        var parameters = new { First = "Eric", Last = "Smith" };
+        var user = session.Query<User>().Single(x =>
+            x.MatchesSql("data->> 'FirstName' = @First and data->> 'LastName' = @Last", parameters));
+
         user.Id.ShouldBe(u.Id);
     }
 
