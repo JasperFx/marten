@@ -79,6 +79,13 @@ internal class DocumentTable: Table
         }
 
         Indexes.AddRange(mapping.Indexes);
+
+        // tenant_id should always be first
+        foreach (var foreignKey in mapping.ForeignKeys)
+        {
+            foreignKey.TryMoveTenantIdFirst(mapping);
+        }
+
         ForeignKeys.AddRange(mapping.ForeignKeys);
 
         Partitioning = mapping.Partitioning;
