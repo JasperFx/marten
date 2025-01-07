@@ -15,6 +15,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -960,4 +961,21 @@ public class DocumentCodeGen
 
     public string AccessId { get; }
     public string ParameterValue { get; }
+}
+
+internal static class ForeignKeyExtensions
+{
+    public static void TryMoveTenantIdFirst(this ForeignKey foreignKey, DocumentMapping mapping)
+    {
+        // Guard clause, do nothing if this document is not tenanted
+        if (mapping.TenancyStyle == TenancyStyle.Single) return;
+
+        foreignKey.ColumnNames = new string[] { TenantIdColumn.Name }
+            .Concat(foreignKey.ColumnNames.Where(x => x != TenantIdColumn.Name)).ToArray();
+
+        foreignKey.LinkedNames = new string[] { TenantIdColumn.Name }
+            .Concat(foreignKey.LinkedNames.Where(x => x != TenantIdColumn.Name)).ToArray();
+
+        foreignKey.Name = $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey";
+    }
 }
