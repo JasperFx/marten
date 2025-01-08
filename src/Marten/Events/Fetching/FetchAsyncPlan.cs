@@ -147,7 +147,10 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             // Read in any events from after the current state of the aggregate
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            if (events.Any())
+            {
+                document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            }
 
             if (document != null)
             {
