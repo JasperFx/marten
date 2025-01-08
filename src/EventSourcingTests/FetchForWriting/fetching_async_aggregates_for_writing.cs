@@ -498,6 +498,33 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
     }
 
+    [Fact]
+    public async Task fetch_aggregate_that_is_completely_caught_up_with_no_version_supplied()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Async);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<SimpleAggregateAsString>(CancellationToken.None);
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        stream.AppendOne(new EEvent());
+        await theSession.SaveChangesAsync();
+    }
+
+
 
     [Fact]
     public async Task fetch_aggregate_that_is_completely_caught_up_use_exclusive_locks()
