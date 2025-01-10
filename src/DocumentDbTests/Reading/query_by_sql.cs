@@ -281,25 +281,6 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
 
     #endregion
 
-    #region sample_query_with_matches_sql_parameters
-
-    [Fact]
-    public async Task query_with_matches_sql_and_parameters()
-    {
-        using var session = theStore.LightweightSession();
-        var u = new User { FirstName = "Eric", LastName = "Smith" };
-        session.Store(u);
-        await session.SaveChangesAsync();
-
-        var parameters = new { First = "Eric", Last = "Smith" };
-        var user = session.Query<User>().Single(x =>
-            x.MatchesSql("data->> 'FirstName' = @First and data->> 'LastName' = @Last", parameters));
-
-        user.Id.ShouldBe(u.Id);
-    }
-
-    #endregion
-
     [Fact]
     public async Task query_with_select_in_query()
     {

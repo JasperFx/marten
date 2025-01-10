@@ -21,28 +21,7 @@ public async Task query_with_matches_sql()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L267-L282' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Alternatively, named parameters can be used by passing in an anonymous object or a `Dictionary<string, object?>`. This can be done anywhere where you can pass in sql parameters:
-
-<!-- snippet: sample_query_with_matches_sql_parameters -->
-<a id='snippet-sample_query_with_matches_sql_parameters'></a>
-```cs
-[Fact]
-public async Task query_with_matches_sql_and_parameters()
-{
-    using var session = theStore.LightweightSession();
-    var u = new User { FirstName = "Eric", LastName = "Smith" };
-    session.Store(u);
-    await session.SaveChangesAsync();
-
-    var parameters = new { First = "Eric", Last = "Smith" };
-    var user = session.Query<User>().Single(x =>
-        x.MatchesSql("data->> 'FirstName' = @First and data->> 'LastName' = @Last", parameters));
-
-    user.Id.ShouldBe(u.Id);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L284-L301' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql_parameters' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+Named parameters are not supported here, and will throw at runtime if they are used.
 
 **But**, if you want to take advantage of the more recent and very powerful JSONPath style querying, use this flavor of 
 the same functionality that behaves exactly the same, but uses the '^' character for parameter placeholders to disambiguate
