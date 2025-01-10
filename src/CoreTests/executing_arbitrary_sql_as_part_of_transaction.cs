@@ -57,7 +57,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
             var names = await conn.CreateCommand("select name from names order by name")
                 .FetchListAsync<string>();
 
-            names.ShouldHaveTheSameElementsAs("Babu", "Jeremy", "Oskar", "Hawx");
+            names.ShouldHaveTheSameElementsAs("Babu", "Hawx", "Jeremy", "Oskar");
         }
     }
 }
