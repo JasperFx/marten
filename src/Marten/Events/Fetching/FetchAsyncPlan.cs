@@ -11,6 +11,7 @@ using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Marten.Schema;
+using Marten.Storage;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -73,8 +74,18 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         _storage = storage;
         _aggregator = _events.Options.Projections.AggregatorFor<TDoc>();
 
-        _versionSelectionSql =
-            $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
+        if (_events.TenancyStyle == TenancyStyle.Single)
+        {
+            _versionSelectionSql =
+                $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
+        }
+        else
+        {
+            _versionSelectionSql =
+                $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id and d.tenant_id = a.tenant_id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
+        }
+
+
     }
 
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate, CancellationToken cancellation = default)
@@ -136,7 +147,10 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             // Read in any events from after the current state of the aggregate
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            if (events.Any())
+            {
+                document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            }
 
             if (document != null)
             {
@@ -177,6 +191,14 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         builder.Append(_initialSql);
         builder.Append(_versionSelectionSql);
         builder.AppendParameter(id);
+
+        // You must do this for performance even if the stream ids were
+        // magically unique across tenants
+        if (_events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            builder.Append(" and d.tenant_id = ");
+            builder.AppendParameter(builder.TenantId);
+        }
     }
 
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion,

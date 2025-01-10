@@ -1,4 +1,7 @@
+using System.Linq;
 using System.Threading.Tasks;
+using Marten.Schema;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -62,5 +65,36 @@ public class partitioning_and_foreign_keys : OneOffConfigurationsContext
         {
             await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         });
+    }
+
+    [Fact]
+    public async Task partitioned_by_tenant_id_to_partitioned_to_tenant_id_and_tenant_id_is_sorted_first()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Issue>()
+                .ForeignKey<User>(x => x.AssigneeId);
+
+            opts.Schema.For<User>();
+
+            opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(partitioning =>
+            {
+                partitioning.ByHash("one", "two", "three");
+            });
+        });
+
+        // Just smoke test that it works
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+
+        var mapping = (DocumentMapping)theStore.Options.Storage.FindMapping(typeof(Issue));
+        var table = new DocumentTable(mapping);
+
+        var fk = table.ForeignKeys.Single();
+        fk.ColumnNames.ShouldBe(["tenant_id", "assignee_id"]);
+        fk.LinkedNames.ShouldBe(["tenant_id", "id"]);
+
+        fk.Name.ShouldBe("mt_doc_issue_tenant_id_assignee_id_fkey");
     }
 }

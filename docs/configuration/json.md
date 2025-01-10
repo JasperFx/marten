@@ -114,6 +114,20 @@ public class User
 }
 ```
 
+## Polymorphic Serialization <Badge type="warning" text=".NET 9+ & System.Text.Json Only" />
+
+::: tip
+This is specifically to do with types stored _within_ documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
+:::
+
+Due to `jsonb` providing no guarantee on what order it stores properties in, metadata fields that usually sit at the start of a type can be in any position.
+
+When using types annotated with `[JsonDerivedType]`, you **MUST** opt into the ability for the serializer to find metadata fields that are out of order. 
+
+```cs
+options.AllowOutOfOrderMetadataProperties = true;
+```
+
 ## Collection Storage <Badge type="warning" text="Newtonsoft Only" />
 
 Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current `MartenQueryable` limitations, it might result in not properly resolved nested collections queries.
