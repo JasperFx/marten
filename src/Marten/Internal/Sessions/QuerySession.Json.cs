@@ -53,6 +53,11 @@ public partial class QuerySession
         return await stream.ReadAllTextAsync().ConfigureAwait(false);
     }
 
+    public Task<int> StreamJson<T>(Stream destination, CancellationToken token, string sql, params object[] parameters)
+    {
+        return StreamJson<T>(destination, token, DefaultParameterPlaceholder, sql, parameters);
+    }
+
     public Task<int> StreamJson<T>(Stream destination, CancellationToken token, char placeholder, string sql, params object[] parameters)
     {
         assertNotDisposed();
@@ -60,10 +65,6 @@ public partial class QuerySession
         var builder = new CommandBuilder();
         handler.ConfigureCommand(builder, this);
         return StreamMany(builder.Compile(), destination, token);
-    }
-    public Task<int> StreamJson<T>(Stream destination, CancellationToken token, string sql, params object[] parameters)
-    {
-        return StreamJson<T>(destination, token, DefaultParameterPlaceholder, sql, parameters);
     }
 
     public Task<int> StreamJson<T>(Stream destination, string sql, params object[] parameters)
