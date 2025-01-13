@@ -232,6 +232,14 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
                 {
                     RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
                 },
+                nameof(string.ToLowerInvariant) => new StringMember(this, Casing.Default, member)
+                {
+                    RawLocator = $"lower({RawLocator})", TypedLocator = $"lower({RawLocator})"
+                },
+                nameof(string.ToUpperInvariant) => new StringMember(this, Casing.Default, member)
+                {
+                    RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
+                },
                 _ => throw new BadLinqExpressionException($"Marten does not (yet) support the method {member.Name} in duplicated field querying")
             };
         }

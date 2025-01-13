@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
+using Marten;
 using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
@@ -171,6 +172,12 @@ public class where_clauses: LinqTestContext<where_clauses>
 
         @where(x => x.String.ToLower() == "red");
         @where(x => x.String.ToUpper() == "RED");
+
+        @where(x => x.String.ToLower().IsOneOf("red", "green"));
+        @where(x => x.String.ToLowerInvariant().IsOneOf("red", "green"));
+
+        @where(x => x.String.ToUpper().IsOneOf("RED", "GREEN"));
+        @where(x => x.String.ToUpperInvariant().IsOneOf("RED", "GREEN"));
 
         @where(x => x.PaddedString.Trim() == "red");
 
