@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.FSharp.Core;
 using Shouldly;
+using Xunit.Abstractions;
 
 namespace LinqTests.Operators;
 
 public class is_one_of_operator: IntegrationContext
 {
+    private readonly ITestOutputHelper _output;
 
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntArray =
         new()
@@ -125,8 +128,6 @@ public class is_one_of_operator: IntegrationContext
             validGuids => x => !x.FSharpGuidOption.IsOneOf(validGuids),
             validGuids => x => !x.FSharpGuidOption.In(validGuids)
         };
-
-
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithIntArray))]
@@ -307,8 +308,9 @@ public class is_one_of_operator: IntegrationContext
 
 
 
-    public is_one_of_operator(DefaultStoreFixture fixture): base(fixture)
+    public is_one_of_operator(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
     {
+        _output = output;
         StoreOptions(_ =>
         {
             //_.Logger(new ConsoleMartenLogger());
