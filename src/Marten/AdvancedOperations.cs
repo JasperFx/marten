@@ -235,7 +235,7 @@ public class AdvancedOperations
     /// </summary>
     /// <param name="token"></param>
     /// <param name="tenantIds"></param>
-    public Task AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
+    public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
     {
         var dict = new Dictionary<string, string>();
         foreach (var tenantId in tenantIds)
@@ -272,6 +272,33 @@ public class AdvancedOperations
             logger,
             database,
             tenantIdToPartitionMapping,
+            token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Drop a tenant partition from all tables that use the Marten managed tenant partitioning. NOTE: you have to supply
+    /// the partition suffix for the tenant, not necessarily the tenant id. In most cases we think this will probably
+    /// be the same value, but you may have to "sanitize" the suffix name
+    /// </summary>
+    /// <param name="suffixes"></param>
+    /// <param name="token"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public async Task RemoveMartenManagedTenantsAsync(string[] suffixes, CancellationToken token)
+    {
+        if (_store.Options.TenantPartitions == null)
+        {
+            throw new InvalidOperationException(
+                $"Marten-managed per-tenant partitioning is not active in this store. Did you miss a call to {nameof(StoreOptions)}.{nameof(StoreOptions.Policies)}.{nameof(StoreOptions.PoliciesExpression.PartitionMultiTenantedDocumentsUsingMartenManagement)}()?");
+        }
+
+        if (_store.Tenancy is not DefaultTenancy)
+            throw new InvalidOperationException(
+                "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+        var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
+
+
+        var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+        await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);
     }
 
