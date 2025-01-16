@@ -1,4 +1,4 @@
-# Removing Protected Information
+# Removing Protected Information <Badge type="tip" text="7.31" />
 
 ::: info
 The Marten team is at least considering support for [crypto-shredding](https://en.wikipedia.org/wiki/Crypto-shredding) in Marten 8.0,
