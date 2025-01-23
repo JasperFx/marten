@@ -896,7 +896,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 A couple important facts about this new functionality:
 
 - The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
-  be called during projection rebuilds or `Inline` projection usage
+  be called during projection rebuilds, bumping of the `ProjectionVersion` or `Inline` projection usage.
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
