@@ -18,7 +18,7 @@ public async Task query_with_matches_sql()
     user.Id.ShouldBe(u.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L267-L282' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/query_by_sql.cs#L336-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_matches_sql' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **But**, if you want to take advantage of the more recent and very powerful JSONPath style querying, you will find that using `?` as a placeholder is not suitable, as that character is widely used in JSONPath expressions.  If you encounter this issue or write another query where the `?` character is not suitable, you can change the placeholder by providing an alternative. Pass this in before the sql argument.
