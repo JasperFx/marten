@@ -20,15 +20,15 @@ var warehouseProductReadModel = warehouseRepository.Get(id);
 DemoConsole.WriteWithColour($"{warehouseProductReadModel?.QuantityOnHand ?? 0} items of stock in the warehouse for {id}");
 
 var handler = new WarehouseProductHandler(id, documentStore);
-handler.ReceiveProduct(100);
+await handler.ReceiveProduct(100);
 
 DemoConsole.WriteWithColour($"Received 100 items of stock into the warehouse for {id}");
 
-handler.ShipProduct(10);
+await handler.ShipProduct(10);
 
 DemoConsole.WriteWithColour($"Shipped 10 items of stock out of the warehouse for {id}");
 
-handler.AdjustInventory(5,"Ordered too many");
+await handler.AdjustInventory(5,"Ordered too many");
 
 DemoConsole.WriteWithColour($"Found 5 items of stock hiding in the warehouse for {id} and have adjusted the stock count");
 
