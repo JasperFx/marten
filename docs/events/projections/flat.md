@@ -4,7 +4,7 @@ Marten has yet another projection recipe for writing event data to flat projecti
 
 Let’s dive right into a sample usage of this. If you’re a software developer long enough and move around just a little bit, 
 you’re going to get sucked into building a workflow for importing flat files of dubious quality from external partners or 
-customers. I’m going to claim that event sourcing is a good fit for this problem domain for event sourcing (and 
+customers. I’m going to claim that event sourcing is a good fit for this problem domain (and 
 also suggesting this pretty strongly at work). That being said, here’s what the event types might look like that are 
 recording the progress of a file import:
 
@@ -100,7 +100,7 @@ The `Project()` methods are a naming convention with Marten’s EventProjection.
 assumed to be the event type. In this case though, it’s legal to use Marten’s `IEvent<T>` envelope type to 
 allow you access to event metadata like timestamps, version information, and the containing stream identity.
 
-Now, let’s use Marten’s brand `FlatTableProjection` recipe to do a little more advanced version of the earlier projection:
+Now, let’s use Marten’s `FlatTableProjection` recipe to do a little more advanced version of the earlier projection:
 
 <!-- snippet: sample_flat_import_projection -->
 <a id='snippet-sample_flat_import_projection'></a>
@@ -161,9 +161,9 @@ public class FlatImportProjection: FlatTableProjection
 
 A couple notes on this version of the code:
 
-* `FlatFileProjection` is adding columns to its table based on the designated column mappings. 
-  You can happily customize the `FlatFileProjection.Table` object to add indexes, constraints, or defaults.
-* Marten is able to apply schema migrations and manage the table from the `FlatFileProjection` as long as it’s registered with Marten.
+* `FlatTableProjection` is adding columns to its table based on the designated column mappings. 
+  You can happily customize the `FlatTableProjection.Table` object to add indexes, constraints, or defaults.
+* Marten is able to apply schema migrations and manage the table from the `FlatTableProjection` as long as it’s registered with Marten.
 * When you call `Map(x => x.ActivityType)`, Marten is by default mapping that to a snake_cased derivation of the member 
   name for the column, so “activity_type”. You can explicitly map the column name yourself.
 * The call to `Map(expression)` chains a fluent builder for the table column if you want to further customize the table 
