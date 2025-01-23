@@ -26,7 +26,7 @@ public class MatchesSqlParser: IMethodCallParser
 
     public bool Matches(MethodCallExpression expression)
     {
-        return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _fragmentMethod);
+        return Equals(expression.Method, _sqlMethod) || Equals(expression.Method, _sqlMethodWithPlaceholder) || Equals(expression.Method, _fragmentMethod);
     }
 
     public ISqlFragment? Parse(IQueryableMemberCollection memberCollection, IReadOnlyStoreOptions options,
@@ -40,8 +40,8 @@ public class MatchesSqlParser: IMethodCallParser
 
         if (expression.Method.Equals(_sqlMethodWithPlaceholder))
         {
-            return new CustomizableWhereFragment(expression.Arguments[1].Value().As<string>(),
-                expression.Arguments[2].Value().As<char>().ToString(),
+            return new CustomizableWhereFragment(expression.Arguments[2].Value().As<string>(),
+                expression.Arguments[1].Value().As<char>().ToString(),
                 expression.Arguments[3].Value().As<object[]>());
         }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -71,6 +71,31 @@ public class query_by_sql: IntegrationContext
     }
 
     [Fact]
+    public async Task stream_query_by_one_parameter_custom_placeholder()
+    {
+        await using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+        session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller" });
+        session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+        await session.SaveChangesAsync();
+
+        var stream = new MemoryStream();
+        await session.StreamJson<User>(stream, '$', "where data ->> 'LastName' = $", "Miller");
+
+        stream.Position = 0;
+        var results = theStore.Options.Serializer().FromJson<User[]>(stream);
+        var firstnames = results
+            .OrderBy(x => x.FirstName)
+            .Select(x => x.FirstName).ToArray();
+
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
+    }
+
+    [Fact]
     public async Task query_by_one_parameter()
     {
         using var session = theStore.LightweightSession();
@@ -83,6 +108,50 @@ public class query_by_sql: IntegrationContext
         var firstnames =
             session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
                 .Select(x => x.FirstName).ToArray();
+
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
+    }
+
+    [Fact]
+    public async Task query_by_one_parameter_async()
+    {
+        await using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+        session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller" });
+        session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+        await session.SaveChangesAsync();
+
+        var firstnames =
+            (await session.QueryAsync<User>("where data ->> 'LastName' = ?", "Miller"))
+            .OrderBy(x => x.FirstName)
+            .Select(x => x.FirstName)
+            .ToArray();
+
+        firstnames.Length.ShouldBe(3);
+        firstnames[0].ShouldBe("Jeremy");
+        firstnames[1].ShouldBe("Lindsey");
+        firstnames[2].ShouldBe("Max");
+    }
+
+    [Fact]
+    public async Task query_by_one_parameter_async_custom_placeholder()
+    {
+        await using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+        session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller" });
+        session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+        await session.SaveChangesAsync();
+
+        var firstnames =
+            (await session.QueryAsync<User>('$', "where data ->> 'LastName' = $", "Miller"))
+            .OrderBy(x => x.FirstName)
+            .Select(x => x.FirstName)
+            .ToArray();
 
         firstnames.Length.ShouldBe(3);
         firstnames[0].ShouldBe("Jeremy");
@@ -280,6 +349,19 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     }
 
     #endregion
+    
+    [Fact]
+    public async Task query_with_matches_sql_custom_placeholder()
+    {
+        await using var session = theStore.LightweightSession();
+        var u = new User { FirstName = "Eric", LastName = "Smith" };
+        session.Store(u);
+        await session.SaveChangesAsync();
+
+        var user = await session.Query<User>().Where(x => x.MatchesSql('$', "data->> 'FirstName' = $", "Eric")).SingleAsync();
+        user.LastName.ShouldBe("Smith");
+        user.Id.ShouldBe(u.Id);
+    }
 
     [Fact]
     public async Task query_with_select_in_query()
