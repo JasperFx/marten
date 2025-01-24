@@ -16,7 +16,6 @@ namespace EventSourcingTests.Projections;
 
 public class using_explicit_code_for_live_aggregation : OneOffConfigurationsContext
 {
-
     [Fact]
     public async Task using_a_custom_projection_for_live_aggregation()
     {
@@ -35,6 +34,25 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         aggregate.Id.ShouldBe(streamId);
     }
 
+    [Fact]
+    public async Task using_a_custom_projection_for_live_aggregation_that_has_string_as_id()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ExplicitCounterThatHasStringId(), ProjectionLifecycle.Live);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        aggregate.ACount.ShouldBe(2);
+        aggregate.BCount.ShouldBe(1);
+        aggregate.CCount.ShouldBe(3);
+        aggregate.Id.ShouldBe(streamId);
+    }
 
     [Fact]
     public async Task using_a_custom_projection_for_live_aggregation_with_query_session()
@@ -96,3 +114,31 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
 }
 
 #endregion
+
+public class ExplicitCounterThatHasStringId: CustomProjection<SimpleAggregateAsString, string>
+{
+    public override SimpleAggregateAsString Apply(SimpleAggregateAsString snapshot, IReadOnlyList<IEvent> events)
+    {
+        snapshot ??= new();
+        foreach (var e in events.Select(x => x.Data))
+        {
+            switch (e)
+            {
+                case AEvent:
+                    snapshot.ACount++;
+                    break;
+                case BEvent:
+                    snapshot.BCount++;
+                    break;
+                case CEvent:
+                    snapshot.CCount++;
+                    break;
+                case DEvent:
+                    snapshot.DCount++;
+                    break;
+            }
+        }
+
+        return snapshot;
+    }
+}
