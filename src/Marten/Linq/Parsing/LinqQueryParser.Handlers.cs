@@ -23,6 +23,13 @@ internal partial class LinqQueryParser
             return (IQueryHandler<TResult>)new ListQueryHandler<TDocument>(statement, selector);
         }
 
+        var documentType = typeof(TDocument);
+
+        // if (typeof(TResult).CanBeCastTo<IEnumerable<Nullable<TDocument>>>())
+        // {
+        //     return (IQueryHandler<TResult>)new ListQueryHandler<Nullable<TDocument>>(statement, selector);
+        // }
+
         throw new NotSupportedException("Marten does not know how to use result type " +
                                         typeof(TResult).FullNameInCode());
     }
