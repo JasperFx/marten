@@ -79,6 +79,29 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task happy_path_test_with_live_projection_multi_tenanted()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.LiveStreamAggregation<LiveUser>();
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+        });
+
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        var id = Guid.NewGuid();
+
+        await theStore.Advanced.EventProjectionScenario(scenario =>
+        {
+            scenario.Append(Guid.NewGuid(), new CreateUser { UserId = id, UserName = "Kareem" });
+            scenario.DocumentShouldNotExist<User>(id);
+        });
+
+        var user = await theSession.Events.AggregateStreamAsync<LiveUser>(id);
+        user.ShouldNotBeNull();
+        user.UserName.ShouldBe("Kareem");
+    }
+
+    [Fact]
     public async Task sad_path_test_with_inline_projection()
     {
         StoreOptions(opts =>
@@ -279,3 +302,18 @@ public class UserProjection: EventProjection
 }
 
 #endregion
+
+public class LiveUser
+{
+    public Guid Id { get; set; }
+    public string UserName { get; set; }
+
+    public LiveUser Create(CreateUser create)
+    {
+        return new LiveUser
+        {
+            Id = create.UserId,
+            UserName = create.UserName
+        };
+    }
+}
