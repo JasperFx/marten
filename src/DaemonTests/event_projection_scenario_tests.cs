@@ -92,7 +92,7 @@ public class event_projection_scenario_tests : OneOffConfigurationsContext
 
         await theStore.Advanced.EventProjectionScenario(scenario =>
         {
-            scenario.Append(Guid.NewGuid(), new CreateUser { UserId = id, UserName = "Kareem" });
+            scenario.Append(id, new CreateUser { UserId = id, UserName = "Kareem" });
             scenario.DocumentShouldNotExist<User>(id);
         });
 
@@ -308,12 +308,10 @@ public class LiveUser
     public Guid Id { get; set; }
     public string UserName { get; set; }
 
-    public LiveUser Create(CreateUser create)
-    {
-        return new LiveUser
+    public static LiveUser Create(CreateUser create) =>
+        new()
         {
             Id = create.UserId,
             UserName = create.UserName
         };
-    }
 }
