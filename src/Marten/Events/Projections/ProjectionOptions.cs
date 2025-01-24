@@ -324,6 +324,10 @@ public class ProjectionOptions: DaemonSettings
         Action<AsyncOptions> asyncConfiguration = null
     )
     {
+        if (typeof(T).CanBeCastTo<IProjectionSource>())
+            throw new InvalidOperationException(
+                $"This registration mechanism can only be used for an aggregate type that is 'self-aggregating'. Please use the Projections.Add() API instead to register {typeof(T).FullNameInCode()}");
+
         // Make sure there's a DocumentMapping for the aggregate
         var expression = _options.Schema.For<T>();
 
