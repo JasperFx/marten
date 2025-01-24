@@ -184,6 +184,11 @@ public class Payment
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
 `string` depending on your application's `StreamIdentity`. 
 
+At this point, the `FetchForWriting` and `FetchForLatest` APIs do not directly support strongly typed identifiers and you
+will have to just pass in the wrapped, primitive value like this:
+
+snippet: sample_use_fetch_for_writing_with_strong_typed_identifier
+
 ## Aggregate Creation
 
 ::: tip

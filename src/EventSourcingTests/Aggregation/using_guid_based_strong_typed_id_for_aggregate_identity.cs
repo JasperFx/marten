@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -86,6 +87,15 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
 
         payment.State.ShouldBe(PaymentState.Verified);
     }
+
+    #region sample_use_fetch_for_writing_with_strong_typed_identifier
+
+    private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
+    {
+        var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+    }
+
+    #endregion
 
     [Fact]
     public async Task can_utilize_strong_typed_id_with_async_aggregation()
