@@ -1,3 +1,4 @@
+using System;
 using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events;
@@ -40,5 +41,16 @@ public class SingleStreamProjectionTests
         projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
 
         mapping.UseVersionFromMatchingStream.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void you_cannot_accidentally_try_to_add_single_stream_projection_through_the_snapshot()
+    {
+        var options = new StoreOptions();
+
+        Should.Throw<InvalidOperationException>(() =>
+        {
+            options.Projections.Snapshot<AllGood>(SnapshotLifecycle.Inline);
+        });
     }
 }
