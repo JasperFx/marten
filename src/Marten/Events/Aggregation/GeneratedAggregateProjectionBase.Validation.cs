@@ -26,7 +26,8 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         if (options.Events.TenancyStyle != mapping.TenancyStyle
             && (options.Events.TenancyStyle == TenancyStyle.Single
                 || options.Events is
-                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false })
+                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
+            && Lifecycle != ProjectionLifecycle.Live)
            )
         {
             yield return
