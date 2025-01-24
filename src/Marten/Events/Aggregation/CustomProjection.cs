@@ -376,9 +376,15 @@ public abstract class CustomProjection<TDoc, TId>:
         var documentSessionBase = session as DocumentSessionBase ?? (DocumentSessionBase)session.DocumentStore.LightweightSession();
 
         var slice = new EventSlice<TDoc, TId>(default, session, events);
-        await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
-
-        ApplyMetadata(slice.Aggregate, events.Last());
+        if (Lifecycle == ProjectionLifecycle.Live)
+        {
+            slice.Aggregate = await BuildAsync(session, slice.Aggregate, slice.Events()).ConfigureAwait(false);
+            ApplyMetadata(slice.Aggregate, events.Last());
+        }
+        else
+        {
+            await ApplyChangesAsync(documentSessionBase, slice, cancellation).ConfigureAwait(false);
+        }
 
         return slice.Aggregate;
     }
