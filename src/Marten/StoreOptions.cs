@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text.Json;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Daemon;
@@ -261,6 +262,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
+    [IgnoreDescription]
     public StorageFeatures Storage => _storage;
 
     internal Action<IDatabaseCreationExpressions>? CreateDatabases
@@ -274,6 +276,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Advanced configuration options for this DocumentStore
     /// </summary>
+    [ChildDescription]
     public AdvancedOptions Advanced => _advanced;
 
     internal EventGraph EventGraph => _eventGraph;
@@ -286,11 +289,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Extension point to add custom Linq query parsers
     /// </summary>
+    [IgnoreDescription]
     public LinqParsing Linq => _linq;
 
     /// <summary>
     ///     Apply conventional policies to how documents are mapped
     /// </summary>
+    [IgnoreDescription]
     public PoliciesExpression Policies => new(this);
 
 
@@ -394,6 +399,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Get or set the tenancy model for this DocumentStore
     /// </summary>
+    [IgnoreDescription]
     public ITenancy Tenancy
     {
         get => (_tenancy ?? throw new InvalidOperationException(
