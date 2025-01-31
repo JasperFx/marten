@@ -478,7 +478,7 @@ public class ProjectionOptions: DaemonSettings
         var duplicateNames = All.Select(x => x.ProjectionName).Concat(_subscriptions.Select(x => x.SubscriptionName))
             .GroupBy(x => x)
             .Where(x => x.Count() > 1)
-            .Select(group => $"Duplicate projection or subscription name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}")
+            .Select(group => $"Duplicate projection or subscription name '{group.Key}': {group.Select(x => x.ToString()).Join(", ")}. You can set the 'ProjectionName' or 'SubscriptionName' property on the projection or subscription to override the default names and thus avoid duplicates.")
             .ToArray();
 
         if (duplicateNames.Any())
