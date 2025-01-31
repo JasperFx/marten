@@ -135,7 +135,10 @@ public partial class StoreOptions
 
     internal void Scan(StoreOptions options)
     {
-        var assemblies = _assemblies.Union([options.ApplicationAssembly]).ToArray();
+        var assemblies = options.ApplicationAssembly == null
+            ? _assemblies.ToArray()
+            : _assemblies.Union([options.ApplicationAssembly]).ToArray();
+
         var publicTypes =
             TypeRepository.FindTypes(assemblies, TypeClassification.Concretes | TypeClassification.Closed, type => type.IsPublic || type.IsNestedPublic)
                 .ToArray();
