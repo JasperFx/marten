@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptions;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -439,6 +440,13 @@ public class StoreOptionsTests
         var options = new StoreOptions { TenantIdStyle = style };
 
         options.MaybeCorrectTenantId(tenantId).ShouldBe(corrected);
+    }
+
+    [Fact]
+    public void can_generate_options_description()
+    {
+        // just a smoke test
+        var description = new OptionsDescription(new StoreOptions());
     }
 
 
