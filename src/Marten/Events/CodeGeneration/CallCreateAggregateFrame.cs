@@ -10,11 +10,14 @@ namespace Marten.Events.CodeGeneration;
 
 internal class CallCreateAggregateFrame: Frame
 {
+    private readonly Type _projectionType;
     private Variable _cancellation;
     private Variable _session;
+    private Variable _projection;
 
-    public CallCreateAggregateFrame(CreateMethodCollection methods): base(methods.IsAsync)
+    public CallCreateAggregateFrame(CreateMethodCollection methods, Type projectionType): base(methods.IsAsync)
     {
+        _projectionType = projectionType;
         Aggregate = new Variable(methods.AggregateType, this);
         UsedEventOnCreate = new Variable(typeof(bool), UsedEventOnCreateName, this);
     }
@@ -45,6 +48,9 @@ internal class CallCreateAggregateFrame: Frame
         _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ??
                    chain.FindVariable(typeof(IDocumentSession));
         yield return _session;
+
+        _projection = chain.FindVariable(_projectionType);
+        yield return _projection;
 
         if (IsAsync)
         {
@@ -104,6 +110,7 @@ internal class CallCreateAggregateFrame: Frame
         writer.WriteLine($"{UsedEventOnCreate.Usage} = false;");
         // creates default or throws if not possible
         writer.WriteLine($"{Aggregate.Usage} = {CreateDefaultMethod.MethodName}({FirstEventExpression});");
+        writer.WriteLine($"if ({Aggregate.Usage} != null) {_projection.Usage}.ApplyMetadata({Aggregate.Usage}, {FirstEventExpression});");
         writer.FinishBlock();
 
         Next?.GenerateCode(method, writer);
