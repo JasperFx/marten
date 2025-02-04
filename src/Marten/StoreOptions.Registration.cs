@@ -135,6 +135,8 @@ public partial class StoreOptions
 
     internal void Scan(StoreOptions options)
     {
+        options.ApplicationAssembly ??= System.Reflection.Assembly.GetEntryAssembly();
+
         var assemblies = options.ApplicationAssembly == null
             ? _assemblies.ToArray()
             : _assemblies.Union([options.ApplicationAssembly]).ToArray();
