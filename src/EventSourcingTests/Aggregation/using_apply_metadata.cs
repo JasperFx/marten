@@ -38,6 +38,100 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
         // RIP Glenn Frey, take it easy!
         item.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_latest(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchLatest<Item>(id);
+
+        // RIP Glenn Frey, take it easy!
+        item.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_for_writing(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchForWriting<Item>(id);
+
+        // RIP Glenn Frey, take it easy!
+        item.Aggregate.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Aggregate.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_for_writing_for_specific_version(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchForWriting<Item>(id, 4);
+
+        // RIP Glenn Frey, take it easy!
+        item.Aggregate.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Aggregate.Version.ShouldBe(4);
     }
 }
 
@@ -54,6 +148,8 @@ public class Item
     public bool Completed { get; set; }
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
+
+    public int Version { get; set; }
 }
 
 public record ItemStarted(string Description);

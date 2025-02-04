@@ -306,11 +306,11 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
         var snapshot = buildMethod.Arguments.Single(x => x.VariableType == typeof(T));
         buildMethod.Frames.Code($"if (!events.Any()) return {snapshot.Usage};");
 
-        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods);
+        var callCreateAggregateFrame = new CallCreateAggregateFrame(_createMethods, GetType());
         callCreateAggregateFrame.CoalesceAssignTo(snapshot);
 
         buildMethod.Frames.Add(callCreateAggregateFrame);
-        buildMethod.Frames.Add(new CallApplyAggregateFrame(_applyMethods) { InsideForEach = true });
+        buildMethod.Frames.Add(new CallApplyAggregateFrame(_applyMethods, GetType()) { InsideForEach = true });
 
         buildMethod.Frames.Return(typeof(T));
 

@@ -10,13 +10,16 @@ namespace Marten.Events.CodeGeneration;
 
 internal class CallApplyAggregateFrame: Frame
 {
+    private readonly Type _projectionType;
     private Variable _aggregate;
     private Variable _cancellation;
     private Variable _session;
     private Variable _usedEventOnCreate;
+    private Variable _projection;
 
-    public CallApplyAggregateFrame(ApplyMethodCollection methods): base(methods.IsAsync)
+    public CallApplyAggregateFrame(ApplyMethodCollection methods, Type projectionType): base(methods.IsAsync)
     {
+        _projectionType = projectionType;
         AggregateType = methods.AggregateType;
     }
 
@@ -29,6 +32,9 @@ internal class CallApplyAggregateFrame: Frame
 
         _session = chain.TryFindVariable(typeof(IQuerySession), VariableSource.All) ??
                    chain.FindVariable(typeof(IDocumentSession));
+
+        _projection = chain.FindVariable(_projectionType);
+        yield return _projection;
 
         _usedEventOnCreate = chain.FindVariableByName(typeof(bool), CallCreateAggregateFrame.UsedEventOnCreateName);
 
@@ -61,6 +67,8 @@ internal class CallApplyAggregateFrame: Frame
             writer.WriteLine(
                 $"{_aggregate.Usage} = {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage});");
         }
+
+        writer.WriteLine($"if ({_aggregate.Usage} != null) {_projection.Usage}.ApplyMetadata({_aggregate.Usage}, @event);");
 
         if (InsideForEach)
         {
