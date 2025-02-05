@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Oakton;
+using JasperFx.CommandLine;
 using Spectre.Console;
 
-[assembly: OaktonCommandAssembly]
+[assembly: JasperFxAssembly]
 
 namespace Marten.CommandLine;
 

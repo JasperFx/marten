@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.PLv8.Patching;
 using Marten.Services;
 using Marten.Testing.Harness;

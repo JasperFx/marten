@@ -8,7 +8,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
-        <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
 

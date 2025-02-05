@@ -100,7 +100,7 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
 
         public bool Internal { get; set; }
 
-        public string FullName => "{0} {1}".ToFormat(FirstName, LastName);
+        public string FullName => "${FirstName} {LastName}";
 
         public int Age { get; set; }
 

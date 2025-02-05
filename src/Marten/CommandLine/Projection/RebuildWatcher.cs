@@ -4,7 +4,7 @@ using JasperFx.Core;
 using Marten.Events.Daemon;
 using Spectre.Console;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 public class RebuildWatcher : IObserver<ShardState>
 {

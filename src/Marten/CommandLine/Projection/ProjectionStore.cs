@@ -1,14 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
-using Marten;
-using Marten.CommandLine.Commands.Projection;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Storage;
+
+namespace Marten.CommandLine.Projection;
 
 internal class ProjectionStore: IProjectionStore
 {

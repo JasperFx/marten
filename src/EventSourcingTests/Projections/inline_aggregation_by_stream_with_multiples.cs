@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;

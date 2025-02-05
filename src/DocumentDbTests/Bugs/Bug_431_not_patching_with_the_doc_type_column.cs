@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

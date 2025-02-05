@@ -1,10 +1,10 @@
+using JasperFx.CommandLine;
 using Marten;
 using Microsoft.Extensions.DependencyInjection;
-using Oakton;
 
 namespace EventStoreMigrations;
 
-public class TestCommand : OaktonAsyncCommand<NetCoreInput>
+public class TestCommand : JasperFxAsyncCommand<NetCoreInput>
 {
     public override async Task<bool> Execute(NetCoreInput input)
     {

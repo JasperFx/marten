@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;

@@ -58,7 +58,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     internal class MasterDatabase: PostgresqlDatabase
     {
-        public MasterDatabase(NpgsqlDataSource dataSource) : base(new DefaultMigrationLogger(), AutoCreate.None, new PostgresqlMigrator(), "MartenMaster", dataSource)
+        public MasterDatabase(NpgsqlDataSource dataSource) : base(new DefaultMigrationLogger(), JasperFx.AutoCreate.None, new PostgresqlMigrator(), "MartenMaster", dataSource)
         {
         }
 

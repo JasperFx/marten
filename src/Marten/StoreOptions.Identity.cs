@@ -130,7 +130,7 @@ public partial class StoreOptions
 
         if (ctor != null)
         {
-            var valueType = new Internal.ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -168,5 +168,5 @@ public partial class StoreOptions
         RegisterValueType(typeof(FSharpOption<DateTimeOffset>));
     }
 
-    internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
+    internal List<ValueTypeInfo> ValueTypes { get; } = new();
 }

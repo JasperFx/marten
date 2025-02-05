@@ -1,8 +1,9 @@
 using AspNetCoreWithMarten;
+using JasperFx;
 using Marten;
 using Marten.Services.Json;
 using Microsoft.AspNetCore.Mvc;
-using Oakton;
+using JasperFx;
 using Weasel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
-builder.Host.ApplyOaktonExtensions();
+builder.Host.ApplyJasperFxExtensions();
 
 #region sample_StartupConfigureServices
 // This is the absolute, simplest way to integrate Marten into your
@@ -79,7 +80,7 @@ app.MapGet("/user/{id:guid}",
 #endregion
 
 
-return await app.RunOaktonCommands(args);
+return await app.RunJasperFxCommands(args);
 
 
 record CreateUserRequest(string FirstName, string LastName, bool Internal);

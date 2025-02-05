@@ -25,7 +25,6 @@ public class InvalidCompiledQueryException: MartenException
 
     public static InvalidCompiledQueryException ForCannotBeAsync(Type compiledQueryType)
     {
-        return new InvalidCompiledQueryException(
-            CompiledQueryTypeCannotBeAsyncMessage.ToFormat(compiledQueryType.FullNameInCode()));
+        return new InvalidCompiledQueryException(string.Format(CompiledQueryTypeCannotBeAsyncMessage, compiledQueryType.FullNameInCode()));
     }
 }

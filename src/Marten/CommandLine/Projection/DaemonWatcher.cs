@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
 using Marten.Events.Daemon;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 internal class DaemonWatcher : IObserver<ShardState>
 {

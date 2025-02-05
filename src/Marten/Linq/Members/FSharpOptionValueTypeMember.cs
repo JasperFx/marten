@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 using Microsoft.FSharp.Core;

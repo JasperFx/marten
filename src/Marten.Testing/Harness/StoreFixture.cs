@@ -1,4 +1,5 @@
 using System;
+using JasperFx;
 using Weasel.Core;
 using Weasel.Postgresql;
 

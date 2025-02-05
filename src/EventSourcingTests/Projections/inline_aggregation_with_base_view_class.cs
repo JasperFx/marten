@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
