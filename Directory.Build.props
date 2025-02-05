@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
     <PropertyGroup>
-        <Version>7.37.1</Version>
+        <Version>8.0.0-alpha-1</Version>
         <LangVersion>12.0</LangVersion>
         <Authors>Jeremy D. Miller;Babu Annamalai;Oskar Dudycz;Joona-Pekka Kokko</Authors>
         <PackageIconUrl>https://martendb.io/logo.png</PackageIconUrl>
@@ -9,6 +9,7 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <NoWarn>1570;1571;1572;1573;1574;1587;1591;1701;1702;1711;1735;0618</NoWarn>
         <RepositoryUrl>https://github.com/JasperFx/marten</RepositoryUrl>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     </PropertyGroup>
 
     <PropertyGroup>
