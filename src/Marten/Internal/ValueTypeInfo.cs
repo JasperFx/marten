@@ -26,93 +26,29 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal;
 
-/// <summary>
-/// Internal model of a custom "wrapped" value type Marten uses
-/// for LINQ generation
-/// </summary>
-public class ValueTypeInfo
+internal static class ValueTypeInfoExtensions
 {
-    private object _converter;
-    public Type OuterType { get; }
-    public Type SimpleType { get; }
-    public PropertyInfo ValueProperty { get; }
-    public MethodInfo Builder { get; }
-    public ConstructorInfo Ctor { get; }
-
-    public ValueTypeInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, ConstructorInfo ctor)
-    {
-        OuterType = outerType;
-        SimpleType = simpleType;
-        ValueProperty = valueProperty;
-        Ctor = ctor;
-    }
-
-    public ValueTypeInfo(Type outerType, Type simpleType, PropertyInfo valueProperty, MethodInfo builder)
-    {
-        OuterType = outerType;
-        SimpleType = simpleType;
-        ValueProperty = valueProperty;
-        Builder = builder;
-    }
-
-    public Func<TInner, TOuter> CreateConverter<TOuter, TInner>()
-    {
-        if (_converter != null)
-        {
-            return (Func<TInner, TOuter>)_converter;
-        }
-
-        var inner = Expression.Parameter(typeof(TInner), "inner");
-        Expression builder;
-        if (Builder != null)
-        {
-            builder = Expression.Call(null, Builder, inner);
-        }
-        else if (Ctor != null)
-        {
-            builder = Expression.New(Ctor, inner);
-        }
-        else
-        {
-            throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
-                                            OuterType.FullNameInCode());
-        }
-
-        var lambda = Expression.Lambda<Func<TInner, TOuter>>(builder, inner);
-
-        _converter = lambda.CompileFast();
-        return (Func<TInner, TOuter>)_converter;
-    }
-
-    public Func<TOuter, TInner> ValueAccessor<TOuter, TInner>()
-    {
-        var outer = Expression.Parameter(typeof(TOuter), "outer");
-        var getter = ValueProperty.GetMethod;
-        var lambda = Expression.Lambda<Func<TOuter, TInner>>(Expression.Call(outer, getter), outer);
-        return lambda.CompileFast();
-    }
-
-    public Func<IEvent,TId> CreateAggregateIdentitySource<TId>() where TId : notnull
+    public static Func<IEvent,TId> CreateAggregateIdentitySource<TId>(this ValueTypeInfo valueTypeInfo) where TId : notnull
     {
         var e = Expression.Parameter(typeof(IEvent), "e");
-        var eMember = SimpleType == typeof(Guid)
+        var eMember = valueTypeInfo.SimpleType == typeof(Guid)
             ? ReflectionHelper.GetProperty<IEvent>(x => x.StreamId)
             : ReflectionHelper.GetProperty<IEvent>(x => x.StreamKey);
 
         var raw = Expression.Call(e, eMember.GetMethod);
         Expression wrapped = null;
-        if (Builder != null)
+        if (valueTypeInfo.Builder != null)
         {
-            wrapped = Expression.Call(null, Builder, raw);
+            wrapped = Expression.Call(null, valueTypeInfo.Builder, raw);
         }
-        else if (Ctor != null)
+        else if (valueTypeInfo.Ctor != null)
         {
-            wrapped = Expression.New(Ctor, raw);
+            wrapped = Expression.New(valueTypeInfo.Ctor, raw);
         }
         else
         {
             throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
-                                            OuterType.FullNameInCode());
+                                            valueTypeInfo.OuterType.FullNameInCode());
         }
 
         var lambda = Expression.Lambda<Func<IEvent, TId>>(wrapped, e);

@@ -1,11 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.CommandLine.Commands.Projection;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Storage;
 using Microsoft.Extensions.Logging.Abstractions;
+
+namespace Marten.CommandLine.Projection;
 
 internal class ProjectionDatabase: IProjectionDatabase
 {

@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using DaemonTests.TestingSupport;
 using EventSourcingTests.Aggregation;
 using JasperFx.CodeGeneration;
+using JasperFx.CommandLine;
 using Marten;
-using DaemonTests.TestingSupport;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
-using Oakton;
 using Shouldly;
 using Spectre.Console;
 
 namespace CommandLineRunner;
 
-public class TestCommand : OaktonAsyncCommand<NetCoreInput>
+public class TestCommand: JasperFxAsyncCommand<NetCoreInput>
 {
     public override async Task<bool> Execute(NetCoreInput input)
     {
@@ -29,10 +28,7 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
             var files = collection.BuildFiles();
             if (files.Any())
             {
-                foreach (var file in files)
-                {
-                    Console.WriteLine("    * " + file);
-                }
+                foreach (var file in files) Console.WriteLine("    * " + file);
             }
             else
             {
@@ -63,14 +59,14 @@ public class TestCommand : OaktonAsyncCommand<NetCoreInput>
             (await session2.Query<Target>().Take(1).ToListAsync()).Single().ShouldBeOfType<Target>();
 
 
-            var user = new User {FirstName = "Jeremy", LastName = "Miller", UserName = "jeremydmiller"};
+            var user = new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jeremydmiller" };
 
 
             var target = Target.Random();
             session2.Store(target);
             session2.Store(user);
 
-            session2.Events.StartStream(Guid.NewGuid(), new TripStarted {Day = 5},
+            session2.Events.StartStream(Guid.NewGuid(), new TripStarted { Day = 5 },
                 Travel.Random(5), Travel.Random(6)
             );
 

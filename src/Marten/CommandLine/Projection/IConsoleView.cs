@@ -1,4 +1,4 @@
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 public interface IConsoleView
 {

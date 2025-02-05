@@ -141,7 +141,7 @@ document = ({documentType.FullNameInCode()}) (await _serializer.FromJsonAsync(_m
             var memberType = member.GetRawMemberType();
             var actionType = typeof(Action<,>).MakeGenericType(documentType, memberType);
             var expression =
-                $"{typeof(LambdaBuilder).GetFullName()}.{nameof(LambdaBuilder.Setter)}<{documentType.FullNameInCode()},{memberType.FullNameInCode()}>(typeof({documentType.FullNameInCode()}).GetProperty(\"{member.Name}\"))";
+                $"{typeof(LambdaBuilder).FullNameInCode()}.{nameof(LambdaBuilder.Setter)}<{documentType.FullNameInCode()},{memberType.FullNameInCode()}>(typeof({documentType.FullNameInCode()}).GetProperty(\"{member.Name}\"))";
 
             var constant = new Variable(actionType, expression);
 

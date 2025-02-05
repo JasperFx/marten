@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
@@ -14,7 +14,7 @@
 
     <ItemGroup>
       <PackageReference Include="FSharp.Core" Version="9.0.100" />
-      <PackageReference Include="JasperFx.Core" Version="1.9.0" />
+      <PackageReference Include="JasperFx" Version="0.1.0" />
     </ItemGroup>
 
 </Project>

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Bug2211;
+using JasperFx;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;

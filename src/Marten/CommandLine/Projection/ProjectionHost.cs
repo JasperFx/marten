@@ -11,7 +11,7 @@ using Marten.Events.Daemon;
 using Microsoft.Extensions.Hosting;
 using Spectre.Console;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 internal class ProjectionHost: IProjectionHost
 {

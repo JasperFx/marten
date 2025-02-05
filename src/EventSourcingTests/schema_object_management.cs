@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.Projections;
+using JasperFx;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;

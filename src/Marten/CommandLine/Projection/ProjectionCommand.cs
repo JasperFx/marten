@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
-using Oakton;
+using JasperFx.CommandLine;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 [Description("Marten's asynchronous projection and projection rebuilds")]
-public class ProjectionsCommand: OaktonAsyncCommand<ProjectionInput>
+public class ProjectionsCommand: JasperFxAsyncCommand<ProjectionInput>
 {
     public override async Task<bool> Execute(ProjectionInput input)
     {

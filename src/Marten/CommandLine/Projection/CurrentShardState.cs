@@ -1,6 +1,6 @@
 using Marten.Events.Daemon;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 internal class CurrentShardState
 {

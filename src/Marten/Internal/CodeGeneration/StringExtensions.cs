@@ -7,11 +7,6 @@ namespace Marten.Internal.CodeGeneration;
 
 public static class StringExtensions
 {
-    public static string Sanitize(this string value)
-    {
-        return Regex.Replace(value, @"[\#\<\>\,\.\]\[\`\+\-]", "_").Replace(" ", "");
-    }
-
     public static string ToTypeNamePart(this Type type)
     {
         if (type.IsGenericType)
