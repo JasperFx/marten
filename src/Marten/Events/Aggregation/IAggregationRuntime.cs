@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;

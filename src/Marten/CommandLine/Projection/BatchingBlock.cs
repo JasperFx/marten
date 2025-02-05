@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 internal class BatchingBlock<T> : IDisposable
 {

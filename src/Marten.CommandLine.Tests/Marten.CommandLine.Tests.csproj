@@ -22,7 +22,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj"/>
     </ItemGroup>
 

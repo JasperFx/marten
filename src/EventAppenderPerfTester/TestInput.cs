@@ -1,4 +1,5 @@
-using Oakton;
+using JasperFx;
+using JasperFx.CommandLine;
 
 namespace EventAppenderPerfTester;
 

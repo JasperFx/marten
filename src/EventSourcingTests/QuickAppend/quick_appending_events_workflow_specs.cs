@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events;

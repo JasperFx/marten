@@ -4,7 +4,7 @@ using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using Spectre.Console;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 internal class DaemonStatusGrid
 {

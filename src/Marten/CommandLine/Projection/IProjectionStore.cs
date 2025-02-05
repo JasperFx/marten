@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events.Daemon;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 public interface IProjectionStore
 {

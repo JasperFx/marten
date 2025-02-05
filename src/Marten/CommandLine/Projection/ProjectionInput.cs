@@ -1,13 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.CommandLine;
 using JasperFx.Core;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
-using Oakton;
 
-namespace Marten.CommandLine.Commands.Projection;
+namespace Marten.CommandLine.Projection;
 
 public class ProjectionInput: MartenInput
 {

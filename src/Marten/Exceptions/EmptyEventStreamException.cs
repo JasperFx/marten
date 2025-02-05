@@ -8,11 +8,11 @@ public class EmptyEventStreamException: MartenException
     public static readonly string MessageTemplate =
         "A new event stream ('{0}') cannot be started without any events";
 
-    public EmptyEventStreamException(string key): base(MessageTemplate.ToFormat(key))
+    public EmptyEventStreamException(string key): base(string.Format(MessageTemplate, key))
     {
     }
 
-    public EmptyEventStreamException(Guid id): base(MessageTemplate.ToFormat(id))
+    public EmptyEventStreamException(Guid id): base(string.Format(MessageTemplate, id))
     {
     }
 }

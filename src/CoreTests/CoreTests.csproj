@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="14.0.1" />
+        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0-alpha-1" />
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
         <PackageReference Include="Microsoft.FeatureManagement" Version="3.2.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />

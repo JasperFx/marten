@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
