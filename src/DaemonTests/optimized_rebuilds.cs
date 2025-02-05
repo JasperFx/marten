@@ -79,7 +79,7 @@ public class optimized_rebuilds : DaemonContext
         StoreOptions(opts =>
         {
             opts.Events.UseOptimizedProjectionRebuilds = true;
-            opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Live);
+            opts.Projections.Add(new TestingSupport.TripProjection(), ProjectionLifecycle.Live);
         });
 
         NumberOfStreams = 10;
