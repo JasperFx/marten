@@ -376,7 +376,7 @@ public abstract class CustomProjection<TDoc, TId>:
         var documentSessionBase = session as DocumentSessionBase ?? (DocumentSessionBase)session.DocumentStore.LightweightSession();
 
         var latestEvent = events.Last();
-        var streamId = IdentityFromEvent(latestEvent);
+        var streamId = IdentityFromEvent(documentSessionBase.Options.EventGraph.StreamIdentity, latestEvent);
         var slice = new EventSlice<TDoc, TId>(streamId, session, events);
         if (Lifecycle == ProjectionLifecycle.Live)
         {
@@ -420,16 +420,6 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
-    public TId IdentityFromEvent(IEvent e)
-    {
-        if (typeof(TId) == typeof(Guid))
-        {
-            return e.StreamId.To<TId>();
-        }
-
-        return e.StreamKey.To<TId>();
-    }
+    public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e) =>
+        streamIdentity == StreamIdentity.AsGuid ? e.StreamId.To<TId>() : e.StreamKey.To<TId>();
 }
-
-
-
