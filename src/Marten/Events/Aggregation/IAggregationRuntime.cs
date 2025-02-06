@@ -40,5 +40,5 @@ public interface IAggregationRuntime<TDoc, TId>: IAggregationRuntime where TDoc 
 
     IAggregateCache<TId, TDoc> CacheFor(Tenant tenant);
 
-    TId IdentityFromEvent(IEvent e);
+    TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e);
 }
