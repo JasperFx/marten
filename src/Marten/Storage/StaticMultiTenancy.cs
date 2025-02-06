@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
@@ -55,6 +56,8 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         return false;
     }
+
+    public DatabaseUsage DatabaseUsage => DatabaseUsage.StaticMultiple;
 
     /// <summary>
     ///     Register a database that will hold data for multiple conjoined tenants

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Exceptions;
@@ -60,6 +61,8 @@ public class using_per_database_multitenancy: IAsyncLifetime
         {
             throw new System.NotImplementedException();
         }
+
+        public DatabaseUsage DatabaseUsage => DatabaseUsage.StaticMultiple;
 
         public void Dispose()
         {
