@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
@@ -62,4 +63,6 @@ internal class DefaultTenancy: Tenancy, ITenancy
     {
         Default.Database.Dispose();
     }
+
+    public DatabaseUsage DatabaseUsage => DatabaseUsage.Single;
 }

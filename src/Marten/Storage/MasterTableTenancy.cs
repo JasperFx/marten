@@ -7,12 +7,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -253,6 +254,8 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         tenantId = _options.MaybeCorrectTenantId(tenantId);
         return database.Identifier == tenantId;
     }
+
+    public DatabaseUsage DatabaseUsage => DatabaseUsage.DynamicMultiple;
 
     public PostgresqlDatabase TenantDatabase => _tenantDatabase.Value;
 
