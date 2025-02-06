@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -354,6 +355,44 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     }
 
     [Fact]
+    public async Task using_a_custom_projection_fetch_latest()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Async);
+        });
+
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        aggregate.ACount.ShouldBe(2);
+        aggregate.BCount.ShouldBe(1);
+        aggregate.CCount.ShouldBe(3);
+        aggregate.Id.ShouldBe(streamId);
+    }
+
+    [Fact]
+    public async Task using_a_custom_projection_that_has_string_as_id_fetch_latest()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ExplicitCounterThatHasStringId(), ProjectionLifecycle.Async);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = $"simple|{Guid.NewGuid()}";
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        aggregate.ACount.ShouldBe(2);
+        aggregate.BCount.ShouldBe(1);
+        aggregate.CCount.ShouldBe(3);
+        aggregate.Id.ShouldBe(streamId);
+    }
+
+    [Fact]
     public async Task warn_if_trying_to_fetch_multi_stream_projection()
     {
         StoreOptions(opts =>
@@ -460,7 +499,8 @@ public class SimpleAggregate : IRevisioned
     // This will be the aggregate version
     public int Version { get; set; }
 
-    public Guid Id { get; set; }
+    public Guid Id { get;
+        set; }
 
     public int ACount { get; set; }
     public int BCount { get; set; }
