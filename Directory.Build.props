@@ -12,8 +12,8 @@
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
-        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All" />
+    </ItemGroup>
+
 </Project>
