@@ -41,7 +41,7 @@ public interface IBatchEvents
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <returns></returns>
-    Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null,
+    Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 
     /// <summary>
@@ -52,7 +52,7 @@ public interface IBatchEvents
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <returns></returns>
-    Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null,
+    Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 }
 
