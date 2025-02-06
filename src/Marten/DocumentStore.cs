@@ -29,7 +29,7 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-public partial class DocumentStore: IDocumentStore, IAsyncDisposable
+public partial class DocumentStore: IDocumentStore
 {
     private readonly IMartenLogger _logger;
     private readonly INpgsqlDataSourceFactory dataSourceFactory;
