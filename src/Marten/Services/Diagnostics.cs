@@ -28,7 +28,7 @@ public class Diagnostics: IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
-        DocumentTracking trackingMode = DocumentTracking.QueryOnly)
+        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull
     {
         using var session = OpenQuerySession(trackingMode);
         var source = _store.GetCompiledQuerySourceFor(query, session);
@@ -51,7 +51,7 @@ public class Diagnostics: IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     [Obsolete(QuerySession.SynchronousRemoval)]
-    public QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
+    public QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query) where TDoc : notnull
     {
         var cmd = PreviewCommand(query);
 
@@ -67,7 +67,7 @@ public class Diagnostics: IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default)
+    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default) where TDoc : notnull
     {
         var cmd = PreviewCommand(query);
 

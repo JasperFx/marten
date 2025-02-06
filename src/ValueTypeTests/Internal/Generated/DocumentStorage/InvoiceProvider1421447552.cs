@@ -6,21 +6,22 @@ using Marten.Schema;
 using Marten.Schema.Arguments;
 using Npgsql;
 using System.Collections.Generic;
-using ValueTypeTests.Vogen;
+using ValueTypeTests.VogenIds;
 using Weasel.Core;
 using Weasel.Postgresql;
+using InvoiceId = ValueTypeTests.VogenIds.InvoiceId;
 
 namespace Marten.Generated.DocumentStorage
 {
     // START: UpsertInvoiceOperation1421447552
-    public class UpsertInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class UpsertInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<Invoice, InvoiceId>
     {
-        private readonly ValueTypeTests.Vogen.Invoice _document;
-        private readonly ValueTypeTests.Vogen.InvoiceId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> _versions;
+        private readonly Invoice _document;
+        private readonly InvoiceId _id;
+        private readonly System.Collections.Generic.Dictionary<InvoiceId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpsertInvoiceOperation1421447552(ValueTypeTests.Vogen.Invoice document, ValueTypeTests.Vogen.InvoiceId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpsertInvoiceOperation1421447552(Invoice document, InvoiceId id, System.Collections.Generic.Dictionary<InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -56,7 +57,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Invoice document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed5.mt_upsert_invoice(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -83,17 +84,17 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpsertInvoiceOperation1421447552
-    
-    
+
+
     // START: InsertInvoiceOperation1421447552
-    public class InsertInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class InsertInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<Invoice, InvoiceId>
     {
-        private readonly ValueTypeTests.Vogen.Invoice _document;
-        private readonly ValueTypeTests.Vogen.InvoiceId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> _versions;
+        private readonly Invoice _document;
+        private readonly InvoiceId _id;
+        private readonly System.Collections.Generic.Dictionary<InvoiceId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public InsertInvoiceOperation1421447552(ValueTypeTests.Vogen.Invoice document, ValueTypeTests.Vogen.InvoiceId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public InsertInvoiceOperation1421447552(Invoice document, InvoiceId id, System.Collections.Generic.Dictionary<InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -129,7 +130,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Invoice document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed5.mt_insert_invoice(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -156,17 +157,17 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InsertInvoiceOperation1421447552
-    
-    
+
+
     // START: UpdateInvoiceOperation1421447552
-    public class UpdateInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class UpdateInvoiceOperation1421447552 : Marten.Internal.Operations.StorageOperation<Invoice, InvoiceId>
     {
-        private readonly ValueTypeTests.Vogen.Invoice _document;
-        private readonly ValueTypeTests.Vogen.InvoiceId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> _versions;
+        private readonly Invoice _document;
+        private readonly InvoiceId _id;
+        private readonly System.Collections.Generic.Dictionary<InvoiceId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpdateInvoiceOperation1421447552(ValueTypeTests.Vogen.Invoice document, ValueTypeTests.Vogen.InvoiceId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpdateInvoiceOperation1421447552(Invoice document, InvoiceId id, System.Collections.Generic.Dictionary<InvoiceId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -202,7 +203,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Invoice document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed5.mt_update_invoice(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -229,10 +230,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpdateInvoiceOperation1421447552
-    
-    
+
+
     // START: QueryOnlyInvoiceSelector1421447552
-    public class QueryOnlyInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Invoice>
+    public class QueryOnlyInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<Invoice>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -245,30 +246,30 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Invoice Resolve(System.Data.Common.DbDataReader reader)
+        public Invoice Resolve(System.Data.Common.DbDataReader reader)
         {
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Invoice>(reader, 0);
+            Invoice document;
+            document = _serializer.FromJson<Invoice>(reader, 0);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Invoice>(reader, 0, token).ConfigureAwait(false);
+            Invoice document;
+            document = await _serializer.FromJsonAsync<Invoice>(reader, 0, token).ConfigureAwait(false);
             return document;
         }
 
     }
 
     // END: QueryOnlyInvoiceSelector1421447552
-    
-    
+
+
     // START: LightweightInvoiceSelector1421447552
-    public class LightweightInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Invoice>
+    public class LightweightInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<Invoice, InvoiceId>, Marten.Linq.Selectors.ISelector<Invoice>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -281,23 +282,23 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Invoice Resolve(System.Data.Common.DbDataReader reader)
+        public Invoice Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
+            var id = InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Invoice>(reader, 1);
+            Invoice document;
+            document = _serializer.FromJson<Invoice>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
+            var id = InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Invoice>(reader, 1, token).ConfigureAwait(false);
+            Invoice document;
+            document = await _serializer.FromJsonAsync<Invoice>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
@@ -305,10 +306,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightInvoiceSelector1421447552
-    
-    
+
+
     // START: IdentityMapInvoiceSelector1421447552
-    public class IdentityMapInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Invoice>
+    public class IdentityMapInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<Invoice, InvoiceId>, Marten.Linq.Selectors.ISelector<Invoice>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -321,26 +322,26 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Invoice Resolve(System.Data.Common.DbDataReader reader)
+        public Invoice Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
+            var id = InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Invoice>(reader, 1);
+            Invoice document;
+            document = _serializer.FromJson<Invoice>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
+            var id = InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Invoice>(reader, 1, token).ConfigureAwait(false);
+            Invoice document;
+            document = await _serializer.FromJsonAsync<Invoice>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
@@ -349,10 +350,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapInvoiceSelector1421447552
-    
-    
+
+
     // START: DirtyTrackingInvoiceSelector1421447552
-    public class DirtyTrackingInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Invoice>
+    public class DirtyTrackingInvoiceSelector1421447552 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<Invoice, InvoiceId>, Marten.Linq.Selectors.ISelector<Invoice>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -365,13 +366,13 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Invoice Resolve(System.Data.Common.DbDataReader reader)
+        public Invoice Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
+            var id = InvoiceId.From(reader.GetFieldValue<System.Guid>(0));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Invoice>(reader, 1);
+            Invoice document;
+            document = _serializer.FromJson<Invoice>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -379,13 +380,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Invoice> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
+            var id = InvoiceId.From(await reader.GetFieldValueAsync<System.Guid>(0, token));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Invoice document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Invoice>(reader, 1, token).ConfigureAwait(false);
+            Invoice document;
+            document = await _serializer.FromJsonAsync<Invoice>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -395,10 +396,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingInvoiceSelector1421447552
-    
-    
+
+
     // START: QueryOnlyInvoiceDocumentStorage1421447552
-    public class QueryOnlyInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.QueryOnlyDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class QueryOnlyInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.QueryOnlyDocumentStorage<Invoice, InvoiceId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -409,59 +410,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.InvoiceId AssignIdentity(ValueTypeTests.Vogen.Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override InvoiceId AssignIdentity(Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
-            if (document.Id == null) _setter(document, ValueTypeTests.Vogen.InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
+            if (document.Id == null) _setter(document, InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.InvoiceId Identity(ValueTypeTests.Vogen.Invoice document)
+        public override InvoiceId Identity(Invoice document)
         {
             return document.Id.Value;
         }
@@ -473,13 +474,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.InvoiceId id)
+        public override object RawIdentityValue(InvoiceId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.InvoiceId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(InvoiceId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Uuid};
         }
@@ -487,10 +488,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyInvoiceDocumentStorage1421447552
-    
-    
+
+
     // START: LightweightInvoiceDocumentStorage1421447552
-    public class LightweightInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.LightweightDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class LightweightInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.LightweightDocumentStorage<Invoice, InvoiceId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -501,59 +502,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.InvoiceId AssignIdentity(ValueTypeTests.Vogen.Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override InvoiceId AssignIdentity(Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
-            if (document.Id == null) _setter(document, ValueTypeTests.Vogen.InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
+            if (document.Id == null) _setter(document, InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.InvoiceId Identity(ValueTypeTests.Vogen.Invoice document)
+        public override InvoiceId Identity(Invoice document)
         {
             return document.Id.Value;
         }
@@ -565,13 +566,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.InvoiceId id)
+        public override object RawIdentityValue(InvoiceId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.InvoiceId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(InvoiceId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Uuid};
         }
@@ -579,10 +580,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightInvoiceDocumentStorage1421447552
-    
-    
+
+
     // START: IdentityMapInvoiceDocumentStorage1421447552
-    public class IdentityMapInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.IdentityMapDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class IdentityMapInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.IdentityMapDocumentStorage<Invoice, InvoiceId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -593,59 +594,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.InvoiceId AssignIdentity(ValueTypeTests.Vogen.Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override InvoiceId AssignIdentity(Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
-            if (document.Id == null) _setter(document, ValueTypeTests.Vogen.InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
+            if (document.Id == null) _setter(document, InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.InvoiceId Identity(ValueTypeTests.Vogen.Invoice document)
+        public override InvoiceId Identity(Invoice document)
         {
             return document.Id.Value;
         }
@@ -657,13 +658,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.InvoiceId id)
+        public override object RawIdentityValue(InvoiceId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.InvoiceId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(InvoiceId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Uuid};
         }
@@ -671,10 +672,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapInvoiceDocumentStorage1421447552
-    
-    
+
+
     // START: DirtyTrackingInvoiceDocumentStorage1421447552
-    public class DirtyTrackingInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
+    public class DirtyTrackingInvoiceDocumentStorage1421447552 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<Invoice, InvoiceId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -685,59 +686,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.InvoiceId AssignIdentity(ValueTypeTests.Vogen.Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override InvoiceId AssignIdentity(Invoice document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
-            if (document.Id == null) _setter(document, ValueTypeTests.Vogen.InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
+            if (document.Id == null) _setter(document, InvoiceId.From(Marten.Schema.Identity.CombGuidIdGeneration.NewGuid()));
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertInvoiceOperation1421447552
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>(),
+                session.Versions.ForType<Invoice, InvoiceId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Invoice document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Invoice document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.InvoiceId Identity(ValueTypeTests.Vogen.Invoice document)
+        public override InvoiceId Identity(Invoice document)
         {
             return document.Id.Value;
         }
@@ -749,13 +750,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.InvoiceId id)
+        public override object RawIdentityValue(InvoiceId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.InvoiceId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(InvoiceId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Uuid};
         }
@@ -763,14 +764,14 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingInvoiceDocumentStorage1421447552
-    
-    
-    // START: InvoiceBulkLoader1421447552
-    public class InvoiceBulkLoader1421447552 : Marten.Internal.CodeGeneration.BulkLoader<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId>
-    {
-        private readonly Marten.Internal.Storage.IDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId> _storage;
 
-        public InvoiceBulkLoader1421447552(Marten.Internal.Storage.IDocumentStorage<ValueTypeTests.Vogen.Invoice, ValueTypeTests.Vogen.InvoiceId> storage) : base(storage)
+
+    // START: InvoiceBulkLoader1421447552
+    public class InvoiceBulkLoader1421447552 : Marten.Internal.CodeGeneration.BulkLoader<Invoice, InvoiceId>
+    {
+        private readonly Marten.Internal.Storage.IDocumentStorage<Invoice, InvoiceId> _storage;
+
+        public InvoiceBulkLoader1421447552(Marten.Internal.Storage.IDocumentStorage<Invoice, InvoiceId> storage) : base(storage)
         {
             _storage = storage;
         }
@@ -805,7 +806,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.Vogen.Invoice document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
+        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, Invoice document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
         {
             writer.Write(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar);
             writer.Write(document.Id.Value.Value, NpgsqlTypes.NpgsqlDbType.Uuid);
@@ -814,7 +815,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.Vogen.Invoice document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, Invoice document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(document.Id.Value.Value, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
@@ -837,10 +838,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InvoiceBulkLoader1421447552
-    
-    
+
+
     // START: InvoiceProvider1421447552
-    public class InvoiceProvider1421447552 : Marten.Internal.Storage.DocumentProvider<ValueTypeTests.Vogen.Invoice>
+    public class InvoiceProvider1421447552 : Marten.Internal.Storage.DocumentProvider<Invoice>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 
@@ -853,7 +854,7 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InvoiceProvider1421447552
-    
-    
+
+
 }
 

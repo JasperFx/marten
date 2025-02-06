@@ -6,21 +6,22 @@ using Marten.Schema;
 using Marten.Schema.Arguments;
 using Npgsql;
 using System.Collections.Generic;
-using ValueTypeTests.Vogen;
+using ValueTypeTests.VogenIds;
 using Weasel.Core;
 using Weasel.Postgresql;
+using TeamId = ValueTypeTests.VogenIds.TeamId;
 
 namespace Marten.Generated.DocumentStorage
 {
     // START: UpsertTeamOperation389145516
-    public class UpsertTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class UpsertTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<Team, TeamId>
     {
-        private readonly ValueTypeTests.Vogen.Team _document;
-        private readonly ValueTypeTests.Vogen.TeamId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> _versions;
+        private readonly Team _document;
+        private readonly TeamId _id;
+        private readonly System.Collections.Generic.Dictionary<TeamId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpsertTeamOperation389145516(ValueTypeTests.Vogen.Team document, ValueTypeTests.Vogen.TeamId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpsertTeamOperation389145516(Team document, TeamId id, System.Collections.Generic.Dictionary<TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -56,7 +57,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Team document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed8.mt_upsert_team(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -83,17 +84,17 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpsertTeamOperation389145516
-    
-    
+
+
     // START: InsertTeamOperation389145516
-    public class InsertTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class InsertTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<Team, TeamId>
     {
-        private readonly ValueTypeTests.Vogen.Team _document;
-        private readonly ValueTypeTests.Vogen.TeamId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> _versions;
+        private readonly Team _document;
+        private readonly TeamId _id;
+        private readonly System.Collections.Generic.Dictionary<TeamId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public InsertTeamOperation389145516(ValueTypeTests.Vogen.Team document, ValueTypeTests.Vogen.TeamId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public InsertTeamOperation389145516(Team document, TeamId id, System.Collections.Generic.Dictionary<TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -129,7 +130,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Team document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed8.mt_insert_team(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -156,17 +157,17 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: InsertTeamOperation389145516
-    
-    
+
+
     // START: UpdateTeamOperation389145516
-    public class UpdateTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class UpdateTeamOperation389145516 : Marten.Internal.Operations.StorageOperation<Team, TeamId>
     {
-        private readonly ValueTypeTests.Vogen.Team _document;
-        private readonly ValueTypeTests.Vogen.TeamId _id;
-        private readonly System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> _versions;
+        private readonly Team _document;
+        private readonly TeamId _id;
+        private readonly System.Collections.Generic.Dictionary<TeamId, System.Guid> _versions;
         private readonly Marten.Schema.DocumentMapping _mapping;
 
-        public UpdateTeamOperation389145516(ValueTypeTests.Vogen.Team document, ValueTypeTests.Vogen.TeamId id, System.Collections.Generic.Dictionary<ValueTypeTests.Vogen.TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
+        public UpdateTeamOperation389145516(Team document, TeamId id, System.Collections.Generic.Dictionary<TeamId, System.Guid> versions, Marten.Schema.DocumentMapping mapping) : base(document, id, versions, mapping)
         {
             _document = document;
             _id = id;
@@ -202,7 +203,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session)
+        public override void ConfigureParameters(Weasel.Postgresql.IGroupedParameterBuilder parameterBuilder, Weasel.Postgresql.ICommandBuilder builder, Team document, Marten.Internal.IMartenSession session)
         {
             builder.Append("select strong_typed8.mt_update_team(");
             var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
@@ -229,10 +230,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: UpdateTeamOperation389145516
-    
-    
+
+
     // START: QueryOnlyTeamSelector389145516
-    public class QueryOnlyTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Team>
+    public class QueryOnlyTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<Team>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -245,30 +246,30 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Team Resolve(System.Data.Common.DbDataReader reader)
+        public Team Resolve(System.Data.Common.DbDataReader reader)
         {
 
-            ValueTypeTests.Vogen.Team document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Team>(reader, 0);
+            Team document;
+            document = _serializer.FromJson<Team>(reader, 0);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
 
-            ValueTypeTests.Vogen.Team document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Team>(reader, 0, token).ConfigureAwait(false);
+            Team document;
+            document = await _serializer.FromJsonAsync<Team>(reader, 0, token).ConfigureAwait(false);
             return document;
         }
 
     }
 
     // END: QueryOnlyTeamSelector389145516
-    
-    
+
+
     // START: LightweightTeamSelector389145516
-    public class LightweightTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Team>
+    public class LightweightTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithVersions<Team, TeamId>, Marten.Linq.Selectors.ISelector<Team>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -281,23 +282,23 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Team Resolve(System.Data.Common.DbDataReader reader)
+        public Team Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(reader.GetFieldValue<string>(0));
+            var id = TeamId.From(reader.GetFieldValue<string>(0));
 
-            ValueTypeTests.Vogen.Team document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Team>(reader, 1);
+            Team document;
+            document = _serializer.FromJson<Team>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
+            var id = TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
 
-            ValueTypeTests.Vogen.Team document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Team>(reader, 1, token).ConfigureAwait(false);
+            Team document;
+            document = await _serializer.FromJsonAsync<Team>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             return document;
         }
@@ -305,10 +306,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightTeamSelector389145516
-    
-    
+
+
     // START: IdentityMapTeamSelector389145516
-    public class IdentityMapTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Team>
+    public class IdentityMapTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithIdentityMap<Team, TeamId>, Marten.Linq.Selectors.ISelector<Team>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -321,26 +322,26 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Team Resolve(System.Data.Common.DbDataReader reader)
+        public Team Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(reader.GetFieldValue<string>(0));
+            var id = TeamId.From(reader.GetFieldValue<string>(0));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Team document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Team>(reader, 1);
+            Team document;
+            document = _serializer.FromJson<Team>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
+            var id = TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Team document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Team>(reader, 1, token).ConfigureAwait(false);
+            Team document;
+            document = await _serializer.FromJsonAsync<Team>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             return document;
@@ -349,10 +350,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapTeamSelector389145516
-    
-    
+
+
     // START: DirtyTrackingTeamSelector389145516
-    public class DirtyTrackingTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>, Marten.Linq.Selectors.ISelector<ValueTypeTests.Vogen.Team>
+    public class DirtyTrackingTeamSelector389145516 : Marten.Internal.CodeGeneration.DocumentSelectorWithDirtyChecking<Team, TeamId>, Marten.Linq.Selectors.ISelector<Team>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -365,13 +366,13 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public ValueTypeTests.Vogen.Team Resolve(System.Data.Common.DbDataReader reader)
+        public Team Resolve(System.Data.Common.DbDataReader reader)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(reader.GetFieldValue<string>(0));
+            var id = TeamId.From(reader.GetFieldValue<string>(0));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Team document;
-            document = _serializer.FromJson<ValueTypeTests.Vogen.Team>(reader, 1);
+            Team document;
+            document = _serializer.FromJson<Team>(reader, 1);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -379,13 +380,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public async System.Threading.Tasks.Task<ValueTypeTests.Vogen.Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
+        public async System.Threading.Tasks.Task<Team> ResolveAsync(System.Data.Common.DbDataReader reader, System.Threading.CancellationToken token)
         {
-            var id = ValueTypeTests.Vogen.TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
+            var id = TeamId.From(await reader.GetFieldValueAsync<string>(0, token));
             if (_identityMap.TryGetValue(id, out var existing)) return existing;
 
-            ValueTypeTests.Vogen.Team document;
-            document = await _serializer.FromJsonAsync<ValueTypeTests.Vogen.Team>(reader, 1, token).ConfigureAwait(false);
+            Team document;
+            document = await _serializer.FromJsonAsync<Team>(reader, 1, token).ConfigureAwait(false);
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
             StoreTracker(_session, document);
@@ -395,10 +396,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingTeamSelector389145516
-    
-    
+
+
     // START: QueryOnlyTeamDocumentStorage389145516
-    public class QueryOnlyTeamDocumentStorage389145516 : Marten.Internal.Storage.QueryOnlyDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class QueryOnlyTeamDocumentStorage389145516 : Marten.Internal.Storage.QueryOnlyDocumentStorage<Team, TeamId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -409,59 +410,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.TeamId AssignIdentity(ValueTypeTests.Vogen.Team document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override TeamId AssignIdentity(Team document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             return document.Id.Value;
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.TeamId Identity(ValueTypeTests.Vogen.Team document)
+        public override TeamId Identity(Team document)
         {
             return document.Id.Value;
         }
@@ -473,13 +474,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.TeamId id)
+        public override object RawIdentityValue(TeamId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.TeamId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(TeamId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text};
         }
@@ -487,10 +488,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: QueryOnlyTeamDocumentStorage389145516
-    
-    
+
+
     // START: LightweightTeamDocumentStorage389145516
-    public class LightweightTeamDocumentStorage389145516 : Marten.Internal.Storage.LightweightDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class LightweightTeamDocumentStorage389145516 : Marten.Internal.Storage.LightweightDocumentStorage<Team, TeamId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -501,59 +502,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.TeamId AssignIdentity(ValueTypeTests.Vogen.Team document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override TeamId AssignIdentity(Team document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             return document.Id.Value;
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.TeamId Identity(ValueTypeTests.Vogen.Team document)
+        public override TeamId Identity(Team document)
         {
             return document.Id.Value;
         }
@@ -565,13 +566,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.TeamId id)
+        public override object RawIdentityValue(TeamId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.TeamId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(TeamId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text};
         }
@@ -579,10 +580,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: LightweightTeamDocumentStorage389145516
-    
-    
+
+
     // START: IdentityMapTeamDocumentStorage389145516
-    public class IdentityMapTeamDocumentStorage389145516 : Marten.Internal.Storage.IdentityMapDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class IdentityMapTeamDocumentStorage389145516 : Marten.Internal.Storage.IdentityMapDocumentStorage<Team, TeamId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -593,59 +594,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.TeamId AssignIdentity(ValueTypeTests.Vogen.Team document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override TeamId AssignIdentity(Team document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             return document.Id.Value;
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.TeamId Identity(ValueTypeTests.Vogen.Team document)
+        public override TeamId Identity(Team document)
         {
             return document.Id.Value;
         }
@@ -657,13 +658,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.TeamId id)
+        public override object RawIdentityValue(TeamId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.TeamId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(TeamId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text};
         }
@@ -671,10 +672,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: IdentityMapTeamDocumentStorage389145516
-    
-    
+
+
     // START: DirtyTrackingTeamDocumentStorage389145516
-    public class DirtyTrackingTeamDocumentStorage389145516 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
+    public class DirtyTrackingTeamDocumentStorage389145516 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<Team, TeamId>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -685,59 +686,59 @@ namespace Marten.Generated.DocumentStorage
 
 
 
-        public override ValueTypeTests.Vogen.TeamId AssignIdentity(ValueTypeTests.Vogen.Team document, string tenantId, Marten.Storage.IMartenDatabase database)
+        public override TeamId AssignIdentity(Team document, string tenantId, Marten.Storage.IMartenDatabase database)
         {
             return document.Id.Value;
             return document.Id.Value;
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Update(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Update(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpdateTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Insert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Insert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.InsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Upsert(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Upsert(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
 
             return new Marten.Generated.DocumentStorage.UpsertTeamOperation389145516
             (
                 document, Identity(document),
-                session.Versions.ForType<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>(),
+                session.Versions.ForType<Team, TeamId>(),
                 _document
-                
+
             );
         }
 
 
-        public override Marten.Internal.Operations.IStorageOperation Overwrite(ValueTypeTests.Vogen.Team document, Marten.Internal.IMartenSession session, string tenant)
+        public override Marten.Internal.Operations.IStorageOperation Overwrite(Team document, Marten.Internal.IMartenSession session, string tenant)
         {
             throw new System.NotSupportedException();
         }
 
 
-        public override ValueTypeTests.Vogen.TeamId Identity(ValueTypeTests.Vogen.Team document)
+        public override TeamId Identity(Team document)
         {
             return document.Id.Value;
         }
@@ -749,13 +750,13 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override object RawIdentityValue(ValueTypeTests.Vogen.TeamId id)
+        public override object RawIdentityValue(TeamId id)
         {
             return id.Value;
         }
 
 
-        public override Npgsql.NpgsqlParameter BuildManyIdParameter(ValueTypeTests.Vogen.TeamId[] ids)
+        public override Npgsql.NpgsqlParameter BuildManyIdParameter(TeamId[] ids)
         {
             return new(){Value = System.Linq.Enumerable.ToArray(System.Linq.Enumerable.Select(ids, x => x.Value)), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Array | NpgsqlTypes.NpgsqlDbType.Text};
         }
@@ -763,14 +764,14 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: DirtyTrackingTeamDocumentStorage389145516
-    
-    
-    // START: TeamBulkLoader389145516
-    public class TeamBulkLoader389145516 : Marten.Internal.CodeGeneration.BulkLoader<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId>
-    {
-        private readonly Marten.Internal.Storage.IDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId> _storage;
 
-        public TeamBulkLoader389145516(Marten.Internal.Storage.IDocumentStorage<ValueTypeTests.Vogen.Team, ValueTypeTests.Vogen.TeamId> storage) : base(storage)
+
+    // START: TeamBulkLoader389145516
+    public class TeamBulkLoader389145516 : Marten.Internal.CodeGeneration.BulkLoader<Team, TeamId>
+    {
+        private readonly Marten.Internal.Storage.IDocumentStorage<Team, TeamId> _storage;
+
+        public TeamBulkLoader389145516(Marten.Internal.Storage.IDocumentStorage<Team, TeamId> storage) : base(storage)
         {
             _storage = storage;
         }
@@ -805,7 +806,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.Vogen.Team document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
+        public override void LoadRow(Npgsql.NpgsqlBinaryImporter writer, Team document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer)
         {
             writer.Write(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar);
             writer.Write(document.Id.Value.Value, NpgsqlTypes.NpgsqlDbType.Text);
@@ -814,7 +815,7 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.Vogen.Team document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, Team document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(document.Id.Value.Value, NpgsqlTypes.NpgsqlDbType.Text, cancellation);
@@ -837,10 +838,10 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: TeamBulkLoader389145516
-    
-    
+
+
     // START: TeamProvider389145516
-    public class TeamProvider389145516 : Marten.Internal.Storage.DocumentProvider<ValueTypeTests.Vogen.Team>
+    public class TeamProvider389145516 : Marten.Internal.Storage.DocumentProvider<Team>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 
@@ -853,7 +854,7 @@ namespace Marten.Generated.DocumentStorage
     }
 
     // END: TeamProvider389145516
-    
-    
+
+
 }
 
