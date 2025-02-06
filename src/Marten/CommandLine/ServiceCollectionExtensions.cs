@@ -1,4 +1,5 @@
-using Weasel.Core.CommandLine;
+
+using Weasel.CommandLine;
 
 namespace Marten.CommandLine;
 
