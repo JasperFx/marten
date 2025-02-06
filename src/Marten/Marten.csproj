@@ -31,7 +31,7 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-4" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-5" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
 
@@ -39,7 +39,7 @@
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
         <PackageReference Include="System.Text.Json" Version="8.0.5" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.0.0-alpha-1" />
+        <PackageReference Include="Weasel.Postgresql" Version="8.0.0-alpha-2" />
     </ItemGroup>
 
     <!--SourceLink specific settings-->
