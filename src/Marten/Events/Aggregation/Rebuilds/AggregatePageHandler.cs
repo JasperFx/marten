@@ -192,7 +192,7 @@ internal class AggregatePageHandler<TDoc, TId>
         EventSlice<TDoc, TId> slice = null;
         await foreach (var e in events)
         {
-            var aggregateId = _runtime.IdentityFromEvent(e);
+            var aggregateId = _runtime.IdentityFromEvent(_session.Options.Events.StreamIdentity, e);
             slice ??= new EventSlice<TDoc, TId>(aggregateId, _session);
 
             if (!slice.Id.Equals(aggregateId))

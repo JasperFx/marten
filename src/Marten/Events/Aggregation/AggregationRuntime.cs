@@ -325,7 +325,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
     }
 
-    public TId IdentityFromEvent(IEvent e)
+    public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e)
     {
         return _identitySource(e);
     }
