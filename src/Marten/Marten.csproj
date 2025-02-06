@@ -36,8 +36,8 @@
         <!-- This is forced by Npgsql peer dependency -->
 
         <!-- This is forced by Npgsql peer dependency -->
-        <PackageReference Include="Npgsql.Json.NET" Version="8.0.0" />
-        <PackageReference Include="Polly.Core" Version="8.5.0" />
+        <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
+        <PackageReference Include="Polly.Core" Version="8.5.2" />
         <PackageReference Include="System.Text.Json" Version="8.0.5" />
         <PackageReference Include="Weasel.Postgresql" Version="8.0.0-alpha-1" />
     </ItemGroup>
