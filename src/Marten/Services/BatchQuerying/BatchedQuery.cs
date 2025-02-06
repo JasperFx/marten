@@ -173,7 +173,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return AddItem(handler);
     }
 
-    public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null,
+    public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0)
     {
         _documentTypes.Add(typeof(IEvent));
@@ -192,7 +192,7 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return AddItem(handler);
     }
 
-    public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null, long fromVersion = 0)
+    public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
     {
         _documentTypes.Add(typeof(IEvent));
         var selector = Parent.EventStorage();

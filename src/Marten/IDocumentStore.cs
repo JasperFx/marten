@@ -15,7 +15,7 @@ namespace Marten;
 ///     The core abstraction for a Marten document and event store. This should probably be scoped as a
 ///     singleton in your system
 /// </summary>
-public interface IDocumentStore: IDisposable
+public interface IDocumentStore: IDisposable, IAsyncDisposable
 {
     /// <summary>
     ///     Information about the current configuration of this IDocumentStore
