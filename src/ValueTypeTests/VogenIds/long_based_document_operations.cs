@@ -7,7 +7,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Vogen;
 
-namespace ValueTypeTests.Vogen;
+namespace ValueTypeTests.VogenIds;
 
 public class long_based_document_operations : IAsyncLifetime
 {
