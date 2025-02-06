@@ -14,7 +14,8 @@ using Weasel.Postgresql;
 namespace Marten.Generated.DocumentStorage
 {
     // START: UpsertRevisionedDocOperation1212098993
-    public class UpsertRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class UpsertRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly DocumentDbTests.Concurrency.RevisionedDoc _document;
         private readonly System.Guid _id;
@@ -83,7 +84,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: InsertRevisionedDocOperation1212098993
-    public class InsertRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class InsertRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly DocumentDbTests.Concurrency.RevisionedDoc _document;
         private readonly System.Guid _id;
@@ -146,7 +148,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: UpdateRevisionedDocOperation1212098993
-    public class UpdateRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class UpdateRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly DocumentDbTests.Concurrency.RevisionedDoc _document;
         private readonly System.Guid _id;
@@ -215,7 +218,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyRevisionedDocSelector1212098993
-    public class QueryOnlyRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class QueryOnlyRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -255,7 +259,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightRevisionedDocSelector1212098993
-    public class LightweightRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class LightweightRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.DocumentSelectorWithOnlySerializer, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -299,7 +304,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapRevisionedDocSelector1212098993
-    public class IdentityMapRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.RevisionedDocumentSelectorWithIdentityMap<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class IdentityMapRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.RevisionedDocumentSelectorWithIdentityMap<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -347,7 +353,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingRevisionedDocSelector1212098993
-    public class DirtyTrackingRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.RevisionedDocumentSelectorWithDirtyChecking<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class DirtyTrackingRevisionedDocSelector1212098993 : Marten.Internal.CodeGeneration.RevisionedDocumentSelectorWithDirtyChecking<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>, Marten.Linq.Selectors.ISelector<DocumentDbTests.Concurrency.RevisionedDoc>
     {
         private readonly Marten.Internal.IMartenSession _session;
         private readonly Marten.Schema.DocumentMapping _mapping;
@@ -397,7 +404,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: OverwriteRevisionedDocOperation1212098993
-    public class OverwriteRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class OverwriteRevisionedDocOperation1212098993 : Marten.Internal.Operations.StorageOperation<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly DocumentDbTests.Concurrency.RevisionedDoc _document;
         private readonly System.Guid _id;
@@ -466,7 +474,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: QueryOnlyRevisionedDocDocumentStorage1212098993
-    public class QueryOnlyRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.QueryOnlyDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class QueryOnlyRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.QueryOnlyDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -605,7 +614,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: LightweightRevisionedDocDocumentStorage1212098993
-    public class LightweightRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.LightweightDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class LightweightRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.LightweightDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -744,7 +754,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: IdentityMapRevisionedDocDocumentStorage1212098993
-    public class IdentityMapRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.IdentityMapDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class IdentityMapRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.IdentityMapDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -883,7 +894,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: DirtyTrackingRevisionedDocDocumentStorage1212098993
-    public class DirtyTrackingRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class DirtyTrackingRevisionedDocDocumentStorage1212098993 : Marten.Internal.Storage.DirtyCheckedDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly Marten.Schema.DocumentMapping _document;
 
@@ -1022,7 +1034,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: RevisionedDocBulkLoader1212098993
-    public class RevisionedDocBulkLoader1212098993 : Marten.Internal.CodeGeneration.BulkLoader<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class RevisionedDocBulkLoader1212098993 : Marten.Internal.CodeGeneration.BulkLoader<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid>
     {
         private readonly Marten.Internal.Storage.IDocumentStorage<DocumentDbTests.Concurrency.RevisionedDoc, System.Guid> _storage;
 
@@ -1096,7 +1109,8 @@ namespace Marten.Generated.DocumentStorage
     
     
     // START: RevisionedDocProvider1212098993
-    public class RevisionedDocProvider1212098993 : Marten.Internal.Storage.DocumentProvider<DocumentDbTests.Concurrency.RevisionedDoc>
+    [global::System.CodeDom.Compiler.GeneratedCode("JasperFx", "1.0.0")]
+    public sealed class RevisionedDocProvider1212098993 : Marten.Internal.Storage.DocumentProvider<DocumentDbTests.Concurrency.RevisionedDoc>
     {
         private readonly Marten.Schema.DocumentMapping _mapping;
 

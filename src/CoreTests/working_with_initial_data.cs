@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.RuntimeCompiler;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -21,7 +23,11 @@ public class MartenHost
     public static Task<IHost> For(Action<IServiceCollection> configure)
     {
         return Host.CreateDefaultBuilder()
-            .ConfigureServices((c, services) => configure(services))
+            .ConfigureServices((c, services) =>
+            {
+                configure(services);
+                services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
+            })
             .StartAsync();
     }
 }

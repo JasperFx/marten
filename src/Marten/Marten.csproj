@@ -31,7 +31,7 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-1" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-4" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
 
