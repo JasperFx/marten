@@ -362,7 +362,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Async);
         });
 
-        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
         var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
@@ -379,6 +380,9 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         {
             opts.Projections.Add(new ExplicitCounterThatHasStringId(), ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
+            //opts.Schema.For<SimpleAggregateAsString>()
+            //    .IdStrategy(new String2IdGeneration()); // This works as a workaround for this bug. But it should not be necessary
+            // What goes wrong? Before the aggregate gets the id assigned from the event stream, code passes a .Store() that tries to assign id by strategy
         });
 
         var streamId = $"simple|{Guid.NewGuid()}";
@@ -590,8 +594,9 @@ public class SimpleAggregateAsString
     public int DCount { get; set; }
     public int ECount { get; set; }
 
-    public void Apply(AEvent _)
+    public void Apply(IEvent<AEvent> @event)
     {
+        Id ??= @event.StreamKey;
         ACount++;
     }
 
