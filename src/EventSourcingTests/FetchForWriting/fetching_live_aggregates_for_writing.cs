@@ -380,9 +380,6 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         {
             opts.Projections.Add(new ExplicitCounterThatHasStringId(), ProjectionLifecycle.Async);
             opts.Events.StreamIdentity = StreamIdentity.AsString;
-            //opts.Schema.For<SimpleAggregateAsString>()
-            //    .IdStrategy(new String2IdGeneration()); // This works as a workaround for this bug. But it should not be necessary
-            // What goes wrong? Before the aggregate gets the id assigned from the event stream, code passes a .Store() that tries to assign id by strategy
         });
 
         var streamId = $"simple|{Guid.NewGuid()}";
