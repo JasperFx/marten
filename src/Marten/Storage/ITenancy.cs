@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
@@ -60,6 +61,12 @@ public interface ITenancy: IDatabaseSource, IDisposable
     /// <param name="database"></param>
     /// <param name="tenantId"></param>
     bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
+
+    /// <summary>
+    /// Announces to other tools whether this tenancy usage uses a single database, multiple databases
+    /// with static configuration, or multiple databases with dynamic, runtime addition or removal of attached databases
+    /// </summary>
+    DatabaseUsage DatabaseUsage { get; }
 }
 
 #endregion

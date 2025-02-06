@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core;
@@ -130,6 +131,8 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         var tenant = GetTenant(tenantId);
         return ReferenceEquals(database, tenant.Database);
     }
+
+    public DatabaseUsage DatabaseUsage => DatabaseUsage.StaticMultiple;
 
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
