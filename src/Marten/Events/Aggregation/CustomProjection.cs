@@ -422,7 +422,12 @@ public abstract class CustomProjection<TDoc, TId>:
 
     public TId IdentityFromEvent(IEvent e)
     {
-        return e.StreamKey.To<TId>() ?? e.StreamId.To<TId>();
+        if (typeof(TId) == typeof(Guid))
+        {
+            return e.StreamId.To<TId>();
+        }
+
+        return e.StreamKey.To<TId>();
     }
 }
 
