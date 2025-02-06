@@ -21,7 +21,7 @@ public interface IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
-        DocumentTracking trackingMode = DocumentTracking.QueryOnly);
+        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull;
 
     /// <summary>
     ///     Find the Postgresql EXPLAIN PLAN for this compiled query
@@ -30,7 +30,7 @@ public interface IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query);
+    QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query) where TDoc : notnull;
 
     /// <summary>
     ///     Method to fetch Postgres server version
@@ -45,5 +45,5 @@ public interface IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default);
+    Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default) where TDoc : notnull;
 }

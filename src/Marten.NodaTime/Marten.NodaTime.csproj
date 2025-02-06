@@ -29,7 +29,7 @@
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.1.0"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2"/>
-        <PackageReference Include="Npgsql.NodaTime" Version="8.0.0"/>
+        <PackageReference Include="Npgsql.NodaTime" Version="9.0.2" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
     </ItemGroup>
     <ItemGroup>
