@@ -6,17 +6,17 @@
         <AnalysisLevel>latest</AnalysisLevel>
     </PropertyGroup>
     <ItemGroup>
-        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.8.14">
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.12.19">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Meziantou.Analyzer" Version="2.0.113">
+        <PackageReference Include="Meziantou.Analyzer" Version="2.0.186">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="8.0.0">
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
             <ExcludeAssets>none</ExcludeAssets>
             <IncludeAssets>all</IncludeAssets>
