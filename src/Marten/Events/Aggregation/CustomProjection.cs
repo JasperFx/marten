@@ -374,7 +374,9 @@ public abstract class CustomProjection<TDoc, TId>:
 
         var documentSessionBase = session as DocumentSessionBase ?? (DocumentSessionBase)session.DocumentStore.LightweightSession();
 
-        var slice = new EventSlice<TDoc, TId>(default, session, events);
+        var latestEvent = events.Last();
+        var streamId = IdentityFromEvent(latestEvent);
+        var slice = new EventSlice<TDoc, TId>(streamId, session, events);
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             slice.Aggregate = await BuildAsync(session, slice.Aggregate, slice.Events()).ConfigureAwait(false);
@@ -419,8 +421,7 @@ public abstract class CustomProjection<TDoc, TId>:
 
     public TId IdentityFromEvent(IEvent e)
     {
-        // TODO -- come back here.
-        throw new NotImplementedException();
+        return e.StreamKey.To<TId>() ?? e.StreamId.To<TId>();
     }
 }
 
