@@ -42,6 +42,16 @@ internal class ProjectionWrapper: IProjectionSource
 
     IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
     {
+        if(_projection is EventFilterable filterableProjection)
+        {
+            return new List<AsyncProjectionShard> { new (this)
+            {
+                EventTypes = filterableProjection.IncludedEventTypes,
+                StreamType = filterableProjection.StreamType,
+                IncludeArchivedEvents = filterableProjection.IncludeArchivedEvents
+            } };
+        }
+
         return new List<AsyncProjectionShard> { new(this)
         {
             EventTypes = ArraySegment<Type>.Empty,
