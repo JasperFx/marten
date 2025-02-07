@@ -408,8 +408,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         return new DatabaseUsage
         {
             Cardinality = DatabaseCardinality.DynamicMultiple,
-            Databases = list,
-            MainDatabase = Default?.Database.Describe()
+            Databases = list
         };
     }
 
