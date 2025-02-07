@@ -40,9 +40,27 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         Cleaner = new CompositeDocumentCleaner(this, options);
     }
 
-    public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    public ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
     {
-        throw new NotImplementedException();
+        // Tracking the databases against Marten's identifier
+        var dict = new Dictionary<string, DatabaseDescriptor>();
+        foreach (var entry in _databases.Enumerate())
+        {
+            dict[entry.Key] = entry.Value.Describe();
+        }
+
+        var usage = new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.StaticMultiple,
+            Databases = dict.Values.ToList()
+        };
+
+        foreach (var pair in _tenants.Enumerate())
+        {
+            dict[pair.Value.Database.Identifier].TenantIds.Add(pair.Key);
+        }
+
+        return new ValueTask<DatabaseUsage>(usage);
     }
 
     public DatabaseCardinality Cardinality => DatabaseCardinality.StaticMultiple;

@@ -1,5 +1,7 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Services;
@@ -77,6 +79,31 @@ public class using_static_database_multitenancy: IAsyncLifetime
         #endregion
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
+    }
+
+    [Fact]
+    public async Task describing_the_database_usage()
+    {
+        theStore.Options.Tenancy.Cardinality.ShouldBe(DatabaseCardinality.StaticMultiple);
+
+        var description = await theStore.Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
+
+        description.Cardinality.ShouldBe(DatabaseCardinality.StaticMultiple);
+
+        description.MainDatabase.ShouldBeNull();
+
+        description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
+            .ShouldBe(["database1", "tenant3", "tenant4"]);
+
+        description.Databases.Single(x => x.DatabaseName == "database1")
+            .TenantIds.ShouldBe(["tenant1", "tenant2"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant3")
+            .TenantIds.ShouldBe(["tenant3"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant4")
+            .TenantIds.ShouldBe(["tenant4"]);
+
     }
 
     public async Task DisposeAsync()
