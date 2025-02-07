@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
@@ -39,6 +40,13 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         Cleaner = new CompositeDocumentCleaner(this, options);
     }
 
+    public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.StaticMultiple;
+
     public void Dispose()
     {
         foreach (var entry in _tenants.Enumerate())
@@ -57,7 +65,6 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         return false;
     }
 
-    public DatabaseUsage DatabaseUsage => DatabaseUsage.StaticMultiple;
 
     /// <summary>
     ///     Register a database that will hold data for multiple conjoined tenants

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core.Descriptions;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;
@@ -10,7 +11,7 @@ using Marten.Schema.Identity.Sequences;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -20,6 +21,11 @@ internal class StandinDatabase: IMartenDatabase
     public StandinDatabase(StoreOptions options)
     {
         Providers = new ProviderGraph(options);
+    }
+
+    public DatabaseDescriptor Describe()
+    {
+        throw new NotImplementedException();
     }
 
     public IFeatureSchema[] BuildFeatureSchemas()

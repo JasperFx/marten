@@ -255,8 +255,6 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         return database.Identifier == tenantId;
     }
 
-    public DatabaseUsage DatabaseUsage => DatabaseUsage.DynamicMultiple;
-
     public PostgresqlDatabase TenantDatabase => _tenantDatabase.Value;
 
     public async Task DeleteDatabaseRecordAsync(string tenantId)
@@ -395,4 +393,25 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             AddColumn<string>("connection_string").NotNull();
         }
     }
+
+    public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        // TODO -- watch out for duplicate databases!!!
+        await BuildDatabases().ConfigureAwait(false);
+        var list = _databases.Enumerate().Select(pair =>
+        {
+            var descriptor = pair.Value.Describe();
+            descriptor.TenantIds.Add(pair.Key);
+            return descriptor;
+        }).ToList();
+
+        return new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.DynamicMultiple,
+            Databases = list,
+            MainDatabase = Default?.Database.Describe()
+        };
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.DynamicMultiple;
 }

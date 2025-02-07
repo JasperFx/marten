@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Internal;
@@ -14,7 +15,7 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -46,6 +47,13 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     public ISequences Sequences => _sequences.Value;
 
     public IProviderGraph Providers { get; }
+
+    public override DatabaseDescriptor Describe()
+    {
+        var descriptor = base.Describe();
+        descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
+        return descriptor;
+    }
 
     /// <summary>
     ///     Set the minimum sequence number for a Hilo sequence for a specific document type
