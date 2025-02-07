@@ -10,7 +10,6 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Schema;
@@ -203,12 +202,12 @@ public abstract class CustomProjection<TDoc, TId>:
     /// <param name="range"></param>
     /// <param name="cancellation"></param>
     /// <returns></returns>
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
+    public async ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, TId>>> GroupEventRange(DocumentStore store,
         IMartenDatabase database,
         EventRange range, CancellationToken cancellation)
     {
-        using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
-        return Slicer.SliceAsyncEvents(session, range.Events);
+        await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
+        return await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
     }
 
     Type IReadOnlyProjectionData.ProjectionType => GetType();
