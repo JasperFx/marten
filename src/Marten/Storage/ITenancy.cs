@@ -21,7 +21,7 @@ public interface ITenancyWithMasterDatabase
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
 /// </summary>
-public interface ITenancy: IDatabaseSource, IDisposable
+public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
 {
     /// <summary>
     ///     The default tenant. This can be null.
@@ -61,12 +61,6 @@ public interface ITenancy: IDatabaseSource, IDisposable
     /// <param name="database"></param>
     /// <param name="tenantId"></param>
     bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
-
-    /// <summary>
-    /// Announces to other tools whether this tenancy usage uses a single database, multiple databases
-    /// with static configuration, or multiple databases with dynamic, runtime addition or removal of attached databases
-    /// </summary>
-    DatabaseUsage DatabaseUsage { get; }
 }
 
 #endregion
