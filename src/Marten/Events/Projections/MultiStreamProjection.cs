@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
@@ -49,6 +50,11 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
 
     protected MultiStreamProjection(): base(AggregationScope.MultiStream)
     {
+    }
+
+    public override SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
     }
 
     public override bool IsSingleStream()

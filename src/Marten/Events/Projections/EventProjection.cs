@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
@@ -47,6 +48,11 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
 
             return projection;
         });
+    }
+
+    public override SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.EventProjection);
     }
 
     /// <summary>
