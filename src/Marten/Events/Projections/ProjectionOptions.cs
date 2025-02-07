@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
@@ -544,6 +545,29 @@ public class ProjectionOptions: DaemonSettings
     {
         var sources = All.Where(x => x.Lifecycle == ProjectionLifecycle.Async && x.PublishedTypes().Contains(aggregationType)).Select(x => x.ProjectionName).ToArray();
         return _asyncShards.Value.Values.Where(x => sources.Contains(x.Name.ProjectionName)).Select(x => x.Name).ToArray();
+    }
+
+    internal void Describe(EventStoreUsage usage)
+    {
+        foreach (var source in _subscriptions)
+        {
+            usage.Subscriptions.Add(new SubscriptionDescriptor(source, SubscriptionType.Subscription));
+        }
+
+        foreach (var eventType in _subscriptions.OfType<EventFilterable>().Concat(All.OfType<EventFilterable>()).SelectMany(x => x.IncludedEventTypes))
+        {
+            _options.Events.AddEventType(eventType);
+        }
+
+        foreach (var source in All)
+        {
+            usage.Subscriptions.Add(source.Describe());
+        }
+    }
+
+    public bool IsActive()
+    {
+        return All.Any() || _subscriptions.Any();
     }
 }
 

@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation;
 using Marten.Schema;
@@ -24,6 +25,11 @@ public abstract class ExperimentalMultiStreamProjection<TDoc, TId>: GeneratedAgg
 
     protected ExperimentalMultiStreamProjection(): base(AggregationScope.MultiStream)
     {
+    }
+
+    public override SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
     }
 
     public override bool IsSingleStream()

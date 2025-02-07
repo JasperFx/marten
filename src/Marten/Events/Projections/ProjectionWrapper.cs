@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -19,9 +20,21 @@ internal class ProjectionWrapper: IProjectionSource
         _projection = projection;
         Lifecycle = lifecycle;
         ProjectionName = projection.GetType().FullNameInCode();
+
+        Inner = _projection;
     }
 
+    public SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.EventProjection);
+    }
+
+    [ChildDescription]
+    public IProjection Inner { get; }
+
     public string ProjectionName { get; set; }
+
+    [ChildDescription]
     public AsyncOptions Options { get; } = new();
 
     public IEnumerable<Type> PublishedTypes()

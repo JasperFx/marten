@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
@@ -16,6 +17,8 @@ namespace Marten.Events.Projections;
 /// </summary>
 public interface IProjectionSource: IReadOnlyProjectionData
 {
+    SubscriptionDescriptor Describe();
+
     AsyncOptions Options { get; }
 
     /// <summary>

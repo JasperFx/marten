@@ -7,14 +7,9 @@ using JasperFx.Core.Reflection;
 
 namespace Marten;
 
-internal class EventStoreCapability: IEventStoreCapability
+internal class EventStoreCapability(IDocumentStore store): IEventStoreCapability
 {
-    private readonly DocumentStore _store;
-
-    public EventStoreCapability(IDocumentStore store)
-    {
-        _store = (DocumentStore)store;
-    }
+    private readonly DocumentStore _store = (DocumentStore)store;
 
     protected virtual Type storeType() => typeof(IDocumentStore);
 
@@ -27,27 +22,11 @@ internal class EventStoreCapability: IEventStoreCapability
 
         return await _store.Options.DescribeEventUsage(storeType(), token).ConfigureAwait(false);
     }
-
-    // public bool TryCreateUsage(out EventStoreUsage usage)
-    // {
-    //     if (!_store.Options.EventGraph.IsActive(_store.Options))
-    //     {
-    //         usage = default!;
-    //         return false;
-    //     }
-    //
-    //     usage = _store.Options.DescribeEventUsage(storeType());
-    //
-    //     return true;
-    // }
 }
 
-internal class EventStoreCapability<T> : EventStoreCapability where T : IDocumentStore
+internal class EventStoreCapability<T>(T store): EventStoreCapability(store)
+    where T : IDocumentStore
 {
-    public EventStoreCapability(T store) : base(store)
-    {
-    }
-
     protected override Type storeType()
     {
         return typeof(T);
@@ -64,6 +43,10 @@ public partial class StoreOptions
             Database = await Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
         };
 
+        // TODO -- flesh out events by looping through projections and subscriptions too
+
+        Projections.Describe(usage);
+
         foreach (var eventMapping in EventGraph.AllEvents())
         {
             var descriptor =
@@ -72,10 +55,7 @@ public partial class StoreOptions
             usage.Events.Add(descriptor);
         }
 
-        foreach (var projection in Projections.All)
-        {
 
-        }
 
         return usage;
     }

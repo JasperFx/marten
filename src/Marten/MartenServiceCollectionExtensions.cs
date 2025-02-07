@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.RuntimeCompiler;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
@@ -159,6 +161,8 @@ public static class MartenServiceCollectionExtensions
         Func<IServiceProvider, StoreOptions> optionSource
     )
     {
+        services.AddSingleton<IEventStoreCapability, EventStoreCapability>();
+        services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
         {
             var options = optionSource(s);
@@ -264,6 +268,9 @@ public static class MartenServiceCollectionExtensions
         Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
     {
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
+        services.AddSingleton<IEventStoreCapability, EventStoreCapability<T>>();
+
+        services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
 
         var stores = services
             .Where(x  => !x.IsKeyedService)

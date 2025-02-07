@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Projections;
 using Marten.Internal;
@@ -21,6 +22,11 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
     public override bool IsSingleStream()
     {
         return true;
+    }
+
+    public override SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.SingleStreamProjection);
     }
 
     protected sealed override object buildEventSlicer(StoreOptions options)

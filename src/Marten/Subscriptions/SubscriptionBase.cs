@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -79,5 +80,6 @@ public abstract class SubscriptionBase: EventFilterable, ISubscription, ISubscri
     /// <summary>
     /// Fine tune the behavior of this subscription at runtime
     /// </summary>
+    [ChildDescription]
     public AsyncOptions Options { get; protected set; } = new();
 }

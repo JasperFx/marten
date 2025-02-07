@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 
@@ -14,6 +15,11 @@ public partial class FlatTableProjection
     private Type? _generatedType;
     private GeneratedType _projectionType;
 
+
+    public override SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.FlatTableProjection);
+    }
 
     protected override void assembleTypes(GeneratedAssembly assembly, StoreOptions options)
     {

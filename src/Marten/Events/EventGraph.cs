@@ -369,7 +369,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     internal bool IsActive(StoreOptions options)
     {
-        return _events.Any(x => x.DocumentType != typeof(Archived)) || Options.Projections.All.Any();
+        return _events.Any(x => x.DocumentType != typeof(Archived)) || Options.Projections.IsActive();
     }
 
     internal Type AggregateTypeFor(string aggregateTypeName)
