@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
@@ -339,19 +338,6 @@ public abstract class CustomProjection<TDoc, TId>:
         return true; // just no way of knowing
     }
 
-    public SubscriptionDescriptor Describe()
-    {
-        var type = Slicer is ISingleStreamSlicer
-            ? SubscriptionType.SingleStreamProjection
-            : SubscriptionType.MultiStreamProjection;
-
-        var subscriptionDescriptor = new SubscriptionDescriptor(this, type);
-        subscriptionDescriptor.AddValue("DocumentType", typeof(TDoc));
-        subscriptionDescriptor.AddValue("IdentityType", typeof(TId).ShortNameInCode());
-
-        return subscriptionDescriptor;
-    }
-
     public AsyncOptions Options { get; } = new();
     public object ApplyMetadata(object aggregate, IEvent lastEvent)
     {
@@ -436,4 +422,17 @@ public abstract class CustomProjection<TDoc, TId>:
 
     public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e)
         => e.IdentityFromEvent<TId>(streamIdentity);
+
+    public SubscriptionDescriptor Describe()
+    {
+        var type = Slicer is ISingleStreamSlicer
+            ? SubscriptionType.SingleStreamProjection
+            : SubscriptionType.MultiStreamProjection;
+
+        var subscriptionDescriptor = new SubscriptionDescriptor(this, type);
+        subscriptionDescriptor.AddValue("DocumentType", typeof(TDoc));
+        subscriptionDescriptor.AddValue("IdentityType", typeof(TId).ShortNameInCode());
+
+        return subscriptionDescriptor;
+    }
 }
