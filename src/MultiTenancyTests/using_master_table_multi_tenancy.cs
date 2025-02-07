@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core.Descriptions;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -267,6 +269,37 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
     {
         await _host.StopAsync();
         theStore.Dispose();
+    }
+
+    [Fact]
+    public async Task build_description()
+    {
+        await _host.AddTenantDatabaseAsync("tenant1", tenant1ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant2", tenant2ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant3", tenant3ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
+
+        var description = await _host.DocumentStore().Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
+
+        description.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        description.MainDatabase.ShouldBeNull();
+
+        description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
+            .ShouldBe(["tenant1", "tenant2", "tenant3", "tenant4"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant1")
+            .TenantIds.ShouldBe(["tenant1"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant2")
+            .TenantIds.ShouldBe(["tenant2"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant3")
+            .TenantIds.ShouldBe(["tenant3"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant4")
+            .TenantIds.ShouldBe(["tenant4"]);
+
     }
 
     [Fact]
