@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
 
@@ -71,6 +72,7 @@ public sealed class OpenTelemetryOptions
         });
     }
 
+    [IgnoreDescription]
     public Meter Meter { get; } = new("Marten");
 
 }

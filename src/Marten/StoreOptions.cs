@@ -33,7 +33,6 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -106,11 +105,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Add, remove, or reorder global session listeners
     /// </summary>
-    public readonly List<IDocumentSessionListener> Listeners = new();
+    [IgnoreDescription]
+    public List<IDocumentSessionListener> Listeners { get; } = new();
 
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
     /// </summary>
+    [ChildDescription]
     public OpenTelemetryOptions OpenTelemetry { get; } = new();
 
     /// <summary>
@@ -285,6 +286,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Configuration of event streams and projections
     /// </summary>
+    [ChildDescription]
     public IEventStoreOptions Events => EventGraph;
 
     /// <summary>

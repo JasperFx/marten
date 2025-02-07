@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Descriptions;
 using Marten.Schema;
@@ -64,5 +65,15 @@ internal class DefaultTenancy: Tenancy, ITenancy
         Default.Database.Dispose();
     }
 
-    public DatabaseUsage DatabaseUsage => DatabaseUsage.Single;
+    public DatabaseCardinality Cardinality => DatabaseCardinality.Single;
+
+    public ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        var usage = new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.Single, MainDatabase = Default.Database.Describe()
+        };
+
+        return new ValueTask<DatabaseUsage>(usage);
+    }
 }

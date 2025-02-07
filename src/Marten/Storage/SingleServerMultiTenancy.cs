@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
@@ -132,7 +133,12 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         return ReferenceEquals(database, tenant.Database);
     }
 
-    public DatabaseUsage DatabaseUsage => DatabaseUsage.StaticMultiple;
+    public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.StaticMultiple;
 
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
