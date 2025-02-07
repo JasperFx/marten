@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
@@ -17,13 +18,12 @@ using Marten.Schema;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
-using Marten.Util;
 
 namespace Marten.Events.Aggregation;
 
 /// <summary>
-/// Helpful as a base class for more custom aggregation projections that are not supported
-/// by the Single/MultipleStreamProjections -- or if you'd just prefer to use explicit code
+///     Helpful as a base class for more custom aggregation projections that are not supported
+///     by the Single/MultipleStreamProjections -- or if you'd just prefer to use explicit code
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
@@ -35,6 +35,9 @@ public abstract class CustomProjection<TDoc, TId>:
     IAggregateProjectionWithSideEffects<TDoc>,
     ILiveAggregator<TDoc>
 {
+    private readonly object _cacheLock = new();
+
+    private ImHashMap<Tenant, IAggregateCache<TId, TDoc>> _caches = ImHashMap<Tenant, IAggregateCache<TId, TDoc>>.Empty;
     private IDocumentStorage<TDoc, TId> _storage;
 
     protected CustomProjection()
@@ -51,7 +54,49 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
-    public IAggregateProjection Projection => this;
+    public Type AggregateType => typeof(TDoc);
+
+    public Type[] AllEventTypes { get; set; }
+
+    public bool MatchesAnyDeleteType(StreamAction action)
+    {
+        return false; // just no way of knowing
+    }
+
+    public bool MatchesAnyDeleteType(IEventSlice slice)
+    {
+        return false; // just no way of knowing
+    }
+
+    public bool AppliesTo(IEnumerable<Type> eventTypes)
+    {
+        return true; // just no way of knowing
+    }
+
+    public object ApplyMetadata(object aggregate, IEvent lastEvent)
+    {
+        if (aggregate is TDoc t)
+        {
+            return ApplyMetadata(t, lastEvent);
+        }
+
+        return aggregate;
+    }
+
+    public void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
+    {
+        mapping.UseVersionFromMatchingStream =
+            Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick &&
+            Slicer is ISingleStreamSlicer;
+    }
+
+    // TODO -- duplicated with AggregationRuntime, and that's an ick.
+    /// <summary>
+    ///     If more than 0 (the default), this is the maximum number of aggregates
+    ///     that will be cached in a 2nd level, most recently used cache during async
+    ///     projection. Use this to potentially improve async projection throughput
+    /// </summary>
+    public int CacheLimitPerTenant { get; set; } = 0;
 
     public bool IsSingleStream()
     {
@@ -59,8 +104,8 @@ public abstract class CustomProjection<TDoc, TId>:
     }
 
     /// <summary>
-    /// Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
-    /// asynchronously in a continuous mode (i.e., not in rebuilds)
+    ///     Use to create "side effects" when running an aggregation (single stream, custom projection, multi-stream)
+    ///     asynchronously in a continuous mode (i.e., not in rebuilds)
     /// </summary>
     /// <param name="operations"></param>
     /// <param name="slice"></param>
@@ -69,6 +114,8 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         return new ValueTask();
     }
+
+    [IgnoreDescription] public IAggregateProjection Projection => this;
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
 
@@ -96,8 +143,10 @@ public abstract class CustomProjection<TDoc, TId>:
             // do not load if sliced by stream and the stream does not yet exist
             if (Slicer is not ISingleStreamSlicer || slice.ActionType != StreamActionType.Start)
             {
-                slice.Aggregate = await storage.LoadAsync(slice.Id, tenantedSession, cancellation).ConfigureAwait(false);
+                slice.Aggregate =
+                    await storage.LoadAsync(slice.Id, tenantedSession, cancellation).ConfigureAwait(false);
             }
+
             await ApplyChangesAsync(tenantedSession, slice, cancellation).ConfigureAwait(false);
         }
     }
@@ -136,7 +185,10 @@ public abstract class CustomProjection<TDoc, TId>:
         CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
     {
-        if (!slice.Events().Any()) return;
+        if (!slice.Events().Any())
+        {
+            return;
+        }
 
         var snapshot = slice.Aggregate;
         snapshot = await BuildAsync(session, snapshot, slice.Events()).ConfigureAwait(false);
@@ -156,31 +208,7 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
-    /// <summary>
-    /// Override if the aggregation always updates the aggregate from new events, but may
-    /// require data lookup to update the snapshot
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="snapshot"></param>
-    /// <param name="events"></param>
-    /// <returns></returns>
-    public virtual ValueTask<TDoc> BuildAsync(IQuerySession session, TDoc? snapshot, IReadOnlyList<IEvent> events)
-    {
-        return new ValueTask<TDoc>(Apply(snapshot, events));
-    }
-
-    /// <summary>
-    /// Override if the aggregation always updates the aggregate from new events and you
-    /// don't need to do any other kind of data lookup. Simplest possible way to use this
-    /// </summary>
-    /// <param name="snapshot"></param>
-    /// <param name="events"></param>
-    /// <returns></returns>
-    public virtual TDoc Apply(TDoc? snapshot, IReadOnlyList<IEvent> events)
-    {
-        throw new NotImplementedException("Did you forget to implement this method?");
-    }
-
+    [IgnoreDescription]
     public IAggregateVersioning Versioning { get; set; }
 
     /// <summary>
@@ -195,6 +223,119 @@ public abstract class CustomProjection<TDoc, TId>:
     }
 
     IDocumentStorage<TDoc, TId> IAggregationRuntime<TDoc, TId>.Storage => _storage;
+
+    public IAggregateCache<TId, TDoc> CacheFor(Tenant tenant)
+    {
+        if (_caches.TryFind(tenant, out var cache))
+        {
+            return cache;
+        }
+
+        lock (_cacheLock)
+        {
+            if (_caches.TryFind(tenant, out cache))
+            {
+                return cache;
+            }
+
+            cache = CacheLimitPerTenant == 0
+                ? new NulloAggregateCache<TId, TDoc>()
+                : new RecentlyUsedCache<TId, TDoc> { Limit = CacheLimitPerTenant };
+
+            _caches = _caches.AddOrUpdate(tenant, cache);
+
+            return cache;
+        }
+    }
+
+    public TId IdentityFromEvent(IEvent e)
+    {
+        // TODO -- come back here.
+        throw new NotImplementedException();
+    }
+
+    TDoc ILiveAggregator<TDoc>.Build(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot)
+    {
+        throw new NotSupportedException(
+            "It's not supported to do a synchronous, live aggregation with a custom projection");
+    }
+
+    public SubscriptionDescriptor Describe()
+    {
+        var type = Slicer is ISingleStreamSlicer
+            ? SubscriptionType.SingleStreamProjection
+            : SubscriptionType.MultiStreamProjection;
+
+        var subscriptionDescriptor = new SubscriptionDescriptor(this, type);
+        subscriptionDescriptor.AddValue("DocumentType", typeof(TDoc));
+        subscriptionDescriptor.AddValue("IdentityType", typeof(TId).ShortNameInCode());
+
+        return subscriptionDescriptor;
+    }
+
+    Type IReadOnlyProjectionData.ProjectionType => GetType();
+
+    IEnumerable<Type> IProjectionSource.PublishedTypes()
+    {
+        yield return typeof(TDoc);
+    }
+
+    IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
+    {
+        readDocumentStorage(store);
+
+        return new List<AsyncProjectionShard>
+        {
+            new(this)
+            {
+                IncludeArchivedEvents = IncludeArchivedEvents,
+                EventTypes = IncludedEventTypes,
+                StreamType = StreamType
+            }
+        };
+    }
+
+    async ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
+        EventRange range,
+        CancellationToken cancellationToken)
+    {
+        var groups = await GroupEventRange(store, daemonDatabase, range, cancellationToken).ConfigureAwait(false);
+
+        return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
+    }
+
+    IProjection IProjectionSource.Build(DocumentStore store)
+    {
+        readDocumentStorage(store);
+        return this;
+    }
+
+    public AsyncOptions Options { get; } = new();
+
+    /// <summary>
+    ///     Override if the aggregation always updates the aggregate from new events, but may
+    ///     require data lookup to update the snapshot
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="snapshot"></param>
+    /// <param name="events"></param>
+    /// <returns></returns>
+    public virtual ValueTask<TDoc> BuildAsync(IQuerySession session, TDoc? snapshot, IReadOnlyList<IEvent> events)
+    {
+        return new ValueTask<TDoc>(Apply(snapshot, events));
+    }
+
+    /// <summary>
+    ///     Override if the aggregation always updates the aggregate from new events and you
+    ///     don't need to do any other kind of data lookup. Simplest possible way to use this
+    /// </summary>
+    /// <param name="snapshot"></param>
+    /// <param name="events"></param>
+    /// <returns></returns>
+    public virtual TDoc Apply(TDoc? snapshot, IReadOnlyList<IEvent> events)
+    {
+        throw new NotImplementedException("Did you forget to implement this method?");
+    }
 
 
     /// <summary>
@@ -212,40 +353,6 @@ public abstract class CustomProjection<TDoc, TId>:
     {
         await using var session = store.LightweightSession(SessionOptions.ForDatabase(database));
         return await Slicer.SliceAsyncEvents(session, range.Events).ConfigureAwait(false);
-    }
-
-    Type IReadOnlyProjectionData.ProjectionType => GetType();
-
-    IEnumerable<Type> IProjectionSource.PublishedTypes()
-    {
-        yield return typeof(TDoc);
-    }
-
-    IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
-    {
-        readDocumentStorage(store);
-
-        return new List<AsyncProjectionShard> { new(this)
-        {
-            IncludeArchivedEvents = IncludeArchivedEvents,
-            EventTypes = IncludedEventTypes,
-            StreamType = StreamType
-        } };
-    }
-
-    async ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        var groups = await GroupEventRange(store, daemonDatabase, range, cancellationToken).ConfigureAwait(false);
-
-        return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
-    }
-
-    IProjection IProjectionSource.Build(DocumentStore store)
-    {
-        readDocumentStorage(store);
-        return this;
     }
 
     internal override void AssembleAndAssertValidity()
@@ -320,35 +427,6 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
-    public Type AggregateType
-    {
-        get => typeof(TDoc);
-    }
-
-    public Type[] AllEventTypes { get; set; }
-    public bool MatchesAnyDeleteType(StreamAction action)
-    {
-        return false; // just no way of knowing
-    }
-
-    public bool MatchesAnyDeleteType(IEventSlice slice)
-    {
-        return false; // just no way of knowing
-    }
-
-    public bool AppliesTo(IEnumerable<Type> eventTypes)
-    {
-        return true; // just no way of knowing
-    }
-
-    public AsyncOptions Options { get; } = new();
-    public object ApplyMetadata(object aggregate, IEvent lastEvent)
-    {
-        if (aggregate is TDoc t) return ApplyMetadata(t, lastEvent);
-
-        return aggregate;
-    }
-
     /// <summary>
     /// Template method that is called for each event in a slice of events that
     /// are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
@@ -359,17 +437,6 @@ public abstract class CustomProjection<TDoc, TId>:
     public virtual TDoc ApplyMetadata(TDoc aggregate, IEvent lastEvent)
     {
         return aggregate;
-    }
-
-    public void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
-    {
-        mapping.UseVersionFromMatchingStream =
-            Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
-    }
-
-    TDoc ILiveAggregator<TDoc>.Build(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot)
-    {
-        throw new NotSupportedException("It's not supported to do a synchronous, live aggregation with a custom projection");
     }
 
     async ValueTask<TDoc> ILiveAggregator<TDoc>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)
@@ -395,35 +462,6 @@ public abstract class CustomProjection<TDoc, TId>:
         }
 
         return slice.Aggregate;
-    }
-
-    // TODO -- duplicated with AggregationRuntime, and that's an ick.
-    /// <summary>
-    /// If more than 0 (the default), this is the maximum number of aggregates
-    /// that will be cached in a 2nd level, most recently used cache during async
-    /// projection. Use this to potentially improve async projection throughput
-    /// </summary>
-    public int CacheLimitPerTenant { get; set; } = 0;
-
-    private ImHashMap<Tenant, IAggregateCache<TId, TDoc>> _caches = ImHashMap<Tenant, IAggregateCache<TId, TDoc>>.Empty;
-    private readonly object _cacheLock = new();
-
-    public IAggregateCache<TId, TDoc> CacheFor(Tenant tenant)
-    {
-        if (_caches.TryFind(tenant, out var cache)) return cache;
-
-        lock (_cacheLock)
-        {
-            if (_caches.TryFind(tenant, out cache)) return cache;
-
-            cache = CacheLimitPerTenant == 0
-                ? new NulloAggregateCache<TId, TDoc>()
-                : new RecentlyUsedCache<TId, TDoc> { Limit = CacheLimitPerTenant };
-
-            _caches = _caches.AddOrUpdate(tenant, cache);
-
-            return cache;
-        }
     }
 
     public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e)

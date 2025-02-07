@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using Lamar.IoC.Instances;
 using Marten;
 using Marten.Events;
@@ -402,6 +403,28 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    [Fact]
+    public async Task subscriptions_are_part_of_the_event_store_usage()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMartenStore<ICustomStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc";
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Scoped,
+                    o => o.SubscriptionName = "Simple2");
+            }).StartAsync();
+
+        var capabilities = host.Services.GetServices<IEventStoreCapability>().ToArray();
+        capabilities.Length.ShouldBe(1);
+
+        var usage = await capabilities[0].TryCreateUsage(CancellationToken.None);
+
+        usage.ShouldNotBeNull();
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
 using Marten.Events.Aggregation;
@@ -25,6 +26,8 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
     {
         ProjectionName = projectionName;
     }
+
+    public abstract SubscriptionDescriptor Describe();
 
     internal StoreOptions StoreOptions { get; set; }
 

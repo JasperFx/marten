@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptions;
+using JasperFx.Core.Reflection;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
@@ -74,10 +76,21 @@ internal class ScopedProjectionWrapper<TProjection> : IProjection, IProjectionSo
         }
     }
 
+    public SubscriptionDescriptor Describe()
+    {
+        // TODO -- some way to understand the lifecycle
+        return new SubscriptionDescriptor(this, SubscriptionType.EventProjection)
+        {
+            Subject = ProjectionType.FullNameInCode()
+        };
+    }
+
     public ProjectionLifecycle Lifecycle { get; set; }
     public Type ProjectionType { get; init; }
 
     private AsyncOptions _asyncOptions;
+
+    [ChildDescription]
     public AsyncOptions Options
     {
 
