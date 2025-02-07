@@ -1,5 +1,8 @@
+using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Storage;
@@ -71,6 +74,40 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
 
         var database = await theTenancy.FindOrCreateDatabase(databaseName);
         theTenancy.IsTenantStoredInCurrentDatabase(database, tenantId).ShouldBe(isContained);
+    }
+
+    [Fact]
+    public async Task build_description()
+    {
+        theTenancy.WithTenants("tenant1", "tenant2", "tenant3")
+            .InDatabaseNamed("database1");
+
+        theTenancy.WithTenants("tenant4", "tenant5")
+            .InDatabaseNamed("database2");
+
+        theTenancy.WithTenants("tenant6");
+
+        await theTenancy.BuildDatabases();
+
+        theTenancy.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        var description = await theTenancy.DescribeDatabasesAsync(CancellationToken.None);
+
+        description.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        description.MainDatabase.ShouldBeNull();
+
+        description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
+            .ShouldBe(["database1", "database2", "tenant6"]);
+
+        description.Databases.Single(x => x.DatabaseName == "database1")
+            .TenantIds.ShouldBe(["tenant1", "tenant2", "tenant3"]);
+
+        description.Databases.Single(x => x.DatabaseName == "database2")
+            .TenantIds.ShouldBe(["tenant4", "tenant5"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant6")
+            .TenantIds.ShouldBe(["tenant6"]);
     }
 
     [Fact]
