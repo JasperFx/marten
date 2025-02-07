@@ -428,4 +428,17 @@ public abstract class CustomProjection<TDoc, TId>:
 
     public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e)
         => e.IdentityFromEvent<TId>(streamIdentity);
+
+    public SubscriptionDescriptor Describe()
+    {
+        var type = Slicer is ISingleStreamSlicer
+            ? SubscriptionType.SingleStreamProjection
+            : SubscriptionType.MultiStreamProjection;
+
+        var subscriptionDescriptor = new SubscriptionDescriptor(this, type);
+        subscriptionDescriptor.AddValue("DocumentType", typeof(TDoc));
+        subscriptionDescriptor.AddValue("IdentityType", typeof(TId).ShortNameInCode());
+
+        return subscriptionDescriptor;
+    }
 }
