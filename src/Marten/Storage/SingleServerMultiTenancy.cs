@@ -135,10 +135,30 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
     {
-        throw new NotImplementedException();
+        await BuildDatabases().ConfigureAwait(false);
+
+        // Tracking the databases against Marten's identifier
+        var dict = new Dictionary<string, DatabaseDescriptor>();
+        foreach (var db in AllDatabases())
+        {
+            dict[db.Identifier] = db.Describe();
+        }
+
+        var usage = new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.DynamicMultiple,
+            Databases = dict.Values.ToList()
+        };
+
+        foreach (var pair in _tenantToDatabase)
+        {
+            dict[pair.Value].TenantIds.Add(pair.Key);
+        }
+
+        return usage;
     }
 
-    public DatabaseCardinality Cardinality => DatabaseCardinality.StaticMultiple;
+    public DatabaseCardinality Cardinality => DatabaseCardinality.DynamicMultiple;
 
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
