@@ -341,7 +341,6 @@ class Build : NukeBuild
             var projects = new[]
             {
                 "./src/Marten",
-                "./src/Marten.CommandLine",
                 "./src/Marten.NodaTime",
                 "./src/Marten.PLv8",
                 "./src/Marten.AspNetCore"
