@@ -43,8 +43,6 @@ public partial class StoreOptions
             Database = await Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
         };
 
-        // TODO -- flesh out events by looping through projections and subscriptions too
-
         Projections.Describe(usage);
 
         foreach (var eventMapping in EventGraph.AllEvents())
@@ -54,8 +52,6 @@ public partial class StoreOptions
 
             usage.Events.Add(descriptor);
         }
-
-
 
         return usage;
     }
