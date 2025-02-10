@@ -44,7 +44,7 @@ builder.Services.AddMarten(options =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L15-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
@@ -121,7 +121,7 @@ app.MapGet("/user/{id:guid}",
     return await session.LoadAsync<User>(id, ct);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L44-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L45-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -146,5 +146,5 @@ In some scenarios you may wish to create a document store outside of the generic
 var store = DocumentStore
     .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L34-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L35-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

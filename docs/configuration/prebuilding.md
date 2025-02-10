@@ -133,7 +133,7 @@ public static class Program
 {
     public static Task<int> Main(string[] args)
     {
-        return CreateHostBuilder(args).RunOaktonCommands(args);
+        return CreateHostBuilder(args).RunJasperFxCommands(args);
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args)
@@ -197,7 +197,7 @@ public static class Program
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L27-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming

@@ -18,7 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Easiest to just do this right after creating builder
 // Must be done before calling builder.Build() at least
-builder.Host.ApplyOaktonExtensions();
+builder.Host.ApplyJasperFxExtensions();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L9-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -29,9 +29,9 @@ And finally, use Oakton as the command line parser and executor by replacing `Ap
 <!-- snippet: sample_using_WebApplication_2 -->
 <a id='snippet-sample_using_webapplication_2'></a>
 ```cs
-// Instead of App.Run(), use the app.RunOaktonCommands(args)
+// Instead of App.Run(), use the app.RunJasperFxCommands(args)
 // as the last line of your Program.cs file
-return await app.RunOaktonCommands(args);
+return await app.RunJasperFxCommands(args);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L55-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

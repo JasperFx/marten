@@ -369,7 +369,7 @@ public class Invoice
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The usage of our `Invoice` document is essentially the same as a document type with the primitive identifier types:
@@ -396,7 +396,7 @@ public async Task update_a_document_smoke_test()
     loaded.Name.ShouldBeNull("updated");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -577,7 +577,7 @@ public class LimitedDoc
     public Description? Description { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L217-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L217-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the `UpperLimit` and `LowerLimit` value types can be registered with Marten like so:
@@ -600,7 +600,7 @@ opts.RegisterValueType(typeof(UpperLimit));
 opts.RegisterValueType(typeof(LowerLimit));
 opts.RegisterValueType(typeof(Description));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And that will enable you to seamlessly use the value types in LINQ expressions like so:
@@ -676,5 +676,5 @@ public async Task store_several_and_use_in_LINQ_order_by()
     orderedByGuidBased.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc2.Id, doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

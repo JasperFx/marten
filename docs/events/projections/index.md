@@ -113,7 +113,7 @@ var store = DocumentStore.For(_ =>
     _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L31-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_aggregation_by_stream_with_multiples.cs#L32-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-quest-party' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 At this point, you would be able to query against `QuestParty` as just another document type.
