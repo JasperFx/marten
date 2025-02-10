@@ -20,7 +20,7 @@ public class DistanceProjection: EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L161-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_create_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L174-L190' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_create_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_rebuild-single-projection -->
@@ -28,16 +28,14 @@ public class DistanceProjection: EventProjection
 ```cs
 StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
-var agent = await StartDaemon();
+var agent = await theStore.BuildProjectionDaemonAsync();
 
-// setup test data
-await PublishSingleThreaded();
-
-// rebuild projection `Distance`
 await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L92-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L108-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Projections can also be rebuilt via the [Marten CLI](events/projections/async-daemon#command-line-support)
 
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 

@@ -290,7 +290,7 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 ## View Projection with Custom Grouper
 
 ::: warning
-If your grouping logic requires you to access the aggregate view itself, `ViewProjection` **will not function correctly**
+If your grouping logic requires you to access the aggregate view itself, `MultiStreamProjection` **will not function correctly**
 because of operation ordering (grouping happens in parallel to building projection views as a performance optimization). If
 your grouping logic does require loading the actual aggregate documents, you need to author a custom implementation of the raw
 `IProjection` interface.
@@ -521,7 +521,7 @@ opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
 ## Event "Fan Out" Rules
 
-The `ViewProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
+The `MultiStreamProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
 create an aggregated view. As an example, a `Travel` event we use in Marten testing contains a list of `Movement` objects:
 
 <!-- snippet: sample_Travel_Movements -->
@@ -533,7 +533,7 @@ public List<Stop> Stops { get; set; } = new();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/Travel.cs#L40-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
+In a sample `MultiStreamProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:
 
 <!-- snippet: sample_showing_fanout_rules -->
 <a id='snippet-sample_showing_fanout_rules'></a>

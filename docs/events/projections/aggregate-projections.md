@@ -178,7 +178,7 @@ public class Payment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L128-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L138-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
@@ -187,7 +187,16 @@ Just note that for single stream aggregations, your strong typed identifier type
 At this point, the `FetchForWriting` and `FetchForLatest` APIs do not directly support strongly typed identifiers and you
 will have to just pass in the wrapped, primitive value like this:
 
-snippet: sample_use_fetch_for_writing_with_strong_typed_identifier
+<!-- snippet: sample_use_fetch_for_writing_with_strong_typed_identifier -->
+<a id='snippet-sample_use_fetch_for_writing_with_strong_typed_identifier'></a>
+```cs
+private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
+{
+    var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L91-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Aggregate Creation
 
@@ -726,6 +735,8 @@ public class Item
     public bool Completed { get; set; }
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
+
+    public int Version { get; set; }
 }
 
 public record ItemStarted(string Description);
@@ -766,7 +777,7 @@ public class ItemProjection: SingleStreamProjection<Item>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L46-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L140-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the same projection in usage in a unit test to see how it's all put together:
@@ -801,10 +812,104 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
         // RIP Glenn Frey, take it easy!
         item.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_latest(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchLatest<Item>(id);
+
+        // RIP Glenn Frey, take it easy!
+        item.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_for_writing(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchForWriting<Item>(id);
+
+        // RIP Glenn Frey, take it easy!
+        item.Aggregate.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Aggregate.Version.ShouldBe(4);
+    }
+
+    [Theory]
+    [InlineData(ProjectionLifecycle.Live)]
+    [InlineData(ProjectionLifecycle.Inline)]
+    [InlineData(ProjectionLifecycle.Async)]
+    public async Task use_with_fetch_for_writing_for_specific_version(ProjectionLifecycle lifecycle)
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new ItemProjection(), lifecycle);
+
+            // THIS IS NECESSARY FOR THIS SAMPLE!
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        // Setting a header value on the session, which will get tagged on each
+        // event captured by the current session
+        theSession.SetHeader("last-modified-by", "Glenn Frey");
+
+        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+        await theSession.SaveChangesAsync();
+
+        var item = await theSession.Events.FetchForWriting<Item>(id, 4);
+
+        // RIP Glenn Frey, take it easy!
+        item.Aggregate.LastModifiedBy.ShouldBe("Glenn Frey");
+        item.Aggregate.Version.ShouldBe(4);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Raising Events, Messages, or other Operations in Aggregation Projections <Badge type="tip" text="7.27" />
