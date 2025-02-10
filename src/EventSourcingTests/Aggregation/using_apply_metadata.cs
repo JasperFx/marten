@@ -9,13 +9,15 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-#region sample_apply_metadata
+
 
 public class using_apply_metadata : OneOffConfigurationsContext
 {
+
     [Fact]
     public async Task apply_metadata()
     {
+#region sample_apply_metadata
         StoreOptions(opts =>
         {
             opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
@@ -39,6 +41,7 @@ public class using_apply_metadata : OneOffConfigurationsContext
         // RIP Glenn Frey, take it easy!
         item.LastModifiedBy.ShouldBe("Glenn Frey");
         item.Version.ShouldBe(4);
+#endregion
     }
 
     [Theory]
@@ -135,7 +138,7 @@ public class using_apply_metadata : OneOffConfigurationsContext
     }
 }
 
-#endregion
+
 
 #region sample_using_ApplyMetadata
 

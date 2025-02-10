@@ -89,7 +89,7 @@ public class event_projections_end_to_end : DaemonContext
     {
         NumberOfStreams = 10;
 
-        #region sample_rebuild-single-projection
+
         StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
@@ -99,8 +99,21 @@ public class event_projections_end_to_end : DaemonContext
 
         // rebuild projection `Distance`
         await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
-        #endregion
 
+
+    }
+
+    public async Task RebuildExample()
+    {
+        #region sample_rebuild-single-projection
+
+        StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+
+        var agent = await theStore.BuildProjectionDaemonAsync();
+
+        await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
+
+        #endregion
     }
 
     private Task CheckExpectedResults()

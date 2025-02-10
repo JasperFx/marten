@@ -34,7 +34,7 @@ using (var session = store.QuerySession())
         .FirstOrDefault(x => x.UserName == "somebody");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L23-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration shown above, Marten generates a database index in Postgresql:
@@ -55,7 +55,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Target>().Index(x => x.Inner.Color);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L68-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L69-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The configuration above creates an index like this:
@@ -101,7 +101,7 @@ var store = DocumentStore.For(opts =>
     opts.Schema.For<User>().Index(x => new { x.FirstName, x.LastName });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L153-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_column_index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L154-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multi_column_index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Customizing a Calculated Index
@@ -155,5 +155,5 @@ var store = DocumentStore.For(_ =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L81-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L82-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

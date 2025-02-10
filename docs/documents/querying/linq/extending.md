@@ -29,7 +29,7 @@ public class IsBlue: IMethodCallParser
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L81-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L82-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note a couple things here:
@@ -53,7 +53,7 @@ public static bool IsBlue(this string value)
     return value == "Blue";
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L71-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L72-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-extension-for-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lastly, to plug in our new parser, we can add that to the `StoreOptions` object that we use to bootstrap a new `DocumentStore` as shown below:
@@ -97,5 +97,5 @@ public async Task query_with_custom_parser()
         .ShouldBe(count);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L22-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L23-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_custom_linq_parser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
