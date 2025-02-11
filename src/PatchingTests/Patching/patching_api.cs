@@ -396,6 +396,42 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task append_if_not_exists_complex_element_by_predicate()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.Children.Length;
+
+        var child = Target.Random();
+        var child2 = Target.Random();
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+        theSession.Patch<Target>(target.Id).Append(x => x.Children, child);
+        await theSession.SaveChangesAsync();
+        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child, x => x.Id == child.Id);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 1);
+
+            target2.Children.Last().Id.ShouldBe(child.Id);
+        }
+
+        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.Children, child2, x => x.Id == child2.Id);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 2);
+
+            target2.Children.Last().Id.ShouldBe(child2.Id);
+        }
+    }
+
+    [Fact]
     public async Task insert_first_to_a_primitive_array()
     {
         var target = Target.Random();
@@ -549,6 +585,51 @@ public class patching_api: OneOffConfigurationsContext
         }
 
         theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 2);
+
+            target2.Children.Last().Id.ShouldBe(child2.Id);
+        }
+    }
+
+    [Fact]
+    public async Task insert_if_not_exists_last_complex_element_by_predicate()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.Children.Length;
+
+        var child = Target.Random();
+        var child2 = Target.Random();
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Insert(x => x.Children, child);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 1);
+
+            target2.Children.Last().Id.ShouldBe(child.Id);
+        }
+
+        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child, x => x.Id == child.Id);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = query.Load<Target>(target.Id);
+            target2.Children.Length.ShouldBe(initialCount + 1);
+
+            target2.Children.Last().Id.ShouldBe(child.Id);
+        }
+
+        theSession.Patch<Target>(target.Id).InsertIfNotExists(x => x.Children, child2, x => x.Id == child2.Id);
         await theSession.SaveChangesAsync();
 
         using (var query = theStore.QuerySession())

@@ -161,6 +161,20 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return this;
     }
 
+    public IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("expression", toPathExpression(predicate));
+        patch.Add("path", toPath(expression));
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+
+        return this;
+    }
+
     public IPatchExpression<T> Insert<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null)
     {
         var patch = new Dictionary<string, object>();
@@ -183,6 +197,23 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var patch = new Dictionary<string, object>();
         patch.Add("type", "insert_if_not_exists");
         patch.Add("value", element);
+        patch.Add("path", toPath(expression));
+        if (index.HasValue)
+        {
+            patch.Add("index", index);
+        }
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
+    }
+
+    public IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate, int? index = null)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "insert_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("expression", toPathExpression(predicate));
         patch.Add("path", toPath(expression));
         if (index.HasValue)
         {
