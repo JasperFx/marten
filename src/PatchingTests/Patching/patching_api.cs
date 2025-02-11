@@ -8,6 +8,7 @@ using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Storage;
@@ -18,7 +19,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace PatchingTests.Patching;
 
@@ -700,6 +700,74 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #endregion
+
+    #region sample_patching_remove_complex_element_by_predicate
+
+    [Fact]
+    public async Task remove_complex_element_by_predicate()
+    {
+        var target = Target.Random();
+        target.Children = [Target.Random(), Target.Random(), Target.Random(), Target.Random()];
+        var initialCount = target.Children.Length;
+
+        var random = new Random();
+        var child = target.Children[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.Children, x => x.Id == child.Id);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var target2 = query.Load<Target>(target.Id);
+        target2.Children.Length.ShouldBe(initialCount - 1);
+        target2.Children.ShouldNotContain(t => t.Id == child.Id);
+    }
+
+    [Fact]
+    public async Task remove_complex_elements_by_predicate()
+    {
+        var target = Target.Random();
+        target.Children = [Target.Random(), Target.Random(), Target.Random(), Target.Random()];
+        var initialCount = target.Children.Length;
+
+        var random = new Random();
+        var child = target.Children[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.Children, x => x.Id != child.Id);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var target2 = query.Load<Target>(target.Id);
+        target2.Children.Length.ShouldBe(1);
+        target2.Children.ShouldContain(t => t.Id == child.Id);
+    }
+
+    #endregion
+
+    [Fact]
+    public async Task throw_exception_if_a_method_call_is_used_for_remove_complex_element_by_predicate()
+    {
+        var target = Target.Random();
+        target.Children = [Target.Random(), Target.Random(), Target.Random(), Target.Random()];
+        var initialCount = target.Children.Length;
+
+        var random = new Random();
+        var child = target.Children[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        var call = () => theSession
+            .Patch<Target>(target.Id)
+            .Remove(x => x.Children, x => x.Id.ToString() == child.Id.ToString());
+
+        call.ShouldThrow<MartenNotSupportedException>("Calling a method is not supported");
+    }
 
     [Fact]
     public async Task delete_redundant_property()
