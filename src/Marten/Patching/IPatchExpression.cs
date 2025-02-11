@@ -142,6 +142,16 @@ public interface IPatchExpression<T>
     IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst);
 
     /// <summary>
+    /// Remove element from a child collection by predicate on the persisted document
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="predicate"></param>
+    /// <param name="action"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, Expression<Func<TElement, bool>> predicate, RemoveAction action = RemoveAction.RemoveFirst);
+
+    /// <summary>
     /// Rename a property or field in the persisted JSON document
     /// </summary>
     /// <param name="oldName"></param>

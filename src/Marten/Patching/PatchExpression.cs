@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
 using JasperFx.Core;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
@@ -205,6 +207,18 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return this;
     }
 
+    public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, Expression<Func<TElement, bool>> predicate, RemoveAction action = RemoveAction.RemoveFirst)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "remove");
+        patch.Add("expression", toPathExpression(predicate));
+        patch.Add("path", toPath(expression));
+        patch.Add("action", (int)action);
+
+        _patchSet.Add(new PatchData(Items: patch, PossiblyPolymorphic: false));
+        return this;
+    }
+
     public IPatchExpression<T> Rename(string oldName, Expression<Func<T, object>> expression)
     {
         var patch = new Dictionary<string, object>();
@@ -267,6 +281,9 @@ internal class PatchExpression<T>: IPatchExpression<T>
         // TODO -- don't like this. Smells like duplication in logic
         return visitor.Members.Select(x => x.Name.FormatCase(_session.Serializer.Casing)).Join(".");
     }
+
+    private string toPathExpression(Expression expression)
+        => new JsonPathCreator(_session.Serializer).Build(expression);
 
     private DbObjectName PatchFunction => new PostgresqlObjectName(_session.Options.DatabaseSchemaName, "mt_jsonb_patch");
 }
