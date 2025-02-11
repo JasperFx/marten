@@ -111,6 +111,17 @@ public interface IPatchExpression<T>
     IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
 
     /// <summary>
+    /// Append an element to the end of a child collection on the persisted
+    /// document if the element does not already exist by predicate
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="element"></param>
+    /// <param name="predicate"></param>
+    /// <returns></returns>
+    IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate);
+
+    /// <summary>
     /// Insert an element at the designated index to a child collection on the persisted document
     /// </summary>
     /// <typeparam name="TElement"></typeparam>
@@ -130,6 +141,18 @@ public interface IPatchExpression<T>
     /// <param name="index"></param>
     /// <returns></returns>
     IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null);
+
+    /// <summary>
+    /// Insert an element at the designated index to a child collection on the persisted document
+    /// if the value does not already exist by predicate
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="element"></param>
+    /// <param name="predicate"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate, int? index = null);
 
     /// <summary>
     /// Remove element from a child collection on the persisted document
