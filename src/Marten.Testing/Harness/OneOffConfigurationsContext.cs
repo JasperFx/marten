@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Internal.CodeGeneration;
+using Marten.Sessions;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -98,14 +99,17 @@ namespace Marten.Testing.Harness
             }
         }
 
+        protected Func<IDocumentStore, ISessionFactory> theSessionFactoryThunk =
+            store => new LightweightSessionFactory(store);
         protected IDocumentSession theSession
         {
             get
             {
+
                 if (_session != null)
                     return _session;
 
-                _session = theStore.LightweightSession();
+                _session = theSessionFactoryThunk(theStore).OpenSession();
                 _disposables.Add(_session);
 
                 return _session;

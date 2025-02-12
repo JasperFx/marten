@@ -223,6 +223,51 @@ namespace DocumentDbTests.Metadata
             childSpan.Id.ShouldContain(childSpan.Context.SpanId.ToHexString());
         }
 
+        [Fact]
+        public async Task propogate_w3c_traceparent_as_caussation_and_trace_id_as_correlation()
+        {
+            StoreOptions(opts =>
+            {
+                opts.Policies.ForAllDocuments(x =>
+                {
+                    x.Metadata.CausationId.Enabled = true;
+                    x.Metadata.CorrelationId.Enabled = true;
+                    x.Metadata.Headers.Enabled = true;
+                });
+                opts.Schema.For<MetadataTarget>().Metadata(m =>
+                {
+                    m.CausationId.MapTo(x => x.CausationId);
+                    m.CorrelationId.MapTo(x => x.CorrelationId);
+                    m.Headers.MapTo(x => x.Headers);
+                });
+            });
+
+            // needed to get an activity created below
+            using var provider = Sdk.CreateTracerProviderBuilder()
+                .AddSource("*")
+                .Build();
+
+            using var activity = _source.StartActivity(nameof(activity_source_correlation));
+            activity.ShouldNotBeNull();
+            var doc = new MetadataTarget();
+            theSession.Store(doc);
+            await theSession.SaveChangesAsync();
+
+            var metadata = await theSession.MetadataForAsync(doc);
+
+            var traceparent = activity.Id;
+            var trace_id = activity.TraceId.ToHexString();
+            traceparent.ShouldContain(trace_id);
+            metadata.CausationId.ShouldBe(traceparent);
+            metadata.CorrelationId.ShouldBe(trace_id);
+
+            await using var session2 = theStore.QuerySession();
+            var doc2 = await session2.LoadAsync<MetadataTarget>(doc.Id);
+            doc2.CausationId.ShouldBe(traceparent);
+            doc2.CorrelationId.ShouldBe(trace_id);
+
+            ActivityContext.Parse(doc2.CausationId, null).TraceId.ToHexString().ShouldBe(trace_id);
+        }
     }
 
     public class ActivitySourceCorrelation: DocumentSessionListenerBase
