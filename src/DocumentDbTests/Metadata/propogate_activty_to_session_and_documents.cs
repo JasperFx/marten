@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Metadata
 {
+    [Collection("metadata")]
     public class propogate_activty_to_session_and_documents(ITestOutputHelper testOutputHelper)
         : OneOffConfigurationsContext
     {
@@ -105,6 +106,121 @@ namespace DocumentDbTests.Metadata
             // I used: https://github.com/VerifyTests/Verify
             // but maybe a little top much to add just like that...
             // await Verify(printTree);
+        }
+
+        [Fact]
+        public void activity_w3c_ids_understanding()
+        {
+            /*
+                Activity when Idformat = ActivityIdFormat.W3C represents a:
+                   https://www.w3.org/TR/trace-context/#version-format
+                   The following version-format definition is used for version 00.
+                   version-format   = trace-id "-" parent-id "-" trace-flags
+                   trace-id         = 32HEXDIGLC  ; 16 bytes array identifier. All zeroes forbidden
+                   parent-id        = 16HEXDIGLC  ; 8 bytes array identifier. All zeroes forbidden
+                   trace-flags      = 2HEXDIGLC   ; 8 bit flags. Currently, only one bit is used. See below for details
+
+                Example:
+                    Value = 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+                    base16(version) = 00
+                    base16(trace-id) = 4bf92f3577b34da6a3ce929d0e0e4736
+                    base16(parent-id) = 00f067aa0ba902b7
+                    base16(trace-flags) = 01  // sampled
+
+
+                https://www.w3.org/TR/trace-context/#trace-id
+                *trace-id*
+                w3c: This is the ID of the whole trace forest and is used to uniquely identify a distributed trace through a system
+                dotnet:
+                https://www.w3.org/TR/trace-context/#parent-id
+                *parent-id*
+                w3c: This is the ID of this request as known by the caller (in some tracing systems, this is known as the span-id, where a span is the execution of a client request)
+                dotnet:
+
+              */
+
+            // If we don't have a tracer activities won't be created
+            using var tracer = Sdk.CreateTracerProviderBuilder().AddSource("*").Build();
+            var trace_id = "4bf92f3577b34da6a3ce929d0e0e4736";
+            var parent_id = "00f067aa0ba902b7";
+            var traceParent = $"00-{trace_id}-{parent_id}-01";
+            var rootSpan = ActivityContext.Parse(traceParent, null);
+            using var span = _source.StartActivity(kind: ActivityKind.Internal, parentContext: rootSpan);
+            const string childOperationName = "ChildActivity";
+            using var childSpan = _source.StartActivity(childOperationName);
+
+            span.ShouldNotBeNull();
+            span.Id.ShouldNotBeNull();
+
+            span.IdFormat.ShouldBe(ActivityIdFormat.W3C);
+            span.Id.ShouldBe($"00-{trace_id}-{span.SpanId}-01");
+            span.OperationName.ShouldBe(nameof(activity_w3c_ids_understanding));
+            span.ParentId.ShouldBe(traceParent);
+            span.TraceId.ToHexString().ShouldBe(trace_id);
+            span.ParentSpanId.ToHexString().ShouldBe(parent_id);
+            span.RootId.ShouldBe(span.TraceId.ToHexString());
+
+            var spanContext = span.Context;
+            spanContext.TraceId.ToHexString().ShouldBe(trace_id);
+            spanContext.TraceId.ShouldBe(span.TraceId);
+
+            spanContext.SpanId.ToHexString().ShouldNotBe(parent_id);
+            spanContext.SpanId.ShouldBe(span.SpanId);
+            EchoActivity(span, nameof(span));
+
+            testOutputHelper.WriteLine("");
+            childSpan.ShouldNotBeNull();
+            EchoActivity(childSpan, nameof(childSpan));
+
+            var childSpanContext = childSpan.Context;
+            childSpanContext.TraceId.ShouldBe(rootSpan.TraceId);
+            childSpanContext.SpanId.ShouldNotBe(span.SpanId);
+            childSpan.ParentSpanId.ShouldBe(span.SpanId);
+        }
+
+        private void EchoActivity(Activity activity, string activityName)
+        {
+            testOutputHelper.WriteLine(activityName);
+            testOutputHelper.WriteLine($"    {nameof(Activity.OperationName)}={activity.OperationName}");
+            testOutputHelper.WriteLine($"    {nameof(Activity.Id)}={activity.Id}");
+
+            testOutputHelper.WriteLine("w3c: trace_id in various places...");
+            testOutputHelper.WriteLine($"    {nameof(Activity.RootId)}={activity.RootId}");
+            testOutputHelper.WriteLine($"    {nameof(Activity.TraceId)}={activity.TraceId}");
+            testOutputHelper.WriteLine($"    {nameof(Activity.Context)+"."+nameof(ActivityContext.TraceId)}={activity.Context.TraceId}");
+
+            testOutputHelper.WriteLine("w3c: parent_id aka span_id");
+            testOutputHelper.WriteLine($"    {nameof(Activity.SpanId)}={activity.SpanId}");
+            testOutputHelper.WriteLine($"    {nameof(Activity.Context)+"."+nameof(ActivityContext.SpanId)}:{activity.Context.SpanId}");
+
+            testOutputHelper.WriteLine("parentId or parentSpanId");
+            testOutputHelper.WriteLine($"    {nameof(Activity.ParentSpanId)}={activity.ParentSpanId}");
+            testOutputHelper.WriteLine($"    {nameof(Activity.ParentId)}={activity.ParentId}");
+
+
+        }
+
+        [Fact]
+        public void activitity_correlations()
+        {
+            using var tracer = Sdk.CreateTracerProviderBuilder().AddSource("*").Build();
+            var trace_id = "4bf92f3577b34da6a3ce929d0e0e4736";
+            var parent_id = "00f067aa0ba902b7";
+            var traceParent = $"00-{trace_id}-{parent_id}-01";
+            var rootSpan = ActivityContext.Parse(traceParent, null);
+            using var span = _source.StartActivity(kind: ActivityKind.Internal, parentContext: rootSpan);
+            const string childOperationName = "ChildActivity";
+            using var childSpan = _source.StartActivity(childOperationName);
+
+            rootSpan.TraceId.ToHexString().ShouldBe(trace_id);
+            span.TraceId.ToHexString().ShouldBe(trace_id);
+            childSpan.TraceId.ToHexString().ShouldBe(trace_id);
+            childSpan.Id.ShouldNotBe(traceParent);
+            childSpan.SpanId.ShouldNotBe(rootSpan.SpanId);
+            childSpan.SpanId.ShouldNotBe(span.SpanId);
+
+            childSpan.Id.ShouldContain(childSpan.Context.TraceId.ToHexString());
+            childSpan.Id.ShouldContain(childSpan.Context.SpanId.ToHexString());
         }
 
     }
