@@ -35,6 +35,7 @@ public class MetadataUsage
                 x.CorrelationId.Enabled = true;
                 x.CausationId.Enabled = true;
                 x.Headers.Enabled = true;
+
             });
 
             // Or just globally turn on columns for all document
@@ -44,6 +45,9 @@ public class MetadataUsage
                 x.Metadata.CausationId.Enabled = true;
                 x.Metadata.CorrelationId.Enabled = true;
                 x.Metadata.Headers.Enabled = true;
+
+                // This column is "opt in"
+                x.Metadata.CreatedAt.Enabled = true;
             });
         });
 
