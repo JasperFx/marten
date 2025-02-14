@@ -1,5 +1,11 @@
 # Explicit Aggregations
 
+::: warning
+The recipe in this documentation section is perfect for complicated projection lifecycles, but does not always play
+nicely with Marten's `AggregateStreamAsync()` API. We recommend using `FetchLatest()` with this projection recipe
+for read only access.
+:::
+
 The original concept for Marten projections was the conventional method model (`Apply()` / `Create()` / `ShouldDelete()` methods), but we
 quickly found out that the workflow generated from these methods just isn't sufficient for many user needs. At the same time,
 other users just prefer explicit code anyway, so Marten provides the `CustomProjection<TDoc, TId>` base class as a way to 

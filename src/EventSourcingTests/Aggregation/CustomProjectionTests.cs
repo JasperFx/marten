@@ -630,6 +630,47 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         aggregate.Count.ShouldBe(3);
         aggregate.Deleted.ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task use_aggregate_stream_with_custom_projection()
+    {
+        var stream = Guid.NewGuid();
+
+        // This should do nothing because the aggregate isn't started yet
+        theSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.AggregateStreamAsync<StartAndStopAggregate>(stream);
+        aggregate.ShouldNotBeNull();
+
+        theSession.Events.Append(stream, new Increment(), new End(), new Increment());
+        await theSession.SaveChangesAsync();
+
+        aggregate = await theSession.Events.AggregateStreamAsync<StartAndStopAggregate>(stream);
+        aggregate.Count.ShouldBe(3);
+        aggregate.Deleted.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task use_fetch_latest_with_custom_projection()
+    {
+        var stream = Guid.NewGuid();
+
+        // This should do nothing because the aggregate isn't started yet
+        theSession.Events.StartStream(stream, new Start(), new Increment(), new Increment());
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.FetchLatest<StartAndStopAggregate>(stream);
+        aggregate.ShouldNotBeNull();
+
+        theSession.Events.Append(stream, new Increment(), new End(), new Increment());
+        await theSession.SaveChangesAsync();
+
+        aggregate = await theSession.Events.FetchLatest<StartAndStopAggregate>(stream);
+        aggregate.Count.ShouldBe(3);
+        aggregate.Deleted.ShouldBeTrue();
+    }
+
 }
 
 #region sample_StartAndStopAggregate
@@ -697,7 +738,6 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
     {
         var aggregate = slice.Aggregate;
 
-
         foreach (var data in slice.AllData())
         {
             switch (data)
@@ -728,12 +768,16 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
             }
         }
 
+        // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
+        // AggregateStreamAsync(), you must make this call
+        // FetchLatest() will work w/o any other changes though
+        slice.Aggregate = aggregate;
+
         // Apply any updates!
         if (aggregate != null)
         {
             session.Store(aggregate);
         }
-
 
         // We didn't do anything that required an asynchronous call
         return new ValueTask();
