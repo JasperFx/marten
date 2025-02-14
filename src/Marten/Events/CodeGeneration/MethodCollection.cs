@@ -54,6 +54,7 @@ internal abstract class MethodCollection
 
     protected MethodCollection(string[] methodNames, Type projectionType, Type aggregateType)
     {
+        LambdaName = methodNames.First();
         _validArgumentTypes.Add(typeof(CancellationToken));
 
         MethodNames.AddRange(methodNames);
@@ -78,7 +79,6 @@ internal abstract class MethodCollection
 
 
         IsAsync = Methods.Select(x => x.Method).OfType<MethodInfo>().Any(x => x.IsAsync());
-        LambdaName = methodNames.First();
     }
 
     public Type ProjectionType { get; }
