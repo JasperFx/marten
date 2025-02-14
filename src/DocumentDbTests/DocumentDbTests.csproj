@@ -19,6 +19,8 @@
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
         <PackageReference Include="Lamar" Version="14.0.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+        <PackageReference Include="OpenTelemetry" Version="1.8.1" />
+        <PackageReference Include="OpenTelemetry.Exporter.InMemory" Version="1.8.1" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
