@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_insert(jsonb, text[], jsonb, integer, boolean, jsonb default null)
+CREATE OR REPLACE FUNCTION {databaseSchema}.mt_jsonb_insert(jsonb, text[], jsonb, integer, boolean, jsonb default null::jsonb)
     RETURNS jsonb
     LANGUAGE plpgsql
 AS $function$
