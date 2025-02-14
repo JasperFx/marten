@@ -5,22 +5,23 @@ Note that this content only applies to document storage and will have no impact 
 created through live aggregations of event data.
 :::
 
-A major goal of the Marten V4 release was to enable much richer document and event metadata collection based
-on user requests. To that end, Marten still supports the same basic metadata columns
-as Marten V2/V3, but adds other **opt in** columns.
+Marten supports a rich set of available metadata tracking for documents in the database, but note that some
+of these columns are "opt in" and others are enabled by default, but allow for "opt out" for users who want
+a leader database.
 
 The available columns for document storage are:
 
-|Column Name|Description|Enabled by Default|
-|-----------|-----------|------------------|
-|`mt_last_modified`|Timestamp of the last time the document record was modified|Yes|
-|`mt_version`|`Guid` value that marks the current version of the document. This supports optimistic concurrency|Yes|
-|`mt_dotnet_type`|Assembly qualified name of the .Net type persisted to this row|Yes|
-|`correlation_id`|User-supplied correlation identifier (`string`)|No, opt in|
-|`causation_id`|User-supplied causation identifier (`string`)|No, opt in|
-|`headers`|User-supplied key/value pairs for extensible metadata|No, opt in|
-|`mt_deleted`|Boolean flag noting whether the document is soft-deleted|Only if the document type is configured as soft-deleted|
-|`mt_deleted_at`|Timestamp marking when a document was soft-deleted|Only if the document type is configured as soft-deleted|
+|Column Name| Description                                                                                       |Enabled by Default|
+|-----------|---------------------------------------------------------------------------------------------------|------------------|
+|`mt_last_modified`| Timestamp of the last time the document record was modified                                       |Yes|
+|`mt_version`| `Guid` value that marks the current version of the document. This supports optimistic concurrency |Yes|
+|`mt_dotnet_type`| Assembly qualified name of the .Net type persisted to this row                                    |Yes|
+|`correlation_id`| User-supplied correlation identifier (`string`)                                                   |No, opt in|
+|`causation_id`| User-supplied causation identifier (`string`)                                                     |No, opt in|
+|`headers`| User-supplied key/value pairs for extensible metadata                                             |No, opt in|
+|`mt_deleted`| Boolean flag noting whether the document is soft-deleted                                          |Only if the document type is configured as soft-deleted|
+|`mt_deleted_at`| Timestamp marking when a document was soft-deleted                                                |Only if the document type is configured as soft-deleted|
+|`mt_created_at`| Timestamp marking when a document was originally created. Value of IDocumentSession.CreatedBy     |No, opt in|
 
 ## Correlation Id, Causation Id, and Headers
 
