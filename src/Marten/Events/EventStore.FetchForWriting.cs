@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -136,19 +137,19 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.FetchForWriting(_session, key, true, cancellation);
     }
 
-    public ValueTask<T> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class
+    public ValueTask<T?> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class
     {
         var plan = findFetchPlan<T, Guid>();
         return plan.FetchForReading(_session, id, cancellation);
     }
 
-    public ValueTask<T> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class
+    public ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class
     {
         var plan = findFetchPlan<T, string>();
         return plan.FetchForReading(_session, id, cancellation);
     }
 
-    private IAggregateFetchPlan<TDoc, TId> findFetchPlan<TDoc, TId>() where TDoc : class
+    private IAggregateFetchPlan<TDoc, TId> findFetchPlan<TDoc, TId>() where TDoc : class where TId : notnull
     {
         if (typeof(TId) == typeof(Guid))
         {
@@ -174,7 +175,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     }
 
     private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(IDocumentStorage<TDoc, TId> storage,
-        StoreOptions options) where TDoc : class
+        StoreOptions options) where TDoc : class where TId : notnull
     {
         foreach (var planner in options.Projections.allPlanners())
         {
@@ -186,7 +187,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     }
 }
 
-public interface IAggregateFetchPlan<TDoc, TId>
+public interface IAggregateFetchPlan<TDoc, in TId>
 {
     Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default);
@@ -194,10 +195,10 @@ public interface IAggregateFetchPlan<TDoc, TId>
     Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, long expectedStartingVersion,
         CancellationToken cancellation = default);
 
-    ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
+    ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
 }
 
-public interface IEventIdentityStrategy<TId>
+public interface IEventIdentityStrategy<in TId>
 {
     Task<IEventStorage> EnsureEventStorageExists<T>(DocumentSessionBase session, CancellationToken cancellation);
     void BuildCommandForReadingVersionForStream(ICommandBuilder builder, TId id, bool forUpdate);

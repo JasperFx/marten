@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Npgsql;

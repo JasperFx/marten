@@ -9,7 +9,6 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
-using OpenTelemetry.Trace;
 
 namespace Marten.Subscriptions;
 
@@ -91,7 +90,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
         }
         catch (Exception e)
         {
-            activity?.RecordException(e);
+            activity?.AddException(e);
             _logger.LogError(e, "Error trying to process subscription {Name}", ShardIdentity);
             await range.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
         }
