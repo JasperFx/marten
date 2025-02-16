@@ -2,7 +2,6 @@
 
     <PropertyGroup>
         <Description>Helpers for Marten-backed AspNetCore applications</Description>
-        <VersionPrefix>7.0.0-beta.5</VersionPrefix>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -22,16 +21,12 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App"/>
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="6.0.25"/>
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="7.0.14"/>
-    </ItemGroup>
-
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
         <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+        <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.2"/>
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props"/>

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -71,7 +72,7 @@ internal static class GenericsExtensions
 
     public static object CallGenericInterfaceMethod(this object obj, Type openInterfaceType, string methodName, params object[] parameters)
     {
-        return obj.GetType().GetMethod(methodName)?.Invoke(obj, parameters);
+        return obj.GetType().GetMethod(methodName)?.Invoke(obj, parameters)!;
     }
 
 }

@@ -10,8 +10,6 @@ using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
-using OpenTelemetry.Trace;
-using Weasel.Core;
 
 namespace Marten.Events.Daemon.Internals;
 
@@ -99,7 +97,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         }
         catch (Exception e)
         {
-            activity?.RecordException(e);
+            activity?.AddException(e);
             _logger.LogError(e, "Failure trying to group events for {Name} from {Floor} to {Ceiling}",
                 ProjectionShardIdentity, range.SequenceFloor, range.SequenceCeiling);
             await range.Agent.ReportCriticalFailureAsync(e).ConfigureAwait(false);
@@ -145,7 +143,7 @@ public class GroupedProjectionExecution: ISubscriptionExecution
         }
         catch (Exception e)
         {
-            activity?.RecordException(e);
+            activity?.AddException(e);
             _logger.LogError(e,
                 "Error trying to build and apply changes to event subscription {Name} from {Floor} to {Ceiling}",
                 ProjectionShardIdentity, group.Range.SequenceFloor, group.Range.SequenceCeiling);

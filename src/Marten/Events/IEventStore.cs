@@ -357,7 +357,7 @@ public interface IEventStore: IEventOperations, IQueryEventStore
     /// <param name="cancellation"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    ValueTask<T> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class;
+    ValueTask<T?> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class;
 
     /// <summary>
     ///     Fetch the projected aggregate T by id. This API functions regardless of the projection lifecycle,
@@ -367,5 +367,5 @@ public interface IEventStore: IEventOperations, IQueryEventStore
     /// <param name="cancellation"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    ValueTask<T> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
+    ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
 }
