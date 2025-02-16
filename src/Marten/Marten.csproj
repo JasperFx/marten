@@ -34,31 +34,10 @@
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-9" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
-
-        <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
-        <PackageReference Include="System.Text.Json" Version="8.0.5" />
         <PackageReference Include="Weasel.Postgresql" Version="8.0.0-alpha-3" />
     </ItemGroup>
 
-    <!--SourceLink specific settings-->
-    <PropertyGroup>
-        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
-        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
-        <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Internal\OpenTelemetry\" />
-    </ItemGroup>
     <Import Project="../../Analysis.Build.props" />
 </Project>

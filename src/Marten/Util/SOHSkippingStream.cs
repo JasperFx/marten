@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Threading;
@@ -65,7 +66,7 @@ internal class SOHSkippingStream: Stream
         var totalRead = 0;
         if (_inner.Position == 0)
         {
-            var readBytes = await _inner.ReadAsync(buffer, 0, 1, cancellationToken).ConfigureAwait(false);
+            var readBytes = await _inner.ReadAsync(buffer.AsMemory(0, 1), cancellationToken).ConfigureAwait(false);
             if (readBytes <= 0)
             {
                 return readBytes;
@@ -79,7 +80,7 @@ internal class SOHSkippingStream: Stream
             }
         }
 
-        return totalRead + await _inner.ReadAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+        return totalRead + await _inner.ReadAsync(buffer.AsMemory(offset, count), cancellationToken).ConfigureAwait(false);
     }
 
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer,
@@ -128,8 +129,8 @@ internal class SOHSkippingStream: Stream
         return totalRead + _inner.Read(buffer);
     }
 
-    public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback,
-        object state)
+    public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback? callback,
+        object? state)
     {
         throw new NotSupportedException();
     }

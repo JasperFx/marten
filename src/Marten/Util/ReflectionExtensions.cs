@@ -1,8 +1,7 @@
-using System;
+#nullable enable
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 
 namespace Marten.Util;
 
