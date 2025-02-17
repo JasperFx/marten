@@ -14,7 +14,7 @@ using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
-using Vogen;
+using StronglyTypedIds;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -598,7 +598,7 @@ public record Deleted;
 
 public record MaybeDeleted(bool ShouldDelete);
 
-[ValueObject<Guid>]
+[StronglyTypedId(Template.Guid)]
 public partial struct GuidId;
 
 public class SimpleAggregateStrongTypedGuid
@@ -641,7 +641,7 @@ public class SimpleAggregateStrongTypedGuid
 
 }
 
-[ValueObject<string>]
+[StronglyTypedId(Template.String)]
 public partial struct StringId;
 
 public class SimpleAggregateStrongTypedString

@@ -15,7 +15,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
         <PackageReference Include="xunit" Version="2.9.2" />
-        <PackageReference Include="Vogen" Version="7.0.0" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj"/>
