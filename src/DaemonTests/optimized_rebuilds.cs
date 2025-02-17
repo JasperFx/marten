@@ -12,14 +12,13 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Npgsql;
 using NSubstitute;
 using Shouldly;
-using Vogen;
+using StronglyTypedIds;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
@@ -353,7 +352,7 @@ public class optimized_rebuilds : DaemonContext
 }
 
 
-[ValueObject<Guid>]
+[StronglyTypedId(Template.Guid)]
 public partial struct TripId;
 
 public class StrongTrip
