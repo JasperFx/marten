@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using JasperFx.Core.Reflection;
 using Marten.Storage;
 
 namespace Marten.Events;
@@ -249,5 +250,29 @@ public static class EventExtensions
             StreamKey = @event.StreamKey,
             Timestamp = @event.Timestamp
         };
+    }
+
+    public static TId IdentityFromEvent<TId>(this IEvent e, StreamIdentity streamIdentity)
+    {
+        if (streamIdentity == StreamIdentity.AsGuid)
+        {
+            if (typeof(TId) == typeof(Guid))
+            {
+                return e.StreamId.As<TId>();
+            }
+
+            var valueTypeInfo = new StoreOptions().RegisterValueType(typeof(TId));
+            return valueTypeInfo.CreateAggregateIdentitySource<TId>()(e);
+        }
+        else
+        {
+            if (typeof(TId) == typeof(string))
+            {
+                return e.StreamKey.As<TId>();
+            }
+
+            var valueTypeInfo = new StoreOptions().RegisterValueType(typeof(TId));
+            return valueTypeInfo.CreateAggregateIdentitySource<TId>()(e);
+        }
     }
 }

@@ -11,6 +11,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Schema;
@@ -433,6 +434,6 @@ public abstract class CustomProjection<TDoc, TId>:
         }
     }
 
-    public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e) =>
-        streamIdentity == StreamIdentity.AsGuid ? e.StreamId.To<TId>() : e.StreamKey.To<TId>();
+    public TId IdentityFromEvent(StreamIdentity streamIdentity, IEvent e)
+        => e.IdentityFromEvent<TId>(streamIdentity);
 }
