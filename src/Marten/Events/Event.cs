@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using JasperFx.Core.Reflection;
+using Marten.Internal;
 using Marten.Storage;
 
 namespace Marten.Events;
