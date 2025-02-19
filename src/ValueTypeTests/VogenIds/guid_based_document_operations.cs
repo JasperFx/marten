@@ -269,7 +269,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Invoice[] invoices = [
             new Invoice{Name = Guid.NewGuid().ToString()},
@@ -279,7 +279,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
             new Invoice{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
 }

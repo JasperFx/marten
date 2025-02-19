@@ -46,7 +46,7 @@ public class using_natural_identity_keys: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<NonStandardDoc>("somebody").ShouldNotBeNull();
+            (await query.LoadAsync<NonStandardDoc>("somebody")).ShouldNotBeNull();
         }
     }
 

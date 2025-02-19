@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit.Abstractions;
@@ -22,13 +23,13 @@ public class Bug_834_querying_inside_of_child_collections : IntegrationContext
     }
 
     [Fact]
-    public void can_query_with_condition_within_any()
+    public async Task can_query_with_condition_within_any()
     {
         var c1 = new Contact{Tags = new List<string>{"AA", "B", "C"}};
         var c2 = new Contact{Tags = new List<string>{"B", "AC", "D"}};
         var c3 = new Contact{Tags = new List<string>{"H", "I", "J"}};
 
-        theStore.BulkInsert(new Contact[]{c1, c2, c3});
+        await theStore.BulkInsertAsync(new Contact[]{c1, c2, c3});
 
         theSession.Logger = new TestOutputMartenLogger(_output);
         theSession.Query<Contact>().Where(x => x.Tags.Any(t => t.StartsWith("A"))).Any()

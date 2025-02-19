@@ -24,6 +24,11 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     {
     }
 
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+    }
+
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier()
     {
@@ -362,6 +367,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Async);
         });
 
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
@@ -382,6 +389,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+
         var streamId = $"simple|{Guid.NewGuid()}";
         theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
@@ -400,6 +409,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         {
             opts.Projections.Add(new TotalsProjection(), ProjectionLifecycle.Async);
         });
+
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = Guid.NewGuid();
 
@@ -421,6 +432,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             opts.Projections.LiveStreamAggregation<SomeProjection>();
             opts.Projections.LiveStreamAggregation<SomeOtherProjection>();
         });
+
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = CombGuidIdGeneration.NewGuid();
         theSession.Events.StartStream(streamId, new EventA(), new EventA(), new EventA());
@@ -460,6 +473,8 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
             opts.Projections.LiveStreamAggregation<SomeProjection>();
             opts.Projections.LiveStreamAggregation<SomeOtherProjection>();
         });
+
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var session = theStore.IdentitySession();
 

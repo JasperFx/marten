@@ -35,7 +35,7 @@ public class query_by_sql: IntegrationContext
 
         #region sample_sample-query-type-parameter-overload
 
-        dynamic userFromDb = session.Query(user.GetType(), "where id = ?", user.Id).First();
+        dynamic userFromDb = (await session.QueryAsync(user.GetType(), "where id = ?", CancellationToken.None, user.Id)).First();
         dynamic companyFromDb =
             (await session.QueryAsync(typeof(Company), "where id = ?", CancellationToken.None, company.Id)).First();
 
@@ -106,7 +106,7 @@ public class query_by_sql: IntegrationContext
         await session.SaveChangesAsync();
 
         var firstnames =
-            session.Query<User>("where data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+            (await session.QueryAsync<User>("where data ->> 'LastName' = ?", "Miller")).OrderBy(x => x.FirstName)
                 .Select(x => x.FirstName).ToArray();
 
         firstnames.Length.ShouldBe(3);
@@ -170,7 +170,7 @@ public class query_by_sql: IntegrationContext
         await session.SaveChangesAsync();
 
         var firstnames =
-            session.Query<User>("WHERE data ->> 'LastName' = ?", "Miller").OrderBy(x => x.FirstName)
+            (await session.QueryAsync<User>("WHERE data ->> 'LastName' = ?", "Miller")).OrderBy(x => x.FirstName)
                 .Select(x => x.FirstName).ToArray();
 
         firstnames.Length.ShouldBe(3);
@@ -190,7 +190,7 @@ public class query_by_sql: IntegrationContext
         await session.SaveChangesAsync();
 
         var firstnames =
-            session.Query<User>("where data ->> 'LastName' = :Name", new { Name = "Miller" })
+            (await session.QueryAsync<User>("where data ->> 'LastName' = :Name", new { Name = "Miller" }))
                 .OrderBy(x => x.FirstName)
                 .Select(x => x.FirstName).ToArray();
 
@@ -213,8 +213,8 @@ public class query_by_sql: IntegrationContext
         #region sample_using_parameterized_sql
 
         var user =
-            session.Query<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
-                    "Miller")
+            (await session.QueryAsync<User>("where data ->> 'FirstName' = ? and data ->> 'LastName' = ?", "Jeremy",
+                    "Miller"))
                 .Single();
 
         #endregion
@@ -234,8 +234,8 @@ public class query_by_sql: IntegrationContext
         session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
         await session.SaveChangesAsync();
         var user =
-            session.Query<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName",
-                    new { FirstName = "Jeremy", LastName = "Miller" })
+            (await session.QueryAsync<User>("where data ->> 'FirstName' = :FirstName and data ->> 'LastName' = :LastName",
+                    new { FirstName = "Jeremy", LastName = "Miller" }))
                 .Single();
 
         user.ShouldNotBeNull();
@@ -253,8 +253,8 @@ public class query_by_sql: IntegrationContext
         session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
         await session.SaveChangesAsync();
         var user =
-            session.Query<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name",
-                    new { Name = "Jeremy" })
+            (await session.QueryAsync<User>("where data ->> 'FirstName' = :Name or data ->> 'LastName' = :Name",
+                    new { Name = "Jeremy" }))
                 .Single();
 
         user.ShouldNotBeNull();
@@ -271,7 +271,7 @@ public class query_by_sql: IntegrationContext
         await session.SaveChangesAsync();
 
         var firstnames =
-            session.Query<User>("where data ->> 'LastName' = 'Miller'").OrderBy(x => x.FirstName)
+            (await session.QueryAsync<User>("where data ->> 'LastName' = 'Miller'")).OrderBy(x => x.FirstName)
                 .Select(x => x.FirstName).ToArray();
 
         firstnames.Length.ShouldBe(3);
@@ -292,7 +292,7 @@ public class query_by_sql: IntegrationContext
         await session.SaveChangesAsync();
 
         var firstnames =
-            session.Query<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'")
+            (await session.QueryAsync<User>("where data ->> 'LastName' = 'Miller' order by data ->> 'FirstName'"))
                 .Select(x => x.FirstName).ToArray();
 
         firstnames.Length.ShouldBe(3);
@@ -312,7 +312,7 @@ public class query_by_sql: IntegrationContext
         session.Store(u);
         await session.SaveChangesAsync();
 
-        var user = session.Query<User>("where data ->> 'FirstName' = 'Jeremy'").Single();
+        var user = (await session.QueryAsync<User>("where data ->> 'FirstName' = 'Jeremy'")).Single();
         user.LastName.ShouldBe("Miller");
         user.Id.ShouldBe(u.Id);
     }
@@ -327,8 +327,8 @@ public class query_by_sql: IntegrationContext
         session.Store(u);
         await session.SaveChangesAsync();
 
-        var user = session.Query<User>(@"
-where data ->> 'FirstName' = 'Jeremy'").Single();
+        var user = (await session.QueryAsync<User>(@"
+where data ->> 'FirstName' = 'Jeremy'")).Single();
         user.LastName.ShouldBe("Miller");
         user.Id.ShouldBe(u.Id);
     }
@@ -349,7 +349,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
     }
 
     #endregion
-    
+
     [Fact]
     public async Task query_with_matches_sql_custom_placeholder()
     {
@@ -374,7 +374,7 @@ where data ->> 'FirstName' = 'Jeremy'").Single();
         #region sample_use_all_your_own_sql
 
         var user =
-            session.Query<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'")
+            (await session.QueryAsync<User>("select data from mt_doc_user where data ->> 'FirstName' = 'Jeremy'"))
                 .Single();
 
         #endregion

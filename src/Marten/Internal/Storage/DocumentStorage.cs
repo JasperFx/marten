@@ -153,22 +153,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
 
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        try
-        {
-            var sql = $"truncate {TableName.QualifiedName} cascade";
-            database.RunSql(sql);
-        }
-        catch (PostgresException e)
-        {
-            if (e.SqlState != PostgresErrorCodes.UndefinedTable)
-            {
-                throw;
-            }
-        }
-    }
-
     public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         var sql = $"truncate {TableName.QualifiedName} cascade";
@@ -349,10 +333,8 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _defaultWhere;
     }
 
-    public abstract T? Load(TId id, IMartenSession session);
     public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
-    public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
     public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -463,16 +445,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         {
             yield return CurrentTenantFilter.Instance;
         }
-    }
-
-
-    protected T? load(TId id, IMartenSession session)
-    {
-        var command = BuildLoadCommand(id, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector(session);
-
-        // TODO -- eliminate the downcast here!
-        return session.As<QuerySession>().LoadOne(command, selector);
     }
 
     protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)

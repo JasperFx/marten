@@ -53,7 +53,7 @@ public class schema_object_management : OneOffConfigurationsContext
 
         using (var session = store2.LightweightSession())
         {
-            session.Events.FetchStream(id).Count.ShouldBe(3);
+            (await session.Events.FetchStreamAsync(id)).Count.ShouldBe(3);
         }
 
         store2.Dispose();

@@ -44,7 +44,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             sess.Patch<Model>(id).Set(x => x.Name, "bar");
             await sess.SaveChangesAsync();
             sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
-            sess.Load<Model>(id).Name.ShouldBe("bar");
+            (await sess.LoadAsync<Model>(id)).Name.ShouldBe("bar");
         }
     }
 
@@ -513,7 +513,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(3);
             group2.Items[0].ShouldBeOfType<Item>();
@@ -539,7 +539,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(3);
             group2.Items[0].ShouldBeOfType<Item>();
@@ -566,7 +566,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(2);
             group2.Items.Last().ShouldBeOfType<ColoredItem>();
@@ -655,10 +655,10 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var model1 = query.Load<TestModel7>(model.Id);
+            var model1 = await query.LoadAsync<TestModel7>(model.Id);
             model1!.NullableObjectId.ShouldBe(id);
 
-            var model2 = query.Load<TestModel7>(nullModel.Id);
+            var model2 = await query.LoadAsync<TestModel7>(nullModel.Id);
             Assert.Null(model2!.NullableObjectId);
         }
     }

@@ -19,9 +19,9 @@ public class using_string_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.Load<Account>("email@server.com").ShouldNotBeNull();
+        (await session.LoadAsync<Account>("email@server.com")).ShouldNotBeNull();
 
-        session.Load<Account>("nonexistent@server.com").ShouldBeNull();
+        (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
     }
 
     #region sample_persist_and_load_async
@@ -79,7 +79,7 @@ public class using_string_identity : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Account>(account.Id).ShouldBeNull();
+            (await session.LoadAsync<Account>(account.Id)).ShouldBeNull();
         }
     }
 
@@ -95,7 +95,7 @@ public class using_string_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);
+        (await session.LoadManyAsync<Account>("A", "B", "E")).Count().ShouldBe(3);
     }
 
     public using_string_identity(DefaultStoreFixture fixture) : base(fixture)

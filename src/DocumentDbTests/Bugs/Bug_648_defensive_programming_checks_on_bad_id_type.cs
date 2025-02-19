@@ -12,11 +12,11 @@ namespace DocumentDbTests.Bugs;
 public class Bug_648_defensive_programming_checks_on_bad_id_type: IntegrationContext
 {
     [Fact]
-    public void try_to_load_a_guid_identified_type_with_wrong_type()
+    public async Task try_to_load_a_guid_identified_type_with_wrong_type()
     {
-        Should.Throw<DocumentIdTypeMismatchException>(() =>
+        await Should.ThrowAsync<DocumentIdTypeMismatchException>(async () =>
         {
-            theSession.Load<Target>(111);
+            await theSession.LoadAsync<Target>(111);
         });
     }
 
@@ -29,14 +29,6 @@ public class Bug_648_defensive_programming_checks_on_bad_id_type: IntegrationCon
         });
     }
 
-    [Fact]
-    public void bad_id_to_load_many()
-    {
-        Should.Throw<DocumentIdTypeMismatchException>(() =>
-        {
-            theSession.LoadMany<Target>(111, 121);
-        });
-    }
 
     [Fact]
     public Task try_to_loadmany_a_guid_identified_type_with_wrong_type_async()

@@ -31,5 +31,19 @@
 
     <ItemGroup>
       <Compile Remove="AssemblyInfo.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\TeamProvider700129768.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Team3Provider396017422.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Team2Provider1170066519.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\TeacherProvider944571072.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\ReferenceTypeOrderProvider1892982689.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\OrderProvider347010495.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\InvoiceProvider1724721064.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Invoice3Provider479877132.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Invoice2Provider479877131.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\GradeProvider907442297.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Internal\Generated\DocumentStorage\" />
     </ItemGroup>
 </Project>

@@ -24,12 +24,23 @@ public class MultiTenantUser: User
 
 }
 
-public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixture<JsTransformsFixture>
+public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixture<JsTransformsFixture>, IAsyncLifetime
 {
     public document_transforms(JsTransformsFixture fixture) : base(fixture)
     {
-        theStore.Advanced.Clean.DeleteAllDocuments();
+
     }
+
+    public Task InitializeAsync()
+    {
+        return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
+
 
     internal static void example()
     {
@@ -57,9 +68,9 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     #region sample_transform_example
-    private static void transform_example(IDocumentStore store)
+    private static async Task transform_example(IDocumentStore store)
     {
-        store.Transform(x =>
+        await store.TransformAsync(x =>
         {
             // Transform User documents with a filter
             x.Where<User>("default_username", x => x.UserName == null);
@@ -93,21 +104,21 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
     }
 
     [Fact]
-    public void transform_all_documents()
+    public async Task transform_all_documents()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
-        theStore.Transform(x => x.All<User>("default_username"));
+        await theStore.TransformAsync(x => x.All<User>("default_username"));
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
-            session.Load<User>(user2.Id).UserName.ShouldBe("corey.kaylor");
-            session.Load<User>(user3.Id).UserName.ShouldBe("tim.cools");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("corey.kaylor");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("tim.cools");
         }
     }
 
@@ -120,62 +131,58 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
 
         await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
-        using (var session = theStore.LightweightSession())
-        {
-            session.Transform(x => x.All<User>("default_username"));
-            await session.SaveChangesAsync();
-        }
+        await theStore.TransformAsync(x => x.All<User>("default_username"));
 
         using (var session = theStore.LightweightSession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
-            session.Load<User>(user2.Id).UserName.ShouldBe("corey.kaylor");
-            session.Load<User>(user3.Id).UserName.ShouldBe("tim.cools");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("corey.kaylor");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("tim.cools");
         }
     }
 
     [Fact]
-    public void transform_for_tenants()
+    public async Task transform_for_tenants()
     {
 
         var user1 = new MultiTenantUser() { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new MultiTenantUser { FirstName = "Corey", LastName = "Kaylor" };
         var user3 = new MultiTenantUser { FirstName = "Tim", LastName = "Cools", UserName = "NotTransformed" };
 
-        theStore.BulkInsert("Purple", new MultiTenantUser[] { user1, user2 });
-        theStore.BulkInsert("Orange", new MultiTenantUser[] { user3 });
+        await theStore.BulkInsertAsync("Purple", new MultiTenantUser[] { user1, user2 });
+        await theStore.BulkInsertAsync("Orange", new MultiTenantUser[] { user3 });
 
-        theStore.Transform(x => x.Tenant<MultiTenantUser>("default_username", "Purple"));
+        await theStore.TransformAsync(x => x.Tenant<MultiTenantUser>("default_username", "Purple"));
 
         using (var query = theStore.QuerySession("Purple"))
         {
-            query.Load<MultiTenantUser>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            (await query.LoadAsync<MultiTenantUser>(user1.Id)).UserName.ShouldBe("jeremy.miller");
         }
 
         using (var query = theStore.QuerySession("Orange"))
         {
-            query.Load<MultiTenantUser>(user3.Id).UserName.ShouldBe("NotTransformed");
+            (await query.LoadAsync<MultiTenantUser>(user3.Id)).UserName.ShouldBe("NotTransformed");
         }
     }
 
     [Fact]
-    public void transform_a_single_document()
+    public async Task transform_a_single_document()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
-        theStore.Transform(x => x.Document<User>("default_username", user1.Id));
+        await theStore.TransformAsync(x => x.Document<User>("default_username", user1.Id));
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
 
             // no updates to these
-            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
-            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("user2");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("user3");
         }
     }
 
@@ -188,40 +195,36 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
 
         await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
-        using (var session = theStore.LightweightSession())
-        {
-            session.Transform(x => x.Document<User>("default_username", user1.Id));
-            await session.SaveChangesAsync();
-        }
+        await theStore.TransformAsync(x => x.Document<User>("default_username", user1.Id));
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
 
             // no updates to these
-            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
-            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("user2");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("user3");
         }
     }
 
     [Fact]
-    public void transform_with_where_clause()
+    public async Task transform_with_where_clause()
     {
         var user1 = new User { FirstName = "Jeremy", LastName = "Miller" };
         var user2 = new User { FirstName = "Corey", LastName = "Kaylor", UserName = "user2" };
         var user3 = new User { FirstName = "Tim", LastName = "Cools", UserName = "user3" };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
-        theStore.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
+        await theStore.TransformAsync(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
 
             // no updates to these
-            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
-            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("user2");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("user3");
         }
     }
 
@@ -234,19 +237,15 @@ public class document_transforms: StoreContext<JsTransformsFixture>, IClassFixtu
 
         await theStore.BulkInsertAsync(new User[] { user1, user2, user3 });
 
-        using (var session = theStore.LightweightSession())
-        {
-            session.Transform(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
-            await session.SaveChangesAsync();
-        }
+        await theStore.TransformAsync(x => x.Where<User>("default_username", x => x.FirstName == user1.FirstName));
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(user1.Id).UserName.ShouldBe("jeremy.miller");
+            (await session.LoadAsync<User>(user1.Id)).UserName.ShouldBe("jeremy.miller");
 
             // no updates to these
-            session.Load<User>(user2.Id).UserName.ShouldBe("user2");
-            session.Load<User>(user3.Id).UserName.ShouldBe("user3");
+            (await session.LoadAsync<User>(user2.Id)).UserName.ShouldBe("user2");
+            (await session.LoadAsync<User>(user3.Id)).UserName.ShouldBe("user3");
         }
     }
 }

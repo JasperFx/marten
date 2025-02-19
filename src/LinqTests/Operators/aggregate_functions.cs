@@ -214,6 +214,7 @@ public class aggregate_functions : IntegrationContext
     public async Task get_sum_of_integers_with_where_with_nullable_enum(EnumStorage enumStorage)
     {
         StoreOptions(o => o.UseDefaultSerialization(enumStorage));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         theSession.Store(new Target { NullableColor = Colors.Blue, Number = 1 });
         theSession.Store(new Target { NullableColor = Colors.Red, Number = 2 });

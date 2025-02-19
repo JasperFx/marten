@@ -72,12 +72,12 @@ public class end_to_end_versioned_docs: IntegrationContext
                 ConcurrencyChecks = ConcurrencyChecks.Disabled
             });
 
-            var doc1 = session1.Load<AttVersionedDoc>(doc.Id);
+            var doc1 = await session1.LoadAsync<AttVersionedDoc>(doc.Id);
             doc1.Version.ShouldBe(originalVerion);
             session1.VersionFor(doc1).ShouldBe(originalVerion);
             session1.Store(doc1);
 
-            var doc2 = session2.Load<AttVersionedDoc>(doc.Id);
+            var doc2 = await session2.LoadAsync<AttVersionedDoc>(doc.Id);
             session2.Store(doc2);
 
             // save via session1
@@ -123,12 +123,12 @@ public class end_to_end_versioned_docs: IntegrationContext
                 ConcurrencyChecks = ConcurrencyChecks.Disabled
             });
 
-            var doc1 = session1.Load<PropVersionedDoc>(doc.Id);
+            var doc1 = await session1.LoadAsync<PropVersionedDoc>(doc.Id);
             doc1.Version.ShouldBe(originalVerion);
             session1.VersionFor(doc1).ShouldBe(originalVerion);
             session1.Store(doc1);
 
-            var doc2 = session2.Load<PropVersionedDoc>(doc.Id);
+            var doc2 = await session2.LoadAsync<PropVersionedDoc>(doc.Id);
             session2.Store(doc2);
 
             // save via session1

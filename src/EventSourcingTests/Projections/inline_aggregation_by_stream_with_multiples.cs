@@ -59,9 +59,9 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Load<QuestMonsters>(streamId).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
+        (await theSession.LoadAsync<QuestMonsters>(streamId)).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        theSession.Load<QuestParty>(streamId).Members
+        (await theSession.LoadAsync<QuestParty>(streamId)).Members
             .ShouldHaveTheSameElementsAs("Garion", "Polgara", "Belgarath", "Silk", "Barak");
     }
 

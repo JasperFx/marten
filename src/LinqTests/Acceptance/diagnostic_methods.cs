@@ -34,7 +34,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Explain();
+        var plan = await theSession.Query<SimpleUser>().ExplainAsync();
         plan.ShouldNotBeNull();
         plan.PlanWidth.ShouldBeGreaterThan(0);
         plan.PlanRows.ShouldBeGreaterThan(0);
@@ -61,7 +61,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
+        var plan = await theSession.Query<SimpleUser>().Where(u => u.Number > 5).ExplainAsync();
         plan.ShouldNotBeNull();
         plan.PlanWidth.ShouldBeGreaterThan(0);
         plan.PlanRows.ShouldBeGreaterThan(0);
@@ -88,9 +88,9 @@ public class diagnostic_methods: OneOffConfigurationsContext
         theSession.Store(user1, user2);
         await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5)
+        var plan = await theSession.Query<SimpleUser>().Where(u => u.Number > 5)
             .OrderBy(x => x.Number)
-            .Explain(c =>
+            .ExplainAsync(configureExplain:c =>
             {
                 c
                     .Analyze()

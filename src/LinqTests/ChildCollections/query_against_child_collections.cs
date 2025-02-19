@@ -61,7 +61,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         var expected = new[] { targets[5].Id, targets[9].Id, targets[12].Id }.OrderBy(x => x);
 
-        theSession.Query<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'")
+        (await theSession.QueryAsync<Target>("where data @> '{\"Children\": [{\"Number\": 6}]}'"))
             .ToArray()
             .Select(x => x.Id).OrderBy(x => x)
             .ShouldHaveTheSameElementsAs(expected);
@@ -205,7 +205,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
             var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
             o1.ShouldNotBeNull();
 
-            var o2 = session2.Query(new FindOuterByInner("T1", "V12"));
+            var o2 = await session2.QueryAsync(new FindOuterByInner("T1", "V12"));
 
             o2.ShouldNotBeNull();
 

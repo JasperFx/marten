@@ -50,7 +50,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<Target>(document.Id);
+            var documentFromDb = await query.LoadAsync<Target>(document.Id);
 
             documentFromDb.ShouldNotBeNull();
             documentFromDb.Color.ShouldBe(document.Color);
@@ -83,7 +83,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<NonNullableDuplicateFieldTestDoc>(document.Id);
+            var documentFromDb = await query.LoadAsync<NonNullableDuplicateFieldTestDoc>(document.Id);
 
             documentFromDb.ShouldNotBeNull();
             documentFromDb.NonNullableDuplicateField.ShouldBe(document.NonNullableDuplicateField);
@@ -116,7 +116,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<NullableDuplicateFieldTestDoc>(document.Id);
+            var documentFromDb = await query.LoadAsync<NullableDuplicateFieldTestDoc>(document.Id);
 
             documentFromDb.ShouldNotBeNull();
             documentFromDb.NullableDuplicateField.ShouldBeNull();
@@ -126,7 +126,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_bulk_insert_document_with_duplicated_field_with_null_constraint()
+    public async Task can_bulk_insert_document_with_duplicated_field_with_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -146,8 +146,7 @@ public class duplicated_field: OneOffConfigurationsContext
             })
             .ToArray();
 
-        var success = () => theStore.BulkInsert(successModels, BulkInsertMode.OverwriteExisting);
-        success.ShouldNotThrow();
+        await theStore.BulkInsertAsync(successModels, BulkInsertMode.OverwriteExisting);
     }
 
     [Fact]

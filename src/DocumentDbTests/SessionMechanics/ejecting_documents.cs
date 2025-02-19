@@ -21,14 +21,14 @@ public class ejecting_documents : IntegrationContext
             session.Store(target1, target2);
 
             // Both documents are in the identity map
-            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+            (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
 
             // Eject the 2nd document
             session.Eject(target2);
 
             // Now that 2nd document is no longer in the identity map
-            session.Load<Target>(target2.Id).ShouldBeNull();
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
 
             await session.SaveChangesAsync();
         }
@@ -37,13 +37,13 @@ public class ejecting_documents : IntegrationContext
         {
             // The 2nd document was ejected before the session
             // was saved, so it was never persisted
-            session.Load<Target>(target2.Id).ShouldBeNull();
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
         }
         #endregion
     }
 
     [Fact]
-    public void eject_a_document_clears_it_from_the_identity_map_regular()
+    public async Task eject_a_document_clears_it_from_the_identity_map_regular()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -52,17 +52,17 @@ public class ejecting_documents : IntegrationContext
         {
             session.Store(target1, target2);
 
-            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+            (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
 
             session.Eject(target2);
 
-            session.Load<Target>(target2.Id).ShouldBeNull();
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
         }
     }
 
     [Fact]
-    public void eject_a_document_clears_it_from_the_identity_map_dirty()
+    public async Task eject_a_document_clears_it_from_the_identity_map_dirty()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -71,12 +71,12 @@ public class ejecting_documents : IntegrationContext
         {
             session.Store(target1, target2);
 
-            session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-            session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+            (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
 
             session.Eject(target2);
 
-            session.Load<Target>(target2.Id).ShouldBeNull();
+            (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
         }
     }
 
@@ -158,10 +158,10 @@ public class ejecting_documents : IntegrationContext
         session.Store(target1, target2);
         session.Store(user1, user2);
 
-        session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
-        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
+        (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+        (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeSameAs(user1);
+        (await session.LoadAsync<User>(user2.Id)).ShouldBeSameAs(user2);
 
         session.EjectAllOfType(typeof(Target));
 
@@ -170,14 +170,14 @@ public class ejecting_documents : IntegrationContext
 
         await session.SaveChangesAsync();
 
-        session.Load<Target>(target1.Id).ShouldBeNull();
-        session.Load<Target>(target2.Id).ShouldBeNull();
-        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
+        (await session.LoadAsync<Target>(target1.Id)).ShouldBeNull();
+        (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeSameAs(user1);
+        (await session.LoadAsync<User>(user2.Id)).ShouldBeSameAs(user2);
     }
 
     [Fact]
-    public void eject_a_document_type_clears_it_from_the_identity_map_dirty()
+    public async Task eject_a_document_type_clears_it_from_the_identity_map_dirty()
     {
         var target1 = Target.Random();
         var target2 = Target.Random();
@@ -188,20 +188,20 @@ public class ejecting_documents : IntegrationContext
         session.Store(target1, target2);
         session.Store(user1, user2);
 
-        session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-        session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
-        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
+        (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+        (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeSameAs(user1);
+        (await session.LoadAsync<User>(user2.Id)).ShouldBeSameAs(user2);
 
         session.EjectAllOfType(typeof(Target));
 
         session.PendingChanges.OperationsFor<User>().Any().ShouldBeTrue();
         session.PendingChanges.OperationsFor<Target>().Any().ShouldBeFalse();
 
-        session.Load<Target>(target1.Id).ShouldBeNull();
-        session.Load<Target>(target2.Id).ShouldBeNull();
-        session.Load<User>(user1.Id).ShouldBeSameAs(user1);
-        session.Load<User>(user2.Id).ShouldBeSameAs(user2);
+        (await session.LoadAsync<Target>(target1.Id)).ShouldBeNull();
+        (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeSameAs(user1);
+        (await session.LoadAsync<User>(user2.Id)).ShouldBeSameAs(user2);
     }
 
     [Fact]
@@ -227,8 +227,8 @@ public class ejecting_documents : IntegrationContext
         using (var session = theStore.QuerySession())
         {
             session.Query<Target>().ShouldBeEmpty();
-            session.Load<User>(user1.Id).ShouldNotBeNull();
-            session.Load<User>(user2.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
         }
     }
 
@@ -266,10 +266,10 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Target>(target1.Id).ShouldNotBeNull().Number.ShouldBe(1);
-            session.Load<Target>(target2.Id).ShouldNotBeNull().Number.ShouldBe(2);
-            session.Load<User>(user1.Id).ShouldNotBeNull().Age.ShouldBe(30);
-            session.Load<User>(user2.Id).ShouldNotBeNull().Age.ShouldBe(40);
+            (await session.LoadAsync<Target>(target1.Id)).ShouldNotBeNull().Number.ShouldBe(1);
+            (await session.LoadAsync<Target>(target2.Id)).ShouldNotBeNull().Number.ShouldBe(2);
+            (await session.LoadAsync<User>(user1.Id)).ShouldNotBeNull().Age.ShouldBe(30);
+            (await session.LoadAsync<User>(user2.Id)).ShouldNotBeNull().Age.ShouldBe(40);
         }
     }
 
@@ -296,8 +296,8 @@ public class ejecting_documents : IntegrationContext
         using (var session = theStore.QuerySession())
         {
             session.Query<Target>().ShouldBeEmpty();
-            session.Load<User>(user1.Id).ShouldNotBeNull();
-            session.Load<User>(user2.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
         }
     }
 
@@ -320,10 +320,10 @@ public class ejecting_documents : IntegrationContext
         using (var session = theStore.DirtyTrackedSession())
         {
             // Need to reload the objects inside the dirty session for it to know about them
-            session.Load<Target>(target1.Id)!.Number = 3;
-            session.Load<Target>(target2.Id)!.Number = 4;
-            session.Load<User>(user1.Id)!.Age = 30;
-            session.Load<User>(user2.Id)!.Age = 40;
+            (await session.LoadAsync<Target>(target1.Id))!.Number = 3;
+            (await session.LoadAsync<Target>(target2.Id))!.Number = 4;
+            (await session.LoadAsync<User>(user1.Id))!.Age = 30;
+            (await session.LoadAsync<User>(user2.Id))!.Age = 40;
 
             session.EjectAllOfType(typeof(Target));
 
@@ -332,10 +332,10 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Target>(target1.Id).ShouldNotBeNull().Number.ShouldBe(1);
-            session.Load<Target>(target2.Id).ShouldNotBeNull().Number.ShouldBe(2);
-            session.Load<User>(user1.Id).ShouldNotBeNull().Age.ShouldBe(30);
-            session.Load<User>(user2.Id).ShouldNotBeNull().Age.ShouldBe(40);
+            (await session.LoadAsync<Target>(target1.Id)).ShouldNotBeNull().Number.ShouldBe(1);
+            (await session.LoadAsync<Target>(target2.Id)).ShouldNotBeNull().Number.ShouldBe(2);
+            (await session.LoadAsync<User>(user1.Id)).ShouldNotBeNull().Age.ShouldBe(30);
+            (await session.LoadAsync<User>(user2.Id)).ShouldNotBeNull().Age.ShouldBe(40);
         }
     }
 
@@ -362,8 +362,8 @@ public class ejecting_documents : IntegrationContext
         using (var session = theStore.QuerySession())
         {
             session.Query<Target>().ShouldBeEmpty();
-            session.Load<User>(user1.Id).ShouldNotBeNull();
-            session.Load<User>(user2.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
+            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
         }
     }
 
@@ -401,10 +401,10 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Target>(target1.Id).ShouldNotBeNull().Number.ShouldBe(1);
-            session.Load<Target>(target2.Id).ShouldNotBeNull().Number.ShouldBe(2);
-            session.Load<User>(user1.Id).ShouldNotBeNull().Age.ShouldBe(30);
-            session.Load<User>(user2.Id).ShouldNotBeNull().Age.ShouldBe(40);
+            (await session.LoadAsync<Target>(target1.Id).ShouldNotBeNull()).Number.ShouldBe(1);
+            (await session.LoadAsync<Target>(target2.Id).ShouldNotBeNull()).Number.ShouldBe(2);
+            (await session.LoadAsync<User>(user1.Id).ShouldNotBeNull()).Age.ShouldBe(30);
+            (await session.LoadAsync<User>(user2.Id).ShouldNotBeNull()).Age.ShouldBe(40);
         }
     }
 

@@ -18,7 +18,7 @@ public class ability_to_persist_nested_types_Tests: BugIntegrationContext
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
-        var doc2 = theSession.Load<MyDocument>(doc1.Id);
+        var doc2 = await theSession.LoadAsync<MyDocument>(doc1.Id);
         doc2.ShouldNotBeNull();
     }
 

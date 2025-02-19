@@ -78,15 +78,14 @@ public class statistics_and_paged_list: IntegrationContext
     #endregion
 
     [Fact]
-    public void can_get_the_total_from_a_compiled_query()
+    public async Task can_get_the_total_from_a_compiled_query()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
-        var list = theSession
-            .Query(query)
-            .ToList();
+        var list = await theSession
+            .QueryAsync(query);
 
         list.Any().ShouldBeTrue();
 
@@ -133,25 +132,6 @@ public class statistics_and_paged_list: IntegrationContext
         query.Stats.TotalResults.ShouldBe(count);
     }
 
-    [Fact]
-    public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
-    {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        count.ShouldBeGreaterThan(0);
-
-        var query = new TargetPaginationQuery(2, 5);
-
-        var batch = theSession.CreateBatchQuery();
-
-        var targets = batch.Query(query);
-
-        batch.ExecuteSynchronously();
-
-        targets.Result
-            .Any().ShouldBeTrue();
-
-        query.Stats.TotalResults.ShouldBe(count);
-    }
 
     [Fact]
     public async Task can_get_the_total_in_batch_query()
@@ -173,29 +153,10 @@ public class statistics_and_paged_list: IntegrationContext
         stats.TotalResults.ShouldBe(count);
     }
 
-    [Fact]
-    public void can_get_the_total_in_batch_query_sync()
-    {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        count.ShouldBeGreaterThan(0);
-
-        QueryStatistics stats = null;
-
-        var batch = theSession.CreateBatchQuery();
-
-        var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-            .ToList();
-
-        batch.ExecuteSynchronously();
-
-        list.Result.Any().ShouldBeTrue();
-
-        stats.TotalResults.ShouldBe(count);
-    }
 
     #region sample_using-query-statistics
     [Fact]
-    public void can_get_the_total_in_results()
+    public async Task can_get_the_total_in_results()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
@@ -206,11 +167,11 @@ public class statistics_and_paged_list: IntegrationContext
         // first
         QueryStatistics stats = null;
 
-        var list = theSession
+        var list = await theSession
             .Query<Target>()
             .Stats(out stats)
             .Where(x => x.Number > 10).Take(5)
-            .ToList();
+            .ToListAsync();
 
         list.Any().ShouldBeTrue();
 
@@ -521,11 +482,11 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void try_to_use_in_compiled_query()
+    public async Task try_to_use_in_compiled_query()
     {
-        Should.Throw<BadLinqExpressionException>(() =>
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            var data = theSession.Query(new TargetPage(1, 10));
+            var data = await theSession.QueryAsync(new TargetPage(1, 10));
         });
     }
 

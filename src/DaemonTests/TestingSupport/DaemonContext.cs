@@ -32,7 +32,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     protected DaemonContext(ITestOutputHelper output)
     {
         _schemaName = "daemon";
-        theStore.Advanced.Clean.DeleteAllEventData();
+
         Logger = new TestLogger<IProjection>(output);
 
         // Creating a little uniqueness

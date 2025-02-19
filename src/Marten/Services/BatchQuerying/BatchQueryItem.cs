@@ -31,11 +31,5 @@ internal class BatchQueryItem<T>: IBatchQueryItem
         var result = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
         Completion.SetResult(result);
     }
-    
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public void Read(DbDataReader reader, IMartenSession session)
-    {
-        var result = _handler.Handle(reader, session);
-        Completion.SetResult(result);
-    }
+
 }

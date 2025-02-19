@@ -42,15 +42,6 @@ public class TenantIdArgument: UpsertArgument
         method.Frames.Code("parameter{0}.NpgsqlDbType = {1};", i, DbType);
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code("writer.Write(tenant.TenantId, {0});", DbType);
-        if (mapping.Metadata.TenantId.Member != null)
-        {
-            load.Frames.SetMemberValue(mapping.Metadata.TenantId.Member, "tenant.TenantId", mapping.DocumentType, type);
-        }
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync("await writer.WriteAsync(tenant.TenantId, {0}, {1});", DbType,

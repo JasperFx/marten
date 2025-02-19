@@ -27,27 +27,6 @@ internal class QueryEventStore: IQueryEventStore
         _tenant = tenant;
     }
 
-    public IReadOnlyList<IEvent> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
-        long fromVersion = 0)
-    {
-        var selector = _store.Events.EnsureAsGuidStorage(_session);
-
-        _tenant.Database.EnsureStorageExists(typeof(IEvent));
-
-        var statement = new EventStatement(selector)
-        {
-            StreamId = streamId,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = _tenant.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
-
-        return _session.ExecuteHandler(handler);
-    }
-
     public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(Guid streamId, long version = 0,
         DateTimeOffset? timestamp = null, long fromVersion = 0, CancellationToken token = default)
     {
@@ -67,27 +46,6 @@ internal class QueryEventStore: IQueryEventStore
         IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
         return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
-
-    public IReadOnlyList<IEvent> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
-        long fromVersion = 0)
-    {
-        var selector = _store.Events.EnsureAsStringStorage(_session);
-
-        _tenant.Database.EnsureStorageExists(typeof(IEvent));
-
-        var statement = new EventStatement(selector)
-        {
-            StreamKey = streamKey,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = _tenant.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
-
-        return _session.ExecuteHandler(handler);
     }
 
     public async Task<IReadOnlyList<IEvent>> FetchStreamAsync(string streamKey, long version = 0,
@@ -111,26 +69,6 @@ internal class QueryEventStore: IQueryEventStore
         return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
-    public T? AggregateStream<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null, T? state = null,
-        long fromVersion = 0) where T : class
-    {
-        var events = FetchStream(streamId, version, timestamp, fromVersion);
-
-        var aggregator = _store.Options.Projections.AggregatorFor<T>();
-
-        if (!events.Any())
-        {
-            return state;
-        }
-
-        var aggregate = aggregator.Build(events, _session, state);
-
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromGuid(aggregate, streamId);
-
-        return aggregate;
-    }
-
     public async Task<T?> AggregateStreamAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
     {
@@ -150,24 +88,6 @@ internal class QueryEventStore: IQueryEventStore
 
         var storage = _session.StorageFor<T>();
         storage.SetIdentityFromGuid(aggregate, streamId);
-
-        return aggregate;
-    }
-
-    public T? AggregateStream<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null, T? state = null,
-        long fromVersion = 0) where T : class
-    {
-        var events = FetchStream(streamKey, version, timestamp, fromVersion);
-        if (!events.Any())
-        {
-            return state;
-        }
-
-        var aggregator = _store.Options.Projections.AggregatorFor<T>();
-        var aggregate = aggregator.Build(events, _session, state);
-
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromString(aggregate, streamKey);
 
         return aggregate;
     }
@@ -203,15 +123,6 @@ internal class QueryEventStore: IQueryEventStore
         return _session.Query<IEvent>();
     }
 
-    public IEvent<T>? Load<T>(Guid id) where T : class
-    {
-        _tenant.Database.EnsureStorageExists(typeof(StreamAction));
-
-        _store.Events.AddEventType(typeof(T));
-
-        return Load(id).As<Event<T>>();
-    }
-
     public async Task<IEvent<T>?> LoadAsync<T>(Guid id, CancellationToken token = default) where T : class
     {
         await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
@@ -219,12 +130,6 @@ internal class QueryEventStore: IQueryEventStore
         _store.Events.AddEventType(typeof(T));
 
         return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
-    }
-
-    public IEvent? Load(Guid id)
-    {
-        var handler = new SingleEventQueryHandler(id, _session.EventStorage());
-        return _session.ExecuteHandler(handler);
     }
 
     public async Task<IEvent?> LoadAsync(Guid id, CancellationToken token = default)
@@ -235,25 +140,11 @@ internal class QueryEventStore: IQueryEventStore
         return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
 
-    public StreamState? FetchStreamState(Guid streamId)
-    {
-        _tenant.Database.EnsureStorageExists(typeof(IEvent));
-        var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
-        return _session.ExecuteHandler(handler);
-    }
-
     public async Task<StreamState?> FetchStreamStateAsync(Guid streamId, CancellationToken token = default)
     {
         await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
         var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamId, _tenant.TenantId));
         return await _session.ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
-    }
-
-    public StreamState? FetchStreamState(string streamKey)
-    {
-        _tenant.Database.EnsureStorageExists(typeof(IEvent));
-        var handler = eventStorage().QueryForStream(StreamAction.ForReference(streamKey, _tenant.TenantId));
-        return _session.ExecuteHandler(handler);
     }
 
     public async Task<StreamState?> FetchStreamStateAsync(string streamKey, CancellationToken token = default)

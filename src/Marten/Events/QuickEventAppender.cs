@@ -10,16 +10,6 @@ namespace Marten.Events;
 
 internal class QuickEventAppender: IEventAppender
 {
-    public void ProcessEvents(EventGraph eventGraph, DocumentSessionBase session, IProjection[] inlineProjections)
-    {
-        registerOperationsForStreams(eventGraph, session);
-
-        foreach (var projection in inlineProjections)
-        {
-            projection.Apply(session, session.WorkTracker.Streams.ToList());
-        }
-    }
-
     private static void registerOperationsForStreams(EventGraph eventGraph, DocumentSessionBase session)
     {
         var storage = session.EventStorage();

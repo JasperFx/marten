@@ -16,7 +16,7 @@ public class SoftDeletedItem
 public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: BugIntegrationContext
 {
     [Fact]
-    public void query_where_with_multiple_or_expressions_against_single_tenant()
+    public async Task query_where_with_multiple_or_expressions_against_single_tenant()
     {
         StoreOptions(_ =>
         {
@@ -25,7 +25,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
 
         Target[] reds = Target.GenerateRandomData(50).ToArray();
 
-        theStore.BulkInsert("Bug_854", reds);
+        await theStore.BulkInsertAsync("Bug_854", reds);
 
         var expected = reds.Where(x => x.String == "Red" || x.String == "Orange").Select(x => x.Id).OrderBy(x => x).ToArray();
 

@@ -19,6 +19,11 @@ public class end_to_end_query_with_include: IntegrationContext
 {
     private readonly ITestOutputHelper _output;
 
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+    }
+
     [Fact]
     public async Task include_within_batch_query()
     {
@@ -134,6 +139,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_containment_where_for_a_single_document_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -182,6 +188,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing_2()
     {
         StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -207,6 +214,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing_2()
     {
         StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.SnakeCase));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -232,6 +240,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -257,6 +266,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing()
     {
         StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
@@ -466,8 +476,8 @@ public class end_to_end_query_with_include: IntegrationContext
 
         query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
 
-        query.Load<User>(user1.Id).ShouldBeSameAs(dict[user1.Id]);
-        query.Load<User>(user2.Id).ShouldBeSameAs(dict[user2.Id]);
+        (await query.LoadAsync<User>(user1.Id)).ShouldBeSameAs(dict[user1.Id]);
+        (await query.LoadAsync<User>(user2.Id)).ShouldBeSameAs(dict[user2.Id]);
     }
 
     #region sample_dictionary_include
@@ -771,7 +781,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var user6 = new User { };
         var user7 = new User { };
 
-        theStore.BulkInsert(new User[] { user1, user2, user3, user4, user5, user6, user7 });
+        await theStore.BulkInsertAsync(new User[] { user1, user2, user3, user4, user5, user6, user7 });
 
         var group1 = new Group { Name = "Odds", Users = new[] { user1.Id, user3.Id, user5.Id, user7.Id } };
 
@@ -900,7 +910,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new[] { user1, user2, user3 });
+        await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
         var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
         var group2 = new Group { Name = "Empty", Users = new Guid[0] };

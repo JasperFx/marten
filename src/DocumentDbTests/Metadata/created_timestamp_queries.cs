@@ -46,7 +46,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         session.Store(user3, user4);
         await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user4);
+        var metadata = await session.MetadataForAsync(user4);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.CreatedAt;
@@ -79,7 +79,7 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         session.Store(user1, user2);
         await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user2);
+        var metadata = await session.MetadataForAsync(user2);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.CreatedAt;

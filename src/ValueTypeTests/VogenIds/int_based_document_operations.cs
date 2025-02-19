@@ -73,7 +73,7 @@ public class int_based_document_operations : IAsyncLifetime
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         Order[] invoices = [
             new Order{Name = Guid.NewGuid().ToString()},
@@ -83,7 +83,7 @@ public class int_based_document_operations : IAsyncLifetime
             new Order{Name = Guid.NewGuid().ToString()}
         ];
 
-        theStore.BulkInsertDocuments(invoices);
+        await theStore.BulkInsertDocumentsAsync(invoices);
     }
 
     [Fact]

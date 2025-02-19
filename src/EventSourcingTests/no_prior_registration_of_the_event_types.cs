@@ -25,7 +25,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
         {
             using (var session = store.LightweightSession())
             {
-                var events = session.Events.FetchStream(stream);
+                var events = await session.Events.FetchStreamAsync(stream);
                 events[0].Data.ShouldBeOfType<MembersJoined>();
                 events[1].Data.ShouldBeOfType<MembersDeparted>();
             }
@@ -54,7 +54,7 @@ public class no_prior_registration_of_the_event_types: OneOffConfigurationsConte
 
         using (var session = store.LightweightSession())
         {
-            var events = session.Events.FetchStream(stream);
+            var events = await session.Events.FetchStreamAsync(stream);
             events[0].Data.ShouldBeOfType<MembersJoined>();
             events[1].Data.ShouldBeOfType<MembersDeparted>();
         }

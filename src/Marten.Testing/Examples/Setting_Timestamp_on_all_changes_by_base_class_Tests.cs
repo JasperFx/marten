@@ -46,15 +46,11 @@ public class Setting_Timestamp_on_all_changes_by_base_class_Tests
 
 public class TimestampListener: DocumentSessionListenerBase
 {
-    public override void BeforeSaveChanges(IDocumentSession session)
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         var entities = session.PendingChanges.AllChangedFor<BaseEntity>();
         entities.Each(x => x.Timestamp = DateTimeOffset.UtcNow);
-    }
-
-    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
-    {
-        return Task.Factory.StartNew(() => BeforeSaveChanges(session));
+        return Task.CompletedTask;
     }
 }
 

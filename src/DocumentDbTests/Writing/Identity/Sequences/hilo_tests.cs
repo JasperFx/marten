@@ -37,19 +37,23 @@ public class AdvanceToNextHi : IEnumerable<object[]>
     }
 }
 
-public class HiloSequenceTests : IntegrationContext
+public class hilo_tests : OneOffConfigurationsContext, IAsyncLifetime
 {
+    private HiloSequence theSequence;
+    private Tenant theTenant;
 
-    private readonly HiloSequence theSequence;
-    private readonly Tenant theTenant;
-
-    public HiloSequenceTests(DefaultStoreFixture fixture) : base(fixture)
+    public async Task InitializeAsync()
     {
-        theStore.Advanced.Clean.CompletelyRemoveAll();
-
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
         theTenant = theStore.Tenancy.Default;
 
         theSequence = theTenant.Database.Sequences.SequenceFor(typeof(Foo)).As<HiloSequence>();
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -130,11 +134,11 @@ public class HiloSequenceTests : IntegrationContext
     }
 
     [Fact]
-    public void is_thread_safe()
+    public async Task is_thread_safe()
     {
         var tasks = new Task<List<int>>[] {startThread(), startThread(), startThread(), startThread(), startThread(), startThread()};
 
-        Task.WaitAll(tasks);
+        await Task.WhenAll(tasks);
 
         var all = tasks.SelectMany(x => x.Result).ToArray();
 

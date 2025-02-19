@@ -206,11 +206,6 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         return id;
     }
 
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        database.RunSql($"delete from table {_tableName} where type = '{Alias}'");
-    }
-
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync($"delete from table {_tableName} where type = '{Alias}'", ct: ct);

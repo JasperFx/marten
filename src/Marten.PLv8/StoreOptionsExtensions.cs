@@ -32,44 +32,6 @@ public static class StoreOptionsExtensions
     }
 
     /// <summary>
-    /// Synchronously apply one or more Javascript document transformations
-    /// </summary>
-    /// <param name="store"></param>
-    /// <param name="apply"></param>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public static void Transform(this IDocumentStore store, Action<IDocumentTransforms> apply)
-    {
-        var s = store.As<DocumentStore>();
-        if (!s.Options.Advanced.DefaultTenantUsageEnabled)
-        {
-            throw new DefaultTenantUsageDisabledException("Use the overload that takes a tenantId argument");
-        }
-
-        var tenantId = s.Tenancy.Default;
-
-        tenantId.Database.EnsureStorageExists(typeof(TransformSchema));
-
-        using var transforms = new DocumentTransforms(s, tenantId);
-        apply(transforms);
-        transforms.Session.SaveChanges();
-    }
-
-    /// <summary>
-    /// Apply one or more Javascript document transformations within the current session
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="apply"></param>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public static void Transform(this IDocumentOperations operations, Action<IDocumentTransforms> apply)
-    {
-        var session = operations.As<DocumentSessionBase>();
-        session.Tenancy.Default.Database.EnsureStorageExists(typeof(TransformSchema));
-
-        using var transforms = new DocumentTransforms(session);
-        apply(transforms);
-    }
-
-    /// <summary>
     /// Asynchronously apply one or more Javascript document transformations
     /// </summary>
     /// <param name="store"></param>
@@ -91,26 +53,6 @@ public static class StoreOptionsExtensions
         using var transforms = new DocumentTransforms(s, tenant);
         apply(transforms);
         await transforms.Session.SaveChangesAsync(token).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Synchronously apply one or more Javascript document transformations
-    /// </summary>
-    /// <param name="store"></param>
-    /// <param name="tenantIdOrDatabaseName"></param>
-    /// <param name="apply"></param>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public static void Transform(this IDocumentStore store, string tenantId, Action<IDocumentTransforms> apply)
-    {
-        var s = store.As<DocumentStore>();
-
-        var tenant = s.Tenancy.GetTenant(tenantId);
-
-        tenant.Database.EnsureStorageExists(typeof(TransformSchema));
-
-        using var transforms = new DocumentTransforms(s, tenant);
-        apply(transforms);
-        transforms.Session.SaveChanges();
     }
 
     /// <summary>

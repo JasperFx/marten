@@ -19,18 +19,18 @@ public class query_with_order_by: IntegrationContext
     {
         await CreateTestData();
 
-        RunTest(StringComparer.InvariantCultureIgnoreCase, true);
-        RunTest(StringComparer.OrdinalIgnoreCase, true);
+        await RunTest(StringComparer.InvariantCultureIgnoreCase, true);
+        await RunTest(StringComparer.OrdinalIgnoreCase, true);
 
-        RunTest(StringComparer.InvariantCulture, false);
-        RunTest(StringComparer.Ordinal, false);
+        await RunTest(StringComparer.InvariantCulture, false);
+        await RunTest(StringComparer.Ordinal, false);
 
-        void RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
+        async Task RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
         {
             var query = theSession.Query<Target>()
                 .OrderBy(x => x.String, comparer);
 
-            var sql = query.Explain().Command.CommandText;
+            var sql = (await query.ExplainAsync()).Command.CommandText;
             var result = query.ToList();
 
             if (shouldBeCaseInsensitive)
@@ -54,18 +54,18 @@ public class query_with_order_by: IntegrationContext
     {
         await CreateTestData();
 
-        RunTest(StringComparer.InvariantCultureIgnoreCase, true);
-        RunTest(StringComparer.OrdinalIgnoreCase, true);
+        await RunTest(StringComparer.InvariantCultureIgnoreCase, true);
+        await RunTest(StringComparer.OrdinalIgnoreCase, true);
 
-        RunTest(StringComparer.InvariantCulture, false);
-        RunTest(StringComparer.Ordinal, false);
+        await RunTest(StringComparer.InvariantCulture, false);
+        await RunTest(StringComparer.Ordinal, false);
 
-        void RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
+        async Task RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
         {
             var query = theSession.Query<Target>()
                 .OrderByDescending(x => x.String, comparer);
 
-            var sql = query.Explain().Command.CommandText;
+            var sql = (await query.ExplainAsync()).Command.CommandText;
             var result = query.ToList();
 
             if (shouldBeCaseInsensitive)
@@ -97,23 +97,23 @@ public class query_with_order_by: IntegrationContext
     }
 
     [Fact]
-    public void query_with_then_by_for_string_property_with_comparer()
+    public async Task query_with_then_by_for_string_property_with_comparer()
     {
-        CreateTestData(true);
+        await CreateTestData(true);
 
-        RunTest(StringComparer.InvariantCultureIgnoreCase, true);
-        RunTest(StringComparer.OrdinalIgnoreCase, true);
+        await RunTest(StringComparer.InvariantCultureIgnoreCase, true);
+        await RunTest(StringComparer.OrdinalIgnoreCase, true);
 
-        RunTest(StringComparer.InvariantCulture, false);
-        RunTest(StringComparer.Ordinal, false);
+        await RunTest(StringComparer.InvariantCulture, false);
+        await RunTest(StringComparer.Ordinal, false);
 
-        void RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
+        async Task RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
         {
             var query = theSession.Query<Target>()
                 .OrderBy(x => x.Number)
                 .ThenBy(x => x.String, comparer);
 
-            var sql = query.Explain().Command.CommandText;
+            var sql = (await query.ExplainAsync()).Command.CommandText;
             var result = query.ToList();
 
             if (shouldBeCaseInsensitive)
@@ -141,19 +141,19 @@ public class query_with_order_by: IntegrationContext
     {
         await CreateTestData(true);
 
-        RunTest(StringComparer.InvariantCultureIgnoreCase, true);
-        RunTest(StringComparer.OrdinalIgnoreCase, true);
+        await RunTest(StringComparer.InvariantCultureIgnoreCase, true);
+        await RunTest(StringComparer.OrdinalIgnoreCase, true);
 
-        RunTest(StringComparer.InvariantCulture, false);
-        RunTest(StringComparer.Ordinal, false);
+        await RunTest(StringComparer.InvariantCulture, false);
+        await RunTest(StringComparer.Ordinal, false);
 
-        void RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
+        async Task RunTest(StringComparer comparer, bool shouldBeCaseInsensitive)
         {
             var query = theSession.Query<Target>()
                 .OrderBy(x => x.Number)
                 .ThenByDescending(x => x.String, comparer);
 
-            var sql = query.Explain().Command.CommandText;
+            var sql = (await query.ExplainAsync()).Command.CommandText;
             var result = query.ToList();
 
             if (shouldBeCaseInsensitive)

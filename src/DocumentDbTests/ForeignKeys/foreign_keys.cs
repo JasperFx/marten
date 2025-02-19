@@ -146,8 +146,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Issue>(issue.Id).ShouldBeNull();
-            query.Load<User>(user.Id).ShouldNotBeNull();
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldNotBeNull();
         }
     }
 
@@ -174,8 +174,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Issue>(issue.Id).ShouldBeNull();
-            query.Load<User>(user.Id).ShouldBeNull();
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldBeNull();
         }
     }
 
@@ -205,8 +205,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Issue>(issue.Id).ShouldNotBeNull();
-            query.Load<User>(user.Id).ShouldNotBeNull();
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldNotBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldNotBeNull();
         }
     }
 
@@ -228,7 +228,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Issue>(issue.Id).ShouldNotBeNull();
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldNotBeNull();
         }
     }
 
@@ -370,8 +370,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            node1 = session.Load<Node1>(node1.Id);
-            node2 = session.Load<Node2>(node2.Id);
+            node1 = await session.LoadAsync<Node1>(node1.Id);
+            node2 = await session.LoadAsync<Node2>(node2.Id);
             node1.ShouldNotBeNull();
             node2.ShouldNotBeNull();
             session.Delete(node1);
@@ -380,7 +380,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Node2>(node2.Id).ShouldBeNull();
+            (await session.LoadAsync<Node2>(node2.Id)).ShouldBeNull();
         }
     }
 
@@ -406,8 +406,8 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            node1 = session.Load<Node1>(node1.Id);
-            node2 = session.Load<Node2>(node2.NonStandardId);
+            node1 = await session.LoadAsync<Node1>(node1.Id);
+            node2 = await session.LoadAsync<Node2>(node2.NonStandardId);
             node1.ShouldNotBeNull();
             node2.ShouldNotBeNull();
             session.Delete(node1);
@@ -416,7 +416,7 @@ public class foreign_keys: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Node2>(node2.Id).ShouldBeNull();
+            (await session.LoadAsync<Node2>(node2.Id)).ShouldBeNull();
         }
     }
 

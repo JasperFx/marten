@@ -29,9 +29,6 @@ public class NulloEventAppendStep: IEventAppendingStep
 
 internal interface IEventAppender
 {
-    void ProcessEvents(EventGraph eventGraph, DocumentSessionBase session,
-        IProjection[] inlineProjectionsValue);
-
     Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session,
         IProjection[] inlineProjections, CancellationToken token);
 }

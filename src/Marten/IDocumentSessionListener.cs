@@ -66,13 +66,6 @@ public interface IDocumentSessionListener
     Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
     /// <summary>
-    ///     Called just after IDocumentSession.SaveChanges() is called, but before
-    ///     any database calls are made
-    /// </summary>
-    /// <param name="session"></param>
-    void BeforeSaveChanges(IDocumentSession session);
-
-    /// <summary>
     ///     Called just after IDocumentSession.SaveChanges() is called,
     ///     but before any database calls are made
     /// </summary>
@@ -80,13 +73,6 @@ public interface IDocumentSessionListener
     /// <param name="token"></param>
     /// <returns></returns>
     Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
-
-    /// <summary>
-    ///     After an IDocumentSession is committed
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="commit"></param>
-    void AfterCommit(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
     ///     Called after a document is loaded
@@ -107,20 +93,10 @@ public interface IDocumentSessionListener
 /// </summary>
 public abstract class DocumentSessionListenerBase: IDocumentSessionListener
 {
-    public virtual void BeforeSaveChanges(IDocumentSession session)
-    {
-        // Nothing
-    }
-
     public virtual Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         // Nothing
         return Task.CompletedTask;
-    }
-
-    public virtual void AfterCommit(IDocumentSession session, IChangeSet commit)
-    {
-        // Nothing
     }
 
     public virtual Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)

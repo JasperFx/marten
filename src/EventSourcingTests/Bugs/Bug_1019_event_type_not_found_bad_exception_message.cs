@@ -35,7 +35,13 @@ where
                 command.AddNamedParameter("newTypeName", "foo");
                 command.AddNamedParameter("originalTypeName", typeName);
                 command.ExecuteNonQuery();
-                Assert.Throws<UnknownEventTypeException>(() => session.Events.FetchStream(streamGuid)).Message.ShouldContain(newTypeName);
+
+                var ex = await Should.ThrowAsync<UnknownEventTypeException>(async () =>
+                {
+                    await session.Events.FetchStreamAsync(streamGuid);
+                });
+
+                ex.Message.ShouldContain(newTypeName);
             }
         }
 

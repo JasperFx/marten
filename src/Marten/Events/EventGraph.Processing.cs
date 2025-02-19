@@ -55,21 +55,6 @@ public partial class EventGraph
         }
     }
 
-    internal void ProcessEvents(DocumentSessionBase session)
-    {
-        if (!session.WorkTracker.Streams.Any())
-        {
-            return;
-        }
-
-        if (Options.AutoCreateSchemaObjects != AutoCreate.None)
-        {
-            session.Database.EnsureStorageExists(typeof(IEvent));
-        }
-
-        EventAppender.ProcessEvents(this, session, _inlineProjections.Value);
-    }
-
     internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
     {
         if (!session._workTracker.Streams.Any())
@@ -123,20 +108,6 @@ public partial class EventGraph
 
         batch = null;
         return false;
-    }
-
-    internal void PostTombstones(UpdateBatch tombstoneBatch)
-    {
-        try
-        {
-            using var session = (DocumentSessionBase)_store.LightweightSession(tombstoneBatch.TenantId);
-            session.ExecuteBatch(tombstoneBatch);
-        }
-        catch (Exception)
-        {
-            // The IMartenLogger will log the exception
-            _tombstones.Post(tombstoneBatch);
-        }
     }
 
     public Task PostTombstonesAsync(UpdateBatch tombstoneBatch)

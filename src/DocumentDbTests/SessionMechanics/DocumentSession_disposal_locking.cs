@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -10,16 +11,16 @@ namespace DocumentDbTests.SessionMechanics;
 public class DocumentSession_disposal_locking
 {
     [Fact]
-    public void throw_disposed_ex_after_disposed()
+    public async Task throw_disposed_ex_after_disposed()
     {
         var store = DocumentStore.For(_ => _.Connection(ConnectionSource.ConnectionString));
 
         var session = store.LightweightSession();
         session.Dispose();
 
-        Should.Throw<ObjectDisposedException>(() =>
+        await Should.ThrowAsync<ObjectDisposedException>(async () =>
         {
-            session.Load<User>(Guid.NewGuid());
+            await session.LoadAsync<User>(Guid.NewGuid());
         });
 
 

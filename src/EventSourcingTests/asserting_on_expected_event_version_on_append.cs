@@ -25,7 +25,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var state = theSession.Events.FetchStreamState(stream);
+        var state = await theSession.Events.FetchStreamStateAsync(stream);
 
         state.Id.ShouldBe(stream);
         state.Version.ShouldBe(2);
@@ -77,7 +77,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var state = theSession.Events.FetchStreamState(stream);
+        var state = await theSession.Events.FetchStreamStateAsync(stream);
 
         state.Key.ShouldBe(stream);
         state.Version.ShouldBe(2);

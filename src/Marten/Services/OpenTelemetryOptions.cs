@@ -81,7 +81,7 @@ internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> appl
 {
     public List<Action<IChangeSet>> Applications { get; } = applications;
 
-    public override void AfterCommit(IDocumentSession session, IChangeSet commit)
+    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
         foreach (var application in Applications)
         {
@@ -95,11 +95,6 @@ internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> appl
                 Logger.LogError(e, "Metrics gathering failure");
             }
         }
-    }
-
-    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
-    {
-        AfterCommit(session, commit);
         return Task.CompletedTask;
     }
 }

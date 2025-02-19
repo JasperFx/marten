@@ -45,17 +45,6 @@ internal class DocTypeArgument: UpsertArgument
         method.Frames.Code($"parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {{0}};", DbType);
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");
-
-        load.Frames.Code("writer.Write(docType, {0});", DbType);
-        if (mapping.Metadata.DocumentType.Member != null)
-        {
-            load.Frames.SetMemberValue(mapping.Metadata.DocumentType.Member, "docType", mapping.DocumentType, type);
-        }
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.Code($"var docType = _mapping.{nameof(DocumentMapping.AliasFor)}(document.GetType());");

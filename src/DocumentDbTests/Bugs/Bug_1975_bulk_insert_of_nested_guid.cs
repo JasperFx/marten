@@ -36,14 +36,14 @@ public class Bug_1975_bulk_insert_of_nested_guid : BugIntegrationContext
 
 
     [Fact]
-    public void can_bulk_insert_sync()
+    public async Task can_bulk_insert_sync()
     {
         StoreOptions(options =>
         {
             options.Schema.For<ParentDoc>().Duplicate(x => x.Child.Id);
         });
 
-        theStore.BulkInsertDocuments(new List<ParentDoc>
+        await theStore.BulkInsertDocumentsAsync(new List<ParentDoc>
         {
             new ParentDoc
             {

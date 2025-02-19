@@ -121,7 +121,7 @@ public class noda_time_acceptance: OneOffConfigurationsContext
                 .Duplicate(x => x.NullableLocalDate);
         }, true);
 
-        theStore.Advanced.Clean.CompletelyRemoveAll();
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var dateTime = DateTime.UtcNow;
         var localDateTime = LocalDateTime.FromDateTime(dateTime);

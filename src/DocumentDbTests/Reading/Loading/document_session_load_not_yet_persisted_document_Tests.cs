@@ -10,26 +10,26 @@ namespace DocumentDbTests.Reading.Loading;
 public class not_tracked_document_session_load_not_yet_persisted_document_Tests : IntegrationContext
 {
     [Fact]
-    public void then_a_new_document_should_be_returned()
+    public async Task then_a_new_document_should_be_returned()
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
         theSession.Store(user1);
 
-        var fromSession = theSession.Load<User>(user1.Id);
+        var fromSession = await theSession.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldNotBeSameAs(user1);
     }
 
     [Fact]
-    public void given_document_is_already_added_then_a_new_document_should_be_returned()
+    public async Task given_document_is_already_added_then_a_new_document_should_be_returned()
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
         theSession.Store(user1);
         theSession.Store(user1);
 
-        var fromSession = theSession.Load<User>(user1.Id);
+        var fromSession = await theSession.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldNotBeSameAs(user1);
     }

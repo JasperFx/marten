@@ -18,14 +18,6 @@ internal class DocJsonBodyArgument: UpsertArgument
         Column = "data";
     }
 
-
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code(
-            "writer.Write(serializer.ToJson(document), {0});",
-            NpgsqlDbType.Jsonb);
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync(

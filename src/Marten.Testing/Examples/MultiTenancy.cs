@@ -51,7 +51,7 @@ public class MultiTenancy
             #endregion
         });
 
-        store.Advanced.Clean.CompletelyRemoveAll();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         #region sample_tenancy-scoping-session-write
 
@@ -144,7 +144,7 @@ public class MultiTenancy
             #endregion
         });
 
-        store.Advanced.Clean.CompletelyRemoveAll();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
         #region sample_tenancy-scoping-session-write_with_partitioning
 

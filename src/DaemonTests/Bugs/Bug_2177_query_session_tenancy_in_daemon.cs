@@ -92,9 +92,9 @@ namespace Bug2177
         public Ticket Create(TicketCreated created) =>
             new() { Id = created.TicketId, Name = created.Name };
 
-        public void Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session)
+        public async Task Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session)
         {
-            ticket.User = session.Load<User>(assigned.UserId);
+            ticket.User = await session.LoadAsync<User>(assigned.UserId);
         }
     }
 }

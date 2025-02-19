@@ -70,13 +70,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable
     ///     Execute a single command against the database with this session's connection and return the results
     /// </summary>
     /// <param name="command"></param>
-    /// <returns></returns>
-    DbDataReader ExecuteReader(NpgsqlCommand command);
-
-    /// <summary>
-    ///     Execute a single command against the database with this session's connection and return the results
-    /// </summary>
-    /// <param name="command"></param>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default);

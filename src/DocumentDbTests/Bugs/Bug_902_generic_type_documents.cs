@@ -25,7 +25,7 @@ public class Bug_902_generic_type_documents: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<MartenStoredState<Dictionary<string, string>>>(doc2.Id)
+            (await query.LoadAsync<MartenStoredState<Dictionary<string, string>>>(doc2.Id))
                 .Value["color"].ShouldBe("blue");
         }
     }

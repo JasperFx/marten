@@ -25,23 +25,6 @@ public partial class QuerySession
         return StorageFor<TDoc>().VersionFor(entity, this);
     }
 
-    public DocumentMetadata? MetadataFor<T>(T entity) where T : notnull
-    {
-        assertNotDisposed();
-        if (entity == null)
-        {
-            throw new ArgumentNullException(nameof(entity));
-        }
-
-        Database.EnsureStorageExists(typeof(T));
-
-        var storage = StorageFor<T>();
-        var id = storage.IdentityFor(entity);
-        var handler = new EntityMetadataQueryHandler(id, storage);
-
-        return ExecuteHandler(handler);
-    }
-
     public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default)
         where T : notnull
     {

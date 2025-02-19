@@ -131,26 +131,6 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         #endregion
     }
 
-    [Fact]
-    public void can_query_synchronously_with_compiled_queries()
-    {
-        using var session = theStore.IdentitySession();
-
-        #region sample_batch-query-with-compiled-queries-synchronously
-
-        var batch = session.CreateBatchQuery();
-
-        var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
-        var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
-
-        batch.ExecuteSynchronously();
-
-        justin.Result.Id.ShouldBe(user1.Id);
-        tamba.Result.Id.ShouldBe(user2.Id);
-
-        #endregion
-    }
-
 
     public async Task sample_usage_of_compiled_query()
     {
@@ -158,7 +138,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         #region sample_using-compiled-query
 
-        var justin = session.Query(new FindByFirstName { FirstName = "Justin" });
+        var justin = await session.QueryAsync(new FindByFirstName { FirstName = "Justin" });
 
         var tamba = await session.QueryAsync(new FindByFirstName { FirstName = "Tamba" });
 

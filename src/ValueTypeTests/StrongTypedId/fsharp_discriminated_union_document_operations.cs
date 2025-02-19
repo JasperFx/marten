@@ -304,7 +304,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
     }
 
     [Fact]
-    public void bulk_writing_sync()
+    public async Task bulk_writing_sync()
     {
         FSharpTypes.Order[] orders =
         [
@@ -314,7 +314,7 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
             CreateNewOrder()
         ];
 
-        theStore.BulkInsertDocuments(orders);
+        await theStore.BulkInsertDocumentsAsync(orders);
     }
 
     private FSharpTypes.Order CreateNewOrder(string customerName = null)

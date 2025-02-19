@@ -148,11 +148,6 @@ public interface IBatchedQuery
     Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class;
 
     /// <summary>
-    ///     Force the batched query to execute synchronously
-    /// </summary>
-    void ExecuteSynchronously();
-
-    /// <summary>
     /// Used internally by Marten. Allows for the usage of any old IQueryHandler<T>
     /// in a batch
     /// </summary>

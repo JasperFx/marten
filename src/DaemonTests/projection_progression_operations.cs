@@ -13,12 +13,18 @@ using Xunit;
 
 namespace DaemonTests;
 
-public class projection_progression_operations : OneOffConfigurationsContext
+public class projection_progression_operations : OneOffConfigurationsContext, IAsyncLifetime
 {
-    public projection_progression_operations()
+    public async Task InitializeAsync()
     {
-        theStore.Advanced.Clean.DeleteAllEventData();
-        theStore.EnsureStorageExists(typeof(IEvent));
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
     }
 
     [Fact]

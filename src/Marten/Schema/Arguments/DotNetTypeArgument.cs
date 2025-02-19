@@ -37,11 +37,6 @@ internal class DotNetTypeArgument: UpsertArgument
         method.Frames.Code("parameter{0}.NpgsqlDbType = {1};", i, DbType);
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code("writer.Write(document.GetType().FullName, {0});", DbType);
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.Code("await writer.WriteAsync(document.GetType().FullName, {0}, {1});", DbType,
