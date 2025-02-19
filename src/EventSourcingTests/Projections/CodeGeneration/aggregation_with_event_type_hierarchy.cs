@@ -39,7 +39,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        var something = theSession.Load<Something>(id);
+        var something = await theSession.LoadAsync<Something>(id);
 
         something.Id.ShouldBe(id);
         something.Value.ShouldBe(SomethingUpdated.DefaultValue);
@@ -48,13 +48,13 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
         theSession.Events.Append(id, new SomethingManuallySynched(id));
         await theSession.SaveChangesAsync();
 
-        something = theSession.Load<Something>(id);
+        something = await theSession.LoadAsync<Something>(id);
         something.Value.ShouldBe(SomethingManuallySynched.DefaultValue);
 
         theSession.Events.Append(id, new SomethingAutoSynched(id));
         await theSession.SaveChangesAsync();
 
-        something = theSession.Load<Something>(id);
+        something = await theSession.LoadAsync<Something>(id);
         something.Value.ShouldBe(SomethingAutoSynched.DefaultValue);
     }
 
@@ -73,7 +73,7 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        var something = theSession.Load<Something>(id);
+        var something = await theSession.LoadAsync<Something>(id);
 
         something.Id.ShouldBe(id);
         something.Value.ShouldBe(SomethingUpdated.DefaultValue);

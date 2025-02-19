@@ -109,34 +109,6 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         }
     }
 
-    public void ExecuteSynchronously()
-    {
-        if (!_items.Any())
-        {
-            return;
-        }
-
-        foreach (var type in _documentTypes.Distinct()) Parent.Database.EnsureStorageExists(type);
-
-        var command = Parent.BuildCommand(_items.Select(x => x.Handler));
-
-
-        using var reader = Parent.ExecuteReader(command);
-        _items[0].Read(reader, Parent);
-
-        foreach (var item in _items.Skip(1))
-        {
-            var hasNext = reader.NextResult();
-
-            if (!hasNext)
-            {
-                throw new InvalidOperationException("There is no next result to read over.");
-            }
-
-            item.Read(reader, Parent);
-        }
-    }
-
     public Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class
     {
         _documentTypes.Add(typeof(TDoc));

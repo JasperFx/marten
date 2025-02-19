@@ -22,7 +22,7 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState(streamId);
+            var state = await session.Events.FetchStreamStateAsync(streamId);
             // ... do some stuff
             var expectedVersion = state.Version + 1;
             session.Events.Append(streamId, expectedVersion, new WhateverEvent());
@@ -48,7 +48,7 @@ public class Bug_673_multiple_version_assertions: IntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState(streamId);
+            var state = await session.Events.FetchStreamStateAsync(streamId);
             // ... do some stuff
             var expectedVersion = state.Version + 1;
             session.Events.Append(streamId, expectedVersion, new WhateverEvent());

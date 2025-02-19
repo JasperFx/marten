@@ -21,8 +21,8 @@ public class identity_map_mechanics: IntegrationContext
         await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
-        var first = identitySession.Load<User>(user.Id);
-        var second = identitySession.Load<User>(user.Id);
+        var first = await identitySession.LoadAsync<User>(user.Id);
+        var second = await identitySession.LoadAsync<User>(user.Id);
 
         first.ShouldBeSameAs(second);
     }
@@ -37,8 +37,8 @@ public class identity_map_mechanics: IntegrationContext
         await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
-        var first = identitySession.Load<User>(user.Id);
-        var second = identitySession.LoadMany<User>(user.Id)
+        var first = await identitySession.LoadAsync<User>(user.Id);
+        var second = (await identitySession.LoadManyAsync<User>(user.Id))
             .SingleOrDefault();
 
         first.ShouldBeSameAs(second);
@@ -114,12 +114,12 @@ public class identity_map_mechanics: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void then_a_document_can_be_added_with_then_specified_id(DocumentTracking tracking)
+    public async Task then_a_document_can_be_added_with_then_specified_id(DocumentTracking tracking)
     {
         var id = Guid.NewGuid();
 
         var session = OpenSession(tracking);
-        var notFound = session.Load<User>(id);
+        var notFound = await session.LoadAsync<User>(id);
 
         var replacement = new User { Id = id, FirstName = "Tim", LastName = "Cools" };
 
@@ -130,14 +130,14 @@ public class identity_map_mechanics: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.DirtyTracking)]
     [InlineData(DocumentTracking.IdentityOnly)]
-    public void finding_documents_in_map_but_not_yet_persisted(DocumentTracking tracking)
+    public async Task finding_documents_in_map_but_not_yet_persisted(DocumentTracking tracking)
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
         var session = OpenSession(tracking);
         session.Store(user1);
 
-        var fromSession = session.Load<User>(user1.Id);
+        var fromSession = await session.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldBeSameAs(user1);
     }
@@ -145,7 +145,7 @@ public class identity_map_mechanics: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.DirtyTracking)]
     [InlineData(DocumentTracking.IdentityOnly)]
-    public void finding_documents_in_map_but_not_yet_persisted_2(DocumentTracking tracking)
+    public async Task finding_documents_in_map_but_not_yet_persisted_2(DocumentTracking tracking)
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
@@ -153,7 +153,7 @@ public class identity_map_mechanics: IntegrationContext
         session.Store(user1);
         session.Store(user1);
 
-        var fromSession = session.Load<User>(user1.Id);
+        var fromSession = await session.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldBeSameAs(user1);
     }

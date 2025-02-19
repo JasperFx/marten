@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -11,11 +12,11 @@ public class custom_identity_members : OneOffConfigurationsContext
     private static readonly string[] listSystemIds = {"123", "456"};
 
     [Fact]
-    public void get_by_id_member_property()
+    public async Task get_by_id_member_property()
     {
         StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
 
-        theStore.BulkInsert(new[]
+        await theStore.BulkInsertAsync(new[]
         {
             new BaseClass {Id = "qwe", SystemId = "123"},
             new BaseClass {Id = "asd", SystemId = "456"},
@@ -30,11 +31,11 @@ public class custom_identity_members : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void get_by_id_property()
+    public async Task get_by_id_property()
     {
         StoreOptions(_ => { _.Schema.For<BaseClass>().Identity(x => x.SystemId); });
 
-        theStore.BulkInsert(new[]
+        await theStore.BulkInsertAsync(new[]
         {
             new BaseClass {Id = "qwe", SystemId = "123"},
             new BaseClass {Id = "asd", SystemId = "456"},
@@ -43,7 +44,7 @@ public class custom_identity_members : OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            session.LoadMany<BaseClass>(listSystemIds).Count.ShouldBe(2);
+            (await session.LoadManyAsync<BaseClass>(listSystemIds)).Count.ShouldBe(2);
 
             session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listIds)).ShouldBe(2);
             session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);

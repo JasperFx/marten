@@ -162,7 +162,6 @@ public class quick_append_events_with_optimistic_or_exclusive_locks
         public append_events_optimistic_or_exclusive_with_string_identity()
         {
             StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
-            theStore.Advanced.Clean.DeleteAllEventData();
         }
 
         [Fact]

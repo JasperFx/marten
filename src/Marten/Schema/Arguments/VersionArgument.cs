@@ -46,24 +46,6 @@ internal class VersionArgument: UpsertArgument
         method.Frames.Code("setVersionParameter(parameterBuilder);");
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        if (mapping.Metadata.Version.Member == null)
-        {
-            load.Frames.Code($"writer.Write({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}});",
-                NpgsqlDbType.Uuid);
-        }
-        else
-        {
-            load.Frames.Code($@"
-var version = {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid();
-writer.Write(version, {{0}});
-", NpgsqlDbType.Uuid);
-
-            load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
-        }
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         if (mapping.Metadata.Version.Member == null)

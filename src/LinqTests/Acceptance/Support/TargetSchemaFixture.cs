@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -26,7 +27,7 @@ public abstract class TargetSchemaFixture: IDisposable
         }
     }
 
-    internal DocumentStore ProvisionStore(string schema, Action<StoreOptions> configure = null, bool isFsharpTest = false)
+    internal async Task<DocumentStore> ProvisionStoreAsync(string schema, Action<StoreOptions> configure = null, bool isFsharpTest = false)
     {
         var store = DocumentStore.For(x =>
         {
@@ -36,16 +37,16 @@ public abstract class TargetSchemaFixture: IDisposable
             configure?.Invoke(x);
         });
 
-        store.Advanced.Clean.CompletelyRemoveAll();
+        await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
 
         if (isFsharpTest)
         {
-            store.BulkInsert(FSharpDocuments);
+            await store.BulkInsertAsync(FSharpDocuments);
         }
         else
         {
-            store.BulkInsert(Documents);
+            await store.BulkInsertAsync(Documents);
         }
 
         _stores.Add(store);

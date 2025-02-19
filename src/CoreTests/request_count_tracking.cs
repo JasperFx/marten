@@ -35,27 +35,6 @@ public class request_count_tracking : IDisposable
     }
 
     [Fact]
-    public async Task increments_the_request_count()
-    {
-        theSession.RequestCount.ShouldBe(0);
-
-        theSession.Execute(new NpgsqlCommand("select 1"));
-        theSession.RequestCount.ShouldBe(1);
-
-        theSession.Execute(new NpgsqlCommand("select 2"));
-        theSession.RequestCount.ShouldBe(2);
-
-        theSession.Execute(new NpgsqlCommand("select 3"));
-        theSession.RequestCount.ShouldBe(3);
-
-        theSession.Execute(new NpgsqlCommand("select 4"));
-        theSession.RequestCount.ShouldBe(4);
-
-        await theSession.ExecuteAsync(new NpgsqlCommand("select 5"));
-        theSession.RequestCount.ShouldBe(5);
-    }
-
-    [Fact]
     public async Task log_execute_failure_1_async()
     {
         var ex = await Should.ThrowAsync<MartenCommandException>(async () =>
@@ -71,48 +50,12 @@ public class request_count_tracking : IDisposable
 
 
     [Fact]
-    public void log_execute_failure_2()
-    {
-
-        var cmd = new NpgsqlCommand("select foo from nonexistent");
-
-        var ex = Should.Throw<MartenCommandException>(() =>
-            theSession.Execute(cmd));
-
-        logger.LastCommand.ShouldBe(cmd);
-        logger.LastException.ShouldBe(ex.InnerException);
-
-    }
-
-
-    [Fact]
-    public void log_execute_success_1()
-    {
-        theSession.Execute(new NpgsqlCommand("select 1"));
-
-        logger.LastCommand.CommandText.ShouldBe("select 1");
-
-    }
-
-
-    [Fact]
     public async Task log_execute_success_1_async()
     {
         await theSession.ExecuteAsync(new NpgsqlCommand("select 1"));
 
         logger.LastCommand.CommandText.ShouldBe("select 1");
     }
-
-
-    [Fact]
-    public void log_execute_success_2()
-    {
-        var cmd = new NpgsqlCommand("select 1");
-        theSession.Execute(cmd);
-
-        logger.LastCommand.ShouldBeSameAs(cmd);
-    }
-
 
     [Fact]
     public async Task log_execute_success_2_async()

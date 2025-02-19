@@ -44,7 +44,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
         #region sample_scenario-copyandtransformstream-transform
         using (var session = theStore.LightweightSession())
         {
-            var events = session.Events.FetchStream(started.Name);
+            var events = await session.Events.FetchStreamAsync(started.Name);
 
             var transformedEvents = events.SelectMany(x =>
             {

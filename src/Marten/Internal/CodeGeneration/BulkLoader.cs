@@ -19,20 +19,6 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
         _storage = storage;
     }
 
-    public void Load(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
-    {
-        using var writer = conn.BeginBinaryImport(MainLoaderSql());
-
-        foreach (var document in documents)
-        {
-            _storage.AssignIdentity(document, tenant.TenantId, tenant.Database);
-            writer.StartRow();
-            LoadRow(writer, document, tenant, serializer);
-        }
-
-        writer.Complete();
-    }
-
     public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
         IEnumerable<T> documents,
         CancellationToken cancellation)
@@ -51,19 +37,6 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
 
 
     public abstract string CreateTempTableForCopying();
-
-    public void LoadIntoTempTable(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
-        IEnumerable<T> documents)
-    {
-        using var writer = conn.BeginBinaryImport(TempLoaderSql());
-        foreach (var document in documents)
-        {
-            writer.StartRow();
-            LoadRow(writer, document, tenant, serializer);
-        }
-
-        writer.Complete();
-    }
 
     public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
         IEnumerable<T> documents,
@@ -107,8 +80,6 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
 
         return "EMPTY";
     }
-
-    public abstract void LoadRow(NpgsqlBinaryImporter writer, T document, Tenant tenant, ISerializer serializer);
 
     public abstract Task LoadRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant,
         ISerializer serializer, CancellationToken cancellation);

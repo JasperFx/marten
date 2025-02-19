@@ -41,26 +41,26 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_view_class()
+    public async Task run_inline_aggregation_with_base_view_class()
     {
-        VerifyProjection<QuestMonstersWithBaseClass>();
+        await VerifyProjection<QuestMonstersWithBaseClass>();
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_class_and_id_overloaded()
+    public async Task run_inline_aggregation_with_base_class_and_id_overloaded()
     {
-        VerifyProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
+        await VerifyProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_class_and_id_overloaded_with_new()
+    public async Task run_inline_aggregation_with_base_class_and_id_overloaded_with_new()
     {
-        VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+        await VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
     }
 
-    private void VerifyProjection<T>() where T : IMonstersView
+    private async Task VerifyProjection<T>() where T : IMonstersView
     {
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = await theSession.LoadAsync<T>(streamId);
 
         loadedView.ShouldNotBe(default);
         loadedView.Id.ShouldBe(streamId);

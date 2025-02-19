@@ -47,7 +47,7 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
 
         using (var session = theStore.LightweightSession())
         {
-            session.Query<IPolicy>($"Where id = \'{policy.VersionId}\'").Single()
+            (await session.QueryAsync<IPolicy>($"Where id = \'{policy.VersionId}\'")).Single()
                 .VersionId.ShouldBe(policy.VersionId);
         }
     }

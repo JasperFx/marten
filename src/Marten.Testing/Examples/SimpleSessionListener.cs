@@ -2,6 +2,8 @@ using System.Diagnostics;
 using JasperFx.Core;
 using Marten.Services;
 using Marten.Testing.Documents;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Marten.Testing.Examples;
 
@@ -10,7 +12,7 @@ namespace Marten.Testing.Examples;
 // with empty implementations of each method you may find helpful
 public class SimpleSessionListener: DocumentSessionListenerBase
 {
-    public override void BeforeSaveChanges(IDocumentSession session)
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         // Use pending changes to preview what is about to be
         // persisted
@@ -31,9 +33,11 @@ public class SimpleSessionListener: DocumentSessionListenerBase
         // organized into streams that will be appended to the event store
         pending.Streams()
             .Each(s => Debug.WriteLine(s));
+
+        return Task.CompletedTask;
     }
 
-    public override void AfterCommit(IDocumentSession session, IChangeSet commit)
+    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
         // See what was just persisted, and possibly carry out post
         // commit actions
@@ -43,6 +47,8 @@ public class SimpleSessionListener: DocumentSessionListenerBase
         last.Updated.Each(x => Debug.WriteLine($"{x} was updated"));
         last.Deleted.Each(x => Debug.WriteLine($"{x} was deleted"));
         last.Inserted.Each(x => Debug.WriteLine($"{x} was inserted"));
+
+        return Task.CompletedTask;
     }
 }
 

@@ -232,17 +232,19 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         var allSchemas = theStore.Tenancy.Default.Database.AllSchemaNames();
 
-        int GetSequenceCount(IDocumentStore store)
+        async Task<int> GetSequenceCount(IDocumentStore store)
         {
             using var session = store.QuerySession();
-            return session.Query<int>(@"select count(*) from information_schema.sequences s
-where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas).First();
+            var values = await session.QueryAsync<int>(@"select count(*) from information_schema.sequences s
+where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas);
+
+            return values.First();
         }
 
-        GetSequenceCount(theStore).ShouldBeGreaterThan(0);
+        (await GetSequenceCount(theStore)).ShouldBeGreaterThan(0);
 
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        GetSequenceCount(theStore).ShouldBe(0);
+        (await GetSequenceCount(theStore)).ShouldBe(0);
     }
 }

@@ -23,7 +23,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
 
@@ -44,6 +44,8 @@ public class delete_many_documents_by_query : IntegrationContext
     public async Task delete_where_with_sub_collection_querying()
     {
         StoreOptions(opts => opts.Logger(new TestOutputMartenLogger(_output)));
+
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
         var targets = Target.GenerateRandomData(50).ToArray();
 
@@ -69,7 +71,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var current = new IntDoc {Id = 5};
 
@@ -93,7 +95,7 @@ public class delete_many_documents_by_query : IntegrationContext
             targets[i].Double = 578;
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
 
@@ -120,7 +122,7 @@ public class delete_many_documents_by_query : IntegrationContext
     {
         var targets = new[] { new FailureInLife { Id = 1, What = 2 } };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
         var id = 1;
         var what = 2;
 

@@ -26,7 +26,7 @@ public class dirty_tracked_sessions: IntegrationContext
         {
             session2.ShouldNotBeSameAs(session);
 
-            var user2 = session2.Load<User>(user.Id);
+            var user2 = await session2.LoadAsync<User>(user.Id);
             user2.FirstName = "Jens";
             user2.LastName = "Pettersson";
 
@@ -35,7 +35,7 @@ public class dirty_tracked_sessions: IntegrationContext
 
         using (var session3 = theStore.LightweightSession())
         {
-            var user3 = session3.Load<User>(user.Id);
+            var user3 = await session3.LoadAsync<User>(user.Id);
             user3.FirstName.ShouldBe("Jens");
             user3.LastName.ShouldBe("Pettersson");
         }
@@ -55,7 +55,7 @@ public class dirty_tracked_sessions: IntegrationContext
         await session.SaveChangesAsync();
 
         using var session3 = theStore.LightweightSession();
-        var user3 = session3.Load<User>(user.Id);
+        var user3 = await session3.LoadAsync<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");
     }
@@ -70,13 +70,13 @@ public class dirty_tracked_sessions: IntegrationContext
         session.Store(user);
         await session.SaveChangesAsync();
 
-        var user2 = session.Load<User>(user.Id);
+        var user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         user2.LastName = "Pettersson";
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        var user3 = query.Load<User>(user.Id);
+        var user3 = await query.LoadAsync<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
         user3.LastName.ShouldBe("Pettersson");
     }
@@ -90,13 +90,13 @@ public class dirty_tracked_sessions: IntegrationContext
         session.Store(user);
         await session.SaveChangesAsync();
 
-        var user2 = session.Load<User>(user.Id);
+        var user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         session.Delete(user2);
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        var user3 = query.Load<User>(user.Id);
+        var user3 = await query.LoadAsync<User>(user.Id);
         user3.ShouldBeNull();
     }
 
@@ -109,13 +109,13 @@ public class dirty_tracked_sessions: IntegrationContext
         session.Store(user);
         await session.SaveChangesAsync();
 
-        var user2 = session.Load<User>(user.Id);
+        var user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         session.Delete<User>(user2.Id);
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        var user3 = query.Load<User>(user.Id);
+        var user3 = await query.LoadAsync<User>(user.Id);
         user3.ShouldBeNull();
     }
 
@@ -128,15 +128,15 @@ public class dirty_tracked_sessions: IntegrationContext
         session.Store(user);
         await session.SaveChangesAsync();
 
-        var user2 = session.Load<User>(user.Id);
+        var user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         session.Delete(user2);
-        user2 = session.Load<User>(user.Id);
+        user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        var user3 = query.Load<User>(user.Id);
+        var user3 = await query.LoadAsync<User>(user.Id);
         user3.FirstName.ShouldBe("Jens");
     }
 
@@ -149,13 +149,13 @@ public class dirty_tracked_sessions: IntegrationContext
         session.Store(user);
         await session.SaveChangesAsync();
 
-        var user2 = session.Load<User>(user.Id);
+        var user2 = await session.LoadAsync<User>(user.Id);
         user2.FirstName = "Jens";
         session.Eject(user2);
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        var user3 = query.Load<User>(user.Id);
+        var user3 = await query.LoadAsync<User>(user.Id);
         user3.FirstName.ShouldBe("James");
     }
 

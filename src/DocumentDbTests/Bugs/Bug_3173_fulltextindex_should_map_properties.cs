@@ -20,7 +20,7 @@ public class Bug_3173_fulltextindex_should_map_properties: BugIntegrationContext
         await theSession.SaveChangesAsync();
 
         // use an orm like Dapper in Marten <7.0 to run the same query
-        var indexDefinitions = await theSession.AdvancedSqlQueryAsync<string>(
+        var indexDefinitions = await theSession.AdvancedSql.QueryAsync<string>(
             $"""
              select indexdef
              from pg_catalog.pg_indexes

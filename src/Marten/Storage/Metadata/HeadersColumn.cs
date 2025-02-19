@@ -119,11 +119,6 @@ internal class HeadersArgument: UpsertArgument
         method.Frames.Code($"setHeaderParameter({parameters.Usage}, {{0}});", Use.Type<IMartenSession>());
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code($"writer.Write({typeof(DBNull).FullNameInCode()}.Value, {{0}});", DbType);
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync($"await writer.WriteAsync({typeof(DBNull).FullNameInCode()}.Value, {{0}}, {{1}});",

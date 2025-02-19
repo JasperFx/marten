@@ -15,7 +15,7 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class querying_event_data_with_linq: OneOffConfigurationsContext
+public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -23,6 +23,17 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
 
     private readonly MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
     private readonly MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
+
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
+    }
 
     #region sample_query-against-event-data
     [Fact]
@@ -117,8 +128,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
             _.Events.AddEventType(typeof(MembersDeparted));
         });
 
-        theStore.Advanced.Clean.DeleteAllEventData();
-
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
             .TableName.Schema.ShouldBe("querying_event_data_with_linq_events");
@@ -313,7 +323,6 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     public querying_event_data_with_linq(ITestOutputHelper output)
     {
         _output = output;
-        theStore.Advanced.Clean.DeleteAllEventData();
     }
 }
 

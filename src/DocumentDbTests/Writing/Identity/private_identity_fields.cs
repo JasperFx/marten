@@ -23,7 +23,7 @@ public class private_identity_fields : IntegrationContext
 
         user.Id.ShouldNotBe(Guid.Empty);
 
-        var issue = theSession.Load<Issue>(user.Id);
+        var issue = await theSession.LoadAsync<Issue>(user.Id);
         issue.ShouldBeNull();
     }
 

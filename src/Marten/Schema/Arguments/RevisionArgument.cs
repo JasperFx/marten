@@ -23,13 +23,6 @@ internal class RevisionArgument: UpsertArgument
         method.Frames.Code("setCurrentRevisionParameter(parameterBuilder);");
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code(
-            "writer.Write(1, {0});",
-            NpgsqlDbType.Integer);
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync(

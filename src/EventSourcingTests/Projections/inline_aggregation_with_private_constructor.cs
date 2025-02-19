@@ -50,7 +50,7 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
 
         await theSession.SaveChangesAsync();
 
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = await theSession.LoadAsync<T>(streamId);
 
         loadedView.ShouldNotBe(default);
         loadedView!.Id.ShouldBe(streamId);

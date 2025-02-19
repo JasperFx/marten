@@ -96,17 +96,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteAllDocuments()
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteAllDocumentsAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteDocumentsByType(Type documentType)
     {
         throw new NotImplementedException();
     }
@@ -116,17 +106,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteDocumentsExcept(params Type[] documentTypes)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void CompletelyRemove(Type documentType)
     {
         throw new NotImplementedException();
     }
@@ -136,17 +116,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void CompletelyRemoveAll()
-    {
-        throw new NotImplementedException();
-    }
-
     public Task CompletelyRemoveAllAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteAllEventData()
     {
         throw new NotImplementedException();
     }
@@ -156,17 +126,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteSingleEventStream(Guid streamId, string? tenantId = null)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteSingleEventStream(string streamId, string? tenantId = null)
     {
         throw new NotImplementedException();
     }

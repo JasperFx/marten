@@ -18,9 +18,9 @@ public class using_long_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         await using var session = theStore.LightweightSession();
-        session.Load<LongDoc>(456).ShouldNotBeNull();
+        (await session.LoadAsync<LongDoc>(456)).ShouldNotBeNull();
 
-        session.Load<LongDoc>(222).ShouldBeNull();
+        (await session.LoadAsync<LongDoc>(222)).ShouldBeNull();
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class using_long_identity : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<LongDoc>(LongDoc.Id).ShouldBeNull();
+            (await session.LoadAsync<LongDoc>(LongDoc.Id)).ShouldBeNull();
         }
     }
 
@@ -71,7 +71,7 @@ public class using_long_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
+        (await session.LoadManyAsync<LongDoc>(4, 5, 6)).Count().ShouldBe(3);
     }
 
     public using_long_identity(DefaultStoreFixture fixture) : base(fixture)

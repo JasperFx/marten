@@ -27,55 +27,6 @@ internal class BulkInsertion: IDisposable
     {
     }
 
-    public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        if (typeof(T) == typeof(object))
-        {
-            BulkInsertDocuments(documents.OfType<object>(), mode);
-        }
-        else
-        {
-            _tenant.Database.EnsureStorageExists(typeof(T));
-
-            using var conn = _tenant.Database.CreateConnection();
-            conn.Open();
-            var tx = conn.BeginTransaction();
-
-            try
-            {
-                bulkInsertDocuments(documents, batchSize, conn, mode);
-
-                tx.Commit();
-            }
-            catch (Exception)
-            {
-                tx.Rollback();
-                throw;
-            }
-        }
-    }
-
-    public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
-        Transaction transaction,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        if (typeof(T) == typeof(object))
-        {
-            BulkInsertDocumentsEnlistTransaction(documents.OfType<object>(), transaction, mode);
-        }
-        else
-        {
-            _tenant.Database.EnsureStorageExists(typeof(T));
-
-            using var conn = _tenant.Database.CreateConnection();
-            conn.Open();
-            conn.EnlistTransaction(transaction);
-            bulkInsertDocuments(documents, batchSize, conn, mode);
-        }
-    }
-
     public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize,
         CancellationToken cancellation)
     {
@@ -122,49 +73,6 @@ internal class BulkInsertion: IDisposable
             conn.EnlistTransaction(transaction);
             await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
         }
-    }
-
-    public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        var groups = bulkInserters(documents);
-
-        using var conn = _tenant.Database.CreateConnection();
-
-        conn.Open();
-        var tx = conn.BeginTransaction();
-
-        try
-        {
-            foreach (var group in groups) group.BulkInsert(batchSize, conn, this, mode);
-
-            tx.Commit();
-        }
-        catch (Exception)
-        {
-            tx.Rollback();
-            throw;
-        }
-    }
-
-    public void BulkInsertDocumentsEnlistTransaction(IEnumerable<object> documents,
-        Transaction transaction,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        var groups = bulkInserters(documents);
-        var types = documentTypes(documents);
-
-        // this needs to be done before open connection
-        foreach (var type in types)
-            _tenant.Database.EnsureStorageExists(type);
-
-        using var conn = _tenant.Database.CreateConnection();
-        conn.Open();
-        conn.EnlistTransaction(transaction);
-
-        foreach (var group in groups)
-            group.BulkInsert(batchSize, conn, this, mode);
     }
 
     private static Type[] documentTypes(IEnumerable<object> documents)
@@ -230,57 +138,6 @@ internal class BulkInsertion: IDisposable
             await group.BulkInsertAsync(batchSize, conn, this, mode, cancellation).ConfigureAwait(false);
     }
 
-    private void bulkInsertDocuments<T>(IReadOnlyCollection<T> documents, int batchSize, NpgsqlConnection conn,
-        BulkInsertMode mode)
-    {
-        var provider = _tenant.Database.Providers.StorageFor<T>();
-        var loader = provider.BulkLoader;
-
-        if (mode != BulkInsertMode.InsertsOnly)
-        {
-            var sql = loader.CreateTempTableForCopying();
-            conn.CreateCommand(sql).ExecuteNonQuery();
-        }
-
-        if (documents.Count <= batchSize)
-        {
-            loadDocuments(documents, loader, mode, conn);
-        }
-        else
-        {
-            var batch = new List<T>(batchSize);
-
-            foreach (var document in documents)
-            {
-                batch.Add(document);
-
-                if (batch.Count < batchSize)
-                {
-                    continue;
-                }
-
-                loadDocuments(batch, loader, mode, conn);
-                batch.Clear();
-            }
-
-            loadDocuments(batch, loader, mode, conn);
-        }
-
-        if (mode == BulkInsertMode.IgnoreDuplicates)
-        {
-            var copy = loader.CopyNewDocumentsFromTempTable();
-
-            conn.CreateCommand(copy).ExecuteNonQuery();
-        }
-        else if (mode == BulkInsertMode.OverwriteExisting)
-        {
-            var overwrite = loader.OverwriteDuplicatesFromTempTable();
-            var copy = loader.CopyNewDocumentsFromTempTable();
-
-            conn.CreateCommand(overwrite + ";" + copy).ExecuteNonQuery();
-        }
-    }
-
     private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize,
         NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
     {
@@ -333,19 +190,6 @@ internal class BulkInsertion: IDisposable
         }
     }
 
-    private void loadDocuments<T>(IEnumerable<T> documents, IBulkLoader<T> loader, BulkInsertMode mode,
-        NpgsqlConnection conn)
-    {
-        if (mode == BulkInsertMode.InsertsOnly)
-        {
-            loader.Load(_tenant, Serializer, conn, documents);
-        }
-        else
-        {
-            loader.LoadIntoTempTable(_tenant, Serializer, conn, documents);
-        }
-    }
-
     private async Task loadDocumentsAsync<T>(IReadOnlyCollection<T> documents, IBulkLoader<T> loader,
         BulkInsertMode mode, NpgsqlConnection conn, CancellationToken cancellation)
     {
@@ -362,8 +206,6 @@ internal class BulkInsertion: IDisposable
 
     internal interface IBulkInserter
     {
-        void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent, BulkInsertMode mode);
-
         Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion bulkInsertion, BulkInsertMode mode,
             CancellationToken cancellation);
     }
@@ -375,13 +217,6 @@ internal class BulkInsertion: IDisposable
         public BulkInserter(IEnumerable<object> documents)
         {
             _documents = documents.OfType<T>().ToArray();
-        }
-
-        public void BulkInsert(int batchSize, NpgsqlConnection connection, BulkInsertion parent,
-            BulkInsertMode mode)
-        {
-            parent._tenant.Database.EnsureStorageExists(typeof(T));
-            parent.bulkInsertDocuments(_documents, batchSize, connection, mode);
         }
 
         public async Task BulkInsertAsync(int batchSize, NpgsqlConnection conn, BulkInsertion parent,

@@ -55,7 +55,7 @@ namespace EventSourcingTests.Bugs
                 x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
             });
 
-            documentStore.Advanced.Clean.CompletelyRemoveAll();
+            await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using var session = documentStore.LightweightSession();
 
@@ -72,7 +72,7 @@ namespace EventSourcingTests.Bugs
             await session.SaveChangesAsync();
 
             using var querySession = documentStore.QuerySession();
-            var importAggregate = querySession.Load<DataImportAggregate>(importStream.Key);
+            var importAggregate = await querySession.LoadAsync<DataImportAggregate>(importStream.Key);
             importAggregate.ShouldNotBeNull();
             importAggregate.ImportCount.ShouldBe(importCount);
         }

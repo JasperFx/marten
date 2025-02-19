@@ -18,8 +18,8 @@ public class document_session_load_already_loaded_document_Tests : IntegrationCo
         await theSession.SaveChangesAsync();
 
         using var session = theStore.IdentitySession();
-        var first = session.Load<User>(user.Id);
-        var second = session.Load<User>(user.Id);
+        var first = await session.LoadAsync<User>(user.Id);
+        var second = await session.LoadAsync<User>(user.Id);
 
         first.ShouldBeSameAs(second);
     }

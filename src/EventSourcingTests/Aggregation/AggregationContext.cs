@@ -16,7 +16,12 @@ public class AggregationContext : IntegrationContext
 
     public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(MyAggregate));
+
+    }
+
+    protected override Task fixtureSetup()
+    {
+        return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(MyAggregate));
     }
 
     public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate>, new()

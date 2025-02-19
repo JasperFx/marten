@@ -106,11 +106,6 @@ internal class CausationIdArgument: UpsertArgument
             Use.Type<IMartenSession>());
     }
 
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code("writer.Write(\"BULK_INSERT\", {0});", DbType);
-    }
-
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync("await writer.WriteAsync(\"BULK_INSERT\", {0}, {1});", DbType,

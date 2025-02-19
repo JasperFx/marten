@@ -17,6 +17,6 @@ public class Bug_130_enable_case_insensitive_custom_sql_queries_Tests: BugIntegr
         theSession.Store(entity);
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>($"SELECT data FROM {SchemaName}.mt_doc_target").Single().Id.ShouldBe(entity.Id);
+        (await theSession.QueryAsync<Target>($"SELECT data FROM {SchemaName}.mt_doc_target")).Single().Id.ShouldBe(entity.Id);
     }
 }

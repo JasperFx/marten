@@ -32,7 +32,6 @@ namespace Marten.Testing.Harness
                 if (_store == null)
                 {
                     _store = new DocumentStore(Options);
-                    _store.Advanced.Clean.CompletelyRemoveAll();
                 }
 
                 return _store;

@@ -257,8 +257,8 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Projections.Add(new MyCustomProjection(), ProjectionLifecycle.Inline));
 
-        theStore.Advanced.Clean.DeleteAllDocuments();
-        theStore.Advanced.Clean.DeleteAllEventData();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         appendCustomEvent(1, 'a');
         appendCustomEvent(1, 'a');
@@ -274,7 +274,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Load<CustomAggregate>(1)
+        (await theSession.LoadAsync<CustomAggregate>(1))
             .ShouldBe(new CustomAggregate
             {
                 Id = 1,
@@ -284,7 +284,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
                 DCount = 1
             });
 
-        theSession.Load<CustomAggregate>(2)
+        (await theSession.LoadAsync<CustomAggregate>(2))
             .ShouldBe(new CustomAggregate
             {
                 Id = 2,
@@ -294,7 +294,7 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
                 DCount = 0
             });
 
-        theSession.Load<CustomAggregate>(3)
+        (await theSession.LoadAsync<CustomAggregate>(3))
             .ShouldBe(new CustomAggregate
             {
                 Id = 3,

@@ -207,8 +207,8 @@ public class UnitOfWork_PendingChanges_Functionality_Tests : IntegrationContext
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
-            var user12 = session2.Load<User>(user1.Id);
-            var user22 = session2.Load<User>(user2.Id);
+            var user12 = await session2.LoadAsync<User>(user1.Id);
+            var user22 = await session2.LoadAsync<User>(user2.Id);
             user12.FirstName = "Hank";
 
             session2.PendingChanges.UpdatesFor<User>().Single()

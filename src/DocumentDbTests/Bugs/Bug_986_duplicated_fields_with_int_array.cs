@@ -21,7 +21,7 @@ public class Bug_986_duplicated_fields_with_int_array: IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<GuyWithIntArray>(guyWithIntArray.Id).Numbers.ShouldHaveTheSameElementsAs(1, 3, 5, 7);
+            (await session.LoadAsync<GuyWithIntArray>(guyWithIntArray.Id)).Numbers.ShouldHaveTheSameElementsAs(1, 3, 5, 7);
         }
     }
 

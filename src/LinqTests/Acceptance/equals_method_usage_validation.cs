@@ -84,7 +84,8 @@ public class equals_method_usage_validation : IntegrationContext
         await theSession.SaveChangesAsync();
 
         var itemFromDb =
-            theSession.Query(new CompiledQueryTarget() {IdProp = queryTarget.Id, IntProp = queryTarget.IntProp});
+            await theSession.QueryAsync(new CompiledQueryTarget() {IdProp = queryTarget.Id, IntProp = queryTarget.IntProp});
+
 
         Assert.NotNull(itemFromDb);
     }

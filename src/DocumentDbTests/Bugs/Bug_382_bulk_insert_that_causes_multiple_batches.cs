@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -11,7 +12,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationContext
 {
     [Fact]
-    public void load_with_batch_larger_than_batch_size_and_overwrite_existing_on_empty_database()
+    public async Task load_with_batch_larger_than_batch_size_and_overwrite_existing_on_empty_database()
     {
         StoreOptions(_ =>
         {
@@ -20,7 +21,7 @@ public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationCon
 
         var data = Target.GenerateRandomData(11).ToArray();
 
-        theStore.BulkInsert(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
+        await theStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
 
         theSession.Query<Target>().Count().ShouldBe(data.Length);
     }

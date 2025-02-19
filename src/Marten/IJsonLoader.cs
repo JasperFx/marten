@@ -10,42 +10,6 @@ namespace Marten;
 public interface IJsonLoader
 {
     /// <summary>
-    ///     Load or find only the document json by string id for a document of type T
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    string? FindById<T>(string id) where T : class;
-
-    /// <summary>
-    ///     Load or find only the document json by numeric or Guid id for a document of type T
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    string? FindById<T>(int id) where T : class;
-
-    /// <summary>
-    ///     Load or find only the document json by numeric or Guid id for a document of type T
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    string? FindById<T>(long id) where T : class;
-
-    /// <summary>
-    ///     Load or find only the document json by numeric or Guid id for a document of type T
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    string? FindById<T>(Guid id) where T : class;
-
-    /// <summary>
     ///     Asynchronously load or find only the document json by string id for a document of type T
     /// </summary>
     /// <typeparam name="T"></typeparam>

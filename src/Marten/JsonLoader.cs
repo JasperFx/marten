@@ -18,11 +18,6 @@ internal class JsonLoader: IJsonLoader
         _session = session;
     }
 
-    public string? FindById<T>(string id) where T : class
-    {
-        return findJsonById<T, string>(id);
-    }
-
     public Task<string?> FindByIdAsync<T>(object id, CancellationToken token = default) where T : class
     {
         if (id == null)
@@ -37,21 +32,6 @@ internal class JsonLoader: IJsonLoader
     public Task<string?> FindByIdAsync<T>(string id, CancellationToken token) where T : class
     {
         return findJsonByIdAsync<T, string>(id, token);
-    }
-
-    public string? FindById<T>(int id) where T : class
-    {
-        return findJsonById<T, int>(id);
-    }
-
-    public string? FindById<T>(long id) where T : class
-    {
-        return findJsonById<T, long>(id);
-    }
-
-    public string? FindById<T>(Guid id) where T : class
-    {
-        return findJsonById<T, Guid>(id);
     }
 
     public Task<string?> FindByIdAsync<T>(int id, CancellationToken token = new()) where T : class
@@ -129,16 +109,6 @@ internal class JsonLoader: IJsonLoader
     public Task<string?> FindJsonByIdAsync<T>(int id, CancellationToken token) where T : class
     {
         return findJsonByIdAsync<T, int>(id, token);
-    }
-
-    private string? findJsonById<T, TId>(TId id) where T : notnull where TId : notnull
-    {
-        _session.Database.EnsureStorageExists(typeof(T));
-
-        var storage = _session.QueryStorageFor<T, TId>();
-        var command = storage.BuildLoadCommand(id, _session.TenantId);
-
-        return _session.LoadOne(command, LinqConstants.StringValueSelector);
     }
 
     private async Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token)

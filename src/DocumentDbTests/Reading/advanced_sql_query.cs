@@ -218,27 +218,6 @@ public class advanced_sql_query: IntegrationContext
         collectedResults[2].detail.Detail.ShouldBe("Is a good chess player");
     }
 
-    [Fact]
-    public void can_query_synchrounously()
-    {
-        using var session = theStore.LightweightSession();
-
-        var singleResult  = session.AdvancedSql.Query<int>("select 5 from (values(1)) as dummy").First();
-        var tuple2Result = session.AdvancedSql.Query<int, string>(
-            "select row(5), row('foo')from (values(1)) as dummy").First();
-        var tuple3Result = session.AdvancedSql.Query<int, string, bool>(
-            "select row(5), row('foo'), row(true) from (values(1)) as dummy").First();
-
-        singleResult.ShouldBe(5);
-
-        tuple2Result.Item1.ShouldBe(5);
-        tuple2Result.Item2.ShouldBe("foo");
-
-        tuple3Result.Item1.ShouldBe(5);
-        tuple3Result.Item2.ShouldBe("foo");
-        tuple3Result.Item3.ShouldBe(true);
-    }
-
     public class DocWithoutMeta
     {
         public int Id { get; set; }

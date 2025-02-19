@@ -22,11 +22,6 @@ public class StubDocumentSessionListener : DocumentSessionListenerBase
 
     public IDictionary<object, object> StoredDocuments { get; } = new Dictionary<object, object>();
 
-    public override void BeforeSaveChanges(IDocumentSession session)
-    {
-        SaveChangesSession = session;
-    }
-
     public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         SaveChangesSession = session;
@@ -43,12 +38,6 @@ public class StubDocumentSessionListener : DocumentSessionListenerBase
     public IChangeSet LastCommit { get; set; }
 
     public IDocumentSession SaveChangesSession { get; set; }
-
-    public override void AfterCommit(IDocumentSession session, IChangeSet commit)
-    {
-        LastCommit = commit.Clone();
-        AfterCommitSession = session;
-    }
 
     public IDocumentSession AfterCommitSession { get; set; }
 }

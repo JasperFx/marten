@@ -21,7 +21,7 @@ public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests 
             _.AutoCreateSchemaObjects = AutoCreate.All;
         });
 
-        store1.Advanced.Clean.CompletelyRemoveAll();
+        await store1.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using (var session1 = store1.LightweightSession())
         {

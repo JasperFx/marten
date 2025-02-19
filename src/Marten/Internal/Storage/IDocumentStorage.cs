@@ -40,9 +40,6 @@ public interface IDocumentStorage: ISelectClause
     TenancyStyle TenancyStyle { get; }
     Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default);
 
-    [Obsolete("Use async method instead.")]
-    void TruncateDocumentStorage(IMartenDatabase database);
-
     ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session);
 
     ISqlFragment? DefaultWhereFragment();
@@ -145,11 +142,8 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull
 
     IDeletion DeleteForId(TId id, string tenantId);
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    T? Load(TId id, IMartenSession session);
     Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
-    IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
     Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
 

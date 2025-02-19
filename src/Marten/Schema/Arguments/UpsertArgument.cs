@@ -172,66 +172,6 @@ END
                 NpgsqlDbType.Varchar);
         }
     }
-
-    public virtual void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        var rawMemberType = _members.Last().GetRawMemberType();
-
-        var dbTypeString = rawMemberType.IsArray
-            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
-            : Constant.ForEnum(DbType).Usage;
-
-
-        var memberPath = _members.Select(x => x.Name).Join("?.");
-        if (DotNetType.IsEnum || (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsEnum))
-        {
-            var isDeep = _members.Length > 0;
-            var memberType = _members.Last().GetMemberType();
-            var isNullable = memberType.IsNullable();
-
-            var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
-
-            var accessor = memberPath;
-
-            if (DbType == NpgsqlDbType.Integer)
-            {
-                if (isNullable || isDeep)
-                {
-                    accessor =
-                        $"{nameof(BulkLoader<string, int>.GetEnumIntValue)}<{enumType.FullNameInCode()}>(document.{ParameterValue})";
-                }
-
-                load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Integer);
-            }
-            else
-            {
-                if (isNullable || isDeep)
-                {
-                    accessor =
-                        $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
-                }
-
-                load.Frames.Code($"writer.Write({accessor}, {{0}});", NpgsqlDbType.Varchar);
-            }
-        }
-        else if (mapping.IdStrategy is ValueTypeIdGeneration st)
-        {
-            st.WriteBulkWriterCode(load, mapping);
-        }
-        else if (DotNetType.IsNullable() && DotNetType.GetGenericArguments()[0].IsValueType)
-        {
-            var valueType = DotNetType.GetGenericArguments()[0];
-            var accessor = $"GetNullable<{valueType}>(document.{memberPath})";
-            var npgsqlType = DbType;
-            load.Frames.Code($"writer.Write({accessor}, {{0}});", npgsqlType);
-        }
-        else
-        {
-            load.Frames.Code($"writer.Write(document.{ParameterValue}, {dbTypeString});");
-        }
-    }
-
-
     public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         var rawMemberType = _members.Last().GetRawMemberType();

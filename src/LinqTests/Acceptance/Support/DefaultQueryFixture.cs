@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -6,13 +7,13 @@ using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance.Support;
 
-public class DefaultQueryFixture: TargetSchemaFixture
+public class DefaultQueryFixture: TargetSchemaFixture, IAsyncLifetime
 {
-    public DefaultQueryFixture()
+    public async Task InitializeAsync()
     {
-        Store = ProvisionStore("linq_querying");
+        Store = await ProvisionStoreAsync("linq_querying");
 
-        DuplicatedFieldStore = ProvisionStore("duplicate_fields", o =>
+        DuplicatedFieldStore = await ProvisionStoreAsync("duplicate_fields", o =>
         {
             o.Schema.For<Target>()
                 .Duplicate(x => x.Number)
@@ -25,14 +26,14 @@ public class DefaultQueryFixture: TargetSchemaFixture
                 .Duplicate(x => x.NumberArray);
         });
 
-        FSharpFriendlyStore = ProvisionStore("fsharp_linq_querying", options =>
+        FSharpFriendlyStore = await ProvisionStoreAsync("fsharp_linq_querying", options =>
         {
             options.RegisterFSharpOptionValueTypes();
             var serializerOptions = JsonFSharpOptions.Default().WithUnwrapOption().ToJsonSerializerOptions();
             options.UseSystemTextJsonForSerialization(serializerOptions);
         }, isFsharpTest: true);
 
-        FSharpFriendlyStoreWithDuplicatedField = ProvisionStore("fsharp_duplicated_fields", options =>
+        FSharpFriendlyStoreWithDuplicatedField = await ProvisionStoreAsync("fsharp_duplicated_fields", options =>
         {
             options.Schema.For<Target>()
                 .Duplicate(x => x.Number)
@@ -49,10 +50,15 @@ public class DefaultQueryFixture: TargetSchemaFixture
             options.UseSystemTextJsonForSerialization(serializerOptions);
         }, isFsharpTest: true);
 
-        SystemTextJsonStore = ProvisionStore("stj_linq", o =>
+        SystemTextJsonStore = await ProvisionStoreAsync("stj_linq", o =>
         {
             o.Serializer<SystemTextJsonSerializer>();
         });
+    }
+
+    public async Task DisposeAsync()
+    {
+
     }
 
     public DocumentStore SystemTextJsonStore { get; set; }

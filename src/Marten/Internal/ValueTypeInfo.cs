@@ -106,8 +106,6 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
         => _inner.TruncateDocumentStorageAsync(database, ct);
 
-    public void TruncateDocumentStorage(IMartenDatabase database) => _inner.TruncateDocumentStorage(database);
-
     public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
         => _inner.FilterDocuments(query, session);
 
@@ -167,14 +165,8 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion DeleteForId(TSimple id, string tenantId)
         => _inner.DeleteForId(_converter(id), tenantId);
 
-    public TDoc Load(TSimple id, IMartenSession session)
-        => _inner.Load(_converter(id), session);
-
     public Task<TDoc> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
         => _inner.LoadAsync(_converter(id), session, token);
-
-    public IReadOnlyList<TDoc> LoadMany(TSimple[] ids, IMartenSession session)
-        => _inner.LoadMany(ids.Select(_converter).ToArray(), session);
 
     public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IMartenSession session, CancellationToken token)
         => _inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);

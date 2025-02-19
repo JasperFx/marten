@@ -15,56 +15,6 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
-    public void SaveChanges()
-    {
-        assertNotDisposed();
-
-        processChangeTrackers();
-        if (!_workTracker.HasOutstandingWork())
-        {
-            return;
-        }
-
-        try
-        {
-            Options.EventGraph.ProcessEvents(this);
-        }
-        catch (Exception)
-        {
-            tryApplyTombstoneBatch();
-            throw;
-        }
-
-        _workTracker.Sort(Options);
-
-        if (Options.AutoCreateSchemaObjects != AutoCreate.None)
-        {
-            foreach (var operationType in operationDocumentTypes()) Database.EnsureStorageExists(operationType);
-        }
-
-        foreach (var listener in Listeners)
-        {
-            listener.BeforeSaveChanges(this);
-        }
-
-        var batch = new UpdateBatch(_workTracker.AllOperations);
-
-        ExecuteBatch(batch);
-
-        resetDirtyChecking();
-
-        EjectPatchedTypes(_workTracker);
-        Logger.RecordSavedChanges(this, _workTracker);
-
-        foreach (var listener in Listeners)
-        {
-            listener.AfterCommit(this, _workTracker);
-        }
-
-        // Need to clear the unit of work here
-        _workTracker.Reset();
-    }
-
     public async Task SaveChangesAsync(CancellationToken token = default)
     {
         assertNotDisposed();
@@ -122,50 +72,6 @@ public abstract partial class DocumentSessionBase
     private IEnumerable<Type> operationDocumentTypes()
     {
         return _workTracker.Operations().Select(x => x.DocumentType).Where(x => x != null).Distinct();
-    }
-
-    internal void ExecuteBatch(IUpdateBatch batch)
-    {
-        var pages = batch.BuildPages(this);
-
-        var execution = new PagesExecution(pages, _connection);
-
-        try
-        {
-            try
-            {
-                Options.ResiliencePipeline.Execute(static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution, CancellationToken.None);
-            }
-            catch (Exception e)
-            {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
-            }
-
-            if (execution.Exceptions.Count == 1)
-            {
-                var ex = execution.Exceptions.Single();
-                ExceptionDispatchInfo.Throw(ex);
-            }
-
-            if (execution.Exceptions.Any())
-            {
-                throw new AggregateException(execution.Exceptions);
-            }
-        }
-        catch (Exception)
-        {
-            tryApplyTombstoneBatch();
-
-            throw;
-        }
-    }
-
-    private void tryApplyTombstoneBatch()
-    {
-        if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
-        {
-            Options.EventGraph.PostTombstones(tombstoneBatch);
-        }
     }
 
     internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection)

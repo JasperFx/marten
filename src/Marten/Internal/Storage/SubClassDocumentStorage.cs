@@ -52,12 +52,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.RawIdentityValue(id);
     }
 
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        database.RunSql(
-            $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
-    }
-
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync(
@@ -188,18 +182,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.DeleteForId(id, tenant);
     }
 
-    public T Load(TId id, IMartenSession session)
-    {
-        var doc = _parent.Load(id, session);
-
-        if (doc is T x)
-        {
-            return x;
-        }
-
-        return default;
-    }
-
     public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
@@ -210,11 +192,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         }
 
         return default;
-    }
-
-    public IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
-    {
-        return _parent.LoadMany(ids, session).OfType<T>().ToList();
     }
 
     public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token)

@@ -25,19 +25,6 @@ public static class QueryableExtensions
     /// <param name="configureExplain"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static QueryPlan Explain<T>(this IQueryable<T> queryable,
-        Action<IConfigureExplainExpressions>? configureExplain = null)
-    {
-        return queryable.As<MartenLinqQueryable<T>>().Explain(configureExplain: configureExplain);
-    }
-
-    /// <summary>
-    ///     Fetch the Postgresql QueryPlan for the Linq query
-    /// </summary>
-    /// <param name="queryable"></param>
-    /// <param name="configureExplain"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
     public static Task<QueryPlan> ExplainAsync<T>(this IQueryable<T> queryable, CancellationToken token = default,
         Action<IConfigureExplainExpressions>? configureExplain = null)
     {

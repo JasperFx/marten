@@ -63,9 +63,9 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
         using (var session = store2.LightweightSession())
         {
             var aid = Guid.Parse("1442cbbb-a49a-497e-9ee8-715ed2833bf8");
-            var state = session.Events.FetchStreamState(aid);
+            var state = await session.Events.FetchStreamStateAsync(aid);
             // We never get to the AggregateStream call because we get a nullreference exception on the FetchStreamState call
-            var aggregate = session.Events.AggregateStream<FooAggregate>(aid);
+            var aggregate = await session.Events.AggregateStreamAsync<FooAggregate>(aid);
         }
     }
 
@@ -103,9 +103,9 @@ public class fetching_stream_state: IntegrationContext
     }
 
     [Fact]
-    public void can_fetch_the_stream_version_and_aggregate_type()
+    public async Task can_fetch_the_stream_version_and_aggregate_type()
     {
-        var state = theSession.Events.FetchStreamState(theStreamId);
+        var state = await theSession.Events.FetchStreamStateAsync(theStreamId);
 
         state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
@@ -183,9 +183,9 @@ public class fetching_stream_state_string_id: IntegrationContext
     }
 
     [Fact]
-    public void can_fetch_the_stream_version_and_aggregate_type()
+    public async Task can_fetch_the_stream_version_and_aggregate_type()
     {
-        var state = theSession.Events.FetchStreamState(theStreamKey);
+        var state = await theSession.Events.FetchStreamStateAsync(theStreamKey);
 
         state.ShouldNotBeNull();
         state.Key.ShouldBe(theStreamKey);

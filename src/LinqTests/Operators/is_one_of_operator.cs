@@ -151,14 +151,13 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithFsharpGuidOptionArray))]
-    public void can_query_against_fsharp_guid_option_array_with_unwrapped_guid(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> isOneOf) =>
+    public Task can_query_against_fsharp_guid_option_array_with_unwrapped_guid(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> isOneOf) =>
         can_query_against_array(isOneOf, x => x.FSharpGuidOption);
 
-    private void can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
+    private async Task can_query_against_array<T>(Func<T[], Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
-
         var targets = Target.GenerateRandomData(100, true).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
@@ -194,16 +193,17 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithFsharpGuidOptionArray))]
-    public void can_query_against_fsharp_guid_option_with_not_operator(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> notIsOneOf)
+    public Task can_query_against_fsharp_guid_option_with_not_operator(Func<FSharpOption<Guid>[], Expression<Func<Target, bool>>> notIsOneOf)
         => can_query_against_array_with_not_operator(notIsOneOf, x => x.FSharpGuidOption);
 
-    private void can_query_against_array_with_not_operator<T>(
+    private async Task can_query_against_array_with_not_operator<T>(
         Func<T[], Expression<Func<Target, bool>>> notIsOneOf,
         Func<Target, T> select
     )
     {
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
         var targets = Target.GenerateRandomData(100, true).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
@@ -236,13 +236,13 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedIsOneOfWithFsharpGuidOptionList))]
-    public void can_query_against_fsharp_guid_option_list(Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>> isOneOf)
+    public Task can_query_against_fsharp_guid_option_list(Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>> isOneOf)
         => can_query_against_list(isOneOf, x => x.FSharpGuidOption);
 
-    private void can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
+    private async Task can_query_against_list<T>(Func<List<T>, Expression<Func<Target, bool>>> isOneOf, Func<Target, T> select)
     {
         var targets = Target.GenerateRandomData(100, true).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 
@@ -280,17 +280,18 @@ public class is_one_of_operator: IntegrationContext
 
     [Theory]
     [MemberData(nameof(SupportedNotIsOneOfWithFsharpGuidOptionList))]
-    public void can_query_against_fsharp_guid_option_with_not_operator_list(
+    public Task can_query_against_fsharp_guid_option_with_not_operator_list(
         Func<List<FSharpOption<Guid>>, Expression<Func<Target, bool>>> notIsOneOf) =>
         can_query_against_list_with_not_operator(notIsOneOf, x => x.FSharpGuidOption);
 
-    private void can_query_against_list_with_not_operator<T>(
+    private async Task can_query_against_list_with_not_operator<T>(
         Func<List<T>, Expression<Func<Target, bool>>> notIsOneOf,
         Func<Target, T> select
     )
     {
         var targets = Target.GenerateRandomData(100, true).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.BulkInsertAsync(targets);
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 

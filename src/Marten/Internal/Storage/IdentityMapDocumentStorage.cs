@@ -100,23 +100,6 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
-    {
-        var list = preselectLoadedDocuments(ids, session, out var command);
-        var selector = (ISelector<T>)BuildSelector(session);
-
-        using (var reader = session.ExecuteReader(command))
-        {
-            while (reader.Read())
-            {
-                var document = selector.Resolve(reader);
-                list.Add(document);
-            }
-        }
-
-        return list;
-    }
-
     private List<T> preselectLoadedDocuments(TId[] ids, IMartenSession session, out NpgsqlCommand command)
     {
         var list = new List<T>();
@@ -165,26 +148,6 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
 
         return list;
-    }
-
-    public sealed override T Load(TId id, IMartenSession session)
-    {
-        if (session.ItemMap.TryGetValue(typeof(T), out var items))
-        {
-            if (items is Dictionary<TId, T> d)
-            {
-                if (d.TryGetValue(id, out var item))
-                {
-                    return item;
-                }
-            }
-            else
-            {
-                throw new DocumentIdTypeMismatchException(typeof(T), typeof(TId));
-            }
-        }
-
-        return load(id, session);
     }
 
     public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)

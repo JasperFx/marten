@@ -276,8 +276,6 @@ public class quick_appending_events_workflow_specs
                     opts.Events.AppendMode = EventAppendMode.Quick;
                 });
 
-                store.Advanced.Clean.CompletelyRemoveAll();
-
                 return store;
             });
 

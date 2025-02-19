@@ -32,7 +32,7 @@ public sealed class delete_a_single_document: IntegrationContext
         }
 
         await using var querySession = theStore.QuerySession();
-        querySession.Load<User>(user.Id).ShouldBeNull();
+        (await querySession.LoadAsync<User>(user.Id)).ShouldBeNull();
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class delete_a_single_document: IntegrationContext
 
         using (var querySession = theStore.QuerySession())
         {
-            querySession.Load<User>(user.Id).ShouldBeNull();
+            (await querySession.LoadAsync<User>(user.Id)).ShouldBeNull();
         }
     }
 
@@ -81,8 +81,8 @@ public sealed class delete_a_single_document: IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<User>(id).ShouldBeNull();
-            session.Load<Target>(id).ShouldBeNull();
+            (await session.LoadAsync<User>(id)).ShouldBeNull();
+            (await session.LoadAsync<Target>(id)).ShouldBeNull();
         }
     }
 }

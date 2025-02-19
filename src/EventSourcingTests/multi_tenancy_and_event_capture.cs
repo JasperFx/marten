@@ -123,7 +123,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession("Green"))
         {
-            var events = session.Events.FetchStream(stream);
+            var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
             {
                 @event.TenantId.ShouldBe("Green");
@@ -169,7 +169,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession("Green"))
         {
-            var events = session.Events.FetchStream(stream);
+            var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
             {
                 @event.TenantId.ShouldBe("Green");
@@ -223,7 +223,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession("Green"))
         {
-            var events = session.Events.FetchStream(stream);
+            var events = await session.Events.FetchStreamAsync(stream);
             foreach (var @event in events)
             {
                 @event.TenantId.ShouldBe("Green");
@@ -259,7 +259,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
     {
         InitStore(TenancyStyle.Conjoined);
 
-        theStore.Advanced.Clean.DeleteAllEventData();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         using (var session = theStore.LightweightSession("Green"))
         {
@@ -376,7 +376,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
     public async Task will_parameterize_tenant_id_when_checking_stream_version(StreamIdentity streamIdentity, Func<DocumentStore, IDocumentSession> LightweightSession, Action<IDocumentSession> startStream, Action<IDocumentSession> append)
     {
         InitStore(TenancyStyle.Conjoined, streamIdentity);
-        theStore.Advanced.Clean.DeleteAllEventData();
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var streamId = Guid.NewGuid();
         using (var session = LightweightSession(theStore))

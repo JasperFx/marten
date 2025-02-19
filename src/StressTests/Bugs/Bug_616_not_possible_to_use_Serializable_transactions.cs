@@ -31,10 +31,10 @@ public class Bug_616_not_possible_to_use_Serializable_transactions: IntegrationC
         using (var session1 = theStore.DirtyTrackedSession(IsolationLevel.Serializable))
         using (var session2 = theStore.DirtyTrackedSession(IsolationLevel.Serializable))
         {
-            var session1AcountA = session1.Load<Bug616Account>(accountA.Id);
+            var session1AcountA = await session1.LoadAsync<Bug616Account>(accountA.Id);
             session1AcountA.Substract(500);
 
-            var session2AcountA = session2.Load<Bug616Account>(accountA.Id);
+            var session2AcountA = await session2.LoadAsync<Bug616Account>(accountA.Id);
             session2AcountA.Substract(350);
 
             await session1.SaveChangesAsync();

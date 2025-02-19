@@ -40,14 +40,14 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
         await theSession.SaveChangesAsync();
 
         // Make sure the document has been created
-        theSession.Load<TodoAggregate>(todoId).ShouldNotBeNull();
+        (await theSession.LoadAsync<TodoAggregate>(todoId)).ShouldNotBeNull();
 
         // Append the delete
         theSession.Events.Append(todoId, new TodoDeleted(todoId));
         await theSession.SaveChangesAsync();
 
         // Make sure the document now has been deleted
-        theSession.Load<TodoAggregate>(todoId).ShouldBeNull();
+        (await theSession.LoadAsync<TodoAggregate>(todoId)).ShouldBeNull();
     }
 }
 
