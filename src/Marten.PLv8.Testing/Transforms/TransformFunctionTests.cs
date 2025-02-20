@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.PLv8.Transforms;
+using Marten.Services;
 using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -117,7 +118,7 @@ public class TransformFunctionTests : OneOffConfigurationsContext
     public void end_to_end_test_using_the_transform()
     {
         var user = new User {FirstName = "Jeremy", LastName = "Miller"};
-        var json = new TestsSerializer().ToCleanJson(user);
+        var json = new SystemTextJsonSerializer().ToCleanJson(user);
 
         var func = TransformFunction.ForFile(new StoreOptions(), _getFullnameJs);
 

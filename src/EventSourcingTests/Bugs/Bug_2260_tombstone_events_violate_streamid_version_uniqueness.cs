@@ -6,6 +6,7 @@ using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Xunit;
 using Xunit.Abstractions;
 using static EventSourcingTests.appending_events_workflow_specs;

@@ -54,7 +54,7 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
 {
     public Bug_561_negation_of_query_on_contains_with_camel_casing()
     {
-        StoreOptions(opts => opts.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
     }
 
     public async Task InitializeAsync()

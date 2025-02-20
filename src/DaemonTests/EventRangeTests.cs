@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;

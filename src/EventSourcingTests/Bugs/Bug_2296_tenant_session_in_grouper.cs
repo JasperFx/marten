@@ -2,16 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
-using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace EventSourcingTests.Bugs;
 

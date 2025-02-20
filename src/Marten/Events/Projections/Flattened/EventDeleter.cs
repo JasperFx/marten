@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using JasperFx.Events;
 using Marten.Events.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;

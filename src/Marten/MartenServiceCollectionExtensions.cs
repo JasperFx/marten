@@ -161,6 +161,7 @@ public static class MartenServiceCollectionExtensions
         Func<IServiceProvider, StoreOptions> optionSource
     )
     {
+        services.AddJasperFx();
         services.AddSingleton<IEventStoreCapability, EventStoreCapability>();
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
@@ -169,11 +170,7 @@ public static class MartenServiceCollectionExtensions
             var configures = s.GetServices<IConfigureMarten>();
             foreach (var configure in configures) configure.Configure(s, options);
 
-            var environment = s.GetService<IHostEnvironment>();
-            if (environment != null)
-            {
-                options.ReadHostEnvironment(environment);
-            }
+            options.ReadJasperFxOptions(s.GetService<JasperFxOptions>());
 
             options.InitialData.AddRange(s.GetServices<IInitialData>());
 
@@ -267,6 +264,7 @@ public static class MartenServiceCollectionExtensions
     public static MartenStoreExpression<T> AddMartenStore<T>(this IServiceCollection services,
         Func<IServiceProvider, StoreOptions> configure) where T : class, IDocumentStore
     {
+        services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
         services.AddSingleton<IEventStoreCapability, EventStoreCapability<T>>();
 
@@ -825,6 +823,7 @@ public static class MartenServiceCollectionExtensions
         /// </summary>
         /// <param name="typeLoadMode"></param>
         /// <returns></returns>
+        [Obsolete(StoreOptions.PreferJasperFxMessage)]
         public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
         {
             var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
@@ -839,6 +838,7 @@ public static class MartenServiceCollectionExtensions
         /// </summary>
         /// <param name="developmentEnvironment"></param>
         /// <returns></returns>
+        [Obsolete(StoreOptions.PreferJasperFxMessage)]
         public MartenConfigurationExpression OptimizeArtifactWorkflow(string developmentEnvironment) =>
             OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
 
@@ -849,6 +849,7 @@ public static class MartenServiceCollectionExtensions
         /// <param name="typeLoadMode"></param>
         /// <param name="developmentEnvironment"></param>
         /// <returns></returns>
+        [Obsolete(StoreOptions.PreferJasperFxMessage)]
         public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode,
             string developmentEnvironment)
         {
@@ -1107,6 +1108,7 @@ internal class LambdaConfigureMarten<T>: LambdaConfigureMarten, IConfigureMarten
     }
 }
 
+[Obsolete(StoreOptions.PreferJasperFxMessage)]
 internal class OptimizedArtifactsWorkflow: IConfigureMarten
 {
     private readonly string _developmentEnvironment = "Development";

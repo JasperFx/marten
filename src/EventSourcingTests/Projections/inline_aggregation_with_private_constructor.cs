@@ -17,7 +17,7 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
+            _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
             _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);

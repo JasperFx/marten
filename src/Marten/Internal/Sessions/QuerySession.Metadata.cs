@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Storage.Metadata;
 
 namespace Marten.Internal.Sessions;
@@ -41,4 +42,10 @@ public partial class QuerySession
 
         return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
+
+    bool IMetadataContext.CausationIdEnabled => Options.EventGraph.Metadata.CausationId.Enabled;
+
+    bool IMetadataContext.CorrelationIdEnabled => Options.EventGraph.Metadata.CorrelationId.Enabled;
+
+    bool IMetadataContext.HeadersEnabled => Options.EventGraph.Metadata.Headers.Enabled;
 }

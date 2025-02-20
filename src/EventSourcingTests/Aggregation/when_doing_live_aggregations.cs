@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -61,8 +62,6 @@ public class when_doing_live_aggregations : AggregationContext
             x.D();
         });
 
-        _output.WriteLine(_projection.SourceCode());
-
         aggregate.ACount.ShouldBe(3);
         aggregate.BCount.ShouldBe(5);
         aggregate.CCount.ShouldBe(7);
@@ -79,8 +78,6 @@ public class when_doing_live_aggregations : AggregationContext
         await theSession.SaveChangesAsync();
 
         UsingDefinition<AsyncEverything>();
-
-        _output.WriteLine(_projection.SourceCode());
 
         var aggregate = await LiveAggregation(x =>
         {
@@ -135,8 +132,6 @@ public class when_doing_live_aggregations : AggregationContext
             x.D();
         });
 
-        _output.WriteLine(_projection.SourceCode());
-
         aggregate.Created.ShouldBe(user1.UserName);
         aggregate.ACount.ShouldBe(1);
         aggregate.BCount.ShouldBe(2);
@@ -166,8 +161,6 @@ public class when_doing_live_aggregations : AggregationContext
             x.A();
             x.D();
         });
-
-        _output.WriteLine(_projection.SourceCode());
 
         aggregate.UpdatedBy.ShouldBe(user1.UserName);
         aggregate.ACount.ShouldBe(3);

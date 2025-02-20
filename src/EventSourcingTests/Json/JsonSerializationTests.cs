@@ -13,7 +13,7 @@ public class JsonSerializationTests: IntegrationContext
     [Fact]
     public async Task ForNonPublicMembersStorageAll_ShouldAppendAndFetchEventOfRecordTypeWithASingleProperty()
     {
-        StoreOptions(options => options.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All));
+        StoreOptions(options => options.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All));
 
         // Given
         var streamId = Guid.NewGuid();

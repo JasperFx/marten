@@ -5,6 +5,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Internal.CodeGeneration;
 
 namespace Marten.Events.CodeGeneration;
@@ -27,6 +28,8 @@ internal class EventProcessingFrame: Frame
 
     public EventProcessingFrame(bool isAsync, Type aggregateType, Type eventType): base(isAsync)
     {
+        if (eventType == null) throw new ArgumentNullException(nameof(eventType));
+
         EventType = eventType;
         AggregateType = aggregateType;
 

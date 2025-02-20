@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events.Protected;
 using Marten.Internal.Sessions;
 using Marten.Storage;

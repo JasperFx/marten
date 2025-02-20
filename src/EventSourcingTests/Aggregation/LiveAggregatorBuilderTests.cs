@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -15,7 +16,7 @@ public class LiveAggregatorBuilderTests
     [Fact]
     public void try_existing_QuestParty()
     {
-        var aggregator = new SingleStreamProjection<QuestParty>().Build(new StoreOptions());
+        var aggregator = new SingleStreamProjection<QuestParty>().BuildAggregator(new StoreOptions());
         aggregator.ShouldNotBeNull();
     }
 
@@ -23,7 +24,7 @@ public class LiveAggregatorBuilderTests
     public void try_with_all_possibilities()
     {
         new SingleStreamProjection<FakeAggregate>()
-            .Build(new StoreOptions())
+            .BuildAggregator(new StoreOptions())
             .ShouldNotBeNull();
     }
 

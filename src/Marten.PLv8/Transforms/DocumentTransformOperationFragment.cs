@@ -1,3 +1,4 @@
+using JasperFx.Core;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;

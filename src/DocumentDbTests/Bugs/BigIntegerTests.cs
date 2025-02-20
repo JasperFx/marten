@@ -16,7 +16,7 @@ public class BigIntegerTests : BugIntegrationContext
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+            options.UseNewtonsoftForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);
@@ -43,7 +43,7 @@ public class BigIntegerTests : BugIntegrationContext
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            options.UseSystemTextJsonForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);
@@ -70,7 +70,7 @@ public class BigIntegerTests : BugIntegrationContext
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+            options.UseNewtonsoftForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);
@@ -86,7 +86,7 @@ public class BigIntegerTests : BugIntegrationContext
 
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            options.UseNewtonsoftForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);
@@ -105,7 +105,7 @@ public class BigIntegerTests : BugIntegrationContext
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            options.UseNewtonsoftForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);
@@ -121,7 +121,7 @@ public class BigIntegerTests : BugIntegrationContext
 
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+            options.UseNewtonsoftForSerialization();
 
             options.Schema.For<BigIntegerObject>()
                 .Duplicate(x => x.Value);

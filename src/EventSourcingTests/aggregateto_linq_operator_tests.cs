@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -17,21 +18,6 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
 
     private readonly MembersJoined _joined2 = new() { Members = new[] {"Elayne", "Moiraine", "Elmindreda"} };
     private readonly MembersDeparted _departed2 = new() { Members = new[] {"Moiraine"} };
-
-    [Fact]
-    public async Task can_aggregate_events_to_aggregate_type_synchronously()
-    {
-        theSession.Events.StartStream<Quest>(_joined1, _departed1);
-        theSession.Events.StartStream<Quest>(_joined2, _departed2);
-        await theSession.SaveChangesAsync();
-
-        var events = theSession.Events.QueryAllRawEvents().ToList();
-
-        var questParty = theSession.Events.QueryAllRawEvents()
-            .AggregateTo<QuestParty>();
-
-        questParty.Members.ShouldHaveTheSameElementsAs("Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
-    }
 
     [Fact]
     public async Task can_aggregate_events_to_aggregate_type_asynchronously()
@@ -55,19 +41,6 @@ public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
 
         questParty.Members
             .ShouldHaveTheSameElementsAs("Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
-    }
-
-    [Fact]
-    public async Task can_aggregate_with_initial_state_synchronously()
-    {
-        var initialParty = new QuestParty { Members = new List<string> { "Lan" } };
-        theSession.Events.StartStream<Quest>(_joined1, _departed1);
-        theSession.Events.StartStream<Quest>(_joined2, _departed2);
-        await theSession.SaveChangesAsync();
-
-        var questParty = theSession.Events.QueryAllRawEvents().AggregateTo(initialParty);
-
-        questParty.Members.ShouldHaveTheSameElementsAs("Lan", "Rand", "Matrim", "Perrin", "Elayne", "Elmindreda");
     }
 
     [Fact]

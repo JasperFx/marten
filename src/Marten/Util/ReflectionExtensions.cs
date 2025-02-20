@@ -16,11 +16,4 @@ internal static class ReflectionExtensions
     {
         return member.Name.ToTableAlias();
     }
-
-
-    public static string ToTableAlias(this string name)
-    {
-        return name.SplitPascalCase().ToLower().Replace(" ", "_");
-    }
-
 }

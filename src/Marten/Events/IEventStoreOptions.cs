@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events
 {
@@ -19,7 +20,7 @@ namespace Marten.Events
         /// <summary>
         ///     Configure whether event streams are identified with Guid or strings
         /// </summary>
-        StreamIdentity StreamIdentity { get; set; }
+        public StreamIdentity StreamIdentity { get; set; }
 
         /// <summary>
         ///     Configure the event sourcing storage for multi-tenancy
@@ -30,24 +31,6 @@ namespace Marten.Events
         /// Enables global project projections (with single tenancy style) for events with conjoined tenancy
         /// </summary>
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
-
-        /// <summary>
-        /// Opt into a performance optimization that directs Marten to always use the identity map for an
-        /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
-        /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
-        /// </summary>
-        [Obsolete("Use the UseIdentityMapForAggregates property instead")]
-        bool UseIdentityMapForInlineAggregates
-        {
-            get
-            {
-                return UseIdentityMapForAggregates;
-            }
-            set
-            {
-                UseIdentityMapForAggregates = value;
-            }
-        }
 
         /// <summary>
         /// Opt into a performance optimization that directs Marten to always use the identity map for an
@@ -69,7 +52,7 @@ namespace Marten.Events
         /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
         /// in testing
         /// </summary>
-        TimeProvider TimeProvider { get; set; }
+        public TimeProvider TimeProvider { get; set; }
 
         /// <summary>
         /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
@@ -390,7 +373,7 @@ public static class EventStoreOptionsExtensions
     )
         where TEvent : class
     {
-        options.MapEventType<TEvent>(GetEventTypeNameWithSuffix(eventTypeName, suffix));
+        options.MapEventType<TEvent>(eventTypeName.GetEventTypeNameWithSuffix(suffix));
         return options;
     }
 
@@ -503,7 +486,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     )
     {
-        return options.Upcast(eventType, GetEventTypeName(eventType), jsonTransformation);
+        return options.Upcast(eventType, eventType.GetEventTypeName(), jsonTransformation);
     }
 
     /// <summary>

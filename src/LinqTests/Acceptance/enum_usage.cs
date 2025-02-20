@@ -130,7 +130,7 @@ public class enum_usage: OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString);
             _.Schema.For<Target>().Duplicate(x => x.Color);
         });
 

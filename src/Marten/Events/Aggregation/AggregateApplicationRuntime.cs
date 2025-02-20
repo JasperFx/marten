@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,49 +5,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
 using Marten.Sessions;
 using Marten.Storage;
-using Marten.Util;
 using Npgsql;
 
 namespace Marten.Events.Aggregation;
-
-public abstract class CrossStreamAggregationRuntime<TDoc, TId>: AggregationRuntime<TDoc, TId>
-    where TDoc : class where TId : notnull
-{
-    public CrossStreamAggregationRuntime(IDocumentStore store, IAggregateProjection projection,
-        IEventSlicer<TDoc, TId> slicer, IDocumentStorage<TDoc, TId> storage): base(store, projection, slicer, storage)
-    {
-    }
-
-    public override bool IsNew(EventSlice<TDoc, TId> slice)
-    {
-        return false;
-    }
-}
 
 /// <summary>
 ///     Internal base class for runtime event aggregation
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, TId>
+public class AggregationApplicationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, TId>
     where TDoc : class where TId : notnull
 {
     private readonly Func<IEvent, TId> _identitySource;
 
-    public AggregationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer,
-        IDocumentStorage<TDoc, TId> storage)
+    public AggregationApplicationRuntime(IDocumentStore store, IAggregateProjection projection, IEventSlicer<TDoc, TId> slicer,
+        IDocumentStorage<TDoc, TId> storage, AggregateApplication<TDoc, IQuerySession> application)
     {
         Projection = projection;
         Slicer = slicer;
@@ -77,6 +62,8 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             _identitySource = e => throw new NotSupportedException("Not supported for multi-stream projections");
         }
+
+        _application = application;
     }
 
     internal StoreOptions Options { get; }
@@ -84,6 +71,27 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     public IAggregateProjection Projection { get; }
     public IEventSlicer<TDoc, TId> Slicer { get; }
     public IDocumentStorage<TDoc, TId> Storage { get; }
+
+    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+        CancellationToken cancellation)
+    {
+        // Doing the filtering here to prevent unnecessary network round trips by allowing
+        // an aggregate projection to "work" on a stream with no matching events
+        var filteredStreams = streams
+            .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
+            .ToArray();
+
+        var slices = await Slicer.SliceInlineActions(operations, filteredStreams).ConfigureAwait(false);
+
+        var martenSession = (DocumentSessionBase)operations;
+
+        await martenSession.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        foreach (var slice in slices)
+        {
+            await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
+        }
+    }
 
     public async ValueTask ApplyChangesAsync(DocumentSessionBase session,
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
@@ -93,7 +101,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         if (Projection.MatchesAnyDeleteType(slice))
         {
-            var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+            var operation = Storage.DeleteForId(slice.Id, slice.TenantId);
 
             if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
             {
@@ -127,9 +135,18 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         foreach (var @event in slice.Events())
         {
+            if (@event is IEvent<Archived>) break;
+
             try
             {
-                aggregate = await ApplyEvent(session, slice, @event, aggregate, cancellation).ConfigureAwait(false);
+                if (aggregate == null)
+                {
+                    aggregate = await _application.Create(@event, session, cancellation).ConfigureAwait(false);
+                }
+                else
+                {
+                    aggregate = await _application.ApplyAsync(aggregate, @event, session, cancellation).ConfigureAwait(false);
+                }
             }
             catch (MartenCommandException)
             {
@@ -161,7 +178,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             if (exists)
             {
-                var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
+                var operation = Storage.DeleteForId(slice.Id, slice.TenantId);
                 session.QueueOperation(operation);
             }
 
@@ -174,7 +191,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             session.StoreDocumentInItemMap(slice.Id, aggregate);
         }
 
-        var storageOperation = Storage.Upsert(aggregate, session, slice.Tenant.TenantId);
+        var storageOperation = Storage.Upsert(aggregate, session, slice.TenantId);
         if (Slicer is ISingleStreamSlicer && lastEvent != null && storageOperation is IRevisionedOperation op)
         {
             op.Revision = (int)lastEvent.Version;
@@ -218,7 +235,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             if (slice.RaisedEvents != null)
             {
                 var storage = session.EventStorage();
-                var ops = slice.BuildOperations(Options.EventGraph, session, storage, sideEffects.IsSingleStream());
+                var ops = slice.BuildOperations(Options.EventGraph, storage, sideEffects.IsSingleStream());
                 foreach (var op in ops)
                 {
                     session.QueueOperation(op);
@@ -244,34 +261,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         return slice.Events().First().Version == 1;
     }
 
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-#pragma warning disable VSTHRD002
-        ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-    }
-
-    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-        CancellationToken cancellation)
-    {
-        // Doing the filtering here to prevent unnecessary network round trips by allowing
-        // an aggregate projection to "work" on a stream with no matching events
-        var filteredStreams = streams
-            .Where(x => Projection.AppliesTo(x.Events.Select(x => x.EventType)))
-            .ToArray();
-
-        var slices = await Slicer.SliceInlineActions(operations, filteredStreams).ConfigureAwait(false);
-
-        var martenSession = (DocumentSessionBase)operations;
-
-        await martenSession.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
-
-        foreach (var slice in slices)
-        {
-            await ApplyChangesAsync(martenSession, slice, cancellation).ConfigureAwait(false);
-        }
-    }
-
     public async ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase database, EventRange range,
         CancellationToken cancellationToken)
     {
@@ -280,10 +269,6 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         return new TenantSliceRange<TDoc, TId>(store, this, range, groups, cancellationToken);
     }
-
-    public abstract ValueTask<TDoc> ApplyEvent(IQuerySession session, EventSlice<TDoc, TId> slice,
-        IEvent evt, TDoc? aggregate,
-        CancellationToken cancellationToken);
 
     public TDoc CreateDefault(IEvent @event)
     {
@@ -307,6 +292,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
     private ImHashMap<Tenant, IAggregateCache<TId, TDoc>> _caches = ImHashMap<Tenant, IAggregateCache<TId, TDoc>>.Empty;
     private readonly object _cacheLock = new();
+    private readonly AggregateApplication<TDoc,IQuerySession> _application;
 
     public IAggregateCache<TId, TDoc> CacheFor(Tenant tenant)
     {

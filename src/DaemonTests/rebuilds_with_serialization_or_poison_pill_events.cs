@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
@@ -97,7 +99,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
 
     [Theory]
-    [InlineData(Tenancy.DefaultTenantId)]
+    [InlineData(StorageConstants.DefaultTenantId)]
     [InlineData("CustomTenant")]
     public async Task rebuild_the_projection_skip_failed_events(string tenantId)
     {
@@ -111,7 +113,7 @@ public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 
         StoreOptions(x =>
         {
-            if (tenantId != Tenancy.DefaultTenantId)
+            if (tenantId != StorageConstants.DefaultTenantId)
             {
                 x.Events.TenancyStyle = TenancyStyle.Conjoined;
                 x.Policies.AllDocumentsAreMultiTenanted();

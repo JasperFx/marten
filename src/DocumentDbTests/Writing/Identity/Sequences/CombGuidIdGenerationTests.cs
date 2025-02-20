@@ -11,7 +11,6 @@ using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 
@@ -51,7 +50,7 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
             {
                 if (m.IdType == typeof(Guid))
                 {
-                    m.IdStrategy = new CombGuidIdGeneration();
+                    m.IdStrategy = new SequentialGuidIdGeneration();
                 }
             });
 
@@ -82,15 +81,15 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         {
             #region sample_configuring-mapping-specific-sequentialguid
 
-            options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
+            options.Schema.For<UserWithGuid>().IdStrategy(new SequentialGuidIdGeneration());
 
             #endregion
         });
 
         theStore.StorageFeatures.MappingFor(typeof(UserWithGuid)).As<DocumentMapping>().IdStrategy
-            .ShouldBeOfType<CombGuidIdGeneration>();
+            .ShouldBeOfType<SequentialGuidIdGeneration>();
         theStore.StorageFeatures.MappingFor(typeof(UserWithGuid2)).As<DocumentMapping>().IdStrategy
-            .ShouldBeOfType<CombGuidIdGeneration>();
+            .ShouldBeOfType<SequentialGuidIdGeneration>();
     }
 
     [Fact]

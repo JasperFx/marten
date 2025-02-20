@@ -7,6 +7,7 @@ using System.Threading;
 using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq.Members;
@@ -35,8 +36,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
             SimpleType);
     }
 
-    public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
-    public bool RequiresSequences => false;
+    public bool IsNumeric => false;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

@@ -25,8 +25,6 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
         UsingDefinition<AllSync>();
 
-        _output.WriteLine(_projection.SourceCode());
-
         await InlineProject(x =>
         {
             x.Streams[stream1].IsNew = true;
@@ -64,8 +62,6 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
         var stream2 = Guid.NewGuid();
 
         UsingDefinition<AllSync>();
-
-        _output.WriteLine(_projection.SourceCode());
 
         await InlineProject(x =>
         {
@@ -123,8 +119,6 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
         UsingDefinition<AllSync>();
 
-        _output.WriteLine(_projection.SourceCode());
-
         await InlineProject(x =>
         {
             x.Streams[stream1].A();
@@ -157,8 +151,6 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
         var stream1 = Guid.NewGuid();
 
         UsingDefinition<SometimesDeletes>();
-
-        _output.WriteLine(_projection.SourceCode());
 
         await InlineProject(x =>
         {

@@ -27,6 +27,5 @@ public class String2IdGeneration: IIdGeneration
         method.Frames.Code("return {0}." + mapping.IdMember.Name + ";", use);
     }
 
-    public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(string) };
-    public bool RequiresSequences => false;
+    public bool IsNumeric => false;
 }

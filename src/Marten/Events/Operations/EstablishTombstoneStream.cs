@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Schema;
@@ -13,16 +14,9 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-[DocumentAlias("tombstone")]
-internal class Tombstone
-{
-    public static readonly string Name = "tombstone";
-}
-
 internal class EstablishTombstoneStream: IStorageOperation
 {
-    public static readonly string StreamKey = "mt_tombstone";
-    public static readonly Guid StreamId = Guid.NewGuid();
+
     private readonly Action<NpgsqlParameter> _configureParameter;
     private readonly string _sessionTenantId;
 
@@ -52,7 +46,7 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamId;
+                p.Value = Tombstone.StreamId;
                 p.NpgsqlDbType = NpgsqlDbType.Uuid;
             };
         }
@@ -60,7 +54,7 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamKey;
+                p.Value = Tombstone.StreamKey;
                 p.NpgsqlDbType = NpgsqlDbType.Varchar;
             };
         }

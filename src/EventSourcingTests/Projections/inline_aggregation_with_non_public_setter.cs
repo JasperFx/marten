@@ -22,7 +22,7 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         StoreOptions(opts =>
         {
             opts.AutoCreateSchemaObjects = AutoCreate.All;
-            opts.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
+            opts.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
             opts.Projections.Snapshot<QuestMonstersWithPrivateIdSetter>(SnapshotLifecycle.Inline);
             opts.Projections.Snapshot<QuestMonstersWithProtectedIdSetter>(SnapshotLifecycle.Inline);
         });

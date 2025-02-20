@@ -461,7 +461,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(casing: Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
         });
 
         using var session = theStore.LightweightSession();
@@ -499,6 +499,11 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task can_append_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup();
         theSession.Store(group);
         await theSession.SaveChangesAsync();
@@ -525,6 +530,11 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task can_append_if_not_exists_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup();
         theSession.Store(group);
         await theSession.SaveChangesAsync();
@@ -551,6 +561,11 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
     public async Task can_insert_if_not_exists_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup
         {
             Items = new List<Item>{new Item{Name = "regular"}}

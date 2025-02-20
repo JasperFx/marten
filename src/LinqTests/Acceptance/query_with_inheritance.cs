@@ -206,7 +206,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
             // of type ISmurf to get all its' subclasses/implementations.
             // In projects with many types, this approach will be undvisable.
 
-            _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase);
 
             _.Connection(ConnectionSource.ConnectionString);
             _.AutoCreateSchemaObjects = AutoCreate.All;

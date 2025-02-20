@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Storage;
@@ -36,8 +37,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<Gui
     {
         return new ValueTask<IReadOnlyList<EventSlice<TDoc, Guid>>>(streams.Select(s =>
         {
-            var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, Guid>(s.Id, tenant, s.Events){ActionType = s.ActionType};
+            return new EventSlice<TDoc, Guid>(s.Id, s.TenantId, s.Events){ActionType = s.ActionType};
         }).ToList());
     }
 
@@ -54,7 +54,7 @@ public class ByStreamId<TDoc>: IEventSlicer<TDoc, Guid>, ISingleStreamSlicer<Gui
 
             var slices = tenantGroup
                 .GroupBy(x => x.StreamId)
-                .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenant, x));
+                .Select(x => new EventSlice<TDoc, Guid>(x.Key, tenantGroup.Key, x));
 
             var group = new TenantSliceGroup<TDoc, Guid>(tenant, slices);
 
@@ -91,8 +91,7 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
     {
         return new ValueTask<IReadOnlyList<EventSlice<TDoc, TId>>>(streams.Select(s =>
         {
-            var tenant = new Tenant(s.TenantId, querySession.Database);
-            return new EventSlice<TDoc, TId>(_converter(s.Id), tenant, s.Events){ActionType = s.ActionType};
+            return new EventSlice<TDoc, TId>(_converter(s.Id), s.TenantId, s.Events){ActionType = s.ActionType};
         }).ToList());
     }
 
@@ -108,7 +107,7 @@ public class ByStreamId<TDoc, TId>: IEventSlicer<TDoc, TId>, ISingleStreamSlicer
 
             var slices = tenantGroup
                 .GroupBy(x => x.StreamId)
-                .Select(x => new EventSlice<TDoc, TId>( _converter(x.Key), tenant, x));
+                .Select(x => new EventSlice<TDoc, TId>( _converter(x.Key), tenantGroup.Key, x));
 
             var group = new TenantSliceGroup<TDoc, TId>(tenant, slices);
 

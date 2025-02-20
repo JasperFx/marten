@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten.Exceptions;
-using Marten.Metadata;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -14,6 +14,7 @@ using Shouldly;
 using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
+using IRevisioned = Marten.Metadata.IRevisioned;
 
 namespace DocumentDbTests.Concurrency;
 

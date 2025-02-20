@@ -231,21 +231,6 @@ public class JsonNetSerializer: ISerializer
     public ValueCasting ValueCasting => ValueCasting.Relaxed;
 
     /// <summary>
-    ///     Customize the inner Newtonsoft formatter.
-    /// </summary>
-    /// <param name="configure"></param>
-    [Obsolete("Use Configure(Action<JsonSerializerSettings> configure) instead. This overload will be removed in the next major release.")]
-    public void Customize(Action<JsonSerializer> configure)
-    {
-        configure(_clean.Value);
-        configure(_serializer.Value);
-        configure(_withTypes.Value);
-
-        _clean.Value.TypeNameHandling = TypeNameHandling.None;
-        _withTypes.Value.TypeNameHandling = TypeNameHandling.Objects;
-    }
-
-    /// <summary>
     /// Configure the <see cref="JsonSerializerSettings"/> of the Newtonsoft serializer.
     /// </summary>
     /// <param name="configure"></param>

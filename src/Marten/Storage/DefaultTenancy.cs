@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Descriptions;
 using Marten.Schema;
 using Npgsql;
@@ -57,7 +58,7 @@ internal class DefaultTenancy: Tenancy, ITenancy
             martenDatabase.AddInitializer(Options.TenantPartitions.Partitions);
         }
 
-        Default = new Tenant(DefaultTenantId, martenDatabase);
+        Default = new Tenant(StorageConstants.DefaultTenantId, martenDatabase);
     }
 
     public void Dispose()

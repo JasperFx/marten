@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
+using JasperFx;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Internal.Sessions;
@@ -60,7 +61,7 @@ internal class SubscriptionExecution: ISubscriptionExecution
                 new SessionOptions
                 {
                     Tracking = DocumentTracking.IdentityOnly,
-                    Tenant = new Tenant(Tenancy.DefaultTenantId, _database)
+                    Tenant = new Tenant(StorageConstants.DefaultTenantId, _database)
                 }, Mode);
 
 

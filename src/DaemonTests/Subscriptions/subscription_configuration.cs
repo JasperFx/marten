@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
@@ -58,11 +59,6 @@ public class subscription_configuration : OneOffConfigurationsContext
 
 public class FakeProjection: IProjection
 {
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-        throw new System.NotImplementedException();
-    }
-
     public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
     {
         throw new System.NotImplementedException();

@@ -35,7 +35,7 @@ namespace DaemonTests.TestingSupport
         public TripProjectionWithCustomName()
         {
             ProjectionName = "TripCustomName";
-            TeardownDataOnRebuild = true;
+            Options.TeardownDataOnRebuild = true;
             Options.BatchSize = 5000;
         }
     }

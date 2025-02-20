@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -61,11 +62,6 @@ public class when_registering_a_custom_projection_type: IDisposable
 
     public class MyProjection: IProjection
     {
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-        {
-            throw new System.NotSupportedException();
-        }
-
         public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
         {
             throw new System.NotSupportedException();

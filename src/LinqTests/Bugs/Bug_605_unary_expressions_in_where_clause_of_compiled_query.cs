@@ -40,7 +40,7 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     [Fact]
     public async Task with_flag_as_true_with_enum_as_string()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString));
 
         var targets = Target.GenerateRandomData(1000).ToArray();
         await theStore.BulkInsertAsync(targets);

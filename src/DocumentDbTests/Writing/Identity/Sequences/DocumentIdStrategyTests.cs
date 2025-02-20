@@ -6,7 +6,6 @@ using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace DocumentDbTests.Writing.Identity.Sequences;
 
@@ -16,7 +15,7 @@ public class DocumentIdStrategyTests: OneOffConfigurationsContext
     public void uses_no_id_generation_for_non_public_id()
     {
         theStore.StorageFeatures.MappingFor(typeof(DocumentWithNonPublicId)).As<DocumentMapping>().IdStrategy
-            .ShouldBeOfType<CombGuidIdGeneration>();
+            .ShouldBeOfType<SequentialGuidIdGeneration>();
     }
 
     public class DocumentWithNonPublicId

@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Fetching;
@@ -94,18 +95,6 @@ public class ProjectionOptions: DaemonSettings
     /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
     /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
     /// </summary>
-    [Obsolete("Prefer UseIdentityMapForAggregates")]
-    public bool UseIdentityMapForInlineAggregates
-    {
-        get => _options.Events.UseIdentityMapForAggregates;
-        set => _options.Events.UseIdentityMapForAggregates = value;
-    }
-
-    /// <summary>
-    /// Opt into a performance optimization that directs Marten to always use the identity map for an
-    /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
-    /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
-    /// </summary>
     public bool UseIdentityMapForAggregates
     {
         get => _options.Events.UseIdentityMapForAggregates;
@@ -173,7 +162,7 @@ public class ProjectionOptions: DaemonSettings
     {
         if (lifecycle == ProjectionLifecycle.Live)
         {
-            if (!projection.GetType().Closes(typeof(ILiveAggregator<>)))
+            if (!projection.GetType().Closes(typeof(IAggregator<,>)))
             {
                 throw new ArgumentOutOfRangeException(nameof(lifecycle),
                     $"{nameof(ProjectionLifecycle.Live)} cannot be used for IProjection");
@@ -355,7 +344,7 @@ public class ProjectionOptions: DaemonSettings
         ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
-        where TProjection : GeneratedProjection, new()
+        where TProjection : IProjectionSource, new()
     {
         if (lifecycle == ProjectionLifecycle.Live)
         {
@@ -366,7 +355,8 @@ public class ProjectionOptions: DaemonSettings
 
         asyncConfiguration?.Invoke(projection.Options);
 
-        projection.AssembleAndAssertValidity();
+        // TODO -- this might need to change
+        if (projection is ProjectionBase validated) validated.AssembleAndAssertValidity();
 
         All.Add(projection);
     }
@@ -379,7 +369,7 @@ public class ProjectionOptions: DaemonSettings
     /// <param name="lifecycle">Optionally override the ProjectionLifecycle</param>
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     public void Add<T>(
-        GeneratedAggregateProjectionBase<T> projection,
+        AggregateProjectionBase<T> projection,
         ProjectionLifecycle lifecycle,
         Action<AsyncOptions> asyncConfiguration = null
     )
@@ -435,27 +425,27 @@ public class ProjectionOptions: DaemonSettings
         return All.Any() || _subscriptions.Any();
     }
 
-    internal ILiveAggregator<T> AggregatorFor<T>() where T : class
+    internal IAggregator<T, IQuerySession> AggregatorFor<T>() where T : class
     {
         if (_liveAggregators.TryFind(typeof(T), out var aggregator))
         {
-            return (ILiveAggregator<T>)aggregator;
+            return (IAggregator<T, IQuerySession>)aggregator;
         }
 
-        aggregator = All.OfType<ILiveAggregator<T>>().FirstOrDefault();
+        aggregator = All.OfType<IAggregator<T, IQuerySession>>().FirstOrDefault();
         if (aggregator != null)
         {
             _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
-            return (ILiveAggregator<T>)aggregator;
+            return (IAggregator<T, IQuerySession>)aggregator;
         }
 
         var source = tryFindProjectionSourceForAggregateType<T>();
         source.AssembleAndAssertValidity();
 
-        aggregator = source.As<ILiveAggregatorSource<T>>().Build(_options);
+        aggregator = source.As<ILiveAggregatorSource<T>>().BuildAggregator(_options);
         _liveAggregators = _liveAggregators.AddOrUpdate(typeof(T), aggregator);
 
-        return (ILiveAggregator<T>)aggregator;
+        return (IAggregator<T, IQuerySession>)aggregator;
     }
 
     private SingleStreamProjection<T> tryFindProjectionSourceForAggregateType<T>() where T : class
@@ -468,7 +458,7 @@ public class ProjectionOptions: DaemonSettings
 
         if (!_liveAggregateSources.TryGetValue(typeof(T), out var source))
         {
-            return new SingleStreamProjection<T>();
+            return new SingleStreamProjection<T>(){Lifecycle = ProjectionLifecycle.Live};
         }
 
         return source as SingleStreamProjection<T>;
@@ -488,7 +478,7 @@ public class ProjectionOptions: DaemonSettings
         }
 
         var messages = All.Concat(_liveAggregateSources.Values)
-            .OfType<GeneratedProjection>()
+            .OfType<IValidatedProjection>()
             .Distinct()
             .SelectMany(x => x.ValidateConfiguration(_options))
             .ToArray();

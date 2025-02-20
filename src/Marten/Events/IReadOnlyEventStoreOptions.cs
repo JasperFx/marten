@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -17,7 +18,7 @@ public interface IReadOnlyEventStoreOptions
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
     /// </summary>
-    StreamIdentity StreamIdentity { get; }
+    public StreamIdentity StreamIdentity { get; }
 
     /// <summary>
     ///     Configure the event sourcing storage for multi-tenancy
@@ -42,7 +43,7 @@ public interface IReadOnlyEventStoreOptions
     /// </summary>
     bool EnableUniqueIndexOnEventId { get; set; }
 
-    EventAppendMode AppendMode { get; set; }
+    public EventAppendMode AppendMode { get; set; }
 
     /// <summary>
     ///     Configuration for all event store projections
@@ -50,13 +51,6 @@ public interface IReadOnlyEventStoreOptions
     IReadOnlyList<IReadOnlyProjectionData> Projections();
 
     IReadOnlyList<IEventType> AllKnownEventTypes();
-
-    /// <summary>
-    /// Opt into a performance optimization that directs Marten to always use the identity map for an
-    /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
-    /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
-    /// </summary>
-    bool UseIdentityMapForInlineAggregates { get; set; }
 
     /// <summary>
     /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits

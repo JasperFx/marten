@@ -22,7 +22,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     public query_against_child_collections(ITestOutputHelper output)
     {
         _output = output;
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString));
     }
 
     private Target[] targets;
@@ -159,7 +159,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [InlineData(EnumStorage.AsString)]
     public async Task can_query_on_enum_properties(EnumStorage enumStorage)
     {
-        StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
         theSession.Query<Target>()
@@ -172,7 +172,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [InlineData(EnumStorage.AsString)]
     public async Task can_query_on_deep_enum_properties(EnumStorage enumStorage)
     {
-        StoreOptions(_ => _.UseDefaultSerialization(enumStorage));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
         theSession.Query<Target>()

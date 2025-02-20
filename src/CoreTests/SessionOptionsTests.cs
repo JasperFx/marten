@@ -3,6 +3,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
@@ -52,7 +53,7 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = SessionOptions.ForDatabase(database);
 
         options.Tenant?.Database.ShouldBeSameAs(database);
-        options.Tenant?.TenantId.ShouldBe(Tenancy.DefaultTenantId);
+        options.Tenant?.TenantId.ShouldBe(StorageConstants.DefaultTenantId);
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }

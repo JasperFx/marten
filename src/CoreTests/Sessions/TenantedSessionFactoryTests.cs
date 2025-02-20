@@ -1,4 +1,6 @@
 ﻿using System;
+using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -95,7 +97,7 @@ public class TenantedSessionFactoryTests
             TheSame(NonDefault, NonDefault, TenancyStyle.Conjoined),
         };
 
-    private static readonly string Default = Tenancy.DefaultTenantId;
+    private static readonly string Default = StorageConstants.DefaultTenantId;
     private static readonly string NonDefault = "NON_DEFAULT";
 
     public record Configuration(
@@ -151,8 +153,7 @@ public class TenantedSessionFactoryTests
     {
         var slice = Substitute.For<IEventSlice>();
 
-        // ReSharper disable once ConstantConditionalAccessQualifier
-        slice.Tenant.Returns(new Tenant(setup.SliceTenant, Substitute.For<IMartenDatabase>()));
+        slice.TenantId.Returns(setup.SliceTenant);
 
         return slice;
     }

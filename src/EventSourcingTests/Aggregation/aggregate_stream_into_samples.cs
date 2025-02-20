@@ -239,7 +239,7 @@ namespace EventSourcingTests.Aggregation
         public aggregate_stream_into_samples()
         {
             StoreOptions(options =>
-                options.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters)
+                options.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters)
             );
         }
     }

@@ -120,9 +120,6 @@
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
         </Compile>
-        <Compile Include="..\Marten.Testing\JilSerializer.cs">
-            <Link>JilSerializer.cs</Link>
-        </Compile>
         <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 

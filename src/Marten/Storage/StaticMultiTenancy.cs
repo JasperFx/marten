@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using Marten.Schema;
@@ -193,7 +194,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         public DatabaseExpression AsDefault()
         {
-            _parent.Default = new Tenant(DefaultTenantId, _database);
+            _parent.Default = new Tenant(StorageConstants.DefaultTenantId, _database);
             return this;
         }
     }

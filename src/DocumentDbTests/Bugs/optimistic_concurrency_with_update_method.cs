@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Services;
@@ -53,13 +54,13 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     public async Task can_update_with_optimistic_concurrency_async()
     {
         var doc1 = new CoffeeShop();
-        await using (var session1 = theStore.OpenSession())
+        await using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
             await session1.SaveChangesAsync();
         }
 
-        await using (var session2 = theStore.OpenSession())
+        await using (var session2 = theStore.LightweightSession())
         {
             var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";

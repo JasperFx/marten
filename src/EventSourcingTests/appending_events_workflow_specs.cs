@@ -9,6 +9,7 @@ using JasperFx.Core;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.CodeGeneration;
@@ -155,7 +156,7 @@ public class appending_events_workflow_specs
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-        var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
+        var operation = new EstablishTombstoneStream(@case.Store.Events, StorageConstants.DefaultTenantId);
         await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
@@ -163,11 +164,11 @@ public class appending_events_workflow_specs
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+            (await session.Events.FetchStreamStateAsync(Tombstone.StreamId)).ShouldNotBeNull();
         }
         else
         {
-            (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+            (await session.Events.FetchStreamStateAsync(Tombstone.StreamKey)).ShouldNotBeNull();
         }
     }
 
@@ -179,7 +180,7 @@ public class appending_events_workflow_specs
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
         await @case.Store.EnsureStorageExistsAsync(typeof(IEvent));
 
-        var operation = new EstablishTombstoneStream(@case.Store.Events, Tenancy.DefaultTenantId);
+        var operation = new EstablishTombstoneStream(@case.Store.Events, StorageConstants.DefaultTenantId);
         await using var session = (DocumentSessionBase)@case.Store.LightweightSession();
 
         var batch = new UpdateBatch(new []{operation});
@@ -189,11 +190,11 @@ public class appending_events_workflow_specs
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+            (await session.Events.FetchStreamStateAsync(Tombstone.StreamId)).ShouldNotBeNull();
         }
         else
         {
-            (await session.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+            (await session.Events.FetchStreamStateAsync(Tombstone.StreamKey)).ShouldNotBeNull();
         }
     }
 
@@ -226,9 +227,9 @@ public class appending_events_workflow_specs
 
         if (@case.Store.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            (await session2.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamId)).ShouldNotBeNull();
+            (await session2.Events.FetchStreamStateAsync(Tombstone.StreamId)).ShouldNotBeNull();
 
-            var events = await session2.Events.FetchStreamAsync(EstablishTombstoneStream.StreamId);
+            var events = await session2.Events.FetchStreamAsync(Tombstone.StreamId);
             events.Any().ShouldBeTrue();
             foreach (var @event in events)
             {
@@ -237,9 +238,9 @@ public class appending_events_workflow_specs
         }
         else
         {
-            (await session2.Events.FetchStreamStateAsync(EstablishTombstoneStream.StreamKey)).ShouldNotBeNull();
+            (await session2.Events.FetchStreamStateAsync(Tombstone.StreamKey)).ShouldNotBeNull();
 
-            var events = await session2.Events.FetchStreamAsync(EstablishTombstoneStream.StreamKey);
+            var events = await session2.Events.FetchStreamAsync(Tombstone.StreamKey);
             events.Any().ShouldBeTrue();
             foreach (var @event in events)
             {

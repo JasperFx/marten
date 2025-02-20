@@ -7,11 +7,9 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;
-using Marten.Linq.Members;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 using Microsoft.FSharp.Core;
-using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
 
 namespace Marten;
 
@@ -51,7 +49,7 @@ public partial class StoreOptions
 
         if (idType == typeof(Guid))
         {
-            return new CombGuidIdGeneration();
+            return new SequentialGuidIdGeneration();
         }
 
         if (idType == typeof(int) || idType == typeof(long))

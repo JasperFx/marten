@@ -71,7 +71,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase);
 
             _.Schema.For<Target>().GinIndexJsonData();
         });

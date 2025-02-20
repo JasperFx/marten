@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.Examples;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;

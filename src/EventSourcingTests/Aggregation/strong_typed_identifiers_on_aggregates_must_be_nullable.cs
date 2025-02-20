@@ -1,5 +1,6 @@
 using System;
 using System.Text.Json.Serialization;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Services;
 using Xunit;
 
 namespace Marten.Testing.Harness
@@ -40,7 +41,8 @@ namespace Marten.Testing.Harness
             {
                 if (_session == null)
                 {
-                    _session = theStore.OpenSession(DocumentTracking);
+                    var options = new SessionOptions { Tracking = DocumentTracking };
+                    _session = theStore.OpenSession(options);
                     Disposables.Add(_session);
                 }
 

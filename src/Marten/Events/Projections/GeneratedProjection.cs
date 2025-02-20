@@ -18,7 +18,8 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     Base type for projection types that operate by code generation
 /// </summary>
-public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, ICodeFile
+[Obsolete("Make this go away in V4")]
+public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, ICodeFile, IValidatedProjection
 {
     protected bool _hasGenerated;
 
@@ -98,13 +99,6 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
         } };
     }
 
-    [Obsolete("Use AsyncOptions.TeardownDataOnRebuild instead")]
-    public override bool TeardownDataOnRebuild
-    {
-        get => Options.TeardownDataOnRebuild;
-        set => Options.TeardownDataOnRebuild = value;
-    }
-
     public AsyncOptions Options { get; } = new();
 
     ValueTask<EventRangeGroup> IProjectionSource.GroupEvents(DocumentStore store,
@@ -165,6 +159,11 @@ public abstract class GeneratedProjection: ProjectionBase, IProjectionSource, IC
     protected abstract IProjection buildProjectionObject(DocumentStore store);
 
     protected abstract bool needsSettersGenerated();
+
+    IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
+    {
+        return ValidateConfiguration(options);
+    }
 
     internal virtual IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {

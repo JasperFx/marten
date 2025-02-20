@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Slicing;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
@@ -37,7 +39,7 @@ public class TenantSliceGroup<TDoc, TId>: ITenantSliceGroup<TId>
     public TenantSliceGroup(Tenant tenant)
     {
         Tenant = tenant;
-        Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant));
+        Slices = new LightweightCache<TId, EventSlice<TDoc, TId>>(id => new EventSlice<TDoc, TId>(id, Tenant.TenantId));
     }
 
     public TenantSliceGroup(Tenant tenant, IEnumerable<EventSlice<TDoc, TId>> slices): this(tenant)

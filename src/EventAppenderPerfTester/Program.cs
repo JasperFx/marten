@@ -4,6 +4,7 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using JasperFx;
+using JasperFx.Events;
 
 #region sample_disabling_npgsql_logging
 

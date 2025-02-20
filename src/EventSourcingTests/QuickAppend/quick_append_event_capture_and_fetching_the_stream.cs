@@ -5,6 +5,7 @@ using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -22,7 +23,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
     private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
-    private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
+    private static readonly string[] DefaultTenant = { StorageConstants.DefaultTenantId };
 
     public quick_append_event_capture_and_fetching_the_stream(ITestOutputHelper output)
     {

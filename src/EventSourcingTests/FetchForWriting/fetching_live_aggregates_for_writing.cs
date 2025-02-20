@@ -4,17 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.Projections;
+using JasperFx;
+using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Metadata;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using IRevisioned = Marten.Metadata.IRevisioned;
 
 namespace EventSourcingTests.FetchForWriting;
 

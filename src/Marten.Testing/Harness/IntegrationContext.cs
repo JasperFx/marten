@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Microsoft.FSharp.Core;

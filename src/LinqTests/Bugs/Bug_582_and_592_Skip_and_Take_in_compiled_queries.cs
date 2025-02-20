@@ -38,7 +38,7 @@ public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: BugIntegrationCo
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString);
         });
 
         var targets = Target.GenerateRandomData(1000).ToArray();

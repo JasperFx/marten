@@ -115,7 +115,7 @@ public interface IAggregationSteps<T>
     /// <param name="handler"></param>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler);
+    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler) where TEvent : class;
 
     /// <summary>
     ///     Apply changes to the existing aggregate based on the event type TEvent and return
@@ -124,7 +124,7 @@ public interface IAggregationSteps<T>
     /// <param name="handler"></param>
     /// <typeparam name="TEvent"></typeparam>
     /// <returns></returns>
-    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler);
+    IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler) where TEvent : class;
 
 
     /// <summary>

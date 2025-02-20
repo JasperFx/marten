@@ -40,8 +40,7 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         _selector = typeof(FSharpDiscriminatedUnionIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
     }
 
-    public IEnumerable<Type> KeyTypes => Type.EmptyTypes;
-    public bool RequiresSequences => false;
+    public bool IsNumeric => false;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

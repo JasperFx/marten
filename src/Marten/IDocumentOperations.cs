@@ -7,10 +7,15 @@ using Marten.Internal.Operations;
 
 namespace Marten;
 
+public interface IProjectionStorage
+{
+
+}
+
 /// <summary>
 ///     Basic storage operations for document types, but cannot initiate any actual writes
 /// </summary>
-public interface IDocumentOperations: IQuerySession
+public interface IDocumentOperations: IQuerySession, IProjectionStorage
 {
     new IEventStore Events { get; }
 

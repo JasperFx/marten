@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -34,7 +36,7 @@ public interface IAggregateProjectionWithSideEffects<T>
 /// <summary>
 ///     Internal service within aggregating projections
 /// </summary>
-public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
+public interface IAggregateProjection : IMetadataApplication // THIS NEEDS TO REMAIN PUBLIC
 {
     Type AggregateType { get; }
 
@@ -55,8 +57,6 @@ public interface IAggregateProjection // THIS NEEDS TO REMAIN PUBLIC
     /// into Marten's parallel blue/green deployment of this projection.
     /// </summary>
     uint ProjectionVersion { get; set; }
-
-    object ApplyMetadata(object aggregate, IEvent lastEvent);
 
     /// <summary>
     /// Apply any necessary configuration to the document mapping to work with the projection and append

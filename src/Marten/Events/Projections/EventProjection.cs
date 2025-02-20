@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -16,41 +20,76 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     This is the "do anything" projection type
 /// </summary>
-public abstract partial class EventProjection: GeneratedProjection, IProjectionSchemaSource
+public abstract class EventProjection: ProjectionBase, IValidatedProjection, IProjection, IProjectionSource, IProjectionSchemaSource, IProjectionStorage<IDocumentOperations>
 {
-    private readonly CreateMethodCollection _createMethods;
+    private readonly EventProjectionApplication<IDocumentOperations> _application;
 
-    private readonly Lazy<IProjection> _generatedProjection;
-    private readonly string _inlineTypeName;
-    private readonly ProjectMethodCollection _projectMethods;
-    private Type _generatedType;
-
-    private GeneratedType _inlineType;
-    private bool _isAsync;
-
-    public EventProjection(): base("Projections")
+    public EventProjection()
     {
-        _projectMethods = new ProjectMethodCollection(GetType());
-        _createMethods = new CreateMethodCollection(GetType());
+        _application = new EventProjectionApplication<IDocumentOperations>(this);
+
+        IncludedEventTypes.Fill(_application.AllEventTypes());
+
+        foreach (var publishedType in _application.PublishedTypes())
+        {
+            RegisterPublishedType(publishedType);
+        }
 
         ProjectionName = GetType().FullNameInCode();
-        _inlineTypeName = GetType().ToSuffixedTypeName("InlineProjection");
-
-        _generatedProjection = new Lazy<IProjection>(() =>
-        {
-            if (_generatedType == null)
-            {
-                throw new InvalidOperationException("The EventProjection has not created its inner IProjection");
-            }
-
-            var projection = (IProjection)Activator.CreateInstance(_generatedType, this);
-            foreach (var setter in _inlineType.Setters) setter.SetInitialValue(projection);
-
-            return projection;
-        });
     }
 
-    public override SubscriptionDescriptor Describe()
+    public void Store<T>(IDocumentOperations ops, T entity)
+    {
+        ops.Store(entity);
+    }
+
+    public Type ProjectionType => GetType();
+    public AsyncOptions Options { get; } = new();
+    public IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
+    {
+        return new List<AsyncProjectionShard> { new(this)
+        {
+            IncludeArchivedEvents = IncludeArchivedEvents,
+            EventTypes = IncludedEventTypes,
+            StreamType = StreamType
+        } };
+    }
+
+    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
+        CancellationToken cancellationToken)
+    {
+        return new ValueTask<EventRangeGroup>(
+            new TenantedEventRangeGroup(
+                store,
+                daemonDatabase,
+                this,
+                Options,
+                range,
+                cancellationToken
+            )
+        );
+    }
+
+    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    {
+        foreach (var e in streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence))
+        {
+            await _application.ApplyAsync(operations, e, cancellation).ConfigureAwait(false);
+        }
+    }
+
+    public IProjection Build(DocumentStore store)
+    {
+        return this;
+    }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        executor = default;
+        return false;
+    }
+
+    public SubscriptionDescriptor Describe()
     {
         return new SubscriptionDescriptor(this, SubscriptionType.EventProjection);
     }
@@ -67,58 +106,27 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
         return SchemaObjects;
     }
 
-
-    protected override bool needsSettersGenerated()
-    {
-        return _inlineType == null;
-    }
-
-    protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _generatedProjection.Value,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
-    }
-
-
     [MartenIgnore]
-    public void Project<TEvent>(Action<TEvent, IDocumentOperations> project)
+    public void Project<TEvent>(Action<TEvent, IDocumentOperations> project) where TEvent : class
     {
-        _projectMethods.AddLambda(project, typeof(TEvent));
+        _application.Project<TEvent>(project);
     }
 
     [MartenIgnore]
-    public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project)
+    public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project) where TEvent : class
     {
-        _projectMethods.AddLambda(project, typeof(TEvent));
-    }
-}
-
-public abstract class SyncEventProjection<T>: SyncEventProjectionBase where T : EventProjection
-{
-    public SyncEventProjection(T projection)
-    {
-        Projection = projection;
+        _application.ProjectAsync<TEvent>(project);
     }
 
-    public T Projection { get; }
-}
-
-public abstract class AsyncEventProjection<T>: AsyncEventProjectionBase where T : EventProjection
-{
-    public AsyncEventProjection(T projection)
+    public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        Projection = projection;
+        _application.AssertMethodValidity();
+
+        return ArraySegment<string>.Empty;
     }
 
-    public T Projection { get; }
+    internal override void AssembleAndAssertValidity()
+    {
+        _application.AssertMethodValidity();
+    }
 }

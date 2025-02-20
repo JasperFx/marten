@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Events;
+using JasperFx.Events.Slicing;
 using Marten.Events.Projections;
 using Marten.Storage;
 
@@ -48,7 +51,7 @@ public class EventSlicer<TDoc, TId>: IEventSlicer<TDoc, TId>
         }
 
         // This path is for *NOT* conjoined multi-tenanted projections, but we have to respect per-database tenancy
-        var group = await groupSingleTenant(new Tenant(Tenancy.DefaultTenantId, querySession.Database), querySession,
+        var group = await groupSingleTenant(new Tenant(StorageConstants.DefaultTenantId, querySession.Database), querySession,
             events).ConfigureAwait(false);
 
         return new List<TenantSliceGroup<TDoc, TId>> { group };

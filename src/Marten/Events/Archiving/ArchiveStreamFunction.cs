@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Weasel.Core;

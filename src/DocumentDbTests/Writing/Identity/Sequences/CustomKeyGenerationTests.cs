@@ -17,9 +17,7 @@ namespace DocumentDbTests.Writing.Identity.Sequences;
 #region sample_custom-id-generation
 public class CustomIdGeneration : IIdGeneration
 {
-    public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
-
-    public bool RequiresSequences { get; } = false;
+    public bool IsNumeric { get; } = false;
     public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
     {
         var document = new Use(mapping.DocumentType);

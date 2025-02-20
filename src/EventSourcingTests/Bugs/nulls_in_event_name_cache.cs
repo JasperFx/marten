@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -53,11 +54,6 @@ public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedO
 
 public class CustomProjection: IProjection
 {
-
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
 
     public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
     {
