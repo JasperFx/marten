@@ -4,7 +4,7 @@ namespace Marten.Services.Json;
 
 internal static class SerializerFactory
 {
-    public static SerializerType DefaultSerializerType { get; set; } = SerializerType.Newtonsoft;
+    public static SerializerType DefaultSerializerType { get; set; } = SerializerType.SystemTextJson;
 
     public static ISerializer New(SerializerType? serializerType = null, SerializerOptions options = null)
     {

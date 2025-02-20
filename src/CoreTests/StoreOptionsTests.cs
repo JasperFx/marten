@@ -27,6 +27,12 @@ public class StoreOptionsTests
     }
 
     [Fact]
+    public void STJ_is_the_default_serializer()
+    {
+        new StoreOptions().Serializer().ShouldBeOfType<SystemTextJsonSerializer>();
+    }
+
+    [Fact]
     public void DefaultAutoCreateShouldBeCreateOrUpdate()
     {
         var settings = new StoreOptions();
