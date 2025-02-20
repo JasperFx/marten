@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.PLv8.Patching;
@@ -28,7 +29,7 @@ public class patching_api: OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString);
             _.UseJavascriptTransformsAndPatching();
         });
     }
@@ -47,7 +48,7 @@ public class patching_api: OneOffConfigurationsContext
         var store = SeparateStore(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
-            o.UseDefaultSerialization(EnumStorage.AsString);
+            o.UseSystemTextJsonForSerialization(EnumStorage.AsString);
             o.AutoCreateSchemaObjects = AutoCreate.None;
             o.UseJavascriptTransformsAndPatching();
         });
@@ -1033,7 +1034,8 @@ public class patching_api: OneOffConfigurationsContext
 
         public string Name { get; set; }
 
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+            CancellationToken cancellation)
         {
             var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
 
@@ -1048,12 +1050,6 @@ public class patching_api: OneOffConfigurationsContext
                     operations.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
                 }
             }
-        }
-
-        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-            CancellationToken cancellation)
-        {
-            Apply(operations, streams);
             return Task.CompletedTask;
         }
     }

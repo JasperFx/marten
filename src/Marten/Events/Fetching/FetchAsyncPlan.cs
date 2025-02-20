@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -62,7 +65,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly IDocumentStorage<TDoc, TId> _storage;
-    private readonly ILiveAggregator<TDoc> _aggregator;
+    private readonly IAggregator<TDoc, IQuerySession> _aggregator;
     private readonly string _versionSelectionSql;
     private string _initialSql;
 

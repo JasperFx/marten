@@ -12,9 +12,7 @@ namespace Marten.Schema.Identity;
 /// </summary>
 public class GuidIdGeneration: IIdGeneration
 {
-    public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(Guid) };
-
-    public bool RequiresSequences { get; } = false;
+    public bool IsNumeric { get; } = false;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

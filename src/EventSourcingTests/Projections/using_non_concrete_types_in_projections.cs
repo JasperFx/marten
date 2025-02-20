@@ -45,8 +45,6 @@ public class using_non_concrete_types_in_projections : AggregationContext
             x.D();
         });
 
-        _output.WriteLine(_projection.SourceCode());
-
         aggregate.ACount.ShouldBe(1);
         aggregate.BCount.ShouldBe(2);
         aggregate.CCount.ShouldBe(3);

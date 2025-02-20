@@ -72,7 +72,7 @@ public class FlatImportProjection : FlatTableProjection
         // We need to explicitly add a primary key
         Table.AddColumn<Guid>("id").AsPrimaryKey();
 
-        TeardownDataOnRebuild = true;
+        Options.TeardownDataOnRebuild = true;
 
         Project<ImportStarted>(map =>
         {

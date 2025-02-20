@@ -77,43 +77,6 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
         CancellationToken cancellation = default);
 
     /// <summary>
-    ///     Open a new IDocumentSession with the supplied DocumentTracking.
-    ///     "IdentityOnly" is the default.
-    /// </summary>
-    /// <param name="tracking"></param>
-    /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    IDocumentSession OpenSession(
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    );
-
-    /// <summary>
-    ///     Open a new IDocumentSession with the supplied DocumentTracking.
-    ///     "IdentityOnly" is the default.
-    /// </summary>
-    /// <param name="tracking"></param>
-    /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    IDocumentSession OpenSession(
-        string tenantId,
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    );
-
-    /// <summary>
     ///     Open a new IDocumentSession with the supplied options
     /// </summary>
     /// <param name="options">Additional options for session</param>

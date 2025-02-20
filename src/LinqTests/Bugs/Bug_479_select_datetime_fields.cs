@@ -12,7 +12,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
 {
     public Bug_479_select_datetime_fields()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(_ => _.UseNewtonsoftForSerialization(EnumStorage.AsString));
     }
 
     [Fact]

@@ -5,53 +5,41 @@ using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
+using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProjection, IAggregateProjection,
-    ILiveAggregatorSource<T>, IAggregateProjectionWithSideEffects<T>
+public abstract partial class AggregateProjectionBase<T>: ProjectionBase, IProjectionSource, IAggregateProjection,
+    ILiveAggregatorSource<T>, IAggregateProjectionWithSideEffects<T>, IValidatedProjection
 {
     private readonly Lazy<Type[]> _allEventTypes;
-    internal readonly ApplyMethodCollection _applyMethods;
 
-    internal readonly CreateMethodCollection _createMethods;
-    private readonly string _inlineAggregationHandlerType;
-    private readonly string _liveAggregationTypeName;
-    internal readonly ShouldDeleteMethodCollection _shouldDeleteMethods;
     private readonly AggregateVersioning<T> _versioning;
     internal IDocumentMapping _aggregateMapping;
-    private GeneratedType _inlineGeneratedType;
-    private Type _inlineType;
-    private bool _isAsync;
-    private GeneratedType _liveGeneratedType;
-    private Type _liveType;
     private IAggregationRuntime _runtime;
+    private readonly AggregateApplication<T,IQuerySession> _application;
 
-    protected GeneratedAggregateProjectionBase(AggregationScope scope): base(typeof(T).NameInCode())
+    protected AggregateProjectionBase(AggregationScope scope)
     {
-        _createMethods = new CreateMethodCollection(GetType(), typeof(T));
-        _applyMethods = new ApplyMethodCollection(GetType(), typeof(T));
-        _shouldDeleteMethods = new ShouldDeleteMethodCollection(GetType(), typeof(T));
+        ProjectionName = typeof(T).NameInCode();
+        _application = new AggregateApplication<T, IQuerySession>(this);
 
         Options.DeleteViewTypeOnTeardown<T>();
 
-        _allEventTypes = new Lazy<Type[]>(() =>
-        {
-            return _createMethods.Methods.Concat(_applyMethods.Methods).Concat(_shouldDeleteMethods.Methods)
-                .Select(x => x.EventType).Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
-        });
+        _allEventTypes = new Lazy<Type[]>(determineEventTypes);
 
-
-        _inlineAggregationHandlerType = GetType().ToSuffixedTypeName("InlineHandler");
-        _liveAggregationTypeName = GetType().ToSuffixedTypeName("LiveAggregation");
-        _versioning = new AggregateVersioning<T>(scope);
+        _versioning = new AggregateVersioning<T>(scope){Inner = _application};
 
         RegisterPublishedType(typeof(T));
 
@@ -60,6 +48,13 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
             ProjectionVersion = att.Version;
         }
     }
+
+    IEnumerable<string> IValidatedProjection.ValidateConfiguration(StoreOptions options)
+    {
+        return ValidateConfiguration(options);
+    }
+
+    public AsyncOptions Options { get; } = new();
 
     // TODO -- duplicated with AggregationRuntime, and that's an ick.
     /// <summary>
@@ -76,6 +71,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     /// <param name="operations"></param>
     /// <param name="slice"></param>
     /// <returns></returns>
+    [JasperFxIgnore]
     public virtual ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<T> slice)
     {
         return new ValueTask();
@@ -100,7 +96,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         return aggregate;
     }
 
-    object IAggregateProjection.ApplyMetadata(object aggregate, IEvent lastEvent)
+    object IMetadataApplication.ApplyMetadata(object aggregate, IEvent lastEvent)
     {
         if (aggregate is T t) return ApplyMetadata(t, lastEvent);
 
@@ -125,26 +121,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         return action.Events.Select(x => x.EventType).Intersect(DeleteEvents).Any();
     }
 
-    /// <summary>
-    ///     Designate or override the aggregate version member for this aggregate type
-    /// </summary>
-    /// <param name="expression"></param>
-    public void VersionIdentity(Expression<Func<T, int>> expression)
-    {
-        _versioning.Override(expression);
-    }
-
-    /// <summary>
-    ///     Designate or override the aggregate version member for this aggregate type
-    /// </summary>
-    /// <param name="expression"></param>
-    public void VersionIdentity(Expression<Func<T, long>> expression)
-    {
-        _versioning.Override(expression);
-    }
-
     protected abstract object buildEventSlicer(StoreOptions options);
-    protected abstract Type baseTypeForAggregationRuntime();
 
     /// <summary>
     ///     When used as an asynchronous projection, this opts into
@@ -158,8 +135,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         StreamType = typeof(T);
     }
 
-    protected sealed override ValueTask<EventRangeGroup> groupEvents(DocumentStore store,
-        IMartenDatabase daemonDatabase, EventRange range,
+    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
         CancellationToken cancellationToken)
     {
         _runtime ??= BuildRuntime(store);
@@ -167,9 +143,13 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
         return _runtime.GroupEvents(store, daemonDatabase, range, cancellationToken);
     }
 
+    public Type ProjectionType => GetType();
+
+    public abstract SubscriptionDescriptor Describe();
+
     protected virtual Type[] determineEventTypes()
     {
-        var eventTypes = MethodCollection.AllEventTypes(_applyMethods, _createMethods, _shouldDeleteMethods)
+        var eventTypes = _application.AllEventTypes()
             .Concat(DeleteEvents).Concat(TransformedEvents).Distinct().ToArray();
         return eventTypes;
     }
@@ -177,5 +157,64 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: GeneratedProj
     public virtual void ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
         // nothing
+    }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    {
+        var projection = (IProjection)BuildRuntime(store);
+        if (projection is IAggregationRuntime runtime)
+        {
+            return runtime.TryBuildReplayExecutor(store, database, out executor);
+        }
+
+        executor = default;
+        return false;
+    }
+
+    IReadOnlyList<AsyncProjectionShard> IProjectionSource.AsyncProjectionShards(DocumentStore store)
+    {
+        StoreOptions = store.Options;
+
+        return new List<AsyncProjectionShard> { new(this)
+        {
+            IncludeArchivedEvents = IncludeArchivedEvents,
+            EventTypes = IncludedEventTypes,
+            StreamType = StreamType
+        } };
+    }
+
+    IProjection IProjectionSource.Build(DocumentStore store)
+    {
+        return BuildRuntime(store);
+    }
+
+    internal StoreOptions StoreOptions { get; set; }
+
+    public IAggregator<T, IQuerySession> BuildAggregator(StoreOptions options)
+    {
+        return _versioning;
+    }
+
+    private void validateAndSetAggregateMapping(StoreOptions options)
+    {
+        _aggregateMapping = options.Storage.FindMapping(typeof(T));
+        if (_aggregateMapping.IdMember == null)
+        {
+            throw new InvalidDocumentException(
+                $"No identity property or field can be determined for the aggregate '{typeof(T).FullNameInCode()}', but one is required to be used as an aggregate in projections");
+        }
+    }
+
+    internal IAggregationRuntime BuildRuntime(DocumentStore store)
+    {
+        validateAndSetAggregateMapping(store.Options);
+        var storage = store.Options.Providers.StorageFor<T>().Lightweight;
+        var slicer = buildEventSlicer(store.Options);
+        var runtimeType = typeof(AggregationApplicationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
+        var runtime =
+            (IAggregationRuntime)Activator.CreateInstance(runtimeType, store, this, slicer, storage, _application);
+
+        runtime.Versioning = _versioning;
+        return runtime;
     }
 }

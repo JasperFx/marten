@@ -16,7 +16,7 @@ public interface IReadOnlyProjectionData
     /// <summary>
     ///     When is this projection executed?
     /// </summary>
-    ProjectionLifecycle Lifecycle { get; }
+    ProjectionLifecycle Lifecycle { get; set; }
 
     /// <summary>
     ///     The concrete .Net type implementing this projection

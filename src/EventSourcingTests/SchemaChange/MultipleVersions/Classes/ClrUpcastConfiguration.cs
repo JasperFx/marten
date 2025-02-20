@@ -2,7 +2,7 @@
 using System;
 using Marten;
 using Marten.Services.Json.Transformations;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
 {

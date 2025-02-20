@@ -39,8 +39,6 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
             });
         });
 
-        _output.WriteLine(_projection.SourceCode());
-
         var aggregate = await LiveAggregation(x =>
         {
             x.B();
@@ -129,8 +127,6 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
             p.DeleteEvent<Finished>((aggregate, e) => (aggregate.ACount + aggregate.BCount + aggregate.CCount + aggregate.DCount) > 10);
         });
 
-        _output.WriteLine(_projection.SourceCode());
-
         await InlineProject(x =>
         {
             x.Streams[stream1].IsNew = true;
@@ -173,8 +169,6 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
             p.DeleteEvent<Finished>();
         });
-
-        _output.WriteLine(_projection.SourceCode());
 
         await InlineProject(x =>
         {
@@ -226,6 +220,7 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
         {
             CausesDelete = false
         };
+
         var state2 = new SystemState
         {
             CausesDelete = true
@@ -273,7 +268,6 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
         });
 
         // Run another stream to see it deleted
-
         await InlineProject(x =>
         {
             // Should not cause a deletion

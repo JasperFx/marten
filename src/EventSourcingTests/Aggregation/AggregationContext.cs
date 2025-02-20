@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
@@ -30,7 +31,6 @@ public class AggregationContext : IntegrationContext
 
         var rules = theStore.Options.CreateGenerationRules();
         rules.TypeLoadMode = TypeLoadMode.Dynamic;
-        _projection.Compile(theStore.Options, rules);
     }
 
     public void UsingDefinition(Action<SingleStreamProjection<MyAggregate>> configure)
@@ -41,7 +41,6 @@ public class AggregationContext : IntegrationContext
 
         var rules = theStore.Options.CreateGenerationRules();
         rules.TypeLoadMode = TypeLoadMode.Dynamic;
-        _projection.Compile(theStore.Options, rules);
     }
 
 
@@ -49,7 +48,7 @@ public class AggregationContext : IntegrationContext
     {
         var fragment = BuildStreamFragment(action);
 
-        var aggregator = _projection.BuildLiveAggregator();
+        var aggregator = _projection.BuildAggregator(theStore.Options);
         var events = (IReadOnlyList<IEvent>)fragment.Events();
         return aggregator.BuildAsync(events, theSession, null, CancellationToken.None);
     }

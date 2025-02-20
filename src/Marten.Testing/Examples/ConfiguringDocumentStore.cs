@@ -72,9 +72,6 @@ public class ConfiguringDocumentStore
 
             // This is still mandatory
             _.Connection("some connection string");
-
-            // Override the JSON Serialization
-            _.Serializer<TestsSerializer>();
         });
         #endregion
     }

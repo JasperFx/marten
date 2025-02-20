@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
 
 namespace Marten.Events.Projections;

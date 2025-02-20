@@ -15,7 +15,7 @@ public class Bug_2946_querying_on_value_collection_of_enums_serialized_as_string
     [Fact]
     public async Task try_to_query_on_contains_as_string()
     {
-        StoreOptions(opts => opts.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(opts => opts.UseSystemTextJsonForSerialization(EnumStorage.AsString));
 
         var doc1 = new MyDoc("one", new Colors[] { Colors.Blue, Colors.Green });
         var doc2 = new MyDoc("two", new Colors[] { Colors.Blue, Colors.Red });
@@ -36,7 +36,7 @@ public class Bug_2946_querying_on_value_collection_of_enums_serialized_as_string
     [Fact]
     public async Task try_to_query_on_contains_as_int()
     {
-        StoreOptions(opts => opts.UseDefaultSerialization(EnumStorage.AsInteger));
+        StoreOptions(opts => opts.UseSystemTextJsonForSerialization(EnumStorage.AsInteger));
 
         var doc1 = new MyDoc("one", new Colors[] { Colors.Blue, Colors.Green });
         var doc2 = new MyDoc("two", new Colors[] { Colors.Blue, Colors.Red });

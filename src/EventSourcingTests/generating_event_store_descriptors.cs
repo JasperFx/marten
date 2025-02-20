@@ -30,7 +30,7 @@ public class generating_event_store_descriptors
                     opts.DatabaseSchemaName = "capabilities";
 
                     opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
-                    opts.Projections.Add<BoardViewProjection>(ProjectionLifecycle.Inline);
+                    opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
                     opts.Projections.LiveStreamAggregation<QuestParty>();
                     opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
                 });

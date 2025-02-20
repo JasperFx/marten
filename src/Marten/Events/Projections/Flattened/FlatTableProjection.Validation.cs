@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Events.Projections;
 using Marten.Exceptions;
 
 namespace Marten.Events.Projections.Flattened;

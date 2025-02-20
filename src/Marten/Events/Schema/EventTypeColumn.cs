@@ -1,5 +1,6 @@
 using System;
 using JasperFx.CodeGeneration;
+using JasperFx.Events;
 using Marten.Internal.CodeGeneration;
 using Weasel.Postgresql.Tables;
 

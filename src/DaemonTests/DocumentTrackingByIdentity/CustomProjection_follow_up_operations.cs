@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -59,9 +60,6 @@ public class CustomProjection_follow_up_operations: DaemonContext
         {
             typeof(EntityPublished), typeof(SomeOtherEntityWithNestedIdentifierPublished)
         };
-
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streamActions) =>
-            throw new NotImplementedException();
 
         public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streamActions,
             CancellationToken cancellation)

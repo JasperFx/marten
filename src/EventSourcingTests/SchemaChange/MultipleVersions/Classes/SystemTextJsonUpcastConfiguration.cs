@@ -5,7 +5,7 @@ using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
 using Marten.Services.Json;
 using Marten.Services.Json.Transformations.SystemTextJson;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
 {

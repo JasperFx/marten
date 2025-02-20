@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Operations;
 using Marten.Events.Schema;
@@ -272,7 +273,7 @@ public abstract class EventDocumentStorage: IEventStorage
         catch (Exception e)
         {
             var sequence = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
-            throw new EventDeserializationFailureException(sequence, e);
+            throw new EventDeserializationFailureException(sequence, mapping, e);
         }
 
         await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
@@ -305,7 +306,7 @@ public abstract class EventDocumentStorage: IEventStorage
     }
 
     public virtual IStorageOperation
-        QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream, IEvent e)
+        QuickAppendEventWithVersion(StreamAction stream, IEvent e)
     {
         throw new NotSupportedException(
             "You will have to re-generate the Marten code before the \"quick append events\" feature is available");

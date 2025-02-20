@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Xunit;

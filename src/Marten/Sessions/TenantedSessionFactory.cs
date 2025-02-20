@@ -1,4 +1,6 @@
-﻿using Marten.Events.Projections;
+﻿using JasperFx;
+using JasperFx.Events;
+using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;
@@ -27,16 +29,16 @@ internal static class TenantedSessionFactory
     )
     {
         var shouldApplyConjoinedTenancy =
-            session.TenantId != slice.Tenant.TenantId
-            && slice.Tenant.TenantId != Tenancy.DefaultTenantId
+            session.TenantId != slice.TenantId
+            && slice.TenantId != StorageConstants.DefaultTenantId
             && storage.TenancyStyle == TenancyStyle.Conjoined
             && session.DocumentStore.Options.Tenancy.IsTenantStoredInCurrentDatabase(
                 session.Database,
-                slice.Tenant.TenantId
+                slice.TenantId
             );
 
         if (shouldApplyConjoinedTenancy)
-            return session.WithTenant(slice.Tenant.TenantId);
+            return session.WithTenant(slice.TenantId);
 
         var isDefaultTenantAllowed =
             session.SessionOptions.AllowAnyTenant
@@ -44,7 +46,7 @@ internal static class TenantedSessionFactory
 
         var shouldApplyDefaultTenancy =
             isDefaultTenantAllowed
-            && session.TenantId != Tenancy.DefaultTenantId
+            && session.TenantId != StorageConstants.DefaultTenantId
             && storage.TenancyStyle == TenancyStyle.Single;
 
         if (shouldApplyDefaultTenancy)
@@ -57,5 +59,5 @@ internal static class TenantedSessionFactory
         (DocumentSessionBase)session.ForTenant(tenantId);
 
     private static DocumentSessionBase WithDefaultTenant(this IDocumentSession session) =>
-        (DocumentSessionBase)session.ForTenant(Tenancy.DefaultTenantId);
+        (DocumentSessionBase)session.ForTenant(StorageConstants.DefaultTenantId);
 }

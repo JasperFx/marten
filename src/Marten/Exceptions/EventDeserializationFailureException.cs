@@ -1,6 +1,8 @@
 using System;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using Marten.Events;
 using Marten.Events.Daemon;
 
 namespace Marten.Exceptions;
@@ -11,8 +13,8 @@ namespace Marten.Exceptions;
 /// </summary>
 public class EventDeserializationFailureException: MartenException
 {
-    public EventDeserializationFailureException(long sequence, Exception innerException): base(
-        "Event deserialization error on sequence = " + sequence, innerException)
+    public EventDeserializationFailureException(long sequence, IEventType eventType, Exception innerException): base(
+        $"Event deserialization error on sequence = {sequence} for event type {eventType.EventTypeName}" , innerException)
     {
         Sequence = sequence;
     }

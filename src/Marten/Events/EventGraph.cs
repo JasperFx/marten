@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Resiliency;
@@ -22,11 +23,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -134,19 +135,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
     public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
-
-    [Obsolete("Will be removed in Marten 8")]
-    public bool UseIdentityMapForInlineAggregates
-    {
-        get
-        {
-            return UseIdentityMapForAggregates;
-        }
-        set
-        {
-            UseIdentityMapForAggregates = value;
-        }
-    }
 
     public bool UseIdentityMapForAggregates { get; set; }
 
@@ -349,6 +337,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return _byEventName[eventType];
     }
 
+    IEventType IEventRegistry.EventMappingFor(Type eventType)
+    {
+        return EventMappingFor(eventType);
+    }
+
     // Fetch additional event aliases that map to these types
     internal IReadOnlySet<string> AliasesForEvents(IReadOnlyCollection<Type> types)
     {
@@ -372,12 +365,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return _events.Any(x => x.DocumentType != typeof(Archived)) || Options.Projections.IsActive();
     }
 
-    internal Type AggregateTypeFor(string aggregateTypeName)
+    public Type AggregateTypeFor(string aggregateTypeName)
     {
         return _aggregateTypeByName[aggregateTypeName];
     }
 
-    internal string AggregateAliasFor(Type aggregateType)
+    public string AggregateAliasFor(Type aggregateType)
     {
         var alias = _aggregateNameByType[aggregateType];
 
@@ -434,7 +427,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return session.EventStorage();
     }
 
-    internal IEvent BuildEvent(object eventData)
+    public IEvent BuildEvent(object eventData)
     {
         if (eventData == null)
         {

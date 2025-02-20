@@ -138,7 +138,7 @@ public class end_to_end_query_with_include: IntegrationContext
     [Fact]
     public async Task include_with_containment_where_for_a_single_document_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
@@ -187,7 +187,7 @@ public class end_to_end_query_with_include: IntegrationContext
     [Fact]
     public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing_2()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase));
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
@@ -213,7 +213,7 @@ public class end_to_end_query_with_include: IntegrationContext
     [Fact]
     public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing_2()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString, Casing.SnakeCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.SnakeCase));
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
@@ -239,7 +239,7 @@ public class end_to_end_query_with_include: IntegrationContext
     [Fact]
     public async Task include_with_any_containment_where_for_a_single_document_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
@@ -265,7 +265,7 @@ public class end_to_end_query_with_include: IntegrationContext
     [Fact]
     public async Task include_with_any_containment_where_for_a_single_document_with_snake_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.SnakeCase));
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();

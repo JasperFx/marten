@@ -1,37 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Operations;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
-using Marten.Schema.Identity;
-using Weasel.Core;
 
 namespace Marten.Events;
-
-public enum EventAppendMode
-{
-    /// <summary>
-    /// Default behavior that ensures that all inline projections will have full access to all event
-    /// metadata including intended event sequences, versions, and timestamps
-    /// </summary>
-    Rich,
-
-    /// <summary>
-    /// Stripped down, more performant mode of appending events that will omit some event metadata within
-    /// inline projections
-    /// </summary>
-    Quick
-}
 
 public partial class EventGraph
 {
     private RetryBlock<UpdateBatch> _tombstones;
+
+    internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
+
+    public EventAppendMode AppendMode
+    {
+        get => EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
+        set => EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
+    }
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
     {
@@ -39,20 +31,6 @@ public partial class EventGraph
             ? _store.LightweightSession()
             : _store.LightweightSession(batch.TenantId!));
         await session.ExecuteBatchAsync(batch, cancellationToken).ConfigureAwait(false);
-    }
-
-    internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
-
-    public EventAppendMode AppendMode
-    {
-        get
-        {
-            return EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
-        }
-        set
-        {
-            EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
-        }
     }
 
     internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
@@ -91,8 +69,8 @@ public partial class EventGraph
                     Sequence = x.Sequence,
                     Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
                     TenantId = x.TenantId,
-                    StreamId = EstablishTombstoneStream.StreamId,
-                    StreamKey = EstablishTombstoneStream.StreamKey,
+                    StreamId = Tombstone.StreamId,
+                    StreamKey = Tombstone.StreamKey,
                     Id = CombGuidIdGeneration.NewGuid(),
                     EventTypeName = mapping.EventTypeName,
                     DotNetTypeName = mapping.DotNetTypeName

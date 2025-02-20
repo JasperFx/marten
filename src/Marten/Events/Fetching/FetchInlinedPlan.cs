@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;

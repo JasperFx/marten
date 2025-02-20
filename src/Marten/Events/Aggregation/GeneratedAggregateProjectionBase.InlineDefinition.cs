@@ -3,17 +3,17 @@ using System.Threading.Tasks;
 
 namespace Marten.Events.Aggregation;
 
-public abstract partial class GeneratedAggregateProjectionBase<T>: IAggregationSteps<T>
+public abstract partial class AggregateProjectionBase<T>: IAggregationSteps<T>
 {
     public IAggregationSteps<T> CreateEvent<TEvent>(Func<TEvent, T> creator) where TEvent : class
     {
-        _createMethods.AddLambda(creator, typeof(TEvent));
+        _application.CreateEvent<TEvent>(creator);
         return this;
     }
 
     public IAggregationSteps<T> CreateEvent<TEvent>(Func<TEvent, IQuerySession, Task<T>> creator) where TEvent : class
     {
-        _createMethods.AddLambda(creator, typeof(TEvent));
+        _application.CreateEvent<TEvent>(creator);
         return this;
     }
 
@@ -25,13 +25,13 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: IAggregationS
 
     public IAggregationSteps<T> DeleteEvent<TEvent>(Func<TEvent, bool> shouldDelete) where TEvent : class
     {
-        _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
+        _application.DeleteEvent<TEvent>(shouldDelete);
         return this;
     }
 
     public IAggregationSteps<T> DeleteEvent<TEvent>(Func<T, TEvent, bool> shouldDelete) where TEvent : class
     {
-        _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
+        _application.DeleteEvent<TEvent>(shouldDelete);
         return this;
     }
 
@@ -39,54 +39,54 @@ public abstract partial class GeneratedAggregateProjectionBase<T>: IAggregationS
     public IAggregationSteps<T> DeleteEventAsync<TEvent>(
         Func<IQuerySession, T, TEvent, Task<bool>> shouldDelete) where TEvent : class
     {
-        _shouldDeleteMethods.AddLambda(shouldDelete, typeof(TEvent));
+        _application.DeleteEventAsync<TEvent>(shouldDelete);
         return this;
     }
 
     public IAggregationSteps<T> ProjectEvent<TEvent>(Action<T> handler)
         where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
     public IAggregationSteps<T> ProjectEvent<TEvent>(Action<T, TEvent> handler)
         where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
     public IAggregationSteps<T> ProjectEvent<TEvent>(Func<T, TEvent, T> handler)
         where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
     public IAggregationSteps<T> ProjectEvent<TEvent>(Func<T, T> handler)
         where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
     public IAggregationSteps<T> ProjectEvent<TEvent>(Action<IQuerySession, T, TEvent> handler)
         where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
-    public IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler)
+    public IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task> handler) where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 
-    public IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler)
+    public IAggregationSteps<T> ProjectEventAsync<TEvent>(Func<IQuerySession, T, TEvent, Task<T>> handler) where TEvent : class
     {
-        _applyMethods.AddLambda(handler, typeof(TEvent));
+        _application.ProjectEvent<TEvent>(handler);
         return this;
     }
 

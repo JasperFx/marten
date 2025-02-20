@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 
 namespace Marten.Events.Projections;
 
@@ -14,13 +15,6 @@ namespace Marten.Events.Projections;
 /// </summary>
 public interface IProjection
 {
-    /// <summary>
-    ///     Apply inline projections during synchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams);
-
     /// <summary>
     ///     Apply inline projections during asynchronous operations
     /// </summary>

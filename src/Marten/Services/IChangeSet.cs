@@ -1,5 +1,6 @@
 #nullable enable
 using System.Collections.Generic;
+using JasperFx.Events;
 using Marten.Events;
 
 namespace Marten.Services;

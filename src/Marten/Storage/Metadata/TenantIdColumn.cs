@@ -1,6 +1,8 @@
 using System;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
@@ -14,7 +16,7 @@ internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEvent
 
     public TenantIdColumn(): base(Name, x => x.TenantId)
     {
-        DefaultExpression = $"'{Tenancy.DefaultTenantId}'";
+        DefaultExpression = $"'{StorageConstants.DefaultTenantId}'";
     }
 
     public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)

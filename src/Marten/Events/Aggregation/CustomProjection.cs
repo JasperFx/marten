@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -34,7 +36,7 @@ public abstract class CustomProjection<TDoc, TId>:
     IProjectionSource,
     IAggregateProjection,
     IAggregateProjectionWithSideEffects<TDoc>,
-    ILiveAggregator<TDoc>
+    IAggregator<TDoc, IQuerySession>
 {
     private IDocumentStorage<TDoc, TId> _storage;
 
@@ -72,13 +74,6 @@ public abstract class CustomProjection<TDoc, TId>:
     }
 
     public IEventSlicer<TDoc, TId> Slicer { get; protected internal set; }
-
-    void IProjection.Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-#pragma warning disable VSTHRD002
-        this.As<IProjection>().ApplyAsync(operations, streams, CancellationToken.None).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-    }
 
     async Task IProjection.ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
@@ -365,12 +360,7 @@ public abstract class CustomProjection<TDoc, TId>:
             Lifecycle == ProjectionLifecycle.Inline && storeOptions.Events.AppendMode == EventAppendMode.Quick && Slicer is ISingleStreamSlicer;
     }
 
-    TDoc ILiveAggregator<TDoc>.Build(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot)
-    {
-        throw new NotSupportedException("It's not supported to do a synchronous, live aggregation with a custom projection");
-    }
-
-    async ValueTask<TDoc> ILiveAggregator<TDoc>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)
+    async ValueTask<TDoc> IAggregator<TDoc, IQuerySession>.BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, TDoc snapshot, CancellationToken cancellation)
     {
         if (!events.Any()) return default;
 
@@ -378,7 +368,7 @@ public abstract class CustomProjection<TDoc, TId>:
 
         var latestEvent = events.Last();
         var streamId = IdentityFromEvent(documentSessionBase.Options.EventGraph.StreamIdentity, latestEvent);
-        var slice = new EventSlice<TDoc, TId>(streamId, session, events);
+        var slice = new EventSlice<TDoc, TId>(streamId, session.TenantId, events);
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             slice.Aggregate = await BuildAsync(session, slice.Aggregate, slice.Events()).ConfigureAwait(false);

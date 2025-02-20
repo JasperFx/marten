@@ -21,7 +21,11 @@ public class Bug_2307_JObject_in_dictionary_duplicated_field: BugIntegrationCont
             opts.Schema.For<TestReadModel>()
                 .Identity(x => x.InstanceId);
             opts.UseNodaTime();
+
+            opts.UseNewtonsoftForSerialization();
         });
+
+
 
         var e = new
         {

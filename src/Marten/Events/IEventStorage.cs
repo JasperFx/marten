@@ -1,3 +1,4 @@
+using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -10,7 +11,7 @@ namespace Marten.Events;
 ///     The implementation of this class is generated at runtime based on the configuration
 ///     of the system
 /// </summary>
-public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
+public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>, IEventStorageBuilder<IStorageOperation>
 {
     /// <summary>
     ///     Create a storage operation to append a single event
@@ -53,6 +54,6 @@ public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
 
     IStorageOperation QuickAppendEvents(StreamAction stream);
 
-    IStorageOperation QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream,
+    IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
         IEvent e);
 }

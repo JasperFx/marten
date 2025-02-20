@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Bug1781;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;

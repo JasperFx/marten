@@ -14,10 +14,11 @@ public class aggregates_should_be_registered_as_document_mappings_automatically:
     {
         StoreOptions(_ =>
         {
-            _.Projections.AggregatorFor<QuestParty>();
+            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
         });
 
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        var types = theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType).ToList();
+        types
             .ShouldContain(typeof(QuestParty));
     }
 

@@ -198,7 +198,7 @@ public class DuplicatedFieldTests
     public void store_options_serializer_with_casing(Casing casing, string expectedUpdateFragment)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(casing:casing);
+        storeOptions.UseSystemTextJsonForSerialization(casing:casing);
         var field = DuplicatedField.For<DuplicateFieldCasingTestDoc>(storeOptions, x => x.OtherId);
         field.UpdateSqlFragment().ShouldBe(expectedUpdateFragment);
     }

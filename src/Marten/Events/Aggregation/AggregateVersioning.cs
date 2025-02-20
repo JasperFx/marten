@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using FastExpressionCompiler;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Linq.Parsing;
@@ -45,7 +47,7 @@ public interface IAggregateVersioning<T>
     void TrySetVersion(T aggregate, IEvent lastEvent);
 }
 
-internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersioning<T>, ILiveAggregator<T>
+internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersioning<T>, IAggregator<T, IQuerySession>
 {
     private readonly AggregationScope _scope;
     private readonly Lazy<Action<T, IEvent>> _setValue;
@@ -75,7 +77,7 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
             x.Name.EqualsIgnoreCase("version") && !x.HasAttribute<MartenIgnoreAttribute>());
     }
 
-    public ILiveAggregator<T> Inner { get; set; }
+    public IAggregator<T, IQuerySession> Inner { get; set; }
 
     public MemberInfo VersionMember
     {
@@ -106,13 +108,6 @@ internal class AggregateVersioning<T>: IAggregateVersioning, IAggregateVersionin
         }
 
         _setValue.Value(aggregate, lastEvent);
-    }
-
-    public T Build(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot)
-    {
-        var aggregate = Inner.Build(events, session, snapshot);
-        TrySetVersion(aggregate, events.LastOrDefault());
-        return aggregate;
     }
 
     public async ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, IQuerySession session, T? snapshot,

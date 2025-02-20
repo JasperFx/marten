@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -98,12 +99,7 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         var configures = provider.GetServices<IConfigureMarten<T>>();
         foreach (var configure in configures) configure.Configure(provider, options);
 
-        var environment = provider.GetService<IHostEnvironment>();
-        if (environment != null)
-        {
-            options.ReadHostEnvironment(environment);
-        }
-
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
 
         return options;
@@ -112,15 +108,10 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
     public T Build(IServiceProvider provider)
     {
         var options = BuildStoreOptions(provider);
-        var environment = provider.GetService<IHostEnvironment>();
-        if (environment != null)
-        {
-            options.ReadHostEnvironment(environment);
-        }
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
 
         var rules = options.CreateGenerationRules();
 
-        rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory();
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
         this.InitializeSynchronously(rules, Parent, provider);
 

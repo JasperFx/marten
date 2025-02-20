@@ -1,4 +1,5 @@
 #nullable enable
+using JasperFx;
 using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Storage;
@@ -44,7 +45,7 @@ internal class SubQueryFilter: ISubQueryFilter
             builder.Append("NOT(");
         }
 
-        if (builder.TenantId != Tenancy.DefaultTenantId && Member is ChildCollectionMember child)
+        if (builder.TenantId != StorageConstants.DefaultTenantId && Member is ChildCollectionMember child)
         {
             if (child.Ancestors[0] is DocumentQueryableMemberCollection c && c.TenancyStyle == TenancyStyle.Conjoined)
             {

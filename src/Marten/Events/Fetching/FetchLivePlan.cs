@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -12,7 +14,7 @@ namespace Marten.Events.Fetching;
 
 internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
 {
-    private readonly ILiveAggregator<TDoc> _aggregator;
+    private readonly IAggregator<TDoc, IQuerySession> _aggregator;
     private readonly IDocumentStorage<TDoc, TId> _documentStorage;
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;

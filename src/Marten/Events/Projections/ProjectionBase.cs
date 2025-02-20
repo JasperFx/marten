@@ -116,15 +116,6 @@ public abstract class ProjectionBase : EventFilterable
     /// </summary>
     public ProjectionLifecycle Lifecycle { get; set; } = ProjectionLifecycle.Async;
 
-
-    /// <summary>
-    ///     Direct Marten to delete data published by this projection as the first
-    ///     step to rebuilding the projection data. The default is false.
-    /// </summary>
-    [Obsolete("Use AsyncOptions.TeardownDataOnRebuild instead")]
-    public virtual bool TeardownDataOnRebuild { get; set; } = false;
-
-
     internal virtual void AssembleAndAssertValidity()
     {
         // Nothing

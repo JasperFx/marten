@@ -41,7 +41,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
     public async Task when_doc_with_bool_false_with_serializer_default_value_handling_null_should_return_records()
     {
         var serializer = new JsonNetSerializer();
-        serializer.Customize(s =>
+        serializer.Configure(s =>
         {
             s.DefaultValueHandling = Newtonsoft.Json.DefaultValueHandling.Ignore;
         });

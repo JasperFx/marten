@@ -3,6 +3,7 @@ using System;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.RuntimeCompiler;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;

@@ -4,9 +4,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Slicing;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -23,7 +27,7 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 
     public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
     {
-        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(Tenancy.DefaultTenantId, querySession.Database));
+        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(StorageConstants.DefaultTenantId, querySession.Database));
         var groups = events.GroupBy(x => x.TenantId);
         foreach (var @group in groups)
         {
@@ -42,7 +46,7 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjectionBase<TDoc>
+public abstract class MultiStreamProjection<TDoc, TId>: AggregateProjectionBase<TDoc>
 {
     private readonly EventSlicer<TDoc, TId> _defaultSlicer = new();
 
@@ -201,11 +205,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: GeneratedAggregateProjec
             yield return
                 $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
         }
-    }
-
-    protected override Type baseTypeForAggregationRuntime()
-    {
-        return typeof(CrossStreamAggregationRuntime<,>).MakeGenericType(typeof(TDoc), typeof(TId));
     }
 }
 

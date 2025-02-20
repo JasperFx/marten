@@ -1,19 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using FastExpressionCompiler;
 using JasperFx.Core.Reflection;
-using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.Members;
-using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
@@ -25,44 +19,6 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal;
-
-internal static class ValueTypeInfoExtensions
-{
-    public static Func<IEvent,TId> CreateAggregateIdentitySource<TId>(this ValueTypeInfo valueTypeInfo) where TId : notnull
-    {
-        var e = Expression.Parameter(typeof(IEvent), "e");
-        var eMember = valueTypeInfo.SimpleType == typeof(Guid)
-            ? ReflectionHelper.GetProperty<IEvent>(x => x.StreamId)
-            : ReflectionHelper.GetProperty<IEvent>(x => x.StreamKey);
-
-        var raw = Expression.Call(e, eMember.GetMethod);
-        Expression wrapped = null;
-        if (valueTypeInfo.Builder != null)
-        {
-            wrapped = Expression.Call(null, valueTypeInfo.Builder, raw);
-        }
-        else if (valueTypeInfo.Ctor != null)
-        {
-            wrapped = Expression.New(valueTypeInfo.Ctor, raw);
-        }
-        else
-        {
-            throw new NotSupportedException("Marten cannot build a type converter for strong typed id type " +
-                                            valueTypeInfo.OuterType.FullNameInCode());
-        }
-
-        var lambda = Expression.Lambda<Func<IEvent, TId>>(wrapped, e);
-
-        return lambda.CompileFast();
-    }
-}
-
-internal class ValueTypeElementMember: ElementMember
-{
-    public ValueTypeElementMember(Type declaringType, Type reflectedType) : base(declaringType, reflectedType)
-    {
-    }
-}
 
 internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>
 {

@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

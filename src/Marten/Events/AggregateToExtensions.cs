@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 
@@ -11,31 +12,6 @@ namespace Marten.Events;
 
 public static class AggregateToExtensions
 {
-    /// <summary>
-    ///     Aggregate the events in this query to the type T
-    /// </summary>
-    /// <param name="queryable"></param>
-    /// <param name="state"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static T AggregateTo<T>(this IMartenQueryable<IEvent> queryable, T state = null) where T : class
-    {
-        var events = queryable.ToList();
-        if (!events.Any())
-        {
-            return null;
-        }
-
-        var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
-        var aggregator = session.Options.Projections.AggregatorFor<T>();
-
-        var aggregate = aggregator.Build(queryable.ToList(), session, state);
-
-        setIdentity(session, aggregate, events);
-
-        return aggregate;
-    }
-
     private static void setIdentity<T>(QuerySession session, T aggregate, IEnumerable<IEvent> events) where T : class
     {
         if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
@@ -73,18 +49,6 @@ public static class AggregateToExtensions
         setIdentity(session, aggregate, events);
 
         return aggregate;
-    }
-
-    /// <summary>
-    ///     Aggregate the events in this query to the type T
-    /// </summary>
-    /// <param name="queryable"></param>
-    /// <param name="state"></param>
-    /// <typeparam name="T"></typeparam>
-    /// <returns></returns>
-    public static T AggregateTo<T>(this IQueryable<IEvent> queryable, T state = null) where T : class
-    {
-        return AggregateTo(queryable.As<IMartenQueryable<IEvent>>(), state);
     }
 
     /// <summary>

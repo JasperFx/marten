@@ -37,7 +37,7 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
     [Fact]
     public async Task can_do_any_with_contains_against_IList_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         var doc1 = new DocWithLists { Names = new List<string> { "Jeremy", "Josh", "Corey" } };
         var doc2 = new DocWithLists { Names = new List<string> { "Jeremy", "Lindsey", "Max" } };

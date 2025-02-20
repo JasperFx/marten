@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -88,7 +90,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
 
         async Task AssertGlobalProjectionUpdatedForTenant()
         {
-            var resource = await theSession.ForTenant(Tenancy.DefaultTenantId)
+            var resource = await theSession.ForTenant(StorageConstants.DefaultTenantId)
                 .Query<ResourcesGlobalSummary>().SingleOrDefaultAsync(r => r.Id == organisationId);
 
             resource.ShouldNotBeNull();
@@ -225,8 +227,8 @@ public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation,
 
         // The session and the slice should be for the same tenant
         session.TenantId.ShouldBe(ExpectedTenant);
-        slice.Tenant.TenantId.ShouldBe(ExpectedTenant);
-        session.TenantId.ShouldBe(slice.Tenant.TenantId);
+        slice.TenantId.ShouldBe(ExpectedTenant);
+        session.TenantId.ShouldBe(slice.TenantId);
 
         foreach (var data in slice.AllData())
         {

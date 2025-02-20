@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -254,7 +255,7 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
             session.Query<User>().Count().ShouldBe(2);
 
             // Query documents in default tenant from a session using tenant Green
-            session.Query<Issue>().Count(x => x.TenantIsOneOf(Tenancy.DefaultTenantId)).ShouldBe(2);
+            session.Query<Issue>().Count(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId)).ShouldBe(2);
 
             // Query documents from tenant Red from a session using tenant Green
             session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);

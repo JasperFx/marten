@@ -125,11 +125,26 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     private ISerializer? _serializer;
 
+    private AutoCreate? _autoCreate;
+
     /// <summary>
     ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
     ///     property is "CreateOrUpdate" by default for more efficient development, but can be set to lower values for production usage.
+    ///
+    /// You can also use the IServiceCollection.AddJasperFx() syntax to configure the AutoCreate setting globally
+    /// within your application for all JasperFx / "Critter Stack" tools
     /// </summary>
-    public AutoCreate AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+    public AutoCreate AutoCreateSchemaObjects
+    {
+        get
+        {
+            return _autoCreate ?? AutoCreate.CreateOrUpdate;
+        }
+        set
+        {
+            _autoCreate = value;
+        }
+    }
 
     public StoreOptions()
     {
@@ -162,8 +177,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public string MaybeCorrectTenantId(string tenantId)
     {
-        if (tenantId.IsEmpty()) return Marten.Storage.Tenancy.DefaultTenantId;
-        if (tenantId == Marten.Storage.Tenancy.DefaultTenantId) return tenantId;
+        if (tenantId.IsEmpty()) return StorageConstants.DefaultTenantId;
+        if (tenantId == StorageConstants.DefaultTenantId) return tenantId;
 
         switch (TenantIdStyle)
         {
@@ -255,9 +270,10 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
     /// </summary>
+    [Obsolete(PreferJasperFxMessage)]
     public TypeLoadMode GeneratedCodeMode
     {
-        get => _generatedCodeMode;
+        get => _generatedCodeMode ?? TypeLoadMode.Dynamic;
         set => _generatedCodeMode = value;
     }
 
@@ -419,7 +435,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
     private readonly ProjectionOptions _projections;
-    private TypeLoadMode _generatedCodeMode = TypeLoadMode.Dynamic;
+    private TypeLoadMode? _generatedCodeMode;
     private readonly StorageFeatures _storage;
     private Action<IDatabaseCreationExpressions>? _createDatabases;
     private readonly IProviderGraph _providers;
@@ -485,29 +501,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             new DefaultTenancy(NpgsqlDataSourceFactory.Create(connectionString), this));
     }
 
-    /// <summary>
-    ///     Supply a source for the connection string to a Postgresql database
-    /// </summary>
-    /// <param name="connectionSource"></param>
-    [Obsolete("Use version with connection string. This will be removed in Marten 8")]
-    public void Connection(Func<string> connectionSource)
-    {
-        throw new NotSupportedException(
-            "Sorry, but this feature is no longer supported. Please use the overload that uses NpgsqlDataSource instead for similar functionality");
-    }
-
-    /// <summary>
-    ///     Supply a mechanism for resolving an NpgsqlConnection object to
-    ///     the Postgresql database
-    /// </summary>
-    /// <param name="source"></param>
-    [Obsolete("Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory. This will be removed in Marten 8")]
-    public void Connection(Func<NpgsqlConnection> source)
-    {
-        throw new NotSupportedException(
-            "Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory");
-    }
-
 
     /// <summary>
     ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
@@ -556,34 +549,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             configure(_serializer);
         }
-    }
-
-    /// <summary>
-    ///     Configure the default serializer settings
-    /// </summary>
-    /// <param name="enumStorage"></param>
-    /// <param name="casing">Casing style to be used in serialization</param>
-    /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
-    /// <param name="nonPublicMembersStorage">Allow non public members to be used during deserialization</param>
-    [Obsolete("Prefer UseNewtonsoftForSerialization or UseSystemTextJsonForSerialization to configure JSON options")]
-    public void UseDefaultSerialization(
-        EnumStorage enumStorage = EnumStorage.AsInteger,
-        Casing casing = Casing.Default,
-        CollectionStorage collectionStorage = CollectionStorage.Default,
-        NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default,
-        SerializerType serializerType = SerializerType.Newtonsoft
-    )
-    {
-        var serializer = SerializerFactory.New(serializerType,
-            new SerializerOptions
-            {
-                EnumStorage = enumStorage,
-                Casing = casing,
-                CollectionStorage = collectionStorage,
-                NonPublicMembersStorage = nonPublicMembersStorage
-            });
-
-        Serializer(serializer);
     }
 
     /// <summary>

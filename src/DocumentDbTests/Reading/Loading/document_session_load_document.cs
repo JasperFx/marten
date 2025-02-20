@@ -24,9 +24,10 @@ public class document_session_load_document: OneOffConfigurationsContext
         var token = cancellation.Token;
 
 
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            opts.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
+
         });
 
         var user = new UserWithReadonlyCollectionWithPrivateSetter(Guid.NewGuid(), "James", new[] { 1, 2, 3 });

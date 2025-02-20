@@ -137,7 +137,7 @@ public class query_with_inner_query_with_global_CollectionStorage_WithArray: One
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            options.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
         });
         await SetupTestData();
 

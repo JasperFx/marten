@@ -255,7 +255,7 @@ public class StoreOptionsTests
     public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage(EnumStorage enumStorage)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(enumStorage);
+        storeOptions.UseSystemTextJsonForSerialization(enumStorage);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
     }
@@ -264,12 +264,12 @@ public class StoreOptionsTests
     public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage_when_enum_storage_was_updated()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
         //update EnumStorage
-        storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsString);
 
         storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
@@ -279,7 +279,7 @@ public class StoreOptionsTests
     public void enum_storage_should_not_change_when_duplicated_field_enum_storage_was_changed()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
@@ -295,7 +295,7 @@ public class StoreOptionsTests
         duplicated_field_enum_storage_after_it_had_value_assigned_should_not_change_when_enum_storage_was_updated()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
@@ -303,7 +303,7 @@ public class StoreOptionsTests
         storeOptions.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
 
         //update EnumStorage
-        storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsString);
 
         storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);

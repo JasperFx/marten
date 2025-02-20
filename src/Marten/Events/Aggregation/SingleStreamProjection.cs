@@ -3,9 +3,11 @@ using System;
 using System.Collections.Generic;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
@@ -13,7 +15,7 @@ namespace Marten.Events.Aggregation;
 ///     Base class for aggregating events by a stream using Marten-generated pattern matching
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
+public class SingleStreamProjection<T>: AggregateProjectionBase<T>
 {
     public SingleStreamProjection(): base(AggregationScope.SingleStream)
     {
@@ -62,11 +64,6 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
                                                storeOptions.Events.AppendMode == EventAppendMode.Quick;
     }
 
-    protected sealed override Type baseTypeForAggregationRuntime()
-    {
-        return typeof(AggregationRuntime<,>).MakeGenericType(typeof(T), _aggregateMapping.IdType);
-    }
-
     internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType, out ValueTypeInfo? valueType)
     {
         valueType = default;
@@ -78,6 +75,7 @@ public class SingleStreamProjection<T>: GeneratedAggregateProjectionBase<T>
 
         return valueType.SimpleType == expectedType;
     }
+
 
     protected sealed override IEnumerable<string> validateDocumentIdentity(StoreOptions options,
         DocumentMapping mapping)

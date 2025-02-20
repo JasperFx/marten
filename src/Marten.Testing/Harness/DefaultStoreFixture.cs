@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Util;
+using JasperFx.Events;
 using Marten.Events;
 using Npgsql;
 using Weasel.Core;

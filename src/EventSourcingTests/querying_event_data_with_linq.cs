@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Archiving;
@@ -58,7 +59,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
     [Fact]
     public async Task can_query_against_event_type_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
@@ -93,7 +94,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
     [Fact]
     public async Task can_query_against_event_type_with_snake_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
@@ -123,7 +124,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         {
             _.Events.DatabaseSchemaName = SchemaName + "_events";
 
-            _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase);
 
             _.Events.AddEventType(typeof(MembersDeparted));
         });

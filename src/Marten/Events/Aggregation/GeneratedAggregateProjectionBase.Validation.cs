@@ -3,6 +3,7 @@ using System.Linq;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -11,13 +12,13 @@ using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
-public abstract partial class GeneratedAggregateProjectionBase<T>
+public abstract partial class AggregateProjectionBase<T>
 {
     protected virtual void specialAssertValid() { }
 
     protected abstract IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping);
 
-    internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
+    internal IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
         var mapping = options.Storage.FindMapping(typeof(T)).Root.As<DocumentMapping>();
 
@@ -43,20 +44,7 @@ public abstract partial class GeneratedAggregateProjectionBase<T>
 
     internal override void AssembleAndAssertValidity()
     {
-        if (_applyMethods.IsEmpty() && _createMethods.IsEmpty())
-        {
-            throw new InvalidProjectionException(
-                $"AggregateProjection for {typeof(T).FullNameInCode()} has no valid create or apply operations");
-        }
-
-        var invalidMethods =
-            MethodCollection.FindInvalidMethods(GetType(), _applyMethods, _createMethods, _shouldDeleteMethods)
-                .Where(x => x.Method.Name != nameof(IAggregateProjectionWithSideEffects<string>.RaiseSideEffects));
-
-        if (invalidMethods.Any())
-        {
-            throw new InvalidProjectionException(this, invalidMethods);
-        }
+        _application.AssertNoInvalidMethods();
 
         specialAssertValid();
 

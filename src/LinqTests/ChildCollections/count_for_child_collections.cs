@@ -18,7 +18,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
     [Fact]
     public async Task GivenTwoLevelsOfChildCollections_WhenCountCalled_ThenReturnsProperCount()
     {
-        StoreOptions(op => op.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray));
+        StoreOptions(op => op.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray));
 
         await SetupTestData();
 
@@ -35,7 +35,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
     [Fact]
     public async Task two_levels_of_child_collections_in_compiled_query()
     {
-        StoreOptions(op => op.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray));
+        StoreOptions(op => op.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray));
 
         await SetupTestData();
 

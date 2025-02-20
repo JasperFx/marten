@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Events;
 using Marten.Storage.Metadata;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;

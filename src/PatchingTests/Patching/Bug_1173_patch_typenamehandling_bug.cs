@@ -27,7 +27,7 @@ public class Bug_1173_patch_typenamehandling_bug: BugIntegrationContext
         using var store = SeparateStore(_ =>
         {
             var serializer = new JsonNetSerializer();
-            serializer.Customize(config =>
+            serializer.Configure(config =>
             {
                 config.TypeNameHandling = Newtonsoft.Json.TypeNameHandling.Objects;
             });

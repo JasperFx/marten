@@ -90,7 +90,11 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.UseDefaultSerialization(serializerType: serializerType);
+            if (serializerType == SerializerType.Newtonsoft)
+            {
+                opts.UseNewtonsoftForSerialization();
+            }
+
             opts.UseNodaTime();
         });
 
@@ -114,7 +118,10 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.UseDefaultSerialization(serializerType: serializerType);
+            if (serializerType == SerializerType.Newtonsoft)
+            {
+                opts.UseNewtonsoftForSerialization();
+            }
             opts.UseNodaTime();
             opts.DatabaseSchemaName = "NodaTime";
             opts.Schema.For<TargetWithDates>()
@@ -189,7 +196,10 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.UseDefaultSerialization(serializerType: serializerType);
+            if (serializerType == SerializerType.Newtonsoft)
+            {
+                opts.UseNewtonsoftForSerialization();
+            }
             opts.UseNodaTime();
         }, true);
 

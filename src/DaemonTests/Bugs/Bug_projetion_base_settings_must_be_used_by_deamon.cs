@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -64,11 +65,6 @@ public class Bug_projetion_base_settings_must_be_used_by_deamon : BugIntegration
             }
 
             _feedback = feedback;
-        }
-
-        public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-        {
-            InvokeNTimes(streams.Select(s => s.Events.Count).Sum());
         }
 
         public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)

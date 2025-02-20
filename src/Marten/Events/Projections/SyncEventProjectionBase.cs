@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Npgsql;
 

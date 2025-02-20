@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Events;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Operations;
 
@@ -52,9 +53,7 @@ public class EventRange
     /// </summary>
     public int Size => Events?.Count ?? (int)(SequenceCeiling - SequenceFloor);
 
-    // TODO -- make this come through the constructor later
-    [Obsolete("This property will be removed in Marten 8 in favor of passing in the ISubscriptionController")]
-    public ISubscriptionAgent Agent { get; set; }
+    public ISubscriptionAgent Agent { get; init; }
 
     protected bool Equals(EventRange other)
     {

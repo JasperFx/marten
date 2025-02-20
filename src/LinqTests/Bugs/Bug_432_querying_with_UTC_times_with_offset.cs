@@ -74,7 +74,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     [Fact]
     public async Task can_issue_queries_against_DateTime_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         using (var session = theStore.LightweightSession())
         {
@@ -128,7 +128,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     [Fact]
     public async Task can_issue_queries_against_DateTime_with_snake_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.SnakeCase));
 
         using (var session = theStore.LightweightSession())
         {
