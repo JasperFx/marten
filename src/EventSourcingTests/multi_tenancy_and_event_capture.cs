@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using Marten;
@@ -43,6 +44,33 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         eventsOne[0].Data.ShouldBeOfType<AEvent>();
         eventsOne[1].Data.ShouldBeOfType<BEvent>();
 
+
+        await using var queryTwo = theStore.QuerySession("two");
+        var eventsTwo = await queryTwo.Events.FetchStreamAsync("s1");
+
+        eventsTwo.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task delete_all_tenant_data_catches_event_data()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+
+        }, true);
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        theSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
+        theSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
+
+        await theSession.SaveChangesAsync();
+
+        await theStore.Advanced.DeleteAllTenantDataAsync("one", CancellationToken.None);
+
+        using var queryOne = theStore.QuerySession("one");
+        (await queryOne.Events.QueryAllRawEvents().AnyAsync()).ShouldBeFalse();
 
         await using var queryTwo = theStore.QuerySession("two");
         var eventsTwo = await queryTwo.Events.FetchStreamAsync("s1");
