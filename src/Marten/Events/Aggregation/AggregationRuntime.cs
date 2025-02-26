@@ -144,7 +144,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             }
         }
 
-        var lastEvent = tryApplyMetadata(slice, aggregate);
+        (var lastEvent, aggregate) = tryApplyMetadata(slice, aggregate);
 
         maybeArchiveStream(session, slice);
 
@@ -191,7 +191,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         }
     }
 
-    private IEvent? tryApplyMetadata(EventSlice<TDoc, TId> slice, TDoc? aggregate)
+    private (IEvent?, TDoc?) tryApplyMetadata(EventSlice<TDoc, TId> slice, TDoc? aggregate)
     {
         var lastEvent = slice.Events().LastOrDefault();
         if (aggregate != null)
@@ -201,11 +201,11 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
             foreach (var @event in slice.Events())
             {
-                Projection.ApplyMetadata(aggregate, @event);
+                aggregate = (TDoc)Projection.ApplyMetadata(aggregate, @event);
             }
         }
 
-        return lastEvent;
+        return (lastEvent, aggregate);
     }
 
     private async Task processPossibleSideEffects(DocumentSessionBase session, EventSlice<TDoc, TId> slice)

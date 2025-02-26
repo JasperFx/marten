@@ -33,7 +33,7 @@ public class Increment
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L655-L673' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L696-L714' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -57,7 +57,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L635-L653' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L676-L694' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -121,6 +121,11 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
             }
         }
 
+        // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
+        // AggregateStreamAsync(), you must make this call
+        // FetchLatest() will work w/o any other changes though
+        slice.Aggregate = aggregate;
+
         // Apply any updates!
         if (aggregate != null)
         {
@@ -132,7 +137,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L675-L743' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L716-L787' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping
@@ -174,7 +179,7 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L77-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L95-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).

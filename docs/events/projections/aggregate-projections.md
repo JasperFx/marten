@@ -178,7 +178,7 @@ public class Payment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L128-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L138-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
@@ -187,7 +187,16 @@ Just note that for single stream aggregations, your strong typed identifier type
 At this point, the `FetchForWriting` and `FetchForLatest` APIs do not directly support strongly typed identifiers and you
 will have to just pass in the wrapped, primitive value like this:
 
-snippet: sample_use_fetch_for_writing_with_strong_typed_identifier
+<!-- snippet: sample_use_fetch_for_writing_with_strong_typed_identifier -->
+<a id='snippet-sample_use_fetch_for_writing_with_strong_typed_identifier'></a>
+```cs
+private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
+{
+    var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L91-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Aggregate Creation
 
@@ -706,8 +715,8 @@ As of Marten 7.33, this mechanism executes for every single event in the current
 :::
 
 At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
-or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically take your
-aggregated document with metadata from the very last event the projection is encountering at one time. _If_ you are using
+or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically tag your
+aggregated document with metadata from applied events. _If_ you are using
 either `SingleStreamProjection<T>` or `MultiStreamProjection<TDoc, TId>` as the base class for a projection, you can 
 override the `ApplyMetadata(T aggregate, IEvent lastEvent)` method in your projection to manually map event metadata to 
 your aggregate in any way you wish.
@@ -726,6 +735,8 @@ public class Item
     public bool Completed { get; set; }
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
+
+    public int Version { get; set; }
 }
 
 public record ItemStarted(string Description);
@@ -757,16 +768,15 @@ public class ItemProjection: SingleStreamProjection<Item>
         // Apply the last timestamp
         aggregate.LastModified = lastEvent.Timestamp;
 
-        if (lastEvent.Headers.TryGetValue("last-modified-by", out var person))
-        {
-            aggregate.LastModifiedBy = person?.ToString() ?? "System";
-        }
+        var person = lastEvent.GetHeader("last-modified-by");
+
+        aggregate.LastModifiedBy = person?.ToString() ?? "System";
 
         return aggregate;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L46-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L171-L223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the same projection in usage in a unit test to see how it's all put together:
@@ -774,37 +784,35 @@ And the same projection in usage in a unit test to see how it's all put together
 <!-- snippet: sample_apply_metadata -->
 <a id='snippet-sample_apply_metadata'></a>
 ```cs
-public class using_apply_metadata : OneOffConfigurationsContext
+[Fact]
+public async Task apply_metadata()
 {
-    [Fact]
-    public async Task apply_metadata()
+    StoreOptions(opts =>
     {
-        StoreOptions(opts =>
-        {
-            opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
+        opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
 
-            // THIS IS NECESSARY FOR THIS SAMPLE!
-            opts.Events.MetadataConfig.HeadersEnabled = true;
-        });
+        // THIS IS NECESSARY FOR THIS SAMPLE!
+        opts.Events.MetadataConfig.HeadersEnabled = true;
+    });
 
-        // Setting a header value on the session, which will get tagged on each
-        // event captured by the current session
-        theSession.SetHeader("last-modified-by", "Glenn Frey");
+    // Setting a header value on the session, which will get tagged on each
+    // event captured by the current session
+    theSession.SetHeader("last-modified-by", "Glenn Frey");
 
-        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
-        await theSession.SaveChangesAsync();
+    var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+    await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
-        await theSession.SaveChangesAsync();
+    theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+    await theSession.SaveChangesAsync();
 
-        var item = await theSession.LoadAsync<Item>(id);
+    var item = await theSession.LoadAsync<Item>(id);
 
-        // RIP Glenn Frey, take it easy!
-        item.LastModifiedBy.ShouldBe("Glenn Frey");
-    }
+    // RIP Glenn Frey, take it easy!
+    item.LastModifiedBy.ShouldBe("Glenn Frey");
+    item.Version.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L16-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Raising Events, Messages, or other Operations in Aggregation Projections <Badge type="tip" text="7.27" />

@@ -21,7 +21,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.MetadataConfig.CorrelationIdEnabled = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L114-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by internal `Event<T>`):
@@ -132,5 +132,5 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L8-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L9-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
