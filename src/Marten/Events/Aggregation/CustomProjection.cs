@@ -140,8 +140,11 @@ public abstract class CustomProjection<TDoc, TId>:
 
         var snapshot = slice.Aggregate;
         snapshot = await BuildAsync(session, snapshot, slice.Events()).ConfigureAwait(false);
-        snapshot = ApplyMetadata(snapshot, slice.Events().Last());
 
+        foreach (var @event in slice.Events())
+        {
+            snapshot = ApplyMetadata(snapshot, @event);
+        }
         session.StorageFor<TDoc, TId>().SetIdentity(snapshot, slice.Id);
 
         slice.Aggregate = snapshot;
@@ -381,7 +384,10 @@ public abstract class CustomProjection<TDoc, TId>:
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             slice.Aggregate = await BuildAsync(session, slice.Aggregate, slice.Events()).ConfigureAwait(false);
-            slice.Aggregate = ApplyMetadata(slice.Aggregate, events.Last());
+            foreach (var @event in events)
+            {
+                slice.Aggregate = ApplyMetadata(slice.Aggregate, @event);
+            }
         }
         else
         {
