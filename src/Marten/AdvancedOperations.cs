@@ -10,6 +10,7 @@ using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
 using Marten.Events.Protected;
 using Marten.Events.TestSupport;
+using Marten.Internal;
 using Marten.Schema;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -300,6 +301,19 @@ public class AdvancedOperations
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Delete all data for a given tenant id and drop any partitions for that tenant id if
+    /// using by tenant partitioning managed by Marten
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public Task DeleteAllTenantDataAsync(string tenantId, CancellationToken token)
+    {
+        var cleaner = new TenantDataCleaner(tenantId, _store);
+        return cleaner.ExecuteAsync(token);
     }
 
     /// <summary>

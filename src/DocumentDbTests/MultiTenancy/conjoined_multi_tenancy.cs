@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using DocumentDbTests.SessionMechanics;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -37,12 +39,15 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
+            session.Store(new User(), new User());
+
             await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(targetBlue1, targetBlue2);
+            session.Store(new User(), new User());
             await session.SaveChangesAsync();
         }
     }
@@ -50,6 +55,24 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
     public Task DisposeAsync()
     {
         return Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task delete_all_data_for_a_tenant()
+    {
+        await theStore.Advanced.DeleteAllTenantDataAsync("Red", CancellationToken.None);
+
+        using (var session = theStore.LightweightSession("Red"))
+        {
+            (await session.Query<User>().AnyAsync()).ShouldBeFalse();
+            (await session.Query<Target>().AnyAsync()).ShouldBeFalse();
+        }
+
+        using (var session = theStore.LightweightSession("Blue"))
+        {
+            (await session.Query<User>().AnyAsync()).ShouldBeTrue();
+            (await session.Query<Target>().AnyAsync()).ShouldBeTrue();
+        }
     }
 
     [Fact]

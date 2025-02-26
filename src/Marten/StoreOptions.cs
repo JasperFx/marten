@@ -1003,7 +1003,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
 
     string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
-    internal MartenManagedTenantListPartitions TenantPartitions { get; set; }
+    internal MartenManagedTenantListPartitions? TenantPartitions { get; set; }
 
     string IDocumentSchemaResolver.For<TDocument>(bool qualified)
     {

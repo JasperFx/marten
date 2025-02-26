@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Events;
 using Marten.Metadata;
 using Marten.Schema;
 using Marten.Storage;
@@ -11,6 +12,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.FSharp.Control;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
@@ -89,6 +91,8 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
             opts.Schema.For<User>();
         }, true);
 
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         var statuses = await theStore
             .Advanced
             // This is ensuring that there are tenant id partitions for all multi-tenanted documents
@@ -104,6 +108,46 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
 
         await theStore.Advanced.RemoveMartenManagedTenantsAsync(["a2"], CancellationToken.None);
+
+        var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
+        assertTableHasTenantPartitions(targetTable, "a1", "a3");
+
+        var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
+        assertTableHasTenantPartitions(userTable, "a1", "a3");
+    }
+
+    [Fact]
+    public async Task delete_all_tenant_data_will_drop_partitions()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+        }, true);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        var statuses = await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+
+        foreach (var status in statuses)
+        {
+            status.Status.ShouldBe(PartitionMigrationStatus.Complete);
+        }
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+
+        await theStore.Advanced.DeleteAllTenantDataAsync("a2", CancellationToken.None);
 
         var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
         assertTableHasTenantPartitions(targetTable, "a1", "a3");
