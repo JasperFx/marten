@@ -140,7 +140,7 @@ public abstract class CustomProjection<TDoc, TId>:
 
         var snapshot = slice.Aggregate;
         snapshot = await BuildAsync(session, snapshot, slice.Events()).ConfigureAwait(false);
-        ApplyMetadata(snapshot, slice.Events().Last());
+        snapshot = ApplyMetadata(snapshot, slice.Events().Last());
 
         session.StorageFor<TDoc, TId>().SetIdentity(snapshot, slice.Id);
 
@@ -347,7 +347,7 @@ public abstract class CustomProjection<TDoc, TId>:
     }
 
     /// <summary>
-    /// Template method that is called on the last event in a slice of events that
+    /// Template method that is called for each event in a slice of events that
     /// are updating an aggregate. This was added specifically to add metadata like "LastModifiedBy"
     /// from the last event to an aggregate with user-defined logic. Override this for your own specific logic
     /// </summary>
@@ -381,7 +381,7 @@ public abstract class CustomProjection<TDoc, TId>:
         if (Lifecycle == ProjectionLifecycle.Live)
         {
             slice.Aggregate = await BuildAsync(session, slice.Aggregate, slice.Events()).ConfigureAwait(false);
-            ApplyMetadata(slice.Aggregate, events.Last());
+            slice.Aggregate = ApplyMetadata(slice.Aggregate, events.Last());
         }
         else
         {
