@@ -17,7 +17,7 @@ internal class QueryForTenantIds: IQueryHandler<IReadOnlyList<string>>
 
     public QueryForTenantIds(StoreOptions options, Type aggregateType)
     {
-        _streamAlias = options.Storage.MappingFor(aggregateType).Alias;
+        _streamAlias = options.EventGraph.AggregateAliasFor(aggregateType);
         _schemaName = options.Events.DatabaseSchemaName;
     }
 
