@@ -9,6 +9,7 @@ using Marten.Events.Aggregation;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Patching;
 using Marten.Services;
 
 namespace Marten.Events.Daemon.Internals;
@@ -53,10 +54,15 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         startNewPage(session);
     }
 
-    public Task WaitForCompletion()
+    public async Task WaitForCompletion()
     {
         Queue.Complete();
-        return Queue.Completion;
+
+        await Queue.Completion.ConfigureAwait(false);
+        foreach (var patch in _patches)
+        {
+            applyOperation(patch);
+        }
     }
 
     // TODO -- make this private
@@ -250,11 +256,24 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _pages.Add(_current);
     }
 
+    private readonly List<IStorageOperation> _patches = new();
+
     private void processOperation(IStorageOperation operation)
     {
         if (_token.IsCancellationRequested)
             return;
 
+        if (operation is PatchOperation)
+        {
+            _patches.Add(operation);
+            return;
+        }
+
+        applyOperation(operation);
+    }
+
+    private void applyOperation(IStorageOperation operation)
+    {
         _current.Append(operation);
 
         _documentTypes.Fill(operation.DocumentType);
