@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using JasperFx.CommandLine;
 using Spectre.Console;
@@ -7,12 +6,12 @@ using Spectre.Console;
 
 namespace Marten.CommandLine;
 
-public class MartenInput : NetCoreInput
+public class MartenInput: NetCoreInput
 {
+    private readonly StringWriter _log = new();
+
     [Description("Option to store all output into a log file")]
     public string LogFlag { get; set; }
-
-    private readonly StringWriter _log = new StringWriter();
 
     public void WriteLine(string text)
     {
@@ -23,7 +22,9 @@ public class MartenInput : NetCoreInput
     public void WriteLogFileIfRequested()
     {
         if (LogFlag.IsEmpty())
+        {
             return;
+        }
 
         using (var stream = new FileStream(LogFlag, FileMode.Create))
         {
