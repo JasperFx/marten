@@ -46,6 +46,12 @@ This optimization will be turned on by default in Marten 8, but we didn't want t
 to upgrade their database without the explicit opt in configuration.
 :::
 
+::: warning
+Sorry, but this feature is pretty limited right now. This optimization is only today usable if there is exactly *one*
+single stream projection using any given event stream. If you have two or more single stream projection views for the same
+events -- which is a perfectly valid use case and not uncommon -- the optimized rebuilds will not result in correct behavior.
+:::
+
 Marten can optimize the projection rebuilds of single stream projections by opting into this flag in your configuration:
 
 <!-- snippet: sample_turn_on_optimizations_for_rebuilding -->
