@@ -263,7 +263,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         if (_token.IsCancellationRequested)
             return;
 
-        if (operation is PatchOperation)
+        // If there's one patch, then everything needs to be queued up for later
+        if (operation is PatchOperation || _patches.Any())
         {
             _patches.Add(operation);
             return;
