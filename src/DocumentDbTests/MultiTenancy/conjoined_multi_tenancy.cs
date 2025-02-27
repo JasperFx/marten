@@ -19,6 +19,15 @@ namespace DocumentDbTests.MultiTenancy;
 
 public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>, IAsyncLifetime
 {
+    #region sample_delete_all_data_by_tenant
+
+    public static async Task delete_all_tenant_data(IDocumentStore store, CancellationToken token)
+    {
+        await store.Advanced.DeleteAllTenantDataAsync("AAA", token);
+    }
+
+    #endregion
+
     private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
 
