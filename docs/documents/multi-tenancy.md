@@ -505,6 +505,28 @@ opts.Schema.For<DocThatShouldBeExempted2>().DoNotPartition();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L332-L336' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_exempt_from_partitioning_through_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Deleting Data For a Single Tenant
+
+::: warning
+This is permanent, and may not be the fastest operation in bigger databases. You may want to do this in off peak hours.
+:::
+
+::: info
+This API is probably mostly useful for the case of using "Conjoined" tenancy. In the case of doing multi-tenancy through
+a separate database for each tenant, just remove that database.
+:::
+
+If you need to delete all the data for a single named tenant, you can do that in one step with this API:
+
+snippet: sample_delete_all_data_by_tenant
+
+This API will:
+
+- Delete all event and event stream data for the named tenant
+- Delete tenant specific data out of any document table that is configured for `Conjoined` multi-tenancy for that named tenant
+
+This API is able to differentiate between documents that are configured for tenancy and document types that are global.
+
 ## Implementation Details
 
 At the moment, Marten implements two modes of tenancy, namely single tenancy and conjoined multi-tenancy.
