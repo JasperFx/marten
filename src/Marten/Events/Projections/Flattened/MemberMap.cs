@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
@@ -76,6 +77,17 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
 
     public string ToValueAccessorCode(Variable eventVariable)
     {
-        return $"{eventVariable.Usage}.Data.{_members.Select(x => x.Name).Join("?.")}";
+        var accessor = new StringBuilder();
+        for(var i = 0; i < _members.Length; i++){
+            accessor.Append(_members[i].Name);
+            if(i < _members.Length - 1){
+                if(_members[i] is PropertyInfo propertyinfo && propertyinfo.PropertyType.IsValueType && !propertyinfo.PropertyType.IsPrimitive){
+                    accessor.Append('.');
+                }else{
+                    accessor.Append("?.");
+                }
+            }
+        }
+        return $"{eventVariable.Usage}.Data.{accessor}";
     }
 }
