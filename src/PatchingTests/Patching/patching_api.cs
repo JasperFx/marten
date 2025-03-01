@@ -829,6 +829,25 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #endregion
+    
+    [Fact]
+    public async Task remove_simple_element_by_predicate(){
+        var target = Target.Random();
+        var initialCount = target.NumberArray.Length;
+        var random = new Random();
+        var toRemove = target.NumberArray[random.Next(0, initialCount)];
+        
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, x => x == toRemove);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var target2 = query.Load<Target>(target.Id);
+        target2.NumberArray.ShouldNotContain(t => t == toRemove);
+
+    }
 
     [Fact]
     public async Task remove_complex_nested_elements_by_predicate(){
