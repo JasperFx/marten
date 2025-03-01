@@ -16,7 +16,7 @@ BEGIN
 
         patch_expression = null;
         IF (patch->>'type') IN ('remove', 'append_if_not_exists', 'insert_if_not_exists') AND (patch->>'expression') IS NOT NULL THEN
-            patch_expression = jsonb_path_query_array(retval->(patch->>'path'), (patch->>'expression')::jsonpath);
+            patch_expression = jsonb_path_query_array(retval #> patch_path, (patch->>'expression')::jsonpath);
         END IF;
 
         CASE patch->>'type'
