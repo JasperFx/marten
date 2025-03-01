@@ -42,6 +42,7 @@ public sealed class JsonPathCreator(ISerializer serializer) : ExpressionVisitor
         return jsonPath;
     }
 
+    
     protected override Expression VisitUnary(UnaryExpression node)
     {
         if (node.NodeType == ExpressionType.Not)
@@ -55,6 +56,16 @@ public sealed class JsonPathCreator(ISerializer serializer) : ExpressionVisitor
         return node;
     }
 
+    protected override Expression VisitLambda<T>(Expression<T> node)
+    {
+        return Visit(node.Body);
+    }
+    protected override Expression VisitParameter(ParameterExpression node)
+    {
+        _jsonPathBuilder.Append("@");
+        return node;
+    }
+    
     protected override Expression VisitBinary(BinaryExpression node)
     {
         if (node.Left is MemberExpression leftMember)
