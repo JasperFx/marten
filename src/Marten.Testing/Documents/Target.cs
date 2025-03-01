@@ -20,6 +20,9 @@ public enum Colors
 
 public class Target
 {
+    public record Nested(Target[] Targets);
+
+    public Nested NestedObject { get; set; }
     private static readonly Random _random = new Random(67);
 
     private static readonly string[] _strings =
@@ -64,7 +67,7 @@ public class Target
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
         target.OtherGuid = Guid.NewGuid();
-
+       
         target.Flag = _random.Next(0, 10) > 5;
 
         target.Float = float.Parse(_random.NextDouble().ToString());
@@ -120,6 +123,7 @@ public class Target
 
         if (deep)
         {
+            target.NestedObject = new Nested(new []{Random(), Random()});
             target.Inner = Random();
 
             var number = _random.Next(1, 10);
