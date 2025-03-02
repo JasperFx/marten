@@ -177,11 +177,11 @@ public class DistanceProjection: EventProjection
 
 #endregion
 
-public class DistanceProjection2: SyncProjectionBase
+public class DistanceProjection2: IProjection
 {
-    public override void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
-        foreach (var @event in streams.SelectMany(x => x.Events))
+        foreach (var @event in events)
         {
             switch (@event.Data)
             {
@@ -197,5 +197,7 @@ public class DistanceProjection2: SyncProjectionBase
                     break;
             }
         }
+
+        return Task.CompletedTask;
     }
 }

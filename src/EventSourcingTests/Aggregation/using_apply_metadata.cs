@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -190,7 +191,7 @@ public record ItemWorked;
 
 public record ItemFinished;
 
-public class ItemProjection: SingleStreamProjection<Item>
+public class ItemProjection: SingleStreamProjection<Item, Guid>
 {
     public void Apply(Item item, ItemStarted started)
     {
@@ -235,7 +236,7 @@ public record ItemRecord(
     int Version);
 
 
-public class ItemRecordProjection: SingleStreamProjection<ItemRecord>
+public class ItemRecordProjection: SingleStreamProjection<ItemRecord, Guid>
 {
     public ItemRecord Create(ItemStarted started)
     {

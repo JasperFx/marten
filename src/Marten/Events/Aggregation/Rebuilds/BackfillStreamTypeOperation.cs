@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Storage;

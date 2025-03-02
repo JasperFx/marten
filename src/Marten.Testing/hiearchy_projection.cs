@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -115,14 +118,10 @@ public record ThingStarted(string Size);
 
 public record ThingFed;
 
-public class ThingProjection: CustomProjection<Thing, Guid>
+public class ThingProjection: SingleStreamProjection<Thing, Guid>
 {
-    public ThingProjection()
-    {
-        AggregateByStream();
-    }
-
-    public override Thing Apply(Thing snapshot, IReadOnlyList<IEvent> events)
+    public override ValueTask<SnapshotAction<Thing>> ApplyAsync(IQuerySession session, Thing snapshot, Guid identity, IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
     {
         if (snapshot == null)
         {
@@ -138,6 +137,6 @@ public class ThingProjection: CustomProjection<Thing, Guid>
             snapshot?.Feed();
         }
 
-        return snapshot;
+        return new ValueTask<SnapshotAction<Thing>>(new Store<Thing>(snapshot));
     }
 }

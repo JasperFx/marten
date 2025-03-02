@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -54,7 +55,7 @@ internal class QuickEventAppender: IEventAppender
         }
     }
 
-    public async Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session, IProjection[] inlineProjections,
+    public async Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session, IInlineProjection<IDocumentOperations>[] inlineProjections,
         CancellationToken token)
     {
         registerOperationsForStreams(eventGraph, session);

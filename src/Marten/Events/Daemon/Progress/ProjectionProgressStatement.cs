@@ -1,4 +1,5 @@
 using System.Linq;
+using JasperFx.Events.Projections;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
 

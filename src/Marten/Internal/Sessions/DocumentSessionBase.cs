@@ -8,7 +8,6 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;

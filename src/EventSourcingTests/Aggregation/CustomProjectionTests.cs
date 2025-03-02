@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
@@ -39,10 +42,10 @@ public class CustomProjectionTests
         var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection() : new MyCustomProjection();
         var mapping = DocumentMapping.For<MyAggregate>();
         mapping.StoreOptions.Events.AppendMode = appendMode;
-        projection.Lifecycle = lifecycle;
+        //projection.Lifecycle = lifecycle;
 
-        projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
-
+        //projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+        throw new NotImplementedException("See if this should be rebuilt");
         mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
     }
 
@@ -56,13 +59,13 @@ public class CustomProjectionTests
         var tenant2 = new Tenant("two", db);
         var tenant3 = new Tenant("three", db);
 
-        var cache1 = projection.CacheFor(tenant1);
-        var cache2 = projection.CacheFor(tenant2);
-        var cache3 = projection.CacheFor(tenant3);
+        var cache1 = projection.CacheFor(tenant1.TenantId);
+        var cache2 = projection.CacheFor(tenant2.TenantId);
+        var cache3 = projection.CacheFor(tenant3.TenantId);
 
-        projection.CacheFor(tenant1).ShouldBeSameAs(cache1);
-        projection.CacheFor(tenant2).ShouldBeSameAs(cache2);
-        projection.CacheFor(tenant3).ShouldBeSameAs(cache3);
+        projection.CacheFor(tenant1.TenantId).ShouldBeSameAs(cache1);
+        projection.CacheFor(tenant2.TenantId).ShouldBeSameAs(cache2);
+        projection.CacheFor(tenant3.TenantId).ShouldBeSameAs(cache3);
 
         cache1.ShouldNotBeSameAs(cache2);
         cache1.ShouldNotBeSameAs(cache3);
@@ -72,8 +75,7 @@ public class CustomProjectionTests
     [Fact]
     public void build_nullo_cache_with_no_limit()
     {
-        var projection = new MyCustomProjection();
-        projection.CacheLimitPerTenant = 0;
+        var projection = new MyCustomProjection { Options = { CacheLimitPerTenant = 0 } };
 
         var db = Substitute.For<IMartenDatabase>();
         db.Identifier.Returns("main");
@@ -81,17 +83,19 @@ public class CustomProjectionTests
         var tenant2 = new Tenant("two", db);
         var tenant3 = new Tenant("three", db);
 
-        projection.CacheFor(tenant1).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant2).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant3).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
+        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
 
     }
 
     [Fact]
     public void build_real_cache_with_limit()
     {
-        var projection = new MyCustomProjection();
-        projection.CacheLimitPerTenant = 1000;
+        var projection = new MyCustomProjection
+        {
+            Options = { CacheLimitPerTenant = 1000 }
+        };
 
         var db = Substitute.For<IMartenDatabase>();
         db.Identifier.Returns("main");
@@ -99,9 +103,9 @@ public class CustomProjectionTests
         var tenant2 = new Tenant("two", db);
         var tenant3 = new Tenant("three", db);
 
-        projection.CacheFor(tenant1).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
-        projection.CacheFor(tenant2).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
-        projection.CacheFor(tenant3).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.CacheLimitPerTenant);
+        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
+        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
+        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
 
     }
 
@@ -120,7 +124,7 @@ public class CustomProjectionTests
     [Fact]
     public void async_options_is_not_null()
     {
-        new MyCustomProjection().As<IProjectionSource>().Options.ShouldNotBeNull();
+        new MyCustomProjection().As<IProjectionSource<IDocumentOperations, IQuerySession>>().Options.ShouldNotBeNull();
     }
 
     [Fact]
@@ -132,55 +136,6 @@ public class CustomProjectionTests
         });
     }
 
-    [Fact]
-    public void assert_invalid_with_incomplete_slicing_rules()
-    {
-        var projection = new MyCustomAggregateWithNoSlicer();
-        projection.AggregateEvents(x => { });
-
-        Should.Throw<InvalidProjectionException>(() =>
-        {
-            new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
-        });
-    }
-
-    [Fact]
-    public void valid_slicing_with_configured_slicing()
-    {
-        var projection = new MyCustomAggregateWithNoSlicer();
-        projection.AggregateEvents(x => x.Identity<INumbered>(n => n.Number));
-
-        projection.Slicer.ShouldBeOfType<EventSlicer<CustomAggregate, int>>();
-    }
-
-    [Fact]
-    public void throws_if_you_try_to_slice_by_string_on_something_besides_guid_or_string()
-    {
-        var wrong = new EmptyCustomProjection<User, int>();
-
-        Should.Throw<InvalidProjectionException>(() =>
-        {
-            wrong.AggregateByStream();
-        });
-    }
-
-    [Fact]
-    public void use_per_stream_aggregation_by_guid()
-    {
-        var withGuid = new EmptyCustomProjection<User, Guid>();
-        withGuid.AggregateByStream();
-
-        withGuid.Slicer.ShouldBeOfType<ByStreamId<User>>();
-    }
-
-    [Fact]
-    public void use_per_stream_aggregation_by_string()
-    {
-        var withGuid = new EmptyCustomProjection<StringDoc, string>();
-        withGuid.AggregateByStream();
-
-        withGuid.Slicer.ShouldBeOfType<ByStreamKey<StringDoc>>();
-    }
 }
 
 public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
@@ -376,17 +331,11 @@ public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, in
     }
 }
 
-public class MySingleStreamProjection: CustomProjection<CustomAggregate, Guid>
+public class MySingleStreamProjection: SingleStreamProjection<CustomAggregate, Guid>
 {
-    public MySingleStreamProjection()
+    public override CustomAggregate Evolve(CustomAggregate snapshot, Guid id, IEvent e)
     {
-        AggregateByStream();
-    }
-
-    public override async ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
-    {
-        throw new NotImplementedException();
+        return base.Evolve(snapshot, id, e);
     }
 }
 
@@ -401,33 +350,26 @@ public class MyCustomStringAggregate
     public int D { get; set; }
 }
 
-public class MyCustomStreamProjection: CustomProjection<MyCustomStringAggregate, MyCustomStringId>
+public class MyCustomStreamProjection: SingleStreamProjection<MyCustomStringAggregate, MyCustomStringId>
 {
-    public MyCustomStreamProjection()
+    public override MyCustomStringAggregate Evolve(MyCustomStringAggregate snapshot, MyCustomStringId id, IEvent e)
     {
-        AggregateByStream();
-    }
+        snapshot ??= new();
 
-    public override MyCustomStringAggregate Apply(MyCustomStringAggregate snapshot, IReadOnlyList<IEvent> events)
-    {
-        snapshot ??= new MyCustomStringAggregate();
-        foreach (var e in events.Select(x => x.Data))
+        switch (e.Data)
         {
-            switch (e)
-            {
-                case AEvent:
-                    snapshot.A++;
-                    break;
-                case BEvent:
-                    snapshot.B++;
-                    break;
-                case CEvent:
-                    snapshot.C++;
-                    break;
-                case DEvent:
-                    snapshot.D++;
-                    break;
-            }
+            case AEvent:
+                snapshot.A++;
+                break;
+            case BEvent:
+                snapshot.B++;
+                break;
+            case CEvent:
+                snapshot.C++;
+                break;
+            case DEvent:
+                snapshot.D++;
+                break;
         }
 
         return snapshot;
@@ -443,33 +385,26 @@ public class MyCustomGuidAggregate
     public int D { get; set; }
 }
 
-public class MyCustomGuidProjection: CustomProjection<MyCustomGuidAggregate, MyCustomGuidId>
+public class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregate, MyCustomGuidId>
 {
-    public MyCustomGuidProjection()
-    {
-        AggregateByStream();
-    }
-
-    public override MyCustomGuidAggregate Apply(MyCustomGuidAggregate snapshot, IReadOnlyList<IEvent> events)
+    public override MyCustomGuidAggregate Evolve(MyCustomGuidAggregate snapshot, MyCustomGuidId id, IEvent e)
     {
         snapshot ??= new MyCustomGuidAggregate();
-        foreach (var e in events.Select(x => x.Data))
+
+        switch (e.Data)
         {
-            switch (e)
-            {
-                case AEvent:
-                    snapshot.A++;
-                    break;
-                case BEvent:
-                    snapshot.B++;
-                    break;
-                case CEvent:
-                    snapshot.C++;
-                    break;
-                case DEvent:
-                    snapshot.D++;
-                    break;
-            }
+            case AEvent:
+                snapshot.A++;
+                break;
+            case BEvent:
+                snapshot.B++;
+                break;
+            case CEvent:
+                snapshot.C++;
+                break;
+            case DEvent:
+                snapshot.D++;
+                break;
         }
 
         return snapshot;
@@ -478,49 +413,40 @@ public class MyCustomGuidProjection: CustomProjection<MyCustomGuidAggregate, MyC
 
 public record struct MyCustomGuidId(Guid Value);
 
-public class MyCustomProjection: CustomProjection<CustomAggregate, int>
+public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {
-        AggregateEvents(s =>
-        {
-            s.Identity<INumbered>(x => x.Number);
-        });
+        Identity<INumbered>(x => x.Number);
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice,
-        CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override CustomAggregate Evolve(CustomAggregate snapshot, int id, IEvent e)
     {
-        var aggregate = slice.Aggregate ?? new CustomAggregate { Id = slice.Id };
-
-        foreach (var @event in slice.Events())
+        snapshot ??= new CustomAggregate { Id = id };
+        if (e.Data is CustomEvent ce)
         {
-            if (@event.Data is CustomEvent e)
+            switch (ce.Letter)
             {
-                switch (e.Letter)
-                {
-                    case 'a':
-                        aggregate.ACount++;
-                        break;
+                case 'a':
+                    snapshot.ACount++;
+                    break;
 
-                    case 'b':
-                        aggregate.BCount++;
-                        break;
+                case 'b':
+                    snapshot.BCount++;
+                    break;
 
-                    case 'c':
-                        aggregate.CCount++;
-                        break;
+                case 'c':
+                    snapshot.CCount++;
+                    break;
 
-                    case 'd':
-                        aggregate.DCount++;
-                        break;
-                }
+                case 'd':
+                    snapshot.DCount++;
+                    break;
             }
         }
 
-        session.Store(aggregate);
-        return new ValueTask();
+        return snapshot;
+
     }
 }
 
@@ -718,14 +644,10 @@ public class Increment
 
 #region sample_custom_aggregate_with_start_and_stop
 
-public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Guid>
+public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {
-        // I'm telling Marten that events are assigned to the aggregate
-        // document by the stream id
-        AggregateByStream();
-
         // This is an optional, but potentially important optimization
         // for the async daemon so that it sets up an allow list
         // of the event types that will be run through this projection
@@ -735,56 +657,58 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
         IncludeType<Increment>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session,
-        EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override ValueTask<SnapshotAction<StartAndStopAggregate>> ApplyAsync(IQuerySession session, StartAndStopAggregate snapshot, Guid identity, IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
     {
-        var aggregate = slice.Aggregate;
-
-        foreach (var data in slice.AllData())
-        {
-            switch (data)
-            {
-                case Start:
-                    aggregate = new StartAndStopAggregate
-                    {
-                        // Have to assign the identity ourselves
-                        Id = slice.Id
-                    };
-                    break;
-                case Increment when aggregate is { Deleted: false }:
-                    // Use explicit code to only apply this event
-                    // if the aggregate already exists
-                    aggregate.Increment();
-                    break;
-                case End when aggregate is { Deleted: false }:
-                    // This will be a "soft delete" because the aggregate type
-                    // implements the IDeleted interface
-                    session.Delete(aggregate);
-                    aggregate.Deleted = true; // Got to help Marten out a little bit here
-                    break;
-                case Restart when aggregate == null || aggregate.Deleted:
-                    // Got to "undo" the soft delete status
-                    session
-                        .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);
-                    break;
-            }
-        }
-
-        // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
-        // AggregateStreamAsync(), you must make this call
-        // FetchLatest() will work w/o any other changes though
-        slice.Aggregate = aggregate;
-
-        // Apply any updates!
-        if (aggregate != null)
-        {
-            session.Store(aggregate);
-        }
-
-        // We didn't do anything that required an asynchronous call
-        return new ValueTask();
+        throw new NotImplementedException("Redo all of this");
+        // var aggregate = snapshot ?? new StartAndStopAggregate();
+        //
+        // foreach (var data in events)
+        // {
+        //     switch (data)
+        //     {
+        //         case Start:
+        //             aggregate = new StartAndStopAggregate
+        //             {
+        //                 // Have to assign the identity ourselves
+        //                 Id = identity
+        //             };
+        //             break;
+        //         case Increment when aggregate is { Deleted: false }:
+        //             // Use explicit code to only apply this event
+        //             // if the aggregate already exists
+        //             aggregate.Increment();
+        //             break;
+        //         case End when aggregate is { Deleted: false }:
+        //             // This will be a "soft delete" because the aggregate type
+        //             // implements the IDeleted interface
+        //             session.Delete(aggregate);
+        //             aggregate.Deleted = true; // Got to help Marten out a little bit here
+        //             break;
+        //         case Restart when aggregate == null || aggregate.Deleted:
+        //             // Got to "undo" the soft delete status
+        //             session
+        //                 .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);
+        //             break;
+        //     }
+        // }
+        //
+        // // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
+        // // AggregateStreamAsync(), you must make this call
+        // // FetchLatest() will work w/o any other changes though
+        // slice.Aggregate = aggregate;
+        //
+        // // Apply any updates!
+        // if (aggregate != null)
+        // {
+        //     session.Store(aggregate);
+        // }
+        //
+        // // We didn't do anything that required an asynchronous call
+        // return new ValueTask();
     }
+
+
 }
 
 #endregion

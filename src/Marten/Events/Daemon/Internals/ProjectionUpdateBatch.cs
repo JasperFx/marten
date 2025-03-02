@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -23,7 +25,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
-    private readonly DaemonSettings _settings;
+    private readonly ProjectionOptions _settings;
     private readonly CancellationToken _token;
     private OperationPage? _current;
     private DocumentSessionBase? _session;
@@ -39,7 +41,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public bool ShouldApplyListeners { get; set; }
 
-    internal ProjectionUpdateBatch(DaemonSettings settings,
+    internal ProjectionUpdateBatch(ProjectionOptions settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
     {
         _settings = settings;

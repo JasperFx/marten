@@ -1,4 +1,5 @@
-﻿using JasperFx;
+﻿using System;
+using JasperFx;
 using JasperFx.Events;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
@@ -22,6 +23,7 @@ internal static class TenantedSessionFactory
     // | NON-DEFAULT | DEFAULT     | CONJOINED | THE SAME        |
     // | NON-DEFAULT | NON-DEFAULT | SINGLE    | NEW DEFAULT     |
     // | NON-DEFAULT | NON-DEFAULT | CONJOINED | THE SAME        |
+    [Obsolete("I think this will be unnecessary after 8")]
     internal static DocumentSessionBase UseTenancyBasedOnSliceAndStorage(
         this DocumentSessionBase session,
         IDocumentStorage storage,

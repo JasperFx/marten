@@ -258,11 +258,12 @@ public class LambdaProjection: EventProjection
 {
     public LambdaProjection()
     {
-        Project<UserCreated>((e, ops) =>
-            ops.Store(new User { UserName = e.UserName }));
-
-        Project<UserDeleted>((e, ops) =>
-            ops.DeleteWhere<User>(x => x.UserName == e.UserName));
+        throw new NotImplementedException();
+        // Project<UserCreated>((e, ops) =>
+        //     ops.Store(new User { UserName = e.UserName }));
+        //
+        // Project<UserDeleted>((e, ops) =>
+        //     ops.DeleteWhere<User>(x => x.UserName == e.UserName));
     }
 }
 

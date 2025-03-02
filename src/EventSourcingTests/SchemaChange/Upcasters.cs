@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -773,7 +774,7 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCartDetails>
+        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCartDetails, Guid>
         {
 
         }

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -95,17 +96,26 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
 
 #region sample_using_simple_explicit_code_for_live_aggregation
 
-public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
+public class ExplicitCounter: SingleStreamProjection<SimpleAggregate, Guid>
 {
-    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    public override SimpleAggregate Evolve(SimpleAggregate snapshot, Guid id, IEvent e)
     {
         snapshot ??= new SimpleAggregate();
-        foreach (var e in events.Select(x => x.Data))
+
+        switch (e.Data)
         {
-            if (e is AEvent) snapshot.ACount++;
-            if (e is BEvent) snapshot.BCount++;
-            if (e is CEvent) snapshot.CCount++;
-            if (e is DEvent) snapshot.DCount++;
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
         // You have to explicitly return the new value
@@ -116,28 +126,25 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
 
 #endregion
 
-public class ExplicitCounterThatHasStringId: CustomProjection<SimpleAggregateAsString, string>
+public class ExplicitCounterThatHasStringId: SingleStreamProjection<SimpleAggregateAsString, string>
 {
-    public override SimpleAggregateAsString Apply(SimpleAggregateAsString snapshot, IReadOnlyList<IEvent> events)
+    public override SimpleAggregateAsString Evolve(SimpleAggregateAsString snapshot, string id, IEvent e)
     {
         snapshot ??= new();
-        foreach (var e in events.Select(x => x.Data))
+        switch (e.Data)
         {
-            switch (e)
-            {
-                case AEvent:
-                    snapshot.ACount++;
-                    break;
-                case BEvent:
-                    snapshot.BCount++;
-                    break;
-                case CEvent:
-                    snapshot.CCount++;
-                    break;
-                case DEvent:
-                    snapshot.DCount++;
-                    break;
-            }
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
         return snapshot;

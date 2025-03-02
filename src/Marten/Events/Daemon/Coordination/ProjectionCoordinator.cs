@@ -1,10 +1,11 @@
 using System;
-using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
-using Marten.Events.Daemon.Resiliency;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Polly;
@@ -13,23 +14,23 @@ namespace Marten.Events.Daemon.Coordination;
 
 public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordinator<T> where T : IDocumentStore
 {
-    public ProjectionCoordinator(T documentStore, ILogger<ProjectionCoordinator> logger) : base(documentStore, logger)
+    public ProjectionCoordinator(T documentStore, ILogger<ProjectionCoordinator> logger): base(documentStore, logger)
     {
     }
 }
 
-public class ProjectionCoordinator : IProjectionCoordinator
+public class ProjectionCoordinator: IProjectionCoordinator
 {
-    private readonly StoreOptions _options;
+    private readonly object _daemonLock = new();
     private readonly ILogger<ProjectionCoordinator> _logger;
-
-    private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
-    private readonly object _daemonLock = new ();
+    private readonly StoreOptions _options;
 
     private readonly ResiliencePipeline _resilience;
-    private CancellationTokenSource _cancellation;
-    private Task _runner;
     private readonly TimeProvider _timeProvider;
+    private CancellationTokenSource _cancellation;
+
+    private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
+    private Task _runner;
 
     public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
     {
@@ -58,6 +59,10 @@ public class ProjectionCoordinator : IProjectionCoordinator
         Store = store;
     }
 
+    public DocumentStore Store { get; }
+
+    public IProjectionDistributor Distributor { get; }
+
     public IProjectionDaemon DaemonForMainDatabase()
     {
         var database = (MartenDatabase)Store.Tenancy.Default.Database;
@@ -65,44 +70,18 @@ public class ProjectionCoordinator : IProjectionCoordinator
         return findDaemonForDatabase(database);
     }
 
-    private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
-    {
-        if (_daemons.TryFind(database.Identifier, out var daemon))
-        {
-            return daemon;
-        }
-
-        lock (_daemonLock)
-        {
-            if (_daemons.TryFind(database.Identifier, out daemon))
-            {
-                return daemon;
-            }
-
-            daemon = database.StartProjectionDaemon(Store, _logger);
-            _daemons = _daemons.AddOrUpdate(database.Identifier, daemon);
-        }
-
-        return daemon;
-    }
-
     public async ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier)
     {
-        var database = (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
+        var database =
+            (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
         return findDaemonForDatabase(database);
     }
-
-    public DocumentStore Store { get; }
-
-    public IProjectionDistributor Distributor { get; }
-
-    internal record DaemonShardName(IProjectionDaemon Daemon, ShardName Name);
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _cancellation?.SafeDispose();
 
-        _cancellation = new();
+        _cancellation = new CancellationTokenSource();
         _runner = Task.Run(() => executeAsync(_cancellation.Token), _cancellation.Token);
 
         return Task.CompletedTask;
@@ -149,16 +128,16 @@ public class ProjectionCoordinator : IProjectionCoordinator
         }
     }
 
-    public Task ResumeAsync() => StartAsync(default);
+    public Task ResumeAsync()
+    {
+        return StartAsync(default);
+    }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         await PauseAsync().ConfigureAwait(false);
 
-        foreach (var daemon in _daemons.Enumerate())
-        {
-            daemon.Value.SafeDispose();
-        }
+        foreach (var daemon in _daemons.Enumerate()) daemon.Value.SafeDispose();
 
         try
         {
@@ -168,6 +147,27 @@ public class ProjectionCoordinator : IProjectionCoordinator
         {
             _logger.LogError(e, "Error trying to release subscription agent locks");
         }
+    }
+
+    private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
+    {
+        if (_daemons.TryFind(database.Identifier, out var daemon))
+        {
+            return daemon;
+        }
+
+        lock (_daemonLock)
+        {
+            if (_daemons.TryFind(database.Identifier, out daemon))
+            {
+                return daemon;
+            }
+
+            daemon = database.StartProjectionDaemon(Store, _logger);
+            _daemons = _daemons.AddOrUpdate(database.Identifier, daemon);
+        }
+
+        return daemon;
     }
 
     private async Task executeAsync(CancellationToken stoppingToken)
@@ -202,13 +202,19 @@ public class ProjectionCoordinator : IProjectionCoordinator
             }
             catch (Exception e)
             {
-                if (stoppingToken.IsCancellationRequested) return;
+                if (stoppingToken.IsCancellationRequested)
+                {
+                    return;
+                }
 
                 // Only really expect any errors if there are dynamic tenants in place
                 _logger.LogError(e, "Error trying to resolve projection distributions");
             }
 
-            if (stoppingToken.IsCancellationRequested) return;
+            if (stoppingToken.IsCancellationRequested)
+            {
+                return;
+            }
 
             try
             {
@@ -218,7 +224,8 @@ public class ProjectionCoordinator : IProjectionCoordinator
                 }
                 else
                 {
-                    await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken).ConfigureAwait(false);
+                    await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken)
+                        .ConfigureAwait(false);
                 }
             }
             catch (TaskCanceledException)
@@ -242,7 +249,9 @@ public class ProjectionCoordinator : IProjectionCoordinator
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }
-            else if (agent.Status == AgentStatus.Paused && agent.PausedTime.HasValue && _timeProvider.GetUtcNow().Subtract(agent.PausedTime.Value) > _options.Projections.HealthCheckPollingTime)
+            else if (agent.Status == AgentStatus.Paused && agent.PausedTime.HasValue &&
+                     _timeProvider.GetUtcNow().Subtract(agent.PausedTime.Value) >
+                     _options.Projections.HealthCheckPollingTime)
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }
@@ -259,13 +268,14 @@ public class ProjectionCoordinator : IProjectionCoordinator
     {
         try
         {
-            await _resilience.ExecuteAsync<DaemonShardName>(
+            await _resilience.ExecuteAsync(
                 static (x, t) => new ValueTask(x.Daemon.StartAgentAsync(x.Name.Identity, t)),
                 new DaemonShardName(daemon, name), stoppingToken).ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error trying to start subscription {Name} on database {Database}", name.Identity, set.Database.Identifier);
+            _logger.LogError(e, "Error trying to start subscription {Name} on database {Database}", name.Identity,
+                set.Database.Identifier);
             if (daemon.StatusFor(name.Identity) == AgentStatus.Paused)
             {
                 daemon.EjectPausedShard(name.Identity);
@@ -274,4 +284,6 @@ public class ProjectionCoordinator : IProjectionCoordinator
             await Distributor.ReleaseLockAsync(set).ConfigureAwait(false);
         }
     }
+
+    internal record DaemonShardName(IProjectionDaemon Daemon, ShardName Name);
 }

@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.Events.Daemon;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -26,18 +26,19 @@ internal class AggregatePageHandler<TDoc, TId>
     private readonly NpgsqlCommand _command;
     private readonly IMartenDatabase _database;
     private readonly IReadOnlyList<AggregateIdentity> _ids;
-    private readonly IAggregationRuntime<TDoc, TId> _runtime;
+    //private readonly IAggregationRuntime<TDoc, TId> _runtime;
     private readonly DocumentSessionBase _session;
     private readonly IEventStorage _storage;
     private readonly DocumentStore _store;
 
     // If conjoined, the session will hold the tenant id
     public AggregatePageHandler(long ceiling, DocumentStore store, DocumentSessionBase session,
-        IAggregationRuntime<TDoc, TId> runtime, IReadOnlyList<AggregateIdentity> ids)
+        //IAggregationRuntime<TDoc, TId> runtime,
+        IReadOnlyList<AggregateIdentity> ids)
     {
         _store = store;
         _database = session.Database;
-        _runtime = runtime;
+        //_runtime = runtime;
         _ids = ids;
 
         _session = session;
@@ -164,8 +165,9 @@ internal class AggregatePageHandler<TDoc, TId>
 
         ITargetBlock<EventSlice<TDoc, TId>> block = new ActionBlock<EventSlice<TDoc, TId>>(async s =>
         {
+            throw new NotImplementedException();
             // ReSharper disable once AccessToDisposedClosure
-            await _runtime.ApplyChangesAsync(session, s, token, ProjectionLifecycle.Async).ConfigureAwait(false);
+            //await _runtime.ApplyChangesAsync(session, s, token, ProjectionLifecycle.Async).ConfigureAwait(false);
         });
 
         await collateAndPostSlices(events, block).ConfigureAwait(false);
@@ -193,16 +195,17 @@ internal class AggregatePageHandler<TDoc, TId>
         EventSlice<TDoc, TId> slice = null;
         await foreach (var e in events)
         {
-            var aggregateId = _runtime.IdentityFromEvent(_session.Options.Events.StreamIdentity, e);
-            slice ??= new EventSlice<TDoc, TId>(aggregateId, _session);
-
-            if (!slice.Id.Equals(aggregateId))
-            {
-                block.Post(slice);
-                slice = new EventSlice<TDoc, TId>(aggregateId, _session);
-            }
-
-            slice.AddEvent(e);
+            throw new NotImplementedException();
+            // var aggregateId = _runtime.IdentityFromEvent(_session.Options.Events.StreamIdentity, e);
+            // slice ??= new EventSlice<TDoc, TId>(aggregateId, _session);
+            //
+            // if (!slice.Id.Equals(aggregateId))
+            // {
+            //     block.Post(slice);
+            //     slice = new EventSlice<TDoc, TId>(aggregateId, _session);
+            // }
+            //
+            // slice.AddEvent(e);
         }
 
         // Get the last one

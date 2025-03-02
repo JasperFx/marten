@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Shouldly;
 using Xunit;
+using EventRange = Marten.Events.Daemon.Internals.EventRange;
 
 namespace DaemonTests;
 
@@ -62,48 +63,4 @@ public class EventRangeTests
         range.Events.Count.ShouldBe(4);
     }
 
-    [Fact]
-    public void combine_shallow()
-    {
-        var range1 = new EventRange(new ShardName("name"), 0, 100)
-        {
-            Events = new List<IEvent>
-            {
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-            }
-        };
-
-        var range2 = new EventRange(new ShardName("name"), 100, 200)
-        {
-            Events = new List<IEvent>
-            {
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-            }
-        };
-
-        var range3 = new EventRange(new ShardName("name"), 200, 300)
-        {
-            Events = new List<IEvent>
-            {
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-                new Event<AEvent>(new AEvent()),
-            }
-        };
-
-        var combined = EventRange.CombineShallow(range1, range2, range3);
-        combined.SequenceFloor.ShouldBe(0);
-        combined.SequenceCeiling.ShouldBe(300);
-        combined.ShardName.ShouldBe(range1.ShardName);
-    }
 }

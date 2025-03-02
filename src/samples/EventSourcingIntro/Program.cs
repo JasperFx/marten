@@ -1,4 +1,5 @@
-﻿using Marten;
+﻿using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 
@@ -70,7 +71,7 @@ public class WarehouseProductReadModel
     public int QuantityOnHand { get; set; }
 }
 
-public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel>
+public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel, Guid>
 {
     public WarehouseProductProjection()
     {

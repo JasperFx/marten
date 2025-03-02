@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Internal.Sessions;

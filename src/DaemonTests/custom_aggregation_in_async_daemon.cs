@@ -80,7 +80,7 @@ public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            var myCustomAggregation = new MyCustomProjection(){CacheLimitPerTenant = 100};
+            var myCustomAggregation = new MyCustomProjection{Options = {CacheLimitPerTenant = 100}};
             opts.Projections.Add(myCustomAggregation, ProjectionLifecycle.Async);
             opts.Logger(new TestOutputMartenLogger(_output));
         });

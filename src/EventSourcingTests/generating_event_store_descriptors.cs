@@ -6,6 +6,7 @@ using EventSourcingTests.Examples.TeleHealth;
 using EventSourcingTests.FetchForWriting;
 using EventSourcingTests.Projections;
 using JasperFx.Core.Descriptions;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;

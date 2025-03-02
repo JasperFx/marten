@@ -30,7 +30,7 @@ public class TripEnded{}
 
 #region sample_aggregation_using_event_metadata
 
-public class TripProjection: SingleStreamProjection<Trip>
+public class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     // Access event metadata through IEvent<T>
     public Trip Create(IEvent<TripStarted> @event)

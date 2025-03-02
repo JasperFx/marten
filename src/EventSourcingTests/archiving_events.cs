@@ -6,6 +6,7 @@ using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -554,7 +555,7 @@ public class archiving_events: OneOffConfigurationsContext
     }
 }
 
-public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
+public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, Guid>
 {
     public SimpleAggregateProjection()
     {
@@ -566,29 +567,21 @@ public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
     public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
 }
 
-public class SimpleAggregateProjection2: CustomProjection<SimpleAggregate, Guid>
+public class SimpleAggregateProjection2: SingleStreamProjection<SimpleAggregate, Guid>
 {
-    public SimpleAggregateProjection2()
-    {
-        AggregateByStream();
-    }
-
-    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    public override SimpleAggregate Evolve(SimpleAggregate snapshot, Guid id, IEvent @event)
     {
         snapshot ??= new SimpleAggregate();
 
-        foreach (var @event in events)
+        switch (@event.Data)
         {
-            switch (@event.Data)
-            {
-                case AEvent _:
-                    snapshot.ACount++;
-                    break;
+            case AEvent _:
+                snapshot.ACount++;
+                break;
 
-                case BEvent _:
-                    snapshot.BCount++;
-                    break;
-            }
+            case BEvent _:
+                snapshot.BCount++;
+                break;
         }
 
         return snapshot;

@@ -1,8 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
+using JasperFx.Events.Daemon;
 using Marten.Storage;
 
 namespace Marten.Events.Aggregation.Rebuilds;

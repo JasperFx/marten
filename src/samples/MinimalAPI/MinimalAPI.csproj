@@ -12,7 +12,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
-        <ProjectReference Include="..\..\DaemonTests\DaemonTests.csproj" />
         <ProjectReference Include="..\..\Marten\Marten.csproj"/>
     </ItemGroup>
 

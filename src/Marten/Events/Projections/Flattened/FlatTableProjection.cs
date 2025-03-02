@@ -4,25 +4,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using Marten.Events.Daemon;
-using Marten.Linq.Parsing;
-using Marten.Storage;
-using Weasel.Core;
-using Weasel.Postgresql.Tables;
+using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using Marten.Events.Daemon.Internals;
+using JasperFx.Events.Projections;
+using Marten.Events.Daemon;
+using Marten.Linq.Parsing;
+using Weasel.Core;
 using Weasel.Postgresql;
+using IReplayExecutor = JasperFx.Events.Daemon.IReplayExecutor;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Events.Projections.Flattened;
 
 /// <summary>
 ///     Projection type that will write event data to a single database table
 /// </summary>
-public partial class FlatTableProjection: GeneratedProjection, IProjectionSchemaSource
+public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDocumentOperations, IQuerySession>,
+    IProjectionSchemaSource
 {
     private readonly List<IEventHandler> _handlers = new();
     private readonly string _inlineTypeName;
@@ -34,23 +33,11 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
 
     public FlatTableProjection(DbObjectName tableName): this(tableName, SchemaNameSource.Explicit) { }
 
-    private FlatTableProjection(DbObjectName tableName, SchemaNameSource schemaNameSource): base(tableName.Name)
+    private FlatTableProjection(DbObjectName tableName, SchemaNameSource schemaNameSource)
     {
         SchemaNameSource = schemaNameSource;
         Table = new Table(tableName);
         _inlineTypeName = GetType().ToSuffixedTypeName("InlineProjection");
-
-        _generatedProjection = new Lazy<IProjection>(() =>
-        {
-            if (_generatedType == null)
-            {
-                throw new InvalidOperationException("The EventProjection has not created its inner IProjection");
-            }
-
-            var projection = (IProjection)Activator.CreateInstance(_generatedType)!;
-
-            return projection!;
-        });
     }
 
     public SchemaNameSource SchemaNameSource { get; }
@@ -68,9 +55,33 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
         yield return Table;
 
         foreach (var handler in _handlers)
-        {
-            foreach (var schemaObject in handler.BuildObjects(events, Table)) yield return schemaObject;
-        }
+        foreach (var schemaObject in handler.BuildObjects(events, Table))
+            yield return schemaObject;
+    }
+
+    public Type ProjectionType => GetType();
+    public string Name => ProjectionName;
+    public uint Version => ProjectionVersion;
+
+    public SubscriptionDescriptor Describe()
+    {
+        return new SubscriptionDescriptor(this, SubscriptionType.FlatTableProjection);
+    }
+
+    public IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> Shards()
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool TryBuildReplayExecutor(IEventStorage<IDocumentOperations, IQuerySession> store, IEventDatabase database,
+        out IReplayExecutor executor)
+    {
+        throw new NotImplementedException();
+    }
+
+    public IInlineProjection<IDocumentOperations> BuildForInline()
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -132,22 +143,6 @@ public partial class FlatTableProjection: GeneratedProjection, IProjectionSchema
             : MemberFinder.Determine(tablePrimaryKeySource);
 
         _handlers.Add(new EventDeleter(typeof(T), members));
-    }
-
-    protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _generatedProjection.Value,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
     }
 
     private void readSchema(EventGraph events)

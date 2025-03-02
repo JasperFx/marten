@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -13,7 +14,7 @@ namespace Marten.Events;
 internal class RichEventAppender: IEventAppender
 {
     public async Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session,
-        IProjection[] inlineProjections, CancellationToken token)
+        IInlineProjection<IDocumentOperations>[] inlineProjections, CancellationToken token)
     {
         var batch = session.CreateBatchQuery();
 

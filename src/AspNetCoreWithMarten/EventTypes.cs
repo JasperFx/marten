@@ -38,7 +38,7 @@ public class View2{
     public bool IsEvent4Applied {get; set;}
 }
 
-public class View1Projection : SingleStreamProjection<View1>
+public class View1Projection : SingleStreamProjection<View1, Guid>
 {
     public void Apply(View1 v, Event1 e){
         v.IsEvent1Applied = true;
@@ -47,7 +47,7 @@ public class View1Projection : SingleStreamProjection<View1>
         v.IsEvent2Applied = true;
     }
 }
-public class View2Projection : SingleStreamProjection<View2>
+public class View2Projection : SingleStreamProjection<View2, Guid>
 {
 
     public void Apply(View2 v, Event3 e){

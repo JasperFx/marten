@@ -6,6 +6,8 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -35,13 +37,12 @@ internal class AsyncFetchPlanner: IFetchPlanner
                     $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
             }
 
-            if (projection is CustomProjection<TDoc, TId> custom)
+
+
+            if (projection.Scope == AggregationScope.MultiStream)
             {
-                if (!(custom.Slicer is ISingleStreamSlicer))
-                {
-                    throw new InvalidOperationException(
-                        $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
-                }
+                throw new InvalidOperationException(
+                    $"The aggregate type {typeof(TDoc).FullNameInCode()} is the subject of a multi-stream projection and cannot be used with FetchForWriting");
             }
 
             if (projection.Lifecycle == ProjectionLifecycle.Async)

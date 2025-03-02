@@ -11,7 +11,7 @@ namespace Marten.Events;
 ///     The implementation of this class is generated at runtime based on the configuration
 ///     of the system
 /// </summary>
-public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>, IEventStorageBuilder<IStorageOperation>
+public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
 {
     /// <summary>
     ///     Create a storage operation to append a single event

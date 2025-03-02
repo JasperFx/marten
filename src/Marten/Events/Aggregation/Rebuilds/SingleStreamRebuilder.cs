@@ -5,8 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
@@ -21,24 +23,24 @@ public class SingleStreamRebuilder<TDoc, TId>: IReplayExecutor
 {
     public const string Backfill = "Backfill";
     private readonly IMartenDatabase _database;
-    private readonly IAggregationRuntime<TDoc, TId> _runtime;
     private readonly DocumentStore _store;
     private long _ceiling;
     private readonly ILogger _logger;
 
-    public SingleStreamRebuilder(DocumentStore store, IMartenDatabase database,
-        IAggregationRuntime<TDoc, TId> runtime)
+    public SingleStreamRebuilder(DocumentStore store, IMartenDatabase database
+        //IAggregationRuntime<TDoc, TId> runtime
+        )
     {
         _store = store;
         _database = database;
-        _runtime = runtime;
         _logger = store.Options.LogFactory?.CreateLogger<SingleStreamRebuilder<TDoc, TId>>() ?? store.Options.DotNetLogger ?? NullLogger<SingleStreamRebuilder<TDoc, TId>>.Instance;
     }
 
     public Task StartAsync(SubscriptionExecutionRequest request, ISubscriptionController controller,
         CancellationToken cancellation)
     {
-        return RebuildAllAsync(request.Runtime, controller.Name, _runtime.Projection, cancellation);
+        throw new NotImplementedException();
+        //return RebuildAllAsync(request.Runtime, controller.Name, _runtime.Projection, cancellation);
     }
 
     public async Task RebuildAllAsync(IDaemonRuntime runtime, ShardName shardName, IAggregateProjection projection,
@@ -106,11 +108,13 @@ public class SingleStreamRebuilder<TDoc, TId>: IReplayExecutor
             return false;
         }
 
-        var pageHandler = new AggregatePageHandler<TDoc, TId>(_ceiling, _store, session, _runtime, ids);
-        await pageHandler.ProcessPageAsync(runtime, shardName, _store.Options.Projections.RebuildErrors, token)
-            .ConfigureAwait(false);
+        throw new NotImplementedException();
 
-        return true;
+        // var pageHandler = new AggregatePageHandler<TDoc, TId>(_ceiling, _store, session, _runtime, ids);
+        // await pageHandler.ProcessPageAsync(runtime, shardName, _store.Options.Projections.RebuildErrors, token)
+        //     .ConfigureAwait(false);
+        //
+        // return true;
     }
 
     private async Task<DocumentSessionBase> initializeAsync(IDaemonRuntime runtime, IAggregateProjection projection,

@@ -175,7 +175,7 @@ internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectCl
 {
     public FSharpDiscriminatedUnionIdSelectClause(FSharpDiscriminatedUnionIdGeneration typedIdGeneration)
     {
-        Converter = typedIdGeneration.CreateConverter<TOuter, TInner>();
+        Converter = typedIdGeneration.CreateWrapper<TOuter, TInner>();
         MemberName = "d.id";
     }
 

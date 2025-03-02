@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;

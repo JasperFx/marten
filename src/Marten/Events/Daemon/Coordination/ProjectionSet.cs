@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Storage;
 
 namespace Marten.Events.Daemon.Coordination;

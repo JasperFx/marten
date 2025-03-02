@@ -1,3 +1,4 @@
+using Marten.Events.Aggregation;
 using Marten.Schema;
 
 namespace Marten.Events.Projections;
@@ -23,7 +24,11 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
             mapping.UseNumericRevisions = true;
             mapping.Metadata.Revision.Enabled = true;
 
-            projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+            if (projection is IMartenAggregateProjection m)
+            {
+                m.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+            }
+
         }
     }
 }

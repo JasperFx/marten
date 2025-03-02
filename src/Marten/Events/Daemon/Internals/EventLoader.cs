@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation.Rebuilds;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -27,10 +29,6 @@ internal sealed class EventLoader: IEventLoader
     private readonly NpgsqlParameter _floor;
     private readonly IEventStorage _storage;
     private readonly IDocumentStore _store;
-    public EventLoader(DocumentStore store, MartenDatabase database, AsyncProjectionShard shard, AsyncOptions options) : this(store, database, options, shard.BuildFilters(store).ToArray())
-    {
-
-    }
 
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters)
     {

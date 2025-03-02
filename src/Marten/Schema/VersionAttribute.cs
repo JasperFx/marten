@@ -12,7 +12,7 @@ namespace Marten.Schema;
 ///     when used on a projected aggregate
 /// </summary>
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
-public class VersionAttribute: MartenAttribute
+public class VersionAttribute: MartenAttribute, IVersionAttribute
 {
     public override void Modify(DocumentMapping mapping, MemberInfo member)
     {

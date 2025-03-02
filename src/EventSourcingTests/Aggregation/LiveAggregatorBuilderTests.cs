@@ -16,16 +16,18 @@ public class LiveAggregatorBuilderTests
     [Fact]
     public void try_existing_QuestParty()
     {
-        var aggregator = new SingleStreamProjection<QuestParty>().BuildAggregator(new StoreOptions());
-        aggregator.ShouldNotBeNull();
+        throw new NotImplementedException();
+        // var aggregator = new SingleStreamProjection<QuestParty, Guid>().BuildAggregator(new StoreOptions());
+        // aggregator.ShouldNotBeNull();
     }
 
     [Fact]
     public void try_with_all_possibilities()
     {
-        new SingleStreamProjection<FakeAggregate>()
-            .BuildAggregator(new StoreOptions())
-            .ShouldNotBeNull();
+        throw new NotImplementedException();
+        // new SingleStreamProjection<FakeAggregate>()
+        //     .BuildAggregator(new StoreOptions())
+        //     .ShouldNotBeNull();
     }
 
     public class EventE{}

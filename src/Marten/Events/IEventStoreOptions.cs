@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Subscriptions;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;

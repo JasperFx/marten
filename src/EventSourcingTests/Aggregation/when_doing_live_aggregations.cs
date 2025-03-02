@@ -204,7 +204,7 @@ public class UserUpdated
     public Guid UserId { get; set; }
 }
 
-public class UsingMetadata : SingleStreamProjection<MyAggregate>
+public class UsingMetadata : SingleStreamProjection<MyAggregate, Guid>
 {
     public MyAggregate Create(CreateEvent create, IEvent e)
     {
@@ -225,7 +225,7 @@ public class UsingMetadata : SingleStreamProjection<MyAggregate>
     }
 }
 
-public class AsyncEverything: SingleStreamProjection<MyAggregate>
+public class AsyncEverything: SingleStreamProjection<MyAggregate, Guid>
 {
     public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
     {
@@ -250,7 +250,7 @@ public class AsyncEverything: SingleStreamProjection<MyAggregate>
 
 }
 
-public class AsyncCreateSyncApply: SingleStreamProjection<MyAggregate>
+public class AsyncCreateSyncApply: SingleStreamProjection<MyAggregate, Guid>
 {
     public async Task<MyAggregate> Create(UserStarted @event, IQuerySession session, CancellationToken cancellation)
     {
@@ -283,7 +283,7 @@ public class AsyncCreateSyncApply: SingleStreamProjection<MyAggregate>
 
 }
 
-public class SyncCreateAsyncApply: SingleStreamProjection<MyAggregate>
+public class SyncCreateAsyncApply: SingleStreamProjection<MyAggregate, Guid>
 {
     public MyAggregate Create(CreateEvent @event)
     {
@@ -324,7 +324,7 @@ public class SyncCreateAsyncApply: SingleStreamProjection<MyAggregate>
 }
 
 
-public class AllSync: SingleStreamProjection<MyAggregate>
+public class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {

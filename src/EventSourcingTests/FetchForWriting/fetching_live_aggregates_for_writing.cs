@@ -7,6 +7,7 @@ using EventSourcingTests.Projections;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -642,30 +643,19 @@ public class Totals
     public int Count { get; set; }
 }
 
-public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer<Totals, Guid>
+public class TotalsProjection: MultiStreamProjection<Totals, Guid>
 {
     public TotalsProjection()
     {
-        CustomGrouping(this);
-    }
+        CustomGrouping((_, events, group) =>
+        {
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
 
-    [MartenIgnore]
-    public async ValueTask<IReadOnlyList<EventSlice<Totals, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
-
-    [MartenIgnore]
-    public ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
-    {
-        var group = new TenantSliceGroup<Totals, Guid>(querySession, querySession.TenantId);
-
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
-
-        return new ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>>([group]);
+            return Task.CompletedTask;
+        });
     }
 
     public void Apply(AEvent e, Totals totals) => totals.Count++;

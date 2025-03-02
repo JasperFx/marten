@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
@@ -57,7 +58,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
 
 
-    public class SampleSingleStream : SingleStreamProjection<MyAggregate>
+    public class SampleSingleStream : SingleStreamProjection<MyAggregate, Guid>
     {
         public SampleSingleStream ()
         {

@@ -30,8 +30,8 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     {
         _inner = inner;
 
-        _converter = valueTypeInfo.CreateConverter<TValueType, TSimple>();
-        _unwrapper = valueTypeInfo.ValueAccessor<TValueType, TSimple>();
+        _converter = valueTypeInfo.CreateWrapper<TValueType, TSimple>();
+        _unwrapper = valueTypeInfo.UnWrapper<TValueType, TSimple>();
     }
 
     public void Apply(ICommandBuilder builder) => _inner.Apply(builder);

@@ -153,7 +153,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // Opt into 2nd level caching of up to 100
         // most recently encountered aggregates as a
         // performance optimization
-        CacheLimitPerTenant = 1000;
+        Options.CacheLimitPerTenant = 1000;
 
         // With large event stores of relatively small
         // event objects, moving this number up from the

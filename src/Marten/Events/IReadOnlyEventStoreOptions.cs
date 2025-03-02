@@ -1,6 +1,8 @@
 #nullable enable
 using System.Collections.Generic;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;

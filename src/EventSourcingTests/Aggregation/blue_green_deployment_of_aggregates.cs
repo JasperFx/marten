@@ -1,3 +1,5 @@
+using System;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -38,7 +40,7 @@ public class blue_green_deployment_of_aggregates
     }
 }
 
-public class Version2: SingleStreamProjection<MyAggregate>
+public class Version2: SingleStreamProjection<MyAggregate, Guid>
 {
     public Version2()
     {

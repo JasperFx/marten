@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 using Marten.Services;
 using Microsoft.Extensions.Logging;

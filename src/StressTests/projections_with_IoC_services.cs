@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -390,7 +391,7 @@ public record ProductRegistered(string Name, string Category);
 
 #region sample_ProductProjection
 
-public class ProductProjection: CustomProjection<Product, Guid>
+public class ProductProjection: SingleStreamProjection<Product, Guid>
 {
     private readonly IPriceLookup _lookup;
 
@@ -398,35 +399,21 @@ public class ProductProjection: CustomProjection<Product, Guid>
     public ProductProjection(IPriceLookup lookup)
     {
         _lookup = lookup;
-        AggregateByStream();
         ProjectionName = "Product";
     }
 
-    public override ValueTask ApplyChangesAsync(
-        DocumentSessionBase session,
-        EventSlice<Product, Guid> slice,
-        CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline
-    )
+    public override Product Evolve(Product snapshot, Guid id, IEvent e)
     {
-        slice.Aggregate ??= new Product { Id = slice.Id };
+        snapshot ??= new Product { Id = id };
 
-        foreach (var data in slice.AllData())
+        if (e.Data is ProductRegistered r)
         {
-            if (data is ProductRegistered r)
-            {
-                slice.Aggregate.Price = _lookup.PriceFor(r.Category);
-                slice.Aggregate.Name = r.Name;
-                slice.Aggregate.Category = r.Category;
-            }
+            snapshot.Price = _lookup.PriceFor(r.Category);
+            snapshot.Name = r.Name;
+            snapshot.Category = r.Category;
         }
 
-        if (slice.Aggregate != null)
-        {
-            session.Store(slice.Aggregate);
-        }
-
-        return ValueTask.CompletedTask;
+        return snapshot;
     }
 }
 

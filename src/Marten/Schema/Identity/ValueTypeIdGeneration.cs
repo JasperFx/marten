@@ -277,7 +277,7 @@ public class ValueTypeIdSelectClause<TOuter, TInner>: ValueTypeSelectClause<TOut
 {
     public ValueTypeIdSelectClause(ValueTypeIdGeneration idGeneration): base(
         "d.id",
-        idGeneration.CreateConverter<TOuter, TInner>()
+        idGeneration.CreateWrapper<TOuter, TInner>()
     )
     {
     }

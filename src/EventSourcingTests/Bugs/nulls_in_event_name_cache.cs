@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -44,7 +45,7 @@ public class nulls_in_event_name_cache : BugIntegrationContext
 
 public record MemberJoinedOnly(Guid Id);
 
-public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly>
+public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly, Guid>
 {
     public MemberJoinedProjection()
     {
@@ -54,8 +55,7 @@ public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedO
 
 public class CustomProjection: IProjection
 {
-
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
         return Task.CompletedTask;
     }

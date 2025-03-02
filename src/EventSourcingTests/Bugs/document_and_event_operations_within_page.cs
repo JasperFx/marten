@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -63,7 +65,7 @@ public record SamplesRolledUpCreated(Guid Id);
 
 public record SamplesRolledUpPublished(Guid Id);
 
-public class SamplesRolledUpProjection: SingleStreamProjection<SamplesRolledUp>
+public class SamplesRolledUpProjection: SingleStreamProjection<SamplesRolledUp, Guid>
 {
     public SamplesRolledUpProjection()
     {
@@ -99,7 +101,7 @@ public class SampleProjection : MultiStreamProjection<SampleView, Guid>
 
 public sealed class SampleGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var publishedEvents = events.OfType<IEvent<SamplesRolledUpPublished>>().ToArray();
 
@@ -122,19 +124,20 @@ public class SampleEventProjection: EventProjection
 {
     public SampleEventProjection()
     {
-        Project<SampleAdded>(((added, operations) =>
-        {
-            operations.Store(new SampleEventView(added.Id));
-        }));
-
-        ProjectAsync<SamplesRolledUpPublished>(((async (published, operations) =>
-        {
-            var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id);
-            foreach (var rolledUpSample in rolledUp.Samples)
-            {
-                operations.Store(new SampleEventView(rolledUpSample));
-            }
-        })));
+        throw new NotImplementedException("need to redo this");
+        // Project<SampleAdded>(((added, operations) =>
+        // {
+        //     operations.Store(new SampleEventView(added.Id));
+        // }));
+        //
+        // ProjectAsync<SamplesRolledUpPublished>(((async (published, operations) =>
+        // {
+        //     var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id);
+        //     foreach (var rolledUpSample in rolledUp.Samples)
+        //     {
+        //         operations.Store(new SampleEventView(rolledUpSample));
+        //     }
+        // })));
     }
 }
 

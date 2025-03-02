@@ -5,12 +5,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Blocks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
@@ -38,7 +41,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     private readonly Cache<Type, EventMapping> _events = new();
 
-    private readonly Lazy<IProjection[]> _inlineProjections;
+    private readonly Lazy<IInlineProjection<IDocumentOperations>[]> _inlineProjections;
 
     private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
@@ -62,7 +65,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
         _byEventName.OnMissing = name => AllEvents().FirstOrDefault(x => x.EventTypeName == name);
 
-        _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
+        _inlineProjections = new Lazy<IInlineProjection<IDocumentOperations>[]>(() => options.Projections.BuildInlineProjections(_store));
 
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 

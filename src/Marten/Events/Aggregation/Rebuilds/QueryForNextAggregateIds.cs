@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;

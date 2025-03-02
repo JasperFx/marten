@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Internals;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
@@ -116,7 +117,7 @@ public class aggregation_projection_validation_rules
         }).ShouldNotBeNull();
     }
 
-    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate>
+    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate, Guid>
     {
     }
 
@@ -153,9 +154,9 @@ public class aggregation_projection_validation_rules
         var projection = new AllGood();
         var options = new StoreOptions();
         options.Schema.For<MyAggregate>().SoftDeleted();
-
-        var errors = projection.ValidateConfiguration(options).ToArray();
-        errors.Single().ShouldBe("AggregateProjection cannot support aggregates that are soft-deleted");
+        throw new NotImplementedException();
+        // var errors = projection.ValidateConfiguration(options).ToArray();
+        // errors.Single().ShouldBe("AggregateProjection cannot support aggregates that are soft-deleted");
     }
 
     [Fact]
@@ -218,14 +219,14 @@ public class aggregation_projection_validation_rules
     }
 }
 
-public class MissingMandatoryType: SingleStreamProjection<MyAggregate>
+public class MissingMandatoryType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event)
     {
     }
 }
 
-public class BadReturnType: SingleStreamProjection<MyAggregate>
+public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
 {
     public string Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -233,28 +234,28 @@ public class BadReturnType: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class MissingEventType1: SingleStreamProjection<MyAggregate>
+public class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(MyAggregate aggregate, IDocumentOperations operations)
     {
     }
 }
 
-public class CanGuessEventType: SingleStreamProjection<MyAggregate>
+public class CanGuessEventType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
     {
     }
 }
 
-public class InvalidArgumentType: SingleStreamProjection<MyAggregate>
+public class InvalidArgumentType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
     }
 }
 
-public class BadMethodName: SingleStreamProjection<MyAggregate>
+public class BadMethodName: SingleStreamProjection<MyAggregate, Guid>
 {
     public void DoStuff(AEvent @event, MyAggregate aggregate)
     {
@@ -266,7 +267,7 @@ public class BadMethodName: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

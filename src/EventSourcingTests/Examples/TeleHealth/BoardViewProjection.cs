@@ -1,11 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using JasperFx.Events;
-using JasperFx.Events.Slicing;
-using Marten;
-using Marten.Events;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;

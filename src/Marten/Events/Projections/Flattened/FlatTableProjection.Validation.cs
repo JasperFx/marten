@@ -12,10 +12,11 @@ public partial class FlatTableProjection
     private const string EmptyProjection =
         "Empty flat table projections. Register event handlers by calling the Project<T>() or Delete<T>() methods";
 
-    internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
-    {
-        foreach (var p in quickValidations()) yield return p;
-    }
+    // TODO -- gotta redo this
+    // internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
+    // {
+    //     foreach (var p in quickValidations()) yield return p;
+    // }
 
     private IEnumerable<string> quickValidations()
     {
@@ -30,7 +31,7 @@ public partial class FlatTableProjection
         }
     }
 
-    internal override void AssembleAndAssertValidity()
+    public override void AssembleAndAssertValidity()
     {
         var messages = quickValidations().ToArray();
         if (messages.Any())

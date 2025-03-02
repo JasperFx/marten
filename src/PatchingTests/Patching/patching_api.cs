@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -1162,10 +1163,9 @@ public class patching_api: OneOffConfigurationsContext
 
         public string Name { get; set; }
 
-        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-            CancellationToken cancellation)
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
         {
-            var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+            var questEvents = events.Select(s => s.Data);
 
             foreach (var @event in questEvents)
             {

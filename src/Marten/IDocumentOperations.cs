@@ -2,20 +2,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 
 namespace Marten;
 
-public interface IProjectionStorage
-{
-
-}
-
 /// <summary>
 ///     Basic storage operations for document types, but cannot initiate any actual writes
 /// </summary>
-public interface IDocumentOperations: IQuerySession, IProjectionStorage
+public interface IDocumentOperations: IQuerySession, IStorageOperations
 {
     new IEventStore Events { get; }
 

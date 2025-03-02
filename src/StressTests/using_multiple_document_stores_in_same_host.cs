@@ -9,7 +9,6 @@ using JasperFx.Core.Reflection;
 using Lamar;
 using Marten;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Services;
 using Marten.Testing;

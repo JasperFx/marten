@@ -7,6 +7,8 @@ using EventSourcingTests.Aggregation;
 using EventSourcingTests.Examples;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -46,31 +48,24 @@ public class Bug_3661_await_custom_projection_slicing : OneOffConfigurationsCont
     }
 }
 
-public class StartAndStopIteratingAwaitablesSlicedProjection: CustomProjection<StartAndStopAggregate, Guid>, IEventSlicer<StartAndStopAggregate, Guid>
+public class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopIteratingAwaitablesSlicedProjection()
     {
-        UseCustomSlicer(this);
+        CustomGrouping(async (session, events, group) =>
+        {
+            foreach (var @event in events)
+            {
+                await session.LoadAsync<Document1>(@event.StreamId);
+                group.AddEvent(@event.StreamId, @event);
+            }
+        });
+
         IncludeType<Start>();
         IncludeType<Increment>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session,
-        EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline) =>
-        new StartAndStopProjection().ApplyChangesAsync(session, slice, cancellation, lifecycle);
+    public StartAndStopAggregate Create(Start _) => new StartAndStopAggregate();
 
-    public ValueTask<IReadOnlyList<EventSlice<StartAndStopAggregate, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams) => throw new NotImplementedException();
-
-    public async ValueTask<IReadOnlyList<TenantSliceGroup<StartAndStopAggregate, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
-    {
-        var aggregateId = events.First().StreamId;
-        var group = new TenantSliceGroup<StartAndStopAggregate, Guid>(Tenant.ForDatabase(querySession.Database));
-        foreach (var @event in events)
-        {
-            await querySession.LoadAsync<Document1>(@event.StreamId);
-            group.AddEvent(@event.StreamId, @event);
-        }
-        return [group];
-    }
+    public void Apply(StartAndStopAggregate aggregate, Increment _) => aggregate.Increment();
 }

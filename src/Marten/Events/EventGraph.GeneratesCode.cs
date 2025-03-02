@@ -12,7 +12,7 @@ using Marten.Internal.Storage;
 namespace Marten.Events;
 
 #nullable enable
-public partial class EventGraph: ICodeFileCollection, ICodeFile
+public partial class EventGraph: ICodeFile
 {
     private readonly Type _storageType;
 
@@ -52,18 +52,4 @@ public partial class EventGraph: ICodeFileCollection, ICodeFile
     string ICodeFile.FileName => "EventStorage";
 
     public GenerationRules Rules => Options.CreateGenerationRules();
-
-    IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
-    {
-        var list = new List<ICodeFile> { this };
-
-        var projections = Options.Projections.All.OfType<ICodeFile>();
-        list.AddRange(projections);
-
-        foreach (var projection in projections.OfType<GeneratedProjection>()) projection.StoreOptions = Options;
-
-        return list;
-    }
-
-    string ICodeFileCollection.ChildNamespace { get; } = "EventStore";
 }

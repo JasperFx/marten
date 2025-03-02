@@ -81,7 +81,7 @@ public class build_aggregate_projection: DaemonContext
 
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName{Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async);
             x.Logger(new TestOutputMartenLogger(_output));
         }, true);
 
@@ -132,7 +132,7 @@ public class build_aggregate_projection: DaemonContext
         StoreOptions(x =>
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
-            x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName(){Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async);
             x.Schema.For<Trip>().MultiTenanted();
         }, true);
 
@@ -182,7 +182,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(){CacheLimitPerTenant = 100}, ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName{Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async), true);
 
         var agent = await StartDaemon();
 

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
@@ -148,7 +149,7 @@ public class QuestEnded
     }
 }
 
-public class AllSync: SingleStreamProjection<MyAggregate>
+public class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
@@ -195,7 +196,7 @@ public class AllSync: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

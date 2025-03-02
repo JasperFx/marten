@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Services.BatchQuerying;
@@ -30,5 +31,5 @@ public class NulloEventAppendStep: IEventAppendingStep
 internal interface IEventAppender
 {
     Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session,
-        IProjection[] inlineProjections, CancellationToken token);
+        IInlineProjection<IDocumentOperations>[] inlineProjections, CancellationToken token);
 }

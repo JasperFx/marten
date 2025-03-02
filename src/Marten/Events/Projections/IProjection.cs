@@ -1,8 +1,5 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.Events;
+using JasperFx.Events.Projections;
 
 namespace Marten.Events.Projections;
 
@@ -13,17 +10,8 @@ namespace Marten.Events.Projections;
 ///     IProjection implementations define the projection type and handle its projection document lifecycle
 ///     Optimized for inline usage
 /// </summary>
-public interface IProjection
+public interface IProjection: IJasperFxProjection<IDocumentOperations>
 {
-    /// <summary>
-    ///     Apply inline projections during asynchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-        CancellationToken cancellation);
 }
 
 #endregion

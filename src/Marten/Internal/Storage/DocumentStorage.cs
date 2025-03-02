@@ -101,12 +101,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         {
             if (valueType.SimpleType == typeof(Guid))
             {
-                var converter = valueType.CreateConverter<TId, Guid>();
+                var converter = valueType.CreateWrapper<TId, Guid>();
                 _setFromGuid = (doc, guid) => _setter(doc, converter(guid));
             }
             else if (valueType.SimpleType == typeof(string))
             {
-                var converter = valueType.CreateConverter<TId, string>();
+                var converter = valueType.CreateWrapper<TId, string>();
                 _setFromString = (doc, s) => _setter(doc, converter(s));
             }
         }

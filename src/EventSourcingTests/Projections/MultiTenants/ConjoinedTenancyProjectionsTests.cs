@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -163,7 +165,7 @@ public enum ResourceState
     Enabled
 }
 
-public class ResourceProjection: SingleStreamProjection<Resource>
+public class ResourceProjection: SingleStreamProjection<Resource, Guid>
 {
     public ResourceProjection() =>
         DeleteEvent<ResourceRemovedEvent>();
@@ -208,51 +210,56 @@ public record CompanyLocationCreated(string Name);
 public record CompanyLocationUpdated(string NewName);
 public record CompanyLocationDeleted();
 
-public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation, Guid>
+public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLocation, Guid>
 {
     public static string ExpectedTenant;
 
     public CompanyLocationCustomProjection()
     {
-        this.AggregateByStream();
-
         this.IncludeType<CompanyLocationCreated>();
         this.IncludeType<CompanyLocationUpdated>();
         this.IncludeType<CompanyLocationDeleted>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CompanyLocation, Guid> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override ValueTask<SnapshotAction<CompanyLocation>> ApplyAsync(IQuerySession session, CompanyLocation snapshot, Guid identity, IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
     {
-        var location = slice.Aggregate;
-
-        // The session and the slice should be for the same tenant
-        session.TenantId.ShouldBe(ExpectedTenant);
-        slice.TenantId.ShouldBe(ExpectedTenant);
-        session.TenantId.ShouldBe(slice.TenantId);
-
-        foreach (var data in slice.AllData())
-        {
-            switch (data)
-            {
-                case CompanyLocationCreated c:
-                    location = new CompanyLocation
-                    {
-                        Id = slice.Id,
-                        Name = c.Name,
-                    };
-                    session.Store(location);
-                    break;
-
-                case CompanyLocationUpdated u:
-                    location.Name = u.NewName;
-                    break;
-
-                case CompanyLocationDeleted d:
-                    session.Delete(location);
-                    break;
-            }
-        }
-
-        return ValueTask.CompletedTask;
+        throw new NotImplementedException("Do with synchronous version of apply changes");
+        return base.ApplyAsync(session, snapshot, identity, events, cancellation);
     }
+
+    // public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CompanyLocation, Guid> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    // {
+    //     var location = slice.Aggregate;
+    //
+    //     // The session and the slice should be for the same tenant
+    //     session.TenantId.ShouldBe(ExpectedTenant);
+    //     slice.TenantId.ShouldBe(ExpectedTenant);
+    //     session.TenantId.ShouldBe(slice.TenantId);
+    //
+    //     foreach (var data in slice.AllData())
+    //     {
+    //         switch (data)
+    //         {
+    //             case CompanyLocationCreated c:
+    //                 location = new CompanyLocation
+    //                 {
+    //                     Id = slice.Id,
+    //                     Name = c.Name,
+    //                 };
+    //                 session.Store(location);
+    //                 break;
+    //
+    //             case CompanyLocationUpdated u:
+    //                 location.Name = u.NewName;
+    //                 break;
+    //
+    //             case CompanyLocationDeleted d:
+    //                 session.Delete(location);
+    //                 break;
+    //         }
+    //     }
+    //
+    //     return ValueTask.CompletedTask;
+    // }
 }

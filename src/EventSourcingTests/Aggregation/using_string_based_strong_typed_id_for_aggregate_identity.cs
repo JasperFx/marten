@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -59,7 +60,7 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.UseSystemTextJsonForSerialization(new JsonSerializerOptions { IncludeFields = true });
-            opts.Projections.Add(new SingleStreamProjection<Payment2>(), lifecycle);
+            opts.Projections.Add(new SingleStreamProjection<Payment2, Payment2Id>(), lifecycle);
         });
 
         var id = Guid.NewGuid().ToString();
@@ -70,7 +71,9 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
 
         // This shouldn't blow up
         var stream = await theSession.Events.FetchForWriting<Payment2>(id);
-        stream.Aggregate.Id.Value.Value.ShouldBe(id);
+
+        throw new NotImplementedException();
+        //stream.Aggregate.Id.Value.ShouldBe(id);
     }
 
     [Fact]

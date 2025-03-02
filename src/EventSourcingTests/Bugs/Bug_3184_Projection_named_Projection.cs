@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -44,7 +45,7 @@ public class AccountListInformation
         // Balance = 0;
     }
 
-    public class Projection : SingleStreamProjection<AccountListInformation>
+    public class Projection : SingleStreamProjection<AccountListInformation, Guid>
     {
         public Projection()
         {

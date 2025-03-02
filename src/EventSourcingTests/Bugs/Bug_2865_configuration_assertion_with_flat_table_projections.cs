@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
