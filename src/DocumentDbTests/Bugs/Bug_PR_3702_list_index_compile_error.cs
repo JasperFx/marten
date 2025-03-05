@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DocumentDbTests.Bugs;
 
-public class Bug_PR_XXXX_list_index_compile_error : BugIntegrationContext
+public class Bug_PR_3702_list_index_compile_error : BugIntegrationContext
 {
     [Fact]
     public async Task can_create_array_duplicate_column_on_a_list_field()
