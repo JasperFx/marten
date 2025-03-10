@@ -70,10 +70,7 @@ namespace Marten.Testing.Harness
 
             if (cleanAll)
             {
-                using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
-                conn.Open();
-                conn.CreateCommand($"drop schema if exists {_schemaName} cascade")
-                    .ExecuteNonQuery();
+                CleanSchema(_schemaName);
             }
 
             _store = new DocumentStore(options);
@@ -81,6 +78,14 @@ namespace Marten.Testing.Harness
             _disposables.Add(_store);
 
             return _store;
+        }
+
+        protected void CleanSchema(string schemaName)
+        {
+            using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            conn.Open();
+            conn.CreateCommand($"drop schema if exists {schemaName} cascade")
+                .ExecuteNonQuery();
         }
 
         protected DocumentStore theStore

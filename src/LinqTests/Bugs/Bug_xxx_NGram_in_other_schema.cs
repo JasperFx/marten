@@ -10,15 +10,18 @@ namespace LinqTests.Bugs;
 
 public class Bug_xxx_NGram_in_other_schema : BugIntegrationContext
 {
+    private string AnotherSchema = "not_public";
+
     [Fact]
     public async Task not_public_schema()
     {
+        CleanSchema(AnotherSchema);
         StoreOptions(opts =>
         {
             var documentMappingExpression = opts.Schema.For<DifferentSchema>();
-            documentMappingExpression.DatabaseSchemaName("not_public");
+            documentMappingExpression.DatabaseSchemaName(AnotherSchema);
             documentMappingExpression.NgramIndex(x => x.Name);
-        });
+        }, true);
 
         var elayne = new Foo { Name = "Elayne", Status = StatusEnum.Active };
         theSession.Store(elayne);
@@ -33,12 +36,12 @@ public class Bug_xxx_NGram_in_other_schema : BugIntegrationContext
     [Fact]
     public async Task change_default_schema_to_not_public()
     {
+        CleanSchema(AnotherSchema);
         StoreOptions(opts =>
         {
-            var optsDatabaseSchemaName = "not_public";
-            opts.DatabaseSchemaName = optsDatabaseSchemaName;
+            opts.DatabaseSchemaName = AnotherSchema;
             var documentMappingExpression = opts.Schema.For<DifferentSchema>();
-            documentMappingExpression.DatabaseSchemaName(optsDatabaseSchemaName);
+            documentMappingExpression.DatabaseSchemaName(AnotherSchema);
             documentMappingExpression.NgramIndex(x => x.Name);
         });
 
