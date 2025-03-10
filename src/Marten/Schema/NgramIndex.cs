@@ -24,7 +24,7 @@ public class NgramIndex: IndexDefinition
 
     public NgramIndex(DocumentMapping mapping, string dataConfig = null, string indexName = null)
     {
-        _databaseSchemaName = mapping.DatabaseSchemaName;
+        _databaseSchemaName = mapping.StoreOptions.DatabaseSchemaName;
         _table = mapping.TableName;
         DataConfig = dataConfig;
         _indexName = indexName;
