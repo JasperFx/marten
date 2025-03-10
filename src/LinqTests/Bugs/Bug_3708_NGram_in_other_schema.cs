@@ -8,7 +8,7 @@ using Weasel.Core;
 
 namespace LinqTests.Bugs;
 
-public class Bug_xxx_NGram_in_other_schema : BugIntegrationContext
+public class Bug_3708_NGram_in_other_schema : BugIntegrationContext
 {
     private string AnotherSchema = "not_public";
 
