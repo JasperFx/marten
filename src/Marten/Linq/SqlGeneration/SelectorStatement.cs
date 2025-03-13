@@ -111,18 +111,23 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         return $"Selector statement: {SelectClause}";
     }
 
+    private void processCompoundRecurcively(CompoundWhereFragment compound, IMartenSession session){
+        // See https://github.com/JasperFx/marten/issues/3025
+        foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
+        {
+            processCompoundRecurcively(deepCompound, session);
+            foreach (var subQueryFilter in deepCompound.Children.OfType<ISubQueryFilter>())
+            {
+                subQueryFilter.PlaceUnnestAbove(session, this);
+            }
+        }
+    }
+    
     protected override void compileAnySubQueries(IMartenSession session)
     {
         if (Wheres[0] is CompoundWhereFragment compound)
         {
-            // See https://github.com/JasperFx/marten/issues/3025
-            foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
-            {
-                foreach (var subQueryFilter in deepCompound.Children.OfType<ISubQueryFilter>())
-                {
-                    subQueryFilter.PlaceUnnestAbove(session, this);
-                }
-            }
+            processCompoundRecurcively(compound, session);
 
             if (compound.Children.OfType<ISubQueryFilter>().Any())
             {
