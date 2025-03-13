@@ -81,7 +81,7 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var waiter = Task.Run(async () =>
-            await theStore.Storage.Database.WaitForNonStaleProjectionDataAsync(typeof(SimpleAggregate), 5.Seconds(),
+            await theStore.Storage.Database.WaitForNonStaleProjectionDataAsync([typeof(SimpleAggregate)], 5.Seconds(),
                 CancellationToken.None));
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();

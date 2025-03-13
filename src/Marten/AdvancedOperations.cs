@@ -166,6 +166,34 @@ public class AdvancedOperations
     }
 
     /// <summary>
+    /// If you are running the async daemon, this will "wait" for any asynchronous projections building
+    /// the supplied projected aggregate types to catch up to the current event store high water mark
+    /// </summary>
+    /// <param name="cancellation"></param>
+    /// <param name="timeout"></param>
+    /// <param name="aggregateTypes"></param>
+    /// <returns></returns>
+    public Task WaitForNonStaleDataAsync(CancellationToken cancellation, TimeSpan timeout, params Type[] aggregateTypes)
+    {
+        return _store.Tenancy.Default.Database.WaitForNonStaleProjectionDataAsync(aggregateTypes, timeout,
+            cancellation);
+    }
+
+    /// <summary>
+    /// If you are running the async daemon, this will "wait" for any asynchronous projections building
+    /// the supplied projected aggregate types to catch up to the current event store high water mark
+    /// </summary>
+    /// <param name="cancellation"></param>
+    /// <param name="timeout"></param>
+    /// <param name="tenantId"></param>
+    /// <param name="aggregateTypes"></param>
+    public async Task WaitForNonStaleDataAsync(CancellationToken cancellation, TimeSpan timeout, string tenantId, params Type[] aggregateTypes)
+    {
+        var tenant = await _store.Tenancy.GetTenantAsync(_store.Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false);
+        await tenant.Database.WaitForNonStaleProjectionDataAsync(aggregateTypes, timeout, cancellation).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     Marten's built in test support for event projections. Only use this in testing as
     ///     it will delete existing event and projected aggregate data
     /// </summary>

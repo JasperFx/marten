@@ -136,11 +136,11 @@ public static class TestingExtensions
         return tracking.Values.All(x => x >= highWaterMark);
     }
 
-    public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, Type aggregationType, TimeSpan timeout, CancellationToken token)
+    public static async Task WaitForNonStaleProjectionDataAsync(this IMartenDatabase database, Type[] aggregationTypes, TimeSpan timeout, CancellationToken token)
     {
         // Number of active projection shards, plus the high water mark
-        var shards = database.As<MartenDatabase>().Options.Projections.AsyncShardsPublishingType(aggregationType);
-        if (!shards.Any()) throw new InvalidOperationException($"Cannot find any registered async projection shards for aggregate type {aggregationType.FullNameInCode()}");
+        var shards = aggregationTypes.SelectMany(x => database.As<MartenDatabase>().Options.Projections.AsyncShardsPublishingType(x)).ToArray()  ;
+        if (!shards.Any()) throw new InvalidOperationException($"Cannot find any registered async projection shards for aggregate type {aggregationTypes.Select(x => x.FullNameInCode()).Join(", ")}");
 
         var tracking = new Dictionary<string, long>();
         foreach (var shard in shards)
