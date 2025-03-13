@@ -110,7 +110,7 @@ internal class CallCreateAggregateFrame: Frame
         writer.WriteLine($"{UsedEventOnCreate.Usage} = false;");
         // creates default or throws if not possible
         writer.WriteLine($"{Aggregate.Usage} = {CreateDefaultMethod.MethodName}({FirstEventExpression});");
-        writer.WriteLine($"if ({Aggregate.Usage} != null) {_projection.Usage}.ApplyMetadata({Aggregate.Usage}, {FirstEventExpression});");
+        writer.WriteLine($"if ({Aggregate.Usage} != null) {Aggregate.Usage} = {_projection.Usage}.ApplyMetadata({Aggregate.Usage}, {FirstEventExpression});");
         writer.FinishBlock();
 
         Next?.GenerateCode(method, writer);

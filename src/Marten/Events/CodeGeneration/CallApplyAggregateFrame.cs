@@ -68,7 +68,7 @@ internal class CallApplyAggregateFrame: Frame
                 $"{_aggregate.Usage} = {ApplyMethodCollection.MethodName}(@event, {_aggregate.Usage}, {_session.Usage});");
         }
 
-        writer.WriteLine($"if ({_aggregate.Usage} != null) {_projection.Usage}.ApplyMetadata({_aggregate.Usage}, @event);");
+        writer.WriteLine($"if ({_aggregate.Usage} != null) {_aggregate.Usage} = {_projection.Usage}.ApplyMetadata({_aggregate.Usage}, @event);");
 
         if (InsideForEach)
         {
