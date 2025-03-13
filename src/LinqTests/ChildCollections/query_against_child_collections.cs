@@ -55,6 +55,27 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task bug_3392_can_with_deeper_boolean_nesting(){
+        //Test case based on https://github.com/JasperFx/marten/issues/3392
+        await buildUpTargetData();
+        bool isTrue = true;
+        bool isFalse = false;
+        var random = new Random();
+        var randomtarget = targets[random.Next(targets.Length)];
+        var intList = new List<int>(){randomtarget.Number};
+        //We are using the NestedObject collection here as we know it always has elements.
+        var somenestedtarget = randomtarget.NestedObject.Targets.First();
+
+        Expression<Func<Target, bool>> predicate = x => (isFalse || (isTrue && x.NestedObject.Targets.Any(z => z.AnotherString.Contains(somenestedtarget.AnotherString)))) && isTrue;
+
+        var query = theSession.Query<Target>().Where(predicate);
+        var command = query.ToCommand();
+        var result = await query.ToListAsync();
+        result.Count.ShouldBeGreaterThan(0);
+        result.ShouldAllBe(predicate);
+    }
+
+    [Fact]
     public async Task bug_3710_can_query_childcollection_inside_nested_or(){
         //Test case based on https://github.com/JasperFx/marten/issues/3710
         await buildUpTargetData();
