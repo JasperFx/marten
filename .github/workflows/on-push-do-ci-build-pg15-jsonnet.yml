@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
       - master
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
