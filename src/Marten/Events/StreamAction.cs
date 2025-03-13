@@ -52,6 +52,11 @@ public class StreamAction
         ActionType = actionType;
     }
 
+    internal StreamAction Clone()
+    {
+        return (StreamAction)MemberwiseClone();
+    }
+
     /// <summary>
     ///     Identity of the stream if using Guid's as the identity
     /// </summary>
@@ -443,5 +448,15 @@ public class StreamAction
     public bool IsStarting()
     {
         return ActionType == StreamActionType.Start || Events.First().Version == 1;
+    }
+
+    internal StreamAction FastForward()
+    {
+        if (!_events.Any()) return this;
+
+        return new StreamAction(Id, Key, StreamActionType.Append)
+        {
+            TenantId = TenantId, Id = Id, ExpectedVersionOnServer = Version
+        };
     }
 }
