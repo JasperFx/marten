@@ -115,6 +115,15 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
     {
         if (Wheres[0] is CompoundWhereFragment compound)
         {
+            // See https://github.com/JasperFx/marten/issues/3025
+            foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
+            {
+                foreach (var subQueryFilter in deepCompound.Children.OfType<ISubQueryFilter>())
+                {
+                    subQueryFilter.PlaceUnnestAbove(session, this);
+                }
+            }
+
             if (compound.Children.OfType<ISubQueryFilter>().Any())
             {
                 var subQueries = compound.Children.OfType<ISubQueryFilter>().ToArray();
@@ -146,15 +155,6 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
                 else
                 {
                     foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this);
-                }
-            }
-
-            // See https://github.com/JasperFx/marten/issues/3025
-            foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
-            {
-                foreach (var subQueryFilter in deepCompound.Children.OfType<ISubQueryFilter>())
-                {
-                    subQueryFilter.PlaceUnnestAbove(session, this);
                 }
             }
         }
