@@ -3,14 +3,16 @@ name: build_net7.0 pg12-plv8 Json.NET
 on:
   push:
     branches:
-      - master
+      - "master"
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
       - 'azure-pipelines.yml'
   pull_request:
     branches:
-      - master
+      - "master"
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
