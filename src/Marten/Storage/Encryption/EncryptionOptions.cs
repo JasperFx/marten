@@ -49,13 +49,8 @@ public class EncryptionOptions
         get => _encryptionKey;
         private set
         {
-            if (value != null)
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                    throw new ArgumentException("Encryption key cannot be empty or whitespace", nameof(value));
-                if (value.Length != 32)
-                    throw new ArgumentException("Encryption key must be exactly 32 characters long", nameof(value));
-            }
+            if (value != null && string.IsNullOrWhiteSpace(value))
+                throw new ArgumentException("Encryption key cannot be empty or whitespace", nameof(value));
             _encryptionKey = value;
         }
     }
@@ -67,6 +62,10 @@ public class EncryptionOptions
     /// <returns>The current options instance for method chaining</returns>
     public EncryptionOptions UseAes(string key)
     {
+        var keyBytes = Convert.FromBase64String(key);
+        if (keyBytes.Length < 16 || keyBytes.Length > 32)
+            throw new ArgumentException("AES encryption key must be between 16 and 32 bytes (128-256 bits) when base64 decoded", nameof(key));
+
         Key = key;
         Type = ConnectionStringEncryption.AES;
         return this;
@@ -79,6 +78,10 @@ public class EncryptionOptions
     /// <returns>The current options instance for method chaining</returns>
     public EncryptionOptions UsePgCrypto(string key)
     {
+        var keyBytes = Convert.FromBase64String(key);
+        if (keyBytes.Length < 16)
+            throw new ArgumentException("PgCrypto encryption key must be at least 16 bytes (128 bits) when base64 decoded", nameof(key));
+
         Key = key;
         Type = ConnectionStringEncryption.PgCrypto;
         return this;
