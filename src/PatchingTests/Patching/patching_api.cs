@@ -832,9 +832,9 @@ public class patching_api: OneOffConfigurationsContext
     
     [Fact]
     public async Task remove_simple_element_by_predicate(){
-        var target = Target.Random();
-        var initialCount = target.NumberArray.Length;
         var random = new Random();
+        var target = new Target(){Id = Guid.NewGuid(), NumberArray = [-1, 1,2,3,4,5,6,7,8,99,42]};
+        var initialCount = target.NumberArray.Length;
         var toRemove = target.NumberArray[random.Next(0, initialCount)];
         
         theSession.Store(target);
