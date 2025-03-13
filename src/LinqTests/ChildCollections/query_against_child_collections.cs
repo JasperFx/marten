@@ -68,9 +68,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         Expression<Func<Target, bool>> predicate = x => (isFalse || (isTrue && x.NestedObject.Targets.Any(z => z.AnotherString.Contains(somenestedtarget.AnotherString)))) && isTrue;
 
-        var query = theSession.Query<Target>().Where(predicate);
-        var command = query.ToCommand();
-        var result = await query.ToListAsync();
+        var result = await theSession.Query<Target>().Where(predicate).ToListAsync();
         result.Count.ShouldBeGreaterThan(0);
         result.ShouldAllBe(predicate);
     }
