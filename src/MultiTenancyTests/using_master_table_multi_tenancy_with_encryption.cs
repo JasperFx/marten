@@ -1,8 +1,8 @@
-using System.Linq;
+using System;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
-using Marten.Storage;
+using Marten.Storage.Encryption;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,7 +65,7 @@ public class using_master_table_multi_tenancy_with_aes_encryption: IAsyncLifetim
                     so.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
                     {
                         x.DataSource = sp.GetRequiredService<NpgsqlDataSource>();
-                        x.ConnectionStringEncryptionOpts.UseAes("12345678901234567890123456789012");
+                        x.ConnectionStringEncryptionOpts.UseAes(KeyGenerator.GenerateKey());
                         x.SchemaName = "tenants";
                         x.ApplicationName = "Sample";
                         x.RegisterDatabase("tenant1", tenant1ConnectionString);
@@ -83,6 +83,23 @@ public class using_master_table_multi_tenancy_with_aes_encryption: IAsyncLifetim
     {
         await _host.StopAsync();
         theStore.Dispose();
+    }
+
+    [Theory]
+    [InlineData(8)]   // Too short
+    [InlineData(15)]  // Just under minimum
+    [InlineData(33)]  // Just over maximum
+    [InlineData(64)]  // Way too long
+    public void aes_encryption_rejects_invalid_key_lengths(int keyBytes)
+    {
+        // Arrange
+        var key = KeyGenerator.GenerateKey(keyBytes, true);
+
+        // Act & Assert
+        Should.Throw<ArgumentException>(() =>
+        {
+            var opts = new EncryptionOptions().UseAes(key);
+        }).Message.ShouldContain("AES encryption key must be between 16 and 32 bytes (128-256 bits)");
     }
 
     [Fact]
@@ -140,7 +157,7 @@ public class using_master_table_multi_tenancy_with_pgcrypto_encryption: IAsyncLi
                         {
                             x.AutoCreate = AutoCreate.CreateOrUpdate;
                             x.ConnectionString = ConnectionSource.ConnectionString;
-                            x.ConnectionStringEncryptionOpts.UsePgCrypto("12345678901234567890123456789012");
+                            x.ConnectionStringEncryptionOpts.UsePgCrypto(KeyGenerator.GenerateKey());
                             x.SchemaName = "tenants";
                             x.ApplicationName = "Sample";
                             x.RegisterDatabase("tenant1", tenant1ConnectionString);
@@ -160,6 +177,21 @@ public class using_master_table_multi_tenancy_with_pgcrypto_encryption: IAsyncLi
     {
         await _host.StopAsync();
         theStore.Dispose();
+    }
+
+    [Theory]
+    [InlineData(8)]   // Too short
+    [InlineData(15)]  // Just under minimum
+    public void pgcrypto_encryption_rejects_invalid_key_lengths(int keyBytes)
+    {
+        // Arrange
+        var key = KeyGenerator.GenerateKey(keyBytes, true);
+
+        // Act & Assert
+        Should.Throw<ArgumentException>(() =>
+        {
+            var opts = new EncryptionOptions().UsePgCrypto(key);
+        }).Message.ShouldContain("at least 16 bytes");
     }
 
     [Fact]
