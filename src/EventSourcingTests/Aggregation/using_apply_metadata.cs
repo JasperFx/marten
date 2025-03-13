@@ -162,6 +162,11 @@ public class using_apply_metadata : OneOffConfigurationsContext
         // RIP Glenn Frey, take it easy!
         item.LastModifiedBy.ShouldBe("Glenn Frey");
         item.Version.ShouldBe(4);
+
+        var itemAggregation = await theSession.Events.AggregateStreamAsync<ItemRecord>(id);
+
+        itemAggregation.LastModifiedBy.ShouldBe("Glenn Frey");
+        itemAggregation.Version.ShouldBe(4);
     }
 }
 
