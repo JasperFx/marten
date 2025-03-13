@@ -307,7 +307,7 @@ var posts = session.Query<BlogPost>()
 
 ## Partial text search in a multi-word text (NGram search)
 
-Marten provides the ability to search partial text or words in a string containing multiple words using NGram search. This is quite similar in functionality to [NGrams in Elastic Search](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html). As an example, we can now accurately match `rich com text` within `Communicating Across Contexts (Enriched)`. NGram search uses English by default but applies [Posgres unaccent function](https://www.postgresql.org/docs/current/unaccent.html) before creating ngrams and on your search input for a better multilingual experience. NGram search also encompasses and handles unigrams, bigrams and trigrams. This functionality is added in v5.
+Marten provides the ability to search partial text or words in a string containing multiple words using NGram search. This is quite similar in functionality to [NGrams in Elastic Search](https://www.elastic.co/guide/en/elasticsearch/reference/current/analysis-ngram-tokenizer.html). As an example, we can now accurately match `rich com text` within `Communicating Across Contexts (Enriched)`. NGram search uses English by default but applies [Postgres unaccent function](https://www.postgresql.org/docs/current/unaccent.html) both before creating ngrams and on search input for a better multilingual experience. NGram search also encompasses and handles unigrams, bigrams and trigrams. This functionality is added in v5.
 
 <!-- snippet: sample_ngram_search -->
 <a id='snippet-sample_ngram_search'></a>
