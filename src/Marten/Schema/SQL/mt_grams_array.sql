@@ -14,7 +14,7 @@ BEGIN
                 FOREACH
 word IN ARRAY string_to_array(words, ' ')
                 LOOP
-                     clean_word = regexp_replace(word, '[^a-zA-Z0-9]+', '','g');
+                     clean_word = regexp_replace(unaccent(word), '[^a-zA-Z0-9]+', '','g');
 FOR i IN 1 .. length(clean_word)
                      LOOP
                          result := result || quote_literal(substr(lower(clean_word), i, 1));
