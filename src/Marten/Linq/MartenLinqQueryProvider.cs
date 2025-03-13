@@ -78,7 +78,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
         if (Waiter != null)
         {
-            await _session.Database.WaitForNonStaleProjectionDataAsync(SourceType, Waiter.Timeout, cancellationToken).ConfigureAwait(false);
+            await _session.Database.WaitForNonStaleProjectionDataAsync([SourceType], Waiter.Timeout, cancellationToken).ConfigureAwait(false);
         }
     }
 
