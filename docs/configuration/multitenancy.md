@@ -212,7 +212,7 @@ Marten provides three encryption providers:
 
 1. No Encryption (default and corresponds to existing behavior)
    * Uses `NoopConnectionStringEncryptor` for pass-through with no encryption
-   * Maintains backward compatibility with existing unencrypted/plain text connection strings. This is default hence explicit configuration needed.
+   * Maintains backward compatibility with existing unencrypted/plain text connection strings.
 
 2. AES Encryption (in-memory)
    * Uses `AesConnectionStringEncryptor` for secure in-memory encryption
