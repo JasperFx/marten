@@ -58,8 +58,8 @@ class Build : NukeBuild
         .Executes(() => File.WriteAllText("src/Marten.Testing/connection.txt", ConnectionString));
 
     Target NpmInstall => _ => _
-        .Executes(() => NpmTasks.NpmInstall());
-   
+        .Executes(() => NpmTasks.NpmInstall(s => s.SetProcessArgumentConfigurator(a => a.Add("--loglevel=error"))));
+
     Target Mocha => _ => _
         .ProceedAfterFailure()
         .DependsOn(NpmInstall)
