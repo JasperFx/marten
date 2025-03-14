@@ -50,7 +50,7 @@ jobs:
       - name: Build & Deploy docs preview
         run: |
           ./build.sh publish-docs-preview
-        if: ${{ github.ref != 'refs/heads/master' && github.event.inputs.publish_docs == 'true' }}
+        if: ${{ github.ref != 'refs/heads/7.0' && github.event.inputs.publish_docs == 'true' }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
@@ -58,7 +58,7 @@ jobs:
       - name: Build & Deploy docs
         run: |
           ./build.sh publish-docs
-        if: ${{ github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
+        if: ${{ github.ref == 'refs/heads/7.0' && (github.event_name == 'push' || github.event.inputs.publish_docs == 'true') }}
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
