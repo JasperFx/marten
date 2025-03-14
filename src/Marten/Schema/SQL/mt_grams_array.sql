@@ -1,4 +1,5 @@
-CREATE OR REPLACE FUNCTION {databaseSchema}.mt_grams_array(words text)
+CREATE 
+OR REPLACE FUNCTION {databaseSchema}.mt_grams_array(words text)
         RETURNS text[]
         LANGUAGE plpgsql
         IMMUTABLE STRICT

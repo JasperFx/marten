@@ -6,12 +6,17 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DocumentDbTests.Indexes;
 
 public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsContext
 {
+    private ITestOutputHelper _output;
 
+    public NgramSearchTests(ITestOutputHelper output){
+        _output = output;
+    }
     public sealed class Address
     {
         public Address(string line1, string line2)
@@ -122,7 +127,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
             // This creates
             _.Schema.For<User>().NgramIndex(x => x.Address.Line1);
         });
@@ -156,16 +160,22 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
     [Fact]
     public async Task test_ngram_when_using_non_ascii_characters(){
+
          var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+            _.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All;
             _.DatabaseSchemaName = "ngram_test";
             _.Schema.For<User>().NgramIndex(x => x.UserName);
+            _.Logger(new TestOutputMartenLogger(_output));
         });
 
+        
         await using var session = store.LightweightSession();
 
+     /*   await session.Database.ApplyAllConfiguredChangesToDatabaseAsync();
 
+        await session.Database.ApplyAllConfiguredChangesToDatabaseAsync();*/
         //The ngram uðmu should only exist in bjork, if special characters ignored it will return Umut
         var umut = new User(1, "Umut Aral");
         var bjork = new User(2, "Björk Guðmundsdóttir");
