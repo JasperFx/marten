@@ -1,3 +1,4 @@
+CREATE EXTENSION IF NOT EXISTS unaccent;
 CREATE
 OR REPLACE FUNCTION {databaseSchema}.mt_grams_array(words text)
         RETURNS text[]
