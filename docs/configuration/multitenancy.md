@@ -186,7 +186,7 @@ using var host = await Host.CreateDefaultBuilder()
             .ApplyAllDatabaseChangesOnStartup();;
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L14-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L15-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With this model, Marten is setting up a table named `mt_tenant_databases` to store with just two columns:
@@ -203,6 +203,176 @@ using var session = store.LightweightSession("tenant1");
 This new Marten tenancy strategy will first look for a database with the “tenant1” identifier its own memory, 
 and if it’s not found, will try to reach into the database table to “find” the connection string for this 
 newly discovered tenant. If a record is found, the new tenancy strategy caches the information, and proceeds just like normal.
+
+## Connection String Encryption <Badge type="tip" text="7.39.1" />
+
+The master table tenancy model supports encryption of connection strings stored in the tenants database table `mt_tenant_databases`. The `EncryptionOptions` class encapsulates all encryption settings accessed through the `ConnectionStringEncryptionOpts` property.
+
+Marten provides three encryption providers:
+
+1. No Encryption (default and corresponds to existing behavior)
+   * Uses `NoopConnectionStringEncryptor` for pass-through with no encryption
+   * Maintains backward compatibility with existing unencrypted/plain text connection strings. This is default hence explicit configuration needed.
+
+2. AES Encryption (in-memory)
+   * Uses `AesConnectionStringEncryptor` for secure in-memory encryption
+   * Encrypts/decrypts connection strings in memory before storage/after retrieval
+   * Configured using `ConnectionStringEncryptionOpts.UseAes("your-encryption-key")`
+
+3. PostgreSQL pgcrypto Extension (database-level)
+   * Uses `PgCryptoConnectionStringEncryptor` for database-level encryption
+   * Leverages PostgreSQL's native pgcrypto extension
+   * Marten provides schema feature to create the pgcrypto extension and also verify if the extension is installed during startup to catch configuration issues early.
+   * Configured using `ConnectionStringEncryptionOpts.UsePgCrypto("your-encryption-key")`
+
+Here's how to configure encryption AES encryption:
+
+<!-- snippet: sample_master_table_multi_tenancy_aes_encryption -->
+<a id='snippet-sample_master_table_multi_tenancy_aes_encryption'></a>
+```cs
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var masterConnection = configuration.GetConnectionString("master");
+                var options = new StoreOptions();
+
+                // This is opting into a multi-tenancy model where a database table in the
+                // master database holds information about all the possible tenants and their database connection
+                // strings
+                options.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                {
+                    x.ConnectionString = masterConnection;
+
+                    // You can optionally configure the schema name for where the mt_tenants
+                    // table is stored
+                    x.SchemaName = "tenants";
+
+                    // If set, this will override the database schema rules for
+                    // only the master tenant table from the parent StoreOptions
+                    x.AutoCreate = AutoCreate.CreateOrUpdate;
+
+                    // Use the key generator to generate the secure 24 bytes length encryption key
+                    // or create your own encryption key which is a minimum of 16 bytes or max 32 bytes
+                    var encryptionKey = KeyGenerator.GenerateKey();
+
+                    // Set the connection string encryption to use AES symmetric encryption
+                    x.ConnectionStringEncryptionOpts.UseAes(encryptionKey);
+
+                    // Register your database for use and the connection string will be encrypted and stored
+                    x.RegisterDatabase("tenant1", configuration.GetConnectionString("tenant1"));
+                    x.RegisterDatabase("tenant2", configuration.GetConnectionString("tenant2"));
+                    x.RegisterDatabase("tenant3", configuration.GetConnectionString("tenant3"));
+
+                    // Tags the application name to all the used connection strings as a diagnostic
+                    // Default is the name of the entry assembly for the application or "Marten" if
+                    // .NET cannot determine the entry assembly for some reason
+                    x.ApplicationName = "MyApplication";
+                });
+
+                // Other Marten configuration
+
+                return options;
+            })
+            // All detected changes will be applied to all
+            // the configured tenant databases on startup
+            .ApplyAllDatabaseChangesOnStartup();;
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L68-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy_aes_encryption' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Here's how to configure Pgcrypto encryption:
+
+<!-- snippet: sample_master_table_multi_tenancy_pgcrypto_encryption -->
+<a id='snippet-sample_master_table_multi_tenancy_pgcrypto_encryption'></a>
+```cs
+using var host = await Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten(sp =>
+            {
+                var configuration = sp.GetRequiredService<IConfiguration>();
+                var masterConnection = configuration.GetConnectionString("master");
+                var options = new StoreOptions();
+
+                // This is opting into a multi-tenancy model where a database table in the
+                // master database holds information about all the possible tenants and their database connection
+                // strings
+                options.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                {
+                    x.ConnectionString = masterConnection;
+
+                    // You can optionally configure the schema name for where the mt_tenants
+                    // table is stored
+                    x.SchemaName = "tenants";
+
+                    // If set, this will override the database schema rules for
+                    // only the master tenant table from the parent StoreOptions
+                    x.AutoCreate = AutoCreate.CreateOrUpdate;
+
+                    // Use the key generator to generate the secure 24 bytes length encryption key
+                    // or create your own encryption key which is a minimum of 16 bytes
+                    var encryptionKey = KeyGenerator.GenerateKey();
+
+                    // Set the connection string encryption to use Pgcrypto symmetric encryption
+                    x.ConnectionStringEncryptionOpts.UsePgCrypto(encryptionKey);
+
+                    // Register your database for use and the connection string will be encrypted and stored
+                    x.RegisterDatabase("tenant1", configuration.GetConnectionString("tenant1"));
+                    x.RegisterDatabase("tenant2", configuration.GetConnectionString("tenant2"));
+                    x.RegisterDatabase("tenant3", configuration.GetConnectionString("tenant3"));
+
+                    // Tags the application name to all the used connection strings as a diagnostic
+                    // Default is the name of the entry assembly for the application or "Marten" if
+                    // .NET cannot determine the entry assembly for some reason
+                    x.ApplicationName = "MyApplication";
+                });
+
+                // Other Marten configuration
+
+                return options;
+            })
+            // All detected changes will be applied to all
+            // the configured tenant databases on startup
+            .ApplyAllDatabaseChangesOnStartup();;
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MultiTenancyExamples.cs#L126-L179' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_master_table_multi_tenancy_pgcrypto_encryption' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## Secure Encryption Keys
+
+Marten provides a `KeyGenerator` utility class to generate secure encryption keys compatible with both AES and PgCrypto providers available under `Marten.Storage.Encryption` namespace.
+
+```csharp
+// Generate a secure random key (24 bytes by default, produces a 32-character base64 string)
+var encryptionKey = KeyGenerator.GenerateKey();
+
+// Or specify a custom byte length (minimum 16 bytes for security)
+var customKey = KeyGenerator.GenerateKey(byteLength: 32);
+```
+
+The `KeyGenerator` uses a cryptographically secure random number generator to ensure key security. The generated key is returned as a base64-encoded string, ready to use with either encryption provider.
+
+::: tip
+The default key length of 24 bytes provides a good balance of security and usability. The generated key is:
+
+* Cryptographically secure using `RandomNumberGenerator`
+* Base64-encoded for easy storage and transport
+* Compatible with both AES and PgCrypto providers
+:::
+
+::: warning
+For security reasons:
+
+* The minimum key length is 16 bytes (128 bits)
+* Use `KeyGenerator` to create keys rather than crafting them manually
+* Store the encryption key securely (e.g. in environment variables or a key vault)
+* Never commit encryption keys to source control
+:::
 
 Now, let me try to anticipate a couple questions you might have here:
 
@@ -259,7 +429,7 @@ You can place this code somewhere in the tenant initialization code. For instanc
 
 * tenant setup procedure,
 * dedicated API endpoint
-* [custom session factory](/configuration/hostbuilder#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above. 
+* [custom session factory](/configuration/hostbuilder#customizing-session-creation-globally), although that's not recommended for the reasons mentioned above.
 
 ## Write your own tenancy strategy!
 
