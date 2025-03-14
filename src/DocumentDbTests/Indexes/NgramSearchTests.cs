@@ -6,12 +6,12 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Indexes;
 
 public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsContext
 {
+
     public sealed class Address
     {
         public Address(string line1, string line2)
@@ -44,8 +44,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
-            // This creates
             _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
@@ -83,7 +81,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
             _.DatabaseSchemaName = "ngram_test";
 
             // This creates an ngram index for efficient sub string based matching
@@ -118,7 +115,7 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
     [Fact]
     public async Task test_ngram_on_nested_prop_search_returns_data()
-    {
+{
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
@@ -155,7 +152,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
     [Fact]
     public async Task test_ngram_when_using_non_ascii_characters(){
-
          var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
@@ -163,7 +159,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
-        
         await using var session = store.LightweightSession();
         //The ngram uðmu should only exist in bjork, if special characters ignored it will return Umut
         var umut = new User(1, "Umut Aral");
