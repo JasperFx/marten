@@ -204,7 +204,7 @@ This new Marten tenancy strategy will first look for a database with the “tena
 and if it’s not found, will try to reach into the database table to “find” the connection string for this 
 newly discovered tenant. If a record is found, the new tenancy strategy caches the information, and proceeds just like normal.
 
-## Connection String Encryption <Badge type="tip" text="7.39.1" />
+## Connection String Encryption <Badge type="tip" text="7.39.0" />
 
 The master table tenancy model supports encryption of connection strings stored in the tenants database table `mt_tenant_databases`. The `EncryptionOptions` class encapsulates all encryption settings accessed through the `ConnectionStringEncryptionOpts` property.
 
