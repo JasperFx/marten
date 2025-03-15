@@ -1,4 +1,4 @@
-CREATE 
+CREATE
 OR REPLACE FUNCTION {databaseSchema}.mt_grams_array(words text)
         RETURNS text[]
         LANGUAGE plpgsql
