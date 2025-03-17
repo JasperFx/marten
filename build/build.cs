@@ -41,11 +41,6 @@ class Build : NukeBuild
         .DependsOn(TestNodaTime)
         .DependsOn(TestAspnetcore);
 
-    Target TestExtensionsIncludingPlv8 => _ => _
-        .DependsOn(TestNodaTime)
-        .DependsOn(TestAspnetcore)
-        .DependsOn(TestPlv8);
-
     Target Init => _ => _
         .Executes(() =>
         { 
@@ -216,19 +211,6 @@ class Build : NukeBuild
                 .SetFramework(Framework));
         });
 
-    Target TestPlv8 => _ => _
-        .ProceedAfterFailure()
-        .DependsOn(Compile)
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.PLv8.Testing")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
-
     Target TestCodeGen => _ => _
         .ProceedAfterFailure()
         .Executes(() =>
@@ -342,7 +324,6 @@ class Build : NukeBuild
             {
                 "./src/Marten",
                 "./src/Marten.NodaTime",
-                "./src/Marten.PLv8",
                 "./src/Marten.AspNetCore"
             };
 
@@ -366,7 +347,7 @@ class Build : NukeBuild
                     conn.Open();
 
                     var cmd = conn.CreateCommand();
-                    cmd.CommandText = "create extension if not exists plv8";
+                    cmd.CommandText = "SELECT 1";
                     cmd.ExecuteNonQuery();
 
                     Log.Information("Postgresql is up and ready!");
@@ -422,7 +403,6 @@ class Build : NukeBuild
             "src/EventSourcingTests",
             "src/DocumentDbTests",
             "src/CoreTests",
-            "src/Marten.PLv8.Testing",
             "src/Marten.AspNetCore.Testing",
             "src/ValueTypeTests",
             "src/LinqTests"
