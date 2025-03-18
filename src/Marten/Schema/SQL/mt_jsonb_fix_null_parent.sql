@@ -13,7 +13,7 @@ BEGIN
     WHILE i <=(dst_path_array_length - 1)
     LOOP
         dst_path_segment = dst_path_segment || ARRAY[dst_path[i]];
-        IF retval #> dst_path_segment = 'null'::jsonb THEN
+        IF retval #> dst_path_segment IS NULL OR retval #> dst_path_segment = 'null'::jsonb THEN
             retval = jsonb_set(retval, dst_path_segment, '{}'::jsonb, TRUE);
         END IF;
         i = i + 1;
