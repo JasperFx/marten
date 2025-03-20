@@ -58,11 +58,11 @@ internal class PgCryptoConnectionStringEncryptor : IConnectionStringEncryptor
     /// </summary>
     public (string sql, object[] parameters) GetSelectSql(string schemaName, string tableName, string tenantId)
     {
-        var whereClause = tenantId == "*" ? "" : " where tenant_id = ?";
+        var whereClause = tenantId == string.Empty ? "" : " where (tenant_id = ?) ";
         var sql = $"select tenant_id, pgp_sym_decrypt(connection_string::bytea, ?::text) as connection_string " +
                  $"from {schemaName}.{tableName}{whereClause}";
 
-        return (sql, [_encryptionKey, tenantId]);
+        return (sql, tenantId == string.Empty ? [_encryptionKey] : [_encryptionKey, tenantId]);
     }
 
     /// <summary>

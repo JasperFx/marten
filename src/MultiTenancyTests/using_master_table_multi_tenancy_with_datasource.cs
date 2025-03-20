@@ -116,11 +116,12 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
 
         await conn.DropSchemaAsync("tenants");
 
-
         tenant1ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant1");
         tenant2ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant2");
         tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
         tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        await conn.CloseAsync();
 
         _host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -152,8 +153,6 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
 
 
         theStore = _host.Services.GetRequiredService<IDocumentStore>();
-
-        await _host.ClearAllTenantDatabaseRecordsAsync();
     }
 
     public async Task DisposeAsync()

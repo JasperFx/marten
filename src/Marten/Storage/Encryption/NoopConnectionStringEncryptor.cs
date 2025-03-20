@@ -39,14 +39,9 @@ internal class NoopConnectionStringEncryptor : IConnectionStringEncryptor
     /// </summary>
     public (string sql, object[] parameters) GetSelectSql(string schemaName, string tableName, string tenantId)
     {
-        if (tenantId == "*")
-        {
-            return ($"select tenant_id, connection_string from {schemaName}.{tableName}", Array.Empty<NpgsqlParameter>());
-        }
-
-        var sql = $"select connection_string from {schemaName}.{tableName} where tenant_id = ?";
-
-        return (sql, [tenantId]);
+        var whereClause = tenantId == string.Empty ? "" : " where (tenant_id = ?) ";
+        var sql = $"select tenant_id, connection_string from {schemaName}.{tableName}{whereClause}";
+        return (sql, tenantId == string.Empty ? [] : [tenantId]);
     }
 
 }

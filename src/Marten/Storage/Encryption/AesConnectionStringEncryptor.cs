@@ -88,9 +88,9 @@ internal class AesConnectionStringEncryptor : IConnectionStringEncryptor
 
     public (string sql, object[] parameters) GetSelectSql(string schemaName, string tableName, string tenantId)
     {
-        return ($"select tenant_id, connection_string from {schemaName}.{tableName}" +
-            (tenantId == "*" ? "" : " where tenant_id = ?"),
-            tenantId == "*" ? Array.Empty<NpgsqlParameter>() : [tenantId]);
+        var whereClause = tenantId == string.Empty ? "" : " where (tenant_id = ?) ";
+        return ($"select tenant_id, connection_string from {schemaName}.{tableName}{whereClause}",
+            tenantId == string.Empty ? [] : [tenantId]);
     }
 
     // No prerequisites needed for AES encryption since it's done in memory

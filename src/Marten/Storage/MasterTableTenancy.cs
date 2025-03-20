@@ -174,7 +174,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             }
 
             var command = conn.CreateCommand();
-            var (sql, parameters) = _encryptionProvider.GetSelectSql(_schemaName, TenantTable.TableName, "*");
+            var (sql, parameters) = _encryptionProvider.GetSelectSql(_schemaName, TenantTable.TableName, string.Empty);
             command.CommandText = ConvertToPgPositionalParams(sql);
             foreach (var param in parameters)
             {
