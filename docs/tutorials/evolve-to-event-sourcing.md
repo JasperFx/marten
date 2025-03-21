@@ -87,7 +87,7 @@ session.Events.Append(shipmentId, deliveredEvent);
 
 // 4. Commit the new events
 await session.SaveChangesAsync();
-Console.WriteLine($\"Appended PickedUp and Delivered events to stream {shipmentId}.\");
+Console.WriteLine($"Appended PickedUp and Delivered events to stream {shipmentId}.");
 ```
 
 Let’s break down what’s happening:
