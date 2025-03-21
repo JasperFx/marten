@@ -76,7 +76,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Tutorial',
           collapsed: true,
           items: [
-            { text: 'What is Marten?', link: '/tutorials/introduction' },
+            { text: 'Building a Freight & Delivery System', link: '/tutorials/introduction' },
             { text: 'Getting Started', link: '/tutorials/getting-started' },
             { text: 'Modeling documents', link: '/tutorials/modeling-documents' },
             { text: 'Evolve to event sourcing', link: '/tutorials/evolve-to-event-sourcing' },
