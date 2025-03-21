@@ -6,7 +6,7 @@ Let’s discuss a few projection types and best practices, continuing with our f
 
 ## Inline vs. Async Projections
 
-Marten supports three projection lifecycles: **Inline**, **Async**, and **Live** ([Marten as Event Store | Marten](https://martendb.io/events/#:~:text=%2A%20Inline%20Projections%20,without%20persisting%20the%20created%20view)). We have touched on these, but here’s a quick comparison:
+Marten supports three projection lifecycles: **Inline**, **Async**, and **Live** ([Marten as Event Store | Marten](/events/)). We have touched on these, but here’s a quick comparison:
 
 - **Inline projections** run as part of the same transaction that records the events. This yields **strong consistency** (the projection is updated immediately, within the ACID transaction). The trade-off is that it can add latency to the write operation. In our example, updating the `FreightShipment` document inline ensures any query immediately after the event commit will see the new state.
 - **Async projections** run in the background, typically via Marten’s Projection Daemon or with the help of Wolverine (more on that soon). When events are committed, they are queued for processing and a separate process (or thread) will update the projections shortly after. This is an **eventual consistency** model, but it can vastly improve write throughput, since the event insert transaction doesn’t do extra work. For heavy workloads, this is a common choice – you accept that there may be a tiny delay before the read models reflect the latest events.
