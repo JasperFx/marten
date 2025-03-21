@@ -44,8 +44,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
-            // This creates
             _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
@@ -83,7 +81,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
             _.DatabaseSchemaName = "ngram_test";
 
             // This creates an ngram index for efficient sub string based matching
@@ -118,11 +115,10 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
     [Fact]
     public async Task test_ngram_on_nested_prop_search_returns_data()
-    {
+{
         var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
             // This creates
             _.Schema.For<User>().NgramIndex(x => x.Address.Line1);
         });
@@ -164,8 +160,6 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         });
 
         await using var session = store.LightweightSession();
-
-
         //The ngram uðmu should only exist in bjork, if special characters ignored it will return Umut
         var umut = new User(1, "Umut Aral");
         var bjork = new User(2, "Björk Guðmundsdóttir");

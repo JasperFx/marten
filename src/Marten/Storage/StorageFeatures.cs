@@ -42,6 +42,7 @@ public class StorageFeatures: IFeatureSchema
         _options = options;
 
         SystemFunctions = new SystemFunctions(options);
+        RequiredExtensions = new RequiredExtensions(options);
     }
 
     /// <summary>
@@ -50,6 +51,7 @@ public class StorageFeatures: IFeatureSchema
     public List<ISchemaObject> ExtendedSchemaObjects { get; } = new();
 
     internal SystemFunctions SystemFunctions { get; }
+    internal RequiredExtensions RequiredExtensions{get;}
 
     internal IEnumerable<DocumentMapping> AllDocumentMappings =>
         _documentMappings.Value.Enumerate().Select(x => x.Value);
@@ -262,6 +264,7 @@ public class StorageFeatures: IFeatureSchema
 
     internal void PostProcessConfiguration()
     {
+        Add(RequiredExtensions);
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamptz", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_time", "text");
@@ -278,7 +281,7 @@ public class StorageFeatures: IFeatureSchema
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_move", "jsonb,text[],text");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_path_to_array", "text,char(1)");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_remove", "jsonb,text[],jsonb");
-        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_patch", "jsonb,jsonb");
+        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_patch", "jsonb,jsonb");        
 
         Add(SystemFunctions);
 
@@ -303,6 +306,7 @@ public class StorageFeatures: IFeatureSchema
 
     internal IEnumerable<IFeatureSchema> AllActiveFeatures(IMartenDatabase database)
     {
+        yield return RequiredExtensions;
         yield return SystemFunctions;
 
         if (_options.Events.As<EventGraph>().IsActive(_options))
