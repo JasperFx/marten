@@ -6,7 +6,7 @@ Before we conclude, let’s touch on some advanced topics and best practices tha
 
 When multiple processes or users might act on the same aggregate (shipment) concurrently, we need to handle the possibility of conflicting updates. For instance, if two different services attempted to append events to the same shipment stream at roughly the same time (say one records a pickup while another records a cancellation), one of those should fail or be retried to maintain consistency. Marten uses **optimistic concurrency control** on event streams by default – each event stream has a version number that Marten checks when appending new events.
 
-A convenient API Marten provides is `FetchForWriting<T>()`. This method loads the current aggregate state (using either live aggregation or the latest projected snapshot) and prepares the session for a concurrency check on that stream ([Marten 7 makes “Write Model” Projections Super – The Shade Tree Developer](https://jeremydmiller.com/2024/03/05/marten-7-makes-write-model-projections-super/#:~:text=This%20API%20completely%20hides%20away,that%20new%20events%20are%20captured)). Let’s see how it might be used in a command handling scenario:
+A convenient API Marten provides is `FetchForWriting<T>()`. This method loads the current aggregate state (using either live aggregation or the latest projected snapshot) and prepares the session for a concurrency check on that stream ([Marten 7 makes “Write Model” Projections Super – The Shade Tree Developer](https://jeremydmiller.com/2024/03/05/marten-7-makes-write-model-projections-super)). Let’s see how it might be used in a command handling scenario:
 
 ```csharp
 // Example: handling a "PickUpShipment" command
