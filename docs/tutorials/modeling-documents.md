@@ -115,8 +115,8 @@ This improves query performance by creating indexes on those columns outside the
 
 ```mermaid
 flowchart TB
-    A[Shipment Created] -->|Store| B[mt_doc_shipment (JSONB)]
-    A2[Driver Registered] -->|Store| C[mt_doc_driver (JSONB)]
+    A[Shipment Created] -->|Store| B["mt_doc_shipment (JSONB)"]
+    A2[Driver Registered] -->|Store| C["mt_doc_driver (JSONB)"]
     B -->|Query: Destination = Chicago| D[LINQ Result]
 ```
 
