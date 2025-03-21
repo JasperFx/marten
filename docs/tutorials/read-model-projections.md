@@ -1,6 +1,6 @@
 # Part 4: Projections – Building Read Models from Events
 
-In event sourcing, events are the source of truth, but they’re not always convenient for querying or presenting to users. **Projections** are derived views or read models built from those events ([Marten as Event Store | Marten](https://martendb.io/events/#:~:text=Marten%27s%20Event%20Store%20functionality%20is,its%20rich%20support%20for%20projections)). We already saw one kind of projection: an aggregate projection that builds the current `FreightShipment` state. Marten’s projection system is quite powerful – it allows you to project events into virtually any shape of data: aggregated documents, view tables, or multiple related documents.
+In event sourcing, events are the source of truth, but they’re not always convenient for querying or presenting to users. **Projections** are derived views or read models built from those events ([Marten as Event Store | Marten](/events/)). We already saw one kind of projection: an aggregate projection that builds the current `FreightShipment` state. Marten’s projection system is quite powerful – it allows you to project events into virtually any shape of data: aggregated documents, view tables, or multiple related documents.
 
 Let’s discuss a few projection types and best practices, continuing with our freight shipment domain as context.
 
