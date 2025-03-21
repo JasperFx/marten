@@ -27,7 +27,7 @@ public async Task Handle(PickUpShipment cmd)
 
     // Everything looks good, append the event
     var pickedUp = new ShipmentPickedUp(DateTime.UtcNow);
-    stream.AppendOne(pickedUp);
+    session.Events.Append(stream.StreamKey, pickedUp);
     await session.SaveChangesAsync(); // will throw MartenConcurrencyException if conflict
 }
 ```
