@@ -54,7 +54,7 @@ var shipment = new FreightShipment
 };
 
 // 2. Store it in Marten
-await session.StoreAsync(shipment);
+session.Store(shipment);
 await session.SaveChangesAsync();   // saves the changes to the database
 
 // 3. Later... load the shipment by Id
@@ -65,7 +65,7 @@ Console.WriteLine($"Shipment status: {loaded.Status}");  // Outputs: Scheduled
 A few things to note in this code:
 
 - We use a **session** (`LightweightSession`) to interact with the database. This pattern is similar to an EF Core DbContext or a NHibernate session. The session is a unit of work; we save changes at the end (which wraps everything in a DB transaction).
-- Calling `StoreAsync(shipment)` tells Marten to stage that document for saving. `SaveChangesAsync()` actually commits it to PostgreSQL.
+- Calling `Store(shipment)` tells Marten to stage that document for saving. `SaveChangesAsync()` actually commits it to PostgreSQL.
 - After saving, we can retrieve the document by Id using `LoadAsync<T>`. Marten deserializes the JSON back into our `FreightShipment` object.
 
 Behind the scenes, Marten stored the shipment as a JSON document in a Postgres table. Thanks to Marten’s use of PostgreSQL, this was an ACID transaction – if we had multiple documents or operations in the session, they’d all commit or rollback together. At this point, our shipment record might look like:
@@ -88,7 +88,7 @@ As the shipment goes through its lifecycle, we would update this document. For e
 ```csharp
 loaded.Status = ShipmentStatus.InTransit;
 loaded.PickedUpAt = DateTime.UtcNow;
-await session.StoreAsync(loaded);
+session.Store(loaded);
 await session.SaveChangesAsync();
 ```
 
