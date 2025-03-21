@@ -73,6 +73,22 @@ const config: UserConfig<DefaultTheme.Config> = {
     sidebar: {
       '/': [
         {
+          text: 'Tutorial',
+          collapsed: true,
+          items: [
+            { text: 'What is Marten?', link: '/tutorials/introduction' },
+            { text: 'Getting Started', link: '/tutorials/getting-started' },
+            { text: 'Modeling documents', link: '/tutorials/modeling-documents' },
+            { text: 'Evolve to event sourcing', link: '/tutorials/evolve-to-event-sourcing' },
+            { text: 'Event-Sourced Aggregate', link: '/tutorials/event-sourced-aggregate' },
+            { text: 'Read model projections', link: '/tutorials/read-model-projections' },
+            { text: 'Cross-Aggregate Views', link: '/tutorials/cross-aggregate-views' },
+            { text: 'Distributed systems with Wolverine', link: '/tutorials/wolverine-integration' },
+            { text: 'Advanced Considerations', link: '/tutorials/advanced-considerations' },
+            { text: 'Conclusion', link: '/tutorials/conclusion' }
+          ]
+        },
+        {
           text: 'Introduction',
           collapsed: true,
           items: [
