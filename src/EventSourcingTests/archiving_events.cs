@@ -551,6 +551,59 @@ public class archiving_events: OneOffConfigurationsContext
 
         events.All(x => x.IsArchived).ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_string_identity()
+    {
+        const string streamKey = "test-stream";
+        const string tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_guid_identity()
+    {
+        var streamKey = Guid.NewGuid();
+        var tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    internal record TestEvent(int Id);
 }
 
 public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
