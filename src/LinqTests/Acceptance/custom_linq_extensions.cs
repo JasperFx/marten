@@ -36,7 +36,7 @@ public class custom_linq_extensions
             opts.DatabaseSchemaName = "isblue";
         });
 
-        await store.Advanced.Clean.CompletelyRemoveAllAsync();
+        await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var targets = new List<ColorTarget>();
         for (var i = 0; i < 25; i++)

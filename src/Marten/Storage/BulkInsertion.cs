@@ -284,6 +284,8 @@ internal class BulkInsertion: IDisposable
     private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize,
         NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
     {
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
+
         var provider = _tenant.Database.Providers.StorageFor<T>();
         var loader = provider.BulkLoader;
 
