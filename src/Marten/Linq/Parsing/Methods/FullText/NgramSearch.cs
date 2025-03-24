@@ -19,9 +19,10 @@ public class NgramSearch: IMethodCallParser
     {
         var locator = memberCollection.MemberFor(expression.Arguments[0]).RawLocator;
         var values = expression.Arguments.Last().Value();
+        var useUnaccent = options.Advanced.UseNGramSearchWithUnaccent.ToString().ToUpperInvariant();
 
         return new WhereFragment(
-            $"{options.DatabaseSchemaName}.mt_grams_vector({locator}) @@ {options.DatabaseSchemaName}.mt_grams_query(?)",
+            $"{options.DatabaseSchemaName}.mt_grams_vector({locator},{useUnaccent}) @@ {options.DatabaseSchemaName}.mt_grams_query(?,{useUnaccent})",
             values);
     }
 }

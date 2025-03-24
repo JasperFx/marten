@@ -47,6 +47,8 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         await using var session = store.LightweightSession();
 
         string term = null;
@@ -87,6 +89,8 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().NgramIndex(x => x.UserName);
         });
 
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         await using var session = store.LightweightSession();
 
         string term = null;
@@ -123,6 +127,8 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
             _.Schema.For<User>().NgramIndex(x => x.Address.Line1);
         });
 
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
         await using var session = store.LightweightSession();
 
         string term = null;
@@ -152,12 +158,16 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
 
     [Fact]
     public async Task test_ngram_when_using_non_ascii_characters(){
+        #region sample_ngram_search_unaccent
          var store = DocumentStore.For(_ =>
         {
             _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
             _.DatabaseSchemaName = "ngram_test";
             _.Schema.For<User>().NgramIndex(x => x.UserName);
+            _.Advanced.UseNGramSearchWithUnaccent = true;
         });
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         await using var session = store.LightweightSession();
         //The ngram uðmu should only exist in bjork, if special characters ignored it will return Umut
@@ -172,13 +182,15 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         session.Store(bjork);
         session.Store(kierkegaard);
         session.Store(rea);
-        
+
         await session.SaveChangesAsync();
 
         var result = await session
             .Query<User>()
             .Where(x => x.UserName.NgramSearch("uðmu") || x.UserName.NgramSearch("øre"))
             .ToListAsync();
+
+        #endregion
 
         result.Count.ShouldBe(2);
         result.ShouldContain(x => x.UserName == kierkegaard.UserName);

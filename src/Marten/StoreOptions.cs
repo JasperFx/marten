@@ -1076,6 +1076,11 @@ public interface IReadOnlyAdvancedOptions
     /// </summary>
     bool DefaultTenantUsageEnabled { get; }
 
+    /// <summary>
+    ///     Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; }
+
 }
 
 public sealed class MultiHostSettings
@@ -1159,4 +1164,9 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; set; }
 }
