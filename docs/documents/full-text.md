@@ -323,12 +323,13 @@ var result = await session
 var store = DocumentStore.For(_ =>
 {
     _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
-
     _.DatabaseSchemaName = "ngram_test";
 
     // This creates an ngram index for efficient sub string based matching
     _.Schema.For<User>().NgramIndex(x => x.UserName);
 });
+
+await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
 await using var session = store.LightweightSession();
 
@@ -350,7 +351,7 @@ var result = await session
     .Where(x => x.UserName.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L82-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L82-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-1' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_ngram_search-2'></a>
 ```cs
 var result = await session
@@ -358,5 +359,46 @@ var result = await session
     .Where(x => x.Address.Line1.NgramSearch(term))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L145-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L147-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+## NGram search on non-English text <Badge type="tip" text="7.39.4" />
+
+If you want to use NGram search on non-English text, Marten provides a mechanism via an opt-in `storeOptions.Advanced.UseNGramSearchWithUnaccent = true` which uses [Postgres unaccent extension](https://www.postgresql.org/docs/current/unaccent.html) for applying before creating ngrams and on search input for a better multilingual experience. Check the sample code below:
+
+<!-- snippet: sample_ngram_search_unaccent -->
+<a id='snippet-sample_ngram_search_unaccent'></a>
+```cs
+var store = DocumentStore.For(_ =>
+{
+   _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+   _.DatabaseSchemaName = "ngram_test";
+   _.Schema.For<User>().NgramIndex(x => x.UserName);
+   _.Advanced.UseNGramSearchWithUnaccent = true;
+});
+
+await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+await using var session = store.LightweightSession();
+//The ngram uðmu should only exist in bjork, if special characters ignored it will return Umut
+var umut = new User(1, "Umut Aral");
+var bjork = new User(2, "Björk Guðmundsdóttir");
+
+//The ngram øre should only exist in bjork, if special characters ignored it will return Chris Rea
+var kierkegaard = new User(3, "Søren Kierkegaard");
+var rea = new User(4, "Chris Rea");
+
+session.Store(umut);
+session.Store(bjork);
+session.Store(kierkegaard);
+session.Store(rea);
+
+await session.SaveChangesAsync();
+
+var result = await session
+   .Query<User>()
+   .Where(x => x.UserName.NgramSearch("uðmu") || x.UserName.NgramSearch("øre"))
+   .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L161-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search_unaccent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
