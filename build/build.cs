@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -335,6 +336,90 @@ class Build : NukeBuild
                     .SetConfiguration(Configuration.Release));
             }
         });
+
+    private Dictionary<string, string[]> ReferencedProjects = new()
+    {
+        { "jasperfx", ["JasperFx", "JasperFx.Events", "EventTests", "JasperFx.RuntimeCompiler"] },
+        { "weasel", ["Weasel.Core", "Weasel.Postgresql"] },
+    };
+
+    string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
+        
+    /*
+TODO in Attach
+1. Remove JasperFx package from Weasel.Core
+2. Add JasperFx project reference to Weasel.Core
+3. Add project reference to Weasel.POstgresql to Marten
+4. Add project reference to JasperFx, JasperFx.Events to Marten
+
+TODO in Detach
+       1. Remove JasperFx package from Weasel.Core
+       2. Add JasperFx project reference to Weasel.Core
+       3. Remove project reference from Marten to JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler
+ */
+
+    Target Attach => _ => _.Executes(() =>
+    {
+        foreach (var pair in ReferencedProjects)
+        {
+            foreach (var projectName in pair.Value)
+            {
+                addProject(pair.Key, projectName);
+            }
+        }
+
+        var marten = Solution.GetProject("Marten").Path;
+        foreach (var nuget in Nugets)
+        {
+            DotNet($"remove {marten} package {nuget}");
+        }
+    });
+
+    Target Detach => _ => _.Executes(() =>
+    {
+        foreach (var pair in ReferencedProjects)
+        {
+            foreach (var projectName in pair.Value)
+            {
+                removeProject(pair.Key, projectName);
+            }
+        }
+        
+        var marten = Solution.GetProject("Marten").Path;
+        foreach (var nuget in Nugets)
+        {
+            DotNet($"add {marten} package {nuget} --prerelease");
+        }
+    });
+
+    private void addProject(string repository, string projectName)
+    {
+        var path =  Path.GetFullPath($"../{repository}/src/{projectName}/{projectName}.csproj");;
+        var slnPath = Solution.Path;
+        DotNet($"sln {slnPath} add {path} --solution-folder Attached");
+        
+        if (Nugets.Contains(projectName))
+        {
+            var marten = Solution.GetProject("Marten").Path;
+            DotNet($"add {marten} reference {path}");
+        }
+    }
+    
+    private void removeProject(string repository, string projectName)
+    {
+        var path =  Path.GetFullPath($"../{repository}/src/{projectName}/{projectName}.csproj");
+
+        if (Nugets.Contains(projectName))
+        {
+            var marten = Solution.GetProject("Marten").Path;
+            DotNet($"remove {marten} reference {path}");
+        }
+        
+        var slnPath = Solution.Path;
+        DotNet($"sln {slnPath} remove {path}");
+        
+
+    }
 
     private void WaitForDatabaseToBeReady()
     {
