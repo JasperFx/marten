@@ -72,8 +72,7 @@ public class using_string_based_strong_typed_id_for_aggregate_identity: OneOffCo
         // This shouldn't blow up
         var stream = await theSession.Events.FetchForWriting<Payment2>(id);
 
-        throw new NotImplementedException();
-        //stream.Aggregate.Id.Value.ShouldBe(id);
+        stream.Aggregate.Id.Value.Value.ShouldBe(id);
     }
 
     [Fact]

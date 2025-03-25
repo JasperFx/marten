@@ -32,20 +32,18 @@ public class CustomProjectionTests
 {
     [Theory]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
-    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, false)]
-    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Live, false)]
-    [InlineData(true, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, true)]
+    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Live, true)]
+    [InlineData(true, EventAppendMode.Rich, ProjectionLifecycle.Inline, true)]
     [InlineData(false, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
     [InlineData(false, EventAppendMode.Quick, ProjectionLifecycle.Inline, false)]
     public void configure_mapping(bool isSingleGrouper, EventAppendMode appendMode, ProjectionLifecycle lifecycle, bool useVersionFromStream)
     {
-        var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection() : new MyCustomProjection();
+        var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection(){Lifecycle = lifecycle} : new MyCustomProjection(){Lifecycle = lifecycle};
         var mapping = DocumentMapping.For<MyAggregate>();
         mapping.StoreOptions.Events.AppendMode = appendMode;
-        //projection.Lifecycle = lifecycle;
 
-        //projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
-        throw new NotImplementedException("See if this should be rebuilt");
+        projection.As<IMartenAggregateProjection>().ConfigureAggregateMapping(mapping, mapping.StoreOptions);
         mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
     }
 
@@ -413,7 +411,7 @@ public class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregat
 
 public record struct MyCustomGuidId(Guid Value);
 
-public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
+public class MyCustomProjection: CustomProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {
@@ -657,57 +655,66 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
         IncludeType<Increment>();
     }
 
-    public override ValueTask<SnapshotAction<StartAndStopAggregate>> ApplyAsync(IQuerySession session, StartAndStopAggregate snapshot, Guid identity, IReadOnlyList<IEvent> events,
-        CancellationToken cancellation)
+    public override SnapshotAction<StartAndStopAggregate> DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
+        IReadOnlyList<IEvent> events)
     {
-        throw new NotImplementedException("Redo all of this");
-        // var aggregate = snapshot ?? new StartAndStopAggregate();
-        //
-        // foreach (var data in events)
-        // {
-        //     switch (data)
-        //     {
-        //         case Start:
-        //             aggregate = new StartAndStopAggregate
-        //             {
-        //                 // Have to assign the identity ourselves
-        //                 Id = identity
-        //             };
-        //             break;
-        //         case Increment when aggregate is { Deleted: false }:
-        //             // Use explicit code to only apply this event
-        //             // if the aggregate already exists
-        //             aggregate.Increment();
-        //             break;
-        //         case End when aggregate is { Deleted: false }:
-        //             // This will be a "soft delete" because the aggregate type
-        //             // implements the IDeleted interface
-        //             session.Delete(aggregate);
-        //             aggregate.Deleted = true; // Got to help Marten out a little bit here
-        //             break;
-        //         case Restart when aggregate == null || aggregate.Deleted:
-        //             // Got to "undo" the soft delete status
-        //             session
-        //                 .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);
-        //             break;
-        //     }
-        // }
-        //
-        // // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
-        // // AggregateStreamAsync(), you must make this call
-        // // FetchLatest() will work w/o any other changes though
-        // slice.Aggregate = aggregate;
-        //
-        // // Apply any updates!
-        // if (aggregate != null)
-        // {
-        //     session.Store(aggregate);
-        // }
-        //
-        // // We didn't do anything that required an asynchronous call
-        // return new ValueTask();
-    }
+        var actionType = ActionType.Store;
 
+        if (snapshot == null && events.HasNoEventsOfType<Start>())
+            return new Nothing<StartAndStopAggregate>(snapshot);
+
+
+        var eventData = events.ToQueueOfEventData();
+        while (eventData.Any())
+        {
+            var data = eventData.Dequeue();
+            switch (data)
+            {
+                case Start:
+                    snapshot = new StartAndStopAggregate
+                    {
+                        // Have to assign the identity ourselves
+                        Id = identity
+                    };
+                    break;
+
+                case Increment when snapshot is { Deleted: false }:
+
+                    if (actionType == ActionType.StoreThenSoftDelete) continue;
+
+                    // Use explicit code to only apply this event
+                    // if the snapshot already exists
+                    snapshot.Increment();
+                    break;
+
+                case End when snapshot is { Deleted: false }:
+                    // This will be a "soft delete" because the snapshot type
+                    // implements the IDeleted interface
+                    snapshot.Deleted = true;
+                    actionType = ActionType.StoreThenSoftDelete;
+                    break;
+
+                case Restart when snapshot == null || snapshot.Deleted:
+                    // Got to "undo" the soft delete status
+                    actionType = ActionType.UnDeleteAndStore;
+                    snapshot.Deleted = false;
+                    break;
+            }
+        }
+
+        switch (actionType)
+        {
+            case ActionType.Delete:
+                return new Delete<StartAndStopAggregate>(snapshot);
+            case ActionType.UnDeleteAndStore:
+                return new UnDeleteAndStore<StartAndStopAggregate>(snapshot);
+            case ActionType.StoreThenSoftDelete:
+                return new StoreTheSoftDelete<StartAndStopAggregate>(snapshot);
+            default:
+                return new Store<StartAndStopAggregate>(snapshot);
+
+        }
+    }
 
 }
 

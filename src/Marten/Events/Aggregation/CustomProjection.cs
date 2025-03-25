@@ -27,6 +27,11 @@ namespace Marten.Events.Aggregation;
 /// <typeparam name="TId"></typeparam>
 public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
 {
+    protected CustomProjection()
+    {
+        ProjectionName = GetType().Name;
+    }
+
     /// <summary>
     ///     Apply any document changes based on the incoming slice of events to the underlying aggregate document
     /// </summary>

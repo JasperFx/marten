@@ -124,20 +124,19 @@ public class SampleEventProjection: EventProjection
 {
     public SampleEventProjection()
     {
-        throw new NotImplementedException("need to redo this");
-        // Project<SampleAdded>(((added, operations) =>
-        // {
-        //     operations.Store(new SampleEventView(added.Id));
-        // }));
-        //
-        // ProjectAsync<SamplesRolledUpPublished>(((async (published, operations) =>
-        // {
-        //     var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id);
-        //     foreach (var rolledUpSample in rolledUp.Samples)
-        //     {
-        //         operations.Store(new SampleEventView(rolledUpSample));
-        //     }
-        // })));
+        Project<SampleAdded>(((added, operations) =>
+        {
+            operations.Store(new SampleEventView(added.Id));
+        }));
+
+        ProjectAsync<SamplesRolledUpPublished>(((async (published, operations) =>
+        {
+            var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id);
+            foreach (var rolledUpSample in rolledUp.Samples)
+            {
+                operations.Store(new SampleEventView(rolledUpSample));
+            }
+        })));
     }
 }
 

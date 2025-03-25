@@ -10,13 +10,18 @@ using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Events.Archiving;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
 using Marten.Internal.OpenTelemetry;
+using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using Weasel.Postgresql.SqlGeneration;
+using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 
 namespace Marten;
 
@@ -44,7 +49,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         return Options.Projections.AllShards();
     }
 
-    Meter IEventStorage<IDocumentOperations, IQuerySession>.Meter => throw new NotImplementedException();
+    Meter IEventStorage<IDocumentOperations, IQuerySession>.Meter => Options.OpenTelemetry.Meter;
 
     ActivitySource IEventStorage<IDocumentOperations, IQuerySession>.ActivitySource => MartenTracing.ActivitySource;
 
@@ -137,17 +142,55 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> IEventStorage<IDocumentOperations, IQuerySession>.
-        StartProjectionBatchAsync(EventRange range, IEventDatabase database, ShardExecutionMode mode,
-            CancellationToken token)
+    public async ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> StartProjectionBatchAsync(EventRange range, IEventDatabase database, ShardExecutionMode mode,
+        CancellationToken token)
     {
-        throw new NotImplementedException();
+        await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+        var session = (DocumentSessionBase)IdentitySession(SessionOptions.ForDatabase((IMartenDatabase)database));
+        var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
+        {
+            ShouldApplyListeners = false
+        };
+
+        var projectionBatch = new ProjectionBatch(session, batch, mode);
+        if (range.SequenceFloor == 0)
+        {
+            batch.Queue.Post(new InsertProjectionProgress(session.Options.EventGraph, range));
+        }
+        else
+        {
+            batch.Queue.Post(new UpdateProjectionProgress(session.Options.EventGraph, range));
+        }
+
+        return projectionBatch;
     }
 
     IEventLoader IEventStorage<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
-        ILogger loggerFactory, EventFilterable filtering)
+        ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions)
     {
-        throw new NotImplementedException();
+        var filters = buildEventLoaderFilters(filtering).ToArray();
+        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters);
+        return new ResilientEventLoader(Options.ResiliencePipeline, inner);
+    }
+
+    private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
+    {
+        if (filterable.IncludedEventTypes.Any() && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
+        {
+            // We want to explicitly add in the archived event
+            var allTypes = filterable.IncludedEventTypes.Concat([typeof(Archived)]).ToArray();
+            yield return new EventTypeFilter(Options.EventGraph, allTypes);
+        }
+
+        if (filterable.StreamType != null)
+        {
+            yield return new AggregateTypeFilter(filterable.StreamType, Options.EventGraph);
+        }
+
+        if (!filterable.IncludeArchivedEvents)
+        {
+            yield return IsNotArchivedFilter.Instance;
+        }
     }
 
     IDocumentOperations IEventStorage<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database)

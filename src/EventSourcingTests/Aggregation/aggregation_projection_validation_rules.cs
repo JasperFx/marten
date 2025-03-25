@@ -154,10 +154,11 @@ public class aggregation_projection_validation_rules
         var projection = new AllGood();
         var options = new StoreOptions();
         options.Schema.For<MyAggregate>().SoftDeleted();
-        throw new NotImplementedException();
-        // var errors = projection.ValidateConfiguration(options).ToArray();
-        // errors.Single().ShouldBe("AggregateProjection cannot support aggregates that are soft-deleted");
+        var errors = projection.ValidateConfiguration(options).ToArray();
+        errors.Single().ShouldBe("SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection");
     }
+
+    // TODO -- move these tests to JasperFx's EventTests
 
     [Fact]
     public void find_bad_method_names_that_are_not_ignored()

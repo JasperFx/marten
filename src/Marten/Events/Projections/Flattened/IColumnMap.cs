@@ -12,6 +12,4 @@ internal interface IColumnMap
 
     string UpdateFieldSql(Table table);
     string ToInsertExpression(Table table);
-
-    string ToValueAccessorCode(Variable eventVariable);
 }

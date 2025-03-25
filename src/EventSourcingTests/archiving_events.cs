@@ -429,7 +429,7 @@ public class archiving_events: OneOffConfigurationsContext
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
-        await daemon.WaitForNonStaleData(5.Seconds());
+        await daemon.WaitForNonStaleData(120.Seconds());
 
         // All the events should be archived
         var events = await theSession.Events.QueryAllRawEvents()

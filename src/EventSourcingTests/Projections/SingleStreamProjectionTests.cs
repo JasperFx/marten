@@ -1,5 +1,6 @@
 using System;
 using EventSourcingTests.Aggregation;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
@@ -26,23 +27,10 @@ public class SingleStreamProjectionTests
 
         mapping.StoreOptions.EventGraph.AppendMode = EventAppendMode.Quick;
         projection.Lifecycle = ProjectionLifecycle.Inline;
-        throw new NotImplementedException();
-        // projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
-        //
-        // mapping.UseVersionFromMatchingStream.ShouldBeTrue();
-    }
 
-    [Fact]
-    public void do_not_set_mapping_to_UseVersionFromMatchingStream_when_rich_append()
-    {
-        var projection = new SingleStreamProjection<User, Guid>();
-        var mapping = DocumentMapping.For<User>();
+        projection.As<IMartenAggregateProjection>().ConfigureAggregateMapping(mapping, mapping.StoreOptions);
 
-        mapping.StoreOptions.EventGraph.AppendMode = EventAppendMode.Rich;
-        throw new NotImplementedException();
-        // projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
-        //
-        // mapping.UseVersionFromMatchingStream.ShouldBeFalse();
+        mapping.UseVersionFromMatchingStream.ShouldBeTrue();
     }
 
     [Fact]

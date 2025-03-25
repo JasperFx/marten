@@ -435,7 +435,7 @@ public partial class DocumentStore: IDocumentStore
 
         var detector = new HighWaterDetector((MartenDatabase)database, Events, logger);
 
-        return new ProjectionDaemon(this, (MartenDatabase)database, logger, detector, Options.Projections);
+        return new ProjectionDaemon(this, (MartenDatabase)database, logger, detector);
     }
 
     /// <summary>

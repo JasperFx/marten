@@ -5,19 +5,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
-using Marten.Events;
+using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Marten.Testing;
+namespace EventSourcingTests.Projections;
 
-public class hierarchy_projection
+public class hierarchy_projection : OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -29,25 +29,21 @@ public class hierarchy_projection
     [Fact]
     public async Task try_to_use_hierarchical_with_live()
     {
-        using var store = DocumentStore.For(opts =>
+        StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
             opts.Projections.Add(new ThingProjection(), ProjectionLifecycle.Live);
-            opts.Schema.For<Thing>().AddSubClass<BigThing>().AddSubClass<SmallThing>();
-            opts.DatabaseSchemaName = "things";
-            opts.Logger(new TestOutputMartenLogger(_output));
+            opts.Schema.For<HThing>().AddSubClass<BigThing>().AddSubClass<SmallThing>();
         });
 
-        using var session = store.LightweightSession();
-        var id1 = session.Events.StartStream<Thing>(new ThingStarted("small"), new ThingFed()).Id;
-        var id2 = session.Events.StartStream<Thing>(new ThingStarted("big"), new ThingFed()).Id;
-        await session.SaveChangesAsync();
+        var id1 = theSession.Events.StartStream<Thing>(new ThingStarted("small"), new ThingFed()).Id;
+        var id2 = theSession.Events.StartStream<Thing>(new ThingStarted("big"), new ThingFed()).Id;
+        await theSession.SaveChangesAsync();
 
-        var thing1 = await session.Events.AggregateStreamAsync<Thing>(id1);
+        var thing1 = await theSession.Events.AggregateStreamAsync<HThing>(id1);
         thing1.ShouldBeOfType<SmallThing>();
         thing1.IsFed.ShouldBeTrue();
 
-        var thing2 = await session.Events.AggregateStreamAsync<Thing>(id2);
+        var thing2 = await theSession.Events.AggregateStreamAsync<HThing>(id2);
         thing2.ShouldBeOfType<BigThing>();
         thing2.IsFed.ShouldBeFalse(); // needs three meals
     }
@@ -55,33 +51,29 @@ public class hierarchy_projection
     [Fact]
     public async Task try_to_use_hierarchical_with_inline()
     {
-        using var store = DocumentStore.For(opts =>
+        StoreOptions(opts =>
         {
-            opts.Connection(ConnectionSource.ConnectionString);
             opts.Projections.Add(new ThingProjection(), ProjectionLifecycle.Inline);
-            opts.Schema.For<Thing>().AddSubClass<BigThing>().AddSubClass<SmallThing>();
-            opts.DatabaseSchemaName = "things";
-            opts.Logger(new TestOutputMartenLogger(_output));
+            opts.Schema.For<HThing>().AddSubClass<BigThing>().AddSubClass<SmallThing>();
         });
 
-        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Thing));
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(HThing));
 
-        using var session = store.LightweightSession();
-        var id1 = session.Events.StartStream<Thing>(new ThingStarted("small"), new ThingFed()).Id;
-        var id2 = session.Events.StartStream<Thing>(new ThingStarted("big"), new ThingFed()).Id;
-        await session.SaveChangesAsync();
+        var id1 = theSession.Events.StartStream<HThing>(new ThingStarted("small"), new ThingFed()).Id;
+        var id2 = theSession.Events.StartStream<HThing>(new ThingStarted("big"), new ThingFed()).Id;
+        await theSession.SaveChangesAsync();
 
-        var thing1 = await session.LoadAsync<Thing>(id1);
+        var thing1 = await theSession.LoadAsync<HThing>(id1);
         thing1.ShouldBeOfType<SmallThing>();
         thing1.IsFed.ShouldBeTrue();
 
-        var thing2 = await session.LoadAsync<Thing>(id2);
+        var thing2 = await theSession.LoadAsync<HThing>(id2);
         thing2.ShouldBeOfType<BigThing>();
         thing2.IsFed.ShouldBeFalse(); // needs three meals
     }
 }
 
-public abstract class Thing
+public abstract class HThing
 {
     public Guid Id { get; set; }
     public string Name { get; set; }
@@ -92,7 +84,7 @@ public abstract class Thing
     public bool IsFed { get; set; }
 }
 
-public class SmallThing: Thing
+public class SmallThing: HThing
 {
     public override void Feed()
     {
@@ -100,7 +92,7 @@ public class SmallThing: Thing
     }
 }
 
-public class BigThing: Thing
+public class BigThing: HThing
 {
     public int Meals { get; set; }
 
@@ -118,9 +110,10 @@ public record ThingStarted(string Size);
 
 public record ThingFed;
 
-public class ThingProjection: SingleStreamProjection<Thing, Guid>
+public class ThingProjection: SingleStreamProjection<HThing, Guid>
 {
-    public override ValueTask<SnapshotAction<Thing>> ApplyAsync(IQuerySession session, Thing snapshot, Guid identity, IReadOnlyList<IEvent> events,
+    public override ValueTask<SnapshotAction<HThing>> DetermineActionAsync(IQuerySession session, HThing snapshot, Guid identity,
+        IIdentitySetter<HThing, Guid> identitySetter, IReadOnlyList<IEvent> events,
         CancellationToken cancellation)
     {
         if (snapshot == null)
@@ -137,6 +130,6 @@ public class ThingProjection: SingleStreamProjection<Thing, Guid>
             snapshot?.Feed();
         }
 
-        return new ValueTask<SnapshotAction<Thing>>(new Store<Thing>(snapshot));
+        return new ValueTask<SnapshotAction<HThing>>(new Store<HThing>(snapshot));
     }
 }

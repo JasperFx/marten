@@ -26,6 +26,8 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
         ColumnName = tableColumn ?? _members.Select(x => x.Name.ToSnakeCase()).Join("_");
     }
 
+    public MemberInfo[] Members => _members;
+
     public string ColumnName { get; }
 
     public Table.ColumnExpression ResolveColumn(Table table)
@@ -75,19 +77,4 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
         }
     }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        var accessor = new StringBuilder();
-        for(var i = 0; i < _members.Length; i++){
-            accessor.Append(_members[i].Name);
-            if(i < _members.Length - 1){
-                if(_members[i] is PropertyInfo propertyinfo && propertyinfo.PropertyType.IsValueType && !propertyinfo.PropertyType.IsPrimitive){
-                    accessor.Append('.');
-                }else{
-                    accessor.Append("?.");
-                }
-            }
-        }
-        return $"{eventVariable.Usage}.Data.{accessor}";
-    }
 }

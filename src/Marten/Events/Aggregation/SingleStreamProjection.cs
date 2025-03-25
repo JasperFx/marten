@@ -21,7 +21,7 @@ namespace Marten.Events.Aggregation;
 ///     Base class for aggregating events by a stream using Marten-generated pattern matching
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection
+public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>
 {
     // public override SubscriptionDescriptor Describe()
     // {
@@ -35,8 +35,7 @@ public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBa
 
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
-        mapping.UseVersionFromMatchingStream = Lifecycle == ProjectionLifecycle.Inline &&
-                                               storeOptions.Events.AppendMode == EventAppendMode.Quick;
+        mapping.UseVersionFromMatchingStream = true;
     }
 
     internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType, out ValueTypeInfo? valueType)
@@ -51,21 +50,38 @@ public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBa
         return valueType.SimpleType == expectedType;
     }
 
-    // Redo validation
-    // protected sealed override IEnumerable<string> validateDocumentIdentity(StoreOptions options,
-    //     DocumentMapping mapping)
-    // {
-    //     var matches = IsIdTypeValidForStream(mapping.IdType, options, out var expectedType, out var valueTypeInfo);
-    //     if (!matches)
-    //     {
-    //         yield return
-    //             $"Id type mismatch. The stream identity type is {expectedType.NameInCode()} (or a strong typed identifier type that is convertible to {expectedType.NameInCode()}), but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-    //     }
-    //
-    //     if (valueTypeInfo != null && !mapping.IdMember.GetRawMemberType().IsNullable())
-    //     {
-    //         yield return
-    //             $"At this point, Marten requires that identity members for strong typed identifiers be Nullable<T>. Change {mapping.DocumentType.FullNameInCode()}.{mapping.IdMember.Name} to a Nullable for Marten compliance";
-    //     }
-    // }
+    public IEnumerable<string> ValidateConfiguration(StoreOptions options)
+    {
+        var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();
+
+        foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
+
+        if (options.Events.TenancyStyle != mapping.TenancyStyle
+            && (options.Events.TenancyStyle == TenancyStyle.Single
+                || options.Events is
+                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
+                && Lifecycle != ProjectionLifecycle.Live)
+           )
+        {
+            yield return
+                $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle})";
+        }
+
+        if (mapping.DeleteStyle == DeleteStyle.SoftDelete && IsUsingConventionalMethods)
+        {
+            yield return
+                "SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
+        }
+    }
+
+    protected IEnumerable<string> validateDocumentIdentity(StoreOptions options,
+        DocumentMapping mapping)
+    {
+        var matches = IsIdTypeValidForStream(mapping.IdType, options, out var expectedType, out var valueTypeInfo);
+        if (!matches)
+        {
+            yield return
+                $"Id type mismatch. The stream identity type is {expectedType.NameInCode()} (or a strong typed identifier type that is convertible to {expectedType.NameInCode()}), but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
+    }
 }

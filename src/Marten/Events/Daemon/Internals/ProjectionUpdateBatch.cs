@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -339,6 +340,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private IMessageBatch? _batch;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
     {
         if (_batch != null) return _batch;
@@ -359,4 +361,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             _semaphore.Release();
         }
     }
+
+
 }

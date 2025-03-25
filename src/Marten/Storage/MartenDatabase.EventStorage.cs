@@ -163,7 +163,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
     Task IEventDatabase.WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
     {
-        throw new NotImplementedException();
+        return this.WaitForNonStaleProjectionDataAsync(timeout);
     }
 
     /// <summary>
@@ -211,7 +211,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
     Task IEventDatabase.EnsureStorageExistsAsync(Type storageType, CancellationToken token)
     {
-        throw new NotImplementedException();
+        return EnsureStorageExistsAsync(storageType, token).AsTask();
     }
 
     internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
@@ -221,6 +221,6 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var detector = new HighWaterDetector(this, Options.EventGraph, logger);
 
-        return new ProjectionDaemon(store, this, logger, detector, store.Options.Projections);
+        return new ProjectionDaemon(store, this, logger, detector);
     }
 }

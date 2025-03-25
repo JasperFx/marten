@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
@@ -64,23 +65,10 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
     internal IInlineProjection<IDocumentOperations>[] BuildInlineProjections(DocumentStore store)
     {
-        throw new NotImplementedException("REDO this");
-        // var inlineSources = All.Where(x => x.Lifecycle == ProjectionLifecycle.Inline).ToArray();
-        //
-        // return inlineSources.Select(x =>
-        // {
-        //     try
-        //     {
-        //         return x.Build(store);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         Console.WriteLine("Error trying to build an IProjection for projection " + x.ProjectionName);
-        //         Console.WriteLine(e.ToString());
-        //
-        //         throw;
-        //     }
-        // }).ToArray();
+        return All
+            .Where(x => x.Lifecycle == ProjectionLifecycle.Inline)
+            .Select(x => x.BuildForInline())
+            .ToArray();
     }
 
     /// <summary>

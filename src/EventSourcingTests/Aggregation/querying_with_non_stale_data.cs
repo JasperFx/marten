@@ -43,33 +43,32 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
     [Fact]
     public async Task try_to_fetch_statistics_for_async_shards_smoke_tests()
     {
-        throw new NotImplementedException();
-        // theSession.Events.StartStream(new AEvent(), new BEvent());
-        // theSession.Events.StartStream(new CEvent(), new BEvent());
-        // theSession.Events.StartStream(new DEvent(), new AEvent());
-        // theSession.Events.StartStream(new DEvent(), new CEvent());
-        // await theSession.SaveChangesAsync();
-        //
-        // var progressions =
-        //     await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), ShardName.HighWaterMark]);
-        //
-        // using var daemon = await theStore.BuildProjectionDaemonAsync();
-        // await daemon.StartAllAsync();
-        // await daemon.WaitForNonStaleData(5.Seconds());
-        //
-        // var all = await theStore.Storage.Database.AllProjectionProgress();
-        // all.Count.ShouldBe(3);
-        //
-        // progressions =
-        //     await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), ShardName.HighWaterMark]);
-        //
-        //
-        // progressions.Count.ShouldBe(2);
-        //
-        // foreach (var progression in progressions)
-        // {
-        //     progression.Sequence.ShouldBeGreaterThan(0);
-        // }
+        theSession.Events.StartStream(new AEvent(), new BEvent());
+        theSession.Events.StartStream(new CEvent(), new BEvent());
+        theSession.Events.StartStream(new DEvent(), new AEvent());
+        theSession.Events.StartStream(new DEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var progressions =
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), new ShardName(ShardState.HighWaterMark)]);
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(5.Seconds());
+
+        var all = await theStore.Storage.Database.AllProjectionProgress();
+        all.Count.ShouldBe(3);
+
+        progressions =
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), new ShardName(ShardState.HighWaterMark)]);
+
+
+        progressions.Count.ShouldBe(2);
+
+        foreach (var progression in progressions)
+        {
+            progression.Sequence.ShouldBeGreaterThan(0);
+        }
 
     }
 

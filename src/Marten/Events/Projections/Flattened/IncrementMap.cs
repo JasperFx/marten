@@ -33,8 +33,4 @@ internal class IncrementMap: IColumnMap
         return "0";
     }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        throw new NotSupportedException();
-    }
 }
