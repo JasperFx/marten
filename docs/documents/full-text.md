@@ -362,7 +362,7 @@ var result = await session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L147-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## NGram search on non-English text <Badge type="tip" text="7.39.4" />
+## NGram search on non-English text <Badge type="tip" text="7.39.5" />
 
 If you want to use NGram search on non-English text, Marten provides a mechanism via an opt-in `storeOptions.Advanced.UseNGramSearchWithUnaccent = true` which uses [Postgres unaccent extension](https://www.postgresql.org/docs/current/unaccent.html) for applying before creating ngrams and on search input for a better multilingual experience. Check the sample code below:
 
