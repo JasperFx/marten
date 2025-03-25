@@ -826,14 +826,14 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #endregion
-    
+
     [Fact]
     public async Task remove_simple_element_by_predicate(){
         var target = Target.Random();
         var initialCount = target.NumberArray.Length;
         var random = new Random();
         var toRemove = target.NumberArray[random.Next(0, initialCount)];
-        
+
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
@@ -841,7 +841,7 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        var target2 = query.Load<Target>(target.Id);
+        var target2 = await query.LoadAsync<Target>(target.Id);
         target2.NumberArray.ShouldNotContain(t => t == toRemove);
 
     }
@@ -852,7 +852,7 @@ public class patching_api: OneOffConfigurationsContext
         var random = new Random();
         var initiallength = target.NestedObject.Targets.Length;
         var randomitem = target.NestedObject.Targets[random.Next(0, initiallength)];
-        
+
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
@@ -860,7 +860,7 @@ public class patching_api: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        var target2 = query.Load<Target>(target.Id);
+        var target2 = await query.LoadAsync<Target>(target.Id);
         target2.NestedObject.Targets.Length.ShouldBe(initiallength - 1);
         target2.NestedObject.Targets.ShouldNotContain(x => x.Id == randomitem.Id);
     }
