@@ -190,7 +190,7 @@ To add code samples/snippets from the tests in docs, follow the steps below:
 Use C# named regions to mark a code block as described in the sample below
 
 ```csharp
-#region sample_my_snippet
+#region sample_my-snippet
 // code sample/snippet
 // ...
 #endregion
