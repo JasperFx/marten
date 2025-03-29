@@ -13,6 +13,6 @@ export default {
       },
     },
     build: {
-      chunkSizeWarningLimit: 1000
+      chunkSizeWarningLimit: 3000
     }
   }
