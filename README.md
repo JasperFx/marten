@@ -201,7 +201,7 @@ All code snippet identifier starts with `sample_` as a convention to clearly ide
 Use the below to include the code snippet in a docs page
 
 <pre>
-&#60;!-- snippet: sample_my_snippet -->
+&#60;!-- snippet: sample_my-snippet -->
 &#60;!-- endSnippet -->
 </pre>
 
