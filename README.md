@@ -196,7 +196,7 @@ Use C# named regions to mark a code block as described in the sample below
 #endregion
 ```
 
-All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use snake case for the identifiers with words in lower case.
+All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use kebab case for the identifiers with words in lower case.
 
 Use the below to include the code snippet in a docs page
 
