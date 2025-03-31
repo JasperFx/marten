@@ -23,7 +23,7 @@ const { Layout } = DefaultTheme
 
 <style scoped>
     .info-box {
-        border-top: 1px solid var(--vp-c-divider); margin:3px; padding: 3px;
+        border-top: 1px solid var(--vp-c-divider); padding: 3px;
         font-size: 0.85em;
     }
 
