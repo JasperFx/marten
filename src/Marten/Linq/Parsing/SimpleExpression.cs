@@ -1,7 +1,6 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -306,6 +305,18 @@ internal class SimpleExpression: ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+        if (node.Object == null &&
+            node.Method.DeclaringType == typeof(string) &&
+            node.Method.Name == "Compare" &&
+            node.Arguments.Count == 2 &&
+            node.Method.IsStatic)
+        {
+            var leftArg = new SimpleExpression(_queryableMembers, node.Arguments[0]);
+            var rightArg = new SimpleExpression(_queryableMembers, node.Arguments[1]);
+            Comparable = new StringCompareComparable(leftArg, rightArg);
+            return null;
+        }
+
         if (node.Object == null && !(node.Arguments.FirstOrDefault() is MemberExpression))
         {
             // It's a method of a static, so this has to be a constant
