@@ -317,6 +317,17 @@ internal class SimpleExpression: ExpressionVisitor
             return null;
         }
 
+        if (node.Method.DeclaringType == typeof(string) &&
+            node.Method.Name == "CompareTo" &&
+            node.Arguments.Count == 1)
+        {
+            var left = new SimpleExpression(_queryableMembers, node.Object);
+            var right = new SimpleExpression(_queryableMembers, node.Arguments[0]);
+
+            Comparable = new CompareToComparable(left, right);
+            return null;
+        }
+
         if (node.Object == null && !(node.Arguments.FirstOrDefault() is MemberExpression))
         {
             // It's a method of a static, so this has to be a constant
