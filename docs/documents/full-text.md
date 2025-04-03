@@ -402,3 +402,56 @@ var result = await session
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L161-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search_unaccent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## NGram Search Across Multiple Properties <Badge type="tip" text="7.39.5" />
+In many cases, you may want to perform partial text search across multiple fields like `UserName`, `FirstName`, and `LastName`.  
+
+A naive approach might be to apply individual Ngram indexes and search each field separately:
+
+::: danger Don't do this
+This results in multiple indexes per document and requires complex `LINQ` queries to combine the results — inefficient and hard to maintain.
+:::
+```csharp
+// Inefficient and verbose
+var store = DocumentStore.For(_ =>
+{
+    _.Connection(ConnectionSource.ConnectionString);
+
+    // Too many indexes
+    _.Schema.For<User>().NgramIndex(d => d.UserName);
+    _.Schema.For<User>().NgramIndex(d => d.FirstName);
+    _.Schema.For<User>().NgramIndex(d => d.LastName);
+});
+
+var result = await session
+    .Query<User>()
+    .Where(x => x.UserName.NgramSearch(term) 
+             || x.FirstName.NgramSearch(term) 
+             || x.LastName.NgramSearch(term))
+    .ToListAsync();
+```
+Instead, define a computed property that concatenates the values into a single field, and index that:
+```csharp
+public class User
+{
+    public Guid Id { get; set; }
+    public string UserName { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+
+    // Combine searchable fields
+    public string SearchString => $"{UserName} {FirstName} {LastName}";
+}
+```
+Then configure the Ngram index on that property:
+
+```csharp
+    _.Schema.For<User>().NgramIndex(x => x.SearchString);
+```
+This simplifies querying:
+```csharp
+var result = await session
+    .Query<User>()
+    .Where(x => x.SearchString.NgramSearch(term))
+    .ToListAsync();
+```
