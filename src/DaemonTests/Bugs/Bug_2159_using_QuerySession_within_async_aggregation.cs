@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.Projections;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -42,7 +43,7 @@ public class Bug_2159_using_QuerySession_within_async_aggregation : BugIntegrati
     }
 }
 
-public class UserAggregate: SingleStreamProjection<MyAggregate>
+public class UserAggregate: SingleStreamProjection<MyAggregate, Guid>
 {
     public UserAggregate()
     {

@@ -20,37 +20,37 @@ public record FakeIrrellevantEvent();
 public record FakeEvent();
 public class FakeStream1 { public Guid Id { get; set; } }
 
-public class FakeSingleStream1Projection : SingleStreamProjection<FakeStream1>
+public class FakeSingleStream1Projection : SingleStreamProjection<FakeStream1, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream1 projection) { }
 }
 
 public class FakeStream2 { public Guid Id { get; set; } }
-public class FakeSingleStream2Projection : SingleStreamProjection<FakeStream2>
+public class FakeSingleStream2Projection : SingleStreamProjection<FakeStream2, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream2 projection) { }
 }
 
 public class FakeStream3 { public Guid Id { get; set; } }
-public class FakeSingleStream3Projection : SingleStreamProjection<FakeStream3>
+public class FakeSingleStream3Projection : SingleStreamProjection<FakeStream3, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream3 projection) { }
 }
 
 public class FakeStream4 { public Guid Id { get; set; } }
-public class FakeSingleStream4Projection : SingleStreamProjection<FakeStream4>
+public class FakeSingleStream4Projection : SingleStreamProjection<FakeStream4, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream4 projection) { }
 }
 
 public class FakeStream5 { public Guid Id { get; set; } }
-public class FakeSingleStream5Projection : SingleStreamProjection<FakeStream5>
+public class FakeSingleStream5Projection : SingleStreamProjection<FakeStream5, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream5 projection) { }
 }
 
 public class FakeStream6 { public Guid Id { get; set; } }
-public class FakeSingleStream6Projection : SingleStreamProjection<FakeStream6>
+public class FakeSingleStream6Projection : SingleStreamProjection<FakeStream6, Guid>
 {
     public void Apply(FakeEvent @event, FakeStream6 projection) { }
 }

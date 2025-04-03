@@ -13,7 +13,9 @@ using JasperFx.Events.Projections;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
+using Marten.Exceptions;
 using Marten.Storage;
+using Npgsql;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
@@ -23,6 +25,9 @@ namespace Marten.Events.Projections;
 /// </summary>
 public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOperations, IQuerySession>, IValidatedProjection<StoreOptions>, IProjectionSchemaSource
 {
+    protected EventProjection() : base([typeof(NpgsqlException), typeof(MartenCommandException)])
+    {
+    }
 
     protected sealed override void storeEntity<T>(IDocumentOperations ops, T entity)
     {

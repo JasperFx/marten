@@ -12,6 +12,7 @@ public partial class ProjectionDaemon: JasperFxAsyncDaemon<IDocumentOperations, 
         IHighWaterDetector detector)
         : base(store, database, loggerFactory, detector, store.Options.Projections)
     {
+
     }
 
     public ProjectionDaemon(DocumentStore store, MartenDatabase database, ILogger logger,

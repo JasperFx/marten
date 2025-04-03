@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -126,40 +128,7 @@ public sealed class TeamInvitationGrouper : IAggregateGrouper<Guid>
         typeof(MemberJoined),
     ];
 
-    public async Task Group(
-        IQuerySession session,
-        IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
-    {
-        var eventsArray = events.ToArray();
-        MembershipGroup(eventsArray, grouping);
-        await TeamGroup(session, eventsArray, grouping);
-    }
-
-    private void MembershipGroup(
-        IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
-    {
-        var filteredEvents = events
-            .Where(ev => eventTypes.Contains(ev.EventType))
-            .GroupBy(e => e.StreamId)
-            .Select(x => new
-            {
-                TeamMembershipId = x.Key,
-                Events = x.ToArray(),
-            })
-            .ToList();
-
-        foreach (var membershipEvents in filteredEvents)
-        {
-            grouping.AddEvents(membershipEvents.TeamMembershipId, membershipEvents.Events);
-        }
-    }
-
-    private async Task TeamGroup(
-        IQuerySession session,
-        IEnumerable<IEvent> events,
-        ITenantSliceGroup<Guid> grouping)
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var teamEvents = events
             .OfType<IEvent<TeamNameChanged>>()

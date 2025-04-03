@@ -7,6 +7,7 @@ using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon.Internals;
@@ -24,21 +25,6 @@ public class event_projections_end_to_end : DaemonContext
     public event_projections_end_to_end(ITestOutputHelper output) : base(output)
     {
         _output = output;
-    }
-
-    [Fact]
-    public void uses_event_type_filter()
-    {
-        var projection = new DistanceProjection();
-        projection.AssembleAndAssertValidity();
-        var filter = projection.As<IProjectionSource>()
-            .AsyncProjectionShards(theStore)
-            .First()
-            .BuildFilters(theStore)
-            .OfType<EventTypeFilter>()
-            .Single();
-
-        filter.EventTypes.Where(x => x != typeof(Archived)).Single().ShouldBe(typeof(Travel));
     }
 
     #region sample_using_WaitForNonStaleProjectionDataAsync

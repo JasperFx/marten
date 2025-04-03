@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -27,25 +28,6 @@ public class build_aggregate_projection: DaemonContext
     }
 
     [Fact]
-    public void uses_event_type_filter_for_base_filter_when_not_using_base_types()
-    {
-        var projection = new TripProjectionWithCustomName();
-        projection.AssembleAndAssertValidity();
-        var filter = projection.As<IProjectionSource>()
-            .AsyncProjectionShards(theStore)
-            .First()
-            .BuildFilters(theStore)
-            .OfType<EventTypeFilter>()
-            .Single();
-
-        filter.EventTypes.ShouldContain(typeof(TripAborted));
-        filter.EventTypes.ShouldContain(typeof(Arrival));
-        filter.EventTypes.ShouldContain(typeof(Travel));
-        filter.EventTypes.ShouldContain(typeof(TripEnded));
-        filter.EventTypes.ShouldContain(typeof(TripStarted));
-    }
-
-    [Fact]
     public async Task end_to_end_with_events_already_published()
     {
         NumberOfStreams = 10;
@@ -63,7 +45,7 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
@@ -90,7 +72,7 @@ public class build_aggregate_projection: DaemonContext
         await PublishSingleThreaded();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await agent.StartAgentAsync(shard.Name.Identity, CancellationToken.None);
 
@@ -116,7 +98,7 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await PublishSingleThreaded();
 
@@ -143,7 +125,7 @@ public class build_aggregate_projection: DaemonContext
         var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
-        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard, NumberOfEvents), 60.Seconds());
+        var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
 
         await PublishSingleThreaded();
 
@@ -442,7 +424,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class ContactProjectionNullReturn: SingleStreamProjection<Contact>
+    public class ContactProjectionNullReturn: SingleStreamProjection<Contact, Guid>
     {
         public ContactProjectionNullReturn()
         {
@@ -516,7 +498,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class InterfaceCreationProjection: SingleStreamProjection<Foo>
+    public class InterfaceCreationProjection: SingleStreamProjection<Foo, Guid>
     {
         public InterfaceCreationProjection()
         {
@@ -569,7 +551,7 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class AbstractCreationProjection: SingleStreamProjection<Foo>
+    public class AbstractCreationProjection: SingleStreamProjection<Foo, Guid>
     {
         public AbstractCreationProjection()
         {

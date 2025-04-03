@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.AsyncDaemon.Testing;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -125,14 +126,14 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     [Fact]
     public async Task should_be_healthy_with_all_projections_caught_up()
     {
-
         StoreOptions(x =>
             {
                 x.Projections.Add(new FakeSingleStream3Projection(), ProjectionLifecycle.Async);
                 x.Projections.Add(new FakeSingleStream4Projection(), ProjectionLifecycle.Async);
             });
+
         var agent = await StartDaemon();
-        using var session = theStore.LightweightSession();
+        await using var session = theStore.LightweightSession();
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var eventCount = 100;

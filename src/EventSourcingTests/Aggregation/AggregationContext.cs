@@ -7,6 +7,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -74,7 +75,7 @@ public class AggregationContext : IntegrationContext
             .Select(x => StreamAction.Append(x.Key, x.Value.Events().ToArray()))
             .ToArray();
 
-        var inline = _projection.BuildForInline();
+        var inline = _projection.As<IProjectionSource<IDocumentOperations, IQuerySession>>().BuildForInline();
 
         await inline.ApplyAsync(theSession, streams, CancellationToken.None);
         await theSession.SaveChangesAsync();

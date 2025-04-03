@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -357,7 +358,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
     }
 }
 
-public class Projection1: SingleStreamProjection<SideEffects1>
+public class Projection1: SingleStreamProjection<SideEffects1, Guid>
 {
     public Projection1()
     {
@@ -403,7 +404,7 @@ public class SideEffects1: IRevisioned
 
 public record WasDeleted(Guid Id);
 
-public class Projection2: SingleStreamProjection<SideEffects2>
+public class Projection2: SingleStreamProjection<SideEffects2, string>
 {
     public void Apply(SideEffects2 aggregate, AEvent _)
     {
@@ -426,7 +427,7 @@ public class Projection2: SingleStreamProjection<SideEffects2>
     }
 }
 
-public class Projection3: SingleStreamProjection<SideEffects1>
+public class Projection3: SingleStreamProjection<SideEffects1, Guid>
 {
     public void Apply(SideEffects1 aggregate, AEvent _)
     {

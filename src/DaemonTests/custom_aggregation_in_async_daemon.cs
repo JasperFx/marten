@@ -4,7 +4,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using EventSourcingTests.Bugs;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
@@ -139,50 +142,43 @@ public interface INumbered
 }
 
 
-public class MyCustomProjection: CustomProjection<CustomAggregate, int>
+public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {
         ProjectionName = "Custom";
 
-        Slicer = new EventSlicer<CustomAggregate, int>().Identity<INumbered>(x =>
-            x.Number);
+        Identity<INumbered>(x => x.Number);
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override CustomAggregate Evolve(CustomAggregate snapshot, int id, IEvent e)
     {
-        var aggregate = slice.Aggregate ?? new CustomAggregate { Id = slice.Id };
-
-        foreach (var @event in slice.Events())
+        if (e.Data is CustomEvent ce)
         {
-            if (@event.Data is CustomEvent e)
+            snapshot ??= new();
+
+            switch (ce.Letter)
             {
-                switch (e.Letter)
-                {
-                    case 'a':
-                        aggregate.ACount++;
-                        break;
+                case 'a':
+                    snapshot.ACount++;
+                    break;
 
-                    case 'b':
-                        aggregate.BCount++;
-                        break;
+                case 'b':
+                    snapshot.BCount++;
+                    break;
 
-                    case 'c':
-                        aggregate.CCount++;
-                        break;
+                case 'c':
+                    snapshot.CCount++;
+                    break;
 
-                    case 'd':
-                        aggregate.DCount++;
-                        break;
-                }
+                case 'd':
+                    snapshot.DCount++;
+                    break;
             }
         }
 
-        session.Store(aggregate);
-        return new ValueTask();
+        return snapshot;
     }
-
 }
 
 public class CustomAggregate

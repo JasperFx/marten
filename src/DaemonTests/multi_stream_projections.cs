@@ -4,22 +4,20 @@ using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace DaemonTests;
 
-public class ViewProjectionTests: DaemonContext
+public class multi_stream_projections: DaemonContext
 {
-    public ViewProjectionTests(ITestOutputHelper output): base(output)
+    public multi_stream_projections(ITestOutputHelper output): base(output)
     {
     }
 
@@ -27,40 +25,6 @@ public class ViewProjectionTests: DaemonContext
     public void lifecycle_is_async_by_default()
     {
         new DayProjection().Lifecycle.ShouldBe(ProjectionLifecycle.Async);
-    }
-
-    [Fact]
-    public async Task splicing_events()
-    {
-        NumberOfStreams = 10;
-        await PublishMultiThreaded(3);
-
-        var allEvents = await theSession.Events.QueryAllRawEvents().ToListAsync();
-
-        var slicer = new DayProjection().Slicer;
-
-        var slices = await slicer.SliceAsyncEvents(theSession, allEvents.ToList());
-
-        foreach (var slice in slices.SelectMany(x => x.Slices).ToArray())
-        {
-            var events = slice.Events();
-            events.All(x => x.Data is IDayEvent || x.Data is Movement || x.Data is Stop).ShouldBeTrue();
-            events.Select(x => x.Data).OfType<IDayEvent>().All(x => x.Day == slice.Id)
-                .ShouldBeTrue();
-
-            var travels = events.OfType<Event<Travel>>().ToArray();
-            foreach (var travel in travels)
-            {
-                var index = events.As<List<IEvent>>().IndexOf(travel);
-
-                for (var i = 0; i < travel.Data.Stops.Count; i++)
-                {
-                    events.ElementAt(index + i + 1).Data.ShouldBeSameAs(travel.Data.Stops[i]);
-                }
-            }
-        }
-
-        slices.ShouldNotBeNull();
     }
 
     [Fact]
@@ -162,8 +126,15 @@ public class DayProjection: MultiStreamProjection<Day, int>
         Options.BatchSize = 5000;
     }
 
-    public void Apply(Day day, TripStarted e) => day.Started++;
-    public void Apply(Day day, TripEnded e) => day.Ended++;
+    public void Apply(Day day, TripStarted e)
+    {
+        day.Started++;
+    }
+
+    public void Apply(Day day, TripEnded e)
+    {
+        day.Ended++;
+    }
 
     public void Apply(Day day, Movement e)
     {
@@ -187,7 +158,10 @@ public class DayProjection: MultiStreamProjection<Day, int>
         }
     }
 
-    public void Apply(Day day, Stop e) => day.Stops++;
+    public void Apply(Day day, Stop e)
+    {
+        day.Stops++;
+    }
 }
 
 #endregion

@@ -129,9 +129,9 @@ public class SampleEventProjection: EventProjection
             operations.Store(new SampleEventView(added.Id));
         }));
 
-        ProjectAsync<SamplesRolledUpPublished>(((async (published, operations) =>
+        ProjectAsync<SamplesRolledUpPublished>(((async (published,operations, cancellation) =>
         {
-            var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id);
+            var rolledUp = await operations.Events.AggregateStreamAsync<SamplesRolledUp>(published.Id, token:cancellation);
             foreach (var rolledUpSample in rolledUp.Samples)
             {
                 operations.Store(new SampleEventView(rolledUpSample));

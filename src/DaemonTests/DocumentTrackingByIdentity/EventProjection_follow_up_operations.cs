@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
@@ -64,7 +65,7 @@ public class EventProjection_follow_up_operations: DaemonContext
                 operations.Store(entity);
             });
 
-            ProjectAsync<SomeOtherEntityWithNestedIdentifierPublished>(async (@event, operations) =>
+            ProjectAsync<SomeOtherEntityWithNestedIdentifierPublished>(async (@event, operations, _) =>
             {
                 var entity = await operations.LoadAsync<NestedEntityProjection>(@event.Id);
 

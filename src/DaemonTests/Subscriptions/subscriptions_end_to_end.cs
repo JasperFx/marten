@@ -3,17 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventSourcingTests.Aggregation;
-using EventSourcingTests.FetchForWriting;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using JasperFx.Events;
-using Lamar.IoC.Instances;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Subscriptions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,10 +40,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -73,10 +85,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -109,10 +137,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -141,10 +185,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -173,10 +233,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -199,10 +275,26 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -214,7 +306,9 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
         await theStore.WaitForNonStaleProjectionDataAsync(20.Seconds());
 
         theSubscription.EventsEncountered.Count.ShouldBe(5);
-        theSubscription.EventsEncountered.All(x => x.Data is EventSourcingTests.Aggregation.BEvent or EventSourcingTests.Aggregation.EEvent).ShouldBeTrue();
+        theSubscription.EventsEncountered
+            .All(x => x.Data is EventSourcingTests.Aggregation.BEvent or EventSourcingTests.Aggregation.EEvent)
+            .ShouldBeTrue();
 
         var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
         progress.ShouldBe(16);
@@ -239,10 +333,26 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         theSession.Events.StartStream(Guid.NewGuid(), events1);
         theSession.Events.StartStream(Guid.NewGuid(), events2);
@@ -271,7 +381,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Singleton,
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+                    ServiceLifetime.Singleton,
                     o => o.SubscriptionName = "Simple2");
             }).StartAsync();
 
@@ -281,10 +392,26 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         store.Options.Projections.AllShards().Select(x => x.Name.Identity)
             .ShouldContain("Simple2:All");
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         await using var session = store.LightweightSession();
 
@@ -317,7 +444,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Singleton,
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+                    ServiceLifetime.Singleton,
                     o => o.SubscriptionName = "Simple2");
             }).StartAsync();
 
@@ -327,10 +455,26 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         store.Options.Projections.AllShards().Select(x => x.Name.Identity)
             .ShouldContain("Simple2:All");
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         await using var session = store.LightweightSession();
 
@@ -372,7 +516,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Scoped,
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+                    ServiceLifetime.Scoped,
                     o => o.SubscriptionName = "Simple2");
             }).StartAsync();
 
@@ -382,10 +527,26 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         store.Options.Projections.AllShards().Select(x => x.Name.Identity)
             .ShouldContain("Simple2:All");
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         await using var session = store.LightweightSession();
 
@@ -416,7 +577,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Scoped,
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+                    ServiceLifetime.Scoped,
                     o => o.SubscriptionName = "Simple2");
             }).StartAsync();
 
@@ -440,7 +602,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc";
-                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(ServiceLifetime.Scoped,
+                }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
+                    ServiceLifetime.Scoped,
                     o => o.SubscriptionName = "Simple2");
             }).StartAsync();
 
@@ -450,10 +613,26 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         store.Options.Projections.AllShards().Select(x => x.Name.Identity)
             .ShouldContain("Simple2:All");
 
-        var events1 = new object[] { new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events2 = new object[] { new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events3 = new object[] { new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
-        var events4 = new object[] { new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent() };
+        var events1 = new object[]
+        {
+            new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events2 = new object[]
+        {
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events3 = new object[]
+        {
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.AEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
+        var events4 = new object[]
+        {
+            new EventSourcingTests.Aggregation.EEvent(), new EventSourcingTests.Aggregation.BEvent(),
+            new EventSourcingTests.Aggregation.DEvent(), new EventSourcingTests.Aggregation.CEvent()
+        };
 
         await using var session = store.LightweightSession();
 
@@ -501,7 +680,14 @@ public class FilteredSubscription: SubscriptionBase, IDisposable
         IncludeArchivedEvents = true;
     }
 
-    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller, IDocumentOperations operations,
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations,
         CancellationToken cancellationToken)
     {
         return Task.FromResult(Substitute.For<IChangeListener>());
@@ -513,12 +699,6 @@ public class FilteredSubscription: SubscriptionBase, IDisposable
         {
             // TODO release managed resources here
         }
-    }
-
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -532,7 +712,8 @@ public class FilteredSubscription2: SubscriptionBase, IAsyncDisposable
         IncludeArchivedEvents = true;
     }
 
-    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller, IDocumentOperations operations,
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations,
         CancellationToken cancellationToken)
     {
         return Task.FromResult(Substitute.For<IChangeListener>());
@@ -555,15 +736,9 @@ public class FilteredSubscription2: SubscriptionBase, IAsyncDisposable
 
 public class SimpleSubscription: ISubscription
 {
-    public static int InstanceCounter = 0;
+    public static int InstanceCounter;
 
-    public static LightweightCache<int, List<IEvent>> EventsEncountered = new(i => new());
-
-    public static void Clear()
-    {
-        InstanceCounter = 0;
-        EventsEncountered.Clear();
-    }
+    public static LightweightCache<int, List<IEvent>> EventsEncountered = new(i => new List<IEvent>());
 
     public SimpleSubscription()
     {
@@ -571,6 +746,12 @@ public class SimpleSubscription: ISubscription
     }
 
     public int Instance { get; set; }
+
+    public static void Clear()
+    {
+        InstanceCounter = 0;
+        EventsEncountered.Clear();
+    }
 
     public ValueTask DisposeAsync()
     {
@@ -582,7 +763,7 @@ public class SimpleSubscription: ISubscription
         CancellationToken cancellationToken)
     {
         EventsEncountered[Instance].AddRange(page.Events);
-        return Task.FromResult((IChangeListener)NullChangeListener.Instance);
+        return Task.FromResult(NullChangeListener.Instance);
     }
 }
 

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -58,16 +59,14 @@ public class IssueAggregate
 
 public class IssueAggregateProjection : IProjection
 {
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
-        var events = streams
-            .SelectMany(x => x.Events)
-            .OrderBy(x => x.Sequence)
+        var createds = events
             .Select(x => x.Data)
             .OfType<IssueCreated>()
             .ToList();
 
-        operations.Store(events.Select(x => new IssueAggregate { Id = x.Id }));
+        operations.Store(createds.Select(x => new IssueAggregate { Id = x.Id }));
         return Task.CompletedTask;
     }
 }

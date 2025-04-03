@@ -2,12 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -81,27 +80,42 @@ public class blue_green_projection_deployments
 
         using (var session = blueStore.LightweightSession())
         {
-            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId, new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
-                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.DEvent());
+            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId,
+                new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+                new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.DEvent());
             await session.SaveChangesAsync();
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
-            {
-                ACount = 2, BCount = 1, CCount = 3, DCount = 1, Version = 7, Id = streamId
-            });
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+                new EventSourcingTests.Aggregation.MyAggregate
+                {
+                    ACount = 2,
+                    BCount = 1,
+                    CCount = 3,
+                    DCount = 1,
+                    Version = 7,
+                    Id = streamId
+                });
         }
 
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
-            {
-                // The "green" version doubles the counts as a cheap way
-                // of being able to test that the data is different
-                ACount = 4, BCount = 2, CCount = 6, DCount = 2, Version = 7, Id = streamId
-            });
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+                new EventSourcingTests.Aggregation.MyAggregate
+                {
+                    // The "green" version doubles the counts as a cheap way
+                    // of being able to test that the data is different
+                    ACount = 4,
+                    BCount = 2,
+                    CCount = 6,
+                    DCount = 2,
+                    Version = 7,
+                    Id = streamId
+                });
         }
     }
 
@@ -141,45 +155,75 @@ public class blue_green_projection_deployments
 
         using (var session = blueStore.LightweightSession())
         {
-            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId, new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
-                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.DEvent());
+            session.Events.StartStream<EventSourcingTests.Aggregation.MyAggregate>(streamId,
+                new EventSourcingTests.Aggregation.AEvent(), new EventSourcingTests.Aggregation.AEvent(),
+                new EventSourcingTests.Aggregation.BEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.CEvent(), new EventSourcingTests.Aggregation.CEvent(),
+                new EventSourcingTests.Aggregation.DEvent());
             await session.SaveChangesAsync();
 
             await blueDaemon.WaitForNonStaleData(5.Seconds());
 
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
-            {
-                ACount = 2, BCount = 1, CCount = 3, DCount = 1, Version = 7, Id = streamId
-            });
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+                new EventSourcingTests.Aggregation.MyAggregate
+                {
+                    ACount = 2,
+                    BCount = 1,
+                    CCount = 3,
+                    DCount = 1,
+                    Version = 7,
+                    Id = streamId
+                });
         }
 
         await greenDaemon.WaitForNonStaleData(5.Seconds());
         using (var session = greenStore.LightweightSession())
         {
-            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(new EventSourcingTests.Aggregation.MyAggregate
-            {
-                // The "green" version doubles the counts as a cheap way
-                // of being able to test that the data is different
-                ACount = 4, BCount = 2, CCount = 6, DCount = 2, Version = 7, Id = streamId
-            });
+            (await session.LoadAsync<EventSourcingTests.Aggregation.MyAggregate>(streamId)).ShouldBeEquivalentTo(
+                new EventSourcingTests.Aggregation.MyAggregate
+                {
+                    // The "green" version doubles the counts as a cheap way
+                    // of being able to test that the data is different
+                    ACount = 4,
+                    BCount = 2,
+                    CCount = 6,
+                    DCount = 2,
+                    Version = 7,
+                    Id = streamId
+                });
         }
     }
 }
 
-public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate>
+public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
 {
     public BlueProjection()
     {
         ProjectionName = "Baseline";
     }
 
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e) => aggregate.ACount++;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e) => aggregate.BCount++;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e) => aggregate.CCount++;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e) => aggregate.DCount++;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e)
+    {
+        aggregate.ACount++;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e)
+    {
+        aggregate.BCount++;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e)
+    {
+        aggregate.CCount++;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e)
+    {
+        aggregate.DCount++;
+    }
 }
 
-public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate>
+public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregation.MyAggregate, Guid>
 {
     public GreenProjection()
     {
@@ -187,8 +231,23 @@ public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregat
         ProjectionVersion = 2;
     }
 
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e) => aggregate.ACount += 2;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e) => aggregate.BCount += 2;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e) => aggregate.CCount += 2;
-    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e) => aggregate.DCount += 2;
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e)
+    {
+        aggregate.ACount += 2;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.BEvent e)
+    {
+        aggregate.BCount += 2;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.CEvent e)
+    {
+        aggregate.CCount += 2;
+    }
+
+    public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.DEvent e)
+    {
+        aggregate.DCount += 2;
+    }
 }

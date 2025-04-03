@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Samples.Deleting3;
@@ -43,7 +44,7 @@ namespace DaemonTests.TestingSupport
 
     #region sample_TripProjection_aggregate
 
-    public class TripProjection: SingleStreamProjection<Trip>
+    public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         public TripProjection()
         {
@@ -168,7 +169,7 @@ namespace TripProjection.UsingLambdas
 {
     #region sample_using_ProjectEvent_in_aggregate_projection
 
-    public class TripProjection: SingleStreamProjection<Trip>
+    public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         public TripProjection()
         {

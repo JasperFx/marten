@@ -1,16 +1,14 @@
 using System.Threading.Tasks;
-using Confluent.Kafka;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests;
 
@@ -45,5 +43,4 @@ public class pausing_and_resuming_the_daemon
         var trip = await session.LoadAsync<Trip>(id);
         trip.ShouldNotBeNull();
     }
-
 }

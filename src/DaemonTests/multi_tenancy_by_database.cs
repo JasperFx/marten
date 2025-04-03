@@ -1,13 +1,16 @@
 using System;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Exceptions;
+using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -123,7 +126,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
         daemon.Database.Identifier.ShouldBe("database1");
 
-        await using var conn = daemon.Database.CreateConnection();
+        await using var conn = daemon.Database.As<IMartenDatabase>().CreateConnection();
         conn.Database.ShouldBe("database1");
     }
 
@@ -135,7 +138,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
         daemon.Database.Identifier.ShouldBe("database1");
 
-        await using var conn = daemon.Database.CreateConnection();
+        await using var conn = daemon.Database.As<IMartenDatabase>().CreateConnection();
         conn.Database.ShouldBe("database1");
     }
 
@@ -166,7 +169,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
     }
 }
 
-public class AllSync: SingleStreamProjection<MyAggregate>
+public class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
@@ -213,7 +216,7 @@ public class AllSync: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

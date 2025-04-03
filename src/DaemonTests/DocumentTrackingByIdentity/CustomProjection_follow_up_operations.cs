@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -61,10 +62,10 @@ public class CustomProjection_follow_up_operations: DaemonContext
             typeof(EntityPublished), typeof(SomeOtherEntityWithNestedIdentifierPublished)
         };
 
-        public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streamActions,
-            CancellationToken cancellation)
+        public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
         {
-            var eventsToApply = streamActions.SelectMany(streamAction => streamAction.Events)
+            // TODO -- add an extension method helper to select the right event types? Or show an Include
+            var eventsToApply = events
                 .Where(@event => _handledEventTypes.Contains(@event.EventType))
                 .Select(@event => @event.Data).ToArray();
 
@@ -90,6 +91,7 @@ public class CustomProjection_follow_up_operations: DaemonContext
                 }
             }
         }
+
     }
 
     public CustomProjection_follow_up_operations(ITestOutputHelper output): base(output)

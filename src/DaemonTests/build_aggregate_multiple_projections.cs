@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
@@ -39,7 +40,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
     //Aggregation 2
-    public class CarProjection: SingleStreamProjection<CarView>
+    public class CarProjection: SingleStreamProjection<CarView, Guid>
     {
         public CarProjection()
         {
@@ -68,11 +69,12 @@ public class build_aggregate_multiple_projections: DaemonContext
     //Event 2
     public class TruckNamed
     {
+        public Guid Id { get; set; }
         public string Value { get; set; }
     }
 
     //Aggregation 2
-    public class TruckProjection: SingleStreamProjection<TruckView>
+    public class TruckProjection: SingleStreamProjection<TruckView, Guid>
     {
         public TruckProjection()
         {

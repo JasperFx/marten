@@ -4,29 +4,37 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
-using Xunit.Abstractions;
-using EventRange = Marten.Events.Daemon.Internals.EventRange;
 
 namespace DaemonTests;
 
-public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
+public class event_fetcher_tests: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly List<ISqlFragment> theFilters = new List<ISqlFragment>();
+    private readonly List<ISqlFragment> theFilters = new();
     private readonly EventRange theRange;
-    private readonly ShardName theShardName = new ShardName("foo", "All");
+    private readonly ShardName theShardName = new("foo", "All");
 
     public event_fetcher_tests()
     {
         theRange = new EventRange(theShardName, 0, 100);
+    }
+
+    public Task InitializeAsync()
+    {
+        return theStore.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     internal async Task executeAfterLoadingEvents(Action<IEventStore> loadEvents)
@@ -34,10 +42,18 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         loadEvents(theSession.Events);
         await theSession.SaveChangesAsync();
 
-        var fetcher = new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(), theFilters.ToArray());
+        var fetcher = new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(),
+            theFilters.ToArray());
 
         var results = await fetcher.LoadAsync(
-            new EventRequest { Floor = theRange.SequenceFloor, BatchSize = 1000, HighWater = 1000, Runtime = new NulloDaemonRuntime(), Name = theShardName},
+            new EventRequest
+            {
+                Floor = theRange.SequenceFloor,
+                BatchSize = 1000,
+                HighWater = 1000,
+                Runtime = new NulloDaemonRuntime(),
+                Name = theShardName
+            },
             CancellationToken.None);
 
         theRange.Events = results.ToList();
@@ -50,7 +66,6 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         var stream = Guid.NewGuid();
         await executeAfterLoadingEvents(e =>
         {
-
             e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
         });
 
@@ -71,7 +86,6 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
         var stream = Guid.NewGuid().ToString();
         await executeAfterLoadingEvents(e =>
         {
-
             e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
         });
 
@@ -92,7 +106,6 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
             e.StartStream<Letters>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
                 new DEvent());
-
         });
 
         for (var i = 0; i < 4; i++)
@@ -114,7 +127,6 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
             e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
                 new DEvent());
-
         });
 
         for (var i = 0; i < 4; i++)
@@ -139,15 +151,10 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
             e.StartStream<Letters>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
                 new DEvent());
-
         });
 
         theRange.Events.Count.ShouldBe(5);
-        foreach (var @event in theRange.Events)
-        {
-            @event.AggregateTypeName.ShouldBe("letters");
-        }
-
+        foreach (var @event in theRange.Events) @event.AggregateTypeName.ShouldBe("letters");
     }
 
     [Fact]
@@ -160,24 +167,10 @@ public class event_fetcher_tests : OneOffConfigurationsContext, IAsyncLifetime
             e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
             e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
                 new DEvent());
-
         });
 
         theRange.Events.Count.ShouldBe(5);
-        foreach (var @event in theRange.Events)
-        {
-            @event.AggregateTypeName.ShouldBe("Letters<Value>");
-        }
-    }
-
-    public Task InitializeAsync()
-    {
-        return theStore.Advanced.Clean.DeleteAllEventDataAsync();
-    }
-
-    public Task DisposeAsync()
-    {
-        return Task.CompletedTask;
+        foreach (var @event in theRange.Events) @event.AggregateTypeName.ShouldBe("Letters<Value>");
     }
 }
 
