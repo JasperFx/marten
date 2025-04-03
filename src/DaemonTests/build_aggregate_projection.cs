@@ -4,14 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
+using Marten.Metadata;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
@@ -28,6 +27,52 @@ public class build_aggregate_projection: DaemonContext
     }
 
     [Fact]
+    public async Task simple_scenario()
+    {
+        var store = SeparateStore(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Projections.Snapshot<SimpleEntity>(SnapshotLifecycle.Async);
+            opts.DatabaseSchemaName = "simple_multi_tenancy";
+        });
+
+        await store.Advanced.Clean.DeleteAllDocumentsAsync();
+        await store.Advanced.Clean.DeleteAllEventDataAsync();
+
+        using var session = store.LightweightSession();
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("one", new AEvent(), new BEvent());
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("two", new BEvent(), new BEvent());
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("three", new AEvent(), new AEvent());
+
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("one", new AEvent(), new BEvent(), new AEvent());
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("two", new BEvent(), new BEvent(), new BEvent());
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("five", new BEvent(), new BEvent(), new BEvent());
+
+        await session.SaveChangesAsync();
+
+        using var daemon = await store.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(5.Seconds());
+
+        var blues = await session
+            .Query<SimpleEntity>()
+            .Where(x => x.TenantIsOneOf("blue"))
+            .ToListAsync();
+
+        blues.Select(x => x.Id).OrderBy(x => x).ShouldBe(["one", "three", "two"]);
+        var blueOne = blues.Single(x => x.Id == "one");
+        blueOne.A.ShouldBe(1);
+        blueOne.B.ShouldBe(1);
+
+        var redOne = await session.Query<SimpleEntity>().Where(x => x.TenantIsOneOf("red") && x.Id == "one")
+            .SingleAsync();
+
+        redOne.A.ShouldBe(2);
+        redOne.B.ShouldBe(1);
+    }
+
+    [Fact]
     public async Task end_to_end_with_events_already_published()
     {
         NumberOfStreams = 10;
@@ -38,11 +83,15 @@ public class build_aggregate_projection: DaemonContext
         {
             x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Logger(new TestOutputMartenLogger(_output));
-        }, true);
+        });
 
-        var agent = await StartDaemon();
+
 
         await PublishSingleThreaded();
+
+        _output.WriteLine("STARTING DAEMON---------------------------------");
+
+        var agent = await StartDaemon();
 
         var shard = theStore.Options.Projections.AllShards().Single();
         var waiter = agent.Tracker.WaitForShardState(new ShardState(shard.Name, NumberOfEvents), 60.Seconds());
@@ -63,9 +112,10 @@ public class build_aggregate_projection: DaemonContext
 
         StoreOptions(x =>
         {
-            x.Projections.Add(new TripProjectionWithCustomName{Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName { Options = { CacheLimitPerTenant = 100 } },
+                ProjectionLifecycle.Async);
             x.Logger(new TestOutputMartenLogger(_output));
-        }, true);
+        });
 
         var agent = await StartDaemon();
 
@@ -89,7 +139,7 @@ public class build_aggregate_projection: DaemonContext
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
             x.Schema.For<Trip>().MultiTenanted();
-        }, true);
+        });
 
         UseMixOfTenants(5);
 
@@ -114,9 +164,10 @@ public class build_aggregate_projection: DaemonContext
         StoreOptions(x =>
         {
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
-            x.Projections.Add(new TripProjectionWithCustomName(){Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async);
+            x.Projections.Add(new TripProjectionWithCustomName { Options = { CacheLimitPerTenant = 100 } },
+                ProjectionLifecycle.Async);
             x.Schema.For<Trip>().MultiTenanted();
-        }, true);
+        });
 
         UseMixOfTenants(5);
 
@@ -142,13 +193,14 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
+        var waiter =
+            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
 
         await waiter;
         Logger.LogDebug("About to rebuild TripCustomName:All");
@@ -164,14 +216,17 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName{Options = {CacheLimitPerTenant = 100}}, ProjectionLifecycle.Async), true);
+        StoreOptions(x =>
+            x.Projections.Add(new TripProjectionWithCustomName { Options = { CacheLimitPerTenant = 100 } },
+                ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
         // Gotta do this to have it mixed up
         await PublishMultiThreaded(3);
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 120.Seconds());
+        var waiter =
+            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 120.Seconds());
 
         await waiter;
         Logger.LogDebug("About to rebuild TripCustomName:All");
@@ -187,13 +242,14 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
         await PublishSingleThreaded();
 
-        var waiter = agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
+        var waiter =
+            agent.Tracker.WaitForShardState(new ShardState("TripCustomName:All", NumberOfEvents), 30.Seconds());
 
         await waiter;
 
@@ -216,7 +272,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -237,7 +293,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -246,7 +302,7 @@ public class build_aggregate_projection: DaemonContext
         await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
 
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjectionAsync(typeof(TestingSupport.TripProjection),CancellationToken.None);
+        await agent.RebuildProjectionAsync(typeof(TestingSupport.TripProjection), CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -258,7 +314,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -266,7 +322,7 @@ public class build_aggregate_projection: DaemonContext
 
         await theStore.WaitForNonStaleProjectionDataAsync(15.Seconds());
         Logger.LogDebug("About to rebuild Trip:All");
-        await agent.RebuildProjectionAsync(typeof(Trip),CancellationToken.None);
+        await agent.RebuildProjectionAsync(typeof(Trip), CancellationToken.None);
         Logger.LogDebug("Done rebuilding Trip:All");
         await CheckAllExpectedAggregatesAgainstActuals();
     }
@@ -278,7 +334,7 @@ public class build_aggregate_projection: DaemonContext
 
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
-        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -311,7 +367,7 @@ public class build_aggregate_projection: DaemonContext
         var projection = new TestingSupport.TripProjection();
         projection.ProjectionName = "Trip";
 
-        StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -355,7 +411,7 @@ public class build_aggregate_projection: DaemonContext
         var projection = new TestingSupport.TripProjection();
         projection.ProjectionName = "Trip";
 
-        StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async), true);
+        StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async));
 
         var agent = await StartDaemon();
 
@@ -399,7 +455,7 @@ public class build_aggregate_projection: DaemonContext
             x.Events.TenancyStyle = TenancyStyle.Conjoined;
             x.Policies.AllDocumentsAreMultiTenanted();
             x.Projections.Add(new ContactProjectionNullReturn(), ProjectionLifecycle.Inline);
-        }, true);
+        });
 
         var id = Guid.NewGuid();
         await using (var session = theStore.LightweightSession("a"))
@@ -421,6 +477,88 @@ public class build_aggregate_projection: DaemonContext
         await using var session2 = theStore.LightweightSession("a");
         var c = await session2.LoadAsync<Contact>(id);
         Assert.Equal("x", c.Name);
+    }
+
+    [Fact]
+    public async Task rebuild_with_interface_creation()
+    {
+        StoreOptions(x =>
+        {
+            x.Events.TenancyStyle = TenancyStyle.Conjoined;
+            x.Policies.AllDocumentsAreMultiTenanted();
+            x.Projections.Add(new InterfaceCreationProjection(), ProjectionLifecycle.Inline);
+        });
+
+        var id = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession("a"))
+        {
+            session.Events.StartStream(id, new FooCreated(id, "Foo"));
+            session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
+
+            await session.SaveChangesAsync();
+
+            var foo = await session.LoadAsync<Foo>(id);
+            Assert.Equal("Foo", foo.Name);
+        }
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+
+        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
+
+        await using var session2 = theStore.LightweightSession("a");
+        var c = await session2.LoadAsync<Foo>(id);
+        Assert.Equal("Foo", c.Name);
+    }
+
+    [Fact]
+    public async Task rebuild_with_abstract_creation()
+    {
+        StoreOptions(x =>
+        {
+            x.Events.TenancyStyle = TenancyStyle.Conjoined;
+            x.Policies.AllDocumentsAreMultiTenanted();
+            x.Projections.Add(new AbstractCreationProjection(), ProjectionLifecycle.Inline);
+        });
+
+        var id = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession("a"))
+        {
+            session.Events.StartStream(id, new FooCreated2(id, "Foo"));
+            session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
+
+            await session.SaveChangesAsync();
+
+            var foo = await session.LoadAsync<Foo>(id);
+            Assert.Equal("Foo", foo.Name);
+        }
+
+        var daemon = await theStore.BuildProjectionDaemonAsync();
+
+        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
+
+        await using var session2 = theStore.LightweightSession("a");
+        var c = await session2.LoadAsync<Foo>(id);
+        Assert.Equal("Foo", c.Name);
+    }
+
+    public class SimpleEntity: ITenanted
+    {
+        public string Id { get; set; }
+
+        public int A { get; set; }
+        public int B { get; set; }
+
+        public string TenantId { get; set; }
+
+        public void Apply(AEvent _)
+        {
+            A++;
+        }
+
+        public void Apply(BEvent _)
+        {
+            B++;
+        }
     }
 
 
@@ -453,48 +591,23 @@ public class build_aggregate_projection: DaemonContext
 
     public record Contact(Guid Id, string Name)
     {
-        public static Contact Create(ICreateEvent ev) => ev switch
+        public static Contact Create(ICreateEvent ev)
         {
-            ContactCreated e => new(e.Id, e.Name),
-            _ => null
-        };
-
-        public static Contact Apply(Contact state, IEvent ev) => ev switch
-        {
-            ContactEdited e => state with { Name = e.Name },
-            _ => state
-        };
-    }
-
-    [Fact]
-    public async Task rebuild_with_interface_creation()
-    {
-        StoreOptions(x =>
-        {
-            x.Events.TenancyStyle = TenancyStyle.Conjoined;
-            x.Policies.AllDocumentsAreMultiTenanted();
-            x.Projections.Add(new InterfaceCreationProjection(), ProjectionLifecycle.Inline);
-        }, true);
-
-        var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession("a"))
-        {
-            session.Events.StartStream(id, new FooCreated(id, "Foo"));
-            session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
-
-            await session.SaveChangesAsync();
-
-            var foo = await session.LoadAsync<Foo>(id);
-            Assert.Equal("Foo", foo.Name);
+            return ev switch
+            {
+                ContactCreated e => new Contact(e.Id, e.Name),
+                _ => null
+            };
         }
 
-        var daemon = await theStore.BuildProjectionDaemonAsync();
-
-        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
-
-        await using var session2 = theStore.LightweightSession("a");
-        var c = await session2.LoadAsync<Foo>(id);
-        Assert.Equal("Foo", c.Name);
+        public static Contact Apply(Contact state, IEvent ev)
+        {
+            return ev switch
+            {
+                ContactEdited e => state with { Name = e.Name },
+                _ => state
+            };
+        }
     }
 
 
@@ -504,7 +617,7 @@ public class build_aggregate_projection: DaemonContext
         {
             ProjectionName = nameof(Foo);
 
-            CreateEvent<IFooCreated>(e => new(e.Id, "Foo"));
+            CreateEvent<IFooCreated>(e => new Foo(e.Id, "Foo"));
         }
     }
 
@@ -519,37 +632,6 @@ public class build_aggregate_projection: DaemonContext
 
     public record Foo(Guid Id, string Name);
 
-    [Fact]
-    public async Task rebuild_with_abstract_creation()
-    {
-        StoreOptions(x =>
-        {
-            x.Events.TenancyStyle = TenancyStyle.Conjoined;
-            x.Policies.AllDocumentsAreMultiTenanted();
-            x.Projections.Add(new AbstractCreationProjection(), ProjectionLifecycle.Inline);
-        }, true);
-
-        var id = Guid.NewGuid();
-        await using (var session = theStore.LightweightSession("a"))
-        {
-            session.Events.StartStream(id, new FooCreated2(id, "Foo"));
-            session.Events.StartStream(Guid.NewGuid(), new BarCreated(Guid.NewGuid()));
-
-            await session.SaveChangesAsync();
-
-            var foo = await session.LoadAsync<Foo>(id);
-            Assert.Equal("Foo", foo.Name);
-        }
-
-        var daemon = await theStore.BuildProjectionDaemonAsync();
-
-        await daemon.RebuildProjectionAsync("Foo", CancellationToken.None);
-
-        await using var session2 = theStore.LightweightSession("a");
-        var c = await session2.LoadAsync<Foo>(id);
-        Assert.Equal("Foo", c.Name);
-    }
-
 
     public class AbstractCreationProjection: SingleStreamProjection<Foo, Guid>
     {
@@ -557,7 +639,7 @@ public class build_aggregate_projection: DaemonContext
         {
             ProjectionName = nameof(Foo);
 
-            CreateEvent<AbstractFooCreated>(e => new(e.Id, "Foo"));
+            CreateEvent<AbstractFooCreated>(e => new Foo(e.Id, "Foo"));
         }
     }
 

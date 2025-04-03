@@ -8,6 +8,7 @@ using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Coordination;
+using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -83,7 +84,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
         await daemon.WaitForShardToBeRunning("Weird:All", 10.Seconds());
         await daemon.WaitForNonStaleData(5.Seconds());
 
-        using (var session = _processor.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        await using (var session = _processor.DocumentStore().LightweightSession())
         {
             var aggregate = await session.LoadAsync<MyAggregate>(streamId);
             aggregate.ShouldNotBeNull();
@@ -94,38 +95,33 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
     }
 }
 
-public class WeirdCustomAggregation: CustomProjection<MyAggregate, Guid>
+public class WeirdCustomAggregation: MultiStreamProjection<MyAggregate, Guid>
 {
     public WeirdCustomAggregation()
     {
         ProjectionName = "Weird";
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<MyAggregate, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override MyAggregate Evolve(MyAggregate snapshot, Guid id, IEvent e)
     {
-        slice.Aggregate ??= new MyAggregate{Id = slice.Id};
-        foreach (var e in slice.Events())
+        snapshot ??= new MyAggregate(){ Id = id };
+        switch (e.Data)
         {
-            switch (e.Data)
-            {
-                case AEvent:
-                    slice.Aggregate.ACount++;
-                    break;
-                case BEvent:
-                    slice.Aggregate.BCount++;
-                    break;
-                case CEvent:
-                    slice.Aggregate.CCount++;
-                    break;
-                case DEvent:
-                    slice.Aggregate.DCount++;
-                    break;
-            }
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
-        session.Store(slice.Aggregate);
-
-        return new ValueTask();
+        return snapshot;
     }
+
 }

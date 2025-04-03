@@ -107,7 +107,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId>
 
     public void StoreProjection(TDoc aggregate, IEvent lastEvent, AggregationScope scope)
     {
-        var op = _storage.Upsert(aggregate, _session, TenantId);
+        var op = _storage.Overwrite(aggregate, _session, TenantId);
         if (op is IRevisionedOperation r)
         {
             r.Revision = scope == AggregationScope.SingleStream ? (int)lastEvent.Version : (int)lastEvent.Sequence;
