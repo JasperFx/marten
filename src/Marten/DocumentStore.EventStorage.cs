@@ -19,13 +19,14 @@ using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Subscriptions;
 using Microsoft.Extensions.Logging;
 using Weasel.Postgresql.SqlGeneration;
 using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 
 namespace Marten;
 
-public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySession>
+public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
     IEventRegistry IEventStorage<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
 
@@ -71,7 +72,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         var names = Options
             .Projections
             .AllShards()
-            .Where(x => x.Name.ProjectionName.EqualsIgnoreCase(subscriptionName))
+            .Where(x => x.Name.Identity.EqualsIgnoreCase(subscriptionName))
             .Select(x => x.Name)
             .ToArray();
 
@@ -85,8 +86,8 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
             else
             {
                 session.QueueSqlCommand(
-                    $"update {Options.EventGraph.ProgressionTable} set last_seq_id = ? where name = ?", sequenceFloor,
-                    name.Identity);
+                    $"insert into {Options.EventGraph.ProgressionTable} (name, last_seq_id) values (?, ?) on conflict (name) do update set last_seq_id = ?",
+                    name.Identity, sequenceFloor, sequenceFloor);
             }
         }
 
@@ -207,5 +208,37 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
     ErrorHandlingOptions IEventStorage<IDocumentOperations, IQuerySession>.ErrorHandlingOptions(ShardExecutionMode mode)
     {
         return mode == ShardExecutionMode.Rebuild ? Options.Projections.RebuildErrors : Options.Projections.Errors;
+    }
+
+    async Task ISubscriptionRunner<ISubscription>.ExecuteAsync(ISubscription subscription, IEventDatabase database, EventRange range, ShardExecutionMode mode,
+        CancellationToken token)
+    {
+        var db = (IMartenDatabase)database;
+        await using var parent = (DocumentSessionBase)OpenSession(SessionOptions.ForDatabase(db));
+
+        var batch = new ProjectionUpdateBatch(Options.Projections, parent, mode, token)            {
+            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
+        };;
+
+        // Mark the progression
+        batch.Queue.Post(range.BuildProgressionOperation(Events));
+
+        await using var session = new ProjectionDocumentSession(this, batch,
+            new SessionOptions
+            {
+                Tracking = DocumentTracking.IdentityOnly,
+                Tenant = new Tenant(StorageConstants.DefaultTenantId, db)
+            }, mode);
+
+
+        var listener = await subscription.ProcessEventsAsync(range, range.Agent, session, token)
+            .ConfigureAwait(false);
+
+        batch.Listeners.Add(listener);
+        await batch.WaitForCompletion().ConfigureAwait(false);
+
+        // Polly is already around the basic retry here, so anything that gets past this
+        // probably deserves a full circuit break
+        await session.ExecuteBatchAsync(batch, token).ConfigureAwait(false);
     }
 }

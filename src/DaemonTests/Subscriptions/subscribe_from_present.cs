@@ -60,13 +60,6 @@ public class subscribe_from_present : IAsyncLifetime
         _host.Dispose();
     }
 
-    /*
-     * TODO
-     *
-     *
-     *
-     */
-
     [Fact]
     public async Task start_from_scratch()
     {
