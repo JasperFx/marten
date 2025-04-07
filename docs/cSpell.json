@@ -93,7 +93,11 @@
     "hostbuilder",
     "Garofolo",
     "Alexey",
-    "Zimarev"
+    "Zimarev",
+    "unaccent",
+    "ngram",
+    "ngrams",
+    "pgcrypto"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links
