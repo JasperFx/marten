@@ -144,7 +144,7 @@ You need to map the previous event type name (`order_status_changed`) into the r
 ```cs
 var options = new StoreOptions();
 
-options.EventGraph
+options.Events
     .MapEventType<NewEventNamespace.ConfirmedOrderStatusChanged>("order_status_changed");
 
 var store = new DocumentStore(options);

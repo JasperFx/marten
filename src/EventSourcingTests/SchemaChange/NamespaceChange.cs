@@ -84,7 +84,7 @@ namespace EventSourcingTests.SchemaChange
             #region sample_event_type_name_migration_options
             var options = new StoreOptions();
 
-            options.EventGraph
+            options.Events
                 .MapEventType<NewEventNamespace.ConfirmedOrderStatusChanged>("order_status_changed");
 
             var store = new DocumentStore(options);

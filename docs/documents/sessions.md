@@ -13,7 +13,7 @@ class QuerySession
 class IDocumentSession
 class DocumentStore
 class IdentityMapDocumentSession
-class LightWeightDocumentSession
+class LightweightSession
 class DirtyCheckingDocumentSession
 
 IDocumentStore --> IQuerySession: Builds
@@ -25,7 +25,7 @@ IQuerySession <|.. IDocumentSession
 IDocumentStore <|.. DocumentStore
 
 IDocumentSession <|.. IdentityMapDocumentSession
-IDocumentSession <|.. LightWeightDocumentSession
+IDocumentSession <|.. LightweightSession
 IDocumentSession <|.. DirtyCheckingDocumentSession
 ```
 
@@ -46,7 +46,7 @@ types of sessions are:
 | `IDocumentStore.OpenSerializableSessionAsync()`         | Read/Write     | Yes              | No                 |
 
 ::: tip INFO
-The recommended session type for read/write operations is `LightWeightDocumentSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
+The recommended session type for read/write operations is `LightweightSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
 
 For read-only access, use `QuerySession`.
 :::
