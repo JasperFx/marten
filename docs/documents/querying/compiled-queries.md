@@ -56,7 +56,7 @@ public class FindByFirstName: ICompiledQuery<User, User>
 <!-- endSnippet -->
 
 ::: tip
-There are many more example compiled query classes in the [acceptance tests for compiled queries](https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Linq/Compiled/compiled_query_Tests.cs) within the Marten codebase.
+There are many more example compiled query classes in the [acceptance tests for compiled queries](https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs) within the Marten codebase.
 :::
 
 So a couple things to note in the class above:
