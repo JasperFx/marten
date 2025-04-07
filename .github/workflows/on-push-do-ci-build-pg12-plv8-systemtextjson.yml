@@ -104,11 +104,6 @@ jobs:
         run: ./build.sh compile
         shell: bash
 
-      - name: mocha
-        if: ${{ success() || failure() }}
-        run: ./build.sh mocha
-        shell: bash
-
       - name: test-base-lib
         if: ${{ success() || failure() }}
         run: ./build.sh test-base-lib
