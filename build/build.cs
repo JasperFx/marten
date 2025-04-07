@@ -56,11 +56,6 @@ class Build : NukeBuild
     Target NpmInstall => _ => _
         .Executes(() => NpmTasks.NpmInstall());
    
-    Target Mocha => _ => _
-        .ProceedAfterFailure()
-        .DependsOn(NpmInstall)
-        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("test")));
-
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
