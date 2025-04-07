@@ -352,8 +352,6 @@ The code below is provided as an example only, `Jil` is no longer maintained
 and should not be used in your application.
 :::
 
-<!-- snippet: sample_JilSerializer -->
-<a id='snippet-sample_jilserializer'></a>
 ```cs
 public class JilSerializer : ISerializer
 {
@@ -422,13 +420,9 @@ public class JilSerializer : ISerializer
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/JilSerializer.cs#L15-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
 
-<!-- snippet: sample_replacing_serializer_with_jil -->
-<a id='snippet-sample_replacing_serializer_with_jil'></a>
 ```cs
 var store = DocumentStore.For(_ =>
 {
@@ -438,5 +432,3 @@ var store = DocumentStore.For(_ =>
     _.Serializer<TestsSerializer>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/JilSerializer.cs#L93-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
