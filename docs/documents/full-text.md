@@ -404,6 +404,7 @@ var result = await session
 <!-- endSnippet -->
 
 ## NGram Search Across Multiple Properties <Badge type="tip" text="7.39.5" />
+
 In many cases, you may want to perform partial text search across multiple fields like `UserName`, `FirstName`, and `LastName`.  
 
 A naive approach might be to apply individual Ngram indexes and search each field separately:
