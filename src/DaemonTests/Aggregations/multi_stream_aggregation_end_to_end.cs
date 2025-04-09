@@ -11,7 +11,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class multi_stream_aggregation_end_to_end: DaemonContext
 {

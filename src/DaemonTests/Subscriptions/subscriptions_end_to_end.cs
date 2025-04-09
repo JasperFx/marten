@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.Aggregations;
 using JasperFx.Core;
 using JasperFx.Core.Descriptions;
 using JasperFx.Events;

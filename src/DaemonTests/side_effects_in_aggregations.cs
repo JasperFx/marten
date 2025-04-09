@@ -280,6 +280,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
             opts.Projections.Add<Projection2>(ProjectionLifecycle.Async);
             opts.Logger(new TestOutputMartenLogger(_output));
+
+            opts.Events.AppendMode = EventAppendMode.Quick;
         });
 
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
@@ -377,7 +379,7 @@ public class Projection1: SingleStreamProjection<SideEffects1, Guid>
 
     public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<SideEffects1> slice)
     {
-        if (slice.Aggregate?.A % 5 == 0)
+        if (slice.Snapshot?.A % 5 == 0)
         {
             slice.AppendEvent(new BEvent());
         }
@@ -418,7 +420,7 @@ public class Projection2: SingleStreamProjection<SideEffects2, string>
 
     public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<SideEffects2> slice)
     {
-        if (slice.Aggregate.A >= 5 && slice.Aggregate.B == 0)
+        if (slice.Snapshot.A >= 5 && slice.Snapshot.B == 0)
         {
             slice.AppendEvent(new BEvent());
         }
@@ -441,9 +443,9 @@ public class Projection3: SingleStreamProjection<SideEffects1, Guid>
 
     public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<SideEffects1> slice)
     {
-        if (slice.Aggregate != null && slice.Events().OfType<IEvent<BEvent>>().Any())
+        if (slice.Snapshot != null && slice.Events().OfType<IEvent<BEvent>>().Any())
         {
-            slice.PublishMessage(new GotB(slice.Aggregate.Id));
+            slice.PublishMessage(new GotB(slice.Snapshot.Id));
         }
 
         return new ValueTask();

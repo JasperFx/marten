@@ -7,8 +7,6 @@ using JasperFx.Core;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Testing;
 using NpgsqlTypes;
 using Shouldly;
@@ -16,7 +14,7 @@ using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class build_aggregate_multiple_projections: DaemonContext
 {

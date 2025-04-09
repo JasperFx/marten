@@ -1,24 +1,15 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
-using EventSourcingTests.Bugs;
 using JasperFx.Events;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
-using Marten.Events;
-using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
-using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class custom_aggregation_in_async_daemon : OneOffConfigurationsContext
 {

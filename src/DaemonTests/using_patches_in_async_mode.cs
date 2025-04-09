@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DaemonTests.Aggregations;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;

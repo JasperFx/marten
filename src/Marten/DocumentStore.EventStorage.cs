@@ -72,9 +72,15 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         var names = Options
             .Projections
             .AllShards()
-            .Where(x => x.Name.Identity.EqualsIgnoreCase(subscriptionName))
+            .Where(x => x.Name.ProjectionOrSubscriptionName.EqualsIgnoreCase(subscriptionName) || x.Name.Identity == subscriptionName)
             .Select(x => x.Name)
             .ToArray();
+
+        if (!names.Any())
+        {
+            throw new ArgumentOutOfRangeException(nameof(subscriptionName),
+                $"Unknown subscription name '{subscriptionName}'. Available options are {Options.Projections.AllShards().Select(x => x.Name.ProjectionOrSubscriptionName).Distinct().Join(", ")}");
+        }
 
         foreach (var name in names)
         {

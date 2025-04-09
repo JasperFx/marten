@@ -48,66 +48,6 @@ public class CustomProjectionTests
     }
 
     [Fact]
-    public void caches_aggregate_caches_correctly()
-    {
-        var projection = new MyCustomProjection();
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        var cache1 = projection.CacheFor(tenant1.TenantId);
-        var cache2 = projection.CacheFor(tenant2.TenantId);
-        var cache3 = projection.CacheFor(tenant3.TenantId);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeSameAs(cache1);
-        projection.CacheFor(tenant2.TenantId).ShouldBeSameAs(cache2);
-        projection.CacheFor(tenant3.TenantId).ShouldBeSameAs(cache3);
-
-        cache1.ShouldNotBeSameAs(cache2);
-        cache1.ShouldNotBeSameAs(cache3);
-        cache2.ShouldNotBeSameAs(cache3);
-    }
-
-    [Fact]
-    public void build_nullo_cache_with_no_limit()
-    {
-        var projection = new MyCustomProjection { Options = { CacheLimitPerTenant = 0 } };
-
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-
-    }
-
-    [Fact]
-    public void build_real_cache_with_limit()
-    {
-        var projection = new MyCustomProjection
-        {
-            Options = { CacheLimitPerTenant = 1000 }
-        };
-
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-
-    }
-
-    [Fact]
     public void default_projection_name_is_type_name()
     {
         new MyCustomProjection().ProjectionName.ShouldBe(nameof(MyCustomProjection));

@@ -7,7 +7,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class Base
 {

@@ -1,15 +1,13 @@
 using System;
 using System.Threading.Tasks;
-using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class converting_projection_from_inline_to_async : OneOffConfigurationsContext
 {

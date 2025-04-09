@@ -1,10 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
-using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
@@ -13,7 +11,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class multi_stream_projections: DaemonContext
 {

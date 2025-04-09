@@ -30,7 +30,7 @@ public class EventDeserializationFailureException: MartenException
             EventSequence = Sequence,
             ExceptionMessage = Message,
             ExceptionType = GetType().FullNameInCode(),
-            ProjectionName = name.ProjectionName,
+            ProjectionName = name.ProjectionOrSubscriptionName,
             ShardName = name.Key
         };
     }
