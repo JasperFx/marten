@@ -15,7 +15,7 @@ using Xunit;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_projetion_base_settings_must_be_used_by_deamon : BugIntegrationContext
+public class Bug_projection_base_settings_must_be_used_by_deamon : BugIntegrationContext
 {
     [Theory]
     [InlineData(0, false, typeof(EventA))]

@@ -18,32 +18,22 @@ public class Bug_1995_empty_batch_update_failure : BugIntegrationContext
     [Fact]
     public async Task should_be_able_to_apply_an_update_batch_with_no_changes()
     {
-        using var documentStore = SeparateStore(x =>
+        StoreOptions(opts =>
         {
-            x.Events.StreamIdentity = StreamIdentity.AsGuid;
-            x.Projections.Add(new IssueAggregateProjection(), ProjectionLifecycle.Async, "IssueAggregate");
-        });
+            opts.Events.StreamIdentity = StreamIdentity.AsGuid;
+            opts.Projections.Add(new IssueAggregateProjection(), ProjectionLifecycle.Async, "IssueAggregate");
+        }, true);
 
-        await RunTest(documentStore);
-    }
-
-    private static async Task RunTest(IDocumentStore documentStore)
-    {
-        await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
-
-        await using (var session = documentStore.LightweightSession())
+        for (var i = 0; i < 499; i++)
         {
-            for (var i = 0; i < 499; i++)
-            {
-                var id = Guid.NewGuid();
-                session.Events.StartStream(id, new IssueCreated { Id = id });
-            }
-
-            await session.SaveChangesAsync();
+            var id = Guid.NewGuid();
+            theSession.Events.StartStream(id, new IssueCreated { Id = id });
         }
 
-        using var daemon = await documentStore.BuildProjectionDaemonAsync();
-        await daemon.RebuildProjectionAsync<IssueAggregate>(default);
+        await theSession.SaveChangesAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<IssueAggregateProjection>(default);
     }
 }
 
