@@ -166,7 +166,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         var session = (DocumentSessionBase)IdentitySession(sessionOptions);
         var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
         {
-            ShouldApplyListeners = false
+            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
         };
 
         var projectionBatch = new ProjectionBatch(session, batch, mode);

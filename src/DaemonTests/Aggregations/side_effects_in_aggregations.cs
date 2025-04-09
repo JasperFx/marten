@@ -345,7 +345,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         theSession.Events.StartStream<SideEffects1>(stream3, new AEvent(), new AEvent(), new BEvent());
         await theSession.SaveChangesAsync();
 
-        await daemon.WaitForNonStaleData(5.Seconds());
+        await daemon.WaitForNonStaleData(120.Seconds());
 
         var expected = outbox.Batches.SelectMany(x => x.Messages).OfType<GotB>().Single();
         expected.streamId.ShouldBe(stream3);

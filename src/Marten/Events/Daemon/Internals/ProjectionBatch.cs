@@ -52,7 +52,7 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
 
     public async Task PublishMessageAsync(object message)
     {
-        var batch = await _session.CurrentMessageBatch().ConfigureAwait(false);
+        var batch = await _batch.CurrentMessageBatch(_session).ConfigureAwait(false);
         await batch.PublishAsync(message).ConfigureAwait(false);
     }
 
