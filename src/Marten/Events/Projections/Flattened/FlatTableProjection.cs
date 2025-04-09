@@ -113,13 +113,13 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         ShardName shardName)
     {
         var logger = loggerFactory.CreateLogger(GetType());
-        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, storage, database, this, logger);
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, storage, database, this, logger);
     }
 
     ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStorage<IDocumentOperations, IQuerySession> storage, IEventDatabase database, ILogger logger,
         ShardName shardName)
     {
-        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, storage, database, this, logger);
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, storage, database, this, logger);
     }
 
     bool IProjectionSource<IDocumentOperations, IQuerySession>.TryBuildReplayExecutor(IEventStorage<IDocumentOperations, IQuerySession> store, IEventDatabase database,

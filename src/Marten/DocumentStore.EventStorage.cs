@@ -149,11 +149,21 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    public async ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> StartProjectionBatchAsync(EventRange range, IEventDatabase database, ShardExecutionMode mode,
+    public async ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> StartProjectionBatchAsync(
+        EventRange range, IEventDatabase database, ShardExecutionMode mode,
+        AsyncOptions projectionOptions,
         CancellationToken token)
     {
         await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
-        var session = (DocumentSessionBase)IdentitySession(SessionOptions.ForDatabase((IMartenDatabase)database));
+        var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
+
+        // Opt into identity mechanics for Event Projections that require that
+        if (projectionOptions.EnableDocumentTrackingByIdentity)
+        {
+            sessionOptions.Tracking = DocumentTracking.IdentityOnly;
+        }
+
+        var session = (DocumentSessionBase)IdentitySession(sessionOptions);
         var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
         {
             ShouldApplyListeners = false

@@ -60,12 +60,18 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
     {
         if (tenantId.IsEmpty() || tenantId == StorageConstants.DefaultTenantId)
         {
+            var sessionOptions = SessionOptions.ForDatabase(_session.Database);
+            sessionOptions.Tracking = _session.TrackingMode;
+
             return new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, _batch,
-                SessionOptions.ForDatabase(_session.Database), _mode);
+                sessionOptions, _mode);
         }
 
+        var forDatabase = SessionOptions.ForDatabase(tenantId, _session.Database);
+        forDatabase.Tracking = _session.TrackingMode;
+
         return new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, _batch,
-            SessionOptions.ForDatabase(tenantId, _session.Database), _mode);
+            forDatabase, _mode);
     }
 
     public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>(string tenantId)
