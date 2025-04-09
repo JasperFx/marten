@@ -1,16 +1,11 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
-using JasperFx.Events.Daemon;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
-using Marten.Events.Projections;
 using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Schema;
 using Marten.Storage;
 using Npgsql;
@@ -21,14 +16,16 @@ namespace Marten.Events.Aggregation;
 ///     Base class for aggregating events by a stream using Marten-generated pattern matching
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
-public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>
+public class SingleStreamProjection<TDoc, TId>:
+    JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection,
+    IValidatedProjection<StoreOptions>
 {
     // public override SubscriptionDescriptor Describe()
     // {
     //     return new SubscriptionDescriptor(this, SubscriptionType.SingleStreamProjection);
     // }
 
-    public SingleStreamProjection() : base([typeof(NpgsqlException), typeof(MartenCommandException)])
+    public SingleStreamProjection(): base([typeof(NpgsqlException), typeof(MartenCommandException)])
     {
     }
 
@@ -36,18 +33,6 @@ public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBa
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
         mapping.UseVersionFromMatchingStream = true;
-    }
-
-    internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType, out ValueTypeInfo? valueType)
-    {
-        valueType = default;
-        expectedType = options.Events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
-        if (idType == expectedType) return true;
-
-        valueType = options.TryFindValueType(idType);
-        if (valueType == null) return false;
-
-        return valueType.SimpleType == expectedType;
     }
 
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
@@ -58,9 +43,9 @@ public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBa
 
         if (options.Events.TenancyStyle != mapping.TenancyStyle
             && (options.Events.TenancyStyle == TenancyStyle.Single
-                || options.Events is
-                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
-                && Lifecycle != ProjectionLifecycle.Live)
+                || (options.Events is
+                        { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
+                    && Lifecycle != ProjectionLifecycle.Live))
            )
         {
             yield return
@@ -72,6 +57,25 @@ public class SingleStreamProjection<TDoc, TId>: JasperFxSingleStreamProjectionBa
             yield return
                 "SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
         }
+    }
+
+    internal bool IsIdTypeValidForStream(Type idType, StoreOptions options, out Type expectedType,
+        out ValueTypeInfo? valueType)
+    {
+        valueType = default;
+        expectedType = options.Events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+        if (idType == expectedType)
+        {
+            return true;
+        }
+
+        valueType = options.TryFindValueType(idType);
+        if (valueType == null)
+        {
+            return false;
+        }
+
+        return valueType.SimpleType == expectedType;
     }
 
     protected IEnumerable<string> validateDocumentIdentity(StoreOptions options,
