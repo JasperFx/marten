@@ -7,14 +7,13 @@ using DaemonTests.TestingSupport;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
 using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests.DocumentTrackingByIdentity;
+namespace DaemonTests.EventProjections;
 
-public class CustomProjection_follow_up_operations: DaemonContext
+public class using_custom_projection_that_depends_on_identity_map_behavior: DaemonContext
 {
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
@@ -94,7 +93,7 @@ public class CustomProjection_follow_up_operations: DaemonContext
 
     }
 
-    public CustomProjection_follow_up_operations(ITestOutputHelper output): base(output)
+    public using_custom_projection_that_depends_on_identity_map_behavior(ITestOutputHelper output): base(output)
     {
     }
 }

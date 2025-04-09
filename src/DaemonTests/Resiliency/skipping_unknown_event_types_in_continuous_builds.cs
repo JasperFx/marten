@@ -1,23 +1,21 @@
 using System;
-using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.MultiTenancy;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Projections;
-using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Xunit;
 using Shouldly;
 using Weasel.Postgresql;
+using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Resiliency;
 
 public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
 {

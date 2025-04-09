@@ -3,10 +3,7 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Events.Projections;
-using Marten.AsyncDaemon.Testing;
 using Marten.Events.Daemon;
-using Marten.Events.Projections;
-using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Npgsql;
@@ -16,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using static Marten.Events.Daemon.AsyncDaemonHealthCheckExtensions;
 
-namespace DaemonTests;
+namespace DaemonTests.HealthChecks;
 
 
 public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext

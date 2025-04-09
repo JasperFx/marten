@@ -1,5 +1,3 @@
-using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
@@ -13,7 +11,7 @@ using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class HighWaterAgentTests: DaemonContext
 {

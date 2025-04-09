@@ -3,7 +3,7 @@ using Marten.Events.Aggregation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace Marten.AsyncDaemon.Testing;
+namespace DaemonTests.HealthChecks;
 
 internal class FakeHealthCheckBuilderStub : IHealthChecksBuilder
 {

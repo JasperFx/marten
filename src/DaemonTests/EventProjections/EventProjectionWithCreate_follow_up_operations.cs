@@ -4,13 +4,12 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests.DocumentTrackingByIdentity;
+namespace DaemonTests.EventProjections;
 
 public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 {

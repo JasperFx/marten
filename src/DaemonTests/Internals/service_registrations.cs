@@ -9,7 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class service_registrations
 {

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -8,29 +7,31 @@ using JasperFx;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Projections;
-using Marten.Linq.SqlGeneration;
 using Marten.Services;
 using Marten.Storage;
-using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
-public class basic_async_daemon_tests: DaemonContext
+public class basic_functionality: DaemonContext
 {
     private readonly ISubscriptionAgent theAgent;
 
-    public basic_async_daemon_tests(ITestOutputHelper output): base(output)
+    public basic_functionality(ITestOutputHelper output): base(output)
     {
         theAgent = Substitute.For<ISubscriptionAgent>();
         theAgent.Mode.Returns(ShardExecutionMode.Continuous);
+    }
+
+    [Fact]
+    public async Task can_build_it_out_with_no_custom_logging()
+    {
+        var daemon = await theStore.BuildProjectionDaemonAsync();
     }
 
     [Fact]

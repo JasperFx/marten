@@ -6,13 +6,12 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
-using Marten.Events.Projections;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.EventProjections;
 
 public class event_projections_end_to_end_ihost : DaemonContext
 {

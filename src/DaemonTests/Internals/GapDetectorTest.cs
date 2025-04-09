@@ -2,7 +2,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Events.Daemon.HighWater;
 using Marten.Services;
 using Marten.Testing;
@@ -12,7 +11,7 @@ using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class GapDetectorTest: DaemonContext
 {

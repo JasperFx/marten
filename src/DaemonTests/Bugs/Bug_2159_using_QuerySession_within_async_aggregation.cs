@@ -11,6 +11,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using MyAggregate = DaemonTests.MultiTenancy.MyAggregate;
 using UserCreated = DaemonTests.Aggregations.UserCreated;
 
 namespace DaemonTests.Bugs;

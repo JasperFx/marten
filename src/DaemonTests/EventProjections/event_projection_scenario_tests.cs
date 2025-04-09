@@ -10,7 +10,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.EventProjections;
 
 public class event_projection_scenario_tests : OneOffConfigurationsContext
 {

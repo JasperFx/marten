@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using DaemonTests.MultiTenancy;
 using JasperFx.Core;
 using Marten.Events.Projections;
 using Marten.Metadata;

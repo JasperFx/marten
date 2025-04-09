@@ -5,12 +5,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon.Internals;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -18,7 +16,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.EventProjections;
 
 public class event_projections_end_to_end : DaemonContext
 {

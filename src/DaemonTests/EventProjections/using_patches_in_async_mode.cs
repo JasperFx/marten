@@ -1,18 +1,18 @@
 using System;
 using System.Threading.Tasks;
 using DaemonTests.Aggregations;
+using DaemonTests.MultiTenancy;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Patching;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.EventProjections;
 
 public class using_patches_in_async_mode : OneOffConfigurationsContext
 {

@@ -2,9 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
 using Marten.Exceptions;
 using Marten.Testing;
@@ -13,7 +10,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class projection_progression_operations : OneOffConfigurationsContext, IAsyncLifetime
 {

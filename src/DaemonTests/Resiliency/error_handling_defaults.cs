@@ -3,7 +3,7 @@ using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Resiliency;
 
 public class error_handling_defaults
 {

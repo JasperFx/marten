@@ -9,7 +9,7 @@ using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests.DocumentTrackingByIdentity;
+namespace DaemonTests.EventProjections;
 
 public class EventProjection_follow_up_operations: DaemonContext
 {

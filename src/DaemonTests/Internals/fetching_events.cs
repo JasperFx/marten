@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.MultiTenancy;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -14,15 +15,15 @@ using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
-public class event_fetcher_tests: OneOffConfigurationsContext, IAsyncLifetime
+public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly List<ISqlFragment> theFilters = new();
     private readonly EventRange theRange;
     private readonly ShardName theShardName = new("foo", "All");
 
-    public event_fetcher_tests()
+    public fetching_events()
     {
         theRange = new EventRange(theShardName, 0, 100);
     }

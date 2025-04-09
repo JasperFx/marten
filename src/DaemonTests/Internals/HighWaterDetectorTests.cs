@@ -4,20 +4,18 @@ using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Events.Daemon.HighWater;
-using Weasel.Postgresql;
-using Marten.Services;
 using Marten.Storage;
 using Marten.Testing;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Shouldly;
+using Weasel.Core;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
-using Weasel.Core;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class HighWaterDetectorTests: DaemonContext
 {

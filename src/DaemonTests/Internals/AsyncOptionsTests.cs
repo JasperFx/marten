@@ -1,19 +1,12 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Internal.Operations;
-using Marten.Storage;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using NSubstitute;
-using Shouldly;
 using Xunit;
 
-namespace DaemonTests;
+namespace DaemonTests.Internals;
 
 public class AsyncOptionsTests
 {

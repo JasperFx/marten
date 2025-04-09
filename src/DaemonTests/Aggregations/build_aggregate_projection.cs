@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.MultiTenancy;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using JasperFx.Events;

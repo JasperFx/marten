@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
+using DaemonTests.MultiTenancy;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Metadata;
 using Marten.Services;
@@ -19,7 +17,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Aggregations;
 
 public class side_effects_in_aggregations: OneOffConfigurationsContext
 {

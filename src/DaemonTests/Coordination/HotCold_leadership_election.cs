@@ -1,20 +1,17 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using Marten.Events.Daemon;
-using Marten.Events.Projections;
-using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Coordination;
 
 public class HotCold_leadership_election: DaemonContext
 {

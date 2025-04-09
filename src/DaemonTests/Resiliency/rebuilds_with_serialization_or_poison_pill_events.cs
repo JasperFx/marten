@@ -10,16 +10,13 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.Resiliency;
 
 public class rebuilds_with_serialization_or_poison_pill_events: DaemonContext
 {

@@ -23,7 +23,7 @@ using Weasel.Postgresql.Migrations;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests;
+namespace DaemonTests.MultiTenancy;
 
 public class multi_tenancy_by_database: IAsyncLifetime
 {
