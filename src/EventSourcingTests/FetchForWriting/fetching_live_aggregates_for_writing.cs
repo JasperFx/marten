@@ -374,10 +374,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        theSession.Events.StartStream<CountedAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        var aggregate = await theSession.Events.FetchLatest<CountedAggregate>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
@@ -396,10 +396,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = $"simple|{Guid.NewGuid()}";
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        theSession.Events.StartStream<CountedAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        var aggregate = await theSession.Events.FetchLatest<CountedAsString>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);

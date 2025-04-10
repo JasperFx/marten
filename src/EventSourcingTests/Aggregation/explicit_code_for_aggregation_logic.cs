@@ -595,14 +595,15 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
         IncludeType<Increment>();
     }
 
-    public override SnapshotAction<StartAndStopAggregate> DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
+    public override (StartAndStopAggregate?, ActionType) DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
         IReadOnlyList<IEvent> events)
     {
         var actionType = ActionType.Store;
 
         if (snapshot == null && events.HasNoEventsOfType<Start>())
-            return new Nothing<StartAndStopAggregate>(snapshot);
-
+        {
+            return (snapshot, ActionType.Nothing);
+        }
 
         var eventData = events.ToQueueOfEventData();
         while (eventData.Any())
@@ -642,18 +643,7 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
             }
         }
 
-        switch (actionType)
-        {
-            case ActionType.Delete:
-                return new Delete<StartAndStopAggregate>(snapshot);
-            case ActionType.UnDeleteAndStore:
-                return new UnDeleteAndStore<StartAndStopAggregate>(snapshot);
-            case ActionType.StoreThenSoftDelete:
-                return new StoreTheSoftDelete<StartAndStopAggregate>(snapshot);
-            default:
-                return new Store<StartAndStopAggregate>(snapshot);
-
-        }
+        return (snapshot, actionType);
     }
 
 }

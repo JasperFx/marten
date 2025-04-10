@@ -222,7 +222,7 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
         this.IncludeType<CompanyLocationDeleted>();
     }
 
-    public override ValueTask<SnapshotAction<CompanyLocation>> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
+    public override ValueTask<(CompanyLocation, ActionType)> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
         IIdentitySetter<CompanyLocation, Guid> identitySetter, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
         var location = snapshot;
@@ -248,11 +248,11 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
                     break;
 
                 case CompanyLocationDeleted d:
-                    return new ValueTask<SnapshotAction<CompanyLocation>>(new Delete<CompanyLocation>(location));
+                    return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Delete));
             }
         }
 
-        return new ValueTask<SnapshotAction<CompanyLocation>>(new Store<CompanyLocation>(location));
+        return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Store));
     }
 
 }

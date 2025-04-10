@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
+using EventSourcingTests.Projections;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -395,12 +396,12 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Add(new SimpleAggregateProjection2(), ProjectionLifecycle.Inline);
+            opts.Projections.Add(new CountedAggregateProjection2(), ProjectionLifecycle.Inline);
         });
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        theSession.Events.StartStream<CountedAggregate>(streamId, new AEvent(), new BEvent());
         await theSession.SaveChangesAsync();
 
         theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
@@ -620,11 +621,11 @@ public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, 
     public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
 }
 
-public class SimpleAggregateProjection2: SingleStreamProjection<SimpleAggregate, Guid>
+public class CountedAggregateProjection2: SingleStreamProjection<CountedAggregate, Guid>
 {
-    public override SimpleAggregate Evolve(SimpleAggregate snapshot, Guid id, IEvent @event)
+    public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent @event)
     {
-        snapshot ??= new SimpleAggregate();
+        snapshot ??= new CountedAggregate();
 
         switch (@event.Data)
         {

@@ -6,6 +6,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -32,6 +33,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "missing_events";
                     opts.Events.MapEventType<AEvent>("TripleAAA");
                 }).ApplyAllDatabaseChangesOnStartup();
@@ -93,7 +95,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
     }
 }
 
-public class WeirdCustomAggregation: MultiStreamProjection<MyAggregate, Guid>
+public class WeirdCustomAggregation: SingleStreamProjection<MyAggregate, Guid>
 {
     public WeirdCustomAggregation()
     {

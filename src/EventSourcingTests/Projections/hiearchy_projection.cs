@@ -112,7 +112,7 @@ public record ThingFed;
 
 public class ThingProjection: SingleStreamProjection<HThing, Guid>
 {
-    public override ValueTask<SnapshotAction<HThing>> DetermineActionAsync(IQuerySession session, HThing snapshot, Guid identity,
+    public override ValueTask<(HThing?, ActionType)> DetermineActionAsync(IQuerySession session, HThing snapshot, Guid identity,
         IIdentitySetter<HThing, Guid> identitySetter, IReadOnlyList<IEvent> events,
         CancellationToken cancellation)
     {
@@ -130,6 +130,6 @@ public class ThingProjection: SingleStreamProjection<HThing, Guid>
             snapshot?.Feed();
         }
 
-        return new ValueTask<SnapshotAction<HThing>>(new Store<HThing>(snapshot));
+        return new ValueTask<(HThing, ActionType)>((snapshot, ActionType.Store));
     }
 }
