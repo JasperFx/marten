@@ -5,9 +5,12 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.ContainerScoped;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace Marten.Events.Aggregation;
@@ -18,7 +21,7 @@ namespace Marten.Events.Aggregation;
 /// <typeparam name="TDoc"></typeparam>
 public class SingleStreamProjection<TDoc, TId>:
     JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection,
-    IValidatedProjection<StoreOptions>
+    IValidatedProjection<StoreOptions>, IMartenRegistrable
 {
     // public override SubscriptionDescriptor Describe()
     // {
@@ -86,6 +89,74 @@ public class SingleStreamProjection<TDoc, TId>:
         {
             yield return
                 $"Id type mismatch. The stream identity type is {expectedType.NameInCode()} (or a strong typed identifier type that is convertible to {expectedType.NameInCode()}), but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
+    }
+
+    public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
+    public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TStore : IDocumentStore where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
         }
     }
 }

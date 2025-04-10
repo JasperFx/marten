@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Lamar;
 using Marten;
 using Marten.Events.Daemon.Coordination;

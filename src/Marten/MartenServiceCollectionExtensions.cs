@@ -421,7 +421,7 @@ public static class MartenServiceCollectionExtensions
     }
 
 
-    public class MartenStoreExpression<T> where T : IDocumentStore
+    public class MartenStoreExpression<T> where T : class, IDocumentStore
     {
         public MartenStoreExpression(IServiceCollection services)
         {
@@ -546,37 +546,14 @@ public static class MartenServiceCollectionExtensions
         ///     The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be
         ///     treated as Scoped
         /// </param>
+        /// <param name="configure">Optional confiuration of the projection name, version, event filtering, and async execution</param>
         /// ///
         /// <typeparam name="TProjection">The type of projection to add</typeparam>
         /// <returns></returns>
         public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime) where TProjection : class, IProjection
+            ServiceLifetime lifetime, Action<ProjectionBase>? configure = null) where TProjection : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<TProjection>();
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<TProjection, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(TProjection)
-                        };
-
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-            }
+            TProjection.Register<TProjection, T>(Services, lifecycle, lifetime, configure);
 
             return this;
         }
@@ -592,39 +569,11 @@ public static class MartenServiceCollectionExtensions
         /// </param>
         /// <typeparam name="TProjection">The type of projection to add</typeparam>
         /// <returns></returns>
+        [Obsolete("Favor the overload that uses Action<ProjectionBase>. This will be removed in Marten 9")]
         public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime, string projectionName) where TProjection : class, IProjection
+            ServiceLifetime lifetime, string projectionName) where TProjection : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<TProjection>();
-                        opts.Projections.Add(projection, lifecycle, projectionName);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<TProjection, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle,
-                            ProjectionType = typeof(TProjection),
-                            ProjectionName = projectionName
-                        };
-
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
-            return this;
+            return AddProjectionWithServices<TProjection>(lifecycle, lifetime, x => x.ProjectionName = projectionName);
         }
 
 
@@ -902,7 +851,6 @@ public static class MartenServiceCollectionExtensions
             return this;
         }
 
-
         /// <summary>
         ///     Add a projection to this application that requires IoC services. The projection itself will
         ///     be created with the application's IoC container
@@ -913,37 +861,12 @@ public static class MartenServiceCollectionExtensions
         ///     treated as Scoped
         /// </param>
         /// <typeparam name="T"></typeparam>
+        /// <param name="configure">Optional configuration of the projection behavior including the name, version, event filtering, and async execution behavior</param>
         /// <returns></returns>
         public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime) where T : class, IProjection
+            ServiceLifetime lifetime, Action<ProjectionBase>? configure = null) where T : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<T>();
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<T, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(T)
-                        };
-
-                        opts.Projections.Register(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
+            T.Register<T>(Services, lifecycle, lifetime, configure);
             return this;
         }
 
@@ -959,36 +882,9 @@ public static class MartenServiceCollectionExtensions
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime, string projectionName) where T : class, IProjection
+            ServiceLifetime lifetime, string projectionName) where T : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<T>();
-                        opts.Projections.Add(projection, lifecycle, projectionName);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<T, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(T), ProjectionName = projectionName
-                        };
-
-                        opts.Projections.Register(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
-            return this;
+            return AddProjectionWithServices<T>(lifecycle, lifetime, x => x.ProjectionName = projectionName);
         }
 
 

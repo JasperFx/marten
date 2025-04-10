@@ -1,15 +1,14 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.ContainerScoped;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
-using Marten.Internal.Sessions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +18,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace StressTests;
+namespace ContainerScopedProjectionTests;
 
 [Collection("ioc")]
 public class projections_with_IoC_services
@@ -148,15 +147,12 @@ public class projections_with_IoC_services
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ioc";
+                    opts.DatabaseSchemaName = "ioc2";
                     opts.ApplyChangesLockId = opts.ApplyChangesLockId + 4;
-                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection");
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped);
             }).StartAsync();
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
-
-        store.Options.As<StoreOptions>().Projections.All.Single()
-            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
 
         await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
@@ -185,11 +181,11 @@ public class projections_with_IoC_services
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
-        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single();
-        projectionSource
-            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
+        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single().As<IProjectionSource<IDocumentOperations, IQuerySession>>();
 
-        projectionSource.AsyncProjectionShards((DocumentStore)store).Single().Name.Identity.ShouldBe("MyProjection:All");
+        projectionSource.ProjectionName.ShouldBe("MyProjection");
+
+        projectionSource.Shards().Single().Name.Identity.ShouldBe("MyProjection:All");
 
 
     }
@@ -324,9 +320,6 @@ public class projections_with_IoC_services
 
         var store = host.Services.GetRequiredService<ICustomStore>();
 
-        store.Options.As<StoreOptions>().Projections.All.Single()
-            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
-
         await using var session = store.LightweightSession();
         var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
         await session.SaveChangesAsync();
@@ -355,11 +348,9 @@ public class projections_with_IoC_services
 
         var store = host.Services.GetRequiredService<ICustomStore>();
 
-        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single();
-        projectionSource
-            .ShouldBeOfType<ScopedProjectionWrapper<ProductProjection>>().ProjectionName.ShouldBe("MyProjection");
+        var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single().As<IProjectionSource<IDocumentOperations, IQuerySession>>();
 
-        projectionSource.AsyncProjectionShards((DocumentStore)store).Single().Name.Identity.ShouldBe("MyProjection:All");
+        projectionSource.Shards().Single().Name.Identity.ShouldBe("MyProjection:All");
 
 
     }

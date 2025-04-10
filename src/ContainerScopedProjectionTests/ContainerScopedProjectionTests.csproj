@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
+        <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Jil" Version="3.0.0-alpha2" />
+        <PackageReference Include="Lamar" Version="15.0.0-alpha-1" />
+        <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="xunit" Version="2.9.2" />
+        <PackageReference Include="NSubstitute" Version="5.3.0" />
+        <PackageReference Include="Shouldly" Version="4.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Marten.Testing\MartenHostEnvironment.cs">
+            <Link>MartenHostEnvironment.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\RecordingLogger.cs">
+            <Link>RecordingLogger.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <NoWarn>xUnit1013</NoWarn>
+    </PropertyGroup>
+</Project>

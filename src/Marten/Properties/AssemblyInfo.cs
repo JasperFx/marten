@@ -15,3 +15,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Examples")]
 [assembly: InternalsVisibleTo("PatchingTests")]
 [assembly: InternalsVisibleTo("StressTests")]
+[assembly: InternalsVisibleTo("ContainerScopedProjectionTests")]
