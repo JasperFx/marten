@@ -103,6 +103,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StressTests", "StressTests\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContainerScopedProjectionTests", "ContainerScopedProjectionTests\ContainerScopedProjectionTests.csproj", "{A192E730-7C5F-4D26-9A44-60E6FE73DBA8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar", "..\..\lamar\src\Lamar\Lamar.csproj", "{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar.Microsoft.DependencyInjection", "..\..\lamar\src\Lamar.Microsoft.DependencyInjection\Lamar.Microsoft.DependencyInjection.csproj", "{DEB973D5-D603-40D7-B387-67BA1D66893E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -241,6 +245,14 @@ Global
 		{A192E730-7C5F-4D26-9A44-60E6FE73DBA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A192E730-7C5F-4D26-9A44-60E6FE73DBA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A192E730-7C5F-4D26-9A44-60E6FE73DBA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DEB973D5-D603-40D7-B387-67BA1D66893E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DEB973D5-D603-40D7-B387-67BA1D66893E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DEB973D5-D603-40D7-B387-67BA1D66893E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DEB973D5-D603-40D7-B387-67BA1D66893E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -278,6 +290,8 @@ Global
 		{6DF238FD-E5D0-45DC-B8DE-5EEDE191850E} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 		{03CC8A34-5F73-46E5-A018-C116C138BFD9} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
 		{A192E730-7C5F-4D26-9A44-60E6FE73DBA8} = {91D87D73-EC07-4067-8A64-26A2E4F6BC83}
+		{8E3A26E3-2505-45BC-BC91-B26AC0B3BFFD} = {9BF39071-F6C8-4408-AA22-3789C33DA71C}
+		{DEB973D5-D603-40D7-B387-67BA1D66893E} = {9BF39071-F6C8-4408-AA22-3789C33DA71C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}

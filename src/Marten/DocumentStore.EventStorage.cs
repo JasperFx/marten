@@ -14,6 +14,7 @@ using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Exceptions;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
 using Marten.Schema;
@@ -21,6 +22,7 @@ using Marten.Services;
 using Marten.Storage;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Weasel.Postgresql.SqlGeneration;
 using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 
@@ -28,6 +30,12 @@ namespace Marten;
 
 public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
+    static DocumentStore()
+    {
+        ProjectionExceptions.RegisterTransientExceptionType<NpgsqlException>();
+        ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
+    }
+
     IEventRegistry IEventStorage<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
 
     public Type IdentityTypeForProjectedType(Type aggregateType)

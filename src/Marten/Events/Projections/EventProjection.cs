@@ -27,10 +27,6 @@ namespace Marten.Events.Projections;
 /// </summary>
 public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOperations, IQuerySession>, IValidatedProjection<StoreOptions>, IProjectionSchemaSource, IMartenRegistrable
 {
-    protected EventProjection() : base([typeof(NpgsqlException), typeof(MartenCommandException)])
-    {
-    }
-
     protected sealed override void storeEntity<T>(IDocumentOperations ops, T entity)
     {
         ops.Store(entity);

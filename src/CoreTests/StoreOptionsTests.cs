@@ -103,7 +103,7 @@ public class StoreOptionsTests
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
             .Select(x => x.DocumentType.Name)
-            .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
+            .ShouldBe(["Company", "Issue", "Target", "User"]);
     }
 
     [Fact]
