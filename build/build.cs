@@ -326,7 +326,7 @@ class Build : NukeBuild
             foreach (var project in projects)
             {
                 DotNetPack(s => s
-                    .SetProject(project)
+                    .SetProject(project) 
                     .SetOutputDirectory("./artifacts")
                     .SetConfiguration(Configuration.Release));
             }
@@ -336,6 +336,7 @@ class Build : NukeBuild
     {
         { "jasperfx", ["JasperFx", "JasperFx.Events", "EventTests", "JasperFx.RuntimeCompiler"] },
         { "weasel", ["Weasel.Core", "Weasel.Postgresql"] },
+        {"lamar", ["Lamar", "Lamar.Microsoft.DependencyInjection"]}
     };
 
     string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
