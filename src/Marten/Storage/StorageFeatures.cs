@@ -329,7 +329,7 @@ public class StorageFeatures: IFeatureSchema
 
         if (SequenceIsRequired())
         {
-            yield return database.Sequences;
+            yield return database.BuildSequencesForMigration();
         }
 
         if (_options.Events.As<EventGraph>().IsActive(_options))

@@ -25,6 +25,8 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// </summary>
     ISequences Sequences { get; }
 
+    ISequences BuildSequencesForMigration();
+
 
     IProviderGraph Providers { get; }
 
