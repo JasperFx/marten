@@ -314,7 +314,7 @@ document types, but there is still no direct support for supplying strong typed 
 This may change in Marten 8.0.
 :::
 
-Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifie) using a couple different strategies.
+Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifier) using a couple different strategies.
 As of this moment, Marten can automatically use types that conform to one of two patterns:
 
 <!-- snippet: sample_valid_strong_typed_identifiers -->
