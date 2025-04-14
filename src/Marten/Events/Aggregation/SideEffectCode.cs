@@ -10,6 +10,11 @@ public interface IMessageSink
     ValueTask PublishAsync<T>(T message);
 }
 
+public interface ITenantedMessageSink
+{
+    ValueTask PublishAsync<T>(T message, string tenantId);
+}
+
 public interface IMessageBatch: IMessageSink, IChangeListener
 {
 

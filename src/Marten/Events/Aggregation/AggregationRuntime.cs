@@ -227,9 +227,19 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
             if (slice.PublishedMessages != null)
             {
                 var batch = await session.CurrentMessageBatch().ConfigureAwait(false);
-                foreach (var message in slice.PublishedMessages)
+                if (batch is ITenantedMessageSink tenantedMessageSink)
                 {
-                    await batch.PublishAsync(message).ConfigureAwait(false);
+                    foreach (var message in slice.PublishedMessages)
+                    {
+                        await tenantedMessageSink.PublishAsync(message, slice.Tenant.TenantId).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    foreach (var message in slice.PublishedMessages)
+                    {
+                        await batch.PublishAsync(message).ConfigureAwait(false);
+                    }
                 }
             }
         }
