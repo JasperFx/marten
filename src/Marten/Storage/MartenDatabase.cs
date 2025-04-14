@@ -45,6 +45,13 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
     public ISequences Sequences => _sequences.Value;
 
+    public ISequences BuildSequencesForMigration()
+    {
+        if (_sequences.IsValueCreated) return _sequences.Value;
+
+        return new SequenceFactory(Options, this);
+    }
+
     public IProviderGraph Providers { get; }
 
     /// <summary>

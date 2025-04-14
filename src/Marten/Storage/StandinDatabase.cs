@@ -185,6 +185,11 @@ internal class StandinDatabase: IMartenDatabase
     }
 
     public ISequences Sequences { get; }
+    public ISequences BuildSequencesForMigration()
+    {
+        throw new NotImplementedException();
+    }
+
     public IProviderGraph Providers { get; }
     public ShardStateTracker? Tracker { get; }
 
