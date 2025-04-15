@@ -107,6 +107,12 @@ namespace Marten.Events
         public bool UseMandatoryStreamTypeDeclaration { get; set; }
 
         /// <summary>
+        /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+        /// running in an Inline lifecycle. Default is false;
+        /// </summary>
+        bool EnableSideEffectsOnInlineProjections { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

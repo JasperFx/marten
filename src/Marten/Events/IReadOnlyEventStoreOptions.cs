@@ -83,4 +83,10 @@ public interface IReadOnlyEventStoreOptions
     /// but this will be true in 8.0
     /// </summary>
     bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    /// <summary>
+    /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+    /// running in an Inline lifecycle. Default is false;
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; }
 }

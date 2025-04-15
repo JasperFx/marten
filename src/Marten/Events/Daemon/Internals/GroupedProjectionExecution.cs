@@ -220,6 +220,8 @@ public class GroupedProjectionExecution: ISubscriptionExecution
                 ShouldApplyListeners = group.Agent.Mode == ShardExecutionMode.Continuous && group.Range.Events.Any()
             };
 
+            await batch.InitializeMessageBatch().ConfigureAwait(false);
+
             // Mark the progression
             batch.Queue.Post(group.Range.BuildProgressionOperation(_store.Events));
 

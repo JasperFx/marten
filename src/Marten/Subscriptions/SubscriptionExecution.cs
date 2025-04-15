@@ -52,7 +52,9 @@ internal class SubscriptionExecution: ISubscriptionExecution
 
             var batch = new ProjectionUpdateBatch(_store.Options.Projections, parent, Mode, _cancellation.Token)            {
                 ShouldApplyListeners = Mode == ShardExecutionMode.Continuous && range.Events.Any()
-            };;
+            };
+
+            await batch.InitializeMessageBatch().ConfigureAwait(false);
 
             // Mark the progression
             batch.Queue.Post(range.BuildProgressionOperation(_store.Events));

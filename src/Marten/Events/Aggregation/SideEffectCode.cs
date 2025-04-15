@@ -10,7 +10,7 @@ public interface IMessageSink
     ValueTask PublishAsync<T>(T message);
 }
 
-public interface ITenantedMessageSink
+public interface ITenantedMessageSink : IMessageSink
 {
     ValueTask PublishAsync<T>(T message, string tenantId);
 }
