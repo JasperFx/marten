@@ -909,7 +909,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 A couple important facts about this new functionality:
 
 - The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
-  be called during projection rebuilds or `Inline` projection usage
+  be called during projection rebuilds or `Inline` projection usage **unless you explicitly enable this behavior as shown below**
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
@@ -919,3 +919,13 @@ A couple important facts about this new functionality:
 This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project, 
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
 to join the [Marten Discord room](https://discord.gg/BGkCDx5d). 
+
+### Side Effects in Inline Projections <Badge type="tip" text="7.40" />
+
+By default, Marten will only process projection "side effects" during continuous asynchronous processing. However, if you
+wish to use projection side effects while running projections with an `Inline` lifecycle, you can do that with this setting:
+
+snippet: sample_using_EnableSideEffectsOnInlineProjections
+
+This functionality was originally written as a way of sending external messages to a separate system carrying the new state of a single stream projection
+any time new events were captured on an event stream. 
