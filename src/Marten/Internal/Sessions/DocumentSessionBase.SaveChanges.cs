@@ -104,12 +104,17 @@ public abstract partial class DocumentSessionBase
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
 
+        if (_messageBatch != null)
+        {
+            await _messageBatch.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
+        }
+
         resetDirtyChecking();
 
         EjectPatchedTypes(_workTracker);
         Logger.RecordSavedChanges(this, _workTracker);
 
-        foreach (var listener in Listeners)
+        foreach (var listener in Listeners.ToArray())
         {
             await listener.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
         }

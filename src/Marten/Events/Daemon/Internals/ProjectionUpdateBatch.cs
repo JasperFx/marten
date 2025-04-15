@@ -25,7 +25,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     private readonly DaemonSettings _settings;
     private readonly CancellationToken _token;
     private OperationPage? _current;
-    private DocumentSessionBase? _session;
+    private DocumentSessionBase _session;
 
     private IMartenSession Session
     {
@@ -41,6 +41,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     internal ProjectionUpdateBatch(DaemonSettings settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
     {
+
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
@@ -52,6 +53,12 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             });
 
         startNewPage(session);
+    }
+
+    public async Task InitializeMessageBatch()
+    {
+        _batch = await _session!.Options.Events.MessageOutbox.CreateBatch(_session).ConfigureAwait(false);
+        Listeners.Add(_batch);
     }
 
     public async Task WaitForCompletion()
@@ -335,25 +342,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     }
 
     private IMessageBatch? _batch;
-    private readonly SemaphoreSlim _semaphore = new(1, 1);
-    public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
+    public ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
     {
-        if (_batch != null) return _batch;
-
-        await _semaphore.WaitAsync(_token).ConfigureAwait(false);
-
-        if (_batch != null) return _batch;
-
-        try
-        {
-            _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
-            Listeners.Add(_batch);
-
-            return _batch;
-        }
-        finally
-        {
-            _semaphore.Release();
-        }
+        return new ValueTask<IMessageBatch>(_batch);
     }
 }

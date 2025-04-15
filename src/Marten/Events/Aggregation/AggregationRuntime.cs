@@ -84,6 +84,13 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
     public IEventSlicer<TDoc, TId> Slicer { get; }
     public IDocumentStorage<TDoc, TId> Storage { get; }
 
+    private bool shouldProcessSideEffects(DocumentSessionBase session, ProjectionLifecycle lifecycle)
+    {
+        if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous }) return true;
+
+        return lifecycle == ProjectionLifecycle.Inline && session.Options.Events.EnableSideEffectsOnInlineProjections;
+    }
+
     public async ValueTask ApplyChangesAsync(DocumentSessionBase session,
         EventSlice<TDoc, TId> slice, CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
@@ -94,7 +101,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
         {
             var operation = Storage.DeleteForId(slice.Id, slice.Tenant.TenantId);
 
-            if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
+            if (shouldProcessSideEffects(session, lifecycle))
             {
                 await processPossibleSideEffects(session, slice).ConfigureAwait(false);
             }
@@ -148,7 +155,7 @@ public abstract class AggregationRuntime<TDoc, TId>: IAggregationRuntime<TDoc, T
 
         maybeArchiveStream(session, slice);
 
-        if (session is ProjectionDocumentSession { Mode: ShardExecutionMode.Continuous })
+        if (shouldProcessSideEffects(session, lifecycle))
         {
             // Need to set the aggregate in case it didn't exist upfront
             slice.Aggregate = aggregate;

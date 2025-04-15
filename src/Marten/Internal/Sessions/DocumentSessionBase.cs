@@ -53,7 +53,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             return batch.CurrentMessageBatch(this);
         }
 
-        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
+        return StartMessageBatch();
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
@@ -469,5 +469,12 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
         document = default;
         return false;
+    }
+
+    private IMessageBatch? _messageBatch;
+    internal async ValueTask<IMessageBatch> StartMessageBatch()
+    {
+        _messageBatch ??= await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
+        return _messageBatch;
     }
 }

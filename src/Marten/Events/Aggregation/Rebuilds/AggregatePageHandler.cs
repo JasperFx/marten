@@ -153,6 +153,8 @@ internal class AggregatePageHandler<TDoc, TId>
             ShouldApplyListeners = false
         };
 
+        await batch.InitializeMessageBatch().ConfigureAwait(false);
+
         // Gotta use the current tenant if using conjoined tenancy
         var sessionOptions = SessionOptions.ForDatabase(_session.TenantId, _session.Database);
 
