@@ -107,6 +107,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar", "..\..\lamar\src\La
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar.Microsoft.DependencyInjection", "..\..\lamar\src\Lamar.Microsoft.DependencyInjection\Lamar.Microsoft.DependencyInjection.csproj", "{D2603E0B-B53E-4CF5-B55C-D9AF2803570C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventPublisher", "EventPublisher\EventPublisher.csproj", "{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -253,6 +255,10 @@ Global
 		{D2603E0B-B53E-4CF5-B55C-D9AF2803570C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2603E0B-B53E-4CF5-B55C-D9AF2803570C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2603E0B-B53E-4CF5-B55C-D9AF2803570C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -292,6 +298,7 @@ Global
 		{03426C68-4C3B-44F4-BEA7-62CD22A0A992} = {335CB0FA-2C80-4733-A985-D167A35FCBA7}
 		{8043BE74-7EC6-41BD-B02F-2B0365C6FA98} = {335CB0FA-2C80-4733-A985-D167A35FCBA7}
 		{D2603E0B-B53E-4CF5-B55C-D9AF2803570C} = {335CB0FA-2C80-4733-A985-D167A35FCBA7}
+		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}
