@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using Marten;
@@ -203,6 +204,46 @@ public class using_static_database_multitenancy: IAsyncLifetime
         {
             (await query4.Query<Target>().AnyAsync()).ShouldBeFalse();
         }
+    }
+
+    [Fact]
+    public async Task run_describe_with_single_document_store_and_static_multi_tenancy()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        var result = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                    {
+                        // Explicitly map tenant ids to database connection strings
+                        opts.MultiTenantedDatabases(x =>
+                        {
+                            // Map multiple tenant ids to a single named database
+                            x.AddMultipleTenantDatabase(db1ConnectionString, "database1")
+                                .ForTenants("tenant1", "tenant2");
+
+                            // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
+                            x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
+                            x.AddSingleTenantDatabase(tenant4ConnectionString, "tenant4");
+                        });
+
+
+                        opts.RegisterDocumentType<User>();
+                        opts.RegisterDocumentType<Target>();
+                    })
+
+                    // All detected changes will be applied to all
+                    // the configured tenant databases on startup
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).RunJasperFxCommands(["describe"]);
+
+        result.ShouldBe(0);
     }
 
     public static async Task administering_multiple_databases(IDocumentStore store)

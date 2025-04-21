@@ -8,6 +8,7 @@ using System.Threading;
 using ImTools;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -21,7 +22,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage;
 
-public class StorageFeatures: IFeatureSchema
+public class StorageFeatures: IFeatureSchema, IDescribeMyself
 {
     private readonly Ref<ImHashMap<Type, IDocumentMappingBuilder>> _builders =
         Ref.Of(ImHashMap<Type, IDocumentMappingBuilder>.Empty);
@@ -410,5 +411,16 @@ public class StorageFeatures: IFeatureSchema
                 _builders.Swap(d => d.AddOrUpdate(builder.DocumentType, builder));
             }
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+        foreach (var mapping in AllDocumentMappings)
+        {
+            description.Children[mapping.DocumentType.FullNameInCode()] = new OptionsDescription(mapping);
+        }
+
+        return description;
     }
 }

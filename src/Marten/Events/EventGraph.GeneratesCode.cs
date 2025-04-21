@@ -51,5 +51,4 @@ public partial class EventGraph: ICodeFile
 
     string ICodeFile.FileName => "EventStorage";
 
-    public GenerationRules Rules => Options.CreateGenerationRules();
 }

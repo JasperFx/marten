@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx.Blocks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
@@ -33,7 +34,7 @@ using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry, IAggregationSourceFactory<IQuerySession>
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry, IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -113,6 +114,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
     /// in testing
     /// </summary>
+    [IgnoreDescription]
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
@@ -147,6 +149,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
     /// </summary>
+    [ChildDescription]
     public MetadataConfig MetadataConfig => new(Metadata);
 
     /// <summary>
@@ -502,4 +505,13 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return typeof(SingleStreamProjection<,>).CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
     }
 
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+
+        var set = description.AddChildSet("Events", _events);
+        set.SummaryColumns = [nameof(EventMapping.EventType), nameof(EventMapping.EventTypeName)];
+
+        return description;
+    }
 }

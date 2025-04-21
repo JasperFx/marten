@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -28,7 +29,7 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-public partial class DocumentStore: IDocumentStore
+public partial class DocumentStore: IDocumentStore, IDescribeMyself
 {
     private readonly IMartenLogger _logger;
     private readonly INpgsqlDataSourceFactory dataSourceFactory;
@@ -504,5 +505,10 @@ public partial class DocumentStore: IDocumentStore
         {
             throw new DefaultTenantUsageDisabledException();
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        return OptionsDescription.For(Options);
     }
 }

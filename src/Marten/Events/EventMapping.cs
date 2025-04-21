@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptors;
 using JasperFx.Events;
 using Marten.Events.Archiving;
 using Marten.Internal;
@@ -60,10 +61,13 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         JsonTransformation(null);
     }
 
+    [IgnoreDescription]
     public Func<ISerializer, DbDataReader, IEvent> ReadEventData { get; private set; }
 
+    [IgnoreDescription]
     public Func<ISerializer, DbDataReader, CancellationToken, Task<IEvent>> ReadEventDataAsync { get; private set; }
 
+    [IgnoreDescription]
     public NpgsqlDbType IdType { get; } = NpgsqlDbType.Uuid;
     public TenancyStyle TenancyStyle { get; } = TenancyStyle.Single;
     public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
@@ -74,6 +78,8 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
 
     IDocumentMapping IDocumentMapping.Root => this;
     public Type DocumentType { get; }
+
+    [IgnoreDescription]
     public MemberInfo IdMember { get; }
 
     Type IDocumentMapping.IdType => typeof(Guid);
@@ -186,7 +192,10 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     }
 
+    [IgnoreDescription]
     public IQueryableMemberCollection QueryMembers { get; }
+
+    [IgnoreDescription]
     public ISelectClause SelectClauseWithDuplicatedFields => this;
     public bool UseNumericRevisions { get; } = false;
     public object RawIdentityValue(object id)
@@ -200,9 +209,14 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
     }
 
     public bool UseOptimisticConcurrency { get; } = false;
+
+    [IgnoreDescription]
     public IOperationFragment DeleteFragment => throw new NotSupportedException();
+
+    [IgnoreDescription]
     public IOperationFragment HardDeleteFragment { get; }
 
+    [IgnoreDescription]
     string ISelectClause.FromObject => _tableName;
 
     Type ISelectClause.SelectedType => typeof(T);
