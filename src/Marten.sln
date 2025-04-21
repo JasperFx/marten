@@ -109,6 +109,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lamar.Microsoft.DependencyI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventPublisher", "EventPublisher\EventPublisher.csproj", "{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLineRunner", "CommandLineRunner\CommandLineRunner.csproj", "{5153B23E-6661-40D7-8F01-82FD1484E8DF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -259,6 +261,10 @@ Global
 		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5153B23E-6661-40D7-8F01-82FD1484E8DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5153B23E-6661-40D7-8F01-82FD1484E8DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5153B23E-6661-40D7-8F01-82FD1484E8DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5153B23E-6661-40D7-8F01-82FD1484E8DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -299,6 +305,7 @@ Global
 		{8043BE74-7EC6-41BD-B02F-2B0365C6FA98} = {335CB0FA-2C80-4733-A985-D167A35FCBA7}
 		{D2603E0B-B53E-4CF5-B55C-D9AF2803570C} = {335CB0FA-2C80-4733-A985-D167A35FCBA7}
 		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
+		{5153B23E-6661-40D7-8F01-82FD1484E8DF} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}

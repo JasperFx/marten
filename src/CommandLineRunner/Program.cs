@@ -1,13 +1,14 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
@@ -123,11 +124,11 @@ public class Trip
     }
 }
 
-public class SimpleProjection: SingleStreamProjection<MyAggregate>
+public class SimpleProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public SimpleProjection()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     public MyAggregate Create(CreateEvent @event)

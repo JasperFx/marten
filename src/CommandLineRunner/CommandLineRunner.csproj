@@ -5,4 +5,9 @@
         <UserSecretsId>dotnet-CommandLineRunner-144A5847-CAC2-4DF8-A6D4-C4150BB90A23</UserSecretsId>
         <nullable>enable</nullable>
     </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DaemonTests\DaemonTests.csproj" />
+      <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
 </Project>
