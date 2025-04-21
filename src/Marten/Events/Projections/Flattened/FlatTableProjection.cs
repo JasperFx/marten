@@ -8,11 +8,10 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
-using JasperFx.Core;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon;
@@ -46,6 +45,16 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         Table = new Table(tableName);
     }
 
+    SubscriptionType ISubscriptionSource.Type => SubscriptionType.FlatTableProjection;
+    ShardName[] ISubscriptionSource.ShardNames() => [new ShardName(Name, ShardName.All, Version)];
+
+    Type ISubscriptionSource.ImplementationType => GetType();
+
+    SubscriptionDescriptor ISubscriptionSource<IDocumentOperations, IQuerySession>.Describe()
+    {
+        return new SubscriptionDescriptor(this);
+    }
+
     public SchemaNameSource SchemaNameSource { get; }
 
     /// <summary>
@@ -76,20 +85,13 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
     }
 
     public Type ProjectionType => GetType();
-    public string Name => ProjectionName;
-    public uint Version => ProjectionVersion;
-
-    public SubscriptionDescriptor Describe()
-    {
-        return new SubscriptionDescriptor(this, SubscriptionType.FlatTableProjection);
-    }
 
     IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> ISubscriptionSource<IDocumentOperations, IQuerySession>.Shards()
     {
         return
         [
             new AsyncShard<IDocumentOperations, IQuerySession>(Options, ShardRole.Projection,
-                new ShardName(ProjectionName, ShardName.All), this, this)
+                new ShardName(Name, ShardName.All, Version), this, this)
         ];
     }
 
@@ -110,20 +112,20 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         return Task.CompletedTask;
     }
 
-    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStorage<IDocumentOperations, IQuerySession> storage, IEventDatabase database, ILoggerFactory loggerFactory,
+    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ILoggerFactory loggerFactory,
         ShardName shardName)
     {
         var logger = loggerFactory.CreateLogger(GetType());
-        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, storage, database, this, logger);
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, store, database, this, logger);
     }
 
-    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStorage<IDocumentOperations, IQuerySession> storage, IEventDatabase database, ILogger logger,
+    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ILogger logger,
         ShardName shardName)
     {
-        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, storage, database, this, logger);
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, store, database, this, logger);
     }
 
-    bool IProjectionSource<IDocumentOperations, IQuerySession>.TryBuildReplayExecutor(IEventStorage<IDocumentOperations, IQuerySession> store, IEventDatabase database,
+    bool IProjectionSource<IDocumentOperations, IQuerySession>.TryBuildReplayExecutor(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database,
         out IReplayExecutor executor)
     {
         executor = default;

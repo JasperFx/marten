@@ -183,7 +183,7 @@ public class projections_with_IoC_services
 
         var projectionSource = store.Options.As<StoreOptions>().Projections.All.Single().As<IProjectionSource<IDocumentOperations, IQuerySession>>();
 
-        projectionSource.ProjectionName.ShouldBe("MyProjection");
+        projectionSource.Name.ShouldBe("MyProjection");
 
         projectionSource.Shards().Single().Name.Identity.ShouldBe("MyProjection:All");
 
@@ -390,7 +390,7 @@ public class ProductProjection: SingleStreamProjection<Product, Guid>
     public ProductProjection(IPriceLookup lookup)
     {
         _lookup = lookup;
-        ProjectionName = "Product";
+        Name = "Product";
     }
 
     public override Product Evolve(Product snapshot, Guid id, IEvent e)

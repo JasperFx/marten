@@ -292,9 +292,9 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
-    IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
+    IReadOnlyList<ISubscriptionSource> IReadOnlyEventStoreOptions.Projections()
     {
-        return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
+        return Options.Projections.All.OfType<ISubscriptionSource>().ToList();
     }
 
     public IReadOnlyList<IEventType> AllKnownEventTypes()

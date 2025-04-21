@@ -161,7 +161,7 @@ public class SometimesFailingTripProjection: TripProjectionWithCustomName
 
     public SometimesFailingTripProjection()
     {
-        ProjectionName = "Trip";
+        Name = "Trip";
     }
 
     public void Apply(IEvent<FailingEvent> e, Trip trip)

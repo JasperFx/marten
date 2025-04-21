@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core.Descriptors;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core;

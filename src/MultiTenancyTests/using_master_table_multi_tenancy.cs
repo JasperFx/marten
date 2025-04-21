@@ -2,7 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core.Descriptors;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -12,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 

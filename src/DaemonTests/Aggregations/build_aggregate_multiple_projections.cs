@@ -42,7 +42,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     {
         public CarProjection()
         {
-            ProjectionName = "Car";
+            Name = "Car";
         }
 
         public void Apply(CarView view, CarNamed ev)
@@ -76,7 +76,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     {
         public TruckProjection()
         {
-            ProjectionName = "Truck";
+            Name = "Truck";
         }
 
         public void Apply(TruckView view, TruckNamed ev)

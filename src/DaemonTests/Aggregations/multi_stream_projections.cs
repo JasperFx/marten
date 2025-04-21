@@ -235,7 +235,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // You can also access Event data
         FanOut<Travel, Stop>(x => x.Data.Stops);
 
-        ProjectionName = "Day";
+        Name = "Day";
 
         // Opt into 2nd level caching of up to 100
         // most recently encountered aggregates as a
@@ -324,7 +324,7 @@ public class UserIssueProjection: MultiStreamProjection<UserIssues, Guid>
 {
     public UserIssueProjection()
     {
-        ProjectionName = "UserIssue";
+        Name = "UserIssue";
 
         Identity<UserCreated>(x => x.UserId);
         Identity<IssueCreated>(x => x.UserId);

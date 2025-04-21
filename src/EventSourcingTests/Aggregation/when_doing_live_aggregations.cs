@@ -328,7 +328,7 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
-        ProjectionName = "AllSync";
+        Name = "AllSync";
     }
 
     public MyAggregate Create(CreateEvent @event)

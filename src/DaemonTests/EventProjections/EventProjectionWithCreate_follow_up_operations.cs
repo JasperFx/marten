@@ -76,7 +76,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
     {
         public EntityProjection()
         {
-            ProjectionName = nameof(EntityProjection);
+            Name = nameof(EntityProjection);
         }
 
         public Entity Create(EntityCreated @event)

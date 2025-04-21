@@ -173,7 +173,7 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
-        ProjectionName = "AllSync";
+        Name = "AllSync";
     }
 
     public MyAggregate Create(CreateEvent @event)
@@ -220,7 +220,7 @@ public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     [MartenIgnore]

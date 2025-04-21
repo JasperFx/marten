@@ -367,7 +367,7 @@ public class build_aggregate_projection: DaemonContext
         Logger.LogDebug("The expected number of events is {NumberOfEvents}", NumberOfEvents);
 
         var projection = new TestingSupport.TripProjection();
-        projection.ProjectionName = "Trip";
+        projection.Name = "Trip";
 
         StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async));
 
@@ -411,7 +411,7 @@ public class build_aggregate_projection: DaemonContext
         _output.WriteLine($"Initially publishing {initialCount} events");
 
         var projection = new TestingSupport.TripProjection();
-        projection.ProjectionName = "Trip";
+        projection.Name = "Trip";
 
         StoreOptions(x => x.Projections.Add(projection, ProjectionLifecycle.Async));
 
@@ -568,7 +568,7 @@ public class build_aggregate_projection: DaemonContext
     {
         public ContactProjectionNullReturn()
         {
-            ProjectionName = nameof(Contact);
+            Name = nameof(Contact);
 
             CreateEvent<ICreateEvent>(Contact.Create);
             ProjectEvent<ContactEdited>(Contact.Apply);
@@ -617,7 +617,7 @@ public class build_aggregate_projection: DaemonContext
     {
         public InterfaceCreationProjection()
         {
-            ProjectionName = nameof(Foo);
+            Name = nameof(Foo);
 
             CreateEvent<IFooCreated>(e => new Foo(e.Id, "Foo"));
         }
@@ -639,7 +639,7 @@ public class build_aggregate_projection: DaemonContext
     {
         public AbstractCreationProjection()
         {
-            ProjectionName = nameof(Foo);
+            Name = nameof(Foo);
 
             CreateEvent<AbstractFooCreated>(e => new Foo(e.Id, "Foo"));
         }

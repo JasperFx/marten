@@ -56,7 +56,7 @@ public class EventProjection_follow_up_operations: DaemonContext
     {
         public NestedEntityEventProjection()
         {
-            ProjectionName = nameof(NestedEntity);
+            Name = nameof(NestedEntity);
 
             Project<EntityPublished>((@event, operations) =>
             {

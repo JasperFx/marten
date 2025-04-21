@@ -62,7 +62,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         public SampleSingleStream ()
         {
-            ProjectionName = "AllGood";
+            Name = "AllGood";
         }
 
         [MartenIgnore]

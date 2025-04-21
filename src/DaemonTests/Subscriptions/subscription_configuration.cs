@@ -71,7 +71,7 @@ public class FakeSubscription: SubscriptionBase
 {
     public FakeSubscription()
     {
-        SubscriptionName = "Fake";
+        Name = "Fake";
     }
 
     public List<IEvent> EventsEncountered { get; } = new List<IEvent>();

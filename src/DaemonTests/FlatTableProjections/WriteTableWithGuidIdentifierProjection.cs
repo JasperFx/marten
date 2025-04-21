@@ -7,7 +7,7 @@ public class WriteTableWithGuidIdentifierProjection: FlatTableProjection
 {
     public WriteTableWithGuidIdentifierProjection(): base("values", SchemaNameSource.DocumentSchema)
     {
-        ProjectionName = "Values";
+        Name = "Values";
 
         // Gotta have a primary key
         Table.AddColumn<Guid>("id").AsPrimaryKey();

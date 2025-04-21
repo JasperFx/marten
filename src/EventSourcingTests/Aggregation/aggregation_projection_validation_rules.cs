@@ -272,7 +272,7 @@ public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     [MartenIgnore]

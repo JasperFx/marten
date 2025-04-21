@@ -50,7 +50,7 @@ public class CustomProjectionTests
     [Fact]
     public void default_projection_name_is_type_name()
     {
-        new MyCustomProjection().ProjectionName.ShouldBe(nameof(MyCustomProjection));
+        new MyCustomProjection().Name.ShouldBe(nameof(MyCustomProjection));
     }
 
     [Fact]

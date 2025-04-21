@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -50,7 +51,7 @@ public interface IReadOnlyEventStoreOptions
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
-    IReadOnlyList<IReadOnlyProjectionData> Projections();
+    IReadOnlyList<ISubscriptionSource> Projections();
 
     IReadOnlyList<IEventType> AllKnownEventTypes();
 

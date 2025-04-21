@@ -22,7 +22,7 @@ public class blue_green_projection_deployments
     public void shard_name_uses_non_1_as_suffix_in_shard_name_identifier()
     {
         new ShardName("Baseline").Identity.ShouldBe("Baseline:All");
-        new ShardName("Baseline", "All").Identity.ShouldBe("Baseline:All");
+        new ShardName("Baseline", "All", 1).Identity.ShouldBe("Baseline:All");
         new ShardName("Baseline", "All", 1).Identity.ShouldBe("Baseline:All");
         new ShardName("Baseline", "All", 2).Identity.ShouldBe("Baseline:V2:All");
     }
@@ -199,7 +199,7 @@ public class BlueProjection: SingleStreamProjection<EventSourcingTests.Aggregati
 {
     public BlueProjection()
     {
-        ProjectionName = "Baseline";
+        Name = "Baseline";
     }
 
     public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e)
@@ -227,8 +227,8 @@ public class GreenProjection: SingleStreamProjection<EventSourcingTests.Aggregat
 {
     public GreenProjection()
     {
-        ProjectionName = "Baseline";
-        ProjectionVersion = 2;
+        Name = "Baseline";
+        Version = 2;
     }
 
     public void Apply(EventSourcingTests.Aggregation.MyAggregate aggregate, EventSourcingTests.Aggregation.AEvent e)

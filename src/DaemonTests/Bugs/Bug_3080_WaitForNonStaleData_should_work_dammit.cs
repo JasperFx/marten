@@ -162,7 +162,7 @@ public class Bug_3080_WaitForNonStaleData_should_work_dammit
 
         public MyAggregateTableProjection()
         {
-            ProjectionName = "MyProjection";
+            Name = "MyProjection";
 
             var table = new Table("mt_tbl_my_aggregate");
 

@@ -13,7 +13,7 @@ namespace Marten;
 /// </summary>
 public interface IDocumentOperations: IQuerySession, IStorageOperations
 {
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Mark this entity for deletion upon the next call to SaveChanges()

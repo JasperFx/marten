@@ -62,7 +62,7 @@ public class FooProjection: MultiStreamProjection<FooAuditLog, Guid>
 {
     public FooProjection()
     {
-        ProjectionName = nameof(FooAuditLog);
+        Name = nameof(FooAuditLog);
 
         Identity<FooCreated>(x => x.Id);
 
@@ -85,7 +85,7 @@ public class RecordProjection: MultiStreamProjection<RecordAuditLog, Guid>
 {
     public RecordProjection()
     {
-        ProjectionName = nameof(RecordAuditLog);
+        Name = nameof(RecordAuditLog);
 
         Identity<IRecordLogEvent>(x => x.Id);
 

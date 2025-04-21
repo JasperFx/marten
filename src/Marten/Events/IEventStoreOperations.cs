@@ -8,7 +8,7 @@ using JasperFx.Events;
 
 namespace Marten.Events;
 
-public interface IEventStore: IEventOperations, IQueryEventStore
+public interface IEventStoreOperations: IEventOperations, IQueryEventStore
 {
     /// <summary>
     ///     Append one or more events in order to an existing stream and verify that maximum event id for the stream

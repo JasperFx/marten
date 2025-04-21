@@ -87,7 +87,7 @@ public class DocumentProjection: SingleStreamProjection<Document, string>
 {
     public DocumentProjection()
     {
-        ProjectionName = "Document";
+        Name = "Document";
     }
 
     public Document Create(CreateDoc @event)

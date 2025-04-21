@@ -21,7 +21,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly List<ISqlFragment> theFilters = new();
     private readonly EventRange theRange;
-    private readonly ShardName theShardName = new("foo", "All");
+    private readonly ShardName theShardName = new("foo", "All", 1);
 
     public fetching_events()
     {
@@ -38,7 +38,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    internal async Task executeAfterLoadingEvents(Action<IEventStore> loadEvents)
+    internal async Task executeAfterLoadingEvents(Action<IEventStoreOperations> loadEvents)
     {
         loadEvents(theSession.Events);
         await theSession.SaveChangesAsync();

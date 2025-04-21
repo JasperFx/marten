@@ -31,7 +31,7 @@ public class cannot_register_duplicate_projections_by_name
     {
         public Projection1()
         {
-            ProjectionName = "Same";
+            Name = "Same";
         }
 
         public AEvent Create(BEvent travel, IEvent e)
@@ -44,7 +44,7 @@ public class cannot_register_duplicate_projections_by_name
     {
         public Projection2()
         {
-            ProjectionName = "Same";
+            Name = "Same";
         }
 
         public AEvent Create(BEvent travel, IEvent e)

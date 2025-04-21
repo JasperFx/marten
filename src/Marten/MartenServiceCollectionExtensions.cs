@@ -6,8 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
@@ -162,7 +162,7 @@ public static class MartenServiceCollectionExtensions
     )
     {
         services.AddJasperFx();
-        services.AddSingleton<IEventStoreCapability, EventStoreCapability>();
+        services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
         {
@@ -265,7 +265,6 @@ public static class MartenServiceCollectionExtensions
     {
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
-        services.AddSingleton<IEventStoreCapability, EventStoreCapability<T>>();
 
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
 
@@ -573,7 +572,7 @@ public static class MartenServiceCollectionExtensions
         public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
             ServiceLifetime lifetime, string projectionName) where TProjection : class, IMartenRegistrable
         {
-            return AddProjectionWithServices<TProjection>(lifecycle, lifetime, x => x.ProjectionName = projectionName);
+            return AddProjectionWithServices<TProjection>(lifecycle, lifetime, x => x.Name = projectionName);
         }
 
 
@@ -884,7 +883,7 @@ public static class MartenServiceCollectionExtensions
         public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
             ServiceLifetime lifetime, string projectionName) where T : class, IMartenRegistrable
         {
-            return AddProjectionWithServices<T>(lifecycle, lifetime, x => x.ProjectionName = projectionName);
+            return AddProjectionWithServices<T>(lifecycle, lifetime, x => x.Name = projectionName);
         }
 
 

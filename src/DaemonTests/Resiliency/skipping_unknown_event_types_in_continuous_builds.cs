@@ -99,7 +99,7 @@ public class WeirdCustomAggregation: SingleStreamProjection<MyAggregate, Guid>
 {
     public WeirdCustomAggregation()
     {
-        ProjectionName = "Weird";
+        Name = "Weird";
     }
 
     public override MyAggregate Evolve(MyAggregate snapshot, Guid id, IEvent e)

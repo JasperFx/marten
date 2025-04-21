@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using DaemonTests.Aggregations;
 using DaemonTests.MultiTenancy;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -74,7 +73,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         theSubscription.EventsEncountered.Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
         progress.ShouldBe(16);
     }
 
@@ -177,7 +176,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         theSubscription.EventsEncountered.Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
         progress.ShouldBe(16);
     }
 
@@ -225,7 +224,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
 
         theSubscription.EventsEncountered.Count.ShouldBe(8);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
         progress.ShouldBe(16);
     }
 
@@ -312,7 +311,7 @@ public class subscriptions_end_to_end: OneOffConfigurationsContext
             .All(x => x.Data is EventSourcingTests.Aggregation.BEvent or EventSourcingTests.Aggregation.EEvent)
             .ShouldBeTrue();
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Fake", "All", 1));
         progress.ShouldBe(16);
     }
 }
@@ -326,7 +325,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         StoreOptions(opts =>
         {
-            opts.Projections.Subscribe(new SimpleSubscription(), x => x.SubscriptionName = "Simple");
+            opts.Projections.Subscribe(new SimpleSubscription(), x => x.Name = "Simple");
         });
 
         theStore.Options.Projections.AllShards().Select(x => x.Name.Identity)
@@ -367,7 +366,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBe(16);
 
-        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Simple", "All"));
+        var progress = await theStore.Advanced.ProjectionProgressFor(new ShardName("Simple", "All", 1));
         progress.ShouldBe(16);
     }
 
@@ -385,7 +384,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
-                    o => o.SubscriptionName = "Simple2");
+                    o => o.Name = "Simple2");
             }).StartAsync();
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
@@ -428,7 +427,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All"));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
@@ -448,7 +447,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
-                    o => o.SubscriptionName = "Simple2");
+                    o => o.Name = "Simple2");
             }).StartAsync();
 
         var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
@@ -491,7 +490,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         SimpleSubscription.EventsEncountered[1].Count.ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All"));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
@@ -520,7 +519,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
-                    o => o.SubscriptionName = "Simple2");
+                    o => o.Name = "Simple2");
             }).StartAsync();
 
         var store = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
@@ -563,7 +562,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All"));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();
@@ -581,10 +580,10 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
-                    o => o.SubscriptionName = "Simple2");
+                    o => o.Name = "Simple2");
             }).StartAsync();
 
-        var capabilities = host.Services.GetServices<IEventStoreCapability>().ToArray();
+        var capabilities = host.Services.GetServices<IEventStore>().ToArray();
         capabilities.Length.ShouldBe(1);
 
         var usage = await capabilities[0].TryCreateUsage(CancellationToken.None);
@@ -606,7 +605,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
-                    o => o.SubscriptionName = "Simple2");
+                    o => o.Name = "Simple2");
             }).StartAsync();
 
         var store = (DocumentStore)host.Services.GetRequiredService<ICustomStore>();
@@ -649,7 +648,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         SimpleSubscription.EventsEncountered.Sum(x => x.Count).ShouldBeGreaterThanOrEqualTo(16);
 
-        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All"));
+        var progress = await store.Advanced.ProjectionProgressFor(new ShardName("Simple2", "All", 1));
         progress.ShouldBeGreaterThanOrEqualTo(16);
 
         await store.Advanced.Clean.DeleteAllEventDataAsync();

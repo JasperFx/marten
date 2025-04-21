@@ -144,8 +144,8 @@ public static class SubscriptionBootstrapping
                 // Or with additional configuration like:
                 opts.Events.Subscribe(new ConsoleSubscription(), s =>
                 {
-                    s.SubscriptionName = "Console"; // Override Marten's naming
-                    s.SubscriptionVersion = 2; // Potentially version as an all new subscription
+                    s.Name = "Console"; // Override Marten's naming
+                    s.Version = 2; // Potentially version as an all new subscription
 
                     // Optionally create an allow list of
                     // event types to subscribe to
@@ -298,7 +298,7 @@ public class KafkaSubscription: SubscriptionBase
     {
         _config = config;
 
-        SubscriptionName = "Kafka";
+        Name = "Kafka";
 
         // Access to any or all filtering rules
         IncludeType<InvoiceApproved>();

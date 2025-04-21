@@ -9,6 +9,7 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
@@ -28,7 +29,7 @@ using EventTypeFilter = Marten.Events.Daemon.Internals.EventTypeFilter;
 
 namespace Marten;
 
-public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
+public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
     static DocumentStore()
     {
@@ -36,40 +37,40 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
     }
 
-    IEventRegistry IEventStorage<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
+    IEventRegistry IEventStore<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
 
     public Type IdentityTypeForProjectedType(Type aggregateType)
     {
         return new DocumentMapping(aggregateType, Options).DocumentType;
     }
 
-    string IEventStorage<IDocumentOperations, IQuerySession>.DefaultDatabaseName =>
+    string IEventStore<IDocumentOperations, IQuerySession>.DefaultDatabaseName =>
         Options.Tenancy.Default.Database.Identifier;
 
-    ErrorHandlingOptions IEventStorage<IDocumentOperations, IQuerySession>.ContinuousErrors =>
+    ErrorHandlingOptions IEventStore<IDocumentOperations, IQuerySession>.ContinuousErrors =>
         Options.Projections.Errors;
 
-    ErrorHandlingOptions IEventStorage<IDocumentOperations, IQuerySession>.RebuildErrors =>
+    ErrorHandlingOptions IEventStore<IDocumentOperations, IQuerySession>.RebuildErrors =>
         Options.Projections.RebuildErrors;
 
-    IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> IEventStorage<IDocumentOperations, IQuerySession>.
+    IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> IEventStore<IDocumentOperations, IQuerySession>.
         AllShards()
     {
         return Options.Projections.AllShards();
     }
 
-    Meter IEventStorage<IDocumentOperations, IQuerySession>.Meter => Options.OpenTelemetry.Meter;
+    Meter IEventStore<IDocumentOperations, IQuerySession>.Meter => Options.OpenTelemetry.Meter;
 
-    ActivitySource IEventStorage<IDocumentOperations, IQuerySession>.ActivitySource => MartenTracing.ActivitySource;
+    ActivitySource IEventStore<IDocumentOperations, IQuerySession>.ActivitySource => MartenTracing.ActivitySource;
 
-    TimeProvider IEventStorage<IDocumentOperations, IQuerySession>.TimeProvider => Options.Events.TimeProvider;
+    TimeProvider IEventStore<IDocumentOperations, IQuerySession>.TimeProvider => Options.Events.TimeProvider;
 
-    string IEventStorage<IDocumentOperations, IQuerySession>.MetricsPrefix => "marten";
+    string IEventStore<IDocumentOperations, IQuerySession>.MetricsPrefix => "marten";
 
-    AutoCreate IEventStorage<IDocumentOperations, IQuerySession>.AutoCreateSchemaObjects =>
+    AutoCreate IEventStore<IDocumentOperations, IQuerySession>.AutoCreateSchemaObjects =>
         Options.AutoCreateSchemaObjects;
 
-    async Task IEventStorage<IDocumentOperations, IQuerySession>.RewindSubscriptionProgressAsync(
+    async Task IEventStore<IDocumentOperations, IQuerySession>.RewindSubscriptionProgressAsync(
         IEventDatabase database, string subscriptionName, CancellationToken token,
         long? sequenceFloor)
     {
@@ -80,14 +81,14 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         var names = Options
             .Projections
             .AllShards()
-            .Where(x => x.Name.ProjectionOrSubscriptionName.EqualsIgnoreCase(subscriptionName) || x.Name.Identity == subscriptionName)
+            .Where(x => x.Name.Name.EqualsIgnoreCase(subscriptionName) || x.Name.Identity == subscriptionName)
             .Select(x => x.Name)
             .ToArray();
 
         if (!names.Any())
         {
             throw new ArgumentOutOfRangeException(nameof(subscriptionName),
-                $"Unknown subscription name '{subscriptionName}'. Available options are {Options.Projections.AllShards().Select(x => x.Name.ProjectionOrSubscriptionName).Distinct().Join(", ")}");
+                $"Unknown subscription name '{subscriptionName}'. Available options are {Options.Projections.AllShards().Select(x => x.Name.Name).Distinct().Join(", ")}");
         }
 
         foreach (var name in names)
@@ -112,7 +113,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    async Task IEventStorage<IDocumentOperations, IQuerySession>.RewindAgentProgressAsync(IEventDatabase database,
+    async Task IEventStore<IDocumentOperations, IQuerySession>.RewindAgentProgressAsync(IEventDatabase database,
         string shardName, CancellationToken token, long sequenceFloor)
     {
         var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
@@ -129,14 +130,14 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    async Task IEventStorage<IDocumentOperations, IQuerySession>.TeardownExistingProjectionProgressAsync(
+    async Task IEventStore<IDocumentOperations, IQuerySession>.TeardownExistingProjectionProgressAsync(
         IEventDatabase database, string subscriptionName, CancellationToken token)
     {
         var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
         sessionOptions.AllowAnyTenant = true;
         await using var session = LightweightSession(sessionOptions);
 
-        var source = Options.Projections.All.FirstOrDefault(x => x.ProjectionName.EqualsIgnoreCase(subscriptionName));
+        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(subscriptionName));
 
         if (source == null)
         {
@@ -152,7 +153,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
             session.QueueOperation(new DeleteProjectionProgress(Events, agent.Name.Identity));
 
         // Rewind previous DeadLetterEvents because you're going to replay them all anyway
-        session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.ProjectionName);
+        session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.Name);
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
@@ -190,7 +191,7 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         return projectionBatch;
     }
 
-    IEventLoader IEventStorage<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
+    IEventLoader IEventStore<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
         ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions)
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
@@ -218,18 +219,18 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         }
     }
 
-    IDocumentOperations IEventStorage<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database)
+    IDocumentOperations IEventStore<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database)
     {
         return LightweightSession(SessionOptions.ForDatabase((IMartenDatabase)database));
     }
 
-    IDocumentOperations IEventStorage<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database,
+    IDocumentOperations IEventStore<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database,
         string tenantId)
     {
         return LightweightSession(SessionOptions.ForDatabase(tenantId, (IMartenDatabase)database));
     }
 
-    ErrorHandlingOptions IEventStorage<IDocumentOperations, IQuerySession>.ErrorHandlingOptions(ShardExecutionMode mode)
+    ErrorHandlingOptions IEventStore<IDocumentOperations, IQuerySession>.ErrorHandlingOptions(ShardExecutionMode mode)
     {
         return mode == ShardExecutionMode.Rebuild ? Options.Projections.RebuildErrors : Options.Projections.Errors;
     }
@@ -265,4 +266,28 @@ public partial class DocumentStore: IEventStorage<IDocumentOperations, IQuerySes
         // probably deserves a full circuit break
         await session.ExecuteBatchAsync(batch, token).ConfigureAwait(false);
     }
+
+    Task<EventStoreUsage> IEventStore.TryCreateUsage(CancellationToken token)
+    {
+        throw new NotImplementedException();
+        // var usage = new EventStoreUsage(storeType, this)
+        // {
+        //     Database = await Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
+        // };
+        //
+        // Projections.Describe(usage);
+        //
+        // foreach (var eventMapping in EventGraph.AllEvents())
+        // {
+        //     var descriptor =
+        //         new EventDescriptor(eventMapping.EventTypeName, TypeDescriptor.For(eventMapping.DocumentType));
+        //
+        //     usage.Events.Add(descriptor);
+        // }
+        //
+        // return usage;
+    }
+
+    // TODO -- make this implicit?
+    public Uri Subject { get; }
 }

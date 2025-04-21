@@ -149,7 +149,7 @@ public class DistanceProjection: EventProjection
 {
     public DistanceProjection()
     {
-        ProjectionName = "Distance";
+        Name = "Distance";
     }
 
     // Create a new Distance document based on a Travel event

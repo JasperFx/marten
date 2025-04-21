@@ -137,7 +137,7 @@ public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {
-        ProjectionName = "Custom";
+        Name = "Custom";
 
         Identity<INumbered>(x => x.Number);
     }
