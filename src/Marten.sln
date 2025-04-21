@@ -113,6 +113,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLineRunner", "Comman
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiDatabaseCommandLineRunner", "MultiDatabaseCommandLineRunner\MultiDatabaseCommandLineRunner.csproj", "{C7320E24-95D7-40B3-A542-1181225F2600}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventSourceWorker", "EventSourceWorker\EventSourceWorker.csproj", "{F1B14148-6D25-4F48-943B-07D48B7FAD84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -271,6 +273,10 @@ Global
 		{C7320E24-95D7-40B3-A542-1181225F2600}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7320E24-95D7-40B3-A542-1181225F2600}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7320E24-95D7-40B3-A542-1181225F2600}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1B14148-6D25-4F48-943B-07D48B7FAD84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1B14148-6D25-4F48-943B-07D48B7FAD84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1B14148-6D25-4F48-943B-07D48B7FAD84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1B14148-6D25-4F48-943B-07D48B7FAD84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -313,6 +319,7 @@ Global
 		{3AE63ADF-11AD-4491-800F-7DDB2D3D9773} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 		{5153B23E-6661-40D7-8F01-82FD1484E8DF} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 		{C7320E24-95D7-40B3-A542-1181225F2600} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
+		{F1B14148-6D25-4F48-943B-07D48B7FAD84} = {DA7EC300-12F5-4B80-B5DF-B7B71E344E24}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52B7158F-0A24-47D9-9CF7-3FA94170041A}
