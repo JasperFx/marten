@@ -28,11 +28,6 @@ public class using_multiple_document_stores_in_same_host : IDisposable
 {
     private readonly Container theContainer;
 
-    // TODO -- need to register additional ICodeFileCollection for the new store
-    // TODO -- chained option to add an async daemon for each store
-    // TODO -- post-configure options
-    // TODO -- LATER, chain IInitialData
-
     public using_multiple_document_stores_in_same_host()
     {
         theContainer = Container.For(services =>

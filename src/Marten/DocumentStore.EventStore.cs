@@ -7,10 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
+using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -267,27 +269,25 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.ExecuteBatchAsync(batch, token).ConfigureAwait(false);
     }
 
-    Task<EventStoreUsage> IEventStore.TryCreateUsage(CancellationToken token)
+    async Task<EventStoreUsage> IEventStore.TryCreateUsage(CancellationToken token)
     {
-        throw new NotImplementedException();
-        // var usage = new EventStoreUsage(storeType, this)
-        // {
-        //     Database = await Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
-        // };
-        //
-        // Projections.Describe(usage);
-        //
-        // foreach (var eventMapping in EventGraph.AllEvents())
-        // {
-        //     var descriptor =
-        //         new EventDescriptor(eventMapping.EventTypeName, TypeDescriptor.For(eventMapping.DocumentType));
-        //
-        //     usage.Events.Add(descriptor);
-        // }
-        //
-        // return usage;
+        var usage = new EventStoreUsage(GetType(), Subject, this)
+        {
+            Database = await Options.Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
+        };
+
+        Options.Projections.Describe(usage);
+
+        foreach (var eventMapping in Options.EventGraph.AllEvents())
+        {
+            var descriptor =
+                new EventDescriptor(eventMapping.EventTypeName, TypeDescriptor.For(eventMapping.DocumentType));
+
+            usage.Events.Add(descriptor);
+        }
+
+        return usage;
     }
 
-    // TODO -- make this implicit?
-    public Uri Subject { get; }
+    public Uri Subject { get; internal set; } = new Uri("marten://main");
 }

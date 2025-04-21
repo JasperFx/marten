@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
@@ -41,6 +42,7 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
     ///     projection. Use this to potentially improve async projection throughput
     /// </summary>
     [Obsolete("Prefer Options.CacheLimitPerTenant. This will be removed in Marten 9")]
+    [JasperFxIgnore]
     public int CacheLimitPerTenant
     {
         get => Options.CacheLimitPerTenant;
@@ -53,6 +55,7 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
     //     return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
     // }
 
+    [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
         var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();

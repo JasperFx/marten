@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
@@ -15,6 +16,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Shouldly;
 using Weasel.Core.Migrations;
@@ -22,7 +24,7 @@ using Xunit;
 
 namespace CoreTests;
 
-public class MartenServiceCollectionExtensionsTests
+public class bootstrapping_with_service_collection_extensions
 {
     // Using Lamar for testing this because of its diagnostics
 
@@ -494,5 +496,7 @@ public class MartenServiceCollectionExtensionsTests
         container.GetInstance<IQuerySession>().ShouldNotBeNull();
 
         container.GetInstance<IDatabaseSource>().ShouldBeSameAs(store.As<DocumentStore>().Tenancy);
+
+        container.Model.For<IOptions<JasperFxOptions>>().Default.ShouldNotBeNull();
     }
 }

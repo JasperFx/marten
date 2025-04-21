@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
@@ -100,6 +101,7 @@ public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOper
         return SchemaObjects;
     }
 
+    [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
         AssembleAndAssertValidity();

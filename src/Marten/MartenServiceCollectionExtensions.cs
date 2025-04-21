@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -162,6 +163,7 @@ public static class MartenServiceCollectionExtensions
     )
     {
         services.AddJasperFx();
+        services.AddSingleton<ISystemPart, MartenSystemPart>();
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
@@ -267,6 +269,10 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
 
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
+
+        services.AddSingleton<ISystemPart, MartenSystemPart<T>>();
+
+        services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
 
         var stores = services
             .Where(x => !x.IsKeyedService)

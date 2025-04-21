@@ -115,6 +115,9 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
         this.InitializeSynchronously(rules, Parent, provider);
 
-        return (T)Activator.CreateInstance(_storeType, options);
+        var store = (T)Activator.CreateInstance(_storeType, options);
+        store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());
+
+        return store;
     }
 }

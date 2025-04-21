@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
@@ -38,6 +39,7 @@ public class SingleStreamProjection<TDoc, TId>:
         mapping.UseVersionFromMatchingStream = true;
     }
 
+    [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
         var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();
