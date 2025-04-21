@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.CommandLine.Descriptions;
 using JasperFx.Events;
 using Marten;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -179,6 +180,136 @@ public class jasper_fx_mechanics
 
         result.ShouldBe(0);
     }
+
+    private async Task<IHostBuilder> complexHostBuilder()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var db1ConnectionString = await CreateDatabaseIfNotExists(conn, "database1");
+        var tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        var tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+        return Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(m =>
+                {
+                    m.Connection(ConnectionSource.ConnectionString);
+                    m.DatabaseSchemaName = "complex_host";
+
+                    m.Schema.For<BasketballTeam>();
+                });
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "first_store_complex";
+
+                    opts.Schema.For<User>();
+                });
+
+                services.AddMartenStore<ISecondStore>(services =>
+                {
+                    var opts = new StoreOptions();
+                    opts.DatabaseSchemaName = "second_store_complex";
+
+                    // Explicitly map tenant ids to database connection strings
+                    opts.MultiTenantedDatabases(x =>
+                    {
+                        // Map multiple tenant ids to a single named database
+                        x.AddMultipleTenantDatabase(db1ConnectionString, "database1")
+                            .ForTenants("tenant1", "tenant2");
+
+                        // Map a single tenant id to a database, which uses the tenant id as well for the database identifier
+                        x.AddSingleTenantDatabase(tenant3ConnectionString, "tenant3");
+                        x.AddSingleTenantDatabase(tenant4ConnectionString, "tenant4");
+                    });
+
+                    opts.Schema.For<Target>();
+
+                    return opts;
+                });
+            });
+    }
+
+    [Fact]
+    public async Task use_the_resources_list_command()
+    {
+        var builder = await complexHostBuilder();
+        var result = await builder.RunJasperFxCommands(["resources", "list"]);
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task use_the_resources_setup_command()
+    {
+        var builder = await complexHostBuilder();
+        var result = await builder.RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task setup_then_clear()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "clear"]);
+        result2.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task setup_then_db_assert()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["db-assert"]);
+        result2.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task db_apply_then_db_assert()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["db-apply"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["db-assert"]);
+        result2.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task setup_then_teardown()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "teardown"]);
+        result2.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task setup_then_statistics()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "statistics"]);
+        result2.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task setup_then_check()
+    {
+        var result = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "setup"]);
+        result.ShouldBe(0);
+
+        var result2 = await (await complexHostBuilder()).RunJasperFxCommands(["resources", "check"]);
+        result2.ShouldBe(0);
+    }
+
+
 }
 
 public interface IFirstStore : IDocumentStore{}
