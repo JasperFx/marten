@@ -56,9 +56,16 @@ internal class HighWaterDetector: IHighWaterDetector
         _gapDetector.Start = statistics.SafeStartMark + 1;
 
         var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
-        _logger.LogInformation(
-            "Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
-            safeSequence);
+        if (safeSequence.HasValue)
+        {
+            _logger.LogInformation(
+                "Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
+                safeSequence);
+        }
+        else
+        {
+            _logger.LogInformation("Daemon projection high water detection was not able to determine a safe harbor sequence, will try again soon");
+        }
 
         if (safeSequence.HasValue)
         {
