@@ -106,8 +106,11 @@ internal class QueryEventStore: IQueryEventStore
 
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromString(aggregate, streamKey);
+        if (aggregate != null)
+        {
+            var storage = _session.StorageFor<T>();
+            storage.SetIdentityFromString(aggregate, streamKey);
+        }
 
         return aggregate;
     }

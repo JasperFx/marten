@@ -649,3 +649,6 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 }
 
 #endregion
+
+
+
