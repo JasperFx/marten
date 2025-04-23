@@ -340,20 +340,7 @@ class Build : NukeBuild
     };
 
     string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
-        
-    /*
-TODO in Attach
-1. Remove JasperFx package from Weasel.Core
-2. Add JasperFx project reference to Weasel.Core
-3. Add project reference to Weasel.POstgresql to Marten
-4. Add project reference to JasperFx, JasperFx.Events to Marten
-
-TODO in Detach
-       1. Remove JasperFx package from Weasel.Core
-       2. Add JasperFx project reference to Weasel.Core
-       3. Remove project reference from Marten to JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler
- */
-
+    
     Target Attach => _ => _.Executes(() =>
     {
         foreach (var pair in ReferencedProjects)
