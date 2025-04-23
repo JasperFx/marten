@@ -50,9 +50,11 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         _batch.Queue.Post(op);
     }
 
-    public async Task PublishMessageAsync(object message)
+    public async Task PublishMessageAsync(object message, string tenantId)
     {
         var batch = await _batch.CurrentMessageBatch(_session).ConfigureAwait(false);
+
+        // TODO -- need to pass through the tenant id
         await batch.PublishAsync(message).ConfigureAwait(false);
     }
 

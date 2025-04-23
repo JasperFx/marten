@@ -33,7 +33,7 @@ internal class HighWaterDetector: IHighWaterDetector
         _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
         _settings = graph.Options.Projections;
 
-        DatabaseName = runner.Identifier;
+        DatabaseIdentity = runner.Identifier;
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ internal class HighWaterDetector: IHighWaterDetector
         await markHighWaterMarkInDatabaseAsync(token, statistics.HighestSequence).ConfigureAwait(false);
     }
 
-    public string DatabaseName { get; }
+    public string DatabaseIdentity { get; }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
     {
