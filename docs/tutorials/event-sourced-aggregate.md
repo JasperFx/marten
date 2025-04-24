@@ -4,7 +4,7 @@ Now that we are recording events for each shipment, we need a way to derive the 
 
 Fortunately, Marten can do a lot of this heavy lifting for us if we define how our `FreightShipment` applies events. Marten follows a convention of using static factory and static apply methods to define aggregates. This approach provides explicit control and is the most idiomatic way of building aggregates with Marten.
 
-### Defining the Aggregate with Static Apply Methods
+## Defining the Aggregate with Static Apply Methods
 
 ```csharp
 public class FreightShipment
@@ -74,6 +74,7 @@ This approach enforces a clear, consistent flow of state changes and ensures tha
 By adopting this convention, your aggregate classes are fully compatible with Marten’s projection engine and behave consistently across live and inline projections.
 
 Now that our `FreightShipment` can be built from events, let’s use Marten to do exactly that. We have two main ways to get the current state from events:
+
 1. **On-demand aggregation** – load events and aggregate them in memory when needed.
 2. **Projections (stored aggregation)** – have Marten automatically update a stored `FreightShipment` document as events come in (so we can load it directly like a regular document).
 
@@ -147,7 +148,6 @@ var store = DocumentStore.For(opts =>
 ```
 
 Let’s illustrate how this works with our shipment example:
-
 
 ```csharp
 using var session = store.LightweightSession();

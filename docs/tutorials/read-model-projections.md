@@ -19,6 +19,7 @@ For our freight system, suppose we want to generate a **shipment timeline** view
 ## Designing Projections and Naming Conventions
 
 When building projections, especially multi-step ones, it’s good to follow clear naming and separation:
+
 - Keep your event classes in a domain namespace (they represent business facts).
 - The aggregate (like `FreightShipment`) lives in the domain as well, with the apply methods as we did.
 - If you create separate projection classes (as we will for multi-stream projections soon), name them after the view or purpose (e.g., `DailyShipmentsProjection` for a daily summary). This keeps things organized.
