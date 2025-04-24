@@ -31,15 +31,18 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx" Version="0.5.0" />
-        <PackageReference Include="JasperFx.Events" Version="0.6.0" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-9" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
         <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.0.0-beta-7" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx\JasperFx.csproj" />
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx.Events\JasperFx.Events.csproj" />
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx.RuntimeCompiler\JasperFx.RuntimeCompiler.csproj" />
+      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props" />

@@ -125,6 +125,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
     /// <summary>
+    /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+    /// running in an Inline lifecycle. Default is false;
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
+
+    /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
     /// </summary>
     public StreamIdentity StreamIdentity

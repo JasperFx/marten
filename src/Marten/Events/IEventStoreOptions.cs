@@ -34,6 +34,12 @@ namespace Marten.Events
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
 
         /// <summary>
+        /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+        /// running in an Inline lifecycle. Default is false;
+        /// </summary>
+        bool EnableSideEffectsOnInlineProjections { get; set; }
+
+        /// <summary>
         /// Opt into a performance optimization that directs Marten to always use the identity map for an
         /// as much as possible for FetchForWriting() or FetchLatest(). Note that this optimization is only
         /// appropriate if using either immutable aggregations or when you do not mutate the aggregate yourself
