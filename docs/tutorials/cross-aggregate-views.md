@@ -4,7 +4,7 @@ So far, each projection we considered was confined to a single stream (one shipm
 
 Marten supports this with [Multi Stream Projections](/events/projections/multi-stream-projections). A multi-stream projection processes events from *multiple* streams and aggregates them into one or more view documents. Essentially, you define how to group events (by some key) and how to apply events to a collective view.
 
-### Example: Daily Deliveries Count
+## Example: Daily Deliveries Count
 
 Let’s create a projection to count deliveries per day. We’ll make a view document called `DailyShipmentsDelivered` that has a date and a count of delivered shipments for that date.
 
@@ -82,6 +82,7 @@ foreach(var dayStat in stats)
 This query is hitting a regular document table (`DailyShipmentsDelivered` documents), which Marten has been keeping up-to-date from the events. Under the covers, Marten’s projection daemon fetched new `ShipmentDelivered` events, grouped them by date key, and stored/updated the documents.
 
 This example shows the power of combining events from many streams. We could similarly create projections for other cross-cutting concerns, such as:
+
 - Total live shipments in transit per route or per region.
 - A table of all cancellations with reasons, to analyze why shipments get cancelled.
 - Anything that involves correlating multiple aggregates’ events.

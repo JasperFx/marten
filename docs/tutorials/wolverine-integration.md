@@ -3,6 +3,7 @@
 Marten and Wolverine are a powerful combination for building reliable, distributed, and event-driven systems. Marten handles persistence (documents and events), while Wolverine provides messaging, transactional outbox/inbox support, background processing, and distributed coordination.
 
 This integration serves **two distinct purposes**:
+
 1. Event-driven messaging and transactional command handling
 2. Coordinated background projection processing in distributed environments
 
@@ -13,6 +14,7 @@ This integration serves **two distinct purposes**:
 When using event sourcing, emitting events from domain aggregates is common — and often, we want to trigger side effects (notifications, follow-up commands, integration events). With just Marten, you'd need to handle messaging yourself, risking lost messages in case of failure.
 
 With Wolverine:
+
 - You can use `[AggregateHandler]` to define aggregate command handlers.
 - Events and messages returned from the handler are **saved and dispatched atomically**.
 - Wolverine uses **Marten’s outbox** to store messages until the transaction commits.
@@ -32,6 +34,7 @@ public static IEnumerable<object> Handle(PickupShipment cmd, FreightShipment shi
 ```
 
 Wolverine will:
+
 1. Load the `FreightShipment` using `FetchForWriting` (for optimistic concurrency)
 2. Pass the current aggregate and command to the handler
 3. Append the returned events to the stream

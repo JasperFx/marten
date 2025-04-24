@@ -13,6 +13,7 @@ We also followed best practices such as clear event naming, encapsulating aggreg
 Marten stands out in the .NET ecosystem by making advanced patterns (like CQRS and Event Sourcing) more accessible and pragmatic. It lets you start with a simple approach and incrementally add complexity (audit logging, temporal queries, analytics projections, etc.) as needed – all without switching databases or sacrificing transactional safety. This means you can adopt event sourcing in parts of your system that truly benefit from it (like shipments with complex workflows) while still handling simpler data as straightforward documents, all using one tool.
 
 We encourage you to explore Marten’s documentation and experiment further:
+
 - For a deeper dive into event sourcing, its core concepts, advanced implementation scenarios, and Marten's specific features, be sure to check out our comprehensive guide: [Understanding Event Sourcing with Marten](/events/learning).
 - Try adding a new type of event (e.g., a `ShipmentDelayed` event) and see how to handle it in the projection.
 - Implement a query that uses Marten’s `AggregateStreamAsync` LINQ integration for an ad-hoc calculation.

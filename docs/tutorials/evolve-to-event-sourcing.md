@@ -14,6 +14,7 @@ To gain more insight and auditability, we decide to model the shipment lifecycle
 Traditional systems persist the current state of data, often mutating it in place. Event sourcing flips this around: instead of storing *state*, we store *facts* — each change is captured as an immutable event.
 
 For our delivery system, this means:
+
 - A full audit trail of what happened and when
 - The ability to rebuild state at any point
 - Natural modeling of workflows and temporal logic
