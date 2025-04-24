@@ -26,8 +26,10 @@ internal class ProjectionWrapper: IProjectionSource
 
     public IEnumerable<Type> PublishedTypes()
     {
-        // Really indeterminate
-        yield break;
+        foreach (var storageType in Options.StorageTypes)
+        {
+            yield return storageType;
+        }
     }
 
     public ProjectionLifecycle Lifecycle { get; set; }
