@@ -61,16 +61,18 @@ Combining Marten’s projection versioning with Wolverine’s distribution gives
 
 ```mermaid
 flowchart TD
-    subgraph Old_System [Blue (Old Version)]
-      A[FreightShipment events] --> |v1 projection| P1[DailyShipmentsProjection V1];
+    subgraph OldSystem["Blue (Old Version)"]
+        A[FreightShipment events] -->|v1 projection| P1[DailyShipmentsProjection V1]
     end
-    subgraph New_System [Green (New Version)]
-      A --> |v2 projection| P2[DailyShipmentsProjection V2 (async rebuild)];
+
+    subgraph NewSystem["Green (New Version)"]
+        A -->|v2 projection| P2[DailyShipmentsProjection V2 (async rebuild)]
     end
-    P2 --> |catch up| P2Done[Projection V2 up-to-date];
-    P1 -. serving reads .-> Users((Users));
-    P2Done -. switch reads .-> Users;
-    P1 --> |decommission| X[Old projection retired];
+
+    P2 -->|catch up| P2Done[Projection V2 up-to-date]
+    P1 -. serving reads .-> Users((Users))
+    P2Done -. switch reads .-> Users
+    P1 -->|decommission| X[Old projection retired]
 ```
 
 In summary, Marten’s `ProjectionVersion` feature and Wolverine’s projection distribution **work in tandem** to support zero-downtime deployments for projection changes. Use `ProjectionVersion` when you need to introduce breaking changes to a projection’s shape or data – it gives you a clean slate in the database for the new logic. Use Wolverine’s capabilities to **isolate the new projection to specific nodes**, ensuring old and new versions don’t interfere . By using both strategies together, your freight system can deploy updates (like a new `DailyShipmentsProjection` schema) with minimal disruption: the new projection back-fills data while the old one handles live traffic, and a smooth cutover ensures continuity . This approach, as described in [Jeremy Miller’s 2025 write-up on zero-downtime projections](https://jeremydmiller.com/2025/03/26/projections-consistency-models-and-zero-downtime-deployments-with-the-critter-stack/), lets you evolve your event-driven system confidently without ever putting up a “service unavailable” sign.
