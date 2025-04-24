@@ -7,7 +7,7 @@ namespace Marten.Events.Aggregation;
 
 internal class NulloMessageOutbox: IMessageOutbox, IMessageBatch
 {
-    public ValueTask PublishAsync<T>(T message)
+    public ValueTask PublishAsync<T>(T message, string tenantId)
     {
         return new ValueTask();
     }

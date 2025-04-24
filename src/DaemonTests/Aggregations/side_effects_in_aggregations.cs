@@ -475,15 +475,11 @@ public class RecordingMessageOutbox: IMessageOutbox
     }
 }
 
+public record TenantMessage(string tenantId, object message);
+
 public class RecordingMessageBatch: IMessageBatch
 {
-    public readonly List<object> Messages = new();
-
-    public ValueTask PublishAsync<T>(T message)
-    {
-        Messages.Add(message);
-        return new ValueTask();
-    }
+    public readonly List<TenantMessage> Messages = new();
 
     public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
@@ -500,4 +496,9 @@ public class RecordingMessageBatch: IMessageBatch
     }
 
     public bool BeforeCommitWasCalled { get; set; }
+    public ValueTask PublishAsync<T>(T message, string tenantId)
+    {
+        Messages.Add(new TenantMessage(tenantId, message));
+        return new ValueTask();
+    }
 }

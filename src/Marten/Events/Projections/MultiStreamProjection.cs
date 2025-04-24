@@ -26,7 +26,7 @@ namespace Marten.Events.Projections;
 public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable
 {
     // TODO -- put the exception types in a constant somewhere
-    protected MultiStreamProjection(): base([typeof(NpgsqlException), typeof(MartenCommandException)])
+    protected MultiStreamProjection(): base()
     {
     }
 

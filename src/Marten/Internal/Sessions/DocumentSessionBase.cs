@@ -26,8 +26,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     internal DocumentSessionBase(
         DocumentStore store,
         SessionOptions sessionOptions,
-        IConnectionLifetime connection
-    ): base(store, sessionOptions, connection)
+        IConnectionLifetime connection): base(store, sessionOptions, connection)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = new UnitOfWork(this);
@@ -37,22 +36,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         DocumentStore store,
         SessionOptions sessionOptions,
         IConnectionLifetime connection,
-        ISessionWorkTracker workTracker,
-        Tenant? tenant = default
+        ISessionWorkTracker workTracker, Tenant? tenant = default
     ): base(store, sessionOptions, connection, tenant)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
-    }
-
-    internal ValueTask<IMessageBatch> CurrentMessageBatch()
-    {
-        if (_workTracker is ProjectionUpdateBatch batch)
-        {
-            return batch.CurrentMessageBatch(this);
-        }
-
-        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
