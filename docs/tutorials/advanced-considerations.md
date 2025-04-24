@@ -66,7 +66,7 @@ flowchart TD
     end
 
     subgraph NewSystem["Green (New Version)"]
-        A -->|v2 projection| P2[DailyShipmentsProjection V2 (async rebuild)]
+        A -->|v2 projection| P2[DailyShipmentsProjection V2 - async rebuild]
     end
 
     P2 -->|catch up| P2Done[Projection V2 up-to-date]
