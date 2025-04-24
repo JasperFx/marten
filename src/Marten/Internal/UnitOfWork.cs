@@ -339,7 +339,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
             do
             {
-                index = _topologicallyOrderedTypes.IndexOf(documentType);
+                index = Array.IndexOf(_topologicallyOrderedTypes, documentType);
                 documentType = documentType.BaseType;
             } while (index == -1 && documentType != null);
 
@@ -388,7 +388,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
             do
             {
-                index = _topologicallyOrderedTypes.IndexOf(documentType);
+                index = Array.IndexOf(_topologicallyOrderedTypes, documentType);
                 documentType = documentType.BaseType;
             } while (index == -1 && documentType != null);
 

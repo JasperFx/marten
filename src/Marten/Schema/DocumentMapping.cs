@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
@@ -225,7 +226,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
 
+    [IgnoreDescription]
     public SubClasses SubClasses { get; }
+
+    public string SubClassTypes => SubClasses.Any() ? SubClasses.Select(x => x.DocumentType.FullNameInCode()).Join(", ") : "None";
 
     public DbObjectName UpsertFunction =>
         new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");

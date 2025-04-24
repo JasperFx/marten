@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -146,7 +148,7 @@ public class ErrorRejectingEventProjection: EventProjection
 {
     public ErrorRejectingEventProjection()
     {
-        ProjectionName = "NamedDocuments";
+        Name = "NamedDocuments";
     }
 
     public NamedDocument Create(NameEvent e)
@@ -164,7 +166,7 @@ public class CollateNames: MultiStreamProjection<NamesByLetter, string>
 {
     public CollateNames()
     {
-        ProjectionName = "CollateNames";
+        Name = "CollateNames";
         Identity<NameEvent>(e => e.Name.First().ToString());
     }
 

@@ -62,7 +62,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     {
         public SampleSingleStream ()
         {
-            ProjectionName = "AllGood";
+            Name = "AllGood";
         }
 
         [MartenIgnore]
@@ -124,7 +124,6 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
         var stream = theSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
         await theSession.SaveChangesAsync();
-
 
         var aggregate = await theSession.LoadAsync<MyAggregateWithDifferentVersionProperty>(stream.Id);
         aggregate.SpecialVersion.ShouldBe(3);

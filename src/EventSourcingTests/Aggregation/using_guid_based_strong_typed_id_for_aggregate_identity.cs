@@ -68,9 +68,8 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
 
         // This shouldn't blow up
 
-        throw new NotImplementedException();
-        //var stream = await theSession.Events.FetchForWriting<Payment>(id);
-        //stream.Aggregate.Id.Value.Value.ShouldBe(id);
+        var stream = await theSession.Events.FetchForWriting<Payment>(id);
+        stream.Aggregate.Id.Value.Value.ShouldBe(id);
     }
 
     [Fact]

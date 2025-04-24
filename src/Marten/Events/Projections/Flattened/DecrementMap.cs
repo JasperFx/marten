@@ -33,8 +33,4 @@ internal class DecrementMap: IColumnMap
 
     public string ColumnName { get; }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        throw new NotSupportedException();
-    }
 }

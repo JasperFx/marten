@@ -66,7 +66,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly IDocumentStorage<TDoc, TId> _storage;
-    private readonly IAggregator<TDoc, IQuerySession> _aggregator;
+    private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly string _versionSelectionSql;
     private string _initialSql;
 
@@ -76,7 +76,11 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         _events = events;
         _identityStrategy = identityStrategy;
         _storage = storage;
-        _aggregator = _events.Options.Projections.AggregatorFor<TDoc>();
+        var raw = _events.Options.Projections.AggregatorFor<TDoc>();
+
+        // Blame strong typed identifiers for this abomination folks
+        _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
+                      ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _storage, typeof(TDoc), _storage.IdType, typeof(TId), typeof(IQuerySession));
 
         if (_events.TenancyStyle == TenancyStyle.Single)
         {
@@ -153,7 +157,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
             if (events.Any())
             {
-                document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+                document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
             }
 
             if (document != null)
@@ -260,7 +264,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
             var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
             if (events.Any())
             {
-                document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+                document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
             }
 
             if (document != null)
@@ -306,7 +310,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
-                return await _aggregator.BuildAsync(appendedEvents, session, starting, cancellation).ConfigureAwait(false);
+                return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _storage, cancellation).ConfigureAwait(false);
             }
         }
 
@@ -342,7 +346,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
         var events = await new ListQueryHandler<IEvent>(null, selector).HandleAsync(reader, session, cancellation).ConfigureAwait(false);
         if (events.Any())
         {
-            document = await _aggregator.BuildAsync(events, session, document, cancellation).ConfigureAwait(false);
+            document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
         }
 
         if (document != null)

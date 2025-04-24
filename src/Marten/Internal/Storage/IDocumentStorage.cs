@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Events.Aggregation;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Linq;
@@ -131,15 +132,8 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     void SetIdentityFromGuid(T document, Guid identityGuid);
 }
 
-public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull where TId : notnull
+public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<T, TId> where T : notnull where TId : notnull
 {
-    /// <summary>
-    ///     Assign the given identity to the document
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="identity"></param>
-    void SetIdentity(T document, TId identity);
-
     IDeletion DeleteForId(TId id, string tenantId);
 
     Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);

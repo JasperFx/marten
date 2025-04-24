@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
@@ -15,7 +16,7 @@ namespace Marten.Events.Fetching;
 
 internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
 {
-    private readonly IAggregator<TDoc, IQuerySession> _aggregator;
+    private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly IDocumentStorage<TDoc, TId> _documentStorage;
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
@@ -26,7 +27,11 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
         _events = events;
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
-        _aggregator = _events.Options.Projections.AggregatorFor<TDoc>();
+
+        var raw = _events.Options.Projections.AggregatorFor<TDoc>();
+
+        _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
+                      ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), _documentStorage.IdType, typeof(TId), typeof(IQuerySession));
     }
 
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
@@ -60,7 +65,7 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            var document = await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+            var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
             if (document != null)
             {
                 _documentStorage.SetIdentity(document, id);
@@ -129,7 +134,7 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            var document = await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+            var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
 
             var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
@@ -169,7 +174,7 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
                 var starting = stream.Aggregate;
                 var appendedEvents = stream.Events;
 
-                return await _aggregator.BuildAsync(appendedEvents, session, starting, cancellation).ConfigureAwait(false);
+                return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _documentStorage, cancellation).ConfigureAwait(false);
             }
         }
 
@@ -185,6 +190,6 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
             await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
 
         var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-        return await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+        return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
     }
 }

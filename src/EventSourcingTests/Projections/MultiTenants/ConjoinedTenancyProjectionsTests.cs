@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
@@ -221,45 +222,37 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
         this.IncludeType<CompanyLocationDeleted>();
     }
 
-    public override ValueTask<SnapshotAction<CompanyLocation>> ApplyAsync(IQuerySession session, CompanyLocation snapshot, Guid identity, IReadOnlyList<IEvent> events,
-        CancellationToken cancellation)
+    public override ValueTask<(CompanyLocation, ActionType)> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
+        IIdentitySetter<CompanyLocation, Guid> identitySetter, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
-        throw new NotImplementedException("Do with synchronous version of apply changes");
-        return base.ApplyAsync(session, snapshot, identity, events, cancellation);
+        var location = snapshot;
+
+        // The session and the slice should be for the same tenant
+        session.TenantId.ShouldBe(ExpectedTenant);
+
+        foreach (var data in events.Select(x => x.Data))
+        {
+            switch (data)
+            {
+                case CompanyLocationCreated c:
+                    location = new CompanyLocation
+                    {
+                        Id = identity,
+                        Name = c.Name,
+                    };
+
+                    break;
+
+                case CompanyLocationUpdated u:
+                    location.Name = u.NewName;
+                    break;
+
+                case CompanyLocationDeleted d:
+                    return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Delete));
+            }
+        }
+
+        return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Store));
     }
 
-    // public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CompanyLocation, Guid> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
-    // {
-    //     var location = slice.Aggregate;
-    //
-    //     // The session and the slice should be for the same tenant
-    //     session.TenantId.ShouldBe(ExpectedTenant);
-    //     slice.TenantId.ShouldBe(ExpectedTenant);
-    //     session.TenantId.ShouldBe(slice.TenantId);
-    //
-    //     foreach (var data in slice.AllData())
-    //     {
-    //         switch (data)
-    //         {
-    //             case CompanyLocationCreated c:
-    //                 location = new CompanyLocation
-    //                 {
-    //                     Id = slice.Id,
-    //                     Name = c.Name,
-    //                 };
-    //                 session.Store(location);
-    //                 break;
-    //
-    //             case CompanyLocationUpdated u:
-    //                 location.Name = u.NewName;
-    //                 break;
-    //
-    //             case CompanyLocationDeleted d:
-    //                 session.Delete(location);
-    //                 break;
-    //         }
-    //     }
-    //
-    //     return ValueTask.CompletedTask;
-    // }
 }

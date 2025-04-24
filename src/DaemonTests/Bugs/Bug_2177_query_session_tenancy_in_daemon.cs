@@ -10,6 +10,7 @@ using Bug2177;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Shouldly;
 
@@ -88,7 +89,7 @@ namespace Bug2177
         public User User { get; set; }
     }
 
-    public class TicketProjection: SingleStreamProjection<Ticket>
+    public class TicketProjection: SingleStreamProjection<Ticket, Guid>
     {
         public Ticket Create(TicketCreated created) =>
             new() { Id = created.TicketId, Name = created.Name };

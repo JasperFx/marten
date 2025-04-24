@@ -9,7 +9,7 @@ using Marten.Storage;
 
 namespace Marten.Events;
 
-internal partial class EventStore: QueryEventStore, IEventStore
+internal partial class EventStore: QueryEventStore, IEventStoreOperations
 {
     private readonly DocumentSessionBase _session;
     private readonly DocumentStore _store;

@@ -26,7 +26,10 @@ public class Bug_3661_await_custom_projection_slicing : OneOffConfigurationsCont
     [Fact]
     public async Task fetching_multiple_items_from_slicers_in_async_custom_projection()
     {
-        StoreOptions(opts => opts.Projections.Add(new StartAndStopIteratingAwaitablesSlicedProjection(), ProjectionLifecycle.Async));
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new StartAndStopIteratingAwaitablesSlicedProjection(), ProjectionLifecycle.Async);
+        });
 
         var stream = Guid.NewGuid();
         theSession.Store(new Document1 { Id = stream });
@@ -41,14 +44,26 @@ public class Bug_3661_await_custom_projection_slicing : OneOffConfigurationsCont
         await daemon.StartAllAsync();
         await daemon.WaitForNonStaleData(20.Seconds());
 
-        var aggregate = await theSession.LoadAsync<StartAndStopAggregate>(stream);
+        var aggregate = await theSession.LoadAsync<StartAndStopAggregate2>(stream);
         aggregate.Count.ShouldBe(2);
-        var aggregate2 = await theSession.LoadAsync<StartAndStopAggregate>(stream2);
+        var aggregate2 = await theSession.LoadAsync<StartAndStopAggregate2>(stream2);
         aggregate2.Count.ShouldBe(2);
     }
 }
 
-public class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProjection<StartAndStopAggregate, Guid>
+public class StartAndStopAggregate2
+{
+    public int Count { get; set; }
+
+    public Guid Id { get; set; }
+
+    public void Increment()
+    {
+        Count++;
+    }
+}
+
+public class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProjection<StartAndStopAggregate2, Guid>
 {
     public StartAndStopIteratingAwaitablesSlicedProjection()
     {
@@ -65,7 +80,7 @@ public class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProject
         IncludeType<Increment>();
     }
 
-    public StartAndStopAggregate Create(Start _) => new StartAndStopAggregate();
+    public StartAndStopAggregate2 Create(Start _) => new StartAndStopAggregate2();
 
-    public void Apply(StartAndStopAggregate aggregate, Increment _) => aggregate.Increment();
+    public void Apply(StartAndStopAggregate2 aggregate, Increment _) => aggregate.Increment();
 }

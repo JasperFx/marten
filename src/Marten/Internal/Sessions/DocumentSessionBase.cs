@@ -258,7 +258,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    public new IEventStore Events => (IEventStore)base.Events;
+    public new IEventStoreOperations Events => (IEventStoreOperations)base.Events;
 
 
     public void QueueOperation(IStorageOperation storageOperation)

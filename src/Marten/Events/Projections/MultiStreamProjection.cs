@@ -1,12 +1,18 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
+using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace Marten.Events.Projections;
@@ -17,7 +23,7 @@ namespace Marten.Events.Projections;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection
+public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable
 {
     // TODO -- put the exception types in a constant somewhere
     protected MultiStreamProjection(): base([typeof(NpgsqlException), typeof(MartenCommandException)])
@@ -26,8 +32,8 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
 
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
-        mapping.UseVersionFromMatchingStream = Lifecycle == ProjectionLifecycle.Inline &&
-                                               storeOptions.Events.AppendMode == EventAppendMode.Quick;
+        mapping.UseVersionFromMatchingStream = false;
+        // Nothing right now.
     }
 
     /// <summary>
@@ -36,6 +42,7 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
     ///     projection. Use this to potentially improve async projection throughput
     /// </summary>
     [Obsolete("Prefer Options.CacheLimitPerTenant. This will be removed in Marten 9")]
+    [JasperFxIgnore]
     public int CacheLimitPerTenant
     {
         get => Options.CacheLimitPerTenant;
@@ -48,24 +55,103 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
     //     return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
     // }
 
-    // TODO -- revisit validation
+    [JasperFxIgnore]
+    public IEnumerable<string> ValidateConfiguration(StoreOptions options)
+    {
+        var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();
 
-    // protected override void specialAssertValid()
-    // {
-    //     if (_customSlicer == null && !_defaultSlicer.HasAnyRules())
-    //     {
-    //         throw new InvalidProjectionException(
-    //             $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined or registered lookup grouping rules and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
-    //     }
-    // }
+        if (mapping.IdType != typeof(TId))
+        {
+            yield return
+                $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
+        }
 
+        // TODO -- revisit this with
+        if (options.Events.TenancyStyle != mapping.TenancyStyle
+            && (options.Events.TenancyStyle == TenancyStyle.Single
+                || options.Events is
+                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
+                && Lifecycle != ProjectionLifecycle.Live)
+           )
+        {
+            yield return
+                $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle})";
+        }
 
-    // protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
-    // {
-    //     if (mapping.IdType != typeof(TId))
-    //     {
-    //         yield return
-    //             $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
-    //     }
-    // }
+        if (mapping.DeleteStyle == DeleteStyle.SoftDelete && IsUsingConventionalMethods)
+        {
+            yield return
+                "MultiStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
+        }
+    }
+
+    public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+
+    }
+
+    public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class where TStore : IDocumentStore
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection,
+                        lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
 }

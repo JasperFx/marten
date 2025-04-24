@@ -2,14 +2,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.Core.Descriptions;
+using System.Threading;
+using System.Threading.Tasks;
+using ImTools;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon;
 using Marten.Linq.Parsing;
+using Microsoft.Extensions.Logging;
 using Weasel.Core;
 using Weasel.Postgresql;
 using IReplayExecutor = JasperFx.Events.Daemon.IReplayExecutor;
@@ -21,10 +28,9 @@ namespace Marten.Events.Projections.Flattened;
 ///     Projection type that will write event data to a single database table
 /// </summary>
 public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDocumentOperations, IQuerySession>,
-    IProjectionSchemaSource
+    IProjectionSchemaSource, IInlineProjection<IDocumentOperations>, IJasperFxProjection<IDocumentOperations>
 {
-    private readonly List<IEventHandler> _handlers = new();
-    private readonly string _inlineTypeName;
+    private ImHashMap<Type, IEventHandler> _handlers = ImHashMap<Type, IEventHandler>.Empty;
 
     public FlatTableProjection(string tableName, SchemaNameSource schemaNameSource): this(
         new PostgresqlObjectName("public", tableName), schemaNameSource)
@@ -37,7 +43,16 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
     {
         SchemaNameSource = schemaNameSource;
         Table = new Table(tableName);
-        _inlineTypeName = GetType().ToSuffixedTypeName("InlineProjection");
+    }
+
+    SubscriptionType ISubscriptionSource.Type => SubscriptionType.FlatTableProjection;
+    ShardName[] ISubscriptionSource.ShardNames() => [new ShardName(Name, ShardName.All, Version)];
+
+    Type ISubscriptionSource.ImplementationType => GetType();
+
+    SubscriptionDescriptor ISubscriptionSource<IDocumentOperations, IQuerySession>.Describe()
+    {
+        return new SubscriptionDescriptor(this);
     }
 
     public SchemaNameSource SchemaNameSource { get; }
@@ -54,34 +69,78 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
 
         yield return Table;
 
-        foreach (var handler in _handlers)
-        foreach (var schemaObject in handler.BuildObjects(events, Table))
-            yield return schemaObject;
+        foreach (var handler in _handlers.Enumerate().Select(x => x.Value))
+        {
+            foreach (var schemaObject in handler.BuildObjects(events, Table))
+            {
+                yield return schemaObject;
+            }
+        }
+
+        foreach (var entry in _handlers.Enumerate())
+        {
+            entry.Value.Compile(events, Table);
+        }
+
     }
 
     public Type ProjectionType => GetType();
-    public string Name => ProjectionName;
-    public uint Version => ProjectionVersion;
 
-    public SubscriptionDescriptor Describe()
+    IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> ISubscriptionSource<IDocumentOperations, IQuerySession>.Shards()
     {
-        return new SubscriptionDescriptor(this, SubscriptionType.FlatTableProjection);
+        return
+        [
+            new AsyncShard<IDocumentOperations, IQuerySession>(Options, ShardRole.Projection,
+                new ShardName(Name, ShardName.All, Version), this, this)
+        ];
     }
 
-    public IReadOnlyList<AsyncShard<IDocumentOperations, IQuerySession>> Shards()
+    private void apply(IDocumentOperations operations, IReadOnlyList<IEvent> events)
     {
-        throw new NotImplementedException();
+        foreach (var @event in events)
+        {
+            if (_handlers.TryFind(@event.EventType, out var handler))
+            {
+                handler.Handle(operations, @event);
+            }
+        }
     }
 
-    public bool TryBuildReplayExecutor(IEventStorage<IDocumentOperations, IQuerySession> store, IEventDatabase database,
+    Task IJasperFxProjection<IDocumentOperations>.ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
+    {
+        apply(operations, events);
+        return Task.CompletedTask;
+    }
+
+    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ILoggerFactory loggerFactory,
+        ShardName shardName)
+    {
+        var logger = loggerFactory.CreateLogger(GetType());
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, store, database, this, logger);
+    }
+
+    ISubscriptionExecution ISubscriptionFactory<IDocumentOperations, IQuerySession>.BuildExecution(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database, ILogger logger,
+        ShardName shardName)
+    {
+        return new ProjectionExecution<IDocumentOperations, IQuerySession>(shardName, Options, store, database, this, logger);
+    }
+
+    bool IProjectionSource<IDocumentOperations, IQuerySession>.TryBuildReplayExecutor(IEventStore<IDocumentOperations, IQuerySession> store, IEventDatabase database,
         out IReplayExecutor executor)
     {
-        throw new NotImplementedException();
+        executor = default;
+        return false;
     }
 
-    public IInlineProjection<IDocumentOperations> BuildForInline()
+    IInlineProjection<IDocumentOperations> IProjectionSource<IDocumentOperations, IQuerySession>.BuildForInline()
     {
-        throw new NotImplementedException();
+        return this;
+    }
+
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    {
+        apply(operations, streams.SelectMany(x => x.Events).ToList());
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -107,7 +166,7 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
 
         configure(map);
 
-        _handlers.Add(map);
+        _handlers = _handlers.AddOrUpdate(typeof(T), map);
     }
 
     private static void assertReceivedEventType<T>()
@@ -142,7 +201,7 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
             ? Array.Empty<MemberInfo>()
             : MemberFinder.Determine(tablePrimaryKeySource);
 
-        _handlers.Add(new EventDeleter(typeof(T), members));
+        _handlers = _handlers.AddOrUpdate(typeof(T), new EventDeleter<T>(members, Table));
     }
 
     private void readSchema(EventGraph events)
@@ -159,5 +218,56 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         }
 
         Options.DeleteDataInTableOnTeardown(Table.Identifier);
+    }
+
+    internal static IParameterSetter<IEvent> BuildPrimaryKeySetter<T>(MemberInfo[] members)
+    {
+        // It's off of IEvent directly
+        if (members.Length == 1)
+        {
+            if (members[0].DeclaringType == typeof(IEvent))
+            {
+                return typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<IEvent>>(members[0], typeof(IEvent), members[0].GetRawMemberType());
+            }
+
+            var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0], typeof(T), members[0].GetRawMemberType());
+            return new EventForwarder<T>(setter);
+        }
+
+        if (members.Length == 2)
+        {
+            var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[1], typeof(T),
+                members[1].GetRawMemberType());
+
+            return new EventForwarder<T>(inner);
+        }
+
+        return BuildSetterForMembers<T>(members.Skip(0).ToArray());
+    }
+
+    internal static IParameterSetter<IEvent> BuildSetterForMembers<T>(MemberInfo[] members)
+    {
+        if (members.Length == 1)
+        {
+            if (members[0].DeclaringType != typeof(IEvent))
+            {
+                var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0],typeof(T), members[0].GetRawMemberType());
+                return new EventForwarder<T>(inner);
+            }
+        }
+
+        // off of something on the event
+        var outsideToInside = members.Reverse().ToArray();
+
+        var dbType = PostgresqlProvider.Instance.ToParameterType(outsideToInside[0].GetRawMemberType());
+        var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<object>(outsideToInside[0], outsideToInside[1].GetRawMemberType(),
+            outsideToInside[0].GetRawMemberType());
+
+        for (int i = 1; i < outsideToInside.Length; i++)
+        {
+            setter = typeof(RelayParameterSetter<,>).CloseAndBuildAs<object>(dbType, setter, outsideToInside[i], outsideToInside[i].DeclaringType, outsideToInside[i].GetRawMemberType());
+        }
+
+        return new EventForwarder<T>((IParameterSetter<T>)setter);
     }
 }

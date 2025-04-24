@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -11,7 +12,9 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
@@ -163,7 +166,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
     Task IEventDatabase.WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
     {
-        throw new NotImplementedException();
+        return this.WaitForNonStaleProjectionDataAsync(timeout);
     }
 
     /// <summary>
@@ -204,14 +207,24 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
     /// </summary>
     public ShardStateTracker Tracker { get; private set; }
 
-    Task IEventDatabase.StoreDeadLetterEventAsync(DeadLetterEvent deadLetterEvent, CancellationToken token)
+    async Task IEventDatabase.StoreDeadLetterEventAsync(object storage, DeadLetterEvent deadLetterEvent,
+        CancellationToken token)
     {
-        throw new NotImplementedException();
+        try
+        {
+            using var session = storage.As<DocumentStore>().LightweightSession(SessionOptions.ForDatabase(this));
+            session.Store(deadLetterEvent);
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // TODO -- something to log this?
+        }
     }
 
     Task IEventDatabase.EnsureStorageExistsAsync(Type storageType, CancellationToken token)
     {
-        throw new NotImplementedException();
+        return EnsureStorageExistsAsync(storageType, token).AsTask();
     }
 
     internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
@@ -221,6 +234,6 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var detector = new HighWaterDetector(this, Options.EventGraph, logger);
 
-        return new ProjectionDaemon(store, this, logger, detector, store.Options.Projections);
+        return new ProjectionDaemon(store, this, logger, detector);
     }
 }

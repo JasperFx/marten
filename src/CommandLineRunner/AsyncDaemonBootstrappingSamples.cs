@@ -1,14 +1,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core;
-using Marten;
 using DaemonTests.TestingSupport;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
+using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Microsoft.Extensions.Hosting;
-using Npgsql;
 
 namespace CommandLineRunner;
 
@@ -115,10 +113,7 @@ public class AsyncDaemonBootstrappingSamples
         // This will tell you the current progress of each known projection shard
         // according to the latest recorded mark in the database
         var allProgress = await store.Advanced.AllProjectionProgress();
-        foreach (var state in allProgress)
-        {
-            Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
-        }
+        foreach (var state in allProgress) Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
 
         // This will allow you to retrieve some basic statistics about the event store
         var stats = await store.Advanced.FetchEventStoreStatistics();

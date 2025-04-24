@@ -5,10 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
 using JasperFx.Blocks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
@@ -18,6 +21,7 @@ using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Schema;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
@@ -30,7 +34,7 @@ using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry, IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -110,6 +114,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
     /// in testing
     /// </summary>
+    [IgnoreDescription]
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
@@ -144,6 +149,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
     /// </summary>
+    [ChildDescription]
     public MetadataConfig MetadataConfig => new(Metadata);
 
     /// <summary>
@@ -168,6 +174,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public void AddEventType(Type eventType)
     {
         _events.FillDefault(eventType);
+    }
+
+    public Type IdentityTypeFor(Type aggregateType)
+    {
+        return new DocumentMapping(aggregateType, Options).IdType;
     }
 
     /// <summary>
@@ -284,9 +295,9 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
-    IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
+    IReadOnlyList<ISubscriptionSource> IReadOnlyEventStoreOptions.Projections()
     {
-        return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
+        return Options.Projections.All.OfType<ISubscriptionSource>().ToList();
     }
 
     public IReadOnlyList<IEventType> AllKnownEventTypes()
@@ -486,5 +497,21 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         }
 
         Dispose();
+    }
+
+    public IAggregatorSource<IQuerySession>? Build<TDoc>()
+    {
+        var idType = new DocumentMapping(typeof(TDoc), Options).IdType;
+        return typeof(SingleStreamProjection<,>).CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+
+        var set = description.AddChildSet("Events", _events);
+        set.SummaryColumns = [nameof(EventMapping.EventType), nameof(EventMapping.EventTypeName)];
+
+        return description;
     }
 }

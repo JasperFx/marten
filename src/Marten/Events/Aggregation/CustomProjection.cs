@@ -1,21 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core;
-using JasperFx.Core.Descriptions;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using JasperFx.Events.Aggregation;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
-using Marten.Internal.Storage;
-using Marten.Services;
-using Marten.Sessions;
-using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
@@ -27,6 +16,11 @@ namespace Marten.Events.Aggregation;
 /// <typeparam name="TId"></typeparam>
 public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
 {
+    protected CustomProjection()
+    {
+        Name = GetType().Name;
+    }
+
     /// <summary>
     ///     Apply any document changes based on the incoming slice of events to the underlying aggregate document
     /// </summary>

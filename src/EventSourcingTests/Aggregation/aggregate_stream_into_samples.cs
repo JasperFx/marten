@@ -169,14 +169,15 @@ namespace EventSourcingTests.Aggregation
         {
             var financialAccountId = Guid.NewGuid();
 
-            await AppendEvent(
-                financialAccountId,
+            object[] events = [
                 new AccountingMonthOpened(financialAccountId, 10, 2021, 0),
                 new InflowRecorded(financialAccountId, 100),
                 new InflowRecorded(financialAccountId, 100),
                 new InflowRecorded(financialAccountId, 100),
-                new AccountingMonthClosed(financialAccountId, 10, 2021, 300)
-            );
+                new AccountingMonthClosed(financialAccountId, 10, 2021, 300)];
+
+            theSession.Events.Append(financialAccountId, events);
+            await theSession.SaveChangesAsync();
 
             #region sample_aggregate-stream-into-state-store
 
@@ -214,12 +215,9 @@ namespace EventSourcingTests.Aggregation
             snapshot.IsOpened.ShouldBeTrue();
             snapshot.Version.ShouldBe(openedCashierShift.Version);
 
-            await AppendEvent(
-                financialAccountId,
-                new InflowRecorded(financialAccountId, 100),
-                new InflowRecorded(financialAccountId, 100),
-                new InflowRecorded(financialAccountId, 100)
-            );
+            object[] events1 = new[] { new InflowRecorded(financialAccountId, 100), new InflowRecorded(financialAccountId, 100), new InflowRecorded(financialAccountId, 100) };
+            theSession.Events.Append(financialAccountId, events1);
+            await theSession.SaveChangesAsync();
 
             #region sample_aggregate-stream-into-state-get
 

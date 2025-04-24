@@ -110,7 +110,7 @@ public static class AsyncDaemonHealthCheckExtensions
             {
                 var projectionsToCheck = _store.Options.Events.Projections()
                     .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
-                    .Select(x => $"{x.ProjectionName}:All")
+                    .Select(x => $"{x.Name}:All")
                     .ToHashSet();
 
                 var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);

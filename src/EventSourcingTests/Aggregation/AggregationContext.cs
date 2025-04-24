@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
@@ -48,11 +51,9 @@ public class AggregationContext : IntegrationContext
     public ValueTask<MyAggregate> LiveAggregation(Action<TestEventSlice> action)
     {
         var fragment = BuildStreamFragment(action);
-
-        throw new NotImplementedException("Change this to the new model");
-        //var aggregator = _projection.BuildAggregator(theStore.Options);
-        //var events = (IReadOnlyList<IEvent>)fragment.Events();
-        //return aggregator.BuildAsync(events, theSession, null, CancellationToken.None);
+        var aggregator = _projection.As<IAggregatorSource<IQuerySession>>().Build<MyAggregate>();
+        var events = fragment.Events();
+        return aggregator.BuildAsync(events, theSession, null, CancellationToken.None);
     }
 
 
@@ -74,10 +75,9 @@ public class AggregationContext : IntegrationContext
             .Select(x => StreamAction.Append(x.Key, x.Value.Events().ToArray()))
             .ToArray();
 
-        throw new NotImplementedException("Redo.");
-        // var inline = _projection.BuildRuntime(theStore);
-        //
-        // await inline.ApplyAsync(theSession, streams, CancellationToken.None);
-        // await theSession.SaveChangesAsync();
+        var inline = _projection.As<IProjectionSource<IDocumentOperations, IQuerySession>>().BuildForInline();
+
+        await inline.ApplyAsync(theSession, streams, CancellationToken.None);
+        await theSession.SaveChangesAsync();
     }
 }

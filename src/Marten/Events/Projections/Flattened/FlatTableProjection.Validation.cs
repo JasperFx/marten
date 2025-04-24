@@ -1,22 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Events.Projections;
-using Marten.Exceptions;
+using JasperFx.Events.Subscriptions;
 
 namespace Marten.Events.Projections.Flattened;
 
-public partial class FlatTableProjection
+public partial class FlatTableProjection: ISubscriptionFactory<IDocumentOperations, IQuerySession>
 {
     private const string SingleColumnPkRequired = "Flat table projections require a single column primary key";
 
     private const string EmptyProjection =
         "Empty flat table projections. Register event handlers by calling the Project<T>() or Delete<T>() methods";
-
-    // TODO -- gotta redo this
-    // internal override IEnumerable<string> ValidateConfiguration(StoreOptions options)
-    // {
-    //     foreach (var p in quickValidations()) yield return p;
-    // }
 
     private IEnumerable<string> quickValidations()
     {
@@ -25,7 +19,7 @@ public partial class FlatTableProjection
             yield return SingleColumnPkRequired;
         }
 
-        if (!_handlers.Any())
+        if (_handlers.IsEmpty)
         {
             yield return EmptyProjection;
         }

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core.Descriptors;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;

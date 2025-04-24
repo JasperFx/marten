@@ -18,7 +18,7 @@ internal static class AsyncOptionsExtensions
 
             if (cleanUp is DeleteTableData tableData)
             {
-                session.QueueSqlCommand($"delete from {tableData};");
+                session.QueueSqlCommand($"delete from {tableData.TableIdentifier};");
             }
         }
     }

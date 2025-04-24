@@ -20,12 +20,12 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
     [Fact]
     public async Task CanQueryTenantedStreamsInAsyncProjectionGrouper()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.Policies.AllDocumentsAreMultiTenanted();
-            _.Events.TenancyStyle = TenancyStyle.Conjoined;
-            _.Events.StreamIdentity = StreamIdentity.AsString;
-            _.Projections.Add<CountsByTagProjector>(ProjectionLifecycle.Async);
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Add<CountsByTagProjector>(ProjectionLifecycle.Async);
         });
 
         const string tenant = "myTenant";
@@ -34,7 +34,8 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        var streamKey = CombGuidIdGeneration.NewGuid().ToString();
+        var streamKey = "stream1";
+
         tenantedSession.Events.StartStream(streamKey,
             new CountEvent { Tag = "Foo" },
             new CountEvent { Tag = "Bar" },
@@ -42,6 +43,7 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
             new CountEvent { Tag = "Baz" },
             new CountEvent { Tag = "Baz" },
             new CountEvent { Tag = "Baz" });
+
         await tenantedSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(5.Seconds());
