@@ -9,7 +9,7 @@ This integration serves **two distinct purposes**:
 
 ---
 
-### Reliable Messaging with Aggregates
+## Reliable Messaging with Aggregates
 
 When using event sourcing, emitting events from domain aggregates is common — and often, we want to trigger side effects (notifications, follow-up commands, integration events). With just Marten, you'd need to handle messaging yourself, risking lost messages in case of failure.
 
