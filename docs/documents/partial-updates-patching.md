@@ -2,7 +2,7 @@
 
 Partial update or patching JSON involves making changes to specific parts of a JSON document without replacing the entire document. This is particularly useful when you only need to modify certain fields or elements within a large JSON object, rather than rewriting the entire structure.
 
-Starting with Marten v7.x, there is native partial updates or patching support available in core library using a pure Postgres PL/pgSQL and JSON operators based implementation. Marten earlier supported a PLV8 based patching via [Marten.PLv8](/documents/plv8.html) as a separate opt-in plugin. This library will be deprecated and we recommend users to use this new native patching functionality.
+Starting with Marten v7.x, there is native partial updates or patching support available in core library using a pure Postgres PL/pgSQL and JSON operators based implementation. Marten earlier supported a PLV8 based patching a separate opt-in plugin `Marten.PLv8`. This library will be deprecated and we recommend users to use this new native patching functionality.
 
 ## Patching API
 

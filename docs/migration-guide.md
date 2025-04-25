@@ -100,7 +100,7 @@ Other key, breaking changes:
   If an application was setting `StoreOptions.PLV8Enabled = false` to disable PLV8,
   that line should be removed as the setting no longer exists. If an application
   had `StoreOptions.PLV8Enabled = true` and was using PLV8, you will need to add
-  the [Marten.PLv8 package](/documents/plv8).
+  the `Marten.PLv8` package.
 
 ## Key Changes in 3.0.0
 
