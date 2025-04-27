@@ -67,6 +67,8 @@ public class Target
     public FSharpOption<string> FSharpStringOption { get; set; }
     public FSharpOption<DateTime> FSharpDateOption { get; set; }
     public FSharpOption<DateTimeOffset> FSharpDateTimeOffsetOption { get; set; }
+    public FSharpOption<DateOnly> FSharpDateOnlyOption { get; set; }
+    public FSharpOption<TimeOnly> FSharpTimeOnlyOption { get; set; }
 
     public string AnotherString { get; set; }
 
@@ -146,7 +148,7 @@ public class Target
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
         target.OtherGuid = Guid.NewGuid();
-       
+
         target.Flag = _random.Next(0, 10) > 5;
 
         target.Float = float.Parse(_random.NextDouble().ToString());
