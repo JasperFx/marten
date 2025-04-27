@@ -22,6 +22,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     private FakeHealthCheckBuilderStub _builder = new();
     private readonly TimeProvider _timeProvider = Substitute.For<TimeProvider>();
     private readonly DateTime _now = DateTime.UtcNow;
+    private readonly ProjectionStateTracker _stateTracker = new();
 
     public AsyncDaemonHealthCheckExtensionsTests(ITestOutputHelper output) : base(output)
     {
@@ -52,6 +53,17 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
     }
 
     [Fact]
+    public void should_add_projectionstatetracker_to_services()
+    {
+        _builder = new();
+        _builder.Services.ShouldNotContain(x => x.ServiceType == typeof(ProjectionStateTracker));
+
+        _builder.AddMartenAsyncDaemonHealthCheck(200, TimeSpan.FromSeconds(5));
+
+        _builder.Services.ShouldContain(x => x.ServiceType == typeof(ProjectionStateTracker));
+    }
+
+    [Fact]
     public void should_add_healthcheck_to_services()
     {
         _builder = new();
@@ -70,7 +82,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         {
             x.Projections.Add(new FakeSingleStream1Projection(), ProjectionLifecycle.Async);
         });
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -89,7 +101,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         session.Events.Append(Guid.NewGuid(), new FakeIrrellevantEvent());
         await session.SaveChangesAsync();
         await agent.Tracker.WaitForHighWaterMark(1);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(100), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -112,7 +124,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await session.SaveChangesAsync();
         await agent.Tracker.WaitForHighWaterMark(eventCount);
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream2:All", eventCount), 15.Seconds());
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(0), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(0), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -143,7 +155,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream3:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForShardState(new ShardState("FakeStream4:All", eventCount), 15.Seconds());
         await agent.Tracker.WaitForHighWaterMark(eventCount);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -177,7 +189,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
 
         await theSession.ExecuteAsync(treeCommand);
 
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -211,7 +223,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
 
         await theSession.ExecuteAsync(treeCommand);
 
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, TimeSpan.FromSeconds(30)), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, TimeSpan.FromSeconds(30)), _timeProvider, _stateTracker);
 
         var result = await healthCheck.CheckHealthAsync(new());
 
@@ -247,7 +259,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await theSession.ExecuteAsync(treeCommand);
 
         var maxSameLagTime = TimeSpan.FromSeconds(30);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider, _stateTracker);
         await healthCheck.CheckHealthAsync(new());
 
         // When
@@ -287,7 +299,7 @@ public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext
         await theSession.ExecuteAsync(treeCommandSeqId0);
 
         var maxSameLagTime = TimeSpan.FromSeconds(30);
-        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider);
+        var healthCheck = new AsyncDaemonHealthCheck(theStore, new(1, maxSameLagTime), _timeProvider, _stateTracker);
         await healthCheck.CheckHealthAsync(new());
 
         // When
