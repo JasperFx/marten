@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events.Projections;
-using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -51,6 +50,7 @@ public static class AsyncDaemonHealthCheckExtensions
     {
         builder.Services.AddSingleton(new AsyncDaemonHealthCheckSettings(maxEventLag, maxSameLagTime));
         builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.TryAddSingleton<ProjectionStateTracker>();
         return builder.AddCheck<AsyncDaemonHealthCheck>(
             nameof(AsyncDaemonHealthCheck),
             tags: new[] { "Marten", "AsyncDaemon" }
@@ -65,13 +65,18 @@ public static class AsyncDaemonHealthCheckExtensions
     internal record AsyncDaemonHealthCheckSettings(int MaxEventLag, TimeSpan? MaxSameLagTime = null);
 
     /// <summary>
+    ///     Tracks projection state across multiple health check invocations
+    /// </summary>
+    internal class ProjectionStateTracker
+    {
+        public ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)> LastProjectionsChecks { get; } = new();
+    }
+
+    /// <summary>
     ///     Health check implementation
     /// </summary>
     internal class AsyncDaemonHealthCheck: IHealthCheck
     {
-        private readonly ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)>
-            _lastProjectionsChecks = new();
-
         /// <summary>
         ///     The allowed event projection processing lag compared to the HighWaterMark.
         /// </summary>
@@ -92,13 +97,19 @@ public static class AsyncDaemonHealthCheckExtensions
 
         private readonly TimeProvider _timeProvider;
 
+        /// <summary>
+        ///     Projection state tracker that persists between health check invocations
+        /// </summary>
+        private readonly ProjectionStateTracker _stateTracker;
+
         public AsyncDaemonHealthCheck(IDocumentStore store, AsyncDaemonHealthCheckSettings settings,
-            TimeProvider timeProvider)
+            TimeProvider timeProvider, ProjectionStateTracker stateTracker)
         {
             _store = store;
             _timeProvider = timeProvider;
             _maxEventLag = settings.MaxEventLag;
             _maxSameLagTime = settings.MaxSameLagTime;
+            _stateTracker = stateTracker;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(
@@ -181,7 +192,7 @@ public static class AsyncDaemonHealthCheckExtensions
                     x =>
                     {
                         var (laggingSince, lastKnownPosition) =
-                            _lastProjectionsChecks.GetValueOrDefault(x.ShardName, (now, x.Sequence));
+                            _stateTracker.LastProjectionsChecks.GetValueOrDefault(x.ShardName, (now, x.Sequence));
 
                         var isLaggingWithSamePositionForGivenTime =
                             now.Subtract(laggingSince) >= _maxSameLagTime &&
@@ -194,7 +205,7 @@ public static class AsyncDaemonHealthCheckExtensions
 
             foreach (var laggingProjection in laggingProjections)
             {
-                _lastProjectionsChecks.AddOrUpdate(
+                _stateTracker.LastProjectionsChecks.AddOrUpdate(
                     laggingProjection.ShardName,
                     _ => (now, laggingProjection.Sequence),
                     (_, _) => (now, laggingProjection.Sequence)
