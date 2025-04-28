@@ -93,15 +93,12 @@ public class Target
         }
 
         var value = _random.Next(0, 100);
-        if (value > 10)
-        {
-            target.NullableNumber = value;
-        }
+        if (value > 10) target.NullableNumber = value;
 
         if (value > 20)
         {
             var list = new List<string>();
-            for (var i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 list.Add(_strings[_random.Next(0, 10)]);
             }
