@@ -70,22 +70,22 @@ public partial class StoreOptions
                 : new EnumAsStringMember(parent, serializer.Casing, member);
         }
 
-        if (memberType == typeof(DateTime))
+        if (memberType == typeof(DateTime) || memberType == typeof(FSharpOption<DateTime>))
         {
             return new DateTimeMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateTimeOffset))
+        if (memberType == typeof(DateTimeOffset) || memberType == typeof(FSharpOption<DateTimeOffset>))
         {
             return new DateTimeOffsetMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateOnly))
+        if (memberType == typeof(DateOnly) || memberType == typeof(FSharpOption<DateOnly>))
         {
             return new DateOnlyMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(TimeOnly))
+        if (memberType == typeof(TimeOnly)  || memberType == typeof(FSharpOption<TimeOnly>) )
         {
             return new TimeOnlyMember(this, parent, casing, member);
         }

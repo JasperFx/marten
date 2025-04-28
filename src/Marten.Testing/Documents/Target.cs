@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using JasperFx.Core;
 using Microsoft.FSharp.Core;
 
-#nullable enable
 namespace Marten.Testing.Documents;
 
 public enum Colors
@@ -60,6 +59,9 @@ public class Target
             target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
             target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
             target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
+            target.FSharpBoolOption = new FSharpOption<bool>(_random.Next(0, 10) > 5);
+            target.FSharpDateOnlyOption = new FSharpOption<DateOnly>(new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day));
+            target.FSharpTimeOnlyOption = new FSharpOption<TimeOnly>(new TimeOnly(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, DateTime.UtcNow.Second));
         }
 
         target.PaddedString = " " + target.String + " ";
@@ -67,7 +69,7 @@ public class Target
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
         target.OtherGuid = Guid.NewGuid();
-       
+
         target.Flag = _random.Next(0, 10) > 5;
 
         target.Float = float.Parse(_random.NextDouble().ToString());
@@ -94,12 +96,15 @@ public class Target
         }
 
         var value = _random.Next(0, 100);
-        if (value > 10) target.NullableNumber = value;
+        if (value > 10)
+        {
+            target.NullableNumber = value;
+        }
 
         if (value > 20)
         {
             var list = new List<string>();
-            for (int i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 list.Add(_strings[_random.Next(0, 10)]);
             }
@@ -168,6 +173,9 @@ public class Target
     public FSharpOption<string> FSharpStringOption { get; set; }
     public FSharpOption<DateTime> FSharpDateOption { get; set; }
     public FSharpOption<DateTimeOffset> FSharpDateTimeOffsetOption { get; set; }
+    public FSharpOption<DateOnly> FSharpDateOnlyOption { get; set; }
+    public FSharpOption<TimeOnly> FSharpTimeOnlyOption { get; set; }
+
 
     public string AnotherString { get; set; }
 
