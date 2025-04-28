@@ -59,7 +59,6 @@ public class Target
             target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
             target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
             target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
-            target.FSharpBoolOption = new FSharpOption<bool>(_random.Next(0, 10) > 5);
             target.FSharpDateOnlyOption = new FSharpOption<DateOnly>(new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day));
             target.FSharpTimeOnlyOption = new FSharpOption<TimeOnly>(new TimeOnly(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, DateTime.UtcNow.Second));
         }
