@@ -9,9 +9,15 @@
     <ItemGroup>
         <Compile Include="Library.fs"/>
     </ItemGroup>
+    
 
     <ItemGroup>
       <ProjectReference Include="..\LinqTestsTypes\LinqTestsTypes.csproj" />
+    </ItemGroup>
+    
+
+    <ItemGroup>
+      <PackageReference Update="FSharp.Core" Version="8.0.100" />
     </ItemGroup>
 
 </Project>
