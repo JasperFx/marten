@@ -1,8 +1,10 @@
 using System;
-using JasperFx.Core;
+using System.Linq;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Schema;
+using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -64,6 +66,75 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
             .As<DocumentMapping>()
             .ForeignKeys
             .ShouldContain(x => x.ColumnNames[0] == "id");
+    }
+
+    [Fact]
+    public void should_not_include_tenant_id_in_foreign_key_from_tenanted_doc_to_not_tenanted_doc()
+    {
+        var store = StoreOptions(_ =>
+        {
+            _.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString, c =>
+            {
+                c.WithTenants("tenant1").InDatabaseNamed("postgres");
+            });
+
+            _.Schema.For<Foo>()
+                .SingleTenanted()
+                .Identity(x => x.FooId);
+            _.Schema.For<Bar>()
+                .MultiTenanted()
+                .Identity(x => x.BarId)
+                .ForeignKey<Foo>(x => x.FooId);
+        });
+
+        var mapping = store.Options.Storage.MappingFor(typeof(Bar));
+        new DocumentTable(mapping).ForeignKeys.Single().ColumnNames.ShouldNotContain(TenantIdColumn.Name);
+    }
+
+    [Fact]
+    public void should_include_tenant_id_in_foreign_key_between_tenanted_docs()
+    {
+        var store = StoreOptions(_ =>
+        {
+            _.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString, c =>
+            {
+                c.WithTenants("tenant1").InDatabaseNamed("postgres");
+            });
+
+            _.Schema.For<Foo>()
+                .MultiTenanted()
+                .Identity(x => x.FooId);
+            _.Schema.For<Bar>()
+                .MultiTenanted()
+                .Identity(x => x.BarId)
+                .ForeignKey<Foo>(x => x.FooId);
+        });
+
+        var mapping = store.Options.Storage.MappingFor(typeof(Bar));
+        new DocumentTable(mapping).ForeignKeys.Single().ColumnNames.ShouldContain(TenantIdColumn.Name);
+    }
+
+    [Fact]
+    public void should_not_include_tenant_id_between_single_tenanted_docs()
+    {
+        var store = StoreOptions(_ =>
+        {
+            _.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString, c =>
+            {
+                c.WithTenants("tenant1").InDatabaseNamed("postgres");
+            });
+
+            _.Schema.For<Foo>()
+                .SingleTenanted()
+                .Identity(x => x.FooId);
+            _.Schema.For<Bar>()
+                .SingleTenanted()
+                .Identity(x => x.BarId)
+                .ForeignKey<Foo>(x => x.FooId);
+        });
+
+        var mapping = store.Options.Storage.MappingFor(typeof(Bar));
+        new DocumentTable(mapping).ForeignKeys.Single().ColumnNames.ShouldNotContain(TenantIdColumn.Name);
     }
 
     #region sample_issue-with-fk-attribute
@@ -136,6 +207,12 @@ public class configuring_foreign_key_fields : OneOffConfigurationsContext
     }
     public class FooExtra
     {
+        public Guid FooId { get; set; }
+    }
+
+    public class Bar
+    {
+        public Guid BarId { get; set; }
         public Guid FooId { get; set; }
     }
 }
