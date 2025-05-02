@@ -1,8 +1,10 @@
 #nullable disable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -125,6 +127,11 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+        if (!MethodBeCanTranslated(node.Method))
+        {
+            ThrowForUnsupportedMethod(node);
+        }
+
         if (node.Method.Name == nameof(QueryableExtensions.ExplicitSql))
         {
             var sql = (string)node.Arguments.Last().ReduceToConstant().Value;
@@ -180,6 +187,24 @@ internal class SelectParser: ExpressionVisitor
         return node;
     }
 
+
+    private static bool MethodBeCanTranslated(MethodInfo method)
+    {
+        if (method.Name == nameof(QueryableExtensions.ExplicitSql))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static void ThrowForUnsupportedMethod(MethodCallExpression node, Exception inner = null)
+    {
+        throw new BadLinqExpressionException(
+            $"Marten cannot translate the method call '{node.Method.DeclaringType?.Name}.{node.Method.Name}' " +
+            "in Select() projections to SQL. Consider using only Marten-supported operations or " +
+            "use CustomProjection() for raw SQL fragments.", inner);
+    }
 }
 
 
