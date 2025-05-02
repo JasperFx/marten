@@ -391,6 +391,35 @@ public class select_clause_usage: IntegrationContext
     }
 
     [Fact]
+    public async Task select_to_class_with_primary_constructor_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
+        theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
+        await theSession.SaveChangesAsync();
+
+        var projections = theSession.Query<User>()
+            .OrderBy(u => u.FirstName)
+            .Select(u => new UserProjection(u));
+
+        Should.Throw<BadLinqExpressionException>(() => projections.ToList());
+    }
+
+    [Fact]
+    public async Task select_to_class_with_required_properties()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var result = await theSession.Query<User>()
+            .Where(u => u.FirstName == "Hank")
+            .Select(u => new UserRequired { Name = u.FirstName })
+            .FirstOrDefaultAsync();
+
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("Hank");
+    }
+
+    [Fact]
     public async Task select_with_complex_expression_throws_exception()
     {
         theSession.Store(new User { FirstName = "Hank" });
@@ -448,4 +477,19 @@ public class UserName
     public string Name { get; set; }
 }
 
+public class UserProjection
+{
+    public UserProjection(User u)
+    {
+        FirstName = u.FirstName;
+        LastName = u.LastName;
+    }
 
+    public string FirstName { get; }
+    public string LastName { get; }
+}
+
+public class UserRequired
+{
+    public required string Name { get; set; }
+}
