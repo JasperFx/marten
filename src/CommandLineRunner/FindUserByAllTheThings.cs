@@ -20,3 +20,22 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
                 .Single(x => x.LastName == LastName);
     }
 }
+
+
+public class FindUserOtherThings: ICompiledQuery<User>
+{
+    public string? Username { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+
+    public Expression<Func<IMartenQueryable<User>, User>> QueryIs()
+    {
+        return query =>
+            query
+                .Where(x => x.FirstName == FirstName && Username == x.UserName)
+                .Single(x => x.LastName == LastName);
+    }
+}
+
+
+

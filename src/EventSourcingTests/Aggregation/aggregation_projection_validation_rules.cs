@@ -237,7 +237,7 @@ public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
 
 public class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
 {
-    public void Apply(MyAggregate aggregate, IDocumentOperations operations)
+    public void Apply(MyAggregate aggregate, IQuerySession session)
     {
     }
 }

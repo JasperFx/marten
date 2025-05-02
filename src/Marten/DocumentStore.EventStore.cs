@@ -271,7 +271,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
     async Task<EventStoreUsage> IEventStore.TryCreateUsage(CancellationToken token)
     {
-        var usage = new EventStoreUsage(GetType(), Subject, this)
+        var usage = new EventStoreUsage(Subject, this)
         {
             Database = await Options.Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
         };

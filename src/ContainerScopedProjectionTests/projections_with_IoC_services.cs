@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
 using Marten;
@@ -134,6 +135,9 @@ public class projections_with_IoC_services
         product.ShouldNotBeNull();
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
+
+        var source = store.Options.As<StoreOptions>().Projections.All.Single();
+        source.Describe().SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
     }
 
     [Fact]
@@ -161,6 +165,9 @@ public class projections_with_IoC_services
         var product = await session.LoadAsync<Product>(streamId);
         product.Price.ShouldBeGreaterThan(0);
         product.Name.ShouldBe("Ankle Socks");
+
+        var source = store.Options.As<StoreOptions>().Projections.All.Single();
+        source.Describe().SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
     }
 
     [Fact]

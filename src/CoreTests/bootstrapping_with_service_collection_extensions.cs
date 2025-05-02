@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
@@ -37,6 +38,32 @@ public class bootstrapping_with_service_collection_extensions
         });
 
         ShouldHaveAllTheExpectedRegistrations(container);
+    }
+
+    [Fact]
+    public async Task use_jasper_fx_defaults_for_type_load_and_auto_create()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                services.AddJasperFx(opts =>
+                {
+                    opts.Development.AutoCreate = AutoCreate.None;
+                    opts.GeneratedCodeOutputPath = "/";
+                    opts.Development.GeneratedCodeMode = TypeLoadMode.Static;
+
+                    // Default is true
+                    opts.Development.SourceCodeWritingEnabled = false;
+                });
+            })
+            .UseEnvironment("Development").StartAsync();
+
+        var store = (DocumentStore)host.DocumentStore();
+        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+        store.Options.SourceCodeWritingEnabled.ShouldBeFalse();
+        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Static);
     }
 
     [Fact]
@@ -343,7 +370,6 @@ public class bootstrapping_with_service_collection_extensions
 
 
 
-#if NET8_0
     [Fact]
     public async Task use_npgsql_data_source_with_keyed_registration()
     {
@@ -411,7 +437,6 @@ public class bootstrapping_with_service_collection_extensions
         var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
         exc.Message.Contains("NpgsqlDataSource").ShouldBeTrue();
     }
-#endif
 
     [Fact]
     public void use_npgsql_data_source_should_fail_if_data_source_is_not_registered()

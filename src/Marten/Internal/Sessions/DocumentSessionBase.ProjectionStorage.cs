@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
@@ -32,8 +33,6 @@ public abstract partial class DocumentSessionBase
         return new ProjectionStorage<TDoc, TId>(this, StorageFor<TDoc, TId>());
     }
 }
-
-// START HERE!!!!!
 
 internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId>
 {
@@ -119,34 +118,51 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId>
 
     public void ArchiveStream(TId sliceId, string tenantId)
     {
-        IStorageOperation op = default;
+        var op = archiveOperationBuilderFor<TId>()(sliceId);
+        op.TenantId = tenantId;
+
+        _session.QueueOperation(op);
+    }
+
+    private static ImHashMap<Type, object> _archiveBuilders = ImHashMap<Type, object>.Empty;
+
+    private Func<TId, ArchiveStreamOperation> archiveOperationBuilderFor<TId>()
+    {
+        if (_archiveBuilders.TryFind(typeof(TId), out var raw))
+        {
+            return (Func<TId, ArchiveStreamOperation>)raw;
+        }
+
+        Func<TId, ArchiveStreamOperation> builder = null;
         if (_session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            // TODO -- memoize this crap
             if (typeof(TId) == typeof(Guid))
             {
-                op = new ArchiveStreamOperation(_session.Options.EventGraph, sliceId){TenantId = tenantId};
+                builder = id => new ArchiveStreamOperation(_session.Options.EventGraph, id);
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
-                op = new ArchiveStreamOperation(_session.Options.EventGraph, valueType.UnWrapper<TId, Guid>()(sliceId));
+                var unWrapper = valueType.UnWrapper<TId, Guid>();
+                builder = id =>  new ArchiveStreamOperation(_session.Options.EventGraph, unWrapper(id));
             }
         }
         else
         {
             if (typeof(TId) == typeof(string))
             {
-                op = new ArchiveStreamOperation(_session.Options.EventGraph, sliceId){TenantId = tenantId};
+                builder = id => new ArchiveStreamOperation(_session.Options.EventGraph, id);
             }
             else
             {
                 var valueType = ValueTypeInfo.ForType(typeof(TId));
-                op = new ArchiveStreamOperation(_session.Options.EventGraph, valueType.UnWrapper<TId, string>()(sliceId));
+                var unWrapper = valueType.UnWrapper<TId, string>();
+                builder = id =>  new ArchiveStreamOperation(_session.Options.EventGraph, unWrapper(id));
             }
         }
 
-        _session.QueueOperation(op);
+        _archiveBuilders = _archiveBuilders.AddOrUpdate(typeof(TId), builder);
+        return builder;
     }
 
     public Task<TDoc> LoadAsync(TId id, CancellationToken cancellation)

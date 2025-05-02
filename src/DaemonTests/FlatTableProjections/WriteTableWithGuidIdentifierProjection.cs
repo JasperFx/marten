@@ -47,6 +47,8 @@ public class WriteTableWithGuidIdentifierProjection: FlatTableProjection
 
             cmd.Decrement("revision"); // assume to be an int or long here
 
+            cmd.Map(x => x.NullableNumber, "null_number");
+
             cmd.SetValue("status", "old");
         });
 

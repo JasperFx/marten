@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -100,6 +101,33 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
     public async Task synchronous_create_method()
     {
         UseProjection<SimpleCreatorProjection>();
+
+        var stream = Guid.NewGuid();
+        theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
+            new UserCreated { UserName = "two" });
+
+        await theSession.SaveChangesAsync();
+
+        using var query = theStore.QuerySession();
+
+        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToList()
+            .ShouldHaveTheSameElementsAs("one", "two");
+
+        theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
+        await theSession.SaveChangesAsync();
+
+        query.Query<User>()
+            .OrderBy(x => x.UserName)
+            .Select(x => x.UserName)
+            .Single()
+            .ShouldBe("two");
+    }
+
+    [Fact]
+    public async Task using_explicit_apply_method()
+    {
+        UseProjection<SimpleCreatorProjection2>();
 
         var stream = Guid.NewGuid();
         theSession.Events.StartStream(stream, new UserCreated { UserName = "one" },
@@ -250,6 +278,25 @@ public class SimpleCreatorProjection: EventProjection
 
     public void Project(UserDeleted @event, IDocumentOperations operations) =>
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
+}
+
+public class SimpleCreatorProjection2: EventProjection
+{
+    public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
+    {
+        switch (e.Data)
+        {
+            case UserCreated c:
+                operations.Store(new User { UserName = c.UserName });
+                break;
+
+            case UserDeleted d:
+                operations.DeleteWhere<User>(x => x.UserName == d.UserName);
+                break;
+        }
+
+        return new ValueTask();
+    }
 }
 
 #region sample_lambda_definition_of_event_projection

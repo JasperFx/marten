@@ -34,12 +34,10 @@ public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOper
                 services.AddSingleton<TConcrete>();
                 services.ConfigureMarten((s, opts) =>
                 {
-                    var projection = s.GetRequiredService<TConcrete>();
-                    var wrapper =
-                        new ProjectionWrapper<IDocumentOperations, IQuerySession>((IProjection)projection, lifecycle);
-                    configure?.Invoke(wrapper);
+                    var projection = s.GetRequiredService<TConcrete>().As<EventProjection>();
+                    configure?.Invoke(projection);
 
-                    opts.Projections.Add(wrapper, lifecycle);
+                    opts.Projections.Add(projection, lifecycle);
                 });
                 break;
 

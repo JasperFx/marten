@@ -101,6 +101,7 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
 
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
 
         return options;
     }
@@ -108,8 +109,6 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
     public T Build(IServiceProvider provider)
     {
         var options = BuildStoreOptions(provider);
-        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
-
         var rules = options.CreateGenerationRules();
 
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
