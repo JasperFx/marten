@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -166,27 +167,46 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitNew(NewExpression node)
     {
-        if (_hasStarted)
+        if (!_hasStarted)
         {
-            var child = new SelectParser(_serializer, _members, node);
-            NewObject.Members[_currentField] = child.NewObject;
+            if (node.Arguments.Count > 0 && !IsAnonymousType(node.Type))
+            {
+                throw new BadLinqExpressionException(
+                    $"Marten cannot translate projecting into '{node.Type.Name}'. " +
+                    "Only parameterless‐ctor + member‐init or anonymous‐type projections are supported.");
+            }
 
-            return null;
+            _hasStarted = true;
+
+            var parameters = node.Constructor.GetParameters();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                _currentField = parameters[i].Name;
+                Visit(node.Arguments[i]);
+            }
+
+            return node;
         }
 
-        _hasStarted = true;
-
-        var parameters = node.Constructor.GetParameters();
-
-        for (var i = 0; i < parameters.Length; i++)
+        if (node.Arguments.Count > 0 && !IsAnonymousType(node.Type))
         {
-            _currentField = parameters[i].Name;
-            Visit(node.Arguments[i]);
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate constructing '{node.Type.Name}' inside a Select().");
         }
 
-        return node;
+        var child = new SelectParser(_serializer, _members, node);
+        NewObject.Members[_currentField] = child.NewObject;
+        _currentField = null;
+        return null;
     }
 
+    private static bool IsAnonymousType(Type type)
+    {
+        return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
+               && type.Name.Contains("AnonymousType")
+               && type.IsGenericType;
+    }
 
     private static bool MethodBeCanTranslated(MethodInfo method)
     {
