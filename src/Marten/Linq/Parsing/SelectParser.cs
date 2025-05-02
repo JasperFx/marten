@@ -169,11 +169,11 @@ internal class SelectParser: ExpressionVisitor
     {
         if (!_hasStarted)
         {
-            if (node.Arguments.Count > 0 && !IsAnonymousType(node.Type))
+            if (node.Arguments.Count > 0 && !IsAllowedConstructor(node))
             {
                 throw new BadLinqExpressionException(
                     $"Marten cannot translate projecting into '{node.Type.Name}'. " +
-                    "Only parameterless‐ctor + member‐init or anonymous‐type projections are supported.");
+                    "Only anonymous types, parameterless constructors, or constructors marked with [JsonConstructor] are supported.");
             }
 
             _hasStarted = true;
@@ -189,7 +189,7 @@ internal class SelectParser: ExpressionVisitor
             return node;
         }
 
-        if (node.Arguments.Count > 0 && !IsAnonymousType(node.Type))
+        if (node.Arguments.Count > 0 && !IsAllowedConstructor(node))
         {
             throw new BadLinqExpressionException(
                 $"Marten cannot translate constructing '{node.Type.Name}' inside a Select().");
@@ -199,6 +199,18 @@ internal class SelectParser: ExpressionVisitor
         NewObject.Members[_currentField] = child.NewObject;
         _currentField = null;
         return null;
+    }
+
+    private static bool IsAllowedConstructor(NewExpression node)
+    {
+        if (node.Arguments.Count == 0)
+            return true; // parameterless
+        if (IsAnonymousType(node.Type))
+            return true;
+
+        var ctor = node.Constructor;
+        return ctor.GetCustomAttributes(typeof(Newtonsoft.Json.JsonConstructorAttribute), true).Any()
+            || ctor.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonConstructorAttribute), true).Any();
     }
 
     private static bool IsAnonymousType(Type type)
