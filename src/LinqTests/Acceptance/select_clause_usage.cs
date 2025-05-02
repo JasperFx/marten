@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using LinqTests.Acceptance.Support;
 using Marten;
+using Marten.Exceptions;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -389,6 +390,29 @@ public class select_clause_usage: IntegrationContext
         actual.Number.ShouldBe(target.Inner.Number);
     }
 
+    [Fact]
+    public async Task select_with_complex_expression_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var query = theSession.Query<User>()
+            .Select(u => ReverseString(u.FirstName));
+
+        Should.Throw<BadLinqExpressionException>(() => query.ToList());
+    }
+
+    [Fact]
+    public async Task select_with_complex_expression_in_object_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var query = theSession.Query<User>()
+            .Select(u => new { Name = ReverseString(u.FirstName) });
+
+        Should.Throw<BadLinqExpressionException>(() => query.ToList());
+    }
 
     public class FlatTarget
     {
@@ -407,6 +431,14 @@ public class select_clause_usage: IntegrationContext
 
     public select_clause_usage(DefaultStoreFixture fixture) : base(fixture)
     {
+    }
+
+    // Method that should not be translatable to SQL
+    private static string ReverseString(string input)
+    {
+        char[] charArray = input.ToCharArray();
+        Array.Reverse(charArray);
+        return new string(charArray);
     }
 }
 
