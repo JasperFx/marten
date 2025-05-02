@@ -341,6 +341,8 @@ internal class SimpleExpression: ExpressionVisitor
                         case CompareOptions co:
                             compareOptions = co;
                             break;
+                        default:
+                            throw new BadLinqExpressionException("Marten does not support string.Compare overloads with index parameters.");
                     }
                 }
 
