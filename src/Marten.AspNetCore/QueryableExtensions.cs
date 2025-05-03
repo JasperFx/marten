@@ -257,7 +257,7 @@ public static class QueryableExtensions
         HttpContext context,
         string contentType = "application/json",
         int onFoundStatus = 200
-        )
+        ) where TDoc : notnull
     {
         var stream = new MemoryStream();
         var found = await session.StreamJsonOne(query, stream, context.RequestAborted).ConfigureAwait(false);
@@ -294,7 +294,7 @@ public static class QueryableExtensions
         HttpContext context,
         string contentType = "application/json",
         int onFoundStatus = 200
-        )
+        ) where TDoc : notnull
     {
         context.Response.StatusCode = onFoundStatus;
         context.Response.ContentType = contentType;

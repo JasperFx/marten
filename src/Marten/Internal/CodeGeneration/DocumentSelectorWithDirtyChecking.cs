@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Marten.Internal.CodeGeneration;
 
-public abstract class DocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelector
+public abstract class DocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelector where TId : notnull
 {
     protected readonly Dictionary<TId, T> _identityMap;
     protected readonly DocumentMapping _mapping;
@@ -39,7 +39,7 @@ public abstract class DocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelect
     }
 }
 
-public abstract class RevisionedDocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelector
+public abstract class RevisionedDocumentSelectorWithDirtyChecking<T, TId>: IDocumentSelector where TId: notnull
 {
     protected readonly Dictionary<TId, T> _identityMap;
     protected readonly DocumentMapping _mapping;

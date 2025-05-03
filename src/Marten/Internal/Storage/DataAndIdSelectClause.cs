@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Storage;
 
-internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject
+internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject where T: notnull
 {
     private readonly IDocumentStorage<T> _inner;
 
@@ -36,7 +36,7 @@ internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject
         return _inner.BuildSelector(session);
     }
 
-    public IQueryHandler<T1> BuildHandler<T1>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    public IQueryHandler<T1> BuildHandler<T1>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T1 : notnull
     {
         return _inner.BuildHandler<T1>(session, topStatement, currentStatement);
     }

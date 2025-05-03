@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -67,7 +66,7 @@ internal class CreateFromDocumentMapping: Variable
 
 public class DocumentProvider<T> where T : notnull
 {
-    public DocumentProvider(IBulkLoader<T>? bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight,
+    public DocumentProvider(IBulkLoader<T> bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight,
         IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking)
     {
         BulkLoader = bulkLoader;
@@ -77,7 +76,7 @@ public class DocumentProvider<T> where T : notnull
         DirtyTracking = dirtyTracking;
     }
 
-    public IBulkLoader<T>? BulkLoader { get; }
+    public IBulkLoader<T> BulkLoader { get; }
     public IDocumentStorage<T> QueryOnly { get; }
     public IDocumentStorage<T> Lightweight { get; }
     public IDocumentStorage<T> IdentityMap { get; }

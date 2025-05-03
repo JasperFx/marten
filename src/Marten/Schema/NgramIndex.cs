@@ -19,10 +19,10 @@ public class NgramIndex: IndexDefinition
     private readonly DbObjectName _table;
     private readonly string _databaseSchemaName;
 
-    private string _dataConfig;
-    private readonly string _indexName;
+    private string _dataConfig = null!;
+    private readonly string? _indexName;
 
-    public NgramIndex(DocumentMapping mapping, string dataConfig = null, string indexName = null)
+    public NgramIndex(DocumentMapping mapping, string? dataConfig = null, string? indexName = null)
     {
         _databaseSchemaName = mapping.DatabaseSchemaName;
         _table = mapping.TableName;
@@ -40,21 +40,13 @@ public class NgramIndex: IndexDefinition
     /// <summary>
     ///     Gets or sets the data config.
     /// </summary>
-    public string DataConfig
+    public string? DataConfig
     {
         get => _dataConfig;
         set => _dataConfig = value ?? DefaultDataConfig;
     }
 
-    public override string[] Columns
-    {
-        get => new[] { $"{_databaseSchemaName}.mt_grams_vector( {_dataConfig})" };
-        set
-        {
-            // nothing
-        }
-    }
-
+    public override string[] Columns => [$"{_databaseSchemaName}.mt_grams_vector( {_dataConfig})"];
     protected override string deriveIndexName()
     {
         var lowerValue = _indexName?.ToLowerInvariant();
@@ -69,7 +61,7 @@ public class NgramIndex: IndexDefinition
         }
 
         var indexFieldName = _dataConfig.ToLowerInvariant();
-        indexFieldName = indexFieldName.Split(new[] { " as " }, StringSplitOptions.None)[0];
+        indexFieldName = indexFieldName.Split([" as "], StringSplitOptions.None)[0];
         indexFieldName = indexFieldName
             .Replace("cast(", string.Empty)
             .Replace("data", string.Empty)

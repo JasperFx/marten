@@ -29,7 +29,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return selector;
     }
 
-    IEventStream<TDoc> IEventIdentityStrategy<Guid>.StartStream<TDoc>(TDoc document, DocumentSessionBase session,
+    IEventStream<TDoc> IEventIdentityStrategy<Guid>.StartStream<TDoc>(TDoc? document, DocumentSessionBase session,
         Guid id, CancellationToken cancellation) where TDoc : class
     {
         var action = _store.Events.StartEmptyStream(session, id);
@@ -39,8 +39,8 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
     }
 
-    IEventStream<TDoc> IEventIdentityStrategy<Guid>.AppendToStream<TDoc>(TDoc document, DocumentSessionBase session,
-        Guid id, long version, CancellationToken cancellation)
+    IEventStream<TDoc> IEventIdentityStrategy<Guid>.AppendToStream<TDoc>(TDoc? document, DocumentSessionBase session,
+        Guid id, long version, CancellationToken cancellation) where TDoc : class
     {
         var action = session.Events.Append(id);
         action.ExpectedVersionOnServer = version;
@@ -68,7 +68,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return selector;
     }
 
-    IEventStream<TDoc> IEventIdentityStrategy<string>.StartStream<TDoc>(TDoc document, DocumentSessionBase session,
+    IEventStream<TDoc> IEventIdentityStrategy<string>.StartStream<TDoc>(TDoc? document, DocumentSessionBase session,
         string id, CancellationToken cancellation) where TDoc : class
     {
         var action = _store.Events.StartEmptyStream(session, id);
@@ -78,8 +78,8 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
     }
 
-    IEventStream<TDoc> IEventIdentityStrategy<string>.AppendToStream<TDoc>(TDoc document,
-        DocumentSessionBase session, string id, long version, CancellationToken cancellation)
+    IEventStream<TDoc> IEventIdentityStrategy<string>.AppendToStream<TDoc>(TDoc? document,
+        DocumentSessionBase session, string id, long version, CancellationToken cancellation) where TDoc : class
     {
         var action = session.Events.Append(id);
         action.ExpectedVersionOnServer = version;
@@ -205,11 +205,11 @@ public interface IEventIdentityStrategy<in TId>
     Task<IEventStorage> EnsureEventStorageExists<T>(DocumentSessionBase session, CancellationToken cancellation);
     void BuildCommandForReadingVersionForStream(ICommandBuilder builder, TId id, bool forUpdate);
 
-    IEventStream<TDoc> StartStream<TDoc>(TDoc document, DocumentSessionBase session, TId id,
+    IEventStream<TDoc> StartStream<TDoc>(TDoc? document, DocumentSessionBase session, TId id,
         CancellationToken cancellation) where TDoc : class;
 
-    IEventStream<TDoc> AppendToStream<TDoc>(TDoc document, DocumentSessionBase session, TId id, long version,
-        CancellationToken cancellation);
+    IEventStream<TDoc> AppendToStream<TDoc>(TDoc? document, DocumentSessionBase session, TId id, long version,
+        CancellationToken cancellation) where TDoc : class;
 
     IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(TId id, IEventStorage eventStorage,
         ISqlFragment? filter = null);

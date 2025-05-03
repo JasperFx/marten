@@ -9,7 +9,7 @@ using Marten.Linq.Parsing;
 namespace Marten.Linq.Includes;
 
 internal class MartenQueryableIncludeBuilder<T, TInclude>: IMartenQueryableIncludeBuilder<T, TInclude>
-    where TInclude : notnull
+    where TInclude : notnull where T : notnull
 {
     private readonly MartenLinqQueryable<T> _martenLinqQueryable;
     private readonly Action<TInclude> _callback;
@@ -76,7 +76,7 @@ internal class MartenQueryableIncludeBuilder<T, TInclude>: IMartenQueryableInclu
 
 internal class MartenQueryableIncludeBuilder<T, TKey, TInclude>
     : IMartenQueryableIncludeBuilder<T, TKey, TInclude>
-    where TInclude : notnull where TKey : notnull
+    where TInclude : notnull where TKey : notnull where T : notnull
 {
     private readonly MartenLinqQueryable<T> _martenLinqQueryable;
     private readonly Action<TKey, TInclude> _dictionaryCallback;

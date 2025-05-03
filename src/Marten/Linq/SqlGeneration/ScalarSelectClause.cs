@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Data.Common;
 using System.Threading;
@@ -73,7 +72,7 @@ internal class ScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSelect
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 

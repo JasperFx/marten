@@ -36,7 +36,7 @@ public class UniqueIndexAttribute: MartenAttribute
 
     public override void Modify(DocumentMapping mapping, MemberInfo member)
     {
-        var membersGroupedByIndexName = member.DeclaringType
+        var membersGroupedByIndexName = member.DeclaringType!
             .GetMembers()
             .Where(mi => mi.GetCustomAttributes<UniqueIndexAttribute>().Any())
             .Select(mi => new

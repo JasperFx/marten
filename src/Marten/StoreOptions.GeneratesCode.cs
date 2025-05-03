@@ -79,7 +79,7 @@ public partial class StoreOptions: ICodeFileCollection
         }
 
         rules.ReferenceAssembly(GetType().Assembly);
-        rules.ReferenceAssembly(Assembly.GetEntryAssembly());
+        rules.ReferenceAssembly(Assembly.GetEntryAssembly()!);
 
         return rules;
     }

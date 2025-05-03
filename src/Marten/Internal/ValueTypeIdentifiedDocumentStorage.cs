@@ -20,7 +20,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal;
 
-internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>
+internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
@@ -44,8 +44,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public ISelector BuildSelector(IMartenSession session) => Inner.BuildSelector(session);
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
-        => Inner.BuildHandler<T>(session, topStatement, currentStatement);
+        ISqlFragment currentStatement) where T : notnull => Inner.BuildHandler<T>(session, topStatement, currentStatement);
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
         => Inner.UseStatistics(statistics);
@@ -122,7 +121,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion DeleteForId(TSimple id, string tenantId)
         => Inner.DeleteForId(_converter(id), tenantId);
 
-    public Task<TDoc> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
+    public Task<TDoc?> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
         => Inner.LoadAsync(_converter(id), session, token);
 
     public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IMartenSession session, CancellationToken token)

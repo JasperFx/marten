@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Exceptions;
@@ -19,7 +20,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private static readonly Regex EventStreamUniqueExceptionDetailsRegex =
         new(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
 
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if (!Matches(original))
         {
@@ -29,8 +30,8 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 
         var postgresException = original as PostgresException;
 
-        object id = null;
-        Type aggregateType = null;
+        object? id = null;
+        Type? aggregateType = null;
         var expected = -1;
         var actual = -1;
 

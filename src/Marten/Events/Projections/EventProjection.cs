@@ -26,7 +26,7 @@ public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOper
     public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
 
     public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
-        ServiceLifetime lifetime, Action<ProjectionBase> configure) where TConcrete : class
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
     {
         switch (lifetime)
         {
@@ -59,7 +59,7 @@ public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOper
     }
 
     public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
-        ServiceLifetime lifetime, Action<ProjectionBase> configure)
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure)
         where TStore : IDocumentStore where TConcrete : class
     {
         switch (lifetime)
@@ -107,12 +107,13 @@ public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOper
         return ArraySegment<string>.Empty;
     }
 
+    // TODO upstream change
     protected sealed override void storeEntity<T>(IDocumentOperations ops, T entity)
     {
         ops.Store(entity);
     }
 
-    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor? executor)
     {
         executor = default;
         return false;

@@ -122,7 +122,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
             }
         }
     }
-    
+
     protected override void compileAnySubQueries(IMartenSession session)
     {
         if (Wheres[0] is CompoundWhereFragment compound)

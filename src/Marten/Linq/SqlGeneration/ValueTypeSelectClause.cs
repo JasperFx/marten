@@ -72,7 +72,7 @@ public class ValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelect
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult: notnull
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())
         {
@@ -126,7 +126,7 @@ public class ValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelect
 }
 
 public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    ISelector<TOuter>
+    ISelector<TOuter> where TOuter : notnull
 {
     public ClassValueTypeSelectClause(string memberName, Func<TInner, TOuter> converter)
     {
@@ -175,7 +175,7 @@ public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarS
 
     public string[] SelectFields()
     {
-        return new[] { MemberName };
+        return [MemberName];
     }
 
     public ISelector BuildSelector(IMartenSession session)
@@ -184,7 +184,7 @@ public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarS
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult: notnull
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())
         {

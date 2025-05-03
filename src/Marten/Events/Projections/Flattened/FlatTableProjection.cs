@@ -227,17 +227,17 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         {
             if (members[0].DeclaringType == typeof(IEvent))
             {
-                return typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<IEvent>>(members[0], typeof(IEvent), members[0].GetRawMemberType());
+                return typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<IEvent>>(members[0], typeof(IEvent), members[0].GetRawMemberType()!);
             }
 
-            var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0], typeof(T), members[0].GetRawMemberType());
+            var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0], typeof(T), members[0].GetRawMemberType()!);
             return new EventForwarder<T>(setter);
         }
 
         if (members.Length == 2)
         {
             var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[1], typeof(T),
-                members[1].GetRawMemberType());
+                members[1].GetRawMemberType()!);
 
             return new EventForwarder<T>(inner);
         }
@@ -251,7 +251,7 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         {
             if (members[0].DeclaringType != typeof(IEvent))
             {
-                var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0],typeof(T), members[0].GetRawMemberType());
+                var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0],typeof(T), members[0].GetRawMemberType()!);
                 return new EventForwarder<T>(inner);
             }
         }
@@ -259,13 +259,13 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         // off of something on the event
         var outsideToInside = members.Reverse().ToArray();
 
-        var dbType = PostgresqlProvider.Instance.ToParameterType(outsideToInside[0].GetRawMemberType());
-        var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<object>(outsideToInside[0], outsideToInside[1].GetRawMemberType(),
-            outsideToInside[0].GetRawMemberType());
+        var dbType = PostgresqlProvider.Instance.ToParameterType(outsideToInside[0].GetRawMemberType()!);
+        var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<object>(outsideToInside[0], outsideToInside[1].GetRawMemberType()!,
+            outsideToInside[0].GetRawMemberType()!);
 
         for (int i = 1; i < outsideToInside.Length; i++)
         {
-            setter = typeof(RelayParameterSetter<,>).CloseAndBuildAs<object>(dbType, setter, outsideToInside[i], outsideToInside[i].DeclaringType, outsideToInside[i].GetRawMemberType());
+            setter = typeof(RelayParameterSetter<,>).CloseAndBuildAs<object>(dbType, setter, outsideToInside[i], outsideToInside[i].DeclaringType!, outsideToInside[i].GetRawMemberType()!);
         }
 
         return new EventForwarder<T>((IParameterSetter<T>)setter);

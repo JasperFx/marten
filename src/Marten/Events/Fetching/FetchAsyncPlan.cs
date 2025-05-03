@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,7 +10,6 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -27,7 +27,7 @@ namespace Marten.Events.Fetching;
 internal class AsyncFetchPlanner: IFetchPlanner
 {
     public bool TryMatch<TDoc, TId>(IDocumentStorage<TDoc, TId> storage, IEventIdentityStrategy<TId> identity, StoreOptions options,
-        out IAggregateFetchPlan<TDoc, TId> plan) where TDoc : class
+       [NotNullWhen(true)]out IAggregateFetchPlan<TDoc, TId>? plan) where TDoc : class where TId : notnull
     {
         if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
         {
@@ -61,14 +61,14 @@ internal class AsyncFetchPlanner: IFetchPlanner
     }
 }
 
-internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
     private readonly IDocumentStorage<TDoc, TId> _storage;
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly string _versionSelectionSql;
-    private string _initialSql;
+    private string? _initialSql;
 
     public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> storage)
@@ -96,6 +96,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
 
     }
 
+    [MemberNotNull(nameof(_initialSql))]
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate, CancellationToken cancellation = default)
     {
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
@@ -186,7 +187,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
 
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
-                throw new StreamLockedException(id, e.InnerException);
+                throw new StreamLockedException(id, e.InnerException!);
             }
 
             throw;
@@ -196,7 +197,7 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
     private void writeEventFetchStatement(TId id,
         BatchBuilder builder)
     {
-        builder.Append(_initialSql);
+        builder.Append(_initialSql!);
         builder.Append(_versionSelectionSql);
         builder.AppendParameter(id);
 
@@ -293,14 +294,14 @@ internal class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where T
 
             if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage))
             {
-                throw new StreamLockedException(id, e.InnerException);
+                throw new StreamLockedException(id, e.InnerException!);
             }
 
             throw;
         }
     }
 
-    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    public async ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
         // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
         if (session.Options.Events.UseIdentityMapForAggregates)

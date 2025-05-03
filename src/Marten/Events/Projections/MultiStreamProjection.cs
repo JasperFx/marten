@@ -23,7 +23,7 @@ namespace Marten.Events.Projections;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable
+public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
 {
     // TODO -- put the exception types in a constant somewhere
     protected MultiStreamProjection(): base()

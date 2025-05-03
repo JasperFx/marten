@@ -15,8 +15,9 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
+    // TODO fix in IStorageOperations
     public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(string tenantId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TDoc : notnull where TId : notnull
     {
         await Database.EnsureStorageExistsAsync(typeof(TDoc), cancellationToken).ConfigureAwait(false);
         if (tenantId == TenantId || tenantId.IsEmpty()) return new ProjectionStorage<TDoc, TId>(this, StorageFor<TDoc, TId>());
@@ -27,14 +28,14 @@ public abstract partial class DocumentSessionBase
     }
 
     public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken) where TDoc : notnull where TId : notnull
     {
         await Database.EnsureStorageExistsAsync(typeof(TDoc), cancellationToken).ConfigureAwait(false);
         return new ProjectionStorage<TDoc, TId>(this, StorageFor<TDoc, TId>());
     }
 }
 
-internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId>
+internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where TId : notnull where TDoc : notnull
 {
     private readonly DocumentSessionBase _session;
     private readonly IDocumentStorage<TDoc, TId> _storage;
@@ -165,7 +166,8 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId>
         return builder;
     }
 
-    public Task<TDoc> LoadAsync(TId id, CancellationToken cancellation)
+    //TODO fix in IProjectionStorage
+    public Task<TDoc?> LoadAsync(TId id, CancellationToken cancellation)
     {
         return _storage.LoadAsync(id, _session, cancellation);
     }

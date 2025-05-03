@@ -56,7 +56,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         {
             builder.Append(")', ");
             builder.AppendParameter(_serializer.ToCleanJson(_dict), NpgsqlDbType.Jsonb);
-            ParameterName = builder.LastParameterName;
+            ParameterName = builder.LastParameterName!;
 
             builder.Append(")) ");
         }
@@ -98,5 +98,5 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, top));
     }
 
-    public string? ParameterName { get; private set; }
+    public string ParameterName { get; private set; }
 }

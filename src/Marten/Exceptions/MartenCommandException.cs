@@ -45,7 +45,7 @@ public class MartenCommandException: MartenException
     public MartenCommandException(
         NpgsqlCommand? command,
         Exception innerException,
-        string prefix
+        string? prefix
     ): base(ToMessage(command, innerException, prefix) + innerException.Message, innerException)
     {
         if (command == null)

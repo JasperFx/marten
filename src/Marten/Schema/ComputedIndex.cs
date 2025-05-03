@@ -58,14 +58,7 @@ public class ComputedIndex: IndexDefinition
     /// </summary>
     public TenancyScope TenancyScope { get; set; }
 
-    public override string[] Columns
-    {
-        get => buildColumns().ToArray();
-        set
-        {
-            // nothing
-        }
-    }
+    public override string[] Columns => buildColumns().ToArray();
 
     protected override string deriveIndexName()
     {

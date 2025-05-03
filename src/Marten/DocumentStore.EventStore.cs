@@ -269,7 +269,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.ExecuteBatchAsync(batch, token).ConfigureAwait(false);
     }
 
-    async Task<EventStoreUsage> IEventStore.TryCreateUsage(CancellationToken token)
+    async Task<EventStoreUsage?> IEventStore.TryCreateUsage(CancellationToken token)
     {
         var usage = new EventStoreUsage(Subject, this)
         {

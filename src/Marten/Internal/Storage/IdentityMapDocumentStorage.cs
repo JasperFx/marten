@@ -12,7 +12,7 @@ using Npgsql;
 
 namespace Marten.Internal.Storage;
 
-public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId>
+public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId> where T: notnull where TId: notnull
 {
     public IdentityMapDocumentStorage(DocumentMapping document): this(StorageStyle.IdentityMap, document)
     {
@@ -150,7 +150,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         if (session.ItemMap.TryGetValue(typeof(T), out var items))
         {
@@ -158,7 +158,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
             {
                 if (d.TryGetValue(id, out var item))
                 {
-                    return Task.FromResult(item);
+                    return Task.FromResult<T?>(item);
                 }
             }
             else

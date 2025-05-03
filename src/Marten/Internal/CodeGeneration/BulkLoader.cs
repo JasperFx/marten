@@ -10,7 +10,7 @@ using Npgsql;
 
 namespace Marten.Internal.CodeGeneration;
 
-public abstract class BulkLoader<T, TId>: IBulkLoader<T>
+public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull where T : notnull
 {
     private readonly IDocumentStorage<T, TId> _storage;
 
@@ -75,7 +75,7 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
     {
         if (value.HasValue)
         {
-            return value.Value.ToString();
+            return value.Value.ToString()!;
         }
 
         return "EMPTY";

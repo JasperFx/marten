@@ -60,7 +60,7 @@ public partial class MartenDatabase : IEventDatabase
         await conn.OpenAsync(token).ConfigureAwait(false);
         var highest = (long)await conn
             .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
-            .ExecuteScalarAsync(token).ConfigureAwait(false);
+            .ExecuteScalarAsync(token).ConfigureAwait(false)!;
 
         return highest;
     }

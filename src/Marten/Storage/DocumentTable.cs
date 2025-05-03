@@ -151,7 +151,7 @@ internal class DocumentTable: Table
         return base.Equals(other);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
         {

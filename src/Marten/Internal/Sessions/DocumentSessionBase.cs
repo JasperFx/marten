@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -99,7 +100,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
-    public void TryUpdateRevision<T>(T entity, int revision)
+    public void TryUpdateRevision<T>(T entity, int revision) where T : notnull
     {
         assertNotDisposed();
 
@@ -423,7 +424,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class
+    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class where TId : notnull
     {
         if (ItemMap.ContainsKey(typeof(TDoc)))
         {
@@ -437,7 +438,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, out TDoc document)
+    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, [NotNullWhen(true)]out TDoc? document) where TDoc: notnull where TId : notnull
     {
         if (Options.EventGraph.UseIdentityMapForAggregates)
         {

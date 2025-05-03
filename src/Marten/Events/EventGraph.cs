@@ -211,7 +211,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     public IEventStoreOptions Upcast<TEvent>(
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     ) where TEvent : class
     {
         return Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
@@ -220,7 +220,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public IEventStoreOptions Upcast(
         Type eventType,
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     )
     {
         var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);

@@ -14,21 +14,19 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 
-internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly IDocumentStorage<TDoc, TId> _documentStorage;
-    private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> documentStorage)
     {
-        _events = events;
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
 
-        var raw = _events.Options.Projections.AggregatorFor<TDoc>();
+        var raw = events.Options.Projections.AggregatorFor<TDoc>();
 
         _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
                       ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), _documentStorage.IdType, typeof(TId), typeof(IQuerySession));
@@ -164,7 +162,7 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
         }
     }
 
-    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    public async ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
         // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
         if (session.Options.Events.UseIdentityMapForAggregates)

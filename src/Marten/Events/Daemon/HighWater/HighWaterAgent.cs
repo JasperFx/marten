@@ -181,7 +181,7 @@ internal class HighWaterAgent: IDisposable
         _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling for database {Name}", _detector.DatabaseIdentity);
     }
 
-    private HighWaterStatus tagActivity(HighWaterStatistics statistics, Activity activity)
+    private HighWaterStatus tagActivity(HighWaterStatistics statistics, Activity? activity)
     {
         var status = statistics.InterpretStatus(_current);
 
@@ -226,7 +226,7 @@ internal class HighWaterAgent: IDisposable
         await Task.Delay(delayTime, _token).ConfigureAwait(false);
     }
 
-    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
+    private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
         _ = checkState();
     }

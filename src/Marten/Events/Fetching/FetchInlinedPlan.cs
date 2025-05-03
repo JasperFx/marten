@@ -13,7 +13,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 
-internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
     private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
@@ -27,7 +27,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default)
     {
-        IDocumentStorage<TDoc, TId> storage = null;
+        IDocumentStorage<TDoc, TId>? storage = null;
         if (session.Options.Events.UseIdentityMapForAggregates)
         {
             storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
@@ -98,7 +98,7 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id,
         long expectedStartingVersion, CancellationToken cancellation = default)
     {
-        IDocumentStorage<TDoc, TId> storage = null;
+        IDocumentStorage<TDoc, TId>? storage = null;
         if (session.Options.Events.UseIdentityMapForAggregates)
         {
             storage = session.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
@@ -169,9 +169,9 @@ internal class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where
         }
     }
 
-    public async ValueTask<TDoc> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    public async ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
     {
-        IDocumentStorage<TDoc, TId> storage = null;
+        IDocumentStorage<TDoc, TId>? storage = null;
         if (session.Options.Events.UseIdentityMapForAggregates)
         {
             storage = (IDocumentStorage<TDoc, TId>)session.Options.Providers.StorageFor<TDoc>().IdentityMap;

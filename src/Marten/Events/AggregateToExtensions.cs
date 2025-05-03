@@ -20,7 +20,7 @@ public static class AggregateToExtensions
         }
         else
         {
-            session.StorageFor<T, string>().SetIdentity(aggregate, events.Last().StreamKey);
+            session.StorageFor<T, string>().SetIdentity(aggregate, events.Last().StreamKey!);
         }
     }
 
@@ -32,7 +32,7 @@ public static class AggregateToExtensions
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static async Task<T> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T state = null,
+    public static async Task<T?> AggregateToAsync<T>(this IMartenQueryable<IEvent> queryable, T? state = null,
         CancellationToken token = new()) where T : class
     {
         var events = await queryable.ToListAsync(token).ConfigureAwait(false);
@@ -44,7 +44,7 @@ public static class AggregateToExtensions
         var session = queryable.As<MartenLinqQueryable<IEvent>>().Session;
         var aggregator = session.Options.Projections.AggregatorFor<T>();
 
-        var aggregate = await aggregator.BuildAsync(events, session, state, token).ConfigureAwait(false);
+        var aggregate = await aggregator.BuildAsync(events, session, state, token).ConfigureAwait(false)!;
 
         setIdentity(session, aggregate, events);
 
@@ -59,7 +59,7 @@ public static class AggregateToExtensions
     /// <param name="token"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static async Task<T> AggregateToAsync<T>(this IQueryable<IEvent> queryable, T state = null,
+    public static async Task<T?> AggregateToAsync<T>(this IQueryable<IEvent> queryable, T? state = null,
         CancellationToken token = new()) where T : class
     {
         return await AggregateToAsync(queryable.As<IMartenQueryable<IEvent>>(), state, token).ConfigureAwait(false);

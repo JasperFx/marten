@@ -30,7 +30,7 @@ internal class CompiledQueryCollection
     }
 
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        QuerySession session)
+        QuerySession session) where TDoc : notnull
     {
         if (_querySources.TryFind(query.GetType(), out var source))
         {
@@ -101,7 +101,7 @@ public partial class DocumentStore: ICodeFileCollection
     string ICodeFileCollection.ChildNamespace { get; } = "CompiledQueries";
 
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        QuerySession session)
+        QuerySession session) where TDoc : notnull
     {
         return session.TrackingMode switch
         {

@@ -103,7 +103,7 @@ public partial class QuerySession
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public virtual void UseIdentityMapFor<T>()
+    public virtual void UseIdentityMapFor<T>() where T : notnull
     {
         // Nothing by default
     }

@@ -103,7 +103,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     public Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents,
         Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default)
+        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, cancellation);
@@ -111,7 +111,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
     public async Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default)
+        CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion =
             new BulkInsertion(
@@ -120,7 +120,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     }
 
     public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default)
+        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);

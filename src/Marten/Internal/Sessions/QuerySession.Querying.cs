@@ -18,12 +18,12 @@ public partial class QuerySession
         return LinqConstants.IdListTableName + ++_tableNumber;
     }
 
-    public IMartenQueryable<T> Query<T>()
+    public IMartenQueryable<T> Query<T>() where T : notnull
     {
         return new MartenLinqQueryable<T>(this);
     }
 
-    public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout)
+    public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout) where T : notnull
     {
         var queryable = new MartenLinqQueryable<T>(this);
         queryable.MartenProvider.Waiter = new WaitForAggregate(timeout);
@@ -66,7 +66,7 @@ public partial class QuerySession
         return new BatchedQuery(this);
     }
 
-    public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
+    public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         await Database.EnsureStorageExistsAsync(typeof(TDoc), token).ConfigureAwait(false);
