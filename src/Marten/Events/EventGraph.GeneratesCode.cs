@@ -16,14 +16,14 @@ public partial class EventGraph: ICodeFile
 {
     private readonly Type _storageType;
 
-    internal DocumentProvider<IEvent> Provider { get; private set; }
+    internal DocumentProvider<IEvent>? Provider { get; private set; }
 
     void ICodeFile.AssembleTypes(GeneratedAssembly assembly)
     {
         EventDocumentStorageGenerator.AssembleTypes(Options, assembly);
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         var storageType = assembly.FindPreGeneratedType(containingNamespace,
@@ -35,14 +35,14 @@ public partial class EventGraph: ICodeFile
         }
         else
         {
-            var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, Options);
+            var storage = (EventDocumentStorage)Activator.CreateInstance(storageType, Options)!;
             Provider = new DocumentProvider<IEvent>(null, storage, storage, storage, storage);
         }
 
         return Provider != null;
     }
 
-    Task<bool> ICodeFile.AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    Task<bool> ICodeFile.AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         var found = AttachTypesSynchronously(rules, assembly, services, containingNamespace);

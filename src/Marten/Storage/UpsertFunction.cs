@@ -30,7 +30,7 @@ internal class UpsertFunction: Function
     protected readonly string _andTenantVersionWhereClause;
     private readonly string _currentVersionGuardCondition;
 
-    public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false):
+    public UpsertFunction(DocumentMapping mapping, DbObjectName? identifier = null, bool disableConcurrency = false):
         base(identifier ?? mapping.UpsertFunction)
     {
         _mapping = mapping;
@@ -49,7 +49,7 @@ internal class UpsertFunction: Function
 
         Arguments.Add(new UpsertArgument
         {
-            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = new[] { mapping.IdMember }, ParameterValue = mapping.CodeGen.ParameterValue
+            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = [mapping.IdMember], ParameterValue = mapping.CodeGen.ParameterValue
         });
 
         Arguments.Add(new DocJsonBodyArgument());
@@ -134,7 +134,7 @@ internal class UpsertFunction: Function
 
         var systemUpdates = _mapping.Metadata.LastModified.Enabled
             ? new[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" }
-            : new string[0];
+            : Array.Empty<string>();
         var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
             .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 

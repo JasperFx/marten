@@ -205,7 +205,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    public void PurgeOperations<T, TId>(TId id) where T : notnull where TId: notnull
     {
         // Do nothing here
     }

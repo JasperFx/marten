@@ -24,7 +24,7 @@ public interface IStaticMultiTenancy
     ///     connection string
     /// </param>
     /// <returns></returns>
-    IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string databaseIdentifier = null);
+    IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string? databaseIdentifier = null);
 
     void AddSingleTenantDatabase(string connectionString, string tenantId);
 }
@@ -94,7 +94,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
     ///     connection string
     /// </param>
     /// <returns></returns>
-    public IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string databaseIdentifier = null)
+    public IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string? databaseIdentifier = null)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         var identifier = databaseIdentifier ?? $"{builder.Database}@{builder.Host}";

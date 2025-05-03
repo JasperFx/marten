@@ -14,7 +14,7 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
+public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId> where TDoc : notnull where TId : notnull
 {
     protected CustomProjection()
     {

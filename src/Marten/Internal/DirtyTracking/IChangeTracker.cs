@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Marten.Internal.Operations;
 
 namespace Marten.Internal.DirtyTracking;
@@ -14,6 +15,6 @@ namespace Marten.Internal.DirtyTracking;
 public interface IChangeTracker
 {
     object Document { get; }
-    bool DetectChanges(IMartenSession session, out IStorageOperation operation);
+    bool DetectChanges(IMartenSession session, [NotNullWhen(true)]out IStorageOperation?  operation);
     void Reset(IMartenSession session);
 }

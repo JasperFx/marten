@@ -22,7 +22,7 @@ namespace Marten.Events.Aggregation;
 /// <typeparam name="TDoc"></typeparam>
 public class SingleStreamProjection<TDoc, TId>:
     JasperFxSingleStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection,
-    IValidatedProjection<StoreOptions>, IMartenRegistrable
+    IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
 {
     // public override SubscriptionDescriptor Describe()
     // {

@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject
+internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject where T : notnull
 {
     public DataSelectClause(string from)
     {
@@ -70,7 +70,7 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifya
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = typeof(T) == typeof(TimeSpan) ? (ISelector<T>)new TimeSpanSelector() : new SerializationSelector<T>(session.Serializer);
 

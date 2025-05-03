@@ -45,7 +45,7 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         _parent = parent;
         DocumentType = eventType;
 
-        IdMember = DocumentType.GetProperty(nameof(IEvent.Id));
+        IdMember = DocumentType.GetProperty(nameof(IEvent.Id))!;
 
         _inner = new DocumentMapping(eventType, parent.Options);
 

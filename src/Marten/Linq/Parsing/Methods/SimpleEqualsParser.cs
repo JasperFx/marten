@@ -50,7 +50,7 @@ internal class SimpleEqualsParser: IMethodCallParser
 
     public bool Matches(MethodCallExpression expression)
     {
-        return SupportedTypes.Contains(expression.Method.DeclaringType) &&
+        return SupportedTypes.Contains(expression.Method.DeclaringType!) &&
                expression.Method.Name.Equals("Equals", StringComparison.Ordinal);
     }
 

@@ -49,7 +49,7 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
     /// <param name="batchSize"></param>
     Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default);
+        CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -62,7 +62,7 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
     /// <param name="batchSize"></param>
     Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default);
+        CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -75,7 +75,7 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
     /// <param name="batchSize"></param>
     Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default);
+        CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Open a new IDocumentSession with the supplied options

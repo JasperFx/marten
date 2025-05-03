@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using JasperFx.Events.Projections;
 using Marten.Internal.Storage;
 
@@ -6,7 +7,7 @@ namespace Marten.Events.Fetching;
 internal class InlineFetchPlanner : IFetchPlanner
 {
     public bool TryMatch<TDoc, TId>(IDocumentStorage<TDoc, TId> storage, IEventIdentityStrategy<TId> identity, StoreOptions options,
-        out IAggregateFetchPlan<TDoc, TId> plan) where TDoc : class
+        [NotNullWhen(true)]out IAggregateFetchPlan<TDoc, TId>? plan) where TDoc : class where TId : notnull
     {
         if (options.Projections.TryFindAggregate(typeof(TDoc), out var projection))
         {
@@ -17,7 +18,7 @@ internal class InlineFetchPlanner : IFetchPlanner
             }
         }
 
-        plan = default;
+        plan = null;
         return false;
     }
 }

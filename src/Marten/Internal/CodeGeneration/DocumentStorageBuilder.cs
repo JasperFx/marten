@@ -223,7 +223,7 @@ internal class DocumentStorageBuilder
 
     private void buildOperationMethod(GeneratedType type, DocumentOperations operations, string methodName)
     {
-        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName).GetValue(operations);
+        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName)!.GetValue(operations)!;
         var method = type.MethodFor(methodName);
 
         writeReturnOfOperation(method, operationType, methodName);

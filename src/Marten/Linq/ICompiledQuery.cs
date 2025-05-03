@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -44,7 +43,7 @@ public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: n
 
 #region sample_ICompiledListQuery-with-no-select
 
-public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc>
+public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where TDoc : notnull
 {
 }
 
@@ -58,7 +57,7 @@ public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc>
 
 #region sample_ICompiledListQuery-with-select
 
-public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>>
+public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>> where TDoc : notnull
 {
 }
 
@@ -71,7 +70,7 @@ public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerabl
 
 #region sample_ICompiledQuery-for-single-doc
 
-public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc>
+public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc> where TDoc : notnull
 {
 }
 

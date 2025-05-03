@@ -209,64 +209,64 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         throw new DocumentIdTypeMismatchException(storage, typeof(TId));
     }
 
-    private Task<TResult> addItem<TDoc, TResult>(IQueryable<TDoc> queryable, SingleValueMode? op)
+    private Task<TResult> addItem<TDoc, TResult>(IQueryable<TDoc> queryable, SingleValueMode? op) where TDoc : notnull
     {
         var handler = queryable.As<MartenLinqQueryable<TDoc>>().BuildHandler<TResult>(op);
         return AddItem(handler);
     }
 
-    public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
+    public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable) where TDoc : notnull
     {
         return addItem<TDoc, bool>(queryable, SingleValueMode.Any);
     }
 
-    public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable)
+    public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable) where TDoc : notnull
     {
         return addItem<TDoc, long>(queryable, SingleValueMode.LongCount);
     }
 
-    internal Task<IReadOnlyList<T>> Query<T>(IMartenQueryable<T> queryable)
+    internal Task<IReadOnlyList<T>> Query<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         var handler = queryable.As<MartenLinqQueryable<T>>().BuildHandler<IReadOnlyList<T>>();
         return AddItem(handler);
     }
 
-    public Task<T> First<T>(IMartenQueryable<T> queryable)
+    public Task<T> First<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T>(queryable, SingleValueMode.First);
     }
 
-    public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable)
+    public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T?>(queryable, SingleValueMode.FirstOrDefault);
     }
 
-    public Task<T> Single<T>(IMartenQueryable<T> queryable)
+    public Task<T> Single<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T>(queryable, SingleValueMode.Single);
     }
 
-    public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable)
+    public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T?>(queryable, SingleValueMode.SingleOrDefault);
     }
 
-    public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Min<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Min);
     }
 
-    public Task<TResult> Max<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Max<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Max);
     }
 
-    public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Sum);
     }
 
-    public Task<double> Average<T>(IQueryable<T> queryable)
+    public Task<double> Average<T>(IQueryable<T> queryable) where T : notnull
     {
         return addItem<T, double>(queryable, SingleValueMode.Average);
     }

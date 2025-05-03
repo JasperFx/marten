@@ -80,7 +80,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     /// <returns>The extended storage configuration for entity T</returns>
     public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T>(
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
@@ -103,7 +103,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         return singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
@@ -123,7 +123,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
         Action<ProjectionBase> configureProjection,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         return singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
@@ -131,8 +131,8 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
-        Action<ProjectionBase> configureProjection = null,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<ProjectionBase>? configureProjection = null,
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         if (typeof(T).CanBeCastTo<ProjectionBase>())

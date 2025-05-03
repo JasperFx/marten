@@ -34,7 +34,7 @@ public partial class ProjectionScenario
         }
         else
         {
-            step.Description = $"Append({stream}, {events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"Append({stream}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Append(_store.Events, stream, events);
@@ -58,13 +58,13 @@ public partial class ProjectionScenario
     public StreamAction Append(string stream, params object[] events)
     {
         var step = action(e => e.Append(stream, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"Append('{stream}', events)";
         }
         else
         {
-            step.Description = $"Append('{stream}', {events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"Append('{stream}', {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Append(_store.Events, stream, events);
@@ -80,7 +80,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"Append({stream}, {expectedVersion}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"Append({stream}, {expectedVersion}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Append(_store.Events, stream, events);
@@ -112,7 +112,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"Append(\"{stream}\", {expectedVersion}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"Append(\"{stream}\", {expectedVersion}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Append(_store.Events, stream, events);
@@ -128,7 +128,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream<{typeof(TAggregate).FullNameInCode()}>({id}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream<{typeof(TAggregate).FullNameInCode()}>({id}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, id, events);
@@ -160,7 +160,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream({aggregateType.FullNameInCode()}, {id}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream({aggregateType.FullNameInCode()}, {id}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, id, events);
@@ -193,7 +193,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream<{typeof(TAggregate).FullNameInCode()}>(\"{streamKey}\", {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream<{typeof(TAggregate).FullNameInCode()}>(\"{streamKey}\", {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamKey, events);
@@ -225,7 +225,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream({aggregateType.FullNameInCode()}, \"{streamKey}\", {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream({aggregateType.FullNameInCode()}, \"{streamKey}\", {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamKey, events);
@@ -255,7 +255,7 @@ public partial class ProjectionScenario
         }
         else
         {
-            step.Description = $"StartStream({id}, {events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"StartStream({id}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, id, events);
@@ -285,7 +285,7 @@ public partial class ProjectionScenario
         }
         else
         {
-            step.Description = $"StartStream(\"{streamKey}\", {events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"StartStream(\"{streamKey}\", {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamKey, events);
@@ -319,7 +319,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream<{typeof(TAggregate).FullNameInCode()}>({events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream<{typeof(TAggregate).FullNameInCode()}>({events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamId, events);
@@ -336,7 +336,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream({aggregateType.FullNameInCode()}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream({aggregateType.FullNameInCode()}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamId, events);
@@ -353,7 +353,7 @@ public partial class ProjectionScenario
         else
         {
             step.Description =
-                $"StartStream({aggregateType.FullNameInCode()}, {events.Select(x => x.ToString()).Join(", ")})";
+                $"StartStream({aggregateType.FullNameInCode()}, {events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamId, events);
@@ -369,7 +369,7 @@ public partial class ProjectionScenario
         }
         else
         {
-            step.Description = $"StartStream({events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"StartStream({events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamId, events);
@@ -385,7 +385,7 @@ public partial class ProjectionScenario
         }
         else
         {
-            step.Description = $"StartStream({events.Select(x => x.ToString()).Join(", ")})";
+            step.Description = $"StartStream({events.Select(x => x.ToString()!).Join(", ")})";
         }
 
         return StreamAction.Start(_store.Events, streamId, events);

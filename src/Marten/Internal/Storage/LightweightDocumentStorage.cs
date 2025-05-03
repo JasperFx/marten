@@ -8,7 +8,7 @@ using Marten.Schema;
 
 namespace Marten.Internal.Storage;
 
-public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId>
+public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId> where T : notnull where TId : notnull
 {
     public LightweightDocumentStorage(DocumentMapping document): base(StorageStyle.Lightweight, document)
     {
@@ -73,7 +73,7 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         return loadAsync(id, session, token);
     }

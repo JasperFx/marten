@@ -11,7 +11,7 @@ using Marten.Internal.Storage;
 
 namespace Marten.Events.Fetching;
 
-internal class IdentityForwardingAggregator<T, TId, TSimple, TSession> : IAggregator<T, TSimple, TSession>
+internal class IdentityForwardingAggregator<T, TId, TSimple, TSession> : IAggregator<T, TSimple, TSession> where T : class where TId : notnull where TSimple : notnull
 {
     private readonly IAggregator<T, TId, TSession> _inner;
     private readonly IDocumentStorage<T, TId> _storage;
@@ -24,12 +24,12 @@ internal class IdentityForwardingAggregator<T, TId, TSimple, TSession> : IAggreg
         _wrapper = ValueTypeInfo.ForType(typeof(TId)).CreateWrapper<TId, TSimple>();
     }
 
-    public ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, TSession session, T? snapshot, CancellationToken cancellation)
+    public ValueTask<T?> BuildAsync(IReadOnlyList<IEvent> events, TSession session, T? snapshot, CancellationToken cancellation)
     {
         return _inner.BuildAsync(events, session, snapshot, cancellation);
     }
 
-    public ValueTask<T> BuildAsync(IReadOnlyList<IEvent> events, TSession session, T? snapshot, TSimple id, IIdentitySetter<T, TSimple> identitySetter,
+    public ValueTask<T?> BuildAsync(IReadOnlyList<IEvent> events, TSession session, T? snapshot, TSimple id, IIdentitySetter<T, TSimple> identitySetter,
         CancellationToken cancellation)
     {
         return _inner.BuildAsync(events, session, snapshot, _wrapper(id), _storage, cancellation);

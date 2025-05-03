@@ -60,7 +60,7 @@ public interface IConfigureMarten<T>: IConfigureMarten where T : IDocumentStore
 internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocumentStore
 {
     private readonly Func<IServiceProvider, StoreOptions> _configuration;
-    private Type _storeType;
+    private Type? _storeType;
 
     public SecondaryStoreConfig(Func<IServiceProvider, StoreOptions> configuration)
     {
@@ -74,13 +74,13 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         type.Implements<T>();
     }
 
-    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         return Task.FromResult(AttachTypesSynchronously(rules, assembly, services, containingNamespace));
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _storeType = assembly.FindPreGeneratedType(containingNamespace, FileName);
@@ -115,7 +115,7 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
         this.InitializeSynchronously(rules, Parent, provider);
 
-        var store = (T)Activator.CreateInstance(_storeType, options);
+        var store = (T)Activator.CreateInstance(_storeType!, options)!;
         store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());
 
         return store;

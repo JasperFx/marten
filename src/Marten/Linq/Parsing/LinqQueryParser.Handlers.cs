@@ -34,7 +34,7 @@ internal partial class LinqQueryParser
                                         typeof(TResult).FullNameInCode());
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>() where TResult : notnull
+    public IQueryHandler<TResult> BuildHandler<TResult>()
     {
         if (!_collectionUsages.Any())
         {
@@ -57,7 +57,7 @@ internal partial class LinqQueryParser
         return handler;
     }
 
-    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector) where TResult : notnull
+    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector)
     {
         if (selector.SingleValue)
         {

@@ -209,7 +209,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
@@ -226,7 +226,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 

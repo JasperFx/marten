@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -354,7 +353,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public abstract ISelector BuildSelector(IMartenSession session);
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
@@ -499,7 +498,7 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
         return _parent.BuildSelector(session);
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
     {
         return _parent.BuildHandler<T>(session, topStatement, currentStatement);
     }

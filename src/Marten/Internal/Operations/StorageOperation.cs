@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -22,7 +23,7 @@ public interface IRevisionedOperation
     bool IgnoreConcurrencyViolation { get; set; }
 }
 
-public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation
+public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation where TId: notnull
 {
     private readonly T _document;
     protected readonly TId _id;
@@ -239,7 +240,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         }
     }
 
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         transformed = null;
 

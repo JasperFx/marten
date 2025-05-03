@@ -205,7 +205,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
         return this;
     }
 
-    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment topLevelWhere = null)
+    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment? topLevelWhere = null)
     {
         // First need to unnest the collection into its own recordset
         var unnest = new ExplodeCollectionStatement(session, statement, Member.ArrayLocator) { Where = topLevelWhere };
