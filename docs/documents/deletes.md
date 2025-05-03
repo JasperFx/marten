@@ -203,7 +203,7 @@ public async Task query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L284-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L293-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -231,7 +231,7 @@ public async Task query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L974-L1000' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L983-L1009' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The SQL generated for the first call to `Query<User>()` above would be:
@@ -275,7 +275,7 @@ public async Task query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L312-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L321-L349' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_maybe_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -305,7 +305,7 @@ public async Task query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1002-L1030' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1011-L1039' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Partitioning by Deleted Status <Badge type="tip" text="7.26" />
@@ -337,7 +337,7 @@ var store = DocumentStore.For(opts =>
     opts.Policies.AllDocumentsSoftDeletedWithPartitioning();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1407-L1423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1416-L1432' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The attribute style of configuration also supports partitioning like so:
@@ -351,7 +351,7 @@ public class SoftDeletedAndPartitionedDocument
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1438-L1446' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1447-L1455' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Only Deleted Documents
@@ -389,7 +389,7 @@ public async Task query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L342-L370' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L351-L379' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_is_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -419,7 +419,7 @@ public async Task query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1032-L1060' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1041-L1069' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Documents Deleted Before or After a Specific Time
@@ -445,7 +445,7 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user3);
     await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
     await session.SaveChangesAsync();
 
@@ -453,7 +453,7 @@ public async Task query_is_soft_deleted_since_docs()
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L372-L396' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L381-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_since-1'></a>
 ```cs
 [Fact]
@@ -471,7 +471,7 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user3);
     await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
     await session.SaveChangesAsync();
 
@@ -479,7 +479,7 @@ public async Task query_is_soft_deleted_since_docs()
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1062-L1086' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1071-L1095' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:

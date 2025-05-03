@@ -6,7 +6,7 @@ namespace Marten.Events;
 
 public partial class EventGraph
 {
-    private readonly List<IMasker> _maskers = new();
+    private readonly List<IMasker> _maskers = [];
 
     /// <summary>
     /// Register a policy for how to remove or mask protected information
@@ -23,7 +23,7 @@ public partial class EventGraph
 
     internal bool TryMask(IEvent e)
     {
-        bool matched = false;
+        var matched = false;
         foreach (var masker in _maskers)
         {
             matched = matched || masker.TryMask(e);
@@ -38,7 +38,7 @@ internal interface IMasker
     bool TryMask(IEvent @event);
 }
 
-internal class Masker<T> : IMasker
+internal class Masker<T> : IMasker where T : notnull
 {
     private readonly Action<T> _masking;
 
