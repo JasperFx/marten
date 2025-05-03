@@ -184,7 +184,7 @@ public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarS
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement) where TResult: notnull
+        ISqlFragment currentStatement)
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())
         {

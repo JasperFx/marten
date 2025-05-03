@@ -189,7 +189,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     }
 }
 
-public interface IAggregateFetchPlan<TDoc, in TId>
+public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
 {
     Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default);

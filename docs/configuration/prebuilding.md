@@ -133,7 +133,7 @@ public static class Program
 {
     public static Task<int> Main(string[] args)
     {
-        return CreateHostBuilder(args).RunOaktonCommands(args);
+        return CreateHostBuilder(args).RunJasperFxCommands(args);
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args)

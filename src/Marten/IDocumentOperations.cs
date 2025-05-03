@@ -248,5 +248,5 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public void UseIdentityMapFor<T>();
+    public void UseIdentityMapFor<T>() where T : notnull;
 }

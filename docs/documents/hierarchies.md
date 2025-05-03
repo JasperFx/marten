@@ -94,7 +94,7 @@ public class BrainySmurf: PapaSmurf
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L12-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L13-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
@@ -125,7 +125,7 @@ public query_with_inheritance(ITestOutputHelper output)
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L91-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L92-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
@@ -144,7 +144,7 @@ _.Schema.For<ISmurf>()
         typeof(BrainySmurf)
     );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L53-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L54-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now you can query the "complex" hierarchy in the following ways:
@@ -208,7 +208,7 @@ public async Task get_all_subclasses_of_a_subclass_with_where_with_camel_casing(
         // of type ISmurf to get all its' subclasses/implementations.
         // In projects with many types, this approach will be undvisable.
 
-        _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+        _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase);
 
         _.Connection(ConnectionSource.ConnectionString);
         _.AutoCreateSchemaObjects = AutoCreate.All;
@@ -240,5 +240,5 @@ public async Task get_all_subclasses_of_an_interface()
     theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L150-L242' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L151-L243' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
