@@ -46,7 +46,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker = workTracker;
     }
 
-    internal ValueTask<IMessageBatch> CurrentMessageBatch()
+    internal virtual ValueTask<IMessageBatch> CurrentMessageBatch()
     {
         if (_workTracker is ProjectionUpdateBatch batch)
         {
