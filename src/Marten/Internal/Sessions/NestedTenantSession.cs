@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using Marten.Events.Aggregation;
 using Marten.Internal.Storage;
 using Marten.Storage;
 
@@ -21,6 +22,11 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     }
 
     public IDocumentSession Parent => _parent;
+
+    internal override ValueTask<IMessageBatch> CurrentMessageBatch()
+    {
+        return _parent.CurrentMessageBatch();
+    }
 
     protected internal override void ejectById<T>(long id)
     {
