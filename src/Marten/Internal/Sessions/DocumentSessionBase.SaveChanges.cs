@@ -81,7 +81,7 @@ public abstract partial class DocumentSessionBase
     }
 
     private IMessageBatch? _messageBatch;
-    internal async ValueTask<IMessageBatch> StartMessageBatch()
+    internal virtual async ValueTask<IMessageBatch> StartMessageBatch()
     {
         _messageBatch ??= await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
         return _messageBatch;
