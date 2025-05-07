@@ -297,10 +297,13 @@ public static class MartenServiceCollectionExtensions
         var config = new SecondaryStoreConfig<T>(configure);
         stores.Add(config);
 
-        services.AddSingleton(s => config.Build(s));
+        services.AddSingleton<ICodeFileCollection>(s =>
+        {
+            var options = config.BuildStoreOptions(s);
+            return new DocumentStore(options);
+        });
 
-        services.AddSingleton(s => (ICodeFileCollection)s.GetRequiredService<T>());
-        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<T>().As<DocumentStore>().Options);
+        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s));
 
         return new MartenStoreExpression<T>(services);
     }

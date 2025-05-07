@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
-using JasperFx.Core;
 using Microsoft.FSharp.Core;
 
 namespace Marten.Testing.Documents;
@@ -146,7 +145,7 @@ public class Target
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
         target.OtherGuid = Guid.NewGuid();
-       
+
         target.Flag = _random.Next(0, 10) > 5;
 
         target.Float = float.Parse(_random.NextDouble().ToString());
@@ -200,7 +199,7 @@ public class Target
 
         if (value > 15)
         {
-            target.NullableDateOffset = DateTimeOffset.Now.Subtract(_random.Next(-60, 60).Seconds());
+            target.NullableDateOffset = DateTimeOffset.Now.Subtract( TimeSpan.FromSeconds(_random.Next(-60, 60)));
         }
 
         if (deep)
@@ -232,14 +231,6 @@ public class Address
 {
     public Address()
     {
-    }
-
-    public Address(string text)
-    {
-        var parts = text.ToDelimitedArray();
-        Address1 = parts[0];
-        City = parts[1];
-        StateOrProvince = parts[2];
     }
 
     public string Address1 { get; set; }

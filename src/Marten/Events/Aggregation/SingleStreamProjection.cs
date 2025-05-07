@@ -29,7 +29,7 @@ public class SingleStreamProjection<TDoc, TId>:
     //     return new SubscriptionDescriptor(this, SubscriptionType.SingleStreamProjection);
     // }
 
-    public SingleStreamProjection(): base([typeof(NpgsqlException), typeof(MartenCommandException)])
+    public SingleStreamProjection(): base()
     {
     }
 
@@ -104,6 +104,12 @@ public class SingleStreamProjection<TDoc, TId>:
                 services.ConfigureMarten((s, opts) =>
                 {
                     var projection = s.GetRequiredService<TConcrete>();
+
+                    if (projection is ProjectionBase basic)
+                    {
+                        configure?.Invoke(basic);
+                    }
+
                     opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
                 });
                 break;
