@@ -60,6 +60,9 @@ public abstract partial class DocumentSessionBase
         if (_messageBatch != null)
         {
             await _messageBatch.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
+            // This is important, we need to throw this away on every commit and start w/ a fresh
+            // one on new transactions
+            _messageBatch = null;
         }
 
 
