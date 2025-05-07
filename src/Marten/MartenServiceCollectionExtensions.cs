@@ -297,6 +297,8 @@ public static class MartenServiceCollectionExtensions
         var config = new SecondaryStoreConfig<T>(configure);
         stores.Add(config);
 
+        services.AddSingleton<T>(s => config.Build(s));
+
         services.AddSingleton<ICodeFileCollection>(s =>
         {
             var options = config.BuildStoreOptions(s);
