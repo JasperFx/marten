@@ -5,7 +5,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
-        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0-alpha-2" />
+        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0-alpha-3" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0"/>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="Neovolve.Logging.Xunit" Version="6.3.0" />
