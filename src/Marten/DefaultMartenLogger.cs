@@ -10,11 +10,13 @@ namespace Marten;
 
 internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
 {
-    private Stopwatch _stopwatch;
+    private long? _timestamp;
+    private readonly DefaultLoggingWriter _loggerOutput;
 
     public DefaultMartenLogger(ILogger inner)
     {
         Inner = inner;
+        _loggerOutput = new DefaultLoggingWriter(inner);
     }
 
     public ILogger Inner { get; }
@@ -26,23 +28,18 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
 
     public void SchemaChange(string sql)
     {
-        if (Inner.IsEnabled(LogLevel.Information))
-        {
-            Inner.LogInformation("Executed schema update SQL:\n{SQL}", sql);
-        }
+        _loggerOutput.SchemaChange(sql);
     }
 
     public void LogSuccess(NpgsqlCommand command)
     {
-        _stopwatch?.Stop();
-
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var message = "Marten executed in {milliseconds} ms, SQL: {SQL}\n{PARAMS}";
-            var parameters = command.Parameters.OfType<NpgsqlParameter>()
+            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
+            var parameters = command.Parameters
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
-            Inner.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+            _loggerOutput.LogSuccess(duration.TotalMilliseconds, command.CommandText, parameters);
         }
     }
 
@@ -50,54 +47,52 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
+            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
             foreach (var command in batch.BatchCommands)
             {
-                var message = "Marten executed, SQL: {SQL}\n{PARAMS}";
                 var parameters = command.Parameters.OfType<NpgsqlParameter>()
                     .Select(p => $"  {p.ParameterName}: {p.Value}")
                     .Join(Environment.NewLine);
-                Inner.LogDebug(message, _stopwatch?.ElapsedMilliseconds ?? 0, command.CommandText, parameters);
+                _loggerOutput.LogSuccess(duration.TotalMilliseconds, command.CommandText, parameters);
             }
         }
     }
 
     public void LogFailure(NpgsqlCommand command, Exception ex)
     {
-        _stopwatch?.Stop();
-
-        var message = "Marten encountered an exception executing \n{SQL}\n{PARAMS}";
-        var parameters = command.Parameters.OfType<NpgsqlParameter>()
+        var parameters = command.Parameters
             .Select(p => $"  {p.ParameterName}: {p.Value}")
             .Join(Environment.NewLine);
-        Inner.LogError(ex, message, command.CommandText, parameters);
+
+        _loggerOutput.LogError(ex, command.CommandText, parameters);
     }
 
     public void LogFailure(NpgsqlBatch batch, Exception ex)
     {
-        _stopwatch?.Stop();
-
-        var message = "Marten encountered an exception executing \n{SQL}\n{PARAMS}";
-
         foreach (var command in batch.BatchCommands)
         {
             var parameters = command.Parameters.OfType<NpgsqlParameter>()
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
-            Inner.LogError(ex, message, command.CommandText, parameters);
+
+            _loggerOutput.LogError(ex, command.CommandText, parameters);
         }
+    }
+
+    public void LogFailure(Exception ex, string message)
+    {
+        _loggerOutput.LogError(ex, message);
     }
 
     public void RecordSavedChanges(IDocumentSession session, IChangeSet commit)
     {
-        _stopwatch?.Stop();
-
-        var lastCommit = commit;
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            Inner.LogDebug(
-                "Persisted {UpdateCount} updates in {ElapsedMilliseconds} ms, {InsertedCount} inserts, and {DeletedCount} deletions",
-                lastCommit.Updated.Count(), _stopwatch?.ElapsedMilliseconds ?? 0, lastCommit.Inserted.Count(),
-                lastCommit.Deleted.Count());
+            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
+            _loggerOutput.RecordSavedChanges(commit.Updated.Count(),
+                duration.TotalMilliseconds,
+                commit.Inserted.Count(),
+                commit.Deleted.Count());
         }
     }
 
@@ -105,22 +100,55 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            _stopwatch = new Stopwatch();
-            _stopwatch.Start();
+            _timestamp = Stopwatch.GetTimestamp();
         }
-    }
-
-    public void LogFailure(Exception ex, string message)
-    {
-        Inner.LogError(ex, message);
     }
 
     public void OnBeforeExecute(NpgsqlBatch batch)
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            _stopwatch = new Stopwatch();
-            _stopwatch.Start();
+            _timestamp = Stopwatch.GetTimestamp();
         }
     }
 }
+
+internal sealed partial class DefaultLoggingWriter
+{
+    private readonly ILogger _logger;
+
+    public DefaultLoggingWriter(ILogger logger)
+    {
+        _logger = logger;
+    }
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Executed schema update SQL:\n{SQL}")]
+    public partial void SchemaChange(string sql);
+
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message = "Marten executed in {milliseconds} ms, SQL: {SQL}\n{PARAMETERS}",
+        SkipEnabledCheck = true)]
+    public partial void LogSuccess(double milliseconds, string sql, string parameters);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Marten encountered an exception executing \n{SQL}\n{PARAMETERS}")]
+    public partial void LogError(Exception ex, string sql, string parameters);
+
+    [LoggerMessage(
+        Level = LogLevel.Error,
+        Message = "Marten encountered an exception with message: {MESSAGE}")]
+    public partial void LogError(Exception ex, string message);
+
+    [LoggerMessage(
+        Level = LogLevel.Debug,
+        Message =  "Persisted {UpdateCount} updates in {ElapsedMilliseconds} ms, {InsertedCount} inserts, and {DeletedCount} deletions",
+        SkipEnabledCheck = true)]
+    public partial void RecordSavedChanges(int updateCount, double elapsedMilliseconds, int insertedCount, int deletedCount);
+
+}
+
+
