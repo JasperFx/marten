@@ -90,7 +90,7 @@ public interface IEventOperations
     StreamAction StartStream(Type aggregateType, Guid id, params object[] events);
 
     /// <summary>
-    ///     Creates a new event stream based on a user-supplied Guid and appends the events in order to the new stream
+    ///     Creates a new event stream based on a user-supplied string ID  and appends the events in order to the new stream
     ///     - WILL THROW AN EXCEPTION IF THE STREAM ALREADY EXISTS
     /// </summary>
     /// <typeparam name="TAggregate"></typeparam>
