@@ -54,6 +54,9 @@
         <Compile Include="..\Marten.Testing\Documents\LongDoc.cs">
             <Link>LongDoc.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\Documents\SingleTenantedDocument.cs">
+          <Link>Documents\SingleTenantedDocument.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\Documents\StringDoc.cs">
             <Link>Documents\StringDoc.cs</Link>
         </Compile>
