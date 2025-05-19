@@ -8,7 +8,7 @@ public class VersionTracker
 {
     private readonly Dictionary<Type, object> _byType = new();
 
-    public Dictionary<TId, int> RevisionsFor<TDoc, TId>()
+    public Dictionary<TId, int> RevisionsFor<TDoc, TId>() where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -26,7 +26,7 @@ public class VersionTracker
         return dict;
     }
 
-    public Dictionary<TId, Guid> ForType<TDoc, TId>()
+    public Dictionary<TId, Guid> ForType<TDoc, TId>() where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -44,7 +44,7 @@ public class VersionTracker
         return dict;
     }
 
-    public Guid? VersionFor<TDoc, TId>(TId id)
+    public Guid? VersionFor<TDoc, TId>(TId id) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -62,7 +62,7 @@ public class VersionTracker
         return null;
     }
 
-    public int? RevisionFor<TDoc, TId>(TId id)
+    public int? RevisionFor<TDoc, TId>(TId id) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -80,7 +80,7 @@ public class VersionTracker
         return null;
     }
 
-    public void StoreVersion<TDoc, TId>(TId id, Guid guid)
+    public void StoreVersion<TDoc, TId>(TId id, Guid guid) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -100,7 +100,7 @@ public class VersionTracker
         }
     }
 
-    public void StoreRevision<TDoc, TId>(TId id, int revision)
+    public void StoreRevision<TDoc, TId>(TId id, int revision) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -120,7 +120,7 @@ public class VersionTracker
         }
     }
 
-    public void ClearVersion<TDoc, TId>(TId id)
+    public void ClearVersion<TDoc, TId>(TId id) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
@@ -131,7 +131,7 @@ public class VersionTracker
         }
     }
 
-    public void ClearRevision<TDoc, TId>(TId id)
+    public void ClearRevision<TDoc, TId>(TId id) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {

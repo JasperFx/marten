@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -703,7 +704,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
 public record NamedEvent2(string Name);
 
-public class TestProjection2: SingleStreamProjection<TestAggregate>
+public class TestProjection2: SingleStreamProjection<TestAggregate, string>
 {
     public TestAggregate Create(NamedEvent2 @event)
         => new TestAggregate(@event.Name);

@@ -37,7 +37,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L826-L836' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L827-L837' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
@@ -51,7 +51,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Issue>().UseOptimisticConcurrency(true);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L36-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.
@@ -74,8 +74,8 @@ public async Task update_with_stale_version_standard()
     var session1 = theStore.DirtyTrackedSession();
     var session2 = theStore.DirtyTrackedSession();
 
-    var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-    var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+    var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+    var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
     try
     {
@@ -99,10 +99,10 @@ public async Task update_with_stale_version_standard()
     }
 
     await using var query = theStore.QuerySession();
-    query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
+    (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L127-L169' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L128-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten is throwing an `AggregateException` for the entire batch of changes.

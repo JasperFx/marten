@@ -105,7 +105,7 @@ public abstract class LinqTestContext<TSelf>
 
     protected async Task assertTestCaseWithDocuments(string description, IDocumentStore store, Target[] documents)
     {
-        var index = _descriptions.IndexOf(description);
+        var index = Array.IndexOf(_descriptions, description);
 
         var testCase = testCases[index];
         await using var session = store.QuerySession();

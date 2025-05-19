@@ -2,16 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Marten.Events.Aggregation.Rebuilds;
+using JasperFx.Events.Daemon;
 using Marten.Events.Archiving;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Functions;
 
 namespace Marten.Events;
 
@@ -60,12 +58,6 @@ public partial class EventGraph: IFeatureSchema
         yield return new ArchiveStreamFunction(this);
 
         yield return new QuickAppendEventFunction(this);
-
-        if (UseOptimizedProjectionRebuilds)
-        {
-            yield return new AggregateRebuildTable(this);
-        }
-
 
         foreach (var schemaSource in Options.Projections.All.OfType<IProjectionSchemaSource>())
         {

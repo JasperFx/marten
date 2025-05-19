@@ -1,4 +1,3 @@
-#nullable enable
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,7 @@ public partial class QuerySession
     public IJsonLoader Json => new JsonLoader(this);
 
     public async Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
@@ -23,7 +22,7 @@ public partial class QuerySession
     }
 
     public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
@@ -31,7 +30,7 @@ public partial class QuerySession
     }
 
     public async Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var stream = new MemoryStream();
         var count = await StreamJsonOne(query, stream, token).ConfigureAwait(false);
@@ -45,7 +44,7 @@ public partial class QuerySession
     }
 
     public async Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var stream = new MemoryStream();
         await StreamJsonOne(query, stream, token).ConfigureAwait(false);

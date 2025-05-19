@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,12 +100,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         {
             if (valueType.SimpleType == typeof(Guid))
             {
-                var converter = valueType.CreateConverter<TId, Guid>();
+                var converter = valueType.CreateWrapper<TId, Guid>();
                 _setFromGuid = (doc, guid) => _setter(doc, converter(guid));
             }
             else if (valueType.SimpleType == typeof(string))
             {
-                var converter = valueType.CreateConverter<TId, string>();
+                var converter = valueType.CreateWrapper<TId, string>();
                 _setFromString = (doc, s) => _setter(doc, converter(s));
             }
         }
@@ -354,7 +353,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public abstract ISelector BuildSelector(IMartenSession session);
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
@@ -499,7 +498,7 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
         return _parent.BuildSelector(session);
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
     {
         return _parent.BuildHandler<T>(session, topStatement, currentStatement);
     }

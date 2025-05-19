@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -8,7 +9,6 @@ using JasperFx.Core.Reflection;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -27,8 +27,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     internal DocumentSessionBase(
         DocumentStore store,
         SessionOptions sessionOptions,
-        IConnectionLifetime connection
-    ): base(store, sessionOptions, connection)
+        IConnectionLifetime connection): base(store, sessionOptions, connection)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = new UnitOfWork(this);
@@ -38,22 +37,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         DocumentStore store,
         SessionOptions sessionOptions,
         IConnectionLifetime connection,
-        ISessionWorkTracker workTracker,
-        Tenant? tenant = default
+        ISessionWorkTracker workTracker, Tenant? tenant = default
     ): base(store, sessionOptions, connection, tenant)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
-    }
-
-    internal ValueTask<IMessageBatch> CurrentMessageBatch()
-    {
-        if (_workTracker is ProjectionUpdateBatch batch)
-        {
-            return batch.CurrentMessageBatch(this);
-        }
-
-        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
@@ -112,7 +100,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
-    public void TryUpdateRevision<T>(T entity, int revision)
+    public void TryUpdateRevision<T>(T entity, int revision) where T : notnull
     {
         assertNotDisposed();
 
@@ -259,7 +247,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    public new IEventStore Events => (IEventStore)base.Events;
+    public new IEventStoreOperations Events => (IEventStoreOperations)base.Events;
 
 
     public void QueueOperation(IStorageOperation storageOperation)
@@ -436,7 +424,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class
+    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class where TId : notnull
     {
         if (ItemMap.ContainsKey(typeof(TDoc)))
         {
@@ -450,7 +438,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, out TDoc document)
+    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, [NotNullWhen(true)]out TDoc? document) where TDoc: notnull where TId : notnull
     {
         if (Options.EventGraph.UseIdentityMapForAggregates)
         {

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
+using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -45,10 +47,10 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
         });
 
         var streamId = Guid.NewGuid().ToString();
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        theSession.Events.StartStream<CountedAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        var aggregate = await theSession.Events.AggregateStreamAsync<CountedAsString>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
@@ -83,29 +85,56 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
             opts.Projections.Add(new ExplicitCounter(), ProjectionLifecycle.Live);
         });
 
-        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
+        var streamId = theSession.Events.StartStream<CountedAggregate>(new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent()).Id;
         await theSession.SaveChangesAsync();
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        var eventStream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var eventStream = await theSession.Events.FetchForWriting<CountedAggregate>(streamId);
         var tables = theStore.Storage.AllObjects().OfType<Table>();
-        tables.ShouldNotContain(x => x.Identifier.Name.Contains(nameof(SimpleAggregate), StringComparison.OrdinalIgnoreCase));
+        tables.ShouldNotContain(x => x.Identifier.Name.Contains(nameof(CountedAggregate), StringComparison.OrdinalIgnoreCase));
     }
 }
 
 #region sample_using_simple_explicit_code_for_live_aggregation
 
-public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
+public class CountedAggregate: IRevisioned
 {
-    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public Guid Id
     {
-        snapshot ??= new SimpleAggregate();
-        foreach (var e in events.Select(x => x.Data))
+        get;
+        set;
+    }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+}
+
+public class ExplicitCounter: SingleStreamProjection<CountedAggregate, Guid>
+{
+    public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent e)
+    {
+        snapshot ??= new CountedAggregate();
+
+        switch (e.Data)
         {
-            if (e is AEvent) snapshot.ACount++;
-            if (e is BEvent) snapshot.BCount++;
-            if (e is CEvent) snapshot.CCount++;
-            if (e is DEvent) snapshot.DCount++;
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
         // You have to explicitly return the new value
@@ -116,28 +145,40 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
 
 #endregion
 
-public class ExplicitCounterThatHasStringId: CustomProjection<SimpleAggregateAsString, string>
+public class CountedAsString
 {
-    public override SimpleAggregateAsString Apply(SimpleAggregateAsString snapshot, IReadOnlyList<IEvent> events)
+    // This will be the aggregate version
+    public long Version { get; set; }
+
+
+    public string Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+}
+
+public class ExplicitCounterThatHasStringId: SingleStreamProjection<CountedAsString, string>
+{
+    public override CountedAsString Evolve(CountedAsString snapshot, string id, IEvent e)
     {
         snapshot ??= new();
-        foreach (var e in events.Select(x => x.Data))
+        switch (e.Data)
         {
-            switch (e)
-            {
-                case AEvent:
-                    snapshot.ACount++;
-                    break;
-                case BEvent:
-                    snapshot.BCount++;
-                    break;
-                case CEvent:
-                    snapshot.CCount++;
-                    break;
-                case DEvent:
-                    snapshot.DCount++;
-                    break;
-            }
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
         return snapshot;

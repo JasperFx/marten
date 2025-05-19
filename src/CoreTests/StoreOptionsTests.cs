@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core.Descriptors;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -103,7 +103,7 @@ public class StoreOptionsTests
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
             .Select(x => x.DocumentType.Name)
-            .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
+            .ShouldBe(["Company", "Issue", "Target", "User"]);
     }
 
     [Fact]

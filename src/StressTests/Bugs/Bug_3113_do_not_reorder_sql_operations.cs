@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -145,7 +146,7 @@ public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationConte
 
             foreach (var table in SchemaObjects.OfType<Table>())
             {
-                Options.DeleteDataInTableOnTeardown(table.Identifier);
+                Options.DeleteDataInTableOnTeardown(table.Identifier.QualifiedName);
             }
         }
 

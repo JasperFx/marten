@@ -63,7 +63,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -90,7 +90,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -158,7 +158,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -184,7 +184,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());

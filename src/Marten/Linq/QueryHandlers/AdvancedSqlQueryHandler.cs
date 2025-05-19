@@ -44,7 +44,7 @@ internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQuer
     }
 }
 
-internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>>
+internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>> where T2 : notnull where T1 : notnull
 {
     public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
@@ -75,7 +75,7 @@ internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1,
         }
     }
 }
-internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>>
+internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>> where T1 : notnull where T2 : notnull where T3 : notnull
 {
     public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
@@ -159,7 +159,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         }
     }
 
-    protected async Task<T> ReadNestedRowAsync<T>(DbDataReader reader, int rowIndex, CancellationToken token)
+    protected async Task<T?> ReadNestedRowAsync<T>(DbDataReader reader, int rowIndex, CancellationToken token) where T : notnull
     {
         var innerReader = reader.GetData(rowIndex) ??
                           throw new ArgumentException("Invalid row index", nameof(rowIndex));
@@ -174,7 +174,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return default;
     }
 
-    protected T ReadNestedRow<T>(DbDataReader reader, int rowIndex)
+    protected T? ReadNestedRow<T>(DbDataReader reader, int rowIndex) where T : notnull
     {
         var innerReader = reader.GetData(rowIndex) ??
                           throw new ArgumentException("Invalid row index", nameof(rowIndex));
@@ -208,7 +208,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return session.StorageFor<T>();
     }
 
-    protected void RegisterResultType<T>(IMartenSession session)
+    protected void RegisterResultType<T>(IMartenSession session) where T : notnull
     {
         var selectClause = GetSelectClause<T>(session);
         Selectors.Add(selectClause.BuildSelector(session));

@@ -36,7 +36,7 @@ public interface IDocumentSession: IDocumentOperations
     /// <summary>
     ///     Access to the event store functionality
     /// </summary>
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Override whether or not this session honors optimistic concurrency checks

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -204,7 +205,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
         return this;
     }
 
-    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment topLevelWhere = null)
+    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment? topLevelWhere = null)
     {
         // First need to unnest the collection into its own recordset
         var unnest = new ExplodeCollectionStatement(session, statement, Member.ArrayLocator) { Where = topLevelWhere };

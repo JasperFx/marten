@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Subscriptions;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
@@ -31,6 +32,12 @@ namespace Marten.Events
         /// Enables global project projections (with single tenancy style) for events with conjoined tenancy
         /// </summary>
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+
+        /// <summary>
+        /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+        /// running in an Inline lifecycle. Default is false;
+        /// </summary>
+        bool EnableSideEffectsOnInlineProjections { get; set; }
 
         /// <summary>
         /// Opt into a performance optimization that directs Marten to always use the identity map for an

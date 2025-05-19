@@ -55,6 +55,52 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task bug_3392_can_with_deeper_boolean_nesting(){
+        //Test case based on https://github.com/JasperFx/marten/issues/3392
+        await buildUpTargetData();
+        bool isTrue = true;
+        bool isFalse = false;
+        var random = new Random();
+        var randomtarget = targets[random.Next(targets.Length)];
+        var intList = new List<int>(){randomtarget.Number};
+        //We are using the NestedObject collection here as we know it always has elements.
+        var somenestedtarget = randomtarget.NestedObject.Targets.First();
+
+        Expression<Func<Target, bool>> predicate = x => (isFalse || (isTrue && x.NestedObject.Targets.Any(z => z.AnotherString.Contains(somenestedtarget.AnotherString)))) && isTrue;
+
+        var result = await theSession.Query<Target>().Where(predicate).ToListAsync();
+        result.Count.ShouldBeGreaterThan(0);
+        result.ShouldAllBe(predicate);
+    }
+
+    [Fact]
+    public async Task bug_3710_can_query_childcollection_inside_nested_or(){
+        //Test case based on https://github.com/JasperFx/marten/issues/3710
+        await buildUpTargetData();
+        var random = new Random();
+        var randomtarget = targets[random.Next(targets.Length)];
+        // We are using the NestedObject collection here as we know it always has elements.
+        var somenestedtarget = randomtarget.NestedObject.Targets.First();
+        //This is a query on the form (subquery or something) and subquery
+        Expression<Func<Target, bool>> predicate = p => 
+                    (
+                        p.NestedObject.Targets.Any(x => x.String.Contains(somenestedtarget.String)) 
+                        || 
+                        p.String == randomtarget.String
+                    )
+                    && 
+                    p.NestedObject.Targets.Any(x => x.String.Contains(somenestedtarget.String));
+
+
+        var result = await theSession.Query<Target>()
+            .Where(predicate)
+            .ToListAsync();
+
+        result.Count.ShouldBeGreaterThan(0);
+        result.ShouldAllBe(predicate);
+    }
+
+    [Fact]
     public async Task can_query_with_containment_operator()
     {
         await buildUpTargetData();

@@ -31,8 +31,8 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
         base(parent, casing, member,
             PostgresqlProvider.Instance.GetDatabaseType(valueTypeInfo.SimpleType, EnumStorage.AsInteger))
     {
-        _valueSource = valueTypeInfo.ValueAccessor<TOuter, TInner>();
-        var converter = valueTypeInfo.CreateConverter<TOuter, TInner>();
+        _valueSource = valueTypeInfo.UnWrapper<TOuter, TInner>();
+        var converter = valueTypeInfo.CreateWrapper<TOuter, TInner>();
 
         if (typeof(TOuter).IsClass)
         {

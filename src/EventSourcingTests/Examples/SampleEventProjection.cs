@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -74,28 +75,29 @@ public class SampleEventProjection : EventProjection
 {
     public SampleEventProjection()
     {
-        // Inline document operations
-        Project<Event1>((e, ops) =>
-        {
-            // I'm creating a single new document, but
-            // I can do as many operations as I want
-            ops.Store(new Document1
-            {
-                Id = e.Id
-            });
-        });
-
-        Project<StopEvent1>((e, ops) =>
-        {
-            ops.Delete<Document1>(e.Id);
-        });
-
-        ProjectAsync<Event3>(async (e, ops) =>
-        {
-            var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
-            // now use the lookup document and the event to carry
-            // out other document operations against the ops parameter
-        });
+        throw new NotImplementedException();
+        // // Inline document operations
+        // Project<Event1>((e, ops) =>
+        // {
+        //     // I'm creating a single new document, but
+        //     // I can do as many operations as I want
+        //     ops.Store(new Document1
+        //     {
+        //         Id = e.Id
+        //     });
+        // });
+        //
+        // Project<StopEvent1>((e, ops) =>
+        // {
+        //     ops.Delete<Document1>(e.Id);
+        // });
+        //
+        // ProjectAsync<Event3>(async (e, ops) =>
+        // {
+        //     var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
+        //     // now use the lookup document and the event to carry
+        //     // out other document operations against the ops parameter
+        // });
     }
 
     // This is the conventional method equivalents to the inline calls above

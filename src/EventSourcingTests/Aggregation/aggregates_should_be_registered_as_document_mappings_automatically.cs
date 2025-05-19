@@ -1,5 +1,6 @@
 using System.Linq;
 using EventSourcingTests.Projections;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;

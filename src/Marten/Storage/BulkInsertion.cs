@@ -28,7 +28,7 @@ internal class BulkInsertion: IDisposable
     }
 
     public async Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode, int batchSize,
-        CancellationToken cancellation)
+        CancellationToken cancellation) where T : notnull
     {
         if (typeof(T) == typeof(object))
         {
@@ -58,7 +58,7 @@ internal class BulkInsertion: IDisposable
     }
 
     public async Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
-        BulkInsertMode mode, int batchSize, CancellationToken cancellation)
+        BulkInsertMode mode, int batchSize, CancellationToken cancellation) where T : notnull
     {
         if (typeof(T) == typeof(object))
         {
@@ -139,8 +139,10 @@ internal class BulkInsertion: IDisposable
     }
 
     private async Task bulkInsertDocumentsAsync<T>(IReadOnlyCollection<T> documents, int batchSize,
-        NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation)
+        NpgsqlConnection conn, BulkInsertMode mode, CancellationToken cancellation) where T : notnull
     {
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
+
         var provider = _tenant.Database.Providers.StorageFor<T>();
         var loader = provider.BulkLoader;
 
@@ -210,7 +212,7 @@ internal class BulkInsertion: IDisposable
             CancellationToken cancellation);
     }
 
-    internal class BulkInserter<T>: IBulkInserter
+    internal class BulkInserter<T>: IBulkInserter where T : notnull
     {
         private readonly T[] _documents;
 

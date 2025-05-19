@@ -2,22 +2,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 
 namespace Marten;
 
-public interface IProjectionStorage
-{
-
-}
-
 /// <summary>
 ///     Basic storage operations for document types, but cannot initiate any actual writes
 /// </summary>
-public interface IDocumentOperations: IQuerySession, IProjectionStorage
+public interface IDocumentOperations: IQuerySession, IStorageOperations
 {
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Mark this entity for deletion upon the next call to SaveChanges()
@@ -106,7 +102,7 @@ public interface IDocumentOperations: IQuerySession, IProjectionStorage
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="revision"></param>
-    void UpdateRevision<T>(T entity, int revision);
+    void UpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     /// Explicitly marks a document as needing to be updated and supplies the
@@ -117,7 +113,7 @@ public interface IDocumentOperations: IQuerySession, IProjectionStorage
     /// <param name="entity"></param>
     /// <param name="revision"></param>
     /// <typeparam name="T"></typeparam>
-    void TryUpdateRevision<T>(T entity, int revision);
+    void TryUpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     ///     Store an enumerable of potentially mixed documents
@@ -252,5 +248,5 @@ public interface IDocumentOperations: IQuerySession, IProjectionStorage
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public void UseIdentityMapFor<T>();
+    public void UseIdentityMapFor<T>() where T : notnull;
 }

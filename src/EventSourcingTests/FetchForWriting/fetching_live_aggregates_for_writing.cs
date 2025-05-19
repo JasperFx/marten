@@ -7,6 +7,7 @@ using EventSourcingTests.Projections;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -373,10 +374,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        theSession.Events.StartStream<CountedAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        var aggregate = await theSession.Events.FetchLatest<CountedAggregate>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
@@ -395,10 +396,10 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         var streamId = $"simple|{Guid.NewGuid()}";
-        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
+        theSession.Events.StartStream<CountedAsString>(streamId, new AEvent(), new AEvent(), new BEvent(), new CEvent(), new CEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        var aggregate = await theSession.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        var aggregate = await theSession.Events.FetchLatest<CountedAsString>(streamId);
         aggregate.ACount.ShouldBe(2);
         aggregate.BCount.ShouldBe(1);
         aggregate.CCount.ShouldBe(3);
@@ -642,30 +643,19 @@ public class Totals
     public int Count { get; set; }
 }
 
-public class TotalsProjection: MultiStreamProjection<Totals, Guid>, IEventSlicer<Totals, Guid>
+public class TotalsProjection: MultiStreamProjection<Totals, Guid>
 {
     public TotalsProjection()
     {
-        CustomGrouping(this);
-    }
+        CustomGrouping((_, events, group) =>
+        {
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
+            group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
 
-    [MartenIgnore]
-    public async ValueTask<IReadOnlyList<EventSlice<Totals, Guid>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
-
-    [MartenIgnore]
-    public ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
-    {
-        var group = new TenantSliceGroup<Totals, Guid>(querySession, querySession.TenantId);
-
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is AEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is BEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is CEvent));
-        group.AddEvents(Guid.NewGuid(), events.Where(x => x.Data is DEvent));
-
-        return new ValueTask<IReadOnlyList<TenantSliceGroup<Totals, Guid>>>([group]);
+            return Task.CompletedTask;
+        });
     }
 
     public void Apply(AEvent e, Totals totals) => totals.Count++;

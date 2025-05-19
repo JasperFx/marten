@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -190,7 +191,7 @@ public class AdvancedOperations
             .Projections
             .All
             .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
-            .SelectMany(x => x.AsyncProjectionShards(_store))
+            .SelectMany(x => x.Shards())
             .Select(x => x.Name)
             .ToList();
     }
@@ -208,7 +209,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
@@ -225,7 +226,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 

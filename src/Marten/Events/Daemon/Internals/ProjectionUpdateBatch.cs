@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -6,7 +7,9 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
@@ -23,7 +26,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
-    private readonly DaemonSettings _settings;
+    private readonly ProjectionOptions _settings;
     private readonly CancellationToken _token;
     private OperationPage? _current;
     private DocumentSessionBase? _session;
@@ -39,7 +42,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public bool ShouldApplyListeners { get; set; }
 
-    internal ProjectionUpdateBatch(DaemonSettings settings,
+    internal ProjectionUpdateBatch(ProjectionOptions settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
     {
         _settings = settings;
@@ -202,7 +205,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    public void PurgeOperations<T, TId>(TId id) where T : notnull where TId: notnull
     {
         // Do nothing here
     }
@@ -337,6 +340,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private IMessageBatch? _batch;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
     {
         if (_batch != null) return _batch;
@@ -357,4 +361,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             _semaphore.Release();
         }
     }
+
+
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -41,11 +42,6 @@ class Build : NukeBuild
         .DependsOn(TestNodaTime)
         .DependsOn(TestAspnetcore);
 
-    Target TestExtensionsIncludingPlv8 => _ => _
-        .DependsOn(TestNodaTime)
-        .DependsOn(TestAspnetcore)
-        .DependsOn(TestPlv8);
-
     Target Init => _ => _
         .Executes(() =>
         { 
@@ -60,11 +56,6 @@ class Build : NukeBuild
     Target NpmInstall => _ => _
         .Executes(() => NpmTasks.NpmInstall());
    
-    Target Mocha => _ => _
-        .ProceedAfterFailure()
-        .DependsOn(NpmInstall)
-        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("test")));
-
     Target Compile => _ => _
         .DependsOn(Restore)
         .Executes(() =>
@@ -216,19 +207,6 @@ class Build : NukeBuild
                 .SetFramework(Framework));
         });
 
-    Target TestPlv8 => _ => _
-        .ProceedAfterFailure()
-        .DependsOn(Compile)
-        .Executes(() =>
-        {
-            DotNetTest(c => c
-                .SetProjectFile("src/Marten.PLv8.Testing")
-                .SetConfiguration(Configuration)
-                .EnableNoBuild()
-                .EnableNoRestore()
-                .SetFramework(Framework));
-        });
-
     Target TestCodeGen => _ => _
         .ProceedAfterFailure()
         .Executes(() =>
@@ -342,18 +320,89 @@ class Build : NukeBuild
             {
                 "./src/Marten",
                 "./src/Marten.NodaTime",
-                "./src/Marten.PLv8",
                 "./src/Marten.AspNetCore"
             };
 
             foreach (var project in projects)
             {
                 DotNetPack(s => s
-                    .SetProject(project)
+                    .SetProject(project) 
                     .SetOutputDirectory("./artifacts")
                     .SetConfiguration(Configuration.Release));
             }
         });
+
+    private Dictionary<string, string[]> ReferencedProjects = new()
+    {
+        { "jasperfx", ["JasperFx", "JasperFx.Events", "EventTests", "JasperFx.RuntimeCompiler"] },
+        { "weasel", ["Weasel.Core", "Weasel.Postgresql"] },
+        {"lamar", ["Lamar", "Lamar.Microsoft.DependencyInjection"]}
+    };
+
+    string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
+    
+    Target Attach => _ => _.Executes(() =>
+    {
+        foreach (var pair in ReferencedProjects)
+        {
+            foreach (var projectName in pair.Value)
+            {
+                addProject(pair.Key, projectName);
+            }
+        }
+
+        var marten = Solution.GetProject("Marten").Path;
+        foreach (var nuget in Nugets)
+        {
+            DotNet($"remove {marten} package {nuget}");
+        }
+    });
+
+    Target Detach => _ => _.Executes(() =>
+    {
+        foreach (var pair in ReferencedProjects)
+        {
+            foreach (var projectName in pair.Value)
+            {
+                removeProject(pair.Key, projectName);
+            }
+        }
+        
+        var marten = Solution.GetProject("Marten").Path;
+        foreach (var nuget in Nugets)
+        {
+            DotNet($"add {marten} package {nuget} --prerelease");
+        }
+    });
+
+    private void addProject(string repository, string projectName)
+    {
+        var path =  Path.GetFullPath($"../{repository}/src/{projectName}/{projectName}.csproj");;
+        var slnPath = Solution.Path;
+        DotNet($"sln {slnPath} add {path} --solution-folder Attached");
+        
+        if (Nugets.Contains(projectName))
+        {
+            var marten = Solution.GetProject("Marten").Path;
+            DotNet($"add {marten} reference {path}");
+        }
+    }
+    
+    private void removeProject(string repository, string projectName)
+    {
+        var path =  Path.GetFullPath($"../{repository}/src/{projectName}/{projectName}.csproj");
+
+        if (Nugets.Contains(projectName))
+        {
+            var marten = Solution.GetProject("Marten").Path;
+            DotNet($"remove {marten} reference {path}");
+        }
+        
+        var slnPath = Solution.Path;
+        DotNet($"sln {slnPath} remove {path}");
+        
+
+    }
 
     private void WaitForDatabaseToBeReady()
     {
@@ -366,7 +415,7 @@ class Build : NukeBuild
                     conn.Open();
 
                     var cmd = conn.CreateCommand();
-                    cmd.CommandText = "create extension if not exists plv8";
+                    cmd.CommandText = "SELECT 1";
                     cmd.ExecuteNonQuery();
 
                     Log.Information("Postgresql is up and ready!");
@@ -422,7 +471,6 @@ class Build : NukeBuild
             "src/EventSourcingTests",
             "src/DocumentDbTests",
             "src/CoreTests",
-            "src/Marten.PLv8.Testing",
             "src/Marten.AspNetCore.Testing",
             "src/ValueTypeTests",
             "src/LinqTests"

@@ -50,7 +50,7 @@ internal static class EventDocumentStorageGenerator
 
         Debug.WriteLine(builderType.SourceCode);
 
-        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
+        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType!, options)!;
     }
 
     public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)

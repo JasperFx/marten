@@ -1,13 +1,14 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
@@ -42,11 +43,16 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+
+                    // If you use compiled queries, you will need to register the
+                    // compiled query types with Marten ahead of time
+                    opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
                 });
 
                 services.AddMarten(opts =>
                 {
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
                     opts.DisableNpgsqlLogging = true;
@@ -123,11 +129,11 @@ public class Trip
     }
 }
 
-public class SimpleProjection: SingleStreamProjection<MyAggregate>
+public class SimpleProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public SimpleProjection()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     public MyAggregate Create(CreateEvent @event)

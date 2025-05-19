@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -827,6 +828,44 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
+    public async Task remove_simple_element_by_predicate(){
+        var target = Target.Random();
+        var initialCount = target.NumberArray.Length;
+        var random = new Random();
+        var toRemove = target.NumberArray[random.Next(0, initialCount)];
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.NumberArray, x => x == toRemove);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var target2 = await query.LoadAsync<Target>(target.Id);
+        target2.NumberArray.ShouldNotContain(t => t == toRemove);
+
+    }
+
+    [Fact]
+    public async Task remove_complex_nested_elements_by_predicate(){
+        var target = Target.Random(true);
+        var random = new Random();
+        var initiallength = target.NestedObject.Targets.Length;
+        var randomitem = target.NestedObject.Targets[random.Next(0, initiallength)];
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.NestedObject.Targets, x => x.Id == randomitem.Id);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var target2 = await query.LoadAsync<Target>(target.Id);
+        target2.NestedObject.Targets.Length.ShouldBe(initiallength - 1);
+        target2.NestedObject.Targets.ShouldNotContain(x => x.Id == randomitem.Id);
+    }
+
+    [Fact]
     public async Task throw_exception_if_a_method_call_is_used_for_remove_complex_element_by_predicate()
     {
         var target = Target.Random();
@@ -1162,10 +1201,9 @@ public class patching_api: OneOffConfigurationsContext
 
         public string Name { get; set; }
 
-        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-            CancellationToken cancellation)
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
         {
-            var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+            var questEvents = events.Select(s => s.Data);
 
             foreach (var @event in questEvents)
             {

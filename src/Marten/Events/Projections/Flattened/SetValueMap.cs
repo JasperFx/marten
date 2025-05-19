@@ -35,10 +35,6 @@ internal class SetStringValueMap: IColumnMap
         return $"'{_value}'";
     }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        throw new NotSupportedException();
-    }
 }
 
 internal class SetIntValueMap: IColumnMap
@@ -72,8 +68,4 @@ internal class SetIntValueMap: IColumnMap
         return _value.ToString();
     }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        throw new NotSupportedException();
-    }
 }

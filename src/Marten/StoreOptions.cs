@@ -9,10 +9,10 @@ using System.Text.Json;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -61,7 +61,7 @@ public enum TenantIdStyle
 ///     necessary to customize and bootstrap a working
 ///     DocumentStore
 /// </summary>
-public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
+public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver, IDescribeMyself
 {
     public const int DefaultTimeout = 5;
     internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
@@ -265,6 +265,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
+    [ChildDescription]
     public ProjectionOptions Projections => _projections;
 
     /// <summary>
@@ -280,7 +281,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
-    [IgnoreDescription]
+    [ChildDescription]
     public StorageFeatures Storage => _storage;
 
     internal Action<IDatabaseCreationExpressions>? CreateDatabases
@@ -1009,6 +1010,52 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             Listeners.Add(metrics);
         }
     }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var options = new OptionsDescription(this);
+
+        // var set = options.AddChildSet("Document Types");
+        // foreach (var mapping in Storage.AllDocumentMappings)
+        // {
+        //     set.Rows.Add(new OptionsDescription(mapping));
+        // }
+
+        /*
+    │   ├── Alias: day
+           │   ├── Casing: Default
+           │   ├── CodeGen: Marten.Schema.DocumentCodeGen
+           │   ├── DatabaseSchemaName: cli
+           │   ├── DdlTemplate: None
+           │   ├── DeleteStyle: Remove
+           │   ├── DisablePartitioningIfAny: False
+           │   ├── DocumentType: DaemonTests.Aggregations.Day
+           │   ├── EnumStorage: AsInteger
+           │   ├── HiloSettings: None
+           │   ├── IdMember: Int32 Id
+           │   ├── IdStrategy: Marten.Schema.Identity.Sequences.HiloIdGeneration
+           │   ├── IdType: int
+           │   ├── IgnorePartitions: False
+           │   ├── InsertFunction: cli.mt_insert_day
+           │   ├── Metadata: Marten.Schema.DocumentMetadataCollection
+           │   ├── OverwriteFunction: cli.mt_overwrite_day
+           │   ├── Partitioning: None
+           │   ├── PrimaryKeyTenancyOrdering: TenantId_Then_Id
+           │   ├── PropertySearching: JSON_Locator_Only
+           │   ├── StructuralTyped: False
+           │   ├── SubClasses: Marten.Schema.SubClasses
+           │   ├── TableName: cli.mt_doc_day
+           │   ├── TenancyStyle: Single
+           │   ├── UpdateFunction: cli.mt_update_day
+           │   ├── UpsertFunction: cli.mt_upsert_day
+           │   ├── UseNumericRevisions: True
+           │   ├── UseOptimisticConcurrency: False
+           │   └── UseVersionFromMatchingStream: False
+
+         */
+
+        return options;
+    }
 }
 
 internal class LambdaDocumentPolicy: IDocumentPolicy
@@ -1043,6 +1090,11 @@ public interface IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     bool DefaultTenantUsageEnabled { get; }
+
+    /// <summary>
+    ///     Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; }
 
 }
 
@@ -1092,6 +1144,7 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
     ///     type as well
     /// </summary>
+    [ChildDescription]
     public HiloSettings HiloSequenceDefaults { get; } = new();
 
 
@@ -1099,11 +1152,13 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Allows you to modify how the DDL for document tables and upsert functions is
     ///     written
     /// </summary>
+    [IgnoreDescription]
     public PostgresqlMigrator Migrator { get; } = new();
 
     /// <summary>
     /// Configuration options when using a <see cref="NpgsqlMultiHostDataSource"/>
     /// </summary>
+    [ChildDescription]
     public MultiHostSettings MultiHostSettings { get; } = new();
 
     /// <summary>
@@ -1127,4 +1182,9 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; set; }
 }

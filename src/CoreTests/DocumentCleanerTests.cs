@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -147,10 +148,10 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection1", "All"), 1000)));
+            new EventRange(new ShardName("Projection1", "All", 1), 1000)));
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection2", "All"), 1000)));
+            new EventRange(new ShardName("Projection2", "All", 1), 1000)));
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted());

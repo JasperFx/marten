@@ -1,4 +1,5 @@
 using System;
+using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Exceptions;
 using Shouldly;

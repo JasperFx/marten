@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -102,7 +103,7 @@ public partial class QuerySession
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public virtual void UseIdentityMapFor<T>()
+    public virtual void UseIdentityMapFor<T>() where T : notnull
     {
         // Nothing by default
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -15,7 +16,7 @@ namespace Marten;
 
 public partial class StoreOptions
 {
-    internal IDocumentStorage<TDoc, TId> ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking tracking)
+    internal IDocumentStorage<TDoc, TId> ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking tracking) where TDoc : notnull where TId : notnull
     {
         var provider = Providers.StorageFor<TDoc>();
         var raw = provider.Select(tracking);
@@ -35,7 +36,7 @@ public partial class StoreOptions
 
     internal IIdGeneration DetermineIdStrategy(Type documentType, MemberInfo idMember)
     {
-        var idType = idMember.GetMemberType();
+        var idType = idMember.GetMemberType()!;
 
         if (!idMemberIsSettable(idMember) && !FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {

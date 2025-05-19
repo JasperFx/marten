@@ -20,128 +20,128 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal;
 
-internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>
+internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
-    private readonly IDocumentStorage<TDoc, TValueType> _inner;
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
 
     public ValueTypeIdentifiedDocumentStorage(ValueTypeInfo valueTypeInfo, IDocumentStorage<TDoc, TValueType> inner)
     {
-        _inner = inner;
+        Inner = inner;
 
-        _converter = valueTypeInfo.CreateConverter<TValueType, TSimple>();
-        _unwrapper = valueTypeInfo.ValueAccessor<TValueType, TSimple>();
+        _converter = valueTypeInfo.CreateWrapper<TValueType, TSimple>();
+        _unwrapper = valueTypeInfo.UnWrapper<TValueType, TSimple>();
     }
 
-    public void Apply(ICommandBuilder builder) => _inner.Apply(builder);
+    public IDocumentStorage<TDoc, TValueType> Inner { get; }
 
-    public string FromObject => _inner.FromObject;
-    public Type SelectedType => _inner.SelectedType;
-    public string[] SelectFields() => _inner.SelectFields();
+    public void Apply(ICommandBuilder builder) => Inner.Apply(builder);
 
-    public ISelector BuildSelector(IMartenSession session) => _inner.BuildSelector(session);
+    public string FromObject => Inner.FromObject;
+    public Type SelectedType => Inner.SelectedType;
+    public string[] SelectFields() => Inner.SelectFields();
+
+    public ISelector BuildSelector(IMartenSession session) => Inner.BuildSelector(session);
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
-        => _inner.BuildHandler<T>(session, topStatement, currentStatement);
+        ISqlFragment currentStatement) where T : notnull => Inner.BuildHandler<T>(session, topStatement, currentStatement);
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
-        => _inner.UseStatistics(statistics);
+        => Inner.UseStatistics(statistics);
 
-    public Type SourceType => _inner.SourceType;
-    public Type IdType => _inner.IdType;
-    public bool UseOptimisticConcurrency => _inner.UseOptimisticConcurrency;
-    public IOperationFragment DeleteFragment => _inner.DeleteFragment;
-    public IOperationFragment HardDeleteFragment => _inner.HardDeleteFragment;
-    public IReadOnlyList<DuplicatedField> DuplicatedFields => _inner.DuplicatedFields;
-    public DbObjectName TableName => _inner.TableName;
-    public Type DocumentType => _inner.DocumentType;
-    public TenancyStyle TenancyStyle => _inner.TenancyStyle;
+    public Type SourceType => Inner.SourceType;
+    public Type IdType => Inner.IdType;
+    public bool UseOptimisticConcurrency => Inner.UseOptimisticConcurrency;
+    public IOperationFragment DeleteFragment => Inner.DeleteFragment;
+    public IOperationFragment HardDeleteFragment => Inner.HardDeleteFragment;
+    public IReadOnlyList<DuplicatedField> DuplicatedFields => Inner.DuplicatedFields;
+    public DbObjectName TableName => Inner.TableName;
+    public Type DocumentType => Inner.DocumentType;
+    public TenancyStyle TenancyStyle => Inner.TenancyStyle;
 
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
-        => _inner.TruncateDocumentStorageAsync(database, ct);
+        => Inner.TruncateDocumentStorageAsync(database, ct);
 
     public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
-        => _inner.FilterDocuments(query, session);
+        => Inner.FilterDocuments(query, session);
 
     public ISqlFragment DefaultWhereFragment()
-        => _inner.DefaultWhereFragment();
+        => Inner.DefaultWhereFragment();
 
-    public IQueryableMemberCollection QueryMembers => _inner.QueryMembers;
-    public ISelectClause SelectClauseWithDuplicatedFields => _inner.SelectClauseWithDuplicatedFields;
-    public bool UseNumericRevisions => _inner.UseNumericRevisions;
-    public object RawIdentityValue(object id) => _inner.RawIdentityValue(id);
+    public IQueryableMemberCollection QueryMembers => Inner.QueryMembers;
+    public ISelectClause SelectClauseWithDuplicatedFields => Inner.SelectClauseWithDuplicatedFields;
+    public bool UseNumericRevisions => Inner.UseNumericRevisions;
+    public object RawIdentityValue(object id) => Inner.RawIdentityValue(id);
 
-    public object IdentityFor(TDoc document) => _inner.IdentityFor(document);
+    public object IdentityFor(TDoc document) => Inner.IdentityFor(document);
 
-    public Guid? VersionFor(TDoc document, IMartenSession session) => _inner.VersionFor(document, session);
+    public Guid? VersionFor(TDoc document, IMartenSession session) => Inner.VersionFor(document, session);
 
-    public void Store(IMartenSession session, TDoc document) => _inner.Store(session, document);
+    public void Store(IMartenSession session, TDoc document) => Inner.Store(session, document);
 
-    public void Store(IMartenSession session, TDoc document, Guid? version) => _inner.Store(session, document, version);
+    public void Store(IMartenSession session, TDoc document, Guid? version) => Inner.Store(session, document, version);
 
-    public void Store(IMartenSession session, TDoc document, int revision) => _inner.Store(session, document, revision);
+    public void Store(IMartenSession session, TDoc document, int revision) => Inner.Store(session, document, revision);
 
-    public void Eject(IMartenSession session, TDoc document) => _inner.Eject(session, document);
+    public void Eject(IMartenSession session, TDoc document) => Inner.Eject(session, document);
 
     public IStorageOperation Update(TDoc document, IMartenSession session, string tenantId) =>
-        _inner.Update(document, session, tenantId);
+        Inner.Update(document, session, tenantId);
 
     public IStorageOperation Insert(TDoc document, IMartenSession session, string tenantId)
-        => _inner.Insert(document, session, tenantId);
+        => Inner.Insert(document, session, tenantId);
 
     public IStorageOperation Upsert(TDoc document, IMartenSession session, string tenantId)
-        => _inner.Upsert(document, session, tenantId);
+        => Inner.Upsert(document, session, tenantId);
 
     public IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenantId)
-        => _inner.Overwrite(document, session, tenantId);
+        => Inner.Overwrite(document, session, tenantId);
 
     public IDeletion DeleteForDocument(TDoc document, string tenantId)
-        => _inner.DeleteForDocument(document, tenantId);
+        => Inner.DeleteForDocument(document, tenantId);
 
     public void EjectById(IMartenSession session, object id)
-        => _inner.EjectById(session, id);
+        => Inner.EjectById(session, id);
 
     public void RemoveDirtyTracker(IMartenSession session, object id)
-        => _inner.RemoveDirtyTracker(session, id);
+        => Inner.RemoveDirtyTracker(session, id);
 
     public IDeletion HardDeleteForDocument(TDoc document, string tenantId)
-        => _inner.HardDeleteForDocument(document, tenantId);
+        => Inner.HardDeleteForDocument(document, tenantId);
 
     public void SetIdentityFromString(TDoc document, string identityString)
-        => _inner.SetIdentityFromString(document, identityString);
+        => Inner.SetIdentityFromString(document, identityString);
 
     public void SetIdentityFromGuid(TDoc document, Guid identityGuid)
-        => _inner.SetIdentityFromGuid(document, identityGuid);
+        => Inner.SetIdentityFromGuid(document, identityGuid);
 
     public void SetIdentity(TDoc document, TSimple identity)
-        => _inner.SetIdentity(document, _converter(identity));
+        => Inner.SetIdentity(document, _converter(identity));
 
     public IDeletion DeleteForId(TSimple id, string tenantId)
-        => _inner.DeleteForId(_converter(id), tenantId);
+        => Inner.DeleteForId(_converter(id), tenantId);
 
-    public Task<TDoc> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
-        => _inner.LoadAsync(_converter(id), session, token);
+    public Task<TDoc?> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
+        => Inner.LoadAsync(_converter(id), session, token);
 
     public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IMartenSession session, CancellationToken token)
-        => _inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);
+        => Inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);
 
     public TSimple AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
-        => _unwrapper(_inner.AssignIdentity(document, tenantId, database));
+        => _unwrapper(Inner.AssignIdentity(document, tenantId, database));
 
-    public TSimple Identity(TDoc document) => _unwrapper(_inner.Identity(document));
+    public TSimple Identity(TDoc document) => _unwrapper(Inner.Identity(document));
 
-    public ISqlFragment ByIdFilter(TSimple id) => _inner.ByIdFilter(_converter(id));
+    public ISqlFragment ByIdFilter(TSimple id) => Inner.ByIdFilter(_converter(id));
 
     public IDeletion HardDeleteForId(TSimple id, string tenantId)
-        => _inner.HardDeleteForId(_converter(id), tenantId);
+        => Inner.HardDeleteForId(_converter(id), tenantId);
 
     public NpgsqlCommand BuildLoadCommand(TSimple id, string tenantId)
-        => _inner.BuildLoadCommand(_converter(id), tenantId);
+        => Inner.BuildLoadCommand(_converter(id), tenantId);
 
     public NpgsqlCommand BuildLoadManyCommand(TSimple[] ids, string tenantId)
-        => _inner.BuildLoadManyCommand(ids.Select(_converter).ToArray(), tenantId);
+        => Inner.BuildLoadManyCommand(ids.Select(_converter).ToArray(), tenantId);
 
     public object RawIdentityValue(TSimple id) => id;
 }

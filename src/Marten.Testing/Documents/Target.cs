@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
-using JasperFx.Core;
 using Microsoft.FSharp.Core;
 
 namespace Marten.Testing.Documents;
@@ -19,7 +18,10 @@ public enum Colors
 
 public class Target
 {
-    private static readonly Random _random = new(67);
+    public record Nested(Target[] Targets);
+
+    public Nested NestedObject { get; set; }
+    private static readonly Random _random = new Random(67);
 
     private static readonly string[] _strings =
     {
@@ -197,11 +199,12 @@ public class Target
 
         if (value > 15)
         {
-            target.NullableDateOffset = DateTimeOffset.Now.Subtract(_random.Next(-60, 60).Seconds());
+            target.NullableDateOffset = DateTimeOffset.Now.Subtract( TimeSpan.FromSeconds(_random.Next(-60, 60)));
         }
 
         if (deep)
         {
+            target.NestedObject = new Nested(new []{Random(), Random()});
             target.Inner = Random();
 
             var number = _random.Next(1, 10);
@@ -228,14 +231,6 @@ public class Address
 {
     public Address()
     {
-    }
-
-    public Address(string text)
-    {
-        var parts = text.ToDelimitedArray();
-        Address1 = parts[0];
-        City = parts[1];
-        StateOrProvince = parts[2];
     }
 
     public string Address1 { get; set; }

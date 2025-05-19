@@ -1,4 +1,5 @@
-﻿using Marten;
+﻿using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -53,7 +54,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
 #region sample_Quest
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 
-public sealed class QuestProjection: SingleStreamProjection<Quest>
+public sealed class QuestProjection: SingleStreamProjection<Quest, Guid>
 {
     public static Quest Create(QuestStarted started) => new(started.QuestId, [], [], started.Name, false);
     public static Quest Apply(MembersJoined joined, Quest party) =>

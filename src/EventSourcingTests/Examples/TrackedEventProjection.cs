@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Immutable;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 
@@ -52,26 +53,27 @@ public class TrackedEventProjection: EventProjection
 {
     public TrackedEventProjection()
     {
-        ProjectAsync<Run>(async (run, ops) =>
-        {
-            var game = await ops.LoadAsync<BaseballGame>(run.GameId);
-
-            var updatedGame = run.Team switch
-            {
-                Team.HomeTeam => game with
-                {
-                    HomeRuns = game.HomeRuns + 1,
-                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
-                },
-                Team.VisitingTeam => game with
-                {
-                    VisitorRuns = game.VisitorRuns + 1,
-                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
-                },
-            };
-
-            ops.Store(updatedGame);
-        });
+        throw new NotImplementedException("Redo");
+        // ProjectAsync<Run>(async (run, ops) =>
+        // {
+        //     var game = await ops.LoadAsync<BaseballGame>(run.GameId);
+        //
+        //     var updatedGame = run.Team switch
+        //     {
+        //         Team.HomeTeam => game with
+        //         {
+        //             HomeRuns = game.HomeRuns + 1,
+        //             PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+        //         },
+        //         Team.VisitingTeam => game with
+        //         {
+        //             VisitorRuns = game.VisitorRuns + 1,
+        //             PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+        //         },
+        //     };
+        //
+        //     ops.Store(updatedGame);
+        // });
     }
 }
 

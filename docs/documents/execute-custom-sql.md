@@ -17,5 +17,5 @@ theSession.QueueSqlCommand("insert into data (raw_value) values (?::jsonb)", jso
 // Use ^ as the parameter placeholder
 theSession.QueueSqlCommand('^', "insert into data (raw_value) values (^::jsonb)", json);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/executing_arbitrary_sql_as_part_of_transaction.cs#L39-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_queuesqlcommand' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/executing_arbitrary_sql_as_part_of_transaction.cs#L40-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_queuesqlcommand' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

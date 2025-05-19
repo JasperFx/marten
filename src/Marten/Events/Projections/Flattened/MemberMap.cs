@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
@@ -24,6 +25,8 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
 
         ColumnName = tableColumn ?? _members.Select(x => x.Name.ToSnakeCase()).Join("_");
     }
+
+    public MemberInfo[] Members => _members;
 
     public string ColumnName { get; }
 
@@ -74,8 +77,4 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
         }
     }
 
-    public string ToValueAccessorCode(Variable eventVariable)
-    {
-        return $"{eventVariable.Usage}.Data.{_members.Select(x => x.Name).Join("?.")}";
-    }
 }

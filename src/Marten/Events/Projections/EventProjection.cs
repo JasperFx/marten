@@ -1,18 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
-using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
-using Marten.Events.CodeGeneration;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
+using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
@@ -20,80 +15,9 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     This is the "do anything" projection type
 /// </summary>
-public abstract class EventProjection: ProjectionBase, IValidatedProjection, IProjection, IProjectionSource, IProjectionSchemaSource, IProjectionStorage<IDocumentOperations>
+public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOperations, IQuerySession>,
+    IValidatedProjection<StoreOptions>, IProjectionSchemaSource, IMartenRegistrable
 {
-    private readonly EventProjectionApplication<IDocumentOperations> _application;
-
-    public EventProjection()
-    {
-        _application = new EventProjectionApplication<IDocumentOperations>(this);
-
-        IncludedEventTypes.Fill(_application.AllEventTypes());
-
-        foreach (var publishedType in _application.PublishedTypes())
-        {
-            RegisterPublishedType(publishedType);
-        }
-
-        ProjectionName = GetType().FullNameInCode();
-    }
-
-    public void Store<T>(IDocumentOperations ops, T entity)
-    {
-        ops.Store(entity);
-    }
-
-    public Type ProjectionType => GetType();
-    public AsyncOptions Options { get; } = new();
-    public IReadOnlyList<AsyncProjectionShard> AsyncProjectionShards(DocumentStore store)
-    {
-        return new List<AsyncProjectionShard> { new(this)
-        {
-            IncludeArchivedEvents = IncludeArchivedEvents,
-            EventTypes = IncludedEventTypes,
-            StreamType = StreamType
-        } };
-    }
-
-    public ValueTask<EventRangeGroup> GroupEvents(DocumentStore store, IMartenDatabase daemonDatabase, EventRange range,
-        CancellationToken cancellationToken)
-    {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                this,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
-    }
-
-    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
-    {
-        foreach (var e in streams.SelectMany(x => x.Events).OrderBy(x => x.Sequence))
-        {
-            await _application.ApplyAsync(operations, e, cancellation).ConfigureAwait(false);
-        }
-    }
-
-    public IProjection Build(DocumentStore store)
-    {
-        return this;
-    }
-
-    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor executor)
-    {
-        executor = default;
-        return false;
-    }
-
-    public SubscriptionDescriptor Describe()
-    {
-        return new SubscriptionDescriptor(this, SubscriptionType.EventProjection);
-    }
-
     /// <summary>
     ///     Use to register additional or custom schema objects like database tables that
     ///     will be used by this projection. Originally meant to support projecting to flat
@@ -101,32 +25,97 @@ public abstract class EventProjection: ProjectionBase, IValidatedProjection, IPr
     /// </summary>
     public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
 
+    public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>().As<EventProjection>();
+                    configure?.Invoke(projection);
+
+                    opts.Projections.Add(projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
+    public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure)
+        where TStore : IDocumentStore where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    var wrapper =
+                        new ProjectionWrapper<IDocumentOperations, IQuerySession>((IProjection)projection, lifecycle);
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add(wrapper, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
     IEnumerable<ISchemaObject> IProjectionSchemaSource.CreateSchemaObjects(EventGraph events)
     {
         return SchemaObjects;
     }
 
-    [MartenIgnore]
-    public void Project<TEvent>(Action<TEvent, IDocumentOperations> project) where TEvent : class
-    {
-        _application.Project<TEvent>(project);
-    }
-
-    [MartenIgnore]
-    public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project) where TEvent : class
-    {
-        _application.ProjectAsync<TEvent>(project);
-    }
-
+    [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        _application.AssertMethodValidity();
+        AssembleAndAssertValidity();
 
         return ArraySegment<string>.Empty;
     }
 
-    internal override void AssembleAndAssertValidity()
+    // TODO upstream change
+    protected sealed override void storeEntity<T>(IDocumentOperations ops, T entity)
     {
-        _application.AssertMethodValidity();
+        ops.Store(entity);
+    }
+
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor? executor)
+    {
+        executor = default;
+        return false;
     }
 }

@@ -6,10 +6,10 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Lamar;
 using Marten;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Internal;
 using Marten.Services;
 using Marten.Testing;
@@ -27,11 +27,6 @@ namespace StressTests;
 public class using_multiple_document_stores_in_same_host : IDisposable
 {
     private readonly Container theContainer;
-
-    // TODO -- need to register additional ICodeFileCollection for the new store
-    // TODO -- chained option to add an async daemon for each store
-    // TODO -- post-configure options
-    // TODO -- LATER, chain IInitialData
 
     public using_multiple_document_stores_in_same_host()
     {
@@ -394,6 +389,41 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         await container.GetAllInstances<IHostedService>().First().StartAsync(default);
 
         await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+    }
+
+    [Fact]
+    public async Task jasperfx_options_usage_with_ancillary_stores()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.ApplyChangesLockId += 19;
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<User>();
+                        opts.DatabaseSchemaName = "first_store";
+                    })
+                    .ApplyAllDatabaseChangesOnStartup();
+
+                services.AddJasperFx(opts =>
+                {
+                    opts.Development.AutoCreate = AutoCreate.None;
+                    opts.GeneratedCodeOutputPath = "/";
+                    opts.Development.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                    // Default is true
+                    opts.Development.SourceCodeWritingEnabled = false;
+                });
+            })
+            .UseEnvironment("Development").StartAsync();
+
+        var store = (DocumentStore)host.DocumentStore<IFirstStore>();
+        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+        store.Options.SourceCodeWritingEnabled.ShouldBeFalse();
+        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
     }
 }
 

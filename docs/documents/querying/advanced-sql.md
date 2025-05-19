@@ -149,7 +149,7 @@ var schema = theSession.DocumentStore.Options.Schema;
 schema.DatabaseSchemaName.ShouldBe("public");
 schema.EventsSchemaName.ShouldBe("public");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L24-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L25-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For sync queries you can use the `AdvancedSql.Query<T>(...)` overloads.
@@ -208,7 +208,7 @@ var schema = theSession.DocumentStore.Options.Schema;
 schema.DatabaseSchemaName.ShouldBe("public");
 schema.EventsSchemaName.ShouldBe("public");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L24-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L25-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And documents/aggregates:
@@ -227,7 +227,7 @@ schema.For<Account>(qualified: false).ShouldBe("mt_doc_account");
 schema.For<Company>(qualified: false).ShouldBe("mt_doc_company");
 schema.For<User>(qualified: false).ShouldBe("mt_doc_user");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L93-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L94-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And also marten event tables:
@@ -243,5 +243,5 @@ schema.ForStreams(qualified: false).ShouldBe("mt_streams");
 schema.ForEvents(qualified: false).ShouldBe("mt_events");
 schema.ForEventProgression(qualified: false).ShouldBe("mt_event_progression");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L134-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_event_tables' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L135-L144' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_event_tables' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

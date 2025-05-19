@@ -53,7 +53,7 @@ internal class StringEndsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
         builder.Append(_member.RawLocator);
         builder.Append(_operator);
 
-        var mask = "%" + StringComparisonParser.EscapeValue(_rawValue.ToString());
+        var mask = "%" + StringComparisonParser.EscapeValue(_rawValue.ToString()!);
 
         builder.AppendParameter(mask);
 

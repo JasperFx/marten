@@ -5,6 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Daemon.HighWater;
+using JasperFx.Events.Projections;
 using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
 using Timer = System.Timers.Timer;
@@ -39,9 +42,9 @@ internal class HighWaterAgent: IDisposable
         _timer = new Timer(_settings.HealthCheckPollingTime.TotalMilliseconds) { AutoReset = true };
         _timer.Elapsed += TimerOnElapsed;
 
-        _spanName = detector.DatabaseName.EqualsIgnoreCase("Marten") ? "marten.daemon.highwatermark" : $"marten.{_detector.DatabaseName.ToLowerInvariant()}.daemon.highwatermark";
+        _spanName = detector.DatabaseIdentity.EqualsIgnoreCase("Marten") ? "marten.daemon.highwatermark" : $"marten.{_detector.DatabaseIdentity.ToLowerInvariant()}.daemon.highwatermark";
 
-        var meterName = detector.DatabaseName.EqualsIgnoreCase("Marten") ? "marten.daemon.skipping" : $"marten.{_detector.DatabaseName.ToLowerInvariant()}.daemon.skipping";
+        var meterName = detector.DatabaseIdentity.EqualsIgnoreCase("Marten") ? "marten.daemon.skipping" : $"marten.{_detector.DatabaseIdentity.ToLowerInvariant()}.daemon.skipping";
         _skipping = meter.CreateCounter<int>(meterName);
     }
 
@@ -68,7 +71,7 @@ internal class HighWaterAgent: IDisposable
 
         _timer.Start();
 
-        _logger.LogInformation("Started HighWaterAgent for database {Name}", _detector.DatabaseName);
+        _logger.LogInformation("Started HighWaterAgent for database {Name}", _detector.DatabaseIdentity);
     }
 
     private async Task detectChanges()
@@ -89,7 +92,7 @@ internal class HighWaterAgent: IDisposable
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Failed while making the initial determination of the high water mark for database {Name}", _detector.DatabaseName);
+            _logger.LogError(e, "Failed while making the initial determination of the high water mark for database {Name}", _detector.DatabaseIdentity);
         }
 
         await Task.Delay(_settings.FastPollingTime, _token).ConfigureAwait(false);
@@ -115,7 +118,7 @@ internal class HighWaterAgent: IDisposable
                     return;
                 }
 
-                _logger.LogError(ex, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseName);
+                _logger.LogError(ex, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseIdentity);
                 await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
 
                 activity?.AddException(ex);
@@ -125,7 +128,7 @@ internal class HighWaterAgent: IDisposable
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseName);
+                _logger.LogError(e, "Failed while trying to detect high water statistics for database {Name}", _detector.DatabaseIdentity);
                 activity?.AddException(e);
                 await Task.Delay(_settings.SlowPollingTime, _token).ConfigureAwait(false);
                 continue;
@@ -144,7 +147,7 @@ internal class HighWaterAgent: IDisposable
                     break;
 
                 case HighWaterStatus.Stale:
-                    _logger.LogInformation("High Water agent is stale at {CurrentMark} for database {Name}", statistics.CurrentMark, _detector.DatabaseName);
+                    _logger.LogInformation("High Water agent is stale at {CurrentMark} for database {Name}", statistics.CurrentMark, _detector.DatabaseIdentity);
 
                     // This gives the high water detection a chance to allow the gaps to fill in
                     // before skipping to the safe harbor time
@@ -157,7 +160,7 @@ internal class HighWaterAgent: IDisposable
 
                     _logger.LogInformation(
                         "High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime} for database {Name}",
-                        _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime, _detector.DatabaseName);
+                        _settings.StaleSequenceThreshold.TotalSeconds, safeHarborTime, _detector.DatabaseIdentity);
 
                     activity?.SetTag("skipped", "true");
 
@@ -175,10 +178,10 @@ internal class HighWaterAgent: IDisposable
             }
         }
 
-        _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling for database {Name}", _detector.DatabaseName);
+        _logger.LogInformation("HighWaterAgent has detected a cancellation and has stopped polling for database {Name}", _detector.DatabaseIdentity);
     }
 
-    private HighWaterStatus tagActivity(HighWaterStatistics statistics, Activity activity)
+    private HighWaterStatus tagActivity(HighWaterStatistics statistics, Activity? activity)
     {
         var status = statistics.InterpretStatus(_current);
 
@@ -213,7 +216,7 @@ internal class HighWaterAgent: IDisposable
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            _logger.LogDebug("High Water mark detected at {CurrentMark} for database {Name}", statistics.CurrentMark, _detector.DatabaseName);
+            _logger.LogDebug("High Water mark detected at {CurrentMark} for database {Name}", statistics.CurrentMark, _detector.DatabaseIdentity);
         }
 
         _current = statistics;
@@ -223,7 +226,7 @@ internal class HighWaterAgent: IDisposable
         await Task.Delay(delayTime, _token).ConfigureAwait(false);
     }
 
-    private void TimerOnElapsed(object sender, ElapsedEventArgs e)
+    private void TimerOnElapsed(object? sender, ElapsedEventArgs e)
     {
         _ = checkState();
     }
@@ -232,7 +235,7 @@ internal class HighWaterAgent: IDisposable
     {
         if (_loop.IsFaulted && !_token.IsCancellationRequested)
         {
-            _logger.LogError(_loop.Exception, "HighWaterAgent polling loop was faulted for database {Name}", _detector.DatabaseName);
+            _logger.LogError(_loop.Exception, "HighWaterAgent polling loop was faulted for database {Name}", _detector.DatabaseIdentity);
 
             try
             {
@@ -241,7 +244,7 @@ internal class HighWaterAgent: IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error trying to restart the HighWaterAgent for database {Name}", _detector.DatabaseName);
+                _logger.LogError(ex, "Error trying to restart the HighWaterAgent for database {Name}", _detector.DatabaseIdentity);
             }
         }
     }
@@ -282,7 +285,7 @@ internal class HighWaterAgent: IDisposable
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "Error trying to stop the HighWaterAgent for database {Name}", _detector.DatabaseName);
+            _logger.LogError(e, "Error trying to stop the HighWaterAgent for database {Name}", _detector.DatabaseIdentity);
         }
     }
 }

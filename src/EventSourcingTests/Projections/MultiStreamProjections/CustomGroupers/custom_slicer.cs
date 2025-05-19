@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -17,33 +19,15 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 #region sample_view-projection-custom-slicer
 public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
-    public class CustomSlicer: IEventSlicer<UserGroupsAssignment, Guid>
+    public UserGroupsAssignmentProjection()
     {
-        public ValueTask<IReadOnlyList<EventSlice<UserGroupsAssignment, Guid>>> SliceInlineActions(
-            IQuerySession querySession, IEnumerable<StreamAction> streams)
+        CustomGrouping((_, events, group) =>
         {
-            var allEvents = streams.SelectMany(x => x.Events).ToList();
-            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
-            group.AddEvents<UserRegistered>(@event => @event.UserId, allEvents);
-            group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, allEvents);
-
-            return new(group.Slices.ToList());
-        }
-
-        public ValueTask<IReadOnlyList<TenantSliceGroup<UserGroupsAssignment, Guid>>> SliceAsyncEvents(
-            IQuerySession querySession, List<IEvent> events)
-        {
-            var group = new TenantSliceGroup<UserGroupsAssignment, Guid>(Tenant.ForDatabase(querySession.Database));
             group.AddEvents<UserRegistered>(@event => @event.UserId, events);
             group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, events);
 
-            return new(new List<TenantSliceGroup<UserGroupsAssignment, Guid>>{group});
-        }
-    }
-
-    public UserGroupsAssignmentProjection()
-    {
-        CustomGrouping(new CustomSlicer());
+            return Task.CompletedTask;
+        });
     }
 
     public void Apply(UserRegistered @event, UserGroupsAssignment view)

@@ -66,7 +66,7 @@ internal class JsonLoader: IJsonLoader
         Task<string?> FindByIdAsync(object id, CancellationToken token);
     }
 
-    private class Streamer<T, TId>: IStreamer<T> where T : class
+    private class Streamer<T, TId>: IStreamer<T> where T : class where TId : notnull
     {
         private readonly JsonLoader _parent;
 

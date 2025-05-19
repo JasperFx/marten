@@ -5,16 +5,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
+using JasperFx.Blocks;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
+using Marten.Schema;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
@@ -27,7 +34,7 @@ using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry, IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -38,7 +45,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     private readonly Cache<Type, EventMapping> _events = new();
 
-    private readonly Lazy<IProjection[]> _inlineProjections;
+    private readonly Lazy<IInlineProjection<IDocumentOperations>[]> _inlineProjections;
 
     private readonly Ref<ImHashMap<string, Type>> _nameToType = Ref.Of(ImHashMap<string, Type>.Empty);
 
@@ -62,7 +69,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
         _byEventName.OnMissing = name => AllEvents().FirstOrDefault(x => x.EventTypeName == name);
 
-        _inlineProjections = new Lazy<IProjection[]>(() => options.Projections.BuildInlineProjections(_store));
+        _inlineProjections = new Lazy<IInlineProjection<IDocumentOperations>[]>(() => options.Projections.BuildInlineProjections(_store));
 
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 
@@ -107,6 +114,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
     /// in testing
     /// </summary>
+    [IgnoreDescription]
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
@@ -115,6 +123,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// load events by their Id
     /// </summary>
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
+
+    /// <summary>
+    /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+    /// running in an Inline lifecycle. Default is false;
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
@@ -141,6 +155,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
     /// </summary>
+    [ChildDescription]
     public MetadataConfig MetadataConfig => new(Metadata);
 
     /// <summary>
@@ -167,6 +182,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _events.FillDefault(eventType);
     }
 
+    public Type IdentityTypeFor(Type aggregateType)
+    {
+        return new DocumentMapping(aggregateType, Options).IdType;
+    }
+
     /// <summary>
     ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
     ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
@@ -191,7 +211,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     public IEventStoreOptions Upcast<TEvent>(
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     ) where TEvent : class
     {
         return Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
@@ -200,7 +220,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public IEventStoreOptions Upcast(
         Type eventType,
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     )
     {
         var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
@@ -281,9 +301,9 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
-    IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
+    IReadOnlyList<ISubscriptionSource> IReadOnlyEventStoreOptions.Projections()
     {
-        return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
+        return Options.Projections.All.OfType<ISubscriptionSource>().ToList();
     }
 
     public IReadOnlyList<IEventType> AllKnownEventTypes()
@@ -483,5 +503,21 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         }
 
         Dispose();
+    }
+
+    public IAggregatorSource<IQuerySession>? Build<TDoc>()
+    {
+        var idType = new DocumentMapping(typeof(TDoc), Options).IdType;
+        return typeof(SingleStreamProjection<,>).CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+
+        var set = description.AddChildSet("Events", _events);
+        set.SummaryColumns = [nameof(EventMapping.EventType), nameof(EventMapping.EventTypeName)];
+
+        return description;
     }
 }

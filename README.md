@@ -17,7 +17,7 @@ The Marten library provides .NET developers with the ability to use the proven [
 
 Marten also provides .NET developers with an ACID-compliant event store with user-defined projections against event streams.
 
-Access docs [here](https://martendb.io/) and v3.x docs [here](https://martendb.io/v3).
+Access docs [here](https://martendb.io/). For any of your queries including the whole of Critter stack, join our [Discord channel](https://discord.gg/WMxrvegf8H) and it is the best way to reach us quickly. You can also raise questions/queries via [GitHub Discussions](https://github.com/JasperFx/marten/discussions) as well.
 
 ## Support Plans
 
@@ -190,18 +190,18 @@ To add code samples/snippets from the tests in docs, follow the steps below:
 Use C# named regions to mark a code block as described in the sample below
 
 ```csharp
-#region sample_my_snippet
+#region sample_my-snippet
 // code sample/snippet
 // ...
 #endregion
 ```
 
-All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use snake case for the identifiers with words in lower case.
+All code snippet identifier starts with `sample_` as a convention to clearly identify that the region block corresponds to a sample code/snippet used in docs. Recommend to use kebab case for the identifiers with words in lower case.
 
 Use the below to include the code snippet in a docs page
 
 <pre>
-&#60;!-- snippet: sample_my_snippet -->
+&#60;!-- snippet: sample_my-snippet -->
 &#60;!-- endSnippet -->
 </pre>
 

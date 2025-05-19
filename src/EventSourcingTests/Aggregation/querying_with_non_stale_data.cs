@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -5,10 +6,10 @@ using EventSourcingTests.Examples;
 using EventSourcingTests.FetchForWriting;
 using EventSourcingTests.Projections;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Configuration;
@@ -49,7 +50,7 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var progressions =
-            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), ShardName.HighWaterMark]);
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All", 1), new ShardName(ShardState.HighWaterMark)]);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -59,7 +60,7 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         all.Count.ShouldBe(3);
 
         progressions =
-            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), ShardName.HighWaterMark]);
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All", 1), new ShardName(ShardState.HighWaterMark)]);
 
 
         progressions.Count.ShouldBe(2);

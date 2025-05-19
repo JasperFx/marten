@@ -70,7 +70,7 @@ internal class NewScalarStringSelectClause: ISelectClause, IScalarSelectClause, 
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         return LinqQueryParser.BuildHandler<string, TResult>(this, statement);
     }

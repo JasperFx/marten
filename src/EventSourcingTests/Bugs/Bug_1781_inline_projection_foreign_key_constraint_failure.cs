@@ -80,9 +80,9 @@ namespace EventSourcingTests.Bugs
             await using (var session = documentStore.QuerySession())
             {
                 var importAggregate = await session.LoadAsync<DataImportAggregate>(importStreamKey);
-                importAggregate.ShouldBeNull();
-
                 var dataItemAggregate = await session.LoadAsync<DataItemAggregate>(dataItemStreamKey);
+
+                importAggregate.ShouldBeNull();
                 dataItemAggregate.ShouldBeNull();
             }
         }

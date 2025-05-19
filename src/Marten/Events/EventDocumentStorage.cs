@@ -134,7 +134,7 @@ public abstract class EventDocumentStorage: IEventStorage
     }
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where T : notnull
     {
         return LinqQueryParser.BuildHandler<IEvent, T>(this, topStatement);
     }
@@ -173,7 +173,7 @@ public abstract class EventDocumentStorage: IEventStorage
 
     public object IdentityFor(IEvent document)
     {
-        return Events.StreamIdentity == StreamIdentity.AsGuid ? document.Id : document.StreamKey;
+        return (Events.StreamIdentity == StreamIdentity.AsGuid ? document.Id : document.StreamKey)!;
     }
 
     public Type IdType { get; }

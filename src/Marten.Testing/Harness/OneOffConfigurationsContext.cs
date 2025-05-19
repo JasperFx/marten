@@ -121,11 +121,5 @@ namespace Marten.Testing.Harness
                 disposable.Dispose();
             }
         }
-
-        protected Task AppendEvent(Guid streamId, params object[] events)
-        {
-            theSession.Events.Append(streamId, events);
-            return theSession.SaveChangesAsync();
-        }
     }
 }

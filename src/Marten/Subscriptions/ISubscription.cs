@@ -1,8 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
 
 namespace Marten.Subscriptions;
 
@@ -12,7 +14,7 @@ namespace Marten.Subscriptions;
 /// Basic abstraction for custom subscriptions to Marten events through the async daemon. Use this in
 /// order to do custom processing against an ordered stream of the events
 /// </summary>
-public interface ISubscription : IAsyncDisposable
+public interface ISubscription
 {
     /// <summary>
     /// Processes a page of events at a time

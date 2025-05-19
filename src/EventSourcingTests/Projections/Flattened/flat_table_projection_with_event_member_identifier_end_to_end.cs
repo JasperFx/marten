@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -103,6 +104,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
         };
         theSession.Events.Append(streamId, valuesSet);
 
+        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         var data = await findData("red");

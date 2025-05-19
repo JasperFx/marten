@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -59,7 +60,7 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         return type.IsClass && type.IsSealed && type.GetProperties().Any(x => x.Name == "Tag");
     }
 
-    public static bool IsCandidate(Type idType, out FSharpDiscriminatedUnionIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType, [NotNullWhen(true)]out FSharpDiscriminatedUnionIdGeneration? idGeneration)
     {
 
         idGeneration = default;
@@ -115,7 +116,7 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
 
     public string ParameterValue(DocumentMapping mapping)
     {
-        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        if (mapping.IdMember.GetRawMemberType()!.IsNullable())
         {
             return $"{mapping.IdMember.Name}.Value.{ValueProperty.Name}";
         }
@@ -171,11 +172,11 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
 }
 
 internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
-    ISelector<TOuter>
+    ISelector<TOuter> where TOuter : notnull
 {
     public FSharpDiscriminatedUnionIdSelectClause(FSharpDiscriminatedUnionIdGeneration typedIdGeneration)
     {
-        Converter = typedIdGeneration.CreateConverter<TOuter, TInner>();
+        Converter = typedIdGeneration.CreateWrapper<TOuter, TInner>();
         MemberName = "d.id";
     }
 
@@ -234,23 +235,23 @@ internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectCl
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         return (IQueryHandler<TResult>)new ListQueryHandler<TOuter>(statement, this);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
     {
-        return new StatsSelectClause<TOuter?>(this, statistics);
+        return new StatsSelectClause<TOuter>(this, statistics);
     }
 
-    public TOuter? Resolve(DbDataReader reader)
+    public TOuter Resolve(DbDataReader reader)
     {
         var inner = reader.GetFieldValue<TInner>(0);
         return Converter(inner);
     }
 
-    public async Task<TOuter?> ResolveAsync(DbDataReader reader, CancellationToken token)
+    public async Task<TOuter> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
         var inner = await reader.GetFieldValueAsync<TInner>(0, token).ConfigureAwait(false);
         return Converter(inner);

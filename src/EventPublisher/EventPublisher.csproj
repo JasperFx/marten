@@ -12,9 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Spectre.Console" Version="0.49.1" />
-
-
         <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
         <!-- BUG: 1.8.0-rc.1 breaks prometheus exporter so sticking to 1.8.0-beta.1 for now https://github.com/open-telemetry/opentelemetry-dotnet-contrib/issues/1617 -->
         <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1" />

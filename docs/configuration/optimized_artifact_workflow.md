@@ -10,7 +10,7 @@ immediate developer productivity:
 ```cs
 var store = DocumentStore.For("connection string");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L121-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L122-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration above, as needed, behind the scenes Marten is:
@@ -46,7 +46,7 @@ using var host = await Host.CreateDefaultBuilder()
             .OptimizeArtifactWorkflow();
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L41-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L42-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on a local developer box, Marten is using:
@@ -83,5 +83,5 @@ using var host = await Host.CreateDefaultBuilder()
             .OptimizeArtifactWorkflow(TypeLoadMode.Static);
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L58-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L59-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

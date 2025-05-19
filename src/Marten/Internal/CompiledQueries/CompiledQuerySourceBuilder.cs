@@ -47,7 +47,7 @@ internal class CompiledQuerySourceBuilder
 
     public ICompiledQuerySource Build(Type sourceType)
     {
-        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, _plan.HandlerPrototype);
+        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, _plan.HandlerPrototype)!;
     }
 
     private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,

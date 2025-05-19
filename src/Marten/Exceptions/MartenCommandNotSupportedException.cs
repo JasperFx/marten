@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
 using JasperFx.Core.Exceptions;
@@ -37,9 +38,9 @@ public class MartenCommandNotSupportedException: MartenCommandException
     /// <param name="message">optional additional exception information</param>
     public MartenCommandNotSupportedException(
         NotSupportedReason reason,
-        NpgsqlCommand command,
+        NpgsqlCommand? command,
         Exception innerException,
-        string message = null
+        string? message = null
     ): base(command, innerException, message)
     {
         Reason = reason;
@@ -53,7 +54,7 @@ public class MartenCommandNotSupportedException: MartenCommandException
 
 internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
 {
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if (original is NpgsqlException e)
         {
@@ -61,7 +62,7 @@ internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
             if (knownCause != null)
             {
                 var command = e.Data.Contains(nameof(NpgsqlCommand))
-                    ? (NpgsqlCommand)e.Data[nameof(NpgsqlCommand)]
+                    ? (NpgsqlCommand)e.Data[nameof(NpgsqlCommand)]!
                     : null;
 
                 transformed =

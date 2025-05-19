@@ -60,8 +60,7 @@ It's somewhat unlikely that any self-respecting DBA is going to allow your appli
 so we're stuck needing some kind of migration strategy as we add document types, Javascript transformations, and retrofit indexes. Fortunately, we've got
 a strong facility to detect and generate database migration scripts.
 
-In usage, you would first need to tell Marten about every possible document type, any event store usage, and any
-[javascript transforms](/documents/plv8) so that Marten
+In usage, you would first need to tell Marten about every possible document type and any event store usage so that Marten
 "knows" how to make the full comparison:
 
 <!-- snippet: sample_configure-document-types-upfront -->
@@ -109,10 +108,10 @@ The command above will generate a file called "1.initial.sql" to update the sche
 mechanism covers:
 
 1. Creates any missing database schemas
-1. Document storage tables, "upsert" functions, and any configured indexes -- including missing columns or column type changes
-1. Javascript transforms
-1. The Hilo support table
-1. The Event Store schema objects
+2. Document storage tables, "upsert" functions, and any configured indexes -- including missing columns or column type changes
+3. Javascript transforms
+4. The Hilo support table
+5. The Event Store schema objects
 
 ### Include in your ci/cd pipeline
 

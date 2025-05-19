@@ -39,7 +39,7 @@ public class SubClasses: IEnumerable<SubClassMapping>
         _subClasses.Add(subclass);
     }
 
-    public void Add(Type subclassType, string alias = null)
+    public void Add(Type subclassType, string? alias = null)
     {
         VerifyIsSubclass(subclassType);
 

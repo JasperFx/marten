@@ -1,6 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Polly;
 
 namespace Marten.Events.Daemon.Internals;

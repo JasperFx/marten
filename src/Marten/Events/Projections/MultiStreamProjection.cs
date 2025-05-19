@@ -1,44 +1,21 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Threading.Tasks;
-using JasperFx;
-using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
-using JasperFx.Events.Slicing;
+using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using Npgsql;
 
 namespace Marten.Events.Projections;
-
-public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
-{
-    public ValueTask<IReadOnlyList<EventSlice<TDoc, string>>> SliceInlineActions(IQuerySession querySession, IEnumerable<StreamAction> streams)
-    {
-        throw new NotSupportedException("This is not supported in Inline projections");
-    }
-
-    public ValueTask<IReadOnlyList<TenantSliceGroup<TDoc, string>>> SliceAsyncEvents(IQuerySession querySession, List<IEvent> events)
-    {
-        var sliceGroup = new TenantSliceGroup<TDoc, string>(new Tenant(StorageConstants.DefaultTenantId, querySession.Database));
-        var groups = events.GroupBy(x => x.TenantId);
-        foreach (var @group in groups)
-        {
-            sliceGroup.AddEvents(@group.Key, @group);
-        }
-
-        var list = new List<TenantSliceGroup<TDoc, string>>{sliceGroup};
-
-        return ValueTask.FromResult<IReadOnlyList<TenantSliceGroup<TDoc, string>>>(list);
-    }
-}
 
 /// <summary>
 ///     Project a single document view across events that may span across
@@ -46,165 +23,135 @@ public class TenantRollupSlicer<TDoc>: IEventSlicer<TDoc, string>
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class MultiStreamProjection<TDoc, TId>: AggregateProjectionBase<TDoc>
+public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
 {
-    private readonly EventSlicer<TDoc, TId> _defaultSlicer = new();
-
-    private IEventSlicer<TDoc, TId>? _customSlicer;
-
-    protected MultiStreamProjection(): base(AggregationScope.MultiStream)
+    // TODO -- put the exception types in a constant somewhere
+    protected MultiStreamProjection(): base()
     {
     }
 
-    public override SubscriptionDescriptor Describe()
+    void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
-        return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
-    }
-
-    public override bool IsSingleStream()
-    {
-        return Slicer is ISingleStreamSlicer;
+        mapping.UseVersionFromMatchingStream = false;
+        // Nothing right now.
     }
 
     /// <summary>
-    /// Group events by the tenant id. Use this option if you need to do roll up summaries by
-    /// tenant id within a conjoined multi-tenanted event store.
+    ///     If more than 0 (the default), this is the maximum number of aggregates
+    ///     that will be cached in a 2nd level, most recently used cache during async
+    ///     projection. Use this to potentially improve async projection throughput
     /// </summary>
-    public void RollUpByTenant()
+    [Obsolete("Prefer Options.CacheLimitPerTenant. This will be removed in Marten 9")]
+    [JasperFxIgnore]
+    public int CacheLimitPerTenant
     {
-        if (typeof(TId) != typeof(string))
-            throw new InvalidOperationException("Rolling up by Tenant Id requires the identity type to be string");
-
-        _customSlicer = (IEventSlicer<TDoc, TId>)new TenantRollupSlicer<TDoc>();
+        get => Options.CacheLimitPerTenant;
+        set => Options.CacheLimitPerTenant = value;
     }
 
-    internal IEventSlicer<TDoc, TId> Slicer => _customSlicer ?? _defaultSlicer;
+    // TODO -- need to add this all the way back in JasperFx.Events
+    // public override SubscriptionDescriptor Describe()
+    // {
+    //     return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
+    // }
 
-    protected override Type[] determineEventTypes()
+    [JasperFxIgnore]
+    public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        return base.determineEventTypes().Concat(_defaultSlicer.DetermineEventTypes())
-            .Distinct().ToArray();
-    }
+        var mapping = options.Storage.FindMapping(typeof(TDoc)).Root.As<DocumentMapping>();
 
-    public void Identity<TEvent>(Func<TEvent, TId> identityFunc)
-    {
-        if (_customSlicer != null)
-        {
-            throw new InvalidOperationException(
-                "There is already a custom event slicer registered for this projection");
-        }
-
-        _defaultSlicer.Identity(identityFunc);
-    }
-
-    public void Identities<TEvent>(Func<TEvent, IReadOnlyList<TId>> identitiesFunc)
-    {
-        if (_customSlicer != null)
-        {
-            throw new InvalidOperationException(
-                "There is already a custom event slicer registered for this projection");
-        }
-
-        _defaultSlicer.Identities(identitiesFunc);
-    }
-
-    /// <summary>
-    ///     Apply a custom event grouping strategy for events. This is additive to Identity() or Identities()
-    /// </summary>
-    /// <param name="grouper"></param>
-    /// <exception cref="InvalidOperationException"></exception>
-    public void CustomGrouping(IAggregateGrouper<TId> grouper)
-    {
-        if (_customSlicer != null)
-        {
-            throw new InvalidOperationException(
-                "There is already a custom event slicer registered for this projection");
-        }
-
-        _defaultSlicer.CustomGrouping(grouper);
-    }
-
-    /// <summary>
-    ///     If your grouping of events to aggregates doesn't fall into any simple pattern supported
-    ///     directly by ViewProjection, supply your own "let me do whatever I want" event slicer
-    /// </summary>
-    /// <param name="slicer"></param>
-    public void CustomGrouping(IEventSlicer<TDoc, TId> slicer)
-    {
-        _customSlicer = slicer;
-    }
-
-
-    protected override void specialAssertValid()
-    {
-        if (_customSlicer == null && !_defaultSlicer.HasAnyRules())
-        {
-            throw new InvalidProjectionException(
-                $"ViewProjection {GetType().FullNameInCode()} has no Identity() rules defined or registered lookup grouping rules and does not know how to identify event membership in the aggregated document {typeof(TDoc).FullNameInCode()}");
-        }
-    }
-
-    /// <summary>
-    ///     Apply "fan out" operations to the given TEvent type that inserts an enumerable of TChild events right behind the
-    ///     parent
-    ///     event in the event stream
-    /// </summary>
-    /// <param name="fanOutFunc"></param>
-    /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
-    /// <typeparam name="TEvent"></typeparam>
-    /// <typeparam name="TChild"></typeparam>
-    public void FanOut<TEvent, TChild>(Func<TEvent, IEnumerable<TChild>> fanOutFunc,
-        FanoutMode mode = FanoutMode.AfterGrouping)
-    {
-        _defaultSlicer.FanOut(fanOutFunc, mode);
-    }
-
-    /// <summary>
-    ///     Apply "fan out" operations to the given IEvent<TEvent> type that inserts an enumerable of TChild events right behind the
-    ///     parent
-    ///     event in the event stream
-    /// </summary>
-    /// <param name="fanOutFunc"></param>
-    /// <param name="mode">Should the fan out operation happen after grouping, or before? Default is after</param>
-    /// <typeparam name="TEvent"></typeparam>
-    /// <typeparam name="TChild"></typeparam>
-    public void FanOut<TEvent, TChild>(Func<IEvent<TEvent>, IEnumerable<TChild>> fanOutFunc,
-        FanoutMode mode = FanoutMode.AfterGrouping) where TEvent : notnull
-    {
-        _defaultSlicer.FanOut(fanOutFunc, mode);
-    }
-
-    protected override object buildEventSlicer(StoreOptions options)
-    {
-        if (_customSlicer != null)
-        {
-            return _customSlicer;
-        }
-
-        var mapping = options.Storage.MappingFor(typeof(TDoc));
-        var aggregateStyle = mapping.TenancyStyle;
-        var eventStyle = options.Events.TenancyStyle;
-
-        switch (aggregateStyle)
-        {
-            case TenancyStyle.Conjoined when eventStyle == TenancyStyle.Conjoined:
-                _defaultSlicer.GroupByTenant();
-                break;
-            case TenancyStyle.Conjoined:
-                throw new InvalidProjectionException(
-                    $"Aggregate {typeof(TDoc).FullNameInCode()} is multi-tenanted, but the events are not");
-        }
-
-        return _defaultSlicer;
-    }
-
-    protected override IEnumerable<string> validateDocumentIdentity(StoreOptions options, DocumentMapping mapping)
-    {
         if (mapping.IdType != typeof(TId))
         {
             yield return
                 $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
         }
+
+        // TODO -- revisit this with
+        if (options.Events.TenancyStyle != mapping.TenancyStyle
+            && (options.Events.TenancyStyle == TenancyStyle.Single
+                || options.Events is
+                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
+                && Lifecycle != ProjectionLifecycle.Live)
+           )
+        {
+            yield return
+                $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle})";
+        }
+
+        if (mapping.DeleteStyle == DeleteStyle.SoftDelete && IsUsingConventionalMethods)
+        {
+            yield return
+                "MultiStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection";
+        }
+    }
+
+    public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+
+    }
+
+    public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class where TStore : IDocumentStore
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)projection,
+                        lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper =
+                        typeof(ScopedAggregationWrapper<,,,,>)
+                            .CloseAndBuildAs<ProjectionBase>(s,
+                                typeof(TConcrete), typeof(TDoc), typeof(TId), typeof(IDocumentOperations),
+                                typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
     }
 }
-

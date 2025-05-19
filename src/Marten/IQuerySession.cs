@@ -125,7 +125,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    IMartenQueryable<T> Query<T>();
+    IMartenQueryable<T> Query<T>() where T : notnull;
 
     #endregion
 
@@ -138,7 +138,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="timeout"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout);
+    IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout) where T : notnull;
 
     /// <summary>
     ///     Stream the results of a user-supplied query directly to a stream as a JSON array
@@ -247,7 +247,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <param name="query">The instance of a compiled query</param>
     /// <param name="token">A cancellation token</param>
     /// <returns>A task for a single item query result</returns>
-    Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+    Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default) where TDoc : notnull;
 
     /// <summary>
     ///     Stream a single JSON document to the destination using a compiled query
@@ -259,7 +259,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TOut"></typeparam>
     /// <returns></returns>
     Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default);
+        CancellationToken token = default) where TDoc : notnull;
 
     /// <summary>
     ///     Stream many documents as a JSON array to the destination using a compiled query
@@ -271,7 +271,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TOut"></typeparam>
     /// <returns></returns>
     Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default);
+        CancellationToken token = default) where TDoc : notnull;
 
     /// <summary>
     ///     Fetch the JSON representation of a single document using a compiled query
@@ -281,7 +281,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TOut"></typeparam>
     /// <returns></returns>
-    Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+    Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default) where TDoc : notnull;
 
     /// <summary>
     ///     Fetch the JSON array representation of a list of documents using a compiled query
@@ -291,7 +291,7 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="TDoc"></typeparam>
     /// <typeparam name="TOut"></typeparam>
     /// <returns></returns>
-    Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default);
+    Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default) where TDoc : notnull;
 
     /// <summary>
     ///     Load or find multiple documents by id

@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -16,7 +17,7 @@ namespace EventSourcingTests.Projections;
 public class when_registering_a_custom_projection_type: IDisposable
 {
     private readonly DocumentStore _store;
-    private readonly IProjectionSource theProjection;
+    private readonly IProjectionSource<IDocumentOperations,IQuerySession> theProjection;
 
     public when_registering_a_custom_projection_type()
     {
@@ -40,7 +41,7 @@ public class when_registering_a_custom_projection_type: IDisposable
     [Fact]
     public void can_customize_the_projection_name()
     {
-        theProjection.ProjectionName.ShouldBe("NewProjection");
+        theProjection.Name.ShouldBe("NewProjection");
     }
 
     [Fact]
@@ -62,9 +63,9 @@ public class when_registering_a_custom_projection_type: IDisposable
 
     public class MyProjection: IProjection
     {
-        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+        public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
         {
-            throw new System.NotSupportedException();
+            throw new NotImplementedException();
         }
     }
 }

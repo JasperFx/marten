@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -23,6 +25,8 @@ internal class ArchiveStreamOperation: IStorageOperation
         _streamId = streamId;
     }
 
+    public string? TenantId { get; set; }
+
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         if (_events.TenancyStyle == TenancyStyle.Conjoined)
@@ -30,7 +34,7 @@ internal class ArchiveStreamOperation: IStorageOperation
             var parameters = builder.AppendWithParameters($"select {_events.DatabaseSchemaName}.{ArchiveStreamFunction.Name}(?, ?)");
             parameters[0].Value = _streamId;
             parameters[0].NpgsqlDbType = _events.StreamIdDbType;
-            parameters[1].Value = session.TenantId;
+            parameters[1].Value = TenantId ?? session.TenantId;
             parameters[1].NpgsqlDbType = NpgsqlDbType.Varchar;
         }
         else
@@ -41,8 +45,6 @@ internal class ArchiveStreamOperation: IStorageOperation
 
             parameter.NpgsqlDbType = _events.StreamIdDbType;
         }
-
-
     }
 
 

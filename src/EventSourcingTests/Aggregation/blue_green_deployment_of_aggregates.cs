@@ -1,3 +1,5 @@
+using System;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -38,11 +40,11 @@ public class blue_green_deployment_of_aggregates
     }
 }
 
-public class Version2: SingleStreamProjection<MyAggregate>
+public class Version2: SingleStreamProjection<MyAggregate, Guid>
 {
     public Version2()
     {
-        ProjectionVersion = 2;
+        Version = 2;
     }
 
     public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount++;

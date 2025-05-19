@@ -1,6 +1,9 @@
 #nullable enable
 using System.Collections.Generic;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -37,6 +40,12 @@ public interface IReadOnlyEventStoreOptions
     IReadonlyMetadataConfig MetadataConfig { get; }
 
     /// <summary>
+    /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+    /// running in an Inline lifecycle. Default is false;
+    /// </summary>
+    bool EnableSideEffectsOnInlineProjections { get; }
+
+    /// <summary>
     /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
     /// be helpful if you need to create an external reference id to another system, or need to
     /// load events by their Id
@@ -48,7 +57,7 @@ public interface IReadOnlyEventStoreOptions
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
-    IReadOnlyList<IReadOnlyProjectionData> Projections();
+    IReadOnlyList<ISubscriptionSource> Projections();
 
     IReadOnlyList<IEventType> AllKnownEventTypes();
 

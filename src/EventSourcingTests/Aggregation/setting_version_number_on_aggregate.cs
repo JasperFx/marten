@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
@@ -57,11 +58,11 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
 
 
-    public class SampleSingleStream : SingleStreamProjection<MyAggregate>
+    public class SampleSingleStream : SingleStreamProjection<MyAggregate, Guid>
     {
         public SampleSingleStream ()
         {
-            ProjectionName = "AllGood";
+            Name = "AllGood";
         }
 
         [MartenIgnore]
@@ -123,7 +124,6 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
         var stream = theSession.Events.StartStream(new AEvent(), new AEvent(), new AEvent());
         await theSession.SaveChangesAsync();
-
 
         var aggregate = await theSession.LoadAsync<MyAggregateWithDifferentVersionProperty>(stream.Id);
         aggregate.SpecialVersion.ShouldBe(3);

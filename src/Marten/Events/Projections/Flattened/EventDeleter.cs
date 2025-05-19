@@ -3,28 +3,43 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events.CodeGeneration;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Projections.Flattened;
 
-internal class EventDeleter: IEventHandler
+internal class EventDeleter<T> : IEventHandler
 {
-    private readonly MemberInfo[] _members;
+    private string _sql;
+    private IParameterSetter<IEvent>? _parameter;
 
-    public EventDeleter(Type eventType,
-        MemberInfo[] members)
+    public EventDeleter(MemberInfo[] members, Table table)
     {
-        EventType = eventType;
-        _members = members;
+        if (members.Any())
+        {
+            _parameter = FlatTableProjection.BuildPrimaryKeySetter<T>(members);
+        }
     }
 
-    public Type EventType { get; }
-
-    public IEventHandlingFrame BuildFrame(EventGraph events, Table table)
+    public void Compile(EventGraph events, Table table)
     {
-        return new DeleteRowFrame(table, EventType, determinePkMembers(events).ToArray());
+        if (_parameter == null)
+        {
+            _parameter = events.StreamIdentity == StreamIdentity.AsGuid
+                ? (IParameterSetter<IEvent>)new ParameterSetter<IEvent, Guid>(e => e.StreamId)
+                : new ParameterSetter<IEvent, string>(e => e.StreamKey);
+
+        }
+        _sql = $"delete from {table.Identifier} where {table.PrimaryKeyColumns[0]} = ?";
+    }
+
+    public Type EventType => typeof(T);
+
+    public void Handle(IDocumentOperations operations, IEvent e)
+    {
+        operations.QueueOperation(new SqlOperation(_sql, e, [_parameter]));
     }
 
     public bool AssertValid(EventGraph events, out string? message)
@@ -36,26 +51,5 @@ internal class EventDeleter: IEventHandler
     public IEnumerable<ISchemaObject> BuildObjects(EventGraph events, Table table)
     {
         yield break;
-    }
-
-    private IEnumerable<MemberInfo> determinePkMembers(EventGraph events)
-    {
-        var wrapperType = typeof(IEvent<>).MakeGenericType(EventType);
-        if (_members.Any())
-        {
-            yield return wrapperType.GetProperty("Data");
-            foreach (var member in _members) yield return member;
-
-            yield break;
-        }
-
-        if (events.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            yield return typeof(IEvent).GetProperty(nameof(IEvent.StreamId));
-        }
-        else
-        {
-            yield return typeof(IEvent).GetProperty(nameof(IEvent.StreamKey));
-        }
     }
 }

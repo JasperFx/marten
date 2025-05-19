@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -68,7 +69,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     private string innerValueAccessor(DocumentMapping mapping)
     {
-        return mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name}.Value" : mapping.IdMember.Name;
+        return mapping.IdMember.GetRawMemberType()!.IsNullable() ? $"{mapping.IdMember.Name}.Value" : mapping.IdMember.Name;
     }
 
     private void generateStringWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
@@ -78,7 +79,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     private void generateLongWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
-        var isDefault = mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+        var isDefault = mapping.IdMember.GetRawMemberType()!.IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
 
         var database = Use.Type<IMartenDatabase>();
         if (Ctor != null)
@@ -97,7 +98,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     private void generateIntWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
-        var isDefault =  mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+        var isDefault =  mapping.IdMember.GetRawMemberType()!.IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
 
         var database = Use.Type<IMartenDatabase>();
         if (Ctor != null)
@@ -116,7 +117,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     private void generateGuidWrapper(GeneratedMethod method, DocumentMapping mapping, Use document)
     {
-        var isDefault = mapping.IdMember.GetRawMemberType().IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
+        var isDefault = mapping.IdMember.GetRawMemberType()!.IsNullable() ? $"{mapping.IdMember.Name} == null" : $"{mapping.IdMember.Name}.Value == default";
 
         var newGuid = $"{typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid()";
         var create = Ctor == null
@@ -133,14 +134,14 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
         return _selector.CloneToOtherTable(tableName);
     }
 
-    public static bool IsCandidate(Type idType, out ValueTypeIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType, [NotNullWhen(true)]out ValueTypeIdGeneration? idGeneration)
     {
         if (idType.IsGenericType && idType.IsNullable())
         {
             idType = idType.GetGenericArguments().Single();
         }
 
-        idGeneration = default;
+        idGeneration = null;
         if (idType.IsClass)
         {
             return false;
@@ -198,7 +199,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     public string ParameterValue(DocumentMapping mapping)
     {
-        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        if (mapping.IdMember.GetRawMemberType()!.IsNullable())
         {
             return $"{mapping.IdMember.Name}.Value.{ValueProperty.Name}";
         }
@@ -242,7 +243,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
 
-        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        if (mapping.IdMember.GetRawMemberType()!.IsNullable())
         {
             load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}});", dbType);
         }
@@ -256,7 +257,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
 
-        if (mapping.IdMember.GetRawMemberType().IsNullable())
+        if (mapping.IdMember.GetRawMemberType()!.IsNullable())
         {
             load.Frames.Code(
                 $"await writer.WriteAsync(document.{mapping.IdMember.Name}.Value.{ValueProperty.Name}, {{0}}, {{1}});",
@@ -277,7 +278,7 @@ public class ValueTypeIdSelectClause<TOuter, TInner>: ValueTypeSelectClause<TOut
 {
     public ValueTypeIdSelectClause(ValueTypeIdGeneration idGeneration): base(
         "d.id",
-        idGeneration.CreateConverter<TOuter, TInner>()
+        idGeneration.CreateWrapper<TOuter, TInner>()
     )
     {
     }

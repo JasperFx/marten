@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Blocks;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Operations;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -48,7 +49,7 @@ public partial class EventGraph
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
     }
 
-    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
+    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, [NotNullWhen(true)]out UpdateBatch? batch)
     {
         if (session.WorkTracker.Streams.Any())
         {

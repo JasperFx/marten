@@ -1,5 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -14,14 +16,14 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
     [Fact]
     public void does_call_custom_projection_configuration()
     {
-        var configureProjection = Substitute.For<Action<SingleStreamProjection<TodoAggregate>>>();
+        var configureProjection = Substitute.For<Action<ProjectionBase>>();
 
         StoreOptions(_ =>
         {
             _.Projections.Snapshot<TodoAggregate>(SnapshotLifecycle.Inline, configureProjection);
         });
 
-        configureProjection.Received(1).Invoke(Arg.Any<SingleStreamProjection<TodoAggregate>>());
+        configureProjection.Received(1).Invoke(Arg.Any<SingleStreamProjection<TodoAggregate, Guid>>());
     }
 
     [Fact]
@@ -31,7 +33,7 @@ public class inline_aggregation_with_custom_projection_configuration : OneOffCon
         {
             _.Projections.Snapshot<TodoAggregate>(SnapshotLifecycle.Inline, configureProjection: p =>
             {
-                p.DeleteEvent<TodoDeleted>();
+                p.As<SingleStreamProjection<TodoAggregate, Guid>>().DeleteEvent<TodoDeleted>();
             });
         });
 

@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
+using EventSourcingTests.Projections;
 using JasperFx.Core;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -394,12 +396,12 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Projections.Add(new SimpleAggregateProjection2(), ProjectionLifecycle.Inline);
+            opts.Projections.Add(new CountedAggregateProjection2(), ProjectionLifecycle.Inline);
         });
 
         var streamId = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        theSession.Events.StartStream<CountedAggregate>(streamId, new AEvent(), new BEvent());
         await theSession.SaveChangesAsync();
 
         theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
@@ -428,7 +430,7 @@ public class archiving_events: OneOffConfigurationsContext
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
-        await daemon.WaitForNonStaleData(5.Seconds());
+        await daemon.WaitForNonStaleData(120.Seconds());
 
         // All the events should be archived
         var events = await theSession.Events.QueryAllRawEvents()
@@ -552,9 +554,62 @@ public class archiving_events: OneOffConfigurationsContext
 
         events.All(x => x.IsArchived).ShouldBeTrue();
     }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_string_identity()
+    {
+        const string streamKey = "test-stream";
+        const string tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_guid_identity()
+    {
+        var streamKey = Guid.NewGuid();
+        var tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    internal record TestEvent(int Id);
 }
 
-public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
+public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, Guid>
 {
     public SimpleAggregateProjection()
     {
@@ -566,29 +621,21 @@ public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate>
     public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
 }
 
-public class SimpleAggregateProjection2: CustomProjection<SimpleAggregate, Guid>
+public class CountedAggregateProjection2: SingleStreamProjection<CountedAggregate, Guid>
 {
-    public SimpleAggregateProjection2()
+    public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent @event)
     {
-        AggregateByStream();
-    }
+        snapshot ??= new CountedAggregate();
 
-    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
-    {
-        snapshot ??= new SimpleAggregate();
-
-        foreach (var @event in events)
+        switch (@event.Data)
         {
-            switch (@event.Data)
-            {
-                case AEvent _:
-                    snapshot.ACount++;
-                    break;
+            case AEvent _:
+                snapshot.ACount++;
+                break;
 
-                case BEvent _:
-                    snapshot.BCount++;
-                    break;
-            }
+            case BEvent _:
+                snapshot.BCount++;
+                break;
         }
 
         return snapshot;

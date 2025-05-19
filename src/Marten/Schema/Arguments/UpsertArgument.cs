@@ -24,7 +24,7 @@ public class UpsertArgument
         typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x =>
             x.Name == "Write" && x.GetParameters().Length == 2 &&
             x.GetParameters()[0].ParameterType.IsGenericParameter &&
-            x.GetParameters()[1].ParameterType == typeof(NpgsqlDbType));
+            x.GetParameters()[1].ParameterType == typeof(NpgsqlDbType))!;
 
     private MemberInfo[] _members;
     private string _postgresType;
@@ -61,7 +61,7 @@ public class UpsertArgument
 
                 if (_members.Length == 1)
                 {
-                    DotNetType = _members.Last().GetRawMemberType();
+                    DotNetType = _members.Last().GetRawMemberType()!;
                 }
                 else
                 {
@@ -113,8 +113,8 @@ public class UpsertArgument
         {
             var rawMemberType = _members.Last().GetRawMemberType();
 
-            var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            var dbTypeString = rawMemberType!.IsArray
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
                 : $"({typeof(NpgsqlDbType).FullNameInCode()})({(int)DbType})";
 
             if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
@@ -174,11 +174,11 @@ END
     }
     public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
-        var rawMemberType = _members.Last().GetRawMemberType();
+        var rawMemberType = _members.Last().GetRawMemberType()!;
 
 
         var dbTypeString = rawMemberType.IsArray
-            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
             : $"({typeof(NpgsqlDbType).FullNameInCode()})({(int)DbType})";
 
 
@@ -192,9 +192,9 @@ END
         {
             var isDeep = _members.Length > 0;
             var memberType = _members.Last().GetMemberType();
-            var isNullable = memberType.IsNullable();
+            var isNullable = memberType!.IsNullable();
 
-            var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+            var enumType = isNullable ? memberType!.GetGenericArguments()[0] : memberType;
             var accessor = memberPath;
 
             if (DbType == NpgsqlDbType.Integer)
@@ -213,7 +213,7 @@ END
                 if (isNullable || isDeep)
                 {
                     accessor =
-                        $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                        $"GetEnumStringValue<{enumType!.FullNameInCode()}>(document.{memberPath})";
                 }
                 else
                 {

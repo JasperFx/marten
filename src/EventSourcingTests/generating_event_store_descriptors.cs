@@ -1,11 +1,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using EventSourcingTests.Examples;
-using EventSourcingTests.Examples.TeleHealth;
 using EventSourcingTests.FetchForWriting;
 using EventSourcingTests.Projections;
-using JasperFx.Core.Descriptions;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -36,7 +35,7 @@ public class generating_event_store_descriptors
                 });
             }).StartAsync();
 
-        var capabilities = host.Services.GetServices<IEventStoreCapability>().ToArray();
+        var capabilities = host.Services.GetServices<IEventStore>().ToArray();
         capabilities.Length.ShouldBe(1);
 
         var usage = await capabilities[0].TryCreateUsage(CancellationToken.None);

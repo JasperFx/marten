@@ -22,8 +22,8 @@ public class StringValueTypeMember<T>: StringMember, IValueTypeMember<T, string>
     public StringValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, ValueTypeInfo valueTypeInfo) : base(parent, casing, member)
     {
         MemberType = member.GetRawMemberType();
-        _valueSource = valueTypeInfo.ValueAccessor<T, string>();
-        var converter = valueTypeInfo.CreateConverter<T, string>();
+        _valueSource = valueTypeInfo.UnWrapper<T, string>();
+        var converter = valueTypeInfo.CreateWrapper<T, string>();
 
         if (typeof(T).IsClass)
         {

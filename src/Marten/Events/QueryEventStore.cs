@@ -106,15 +106,18 @@ internal class QueryEventStore: IQueryEventStore
 
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromString(aggregate, streamKey);
+        if (aggregate != null)
+        {
+            var storage = _session.StorageFor<T>();
+            storage.SetIdentityFromString(aggregate, streamKey);
+        }
 
         return aggregate;
     }
 
-    public IMartenQueryable<T> QueryRawEventDataOnly<T>()
+    public IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : notnull
     {
-        _store.Events.AddEventType(typeof(T));
+        _store.Events.AddEventType<T>();
 
         return _session.Query<T>();
     }
@@ -128,9 +131,9 @@ internal class QueryEventStore: IQueryEventStore
     {
         await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
-        _store.Events.AddEventType(typeof(T));
+        _store.Events.AddEventType<T>();
 
-        return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
+        return (await LoadAsync(id, token).ConfigureAwait(false))?.As<Event<T>>();
     }
 
     public async Task<IEvent?> LoadAsync(Guid id, CancellationToken token = default)

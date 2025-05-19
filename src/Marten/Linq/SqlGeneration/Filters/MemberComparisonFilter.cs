@@ -64,7 +64,7 @@ public class MemberComparisonFilter: ComparisonFilter, ICollectionAware
 
     public IEnumerable<DictionaryValueUsage> Values()
     {
-        var rawValue = Right.As<CommandParameter>().Value;
+        var rawValue = Right.As<CommandParameter>().Value!;
         yield return new DictionaryValueUsage(rawValue);
     }
 }

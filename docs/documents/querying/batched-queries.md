@@ -94,25 +94,3 @@ await batch.Execute();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L119-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-## Running Synchronously
-
-As of v0.9.1, Marten also exposes the batch querying functionality with a synchronous option:
-
-<!-- snippet: sample_batch-query-with-compiled-queries-synchronously -->
-<a id='snippet-sample_batch-query-with-compiled-queries-synchronously'></a>
-```cs
-var batch = session.CreateBatchQuery();
-
-var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
-var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
-
-batch.ExecuteSynchronously();
-
-justin.Result.Id.ShouldBe(user1.Id);
-tamba.Result.Id.ShouldBe(user2.Id);
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L139-L151' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries-synchronously' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-The mechanics of running synchronously are identical except for calling `IBatchedQuery.ExecuteSynchronously()`.

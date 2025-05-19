@@ -4,7 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
@@ -13,7 +17,7 @@ namespace EventSourcingTests.Aggregation;
 
 public class AggregationContext : IntegrationContext
 {
-    protected SingleStreamProjection<MyAggregate> _projection;
+    protected SingleStreamProjection<MyAggregate, Guid> _projection;
 
     public AggregationContext(DefaultStoreFixture fixture) : base(fixture)
     {
@@ -25,7 +29,7 @@ public class AggregationContext : IntegrationContext
         return theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(MyAggregate));
     }
 
-    public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate>, new()
+    public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate, Guid>, new()
     {
         _projection = new T();
 
@@ -33,9 +37,9 @@ public class AggregationContext : IntegrationContext
         rules.TypeLoadMode = TypeLoadMode.Dynamic;
     }
 
-    public void UsingDefinition(Action<SingleStreamProjection<MyAggregate>> configure)
+    public void UsingDefinition(Action<SingleStreamProjection<MyAggregate, Guid>> configure)
     {
-        _projection = new SingleStreamProjection<MyAggregate>();
+        _projection = new SingleStreamProjection<MyAggregate, Guid>();
         configure(_projection);
 
 
@@ -47,9 +51,8 @@ public class AggregationContext : IntegrationContext
     public ValueTask<MyAggregate> LiveAggregation(Action<TestEventSlice> action)
     {
         var fragment = BuildStreamFragment(action);
-
-        var aggregator = _projection.BuildAggregator(theStore.Options);
-        var events = (IReadOnlyList<IEvent>)fragment.Events();
+        var aggregator = _projection.As<IAggregatorSource<IQuerySession>>().Build<MyAggregate>();
+        var events = fragment.Events();
         return aggregator.BuildAsync(events, theSession, null, CancellationToken.None);
     }
 
@@ -72,7 +75,7 @@ public class AggregationContext : IntegrationContext
             .Select(x => StreamAction.Append(x.Key, x.Value.Events().ToArray()))
             .ToArray();
 
-        var inline = _projection.BuildRuntime(theStore);
+        var inline = _projection.As<IProjectionSource<IDocumentOperations, IQuerySession>>().BuildForInline();
 
         await inline.ApplyAsync(theSession, streams, CancellationToken.None);
         await theSession.SaveChangesAsync();
