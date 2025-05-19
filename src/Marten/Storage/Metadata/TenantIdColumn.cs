@@ -12,7 +12,7 @@ namespace Marten.Storage.Metadata;
 
 internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn, IStreamTableColumn
 {
-    public static new readonly string Name = "tenant_id";
+    public static new readonly string Name = StorageConstants.TenantIdColumn;
 
     public TenantIdColumn(): base(Name, x => x.TenantId)
     {

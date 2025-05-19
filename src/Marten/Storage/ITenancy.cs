@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Threading.Tasks;
 using JasperFx.Core.Descriptors;
+using JasperFx.MultiTenancy;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 
 namespace Marten.Storage;
@@ -64,10 +66,3 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
 }
 
 #endregion
-
-public class UnknownTenantIdException: MartenException
-{
-    public UnknownTenantIdException(string tenantId): base($"Unknown tenant id '{tenantId}'")
-    {
-    }
-}

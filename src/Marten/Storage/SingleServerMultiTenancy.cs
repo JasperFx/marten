@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.Core.Descriptors;
+using JasperFx.MultiTenancy;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
@@ -132,7 +133,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
 
     public async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
     {
-        var tenant = await GetTenantAsync(_options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier))
+        var tenant = await GetTenantAsync(_options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier))
             .ConfigureAwait(false);
         return tenant.Database;
     }

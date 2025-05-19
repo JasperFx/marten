@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx;
+using JasperFx.MultiTenancy;
 using Marten.Exceptions;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
@@ -88,7 +89,7 @@ public sealed class SessionOptions
         OpenTelemetryOptions telemetryOptions)
     {
         Mode = mode;
-        Tenant ??= TenantId != StorageConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
+        Tenant ??= TenantId != StorageConstants.DefaultTenantId ? store.Tenancy.GetTenant(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)) : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&
             (Tenant == null || Tenant.TenantId == StorageConstants.DefaultTenantId))
@@ -157,7 +158,7 @@ public sealed class SessionOptions
     {
         Mode = mode;
         Tenant ??= TenantId != StorageConstants.DefaultTenantId
-            ? await store.Tenancy.GetTenantAsync(store.Options.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
+            ? await store.Tenancy.GetTenantAsync(store.Options.TenantIdStyle.MaybeCorrectTenantId(TenantId)).ConfigureAwait(false)
             : store.Tenancy.Default;
 
         if (!AllowAnyTenant && !store.Options.Advanced.DefaultTenantUsageEnabled &&

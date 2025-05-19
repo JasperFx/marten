@@ -12,6 +12,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -115,7 +116,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         var bulkInsertion =
             new BulkInsertion(
-                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+                await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
@@ -140,7 +141,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         var bulkInsertion =
             new BulkInsertion(
-                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+                await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
@@ -163,7 +164,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         return IdentitySession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -191,7 +192,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         return IdentitySerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             },
             cancellation
         );
@@ -219,7 +220,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         return DirtyTrackedSession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -245,7 +246,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         return DirtyTrackedSerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             }, cancellation);
     }
 
@@ -271,7 +272,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         return LightweightSession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -297,7 +298,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         return LightweightSerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             }, cancellation);
     }
 
@@ -325,7 +326,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
     public IQuerySession QuerySession(string tenantId)
     {
-        return QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
+        return QuerySession(new SessionOptions { TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId) });
     }
 
     public async Task<IQuerySession> QuerySerializableSessionAsync(
@@ -352,7 +353,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         return QuerySerializableSessionAsync(
             new SessionOptions
             {
-                TenantId = Options.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable
+                TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable
             }, cancellation);
     }
 
@@ -363,7 +364,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
         {
-            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+            tenantIdOrDatabaseIdentifier = Options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         }
 
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
@@ -423,7 +424,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     {
         if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
         {
-            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+            tenantIdOrDatabaseIdentifier = Options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         }
 
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);

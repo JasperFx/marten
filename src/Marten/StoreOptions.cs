@@ -12,6 +12,7 @@ using JasperFx.Core;
 using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Exceptions;
@@ -35,26 +36,6 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
 
 namespace Marten;
-
-public enum TenantIdStyle
-{
-    /// <summary>
-    /// Use the tenant id as is wherever it is supplied
-    /// </summary>
-    CaseSensitive,
-
-    /// <summary>
-    /// Quietly convert all supplied tenant identifiers to all upper case to prevent
-    /// any possible issues with case sensitive tenant id mismatches
-    /// </summary>
-    ForceUpperCase,
-
-    /// <summary>
-    /// Quietly convert all supplied tenant identifiers to all lower case to prevent
-    /// any possible issues with case sensitive tenant id mismatches
-    /// </summary>
-    ForceLowerCase
-}
 
 /// <summary>
 ///     StoreOptions supplies all the necessary configuration
@@ -173,22 +154,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
             return builder;
         });
-    }
-
-    public string MaybeCorrectTenantId(string tenantId)
-    {
-        if (tenantId.IsEmpty()) return StorageConstants.DefaultTenantId;
-        if (tenantId == StorageConstants.DefaultTenantId) return tenantId;
-
-        switch (TenantIdStyle)
-        {
-            case TenantIdStyle.CaseSensitive:
-                return tenantId;
-            case TenantIdStyle.ForceLowerCase:
-                return tenantId.ToLowerInvariant();
-            default:
-                return tenantId.ToUpperInvariant();
-        }
     }
 
     /// <summary>

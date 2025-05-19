@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
@@ -58,7 +59,7 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
     )
     {
         _store = store;
-        TenantId = store.Options.MaybeCorrectTenantId(tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId);
+        TenantId = store.Options.TenantIdStyle.MaybeCorrectTenantId(tenant?.TenantId ?? sessionOptions.Tenant?.TenantId ?? sessionOptions.TenantId);
         Database = tenant?.Database ?? sessionOptions.Tenant?.Database ??
             throw new ArgumentNullException(nameof(SessionOptions.Tenant));
 

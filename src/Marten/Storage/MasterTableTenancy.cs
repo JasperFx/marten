@@ -2,87 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Descriptors;
+using JasperFx.MultiTenancy;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
-
-public class MasterTableTenancyOptions
-{
-    internal readonly Dictionary<string, string> SeedDatabases = new();
-
-    /// <summary>
-    ///     The connection string of the master database holding the tenant table
-    /// </summary>
-    public string? ConnectionString { get; set; }
-
-    /// <summary>
-    ///     A configured data source for managing the tenancy
-    /// </summary>
-    public NpgsqlDataSource? DataSource { get; set; }
-
-    /// <summary>
-    ///     If specified, override the database schema name for the tenants table
-    ///     Default is "public"
-    /// </summary>
-    public string SchemaName { get; set; } = "public";
-
-    /// <summary>
-    ///     Set an application name in the connection strings strictly for diagnostics
-    /// </summary>
-    public string ApplicationName { get; set; } = Assembly.GetEntryAssembly()?.FullName ?? "Marten";
-
-    /// <summary>
-    ///     If set, this will override the AutoCreate setting for just the master tenancy table
-    /// </summary>
-    public AutoCreate? AutoCreate { get; set; }
-
-    /// <summary>
-    ///     For the sake of testing, seed the master tenancy table with a tenant
-    ///     database
-    /// </summary>
-    /// <param name="tenantId"></param>
-    /// <param name="connectionString"></param>
-    public void RegisterDatabase(string tenantId, string connectionString)
-    {
-        SeedDatabases[tenantId] = connectionString;
-    }
-
-    internal string CorrectedConnectionString()
-    {
-        if (ApplicationName.IsNotEmpty())
-        {
-            var builder = new NpgsqlConnectionStringBuilder(ConnectionString) { ApplicationName = ApplicationName };
-
-            return builder.ConnectionString;
-        }
-
-        return ConnectionString;
-    }
-
-    internal string CorrectConnectionString(string connectionString)
-    {
-        if (ApplicationName.IsNotEmpty())
-        {
-            var builder = new NpgsqlConnectionStringBuilder(connectionString) { ApplicationName = ApplicationName };
-
-            return builder.ConnectionString;
-        }
-
-        return connectionString;
-    }
-}
 
 public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 {
@@ -97,7 +32,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
     private bool _hasAppliedDefaults;
 
     public MasterTableTenancy(StoreOptions options, string connectionString, string schemaName): this(options,
-        new MasterTableTenancyOptions { ConnectionString = connectionString, SchemaName = schemaName })
+        new MasterTableTenancyOptions() { ConnectionString = connectionString, SchemaName = schemaName })
     {
     }
 
@@ -161,7 +96,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             while (await reader.ReadAsync().ConfigureAwait(false))
             {
                 var tenantId = await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false);
-                tenantId = _options.MaybeCorrectTenantId(tenantId);
+                tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
 
                 // Be idempotent, don't duplicate
                 if (_databases.Contains(tenantId))
@@ -195,7 +130,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public Tenant GetTenant(string tenantId)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         if (_databases.TryFind(tenantId, out var database))
         {
             return new Tenant(tenantId, database);
@@ -216,7 +151,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async ValueTask<Tenant> GetTenantAsync(string tenantId)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         if (_databases.TryFind(tenantId, out var database))
         {
             return new Tenant(tenantId, database);
@@ -235,7 +170,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier)
     {
-        tenantIdOrDatabaseIdentifier = _options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+        tenantIdOrDatabaseIdentifier = _options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         if (_databases.TryFind(tenantIdOrDatabaseIdentifier, out var database))
         {
             return database;
@@ -252,7 +187,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         return database.Identifier == tenantId;
     }
 
@@ -260,7 +195,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async Task DeleteDatabaseRecordAsync(string tenantId)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
 
         await _dataSource.Value
@@ -279,7 +214,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     public async Task AddDatabaseRecordAsync(string tenantId, string connectionString)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await _dataSource.Value
             .CreateCommand(
                 $"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (:id, :connection) on conflict (tenant_id) do update set connection_string = :connection")
@@ -302,19 +237,19 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     private async Task seedDatabasesAsync(NpgsqlConnection conn)
     {
-        if (!_configuration.SeedDatabases.Any())
+        if (!_configuration.SeedDatabases.HasAny())
         {
             return;
         }
 
         var builder = new BatchBuilder();
-        foreach (var pair in _configuration.SeedDatabases)
+        foreach (var pair in _configuration.SeedDatabases.AllActiveByTenant())
         {
             builder.StartNewCommand();
             var parameters = builder.AppendWithParameters(
                 $"insert into {_schemaName}.{TenantTable.TableName} (tenant_id, connection_string) values (?, ?) on conflict (tenant_id) do update set connection_string = ?");
 
-            parameters[0].Value = pair.Key;
+            parameters[0].Value = pair.TenantId;
             parameters[1].Value = pair.Value;
             parameters[2].Value = pair.Value;
         }
@@ -328,7 +263,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
     private async Task<MartenDatabase?> tryFindTenantDatabase(string tenantId)
     {
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         var connectionString = (string)await _dataSource.Value
             .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
             .With("id", tenantId)
@@ -390,8 +325,8 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
         public TenantTable(string schemaName): base(new DbObjectName(schemaName, TableName))
         {
-            AddColumn<string>("tenant_id").AsPrimaryKey();
-            AddColumn<string>("connection_string").NotNull();
+            AddColumn<string>(StorageConstants.TenantIdColumn).AsPrimaryKey();
+            AddColumn<string>(StorageConstants.ConnectionStringColumn).NotNull();
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -11,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
 using Weasel.Core;
+using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 
@@ -143,10 +145,10 @@ public class master_table_multi_tenancy_seeding_with_datasource: IAsyncLifetime
                         x.DataSource = sp.GetRequiredService<NpgsqlDataSource>();
                         x.SchemaName = "tenants";
                         x.ApplicationName = "Sample";
-                        x.RegisterDatabase("tenant1", tenant1ConnectionString);
-                        x.RegisterDatabase("tenant2", tenant2ConnectionString);
-                        x.RegisterDatabase("tenant3", tenant3ConnectionString);
-                        x.RegisterDatabase("tenant4", tenant4ConnectionString);
+                        x.SeedDatabases.Register("tenant1", tenant1ConnectionString);
+                        x.SeedDatabases.Register("tenant2", tenant2ConnectionString);
+                        x.SeedDatabases.Register("tenant3", tenant3ConnectionString);
+                        x.SeedDatabases.Register("tenant4", tenant4ConnectionString);
                     });
                 });
             }).StartAsync();

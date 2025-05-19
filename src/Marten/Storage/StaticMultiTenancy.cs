@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.Core.Descriptors;
+using JasperFx.MultiTenancy;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql.Connections;
 
 namespace Marten.Storage;

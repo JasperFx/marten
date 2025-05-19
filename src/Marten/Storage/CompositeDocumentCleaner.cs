@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.MultiTenancy;
 using Marten.Schema;
 
 namespace Marten.Storage;
@@ -56,7 +57,7 @@ public class CompositeDocumentCleaner: IDocumentCleaner
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
 
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
 
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);
@@ -70,7 +71,7 @@ public class CompositeDocumentCleaner: IDocumentCleaner
             await applyToAll(d => d.DeleteSingleEventStreamAsync(streamId, tenantId, ct)).ConfigureAwait(false);
         }
 
-        tenantId = _options.MaybeCorrectTenantId(tenantId);
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
 
         var tenant = await _tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
         await tenant.Database.DeleteSingleEventStreamAsync(streamId, tenantId, ct).ConfigureAwait(false);

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -7,7 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
@@ -18,7 +16,6 @@ using Marten.Linq.Members;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
-using Marten.Storage;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -29,16 +26,22 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
 {
     private readonly IScalarSelectClause _selector;
 
-    private FSharpDiscriminatedUnionIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, ConstructorInfo ctor)
+    private FSharpDiscriminatedUnionIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType,
+        ConstructorInfo ctor)
         : base(outerType, simpleType, valueProperty, ctor)
     {
-        _selector = typeof(FSharpDiscriminatedUnionIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector =
+            typeof(FSharpDiscriminatedUnionIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+                SimpleType);
     }
 
-    private FSharpDiscriminatedUnionIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType, MethodInfo builder)
+    private FSharpDiscriminatedUnionIdGeneration(Type outerType, PropertyInfo valueProperty, Type simpleType,
+        MethodInfo builder)
         : base(outerType, simpleType, valueProperty, builder)
     {
-        _selector = typeof(FSharpDiscriminatedUnionIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType, SimpleType);
+        _selector =
+            typeof(FSharpDiscriminatedUnionIdSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(this, OuterType,
+                SimpleType);
     }
 
     public bool IsNumeric => false;
@@ -55,14 +58,26 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         return _selector.CloneToOtherTable(tableName);
     }
 
+    public Func<object, T> BuildInnerValueSource<T>()
+    {
+        var target = Expression.Parameter(typeof(object), "target");
+        var method = ValueProperty.GetMethod;
+
+        var callGetMethod = Expression.Call(Expression.Convert(target, OuterType), method);
+
+        var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
+
+        return FastExpressionCompiler.ExpressionCompiler.CompileFast(lambda);
+    }
+
     public static bool IsFSharpSingleCaseDiscriminatedUnion(Type type)
     {
         return type.IsClass && type.IsSealed && type.GetProperties().Any(x => x.Name == "Tag");
     }
 
-    public static bool IsCandidate(Type idType, [NotNullWhen(true)]out FSharpDiscriminatedUnionIdGeneration? idGeneration)
+    public static bool IsCandidate(Type idType,
+        [NotNullWhen(true)] out FSharpDiscriminatedUnionIdGeneration? idGeneration)
     {
-
         idGeneration = default;
         if (idType.IsClass && !IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
@@ -144,18 +159,6 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         }
     }
 
-    public Func<object, T> BuildInnerValueSource<T>()
-    {
-        var target = Expression.Parameter(typeof(object), "target");
-        var method = ValueProperty.GetMethod;
-
-        var callGetMethod = Expression.Call(Expression.Convert(target, OuterType), method);
-
-        var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
-
-        return lambda.CompileFast();
-    }
-
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
     {
         var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
@@ -171,7 +174,8 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
     }
 }
 
-internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause, IModifyableFromObject,
+internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectClause, IScalarSelectClause,
+    IModifyableFromObject,
     ISelector<TOuter> where TOuter : notnull
 {
     public FSharpDiscriminatedUnionIdSelectClause(FSharpDiscriminatedUnionIdGeneration typedIdGeneration)

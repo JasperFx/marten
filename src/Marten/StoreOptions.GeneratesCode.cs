@@ -91,7 +91,7 @@ public partial class StoreOptions: ICodeFileCollection
         ApplicationAssembly ??= options.ApplicationAssembly;
         GeneratedCodeOutputPath ??= options.GeneratedCodeOutputPath;
         _generatedCodeMode ??= options.ActiveProfile.GeneratedCodeMode;
-        _autoCreate ??= options.ActiveProfile.AutoCreate;
+        _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
         _sourceCodeWritingEnabled ??= options.ActiveProfile.SourceCodeWritingEnabled;
     }
 }

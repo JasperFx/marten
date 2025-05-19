@@ -1,16 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
-using FastExpressionCompiler;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Internal;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
@@ -236,7 +233,7 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
         var lambda = Expression.Lambda<Func<object, T>>(callGetMethod, target);
 
-        return lambda.CompileFast();
+        return FastExpressionCompiler.ExpressionCompiler.CompileFast(lambda);
     }
 
     public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)

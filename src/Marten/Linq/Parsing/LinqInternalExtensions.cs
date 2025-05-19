@@ -1,13 +1,10 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using FastExpressionCompiler;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -193,7 +190,7 @@ public static class LinqInternalExtensions
             {
                 var lambdaWithoutParameters =
                     Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
-                var compiledLambda = lambdaWithoutParameters.CompileFast();
+                var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
 
                 var value = compiledLambda();
                 return new CommandParameter(value);
@@ -341,11 +338,12 @@ public static class LinqInternalExtensions
         }
 
         var lambdaWithoutParameters = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
-        var compiledLambda = lambdaWithoutParameters.CompileFast();
+        var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
 
         try
         {
             var value = compiledLambda();
+
             return Expression.Constant(value, expression.Type);
         }
         catch (Exception e)
