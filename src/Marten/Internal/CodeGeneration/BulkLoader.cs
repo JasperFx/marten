@@ -54,7 +54,7 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
 
     public abstract string CopyNewDocumentsFromTempTable();
 
-    public abstract string OverwriteDuplicatesFromTempTable();
+    public abstract string UpsertFromTempTable();
 
     public object GetNullable<TValue>(TValue? value) where TValue : struct
     {

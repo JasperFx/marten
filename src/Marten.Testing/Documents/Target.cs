@@ -16,7 +16,7 @@ public enum Colors
     Orange
 }
 
-public class Target
+public record Target
 {
     public record Nested(Target[] Targets);
 

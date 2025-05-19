@@ -100,23 +100,39 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
     public AdvancedOperations Advanced { get; }
 
+    public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000,
+        string? updateCondition = null,
+        CancellationToken cancellation = default) where T : notnull
+    {
+        var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+        return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, updateCondition, cancellation);
+    }
+
     public Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents,
         Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
+        int batchSize = 1000,
+        string? updateCondition = null,
+        CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
-        return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, cancellation);
+        return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, updateCondition, cancellation);
     }
 
-    public async Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
+    public async Task BulkInsertAsync<T>(
+        string tenantId,
+        IReadOnlyCollection<T> documents,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000,
+        string? updateCondition = null,
         CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion =
             new BulkInsertion(
                 await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
-        await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
+        await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, updateCondition, cancellation).ConfigureAwait(false);
     }
 
     public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
