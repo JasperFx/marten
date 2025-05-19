@@ -1,7 +1,9 @@
 #nullable enable
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using System;
+using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.ContainerScoped;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Events.Projections;
 
@@ -12,24 +14,78 @@ namespace Marten.Events.Projections;
 ///     IProjection implementations define the projection type and handle its projection document lifecycle
 ///     Optimized for inline usage
 /// </summary>
-public interface IProjection
+public interface IProjection: IJasperFxProjection<IDocumentOperations>, IMartenRegistrable
+#endregion
 {
-    /// <summary>
-    ///     Apply inline projections during synchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams);
+    // Ignore this, ugly Marten internals......
+    static void IMartenRegistrable.Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure)
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    var wrapper = new ProjectionWrapper<IDocumentOperations, IQuerySession>((IProjection)projection, lifecycle);
+                    configure?.Invoke(wrapper);
 
-    /// <summary>
-    ///     Apply inline projections during asynchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-        CancellationToken cancellation);
+                    opts.Projections.Add(wrapper, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
+    static void IMartenRegistrable.Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure)
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    var wrapper =
+                        new ProjectionWrapper<IDocumentOperations, IQuerySession>((IProjection)projection, lifecycle);
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add(wrapper, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
 }
 
-#endregion
+

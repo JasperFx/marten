@@ -1,7 +1,9 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Exceptions;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Npgsql;
 
@@ -9,8 +11,6 @@ namespace Marten.Services;
 
 internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTransform
 {
-    private const string ExpectedMessage =
-        "duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"";
     private const string DetailsRedactedMessage = "Detail redacted as it may contain sensitive data. " +
         "Specify 'Include Error Detail' in the connection string to include this information.";
 
@@ -18,9 +18,9 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string Version = "version";
 
     private static readonly Regex EventStreamUniqueExceptionDetailsRegex =
-        new(@"^Key \(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
+        new(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
 
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if (!Matches(original))
         {
@@ -30,8 +30,8 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 
         var postgresException = original as PostgresException;
 
-        object id = null;
-        Type aggregateType = null;
+        object? id = null;
+        Type? aggregateType = null;
         var expected = -1;
         var actual = -1;
 
@@ -69,6 +69,6 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     {
         return e is PostgresException pe
             && pe.SqlState == PostgresErrorCodes.UniqueViolation
-            && pe.Message.Contains(ExpectedMessage);
+            && (pe.ConstraintName == "pk_mt_events_stream_and_version" || pe.ConstraintName == "mt_events_default_stream_id_version_is_archived_idx");
     }
 }

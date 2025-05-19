@@ -104,10 +104,10 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
+                    expectedTag.ShouldNotBe(default);
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
+                    expectedEvent.ShouldNotBe(default);
                     expectedEvent.Name.ShouldBe(MartenCommandExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -146,7 +146,7 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
+                    expectedTag.ShouldNotBe(default);
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -195,10 +195,10 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
+                    expectedTag.ShouldNotBe(default);
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
+                    expectedEvent.ShouldNotBe(default);
                     expectedEvent.Name.ShouldBe(MartenCommandExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -238,7 +238,7 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
+                    expectedTag.ShouldNotBe(default);
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -287,10 +287,10 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
+                    expectedTag.ShouldNotBe(default);
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
+                    expectedEvent.ShouldNotBe(default);
                     expectedEvent.Name.ShouldBe(MartenCommandExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -331,7 +331,6 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -381,10 +380,8 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
                     expectedEvent.Name.ShouldBe(MartenCommandExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -425,7 +422,6 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -474,10 +470,8 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
                     expectedEvent.Name.ShouldBe(MartenBatchExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -518,7 +512,6 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -567,10 +560,8 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
                     expectedEvent.Name.ShouldBe(MartenBatchExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -611,7 +602,6 @@ namespace CoreTests.Internal.Sessions
                 {
                     _endCalled = true;
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     activity.Events.Count().ShouldBe(2);
                     var firstEvent = activity.Events.First();
@@ -660,10 +650,8 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
                     expectedEvent.Name.ShouldBe(MartenBatchPagesExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }
@@ -703,10 +691,8 @@ namespace CoreTests.Internal.Sessions
                     _endCalled = true;
                     activity.ShouldNotBeNull();
                     var expectedTag = activity.Tags.SingleOrDefault();
-                    expectedTag.ShouldNotBeNull();
                     expectedTag.Key.ShouldBe(MartenTracing.TenantId);
                     var expectedEvent = activity.Events.SingleOrDefault();
-                    expectedEvent.ShouldNotBeNull();
                     expectedEvent.Name.ShouldBe(MartenBatchPagesExecutionStarted);
                     expectedEvent.Tags.ShouldBeEmpty();
                 }

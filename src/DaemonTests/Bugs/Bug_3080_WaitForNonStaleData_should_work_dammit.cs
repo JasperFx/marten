@@ -1,15 +1,17 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Lamar.Microsoft.DependencyInjection;
 using Marten;
 using Marten.Events;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Weasel.Postgresql.Tables;
@@ -160,7 +162,7 @@ public class Bug_3080_WaitForNonStaleData_should_work_dammit
 
         public MyAggregateTableProjection()
         {
-            ProjectionName = "MyProjection";
+            Name = "MyProjection";
 
             var table = new Table("mt_tbl_my_aggregate");
 

@@ -1,8 +1,7 @@
-using System;
+#nullable enable
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 
 namespace Marten.Util;
 
@@ -17,11 +16,4 @@ internal static class ReflectionExtensions
     {
         return member.Name.ToTableAlias();
     }
-
-
-    public static string ToTableAlias(this string name)
-    {
-        return name.SplitPascalCase().ToLower().Replace(" ", "_");
-    }
-
 }

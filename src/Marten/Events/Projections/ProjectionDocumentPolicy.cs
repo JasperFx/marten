@@ -1,3 +1,4 @@
+using Marten.Events.Aggregation;
 using Marten.Schema;
 
 namespace Marten.Events.Projections;
@@ -9,11 +10,13 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
 {
     public void Apply(DocumentMapping mapping)
     {
+        if (mapping.StoreOptions.Projections == null) return;
+
         if (mapping.StoreOptions.Projections.TryFindAggregate(mapping.DocumentType, out var projection))
         {
-            if (projection.ProjectionVersion > 1)
+            if (projection.Version > 1)
             {
-                mapping.Alias += "_" + projection.ProjectionVersion;
+                mapping.Alias += "_" + projection.Version;
             }
 
             mapping.UseOptimisticConcurrency = false;
@@ -21,7 +24,11 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
             mapping.UseNumericRevisions = true;
             mapping.Metadata.Revision.Enabled = true;
 
-            projection.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+            if (projection is IMartenAggregateProjection m)
+            {
+                m.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
+            }
+
         }
     }
 }

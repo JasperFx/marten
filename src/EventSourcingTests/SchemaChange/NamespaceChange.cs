@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Internal.Sessions;
@@ -83,7 +84,7 @@ namespace EventSourcingTests.SchemaChange
             #region sample_event_type_name_migration_options
             var options = new StoreOptions();
 
-            options.EventGraph
+            options.Events
                 .MapEventType<NewEventNamespace.ConfirmedOrderStatusChanged>("order_status_changed");
 
             var store = new DocumentStore(options);

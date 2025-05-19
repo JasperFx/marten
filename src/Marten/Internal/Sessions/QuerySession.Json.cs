@@ -1,4 +1,3 @@
-#nullable enable
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,7 +14,7 @@ public partial class QuerySession
     public IJsonLoader Json => new JsonLoader(this);
 
     public async Task<bool> StreamJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
@@ -23,7 +22,7 @@ public partial class QuerySession
     }
 
     public Task<int> StreamJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         var handler = (IQueryHandler<TOut>)source.Build(query, this);
@@ -31,7 +30,7 @@ public partial class QuerySession
     }
 
     public async Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var stream = new MemoryStream();
         var count = await StreamJsonOne(query, stream, token).ConfigureAwait(false);
@@ -45,7 +44,7 @@ public partial class QuerySession
     }
 
     public async Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        CancellationToken token = default)
+        CancellationToken token = default) where TDoc : notnull
     {
         var stream = new MemoryStream();
         await StreamJsonOne(query, stream, token).ConfigureAwait(false);
@@ -55,8 +54,13 @@ public partial class QuerySession
 
     public Task<int> StreamJson<T>(Stream destination, CancellationToken token, string sql, params object[] parameters)
     {
+        return StreamJson<T>(destination, token, DefaultParameterPlaceholder, sql, parameters);
+    }
+
+    public Task<int> StreamJson<T>(Stream destination, CancellationToken token, char placeholder, string sql, params object[] parameters)
+    {
         assertNotDisposed();
-        var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
+        var handler = new UserSuppliedQueryHandler<T>(this, placeholder, sql, parameters);
         var builder = new CommandBuilder();
         handler.ConfigureCommand(builder, this);
         return StreamMany(builder.Compile(), destination, token);
@@ -65,6 +69,11 @@ public partial class QuerySession
     public Task<int> StreamJson<T>(Stream destination, string sql, params object[] parameters)
     {
         return StreamJson<T>(destination, CancellationToken.None, sql, parameters);
+    }
+
+    public Task<int> StreamJson<T>(Stream destination, char placeholder, string sql, params object[] parameters)
+    {
+        return StreamJson<T>(destination, CancellationToken.None, placeholder, sql, parameters);
     }
 
     public async Task<int> StreamJson<T>(IQueryHandler<T> handler, Stream destination, CancellationToken token)

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Patching;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -20,7 +21,7 @@ public class MultiTenancyFixture: StoreFixture
 }
 
 [Collection("multi_tenancy")]
-public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>
+public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
@@ -35,22 +36,32 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     public multi_tenancy(MultiTenancyFixture fixture, ITestOutputHelper output): base(fixture)
     {
         _output = output;
+
+    }
+
+    public async Task InitializeAsync()
+    {
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(targetBlue1, targetBlue2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
 
     [Fact]
-    public void patching_respects_tenancy_too()
+    public async Task patching_respects_tenancy_too()
     {
         var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller" };
         user.Id = Guid.NewGuid();
@@ -58,24 +69,24 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
         using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
-            red.SaveChanges();
+            await red.SaveChangesAsync();
         }
 
         using (var green = theStore.LightweightSession("Green"))
         {
             green.Patch<User>(user.Id).Set(x => x.FirstName, "John");
-            green.SaveChanges();
+            await green.SaveChangesAsync();
         }
 
         using (var red = theStore.QuerySession("Red"))
         {
-            var final = red.Load<User>(user.Id);
+            var final = await red.LoadAsync<User>(user.Id);
             final.FirstName.ShouldBe("Jeremy");
         }
     }
 
     [Fact]
-    public void patching_respects_tenancy_too_2()
+    public async Task patching_respects_tenancy_too_2()
     {
         var user = new User { UserName = "Me", FirstName = "Jeremy", LastName = "Miller" };
         user.Id = Guid.NewGuid();
@@ -83,18 +94,18 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
         using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
-            red.SaveChanges();
+            await red.SaveChangesAsync();
         }
 
         using (var green = theStore.LightweightSession("Green"))
         {
             green.Patch<User>(x => x.UserName == "Me").Set(x => x.FirstName, "John");
-            green.SaveChanges();
+            await green.SaveChangesAsync();
         }
 
         using (var red = theStore.QuerySession("Red"))
         {
-            var final = red.Load<User>(user.Id);
+            var final = await red.LoadAsync<User>(user.Id);
             final.FirstName.ShouldBe("Jeremy");
         }
     }

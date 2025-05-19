@@ -1,6 +1,9 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core.Descriptors;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
@@ -55,11 +58,23 @@ internal class DefaultTenancy: Tenancy, ITenancy
             martenDatabase.AddInitializer(Options.TenantPartitions.Partitions);
         }
 
-        Default = new Tenant(DefaultTenantId, martenDatabase);
+        Default = new Tenant(StorageConstants.DefaultTenantId, martenDatabase);
     }
 
     public void Dispose()
     {
         Default.Database.Dispose();
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.Single;
+
+    public ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        var usage = new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.Single, MainDatabase = Default.Database.Describe()
+        };
+
+        return new ValueTask<DatabaseUsage>(usage);
     }
 }

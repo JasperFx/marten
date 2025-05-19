@@ -22,6 +22,7 @@ public class StringMember: QueryableMember, IComparableMember
     {
         TypedLocator = RawLocator;
         _lowerLocator = $"lower({RawLocator})";
+        MemberType = typeof(string);
     }
 
     public override IQueryableMember FindMember(MemberInfo member)
@@ -33,6 +34,14 @@ public class StringMember: QueryableMember, IComparableMember
                 RawLocator = $"lower({RawLocator})", TypedLocator = $"lower({RawLocator})"
             },
             nameof(string.ToUpper) => new StringMember(this, Casing.Default, member)
+            {
+                RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
+            },
+            nameof(string.ToLowerInvariant) => new StringMember(this, Casing.Default, member)
+            {
+                RawLocator = $"lower({RawLocator})", TypedLocator = $"lower({RawLocator})"
+            },
+            nameof(string.ToUpperInvariant) => new StringMember(this, Casing.Default, member)
             {
                 RawLocator = $"upper({RawLocator})", TypedLocator = $"upper({RawLocator})"
             },

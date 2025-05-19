@@ -52,6 +52,15 @@ public class MemberFinder: ExpressionVisitor
             Members.Insert(0, LinqConstants.ArrayLength);
         }
 
+        // This is fugly!
+        if (node.Method.Name.IsOneOf([
+                nameof(String.ToLower), nameof(String.ToUpper), nameof(String.ToLowerInvariant),
+                nameof(String.ToUpperInvariant)
+            ]))
+        {
+            Members.Insert(0, node.Method);
+        }
+
         return base.VisitMethodCall(node);
     }
 

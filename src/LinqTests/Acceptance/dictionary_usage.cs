@@ -192,7 +192,7 @@ public class dictionary_bugs : OneOffConfigurationsContext
     public async Task filter_on_enum_of_dictionary_with_string_storage()
     {
         // GH-2951
-        StoreOptions(opts => opts.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(opts => opts.UseSystemTextJsonForSerialization(EnumStorage.AsString));
 
         var desiredValue = ItemStatus.Available;
         await theSession.Query<Order>().Where(x => x.StringEnumMap["1"] == desiredValue).ToListAsync();

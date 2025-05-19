@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
 
@@ -7,7 +8,7 @@ namespace DocumentDbTests.Bugs;
 public class SelfForeignKeyBugs(DefaultStoreFixture fixture) : IntegrationContext(fixture)
 {
     [Fact]
-    public void unitofwork_sort_doesnt_break_self_foreign_keys()
+    public async Task unitofwork_sort_doesnt_break_self_foreign_keys()
     {
         StoreOptions(o =>
         {
@@ -33,7 +34,7 @@ public class SelfForeignKeyBugs(DefaultStoreFixture fixture) : IntegrationContex
             }
         }
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }
 

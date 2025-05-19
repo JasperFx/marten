@@ -14,36 +14,37 @@ public class document_updates: IntegrationContext
 
 
     [Fact]
-    public void can_update_existing_documents()
+    public async Task can_update_existing_documents()
     {
         var targets = Target.GenerateRandomData(99).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var theNewNumber = 54321;
         using (var session = theStore.LightweightSession())
         {
             targets[0].Double = theNewNumber;
             session.Update(targets[0]);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<Target>(targets[0].Id)
+            (await query.LoadAsync<Target>(targets[0].Id))
                 .Double.ShouldBe(theNewNumber);
         }
     }
 
     [Fact]
-    public void update_sad_path()
+    public async Task update_sad_path()
     {
         var target = Target.Random();
 
         using var session = theStore.LightweightSession();
-        Exception<NonExistentDocumentException>.ShouldBeThrownBy(() =>
+
+        await Should.ThrowAsync<NonExistentDocumentException>(async () =>
         {
             session.Update(target);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         });
     }
 
@@ -53,7 +54,7 @@ public class document_updates: IntegrationContext
         var target = Target.Random();
 
         await using var session = theStore.LightweightSession();
-        await Exception<NonExistentDocumentException>.ShouldBeThrownByAsync(async () =>
+        await Should.ThrowAsync<NonExistentDocumentException>(async () =>
         {
             session.Update(target);
             await session.SaveChangesAsync();

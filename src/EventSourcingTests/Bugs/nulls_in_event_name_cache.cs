@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -23,28 +25,27 @@ public class nulls_in_event_name_cache : BugIntegrationContext
             await session.SaveChangesAsync();
         }
 
-        using (var store = SeparateStore(_ =>
-               {
-                   _.DatabaseSchemaName = theStore.Options.DatabaseSchemaName;
-                   _.Events.StreamIdentity = StreamIdentity.AsGuid;
-                   _.Projections.Add<MemberJoinedProjection>(ProjectionLifecycle.Inline);
-                   _.Projections.Add(new CustomProjection(), ProjectionLifecycle.Async);
-                   _.Connection(ConnectionSource.ConnectionString);
-               }))
+        await using var store = SeparateStore(opts =>
         {
-            var daemon = await store.BuildProjectionDaemonAsync();
+            opts.DatabaseSchemaName = theStore.Options.DatabaseSchemaName;
+            opts.Events.StreamIdentity = StreamIdentity.AsGuid;
+            opts.Projections.Add<MemberJoinedProjection>(ProjectionLifecycle.Inline);
+            opts.Projections.Add(new CustomProjection(), ProjectionLifecycle.Async);
+            opts.Connection(ConnectionSource.ConnectionString);
+        });
 
-            // Populate EventGraph name cache with null event mappings by requesting a projection with no event restrictions
-            await daemon.RebuildProjectionAsync("EventSourcingTests.Bugs.CustomProjection", CancellationToken.None);
-            // Request a rebuild from a projection that uses the event filter
-            await daemon.RebuildProjectionAsync<MemberJoinedProjection>(CancellationToken.None);
-        }
+        var daemon = await store.BuildProjectionDaemonAsync();
+
+        // Populate EventGraph name cache with null event mappings by requesting a projection with no event restrictions
+        await daemon.RebuildProjectionAsync("CustomProjection", CancellationToken.None);
+        // Request a rebuild from a projection that uses the event filter
+        await daemon.RebuildProjectionAsync<MemberJoinedProjection>(CancellationToken.None);
     }
 }
 
 public record MemberJoinedOnly(Guid Id);
 
-public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly>
+public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly, Guid>
 {
     public MemberJoinedProjection()
     {
@@ -54,13 +55,7 @@ public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedO
 
 public class CustomProjection: IProjection
 {
-
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
-    {
-        throw new NotImplementedException();
-    }
-
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
         return Task.CompletedTask;
     }

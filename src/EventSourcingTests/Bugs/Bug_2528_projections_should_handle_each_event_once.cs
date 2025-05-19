@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Xunit;
@@ -64,8 +65,8 @@ public class Bug_2528_projections_should_handle_each_event_once: BugIntegrationC
 
         Assert.NotNull(aggregate);
         Assert.Equal(streamId, aggregate.Id);
-        Assert.Equal(0, aggregate.CreateCounter);
-        Assert.Equal(3, aggregate.ApplyCounter);
+        Assert.Equal(1, aggregate.CreateCounter);
+        Assert.Equal(2, aggregate.ApplyCounter);
     }
 
     public record IncrementEvent;

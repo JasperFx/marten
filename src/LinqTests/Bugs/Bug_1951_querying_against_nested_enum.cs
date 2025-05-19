@@ -46,7 +46,7 @@ public class Bug_1951_querying_against_nested_enum : BugIntegrationContext
     {
         StoreOptions(opts =>
         {
-            opts.UseDefaultSerialization(EnumStorage.AsString);
+            opts.UseSystemTextJsonForSerialization(EnumStorage.AsString);
         });
 
         theSession.Logger = new TestOutputMartenLogger(_output);

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -44,11 +45,6 @@ AND    n.nspname = '{1}';";
 FROM   information_schema.sequences s
 WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
-    public void DeleteAllDocuments()
-    {
-        DeleteAllDocumentsAsync().GetAwaiter().GetResult();
-    }
-
     public async Task DeleteAllDocumentsAsync(CancellationToken ct = default)
     {
         await using var conn = CreateConnection();
@@ -68,29 +64,11 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await conn.ExecuteNonQueryAsync(builder, ct).ConfigureAwait(false);
     }
 
-    public void DeleteDocumentsByType(Type documentType)
-    {
-        EnsureStorageExists(documentType);
-        var storage = Providers.StorageFor(documentType);
-        storage.TruncateDocumentStorage(this);
-    }
-
     public async Task DeleteDocumentsByTypeAsync(Type documentType, CancellationToken ct = default)
     {
         await EnsureStorageExistsAsync(documentType, ct).ConfigureAwait(false);
         var storage = Providers.StorageFor(documentType);
         await storage.TruncateDocumentStorageAsync(this, ct).ConfigureAwait(false);
-    }
-
-    public void DeleteDocumentsExcept(params Type[] documentTypes)
-    {
-        var documentMappings =
-            Options.Storage.DocumentMappingsWithSchema.Where(x => !documentTypes.Contains(x.DocumentType));
-        foreach (var mapping in documentMappings)
-        {
-            var storage = Providers.StorageFor(mapping.DocumentType);
-            storage.TruncateDocumentStorage(this);
-        }
     }
 
     public async Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
@@ -101,34 +79,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         {
             var storage = Providers.StorageFor(mapping.DocumentType);
             await storage.TruncateDocumentStorageAsync(this, ct).ConfigureAwait(false);
-        }
-    }
-
-    public void CompletelyRemove(Type documentType)
-    {
-        var mapping = Options.Storage.MappingFor(documentType);
-        using var conn = CreateConnection();
-        conn.Open();
-
-        var writer = new StringWriter();
-        foreach (var schemaObject in ((IFeatureSchema)mapping.Schema).Objects)
-            schemaObject.WriteDropStatement(Options.Advanced.Migrator, writer);
-
-        var sql = writer.ToString();
-        var cmd = conn.CreateCommand(sql);
-
-        try
-        {
-            cmd.ExecuteNonQuery();
-        }
-        catch (Exception e)
-        {
-            if (cmd != null)
-            {
-                e.Data[nameof(NpgsqlCommand)] = cmd;
-            }
-
-            MartenExceptionTransformer.WrapAndThrow(e);
         }
     }
 
@@ -153,12 +103,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         {
             MartenExceptionTransformer.WrapAndThrow(cmd, e);
         }
-    }
-
-
-    public void CompletelyRemoveAll()
-    {
-        CompletelyRemoveAllAsync().GetAwaiter().GetResult();
     }
 
     public async Task CompletelyRemoveAllAsync(CancellationToken ct = default)
@@ -193,14 +137,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         ResetSchemaExistenceChecks();
     }
 
-    public void DeleteAllEventData()
-    {
-        using var connection = CreateConnection();
-        connection.Open();
-        var deleteEventDataSql = toDeleteEventDataSql();
-        connection.CreateCommand(deleteEventDataSql).ExecuteNonQuery();
-    }
-
     public async Task DeleteAllEventDataAsync(CancellationToken ct = default)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
@@ -214,17 +150,6 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
         await connection.CreateCommand(deleteEventDataSql, tx).ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
         await tx.CommitAsync(ct).ConfigureAwait(false);
-    }
-
-
-    public void DeleteSingleEventStream(Guid streamId, string? tenantId = null)
-    {
-        DeleteSingleEventStream<Guid>(streamId, tenantId);
-    }
-
-    public void DeleteSingleEventStream(string streamId, string? tenantId = null)
-    {
-        DeleteSingleEventStream<string>(streamId, tenantId);
     }
 
     public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null, CancellationToken ct = default)

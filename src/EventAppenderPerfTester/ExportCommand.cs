@@ -1,11 +1,12 @@
 using System.Runtime.CompilerServices;
 using DaemonTests.TestingSupport;
-using Oakton;
+using JasperFx;
+using JasperFx.CommandLine;
 using Xunit.Abstractions;
 
 namespace EventAppenderPerfTester;
 
-public class ExportCommand : OaktonAsyncCommand<NetCoreInput>
+public class ExportCommand : JasperFxAsyncCommand<NetCoreInput>
 {
     public override async Task<bool> Execute(NetCoreInput input)
     {

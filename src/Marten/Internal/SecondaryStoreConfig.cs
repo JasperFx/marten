@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -59,7 +60,7 @@ public interface IConfigureMarten<T>: IConfigureMarten where T : IDocumentStore
 internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocumentStore
 {
     private readonly Func<IServiceProvider, StoreOptions> _configuration;
-    private Type _storeType;
+    private Type? _storeType;
 
     public SecondaryStoreConfig(Func<IServiceProvider, StoreOptions> configuration)
     {
@@ -73,13 +74,13 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         type.Implements<T>();
     }
 
-    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         return Task.FromResult(AttachTypesSynchronously(rules, assembly, services, containingNamespace));
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _storeType = assembly.FindPreGeneratedType(containingNamespace, FileName);
@@ -98,13 +99,9 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         var configures = provider.GetServices<IConfigureMarten<T>>();
         foreach (var configure in configures) configure.Configure(provider, options);
 
-        var environment = provider.GetService<IHostEnvironment>();
-        if (environment != null)
-        {
-            options.ReadHostEnvironment(environment);
-        }
-
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
 
         return options;
     }
@@ -112,18 +109,14 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
     public T Build(IServiceProvider provider)
     {
         var options = BuildStoreOptions(provider);
-        var environment = provider.GetService<IHostEnvironment>();
-        if (environment != null)
-        {
-            options.ReadHostEnvironment(environment);
-        }
-
         var rules = options.CreateGenerationRules();
 
-        rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory();
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
         this.InitializeSynchronously(rules, Parent, provider);
 
-        return (T)Activator.CreateInstance(_storeType, options);
+        var store = (T)Activator.CreateInstance(_storeType!, options)!;
+        store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());
+
+        return store;
     }
 }

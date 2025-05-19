@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.RuntimeCompiler;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -21,7 +23,11 @@ public class MartenHost
     public static Task<IHost> For(Action<IServiceCollection> configure)
     {
         return Host.CreateDefaultBuilder()
-            .ConfigureServices((c, services) => configure(services))
+            .ConfigureServices((c, services) =>
+            {
+                configure(services);
+                services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
+            })
             .StartAsync();
     }
 }
@@ -57,7 +63,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -84,7 +90,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -152,7 +158,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());
@@ -178,7 +184,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         });
 
         var store = host.Services.GetRequiredService<IOtherStore>().As<DocumentStore>();
-        store.Options.InitialData.ShouldHaveTheSameElementsAs(data1, data2, data3);
+        store.Options.InitialData.ShouldBe([data1, data2, data3]);
 
         await data1.Received().Populate(store, Arg.Any<CancellationToken>());
         await data2.Received().Populate(store, Arg.Any<CancellationToken>());

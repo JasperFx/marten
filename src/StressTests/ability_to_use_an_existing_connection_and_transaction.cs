@@ -59,7 +59,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
     [Fact]
-    public void can_query_sync_with_session_enlisted_in_transaction_scope()
+    public async Task can_query_sync_with_session_enlisted_in_transaction_scope()
     {
         using var scope = new TransactionScope();
         using var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction());
@@ -69,7 +69,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
         var targetFromQuery = session.Query<Target>().Single(x => x.Id == aTarget.Id);
         targetFromQuery.Id.ShouldBe(aTarget.Id);
 
-        var targetFromLoad = session.Load<Target>(aTarget.Id);
+        var targetFromLoad = await session.LoadAsync<Target>(aTarget.Id);
         targetFromLoad.Id.ShouldBe(aTarget.Id);
 
         scope.Complete();
@@ -93,14 +93,14 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
     [Fact]
-    public void enlist_in_transaction_scope()
+    public async Task enlist_in_transaction_scope()
     {
         using (var scope = new TransactionScope())
         {
             using (var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(Target.Random(), Target.Random());
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // should not yet be committed
@@ -122,14 +122,14 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
 
 
     [Fact]
-    public void enlist_in_transaction_scope_by_transaction()
+    public async Task enlist_in_transaction_scope_by_transaction()
     {
         using (var scope = new TransactionScope())
         {
             using (var session = theStore.LightweightSession(SessionOptions.ForCurrentTransaction()))
             {
                 session.Store(Target.Random(), Target.Random());
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // should not yet be committed
@@ -150,7 +150,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
     [Fact]
-    public void pass_in_current_connection_and_transaction()
+    public async Task pass_in_current_connection_and_transaction()
     {
         var newTargets = Target.GenerateRandomData(5).ToArray();
 
@@ -172,7 +172,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
             using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx, true)))
             {
                 session.Store(newTargets);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 
@@ -219,7 +219,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
     }
 
     [Fact]
-    public void pass_in_current_connection_and_transaction_with_externally_controlled_tx_boundaries()
+    public async Task pass_in_current_connection_and_transaction_with_externally_controlled_tx_boundaries()
     {
         var newTargets = Target.GenerateRandomData(5).ToArray();
 
@@ -235,7 +235,7 @@ public class ability_to_use_an_existing_connection_and_transaction: IntegrationC
             using (var session = theStore.LightweightSession(SessionOptions.ForTransaction(tx)))
             {
                 session.Store(newTargets);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // To prove the isolation here

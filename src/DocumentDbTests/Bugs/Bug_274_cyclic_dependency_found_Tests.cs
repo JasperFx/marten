@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -8,7 +9,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_274_cyclic_dependency_found_Tests: BugIntegrationContext
 {
     [Fact]
-    public void save()
+    public async Task save()
     {
         StoreOptions(_ =>
         {
@@ -18,7 +19,7 @@ public class Bug_274_cyclic_dependency_found_Tests: BugIntegrationContext
         });
 
         theSession.Store(new Issue());
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
 }

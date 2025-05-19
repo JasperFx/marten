@@ -1,7 +1,9 @@
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DocumentDbTests.MultiTenancy;
@@ -16,7 +18,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
             using (var session = theStore.LightweightSession()) { }
         });
@@ -30,7 +32,7 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
             using (var session = theStore.LightweightSession()) { }
         });
@@ -44,9 +46,9 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
-            using (var session = theStore.LightweightSession(Tenancy.DefaultTenantId)) { }
+            using (var session = theStore.LightweightSession(StorageConstants.DefaultTenantId)) { }
         });
     }
 
@@ -58,9 +60,9 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
-            using (var session = theStore.LightweightSession(Tenancy.DefaultTenantId)) { }
+            using (var session = theStore.LightweightSession(StorageConstants.DefaultTenantId)) { }
         });
     }
 
@@ -72,9 +74,9 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
-            var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
+            var sessionOptions = new SessionOptions {TenantId = StorageConstants.DefaultTenantId};
             using (var session = theStore.LightweightSession(sessionOptions)) { }
         });
     }
@@ -87,9 +89,9 @@ public class disabling_default_tenant_usage : OneOffConfigurationsContext
             _.Advanced.DefaultTenantUsageEnabled = false;
         });
 
-        Exception<DefaultTenantUsageDisabledException>.ShouldBeThrownBy(() =>
+        Should.Throw<DefaultTenantUsageDisabledException>(() =>
         {
-            var sessionOptions = new SessionOptions {TenantId = Tenancy.DefaultTenantId};
+            var sessionOptions = new SessionOptions {TenantId = StorageConstants.DefaultTenantId};
             using (var session = theStore.QuerySession(sessionOptions)) { }
         });
     }

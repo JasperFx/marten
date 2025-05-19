@@ -37,7 +37,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L833-L843' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L827-L837' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
@@ -51,7 +51,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Issue>().UseOptimisticConcurrency(true);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L35-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L36-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-optimistic-concurrency' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Once optimistic concurrency is turned on for the CoffeeShop document type, a session will now only be able to update a document if the document has been unchanged in the database since it was initially loaded.
@@ -62,20 +62,20 @@ To demonstrate the failure case, consider the following  acceptance test from M
 <a id='snippet-sample_update_with_stale_version_standard'></a>
 ```cs
 [Fact]
-public void update_with_stale_version_standard()
+public async Task update_with_stale_version_standard()
 {
     var doc1 = new CoffeeShop();
     using (var session = theStore.LightweightSession())
     {
         session.Store(doc1);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     var session1 = theStore.DirtyTrackedSession();
     var session2 = theStore.DirtyTrackedSession();
 
-    var session1Copy = session1.Load<CoffeeShop>(doc1.Id);
-    var session2Copy = session2.Load<CoffeeShop>(doc1.Id);
+    var session1Copy = await session1.LoadAsync<CoffeeShop>(doc1.Id);
+    var session2Copy = await session2.LoadAsync<CoffeeShop>(doc1.Id);
 
     try
     {
@@ -83,11 +83,11 @@ public void update_with_stale_version_standard()
         session2Copy.Name = "Dominican Joe's";
 
         // Should go through just fine
-        session2.SaveChanges();
+        await session2.SaveChangesAsync();
 
-        var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+        var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         });
 
         ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(Shop).FullName} #{doc1.Id}");
@@ -98,13 +98,11 @@ public void update_with_stale_version_standard()
         session2.Dispose();
     }
 
-    using (var query = theStore.QuerySession())
-    {
-        query.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Dominican Joe's");
-    }
+    await using var query = theStore.QuerySession();
+    (await query.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Dominican Joe's");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L127-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L128-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_update_with_stale_version_standard' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten is throwing an `AggregateException` for the entire batch of changes.

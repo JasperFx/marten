@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
-using Marten.Events.Daemon;
+using JasperFx.Events.Daemon;
 using Marten.Internal;
-using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Microsoft.Extensions.Logging;
@@ -14,7 +14,7 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -92,6 +92,19 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         return Options.Storage.AllActiveFeatures(this).ToArray();
     }
 
+    public void Dispose()
+    {
+        DataSource?.Dispose();
+        ((IDisposable)Tracker)?.Dispose();
+    }
+
+    public override DatabaseDescriptor Describe()
+    {
+        var descriptor = base.Describe();
+        descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
+        return descriptor;
+    }
+
     public override void ResetSchemaExistenceChecks()
     {
         base.ResetSchemaExistenceChecks();
@@ -109,15 +122,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         {
             var sequences = new SequenceFactory(Options, this);
 
-            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default).AsTask().GetAwaiter().GetResult();
+            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter()
+                .GetResult();
 
             return sequences;
         });
-    }
-
-    public void Dispose()
-    {
-        DataSource?.Dispose();
-        ((IDisposable)Tracker)?.Dispose();
     }
 }

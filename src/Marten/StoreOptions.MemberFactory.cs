@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
@@ -11,10 +12,9 @@ using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
+using Microsoft.FSharp.Core;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
-
-#nullable enable
 
 namespace Marten;
 
@@ -79,12 +79,22 @@ public partial class StoreOptions
             return new DateTimeOffsetMember(this, parent, casing, member);
         }
 
+        if (memberType == typeof(DateOnly))
+        {
+            return new DateOnlyMember(this, parent, casing, member);
+        }
+
+        if (memberType == typeof(TimeOnly))
+        {
+            return new TimeOnlyMember(this, parent, casing, member);
+        }
+
         if (isEnumerable(memberType))
         {
-            Type elementType = null;
+            Type? elementType = null;
             try
             {
-                elementType = memberType.DetermineElementType();
+                elementType = memberType.DetermineElementType()!;
             }
             catch (Exception e)
             {
@@ -135,20 +145,31 @@ public partial class StoreOptions
 internal class ValueTypeMemberSource: IMemberSource
 {
     public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,
-        out IQueryableMember? member)
+        [NotNullWhen(true)]out IQueryableMember? member)
     {
         var valueType = options.ValueTypes.FirstOrDefault(x => x.OuterType == memberType);
+
         if (valueType == null)
         {
-            member = default;
+            member = null;
             return false;
         }
 
-        var baseType = valueType.SimpleType == typeof(string)
-            ? typeof(StringValueTypeMember<>).MakeGenericType(memberType)
-            : typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
+        Type baseType;
+        if (valueType.OuterType.IsGenericType && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        {
+            baseType = typeof(FSharpOptionValueTypeMember<>).MakeGenericType(valueType.SimpleType);
+        }
+        else if (valueType.SimpleType == typeof(string))
+        {
+            baseType = typeof(StringValueTypeMember<>).MakeGenericType(memberType);
+        }
+        else
+        {
+            baseType = typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
+        }
 
-        member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType);
+        member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType)!;
 
         return true;
     }

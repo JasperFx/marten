@@ -6,7 +6,7 @@ We have replaced the earlier nomenclature of "ViewProjection" and renamed this c
 :::
 
 ::: warning
-**Multi-Stream Projections are registered by default as async.** This is different from Single-Stream Projections. We recommend it as safe default because their processing may be more resource-demanding than single-stream projections. They may need to process more events and update more read models. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
+**Multi-Stream Projections are registered by default as async.** We recommend it as safe default because under heavy load you can easily have contention between requests that effectively stomps over previous updates and leads to apparent "event skipping" and invalid results. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
 
 **Registering projection as async means that it requires running the
 [Async Daemon](/events/projections/async-daemon) as hosted service.**
@@ -362,6 +362,60 @@ public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureTogg
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L15-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Resolving Missing Shared Identifiers with Custom Grouper and Flat Table Projection
+
+When follow-up events lack a shared identifier like `ProjectId`, you can combine a **custom `IAggregateGrouper`** with a **flat table projection** to handle grouping efficiently. The flat table projection manages the mapping between `UserId` and `ProjectId` in the database, enabling the custom grouper to resolve the `ProjectId` dynamically.
+
+#### Step 1: Define the Flat Table Projection
+
+Use a `FlatTableProjection` to store the mapping between `UserId` and `ProjectId`:
+
+::: tip
+Note that you should register this projection as inline, such that you are sure it's available when projecting starts.
+:::
+
+```cs
+public class UserProjectFlatTableProjection : FlatTableProjection
+{
+    public UserProjectFlatTableProjection() : base("user_project_mapping", SchemaNameSource.EventSchema)
+    {
+        Table.AddColumn<Guid>("user_id").AsPrimaryKey();
+        Table.AddColumn<Guid>("project_id").NotNull();
+
+        TeardownDataOnRebuild = true;
+
+        Project<UserJoinedProject>(map =>
+        {
+            map.Map(x => x.UserId);
+            map.Map(x => x.ProjectId);
+        });
+    }
+}
+```
+
+#### Step 2: Use the Mapping in a Custom Grouper
+
+The custom grouper resolves the `ProjectId` dynamically based on the `UserId` stored in the flat table:
+
+```cs
+public class ProjectEventGrouper : IAggregateGrouper<Guid>
+{
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    {
+        foreach (var @event in userEvents)
+        {
+            if(@event.Data is TaskCompleted taskCompleted)
+            {
+                var mapping = await session.Query<UserJoinedProject>()
+                    .Where(mapping => mapping.UserId == @event.StreamId)
+                    .SingleAsync();
+                grouping.AddEvent(mapping.ProjectId, @event);
+            }
+        }
+    }
+}
+```
+
 ## View Projection with Custom Slicer
 
 ::: tip
@@ -501,6 +555,17 @@ public class DayProjection: MultiStreamProjection<Day, int>
         FanOut<Travel, Stop>(x => x.Data.Stops);
 
         ProjectionName = "Day";
+
+        // Opt into 2nd level caching of up to 100
+        // most recently encountered aggregates as a
+        // performance optimization
+        CacheLimitPerTenant = 1000;
+
+        // With large event stores of relatively small
+        // event objects, moving this number up from the
+        // default can greatly improve throughput and especially
+        // improve projection rebuild times
+        Options.BatchSize = 5000;
     }
 
     public void Apply(Day day, TripStarted e) => day.Started++;
@@ -531,7 +596,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
     public void Apply(Day day, Stop e) => day.Stops++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L181' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Custom Grouper with Fan Out Feature for Event Projections

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -12,13 +13,13 @@ public class nested_boolean_logic : IntegrationContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void TestModalOrQuery()
+    public async Task TestModalOrQuery()
     {
         var target1 = new Target { String = "Bert", Date = new DateTime(2016, 03, 10) };
         var target2 = new Target { String = null, Date = new DateTime(2016, 03, 10) };
 
         theSession.Store(target1, target2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var startDate = new DateTime(2016, 03, 01);
         var endDate = new DateTime(2016, 04, 01);

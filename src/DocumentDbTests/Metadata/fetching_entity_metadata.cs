@@ -10,30 +10,30 @@ namespace DocumentDbTests.Metadata;
 public class fetching_entity_metadata: OneOffConfigurationsContext
 {
     [Fact]
-    public void total_miss_returns_null()
+    public async Task total_miss_returns_null()
     {
         var shop = new CoffeeShop();
 
-        theSession.MetadataFor(shop)
+        (await theSession.MetadataForAsync(shop))
             .ShouldBeNull();
 
     }
 
     #region sample_resolving_metadata
     [Fact]
-    public void hit_returns_values()
+    public async Task hit_returns_values()
     {
         var shop = new CoffeeShop();
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
 
             metadata.ShouldNotBeNull();
             metadata.CurrentVersion.ShouldNotBe(Guid.Empty);
@@ -81,19 +81,19 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void created_timestamp_metadata_returns_default()
+    public async Task created_timestamp_metadata_returns_default()
     {
         var shop = new CoffeeShop();
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
             metadata.ShouldNotBeNull();
 
             metadata.CreatedAt.ShouldBe(default);
@@ -118,7 +118,7 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void created_timestamp_metadata_returns_timestamp()
+    public async Task created_timestamp_metadata_returns_timestamp()
     {
         StoreOptions(_ =>
         {
@@ -130,15 +130,15 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(shop);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            var metadata = session.MetadataFor(shop);
+            var metadata = await session.MetadataForAsync(shop);
             metadata.ShouldNotBeNull();
 
-            metadata.CreatedAt.ShouldNotBeNull();
+            metadata.CreatedAt.ShouldNotBe(default);
         }
     }
 
@@ -161,6 +161,6 @@ public class fetching_entity_metadata: OneOffConfigurationsContext
         await using var query = theStore.QuerySession();
         var metadata = await query.MetadataForAsync(shop);
 
-        metadata.CreatedAt.ShouldNotBeNull();
+        metadata.CreatedAt.ShouldNotBe(default);
     }
 }

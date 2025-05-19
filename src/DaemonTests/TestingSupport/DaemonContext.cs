@@ -3,21 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Lamar.Microsoft.DependencyInjection;
 using Marten;
-using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using Shouldly;
+using Weasel.Postgresql;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -30,7 +34,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
     protected DaemonContext(ITestOutputHelper output)
     {
         _schemaName = "daemon";
-        theStore.Advanced.Clean.DeleteAllEventData();
+
         Logger = new TestLogger<IProjection>(output);
 
         // Creating a little uniqueness
@@ -39,6 +43,15 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         theStore.Options.Projections.DaemonLockId = lockId;
 
         _output = output;
+    }
+
+    internal async Task wipeAllStreamTypeMarkers()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.CreateCommand("update daemon.mt_streams set type = null").ExecuteNonQueryAsync();
+        await conn.CreateCommand("delete from daemon.mt_event_progression where name != 'HighWaterMark'")
+            .ExecuteNonQueryAsync();
     }
 
     public ILogger<IProjection> Logger { get; }
@@ -169,6 +182,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         return _streams.Select(x => x.ToAction(theStore.Events)).ToArray();
     }
 
+    // START HERE, NEEDS TO BE GENERALIZED
     protected async Task CheckAllExpectedAggregatesAgainstActuals()
     {
         var actuals = await LoadAllAggregatesFromDatabase();
@@ -184,6 +198,58 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
             else
             {
                 if (actuals.TryGetValue(stream.StreamId, out var actual))
+                {
+                    expected.ShouldBe(actual);
+                }
+                else
+                {
+                    throw new Exception("Missing expected aggregate");
+                }
+            }
+        }
+    }
+
+    protected async Task CheckAllExpectedGuidCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, Guid> identifier) where TDoc : class
+    {
+        var actuals = await LoadAllAggregatesFromDatabase<Guid, TDoc>(identifier);
+
+        foreach (var stream in _streams)
+        {
+            var expected = await theSession.Events.AggregateStreamAsync<TDoc>(stream.StreamId);
+
+            if (expected == null)
+            {
+                actuals.ContainsKey(stream.StreamId).ShouldBeFalse();
+            }
+            else
+            {
+                if (actuals.TryGetValue(stream.StreamId, out var actual))
+                {
+                    expected.ShouldBe(actual);
+                }
+                else
+                {
+                    throw new Exception("Missing expected aggregate");
+                }
+            }
+        }
+    }
+
+    protected async Task CheckAllExpectedStringCentricAggregatesAgainstActuals<TDoc>(Func<TDoc, string> identifier) where TDoc : class
+    {
+        var actuals = await LoadAllAggregatesFromDatabase<string, TDoc>(identifier);
+
+        foreach (var stream in _streams)
+        {
+            var expected = await theSession.Events.AggregateStreamAsync<TDoc>(stream.StreamId.ToString());
+
+            if (expected == null)
+            {
+                actuals.ContainsKey(stream.StreamId.ToString()).ShouldBeFalse();
+            }
+            else
+            {
+                if (actuals.TryGetValue(stream.StreamId.ToString(), out var actual))
                 {
                     expected.ShouldBe(actual);
                 }
@@ -221,34 +287,54 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
-    protected async Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
+    protected Task<Dictionary<Guid, Trip>> LoadAllAggregatesFromDatabase(string tenantId = null)
+    {
+        return LoadAllAggregatesFromDatabase<Guid, Trip>(x => x.Id, tenantId);
+    }
+
+    protected async Task<Dictionary<TId, TDoc>> LoadAllAggregatesFromDatabase<TId, TDoc>(Func<TDoc, TId> identifier,string tenantId = null)
     {
         if (string.IsNullOrEmpty(tenantId))
         {
-            var data = await theSession.Query<Trip>().ToListAsync();
-            var dict = data.ToDictionary(x => x.Id);
+            var data = await theSession.Query<TDoc>().ToListAsync();
+            var dict = data.ToDictionary(x => identifier(x));
             return dict;
         }
         else
         {
             await using var session = theStore.LightweightSession(tenantId);
-            var data = await session.Query<Trip>().ToListAsync();
-            var dict = data.ToDictionary(x => x.Id);
+            var data = await session.Query<TDoc>().ToListAsync();
+            var dict = data.ToDictionary(x => identifier(x));
             return dict;
         }
     }
 
     protected async Task PublishSingleThreaded()
     {
+        await PublishSingleThreaded<Trip>();
+    }
+
+    protected async Task PublishSingleThreaded<T>() where T : class
+    {
         var groups = _streams.GroupBy(x => x.TenantId).ToArray();
-        if (groups.Length > 1 || groups.Single().Key != Tenancy.DefaultTenantId)
+        if (groups.Length > 1 || groups.Single().Key != StorageConstants.DefaultTenantId)
         {
             foreach (var @group in groups)
             {
                 foreach (var stream in @group)
                 {
                     await using var session = theStore.LightweightSession(group.Key);
-                    session.Events.StartStream(stream.StreamId, stream.Events);
+
+                    if (theStore.Options.EventGraph.StreamIdentity == StreamIdentity.AsGuid)
+                    {
+                        session.Events.StartStream<T>(stream.StreamId, stream.Events);
+                    }
+                    else
+                    {
+                        session.Events.StartStream<T>(stream.StreamId.ToString(), stream.Events);
+                    }
+
+
                     await session.SaveChangesAsync();
                 }
             }
@@ -258,7 +344,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
             foreach (var stream in _streams)
             {
                 await using var session = theStore.LightweightSession();
-                session.Events.StartStream(stream.StreamId, stream.Events);
+                session.Events.StartStream<T>(stream.StreamId, stream.Events);
                 await session.SaveChangesAsync();
             }
         }

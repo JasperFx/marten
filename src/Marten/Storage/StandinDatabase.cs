@@ -2,14 +2,17 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core.Descriptors;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Schema.Identity.Sequences;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -19,6 +22,11 @@ internal class StandinDatabase: IMartenDatabase
     public StandinDatabase(StoreOptions options)
     {
         Providers = new ProviderGraph(options);
+    }
+
+    public DatabaseDescriptor Describe()
+    {
+        throw new NotImplementedException();
     }
 
     public IFeatureSchema[] BuildFeatureSchemas()
@@ -89,17 +97,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteAllDocuments()
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteAllDocumentsAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteDocumentsByType(Type documentType)
     {
         throw new NotImplementedException();
     }
@@ -109,17 +107,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteDocumentsExcept(params Type[] documentTypes)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteDocumentsExceptAsync(CancellationToken ct, params Type[] documentTypes)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void CompletelyRemove(Type documentType)
     {
         throw new NotImplementedException();
     }
@@ -129,17 +117,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void CompletelyRemoveAll()
-    {
-        throw new NotImplementedException();
-    }
-
     public Task CompletelyRemoveAllAsync(CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteAllEventData()
     {
         throw new NotImplementedException();
     }
@@ -149,17 +127,7 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
-    public void DeleteSingleEventStream(Guid streamId, string? tenantId = null)
-    {
-        throw new NotImplementedException();
-    }
-
     public Task DeleteSingleEventStreamAsync(Guid streamId, string? tenantId = null, CancellationToken ct = default)
-    {
-        throw new NotImplementedException();
-    }
-
-    public void DeleteSingleEventStream(string streamId, string? tenantId = null)
     {
         throw new NotImplementedException();
     }
@@ -218,12 +186,22 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
     public Task<long> ProjectionProgressFor(ShardName name, CancellationToken token = default)
     {
         throw new NotImplementedException();
     }
 
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
     {
         throw new NotImplementedException();
     }

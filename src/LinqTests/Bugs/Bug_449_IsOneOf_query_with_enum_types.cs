@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -10,7 +11,7 @@ namespace LinqTests.Bugs;
 public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
 {
     [Fact]
-    public void can_query_with_is_one_of_on_an_enum_type_with_jil()
+    public async Task can_query_with_is_one_of_on_an_enum_type_with_jil()
     {
         var blue = new Target { Color = Colors.Blue };
         var red = new Target { Color = Colors.Red };
@@ -19,7 +20,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(blue, red, green);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -33,7 +34,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
     }
 
     [Fact]
-    public void can_query_with_is_one_of_on_an_enum_type_with_newtonsoft()
+    public async Task can_query_with_is_one_of_on_an_enum_type_with_newtonsoft()
     {
         StoreOptions(_ => _.Serializer(new JsonNetSerializer()));
 
@@ -44,7 +45,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(blue, red, green);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

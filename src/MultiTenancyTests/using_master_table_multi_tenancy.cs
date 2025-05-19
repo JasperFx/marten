@@ -1,5 +1,8 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core.Descriptors;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -9,7 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 
@@ -266,6 +268,84 @@ public class using_master_table_multi_tenancy : IAsyncLifetime
     {
         await _host.StopAsync();
         theStore.Dispose();
+    }
+
+    [Fact]
+    public async Task run_describe()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await conn.DropSchemaAsync("tenants");
+
+
+        tenant1ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant1");
+        tenant2ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant2");
+        tenant3ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant3");
+        tenant4ConnectionString = await CreateDatabaseIfNotExists(conn, "tenant4");
+
+
+        var result = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                    {
+                        opts.AutoCreateSchemaObjects = AutoCreate.None;
+
+                        opts.MultiTenantedDatabasesWithMasterDatabaseTable(x =>
+                        {
+                            x.ConnectionString = ConnectionSource.ConnectionString;
+                            x.SchemaName = "tenants";
+                            x.ApplicationName = "Sample";
+
+                            x.AutoCreate = AutoCreate.CreateOrUpdate;
+
+                            x.RegisterDatabase("tenant1", tenant1ConnectionString);
+                            x.RegisterDatabase("tenant2", tenant2ConnectionString);
+                            x.RegisterDatabase("tenant3", tenant3ConnectionString);
+                        });
+
+                        opts.RegisterDocumentType<User>();
+                        opts.RegisterDocumentType<Target>();
+                    })
+
+                    // All detected changes will be applied to all
+                    // the configured tenant databases on startup
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).RunJasperFxCommands(["describe"]);
+
+        result.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task build_description()
+    {
+        await _host.AddTenantDatabaseAsync("tenant1", tenant1ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant2", tenant2ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant3", tenant3ConnectionString);
+        await _host.AddTenantDatabaseAsync("tenant4", tenant4ConnectionString);
+
+        var description = await _host.DocumentStore().Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
+
+        description.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        description.MainDatabase.ShouldBeNull();
+
+        description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
+            .ShouldBe(["tenant1", "tenant2", "tenant3", "tenant4"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant1")
+            .TenantIds.ShouldBe(["tenant1"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant2")
+            .TenantIds.ShouldBe(["tenant2"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant3")
+            .TenantIds.ShouldBe(["tenant3"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant4")
+            .TenantIds.ShouldBe(["tenant4"]);
+
     }
 
     [Fact]

@@ -1,7 +1,10 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -57,7 +60,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
     [Theory]
     [InlineData(TenancyStyle.Single)]
     [InlineData(TenancyStyle.Conjoined)]
-    public void sync_projection_of_events(TenancyStyle tenancyStyle)
+    public async Task sync_projection_of_events(TenancyStyle tenancyStyle)
     {
         StoreOptions(_ =>
         {
@@ -69,22 +72,22 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var monsterEvents =
-            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
+            (await theSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
-        monsterEvents.Each(e =>
+        foreach (var e in monsterEvents)
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
-        });
+        }
     }
 
     [Fact]
-    public void sync_projection_of_events_with_direct_configuration()
+    public async Task sync_projection_of_events_with_direct_configuration()
     {
         StoreOptions(_ =>
         {
@@ -95,18 +98,18 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var monsterEvents =
-            theSession.Events.FetchStream(streamId).OfType<Event<MonsterSlayed>>().ToArray();
+            (await theSession.Events.FetchStreamAsync(streamId)).OfType<Event<MonsterSlayed>>().ToArray();
 
         monsterEvents.Length.ShouldBe(2); // precondition
 
-        monsterEvents.Each(e =>
+        foreach (var e in monsterEvents)
         {
-            var doc = theSession.Load<MonsterDefeated>(e.Id);
+            var doc = await theSession.LoadAsync<MonsterDefeated>(e.Id);
             doc.Monster.ShouldBe(e.Data.Name);
-        });
+        }
     }
 
     [Fact]

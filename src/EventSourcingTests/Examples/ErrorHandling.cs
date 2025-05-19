@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
 using Microsoft.Extensions.Hosting;
 
 namespace EventSourcingTests.Examples;

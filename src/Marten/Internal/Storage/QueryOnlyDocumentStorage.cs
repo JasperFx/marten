@@ -14,7 +14,7 @@ internal interface IQueryOnlyDocumentStorage: IDocumentStorage
     ISelectClause SelectClauseForIncludes();
 }
 
-public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>, IQueryOnlyDocumentStorage
+public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>, IQueryOnlyDocumentStorage where TId : notnull where T : notnull
 {
     public QueryOnlyDocumentStorage(DocumentMapping document): base(StorageStyle.QueryOnly, document)
     {
@@ -41,25 +41,6 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
     {
     }
 
-    public sealed override IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
-    {
-        var list = new List<T>();
-
-        var command = BuildLoadManyCommand(ids, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector(session);
-
-        using (var reader = session.ExecuteReader(command))
-        {
-            while (reader.Read())
-            {
-                var document = selector.Resolve(reader);
-                list.Add(document);
-            }
-        }
-
-        return list;
-    }
-
     public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session,
         CancellationToken token)
     {
@@ -80,13 +61,7 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
         return list;
     }
 
-    public sealed override T Load(TId id, IMartenSession session)
-    {
-        return load(id, session);
-    }
-
-
-    public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         return loadAsync(id, session, token);
     }

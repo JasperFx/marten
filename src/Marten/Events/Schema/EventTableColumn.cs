@@ -7,6 +7,7 @@ using JasperFx.CodeGeneration.Frames;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Parsing;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;

@@ -2,11 +2,14 @@
 using System.Threading.Tasks;
 using Bug2177;
 using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace DaemonTests.Bugs;
@@ -52,7 +55,7 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
     }
 
 
-    public class TicketProjection: SingleStreamProjection<Ticket>
+    public class TicketProjection: SingleStreamProjection<Ticket, Guid>
     {
         public TicketProjection()
         {

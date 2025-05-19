@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,7 +17,7 @@ public class all_operator: IntegrationContext
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test1()
+    public async Task invoking_queryable_all_operation_test1()
     {
         theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
         theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
@@ -25,7 +26,7 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.Roles.All(r => r == "R1"))
@@ -35,7 +36,7 @@ public class all_operator: IntegrationContext
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test2()
+    public async Task invoking_queryable_all_operation_test2()
     {
         theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
         theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
@@ -44,7 +45,7 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.FirstName == "Joe" && u.Roles.All(r => r == "R1"))
@@ -54,7 +55,7 @@ public class all_operator: IntegrationContext
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test3()
+    public async Task invoking_queryable_all_operation_test3()
     {
         theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
         theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
@@ -63,7 +64,7 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.FirstName == "Jean" && u.Roles.All(r => r == "R1"))
@@ -73,7 +74,7 @@ public class all_operator: IntegrationContext
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test4()
+    public async Task invoking_queryable_all_operation_test4()
     {
         theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
         theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
@@ -82,7 +83,7 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
         theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         /* SHOULD BE
 WITH mt_temp_id_list1CTE as (
@@ -109,7 +110,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test5()
+    public async Task invoking_queryable_all_operation_test5()
     {
         theSession.Store(new User
         {
@@ -131,7 +132,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
             FirstName = "Joe" , Roles = new []{ "R1", default(string)},
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.Friends.All(f => f.Name == "F1"))
@@ -141,7 +142,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test6()
+    public async Task invoking_queryable_all_operation_test6()
     {
         theSession.Store(new User
         {
@@ -163,7 +164,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
             FirstName = "Joe" , Roles = new []{ "R1", default(string)},
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.FirstName == "Joe" && u.Friends.All(f => f.Name == "F1"))
@@ -173,7 +174,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test7()
+    public async Task invoking_queryable_all_operation_test7()
     {
         theSession.Store(new User
         {
@@ -195,7 +196,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
             FirstName = "Joe" , Roles = new []{ "R1", default(string)},
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.Friends.All(f => f.Name == null))
@@ -205,7 +206,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     }
 
     [Fact]
-    public void invoking_queryable_all_operation_test8()
+    public async Task invoking_queryable_all_operation_test8()
     {
         theSession.Store(new User
         {
@@ -227,7 +228,7 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
             FirstName = "Joe" , Roles = new []{ "R1", default(string)},
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
             .Where(u => u.FirstName == "Bill" && u.Friends.All(f => f.Name == null))

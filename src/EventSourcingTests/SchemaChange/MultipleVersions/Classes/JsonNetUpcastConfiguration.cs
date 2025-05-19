@@ -4,7 +4,7 @@ using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
 using Marten.Services.Json.Transformations.JsonNet;
 using Newtonsoft.Json.Linq;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
 {
@@ -203,6 +203,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V2WithTheSameName =>
             options =>
             {
+                options.UseNewtonsoftForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -218,6 +219,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V3WithTheSameName =>
             options =>
             {
+                options.UseNewtonsoftForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -235,6 +237,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V2WithDifferentName =>
             options =>
             {
+                options.UseNewtonsoftForSerialization();
                 options.Events
                     .Upcast
                     (
@@ -246,6 +249,7 @@ namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
         public static Action<StoreOptions> V3WithDifferentName =>
             options =>
             {
+                options.UseNewtonsoftForSerialization();
                 options.Events
                     .Upcast
                     (

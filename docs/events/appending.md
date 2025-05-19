@@ -136,10 +136,48 @@ var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
 session.Events.Append(id, joined, departed);
 
-session.SaveChanges();
+await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream_Tests.cs#L582-L591' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L582-L591' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Mandatory Stream Types <Badge type="tip" text="7.30" />
+
+::: warning
+Absolutely use this flag on new development work or when you want to take advantage of the optimized projection rebuilds
+introduced in Marten 7.30, but be aware of the consequences outlined in this section. 
+:::
+
+The default behavior in Marten is to allow you to happily start event streams without a stream type marker (the "T" in `StartStream<T>()`),
+but in some cases there are optimizations that Marten can do for performance if it can assume the stream type marker
+is present in the database:
+
+* The optimized single stream projection rebuilds
+* Specifying event filtering on a projection running asynchronously where Marten cannot derive the event types itself --
+  like you'd frequently encounter with projections using explicit code instead of the aggregation method conventions
+
+To make the stream type markers mandatory, you can use this flag in the configuration:
+
+<!-- snippet: sample_UseMandatoryStreamTypeDeclaration -->
+<a id='snippet-sample_usemandatorystreamtypedeclaration'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // Force users to supply a stream type on StartStream, and disallow
+    // appending events if the stream does not already exist
+    opts.Events.UseMandatoryStreamTypeDeclaration = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L150-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+This causes a couple side effects that **force stricter usage of Marten**:
+
+1. Marten will throw a `StreamTypeMissingException` exception if you call a `StartStream()` overload that doesn't include the stream type
+2. Marten will throw a `NonExistentStreamException` if you try to append events to a stream that does not already exist
 
 ## Optimistic Versioned Append
 
@@ -203,3 +241,36 @@ in the event store sequence due to failed transactions. Marten V4 introduced sup
 event sequence numbers that failed in a Marten transaction. This is done strictly to improve the functioning of the [async daemon](/events/projections/async-daemon) that looks for gaps in the event sequence to "know" how
 far it's safe to process asynchronous projections. If you see event rows in your database of type "tombstone", it's representative of failed transactions (maybe from optimistic concurrency violations,
 transient network issues, timeouts, etc.).
+
+Where this is not _yet_ formal support in Marten's API surface for deleting "tombstone" events, it is 
+perfectly safe to delete tombstone events from your database:
+
+* At any time if you do not use any asynchronous projections and do not use the async daemon at runtime
+* Where the `seq_id` column value is less than the "high water mark" of the async daemon. You can find the "high water mark"
+  value from the `mt_event_progression` table or through this API call:
+
+<!-- snippet: sample_DaemonDiagnostics -->
+<a id='snippet-sample_daemondiagnostics'></a>
+```cs
+public static async Task ShowDaemonDiagnostics(IDocumentStore store)
+{
+    // This will tell you the current progress of each known projection shard
+    // according to the latest recorded mark in the database
+    var allProgress = await store.Advanced.AllProjectionProgress();
+    foreach (var state in allProgress)
+    {
+        Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
+    }
+
+    // This will allow you to retrieve some basic statistics about the event store
+    var stats = await store.Advanced.FetchEventStoreStatistics();
+    Console.WriteLine($"The event store highest sequence is {stats.EventSequenceNumber}");
+
+    // This will let you fetch the current shard state of a single projection shard,
+    // but in this case we're looking for the daemon high water mark
+    var daemonHighWaterMark = await store.Advanced.ProjectionProgressFor(new ShardName(ShardState.HighWaterMark));
+    Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L111-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

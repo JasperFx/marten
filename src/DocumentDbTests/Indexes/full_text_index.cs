@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -195,7 +196,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_full_text_query_through_query_session()
+    public async Task using_full_text_query_through_query_session()
     {
         #region sample_using_full_text_query_through_query_session
 
@@ -217,9 +218,9 @@ public class full_text_index: OneOffConfigurationsContext
             session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
             session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
             session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            result = session.Search<User>("somebody");
+            result = await session.SearchAsync<User>("somebody");
         }
 
         store.Dispose();
@@ -230,7 +231,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void search_in_query_sample()
+    public async Task search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -240,7 +241,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -259,7 +260,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void plain_text_search_in_query_sample()
+    public async Task plain_text_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -269,7 +270,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -288,7 +289,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void phrase_search_in_query_sample()
+    public async Task phrase_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -298,7 +299,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -317,7 +318,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "11.0")]
-    public void web_search_in_query_sample()
+    public async Task web_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -327,7 +328,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -346,7 +347,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void text_search_combined_with_other_query_sample()
+    public async Task text_search_combined_with_other_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -357,7 +358,7 @@ public class full_text_index: OneOffConfigurationsContext
             session.Store(new BlogPost { Id = expectedId, EnglishText = "somefilter", Category = "LifeStyle" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter", Category = "Other" });
             session.Store(new BlogPost { Id = Guid.NewGuid(), ItalianText = "somefilter", Category = "LifeStyle" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -377,7 +378,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void text_search_with_non_default_regConfig_sample()
+    public async Task text_search_with_non_default_regConfig_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
@@ -387,7 +388,7 @@ public class full_text_index: OneOffConfigurationsContext
         {
             session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "somefilter" });
             session.Store(new BlogPost { Id = expectedId, ItalianText = "somefilter" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -418,7 +419,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void should_search_with_store_options_with_multipleIndexes()
+    public async Task should_search_with_store_options_with_multipleIndexes()
     {
         const string frenchRegConfig = "french";
         const string italianRegConfig = "italian";
@@ -436,15 +437,15 @@ public class full_text_index: OneOffConfigurationsContext
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
         session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
         session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var italianResults = session.Search<User>(searchFilter, italianRegConfig);
+        var italianResults = await session.SearchAsync<User>(searchFilter, italianRegConfig);
 
         italianResults.Count.ShouldBe(1);
         italianResults.ShouldContain(u => u.FirstName == searchFilter);
         italianResults.ShouldNotContain(u => u.LastName == searchFilter);
 
-        var frenchResults = session.Search<User>(searchFilter, frenchRegConfig);
+        var frenchResults = await session.SearchAsync<User>(searchFilter, frenchRegConfig);
 
         frenchResults.Count.ShouldBe(1);
         frenchResults.ShouldNotContain(u => u.FirstName == searchFilter);
@@ -452,7 +453,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void should_search_by_tenant_with_tenancy_conjoined()
+    public async Task should_search_by_tenant_with_tenancy_conjoined()
     {
         StoreOptions(_ =>
         {
@@ -471,13 +472,13 @@ public class full_text_index: OneOffConfigurationsContext
             using var session = theStore.LightweightSession(tenant);
             session.Store(new User { FirstName = searchFilter, LastName = "Miller", UserName = "lmiller" });
             session.Store(new User { FirstName = "Frank", LastName = "Zombo", UserName = "fzombo" });
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         foreach (var tenant in tenants)
         {
             using var session = theStore.QuerySession(tenant);
-            var results = session.Search<User>(searchFilter);
+            var results = await session.SearchAsync<User>(searchFilter);
 
             results.Count.ShouldBe(1);
             results.ShouldContain(u => u.FirstName == searchFilter);
@@ -485,7 +486,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    private void SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
+    private async Task SearchShouldBeSuccessfulFor(Action<StoreOptions> configure)
     {
         StoreOptions(configure);
 
@@ -498,9 +499,9 @@ public class full_text_index: OneOffConfigurationsContext
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller", UserName = "jmiller" });
         session.Store(new User { FirstName = "Max", LastName = "Miller", UserName = "mmiller" });
         session.Store(new User { FirstName = "Somebody", LastName = "Somewher", UserName = "somebody" });
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var results = session.Search<User>(searchFilter);
+        var results = await session.SearchAsync<User>(searchFilter);
 
         results.Count.ShouldBe(2);
         results.ShouldContain(u => u.FirstName == searchFilter);
@@ -525,11 +526,11 @@ public class full_text_index: OneOffConfigurationsContext
         var index = table.IndexFor("mt_doc_target_idx_fts");
         index.ShouldNotBeNull();
 
-        index.ToDDL(table).ShouldContain("to_tsvector", StringComparisonOption.Default);
+        index.ToDDL(table).ShouldContain("to_tsvector");
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
     {
         const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
@@ -541,7 +542,7 @@ public class full_text_index: OneOffConfigurationsContext
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -551,7 +552,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
     {
         const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
@@ -565,7 +566,7 @@ public class full_text_index: OneOffConfigurationsContext
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -576,7 +577,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
     {
         const string dataConfig = "(data ->> 'AnotherString' || ' ' || 'test')";
@@ -592,7 +593,7 @@ public class full_text_index: OneOffConfigurationsContext
             }));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -603,13 +604,13 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
     {
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -619,13 +620,13 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
     {
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex(d => d.String, d => d.AnotherString));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -636,7 +637,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
     {
         const string indexName = "custom_index_name";
@@ -651,7 +652,7 @@ public class full_text_index: OneOffConfigurationsContext
             d => d.AnotherString));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -662,7 +663,7 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void
+    public async Task
         creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
     {
         const string frenchRegConfig = "french";
@@ -673,7 +674,7 @@ public class full_text_index: OneOffConfigurationsContext
             .FullTextIndex(italianRegConfig, d => d.AnotherString));
 
         var data = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(data);
+        await theStore.BulkInsertAsync(data);
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Target>(
@@ -691,11 +692,11 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_a_full_text_index_through_attribute_on_class_with_default()
+    public async Task using_a_full_text_index_through_attribute_on_class_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<Book>());
 
-        theStore.BulkInsert(new[]
+        await theStore.BulkInsertAsync(new[]
         {
             new Book { Id = Guid.NewGuid(), Author = "test", Information = "test", Title = "test" }
         });
@@ -710,11 +711,11 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_a_single_property_full_text_index_through_attribute_with_default()
+    public async Task using_a_single_property_full_text_index_through_attribute_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<UserProfile>());
 
-        theStore.BulkInsert(new[] { new UserProfile { Id = Guid.NewGuid(), Information = "test" } });
+        await theStore.BulkInsertAsync(new[] { new UserProfile { Id = Guid.NewGuid(), Information = "test" } });
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<UserProfile>(
@@ -726,11 +727,11 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_a_single_property_full_text_index_through_attribute_with_custom_settings()
+    public async Task using_a_single_property_full_text_index_through_attribute_with_custom_settings()
     {
         StoreOptions(_ => _.RegisterDocumentType<UserDetails>());
 
-        theStore.BulkInsert(new[] { new UserDetails { Id = Guid.NewGuid(), Details = "test" } });
+        await theStore.BulkInsertAsync(new[] { new UserDetails { Id = Guid.NewGuid(), Details = "test" } });
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<UserDetails>(
@@ -742,11 +743,11 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_multiple_properties_full_text_index_through_attribute_with_default()
+    public async Task using_multiple_properties_full_text_index_through_attribute_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<Article>());
 
-        theStore.BulkInsert(new[] { new Article { Id = Guid.NewGuid(), Heading = "test", Text = "test" } });
+        await theStore.BulkInsertAsync(new[] { new Article { Id = Guid.NewGuid(), Heading = "test", Text = "test" } });
 
         theStore.StorageFeatures
             .ShouldContainIndexDefinitionFor<Article>(
@@ -758,14 +759,14 @@ public class full_text_index: OneOffConfigurationsContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void using_multiple_properties_full_text_index_through_attribute_with_custom_settings()
+    public async Task using_multiple_properties_full_text_index_through_attribute_with_custom_settings()
     {
         const string frenchRegConfig = "french";
         const string italianRegConfig = "italian";
 
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
 
-        theStore.BulkInsert(new[]
+        await theStore.BulkInsertAsync(new[]
         {
             new BlogPost
             {
@@ -942,18 +943,18 @@ public static class FullTextIndexTestsExtension
 
         ddl.ShouldNotBeNull();
 
-        SpecificationExtensions.ShouldContain(ddl, $"CREATE INDEX {indexName}");
-        SpecificationExtensions.ShouldContain(ddl, $"ON {tableName}");
-        SpecificationExtensions.ShouldContain(ddl, $"to_tsvector('{regConfig}',{dataConfig})");
+        ddl.ShouldContain($"CREATE INDEX {indexName}");
+        ddl.ShouldContain($"ON {tableName}");
+        ddl.ShouldContain($"to_tsvector('{regConfig}',{dataConfig})");
 
         if (regConfig != null)
         {
-            SpecificationExtensions.ShouldContain(ddl, regConfig);
+            ddl.ShouldContain(regConfig);
         }
 
         if (dataConfig != null)
         {
-            SpecificationExtensions.ShouldContain(ddl, dataConfig);
+            ddl.ShouldContain(dataConfig);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Bug1781;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -79,9 +80,9 @@ namespace EventSourcingTests.Bugs
             await using (var session = documentStore.QuerySession())
             {
                 var importAggregate = await session.LoadAsync<DataImportAggregate>(importStreamKey);
-                importAggregate.ShouldBeNull();
-
                 var dataItemAggregate = await session.LoadAsync<DataItemAggregate>(dataItemStreamKey);
+
+                importAggregate.ShouldBeNull();
                 dataItemAggregate.ShouldBeNull();
             }
         }

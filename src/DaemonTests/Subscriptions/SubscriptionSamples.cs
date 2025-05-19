@@ -5,12 +5,14 @@ using Confluent.Kafka;
 using EventSourcingTests.Projections;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
 using Marten.Services;
 using Marten.Subscriptions;
 using Microsoft.Extensions.Configuration;
@@ -142,8 +144,8 @@ public static class SubscriptionBootstrapping
                 // Or with additional configuration like:
                 opts.Events.Subscribe(new ConsoleSubscription(), s =>
                 {
-                    s.SubscriptionName = "Console"; // Override Marten's naming
-                    s.SubscriptionVersion = 2; // Potentially version as an all new subscription
+                    s.Name = "Console"; // Override Marten's naming
+                    s.Version = 2; // Potentially version as an all new subscription
 
                     // Optionally create an allow list of
                     // event types to subscribe to
@@ -296,7 +298,7 @@ public class KafkaSubscription: SubscriptionBase
     {
         _config = config;
 
-        SubscriptionName = "Kafka";
+        Name = "Kafka";
 
         // Access to any or all filtering rules
         IncludeType<InvoiceApproved>();

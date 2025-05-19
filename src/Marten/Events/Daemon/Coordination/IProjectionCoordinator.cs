@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Microsoft.Extensions.Hosting;
 
 namespace Marten.Events.Daemon.Coordination;

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Services;
@@ -20,7 +21,6 @@ public class append_events_with_optimistic_or_exclusive_locks
         public append_events_optimistic_or_exclusive_with_guid_identity(ITestOutputHelper output)
         {
             _output = output;
-            theStore.Advanced.Clean.DeleteAllEventData();
         }
 
         [Fact]
@@ -120,8 +120,7 @@ public class append_events_with_optimistic_or_exclusive_locks
                     await session.SaveChangesAsync();
                 });
 
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage,
-                    StringComparisonOption.Default);
+                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
             }
         }
 
@@ -151,7 +150,6 @@ public class append_events_with_optimistic_or_exclusive_locks
         public append_events_optimistic_or_exclusive_with_string_identity()
         {
             StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
-            theStore.Advanced.Clean.DeleteAllEventData();
         }
 
         [Fact]
@@ -247,8 +245,7 @@ public class append_events_with_optimistic_or_exclusive_locks
                     await session.SaveChangesAsync();
                 });
 
-                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage,
-                    StringComparisonOption.Default);
+                ex.Message.ShouldContain(MartenCommandException.MaybeLockedRowsMessage);
             }
         }
 

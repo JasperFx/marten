@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -18,23 +19,23 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
     #region sample_compiled_include
 
     [Fact]
-    public void simple_compiled_include_for_a_single_document()
+    public async Task simple_compiled_include_for_a_single_document()
     {
         var user = new User();
         var issue = new Issue { AssigneeId = user.Id, Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
         var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
-        var issue2 = query.Query(issueQuery);
+        var issue2 = await query.QueryAsync(issueQuery);
 
-        SpecificationExtensions.ShouldNotBeNull(issueQuery.Included);
+        issueQuery.Included.ShouldNotBeNull();
         issueQuery.Included.Single().Id.ShouldBe(user.Id);
 
-        SpecificationExtensions.ShouldNotBeNull(issue2);
+        issue2.ShouldNotBeNull();
     }
 
     public class IssueByTitleWithAssignee: ICompiledQuery<Issue>
@@ -67,7 +68,7 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
     }
 
     [Fact]
-    public void compiled_include_to_list()
+    public async Task compiled_include_to_list()
     {
         var user1 = new User();
         var user2 = new User();
@@ -79,13 +80,13 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var querySession = theStore.QuerySession();
         var compiledQuery = new IssueWithUsers();
 
         querySession.Logger = new TestOutputMartenLogger(_output);
-        var issues = querySession.Query(compiledQuery).ToArray();
+        var issues = await querySession.QueryAsync(compiledQuery);
 
         compiledQuery.Users.Count.ShouldBe(2);
         issues.Count().ShouldBe(3);
@@ -111,7 +112,7 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
     }
 
     [Fact]
-    public void compiled_include_to_dictionary()
+    public async Task compiled_include_to_dictionary()
     {
         var user1 = new User();
         var user2 = new User();
@@ -123,12 +124,12 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         using var session = theStore.IdentitySession();
         session.Store(user1, user2);
         session.Store(issue1, issue2, issue3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var querySession = theStore.QuerySession();
         var compiledQuery = new IssueWithUsersById();
 
-        var issues = querySession.Query(compiledQuery).ToArray();
+        var issues = await querySession.QueryAsync(compiledQuery);
 
         issues.ShouldNotBeEmpty();
 

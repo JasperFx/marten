@@ -2,6 +2,7 @@ using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal;
@@ -104,11 +105,6 @@ internal class CausationIdArgument: UpsertArgument
     {
         method.Frames.Code($"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.CausationId)});",
             Use.Type<IMartenSession>());
-    }
-
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code("writer.Write(\"BULK_INSERT\", {0});", DbType);
     }
 
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

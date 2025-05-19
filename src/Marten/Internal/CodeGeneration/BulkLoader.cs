@@ -10,27 +10,13 @@ using Npgsql;
 
 namespace Marten.Internal.CodeGeneration;
 
-public abstract class BulkLoader<T, TId>: IBulkLoader<T>
+public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull where T : notnull
 {
     private readonly IDocumentStorage<T, TId> _storage;
 
     public BulkLoader(IDocumentStorage<T, TId> storage)
     {
         _storage = storage;
-    }
-
-    public void Load(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
-    {
-        using var writer = conn.BeginBinaryImport(MainLoaderSql());
-
-        foreach (var document in documents)
-        {
-            _storage.AssignIdentity(document, tenant.TenantId, tenant.Database);
-            writer.StartRow();
-            LoadRow(writer, document, tenant, serializer);
-        }
-
-        writer.Complete();
     }
 
     public async Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
@@ -51,19 +37,6 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
 
 
     public abstract string CreateTempTableForCopying();
-
-    public void LoadIntoTempTable(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
-        IEnumerable<T> documents)
-    {
-        using var writer = conn.BeginBinaryImport(TempLoaderSql());
-        foreach (var document in documents)
-        {
-            writer.StartRow();
-            LoadRow(writer, document, tenant, serializer);
-        }
-
-        writer.Complete();
-    }
 
     public async Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
         IEnumerable<T> documents,
@@ -102,13 +75,11 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T>
     {
         if (value.HasValue)
         {
-            return value.Value.ToString();
+            return value.Value.ToString()!;
         }
 
         return "EMPTY";
     }
-
-    public abstract void LoadRow(NpgsqlBinaryImporter writer, T document, Tenant tenant, ISerializer serializer);
 
     public abstract Task LoadRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant,
         ISerializer serializer, CancellationToken cancellation);

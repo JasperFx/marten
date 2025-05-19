@@ -137,9 +137,9 @@ public class query_with_inner_query_with_global_CollectionStorage_WithArray: One
     {
         StoreOptions(options =>
         {
-            options.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray);
+            options.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
         });
-        SetupTestData();
+        await SetupTestData();
 
         await using (var query = theStore.QuerySession())
         {
@@ -152,11 +152,11 @@ public class query_with_inner_query_with_global_CollectionStorage_WithArray: One
         }
     }
 
-    private void SetupTestData()
+    private async Task SetupTestData()
     {
         using var session = theStore.LightweightSession();
         session.Store(TestData);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     public query_with_inner_query_with_global_CollectionStorage_WithArray()

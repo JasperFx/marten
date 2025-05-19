@@ -50,12 +50,15 @@ public class Bug_561_negation_of_query_on_contains: IntegrationContext
     }
 }
 
-public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegrationContext
+public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegrationContext, IAsyncLifetime
 {
     public Bug_561_negation_of_query_on_contains_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(opts => opts.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
+    }
 
+    public async Task InitializeAsync()
+    {
         var doc1 = new DocWithArrays { Strings = new string[] { "a", "b", "c" } };
         var doc2 = new DocWithArrays { Strings = new string[] { "c", "d", "e" } };
         var doc3 = new DocWithArrays { Strings = new string[] { "d", "e", "f" } };
@@ -63,7 +66,12 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
 
         theSession.Store(doc1, doc2, doc3, doc4);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]

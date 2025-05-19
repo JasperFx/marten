@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using JasperFx;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -8,11 +10,11 @@ using Xunit;
 
 namespace EventSourcingTests.Projections;
 
-public class inline_aggregation_with_base_view_class: OneOffConfigurationsContext
+public class inline_aggregation_with_base_view_class: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
     private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
-    private readonly Guid streamId;
+    private Guid streamId;
 
     public inline_aggregation_with_base_view_class()
     {
@@ -23,36 +25,44 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
             _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloaded>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<QuestMonstersWithBaseClassAndIdOverloadedWithNew>(SnapshotLifecycle.Inline);
         });
+    }
 
+    public async Task InitializeAsync()
+    {
         streamId = theSession.Events
             .StartStream<QuestMonstersWithBaseClass>(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_view_class()
+    public async Task run_inline_aggregation_with_base_view_class()
     {
-        VerifyProjection<QuestMonstersWithBaseClass>();
+        await VerifyProjection<QuestMonstersWithBaseClass>();
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_class_and_id_overloaded()
+    public async Task run_inline_aggregation_with_base_class_and_id_overloaded()
     {
-        VerifyProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
+        await VerifyProjection<QuestMonstersWithBaseClassAndIdOverloaded>();
     }
 
     [Fact]
-    public void run_inline_aggregation_with_base_class_and_id_overloaded_with_new()
+    public async Task run_inline_aggregation_with_base_class_and_id_overloaded_with_new()
     {
-        VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
+        await VerifyProjection<QuestMonstersWithBaseClassAndIdOverloadedWithNew>();
     }
 
-    private void VerifyProjection<T>() where T : IMonstersView
+    private async Task VerifyProjection<T>() where T : IMonstersView
     {
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = await theSession.LoadAsync<T>(streamId);
 
-        loadedView.ShouldNotBeNull();
+        loadedView.ShouldNotBe(default);
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 

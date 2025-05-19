@@ -26,7 +26,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
     }
 
     [Fact]
-    public void SampleCopyAndTransformStream()
+    public async Task SampleCopyAndTransformStream()
     {
         #region sample_scenario-copyandtransformstream-setup
         var started = new QuestStarted { Name = "Find the Orb" };
@@ -37,14 +37,14 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         #endregion
 
         #region sample_scenario-copyandtransformstream-transform
         using (var session = theStore.LightweightSession())
         {
-            var events = session.Events.FetchStream(started.Name);
+            var events = await session.Events.FetchStreamAsync(started.Name);
 
             var transformedEvents = events.SelectMany(x =>
             {
@@ -75,7 +75,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
             });
 
             // Transactionally update the streams.
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         #endregion
     }

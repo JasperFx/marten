@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -11,11 +12,11 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
 {
     public Bug_479_select_datetime_fields()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(EnumStorage.AsString));
+        StoreOptions(_ => _.UseNewtonsoftForSerialization(EnumStorage.AsString));
     }
 
     [Fact]
-    public void select_date_time_as_utc()
+    public async Task select_date_time_as_utc()
     {
         var doc = new DocWithDates
         {
@@ -24,7 +25,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTime }).Single();
 
@@ -32,7 +33,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
     }
 
     [Fact]
-    public void select_date_time_offset()
+    public async Task select_date_time_offset()
     {
         var doc = new DocWithDates
         {
@@ -41,7 +42,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(doc);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).Single();
 

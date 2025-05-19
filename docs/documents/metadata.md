@@ -1,21 +1,27 @@
 # Marten Metadata
 
-A major goal of the Marten V4 release was to enable much richer document and event metadata collection based
-on user requests. To that end, Marten still supports the same basic metadata columns
-as Marten V2/V3, but adds other **opt in** columns.
+::: tip
+Note that this content only applies to document storage and will have no impact on projected documents
+created through live aggregations of event data.
+:::
+
+Marten supports a rich set of available metadata tracking for documents in the database, but note that some
+of these columns are "opt in" and others are enabled by default, but allow for "opt out" for users who want
+a leader database.
 
 The available columns for document storage are:
 
-|Column Name|Description|Enabled by Default|
-|-----------|-----------|------------------|
-|`mt_last_modified`|Timestamp of the last time the document record was modified|Yes|
-|`mt_version`|`Guid` value that marks the current version of the document. This supports optimistic concurrency|Yes|
-|`mt_dotnet_type`|Assembly qualified name of the .Net type persisted to this row|Yes|
-|`correlation_id`|User-supplied correlation identifier (`string`)|No, opt in|
-|`causation_id`|User-supplied causation identifier (`string`)|No, opt in|
-|`headers`|User-supplied key/value pairs for extensible metadata|No, opt in|
-|`mt_deleted`|Boolean flag noting whether the document is soft-deleted|Only if the document type is configured as soft-deleted|
-|`mt_deleted_at`|Timestamp marking when a document was soft-deleted|Only if the document type is configured as soft-deleted|
+|Column Name| Description                                                                                       |Enabled by Default|
+|-----------|---------------------------------------------------------------------------------------------------|------------------|
+|`mt_last_modified`| Timestamp of the last time the document record was modified                                       |Yes|
+|`mt_version`| `Guid` value that marks the current version of the document. This supports optimistic concurrency |Yes|
+|`mt_dotnet_type`| Assembly qualified name of the .Net type persisted to this row                                    |Yes|
+|`correlation_id`| User-supplied correlation identifier (`string`)                                                   |No, opt in|
+|`causation_id`| User-supplied causation identifier (`string`)                                                     |No, opt in|
+|`headers`| User-supplied key/value pairs for extensible metadata                                             |No, opt in|
+|`mt_deleted`| Boolean flag noting whether the document is soft-deleted                                          |Only if the document type is configured as soft-deleted|
+|`mt_deleted_at`| Timestamp marking when a document was soft-deleted                                                |Only if the document type is configured as soft-deleted|
+|`mt_created_at`| Timestamp marking when a document was originally created. Value of IDocumentSession.CreatedBy     |No, opt in|
 
 ## Correlation Id, Causation Id, and Headers
 
@@ -40,6 +46,7 @@ var store = DocumentStore.For(opts =>
         x.CorrelationId.Enabled = true;
         x.CausationId.Enabled = true;
         x.Headers.Enabled = true;
+
     });
 
     // Or just globally turn on columns for all document
@@ -49,10 +56,13 @@ var store = DocumentStore.For(opts =>
         x.Metadata.CausationId.Enabled = true;
         x.Metadata.CorrelationId.Enabled = true;
         x.Metadata.Headers.Enabled = true;
+
+        // This column is "opt in"
+        x.Metadata.CreatedAt.Enabled = true;
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L26-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_causation_fields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L26-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_causation_fields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, you relay the actual values for these fields at the document session level as shown below:
@@ -68,7 +78,7 @@ public void SettingMetadata(IDocumentSession session, string correlationId, stri
     session.CausationId = causationId;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L55-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_metadata_on_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L59-L69' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_metadata_on_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Headers are a little bit different, with the ability to set individual header key/value pairs
@@ -82,7 +92,7 @@ public void SetHeader(IDocumentSession session, string sagaId)
     session.SetHeader("saga-id", sagaId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L67-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_header' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L71-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_header' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Tracking Metadata on Documents
@@ -106,7 +116,7 @@ public class DocWithMetadata
     public bool IsDeleted { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L76-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docwithmetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L80-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docwithmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To enable the Marten mapping to metadata values, use this syntax:
@@ -128,7 +138,7 @@ var store = DocumentStore.For(opts =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L93-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicitly_map_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L97-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicitly_map_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip

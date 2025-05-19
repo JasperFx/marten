@@ -6,11 +6,13 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -31,7 +33,6 @@ using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Connections;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -60,7 +61,7 @@ public enum TenantIdStyle
 ///     necessary to customize and bootstrap a working
 ///     DocumentStore
 /// </summary>
-public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
+public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver, IDescribeMyself
 {
     public const int DefaultTimeout = 5;
     internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
@@ -104,11 +105,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Add, remove, or reorder global session listeners
     /// </summary>
-    public readonly List<IDocumentSessionListener> Listeners = new();
+    [IgnoreDescription]
+    public List<IDocumentSessionListener> Listeners { get; } = new();
 
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
     /// </summary>
+    [ChildDescription]
     public OpenTelemetryOptions OpenTelemetry { get; } = new();
 
     /// <summary>
@@ -122,21 +125,36 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     private ISerializer? _serializer;
 
+    private AutoCreate? _autoCreate;
+
     /// <summary>
     ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
     ///     property is "CreateOrUpdate" by default for more efficient development, but can be set to lower values for production usage.
+    ///
+    /// You can also use the IServiceCollection.AddJasperFx() syntax to configure the AutoCreate setting globally
+    /// within your application for all JasperFx / "Critter Stack" tools
     /// </summary>
-    public AutoCreate AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
+    public AutoCreate AutoCreateSchemaObjects
+    {
+        get
+        {
+            return _autoCreate ?? AutoCreate.CreateOrUpdate;
+        }
+        set
+        {
+            _autoCreate = value;
+        }
+    }
 
     public StoreOptions()
     {
-        _eventGraph = new EventGraph(this);
         Schema = new MartenRegistry(this);
         _storage = new StorageFeatures(this);
 
         _providers = new ProviderGraph(this);
         _advanced = new AdvancedOptions(this);
 
+        _eventGraph = new EventGraph(this);
         _projections = new ProjectionOptions(this);
 
         _linq = new LinqParsing(this);
@@ -159,8 +177,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public string MaybeCorrectTenantId(string tenantId)
     {
-        if (tenantId.IsEmpty()) return Marten.Storage.Tenancy.DefaultTenantId;
-        if (tenantId == Marten.Storage.Tenancy.DefaultTenantId) return tenantId;
+        if (tenantId.IsEmpty()) return StorageConstants.DefaultTenantId;
+        if (tenantId == StorageConstants.DefaultTenantId) return tenantId;
 
         switch (TenantIdStyle)
         {
@@ -247,20 +265,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
+    [ChildDescription]
     public ProjectionOptions Projections => _projections;
 
     /// <summary>
     ///     Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
     /// </summary>
+    [Obsolete(PreferJasperFxMessage)]
     public TypeLoadMode GeneratedCodeMode
     {
-        get => _generatedCodeMode;
+        get => _generatedCodeMode ?? TypeLoadMode.Dynamic;
         set => _generatedCodeMode = value;
     }
 
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
+    [ChildDescription]
     public StorageFeatures Storage => _storage;
 
     internal Action<IDatabaseCreationExpressions>? CreateDatabases
@@ -274,6 +295,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Advanced configuration options for this DocumentStore
     /// </summary>
+    [ChildDescription]
     public AdvancedOptions Advanced => _advanced;
 
     internal EventGraph EventGraph => _eventGraph;
@@ -281,16 +303,19 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Configuration of event streams and projections
     /// </summary>
+    [ChildDescription]
     public IEventStoreOptions Events => EventGraph;
 
     /// <summary>
     ///     Extension point to add custom Linq query parsers
     /// </summary>
+    [IgnoreDescription]
     public LinqParsing Linq => _linq;
 
     /// <summary>
     ///     Apply conventional policies to how documents are mapped
     /// </summary>
+    [IgnoreDescription]
     public PoliciesExpression Policies => new(this);
 
 
@@ -394,6 +419,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Get or set the tenancy model for this DocumentStore
     /// </summary>
+    [IgnoreDescription]
     public ITenancy Tenancy
     {
         get => (_tenancy ?? throw new InvalidOperationException(
@@ -410,7 +436,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
     private readonly ProjectionOptions _projections;
-    private TypeLoadMode _generatedCodeMode = TypeLoadMode.Dynamic;
+    private TypeLoadMode? _generatedCodeMode;
     private readonly StorageFeatures _storage;
     private Action<IDatabaseCreationExpressions>? _createDatabases;
     private readonly IProviderGraph _providers;
@@ -476,29 +502,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             new DefaultTenancy(NpgsqlDataSourceFactory.Create(connectionString), this));
     }
 
-    /// <summary>
-    ///     Supply a source for the connection string to a Postgresql database
-    /// </summary>
-    /// <param name="connectionSource"></param>
-    [Obsolete("Use version with connection string. This will be removed in Marten 8")]
-    public void Connection(Func<string> connectionSource)
-    {
-        throw new NotSupportedException(
-            "Sorry, but this feature is no longer supported. Please use the overload that uses NpgsqlDataSource instead for similar functionality");
-    }
-
-    /// <summary>
-    ///     Supply a mechanism for resolving an NpgsqlConnection object to
-    ///     the Postgresql database
-    /// </summary>
-    /// <param name="source"></param>
-    [Obsolete("Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory. This will be removed in Marten 8")]
-    public void Connection(Func<NpgsqlConnection> source)
-    {
-        throw new NotSupportedException(
-            "Use one of the overloads that takes a connection string, an NpgsqlDataSource, or an INpgsqlDataSourceFactory");
-    }
-
 
     /// <summary>
     ///     Supply a mechanism for resolving an NpgsqlConnection object based on the NpgsqlDataSource
@@ -547,34 +550,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             configure(_serializer);
         }
-    }
-
-    /// <summary>
-    ///     Configure the default serializer settings
-    /// </summary>
-    /// <param name="enumStorage"></param>
-    /// <param name="casing">Casing style to be used in serialization</param>
-    /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
-    /// <param name="nonPublicMembersStorage">Allow non public members to be used during deserialization</param>
-    [Obsolete("Prefer UseNewtonsoftForSerialization or UseSystemTextJsonForSerialization to configure JSON options")]
-    public void UseDefaultSerialization(
-        EnumStorage enumStorage = EnumStorage.AsInteger,
-        Casing casing = Casing.Default,
-        CollectionStorage collectionStorage = CollectionStorage.Default,
-        NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default,
-        SerializerType serializerType = SerializerType.Newtonsoft
-    )
-    {
-        var serializer = SerializerFactory.New(serializerType,
-            new SerializerOptions
-            {
-                EnumStorage = enumStorage,
-                Casing = casing,
-                CollectionStorage = collectionStorage,
-                NonPublicMembersStorage = nonPublicMembersStorage
-            });
-
-        Serializer(serializer);
     }
 
     /// <summary>
@@ -997,7 +972,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
 
     string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
-    internal MartenManagedTenantListPartitions TenantPartitions { get; set; }
+    internal MartenManagedTenantListPartitions? TenantPartitions { get; set; }
 
     string IDocumentSchemaResolver.For<TDocument>(bool qualified)
     {
@@ -1035,6 +1010,52 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             Listeners.Add(metrics);
         }
     }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var options = new OptionsDescription(this);
+
+        // var set = options.AddChildSet("Document Types");
+        // foreach (var mapping in Storage.AllDocumentMappings)
+        // {
+        //     set.Rows.Add(new OptionsDescription(mapping));
+        // }
+
+        /*
+    │   ├── Alias: day
+           │   ├── Casing: Default
+           │   ├── CodeGen: Marten.Schema.DocumentCodeGen
+           │   ├── DatabaseSchemaName: cli
+           │   ├── DdlTemplate: None
+           │   ├── DeleteStyle: Remove
+           │   ├── DisablePartitioningIfAny: False
+           │   ├── DocumentType: DaemonTests.Aggregations.Day
+           │   ├── EnumStorage: AsInteger
+           │   ├── HiloSettings: None
+           │   ├── IdMember: Int32 Id
+           │   ├── IdStrategy: Marten.Schema.Identity.Sequences.HiloIdGeneration
+           │   ├── IdType: int
+           │   ├── IgnorePartitions: False
+           │   ├── InsertFunction: cli.mt_insert_day
+           │   ├── Metadata: Marten.Schema.DocumentMetadataCollection
+           │   ├── OverwriteFunction: cli.mt_overwrite_day
+           │   ├── Partitioning: None
+           │   ├── PrimaryKeyTenancyOrdering: TenantId_Then_Id
+           │   ├── PropertySearching: JSON_Locator_Only
+           │   ├── StructuralTyped: False
+           │   ├── SubClasses: Marten.Schema.SubClasses
+           │   ├── TableName: cli.mt_doc_day
+           │   ├── TenancyStyle: Single
+           │   ├── UpdateFunction: cli.mt_update_day
+           │   ├── UpsertFunction: cli.mt_upsert_day
+           │   ├── UseNumericRevisions: True
+           │   ├── UseOptimisticConcurrency: False
+           │   └── UseVersionFromMatchingStream: False
+
+         */
+
+        return options;
+    }
 }
 
 internal class LambdaDocumentPolicy: IDocumentPolicy
@@ -1069,6 +1090,11 @@ public interface IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     bool DefaultTenantUsageEnabled { get; }
+
+    /// <summary>
+    ///     Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; }
 
 }
 
@@ -1118,6 +1144,7 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
     ///     type as well
     /// </summary>
+    [ChildDescription]
     public HiloSettings HiloSequenceDefaults { get; } = new();
 
 
@@ -1125,11 +1152,13 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Allows you to modify how the DDL for document tables and upsert functions is
     ///     written
     /// </summary>
+    [IgnoreDescription]
     public PostgresqlMigrator Migrator { get; } = new();
 
     /// <summary>
     /// Configuration options when using a <see cref="NpgsqlMultiHostDataSource"/>
     /// </summary>
+    [ChildDescription]
     public MultiHostSettings MultiHostSettings { get; } = new();
 
     /// <summary>
@@ -1153,4 +1182,9 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Option to enable or disable usage of default tenant when using multi-tenanted documents
     /// </summary>
     public bool DefaultTenantUsageEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Option to use NGram search using unaccent
+    /// </summary>
+    public bool UseNGramSearchWithUnaccent { get; set; }
 }

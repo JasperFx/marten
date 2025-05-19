@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -32,7 +33,7 @@ public class Bug_1994_insert_update_on_same_object_in_transaction: BugIntegratio
 
 
         session1.PendingChanges.InsertsFor<User>()
-            .Single().ShouldBeTheSameAs(user1);
+            .Single().ShouldBeSameAs(user1);
 
         session1.PendingChanges.AllChangedFor<User>()
             .Contains(user1).ShouldBeTrue();

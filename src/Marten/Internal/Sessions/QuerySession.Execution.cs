@@ -19,23 +19,10 @@ public partial class QuerySession
 
     internal record CommandExecution(NpgsqlCommand Command, IConnectionLifetime Lifetime);
 
-    public int Execute(NpgsqlCommand cmd)
-    {
-        RequestCount++;
-
-        return _resilience.Execute(static e => e.Lifetime.Execute(e.Command), new CommandExecution(cmd, _connection));
-    }
-
     public Task<int> ExecuteAsync(NpgsqlCommand command, CancellationToken token = new())
     {
         RequestCount++;
         return _resilience.ExecuteAsync(static (e, t) => new ValueTask<int>(e.Lifetime.ExecuteAsync(e.Command, t)), new CommandExecution(command, _connection), token).AsTask();
-    }
-
-    public DbDataReader ExecuteReader(NpgsqlCommand command)
-    {
-        RequestCount++;
-        return _resilience.Execute(static e => e.Lifetime.ExecuteReader(e.Command), new CommandExecution(command, _connection));
     }
 
     public Task<DbDataReader> ExecuteReaderAsync(NpgsqlCommand command, CancellationToken token = default)
@@ -60,12 +47,6 @@ public partial class QuerySession
         return _resilience.ExecuteAsync(static (e, t)
             => new ValueTask<DbDataReader>(e.Lifetime.ExecuteReaderAsync(e.Batch, t)),
             new BatchExecution(batch, _connection), token).AsTask();
-    }
-
-    internal T? LoadOne<T>(NpgsqlCommand command, ISelector<T> selector)
-    {
-        using var reader = ExecuteReader(command);
-        return !reader.Read() ? default : selector.Resolve(reader);
     }
 
     internal async Task<T?> LoadOneAsync<T>(NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
@@ -100,6 +81,7 @@ public partial class QuerySession
         return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
     }
 
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public T ExecuteHandler<T>(IQueryHandler<T> handler)
     {
         var batch = this.BuildCommand(handler);

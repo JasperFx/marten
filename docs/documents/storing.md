@@ -78,7 +78,7 @@ While `IDocumentSession.Store` will perform either insertion or update depending
 using (var session = theStore.LightweightSession())
 {
     session.Insert(target);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L75-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>

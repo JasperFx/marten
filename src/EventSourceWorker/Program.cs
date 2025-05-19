@@ -1,12 +1,11 @@
-using Marten;
 using DaemonTests.TestingSupport;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
+using JasperFx;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace EventSourceWorker;
 

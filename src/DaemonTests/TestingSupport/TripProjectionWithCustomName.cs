@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using DaemonTests.TestingSupport;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Samples.Deleting3;
@@ -34,15 +38,16 @@ namespace DaemonTests.TestingSupport
     {
         public TripProjectionWithCustomName()
         {
-            ProjectionName = "TripCustomName";
-            TeardownDataOnRebuild = true;
+            Name = "TripCustomName";
+            Options.TeardownDataOnRebuild = true;
+            Options.BatchSize = 5000;
         }
     }
 
 
     #region sample_TripProjection_aggregate
 
-    public class TripProjection: SingleStreamProjection<Trip>
+    public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         public TripProjection()
         {
@@ -56,7 +61,13 @@ namespace DaemonTests.TestingSupport
         // These methods can be either public, internal, or private but there's
         // a small performance gain to making them public
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;
-        public void Apply(Travel e, Trip trip) => trip.Traveled += e.TotalDistance();
+
+        public void Apply(Travel e, Trip trip)
+        {
+            Debug.WriteLine($"Trip {trip.Id} Traveled " + e.TotalDistance());
+            trip.Traveled += e.TotalDistance();
+            Debug.WriteLine("New total distance is " + e.TotalDistance());
+        }
 
         public void Apply(TripEnded e, Trip trip)
         {
@@ -64,9 +75,9 @@ namespace DaemonTests.TestingSupport
             trip.EndedOn = e.Day;
         }
 
-        public Trip Create(TripStarted started)
+        public Trip Create(IEvent<TripStarted> started)
         {
-            return new Trip { StartedOn = started.Day, Active = true };
+            return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
         }
     }
 
@@ -167,7 +178,7 @@ namespace TripProjection.UsingLambdas
 {
     #region sample_using_ProjectEvent_in_aggregate_projection
 
-    public class TripProjection: SingleStreamProjection<Trip>
+    public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         public TripProjection()
         {

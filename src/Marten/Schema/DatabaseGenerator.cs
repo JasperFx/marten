@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Storage;
 using Npgsql;
 using Weasel.Postgresql;
@@ -22,7 +23,7 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
         return this;
     }
 
-    public ITenantDatabaseCreationExpressions ForTenant(string tenantId = Tenancy.DefaultTenantId)
+    public ITenantDatabaseCreationExpressions ForTenant(string tenantId = StorageConstants.DefaultTenantId)
     {
         var configurator = new TenantDatabaseCreationExpressions();
         _configurationPerTenant.Add(tenantId, configurator);

@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -66,11 +69,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     public class MonthlyAllocationGrouper: IAggregateGrouper<string>
     {
-        public Task Group(
-            IQuerySession session,
-            IEnumerable<IEvent> events,
-            ITenantSliceGroup<string> grouping
-        )
+        public Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<string> grouping)
         {
             var allocations = events
                 .OfType<IEvent<EmployeeAllocated>>();

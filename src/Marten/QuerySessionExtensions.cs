@@ -3,49 +3,30 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 
 namespace Marten;
 
 public static class QuerySessionExtensions
 {
-    private static readonly MethodInfo QueryMethod =
-        typeof(IQuerySession).GetMethod(nameof(IQuerySession.Query), new[] { typeof(string), typeof(object[]) });
+    private static ImHashMap<Type, ITypeQueryExecutor> _queryExecutors = ImHashMap<Type, ITypeQueryExecutor>.Empty;
 
-    private static readonly MethodInfo QueryMethodAsync = typeof(IQuerySession).GetMethod(
-        nameof(IQuerySession.QueryAsync), new[] { typeof(string), typeof(CancellationToken), typeof(object[]) });
-
-    private static readonly Ref<ImHashMap<Type, MethodInfo>> QueryMethods =
-        Ref.Of(ImHashMap<Type, MethodInfo>.Empty);
-
-    private static readonly Ref<ImHashMap<Type, MethodInfo>> QueryAsyncMethods =
-        Ref.Of(ImHashMap<Type, MethodInfo>.Empty);
-
-    /// <summary>
-    ///     Query by a user-supplied .Net document type and user-supplied SQL
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="type"></param>
-    /// <param name="sql"></param>
-    /// <param name="parameters"></param>
-    /// <returns></returns>
-    public static IReadOnlyList<object> Query(this IQuerySession session, Type type, string sql,
-        params object[] parameters)
+    private interface ITypeQueryExecutor
     {
-        return (IReadOnlyList<object>)QueryFor(type).Invoke(session, new object[] { sql, parameters });
+        Task<IReadOnlyList<object>> QueryAsync(IQuerySession session, CancellationToken token, string sql,
+            params object[] parameters);
     }
 
-    private static MethodInfo QueryFor(Type type)
+    private class TypeQueryExecutor<T>: ITypeQueryExecutor where T : class
     {
-        if (QueryMethods.Value.TryFind(type, out var method))
+        public async Task<IReadOnlyList<object>> QueryAsync(IQuerySession session, CancellationToken token, string sql,
+            params object[] parameters)
         {
-            return method;
+            var data = await session.QueryAsync<T>(sql, token, parameters).ConfigureAwait(false);
+            return data;
         }
-
-        method = QueryMethod.MakeGenericMethod(type);
-        QueryMethods.Swap(d => d.AddOrUpdate(type, method));
-
-        return method;
     }
 
     /// <summary>
@@ -57,24 +38,37 @@ public static class QuerySessionExtensions
     /// <param name="token"></param>
     /// <param name="parameters"></param>
     /// <returns></returns>
-    public static async Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql,
-        CancellationToken token = default, params object[] parameters)
+    public static Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql,
+        CancellationToken token, params object[] parameters)
     {
-        var task = (Task)QueryAsyncFor(type).Invoke(session, new object[] { sql, token, parameters });
-        await task.ConfigureAwait(false);
-        return (IReadOnlyList<object>)((dynamic)task).Result;
-    }
-
-    private static MethodInfo QueryAsyncFor(Type type)
-    {
-        if (QueryAsyncMethods.Value.TryFind(type, out var method))
+        if (!_queryExecutors.TryFind(type, out var executor))
         {
-            return method;
+            executor = typeof(TypeQueryExecutor<>).CloseAndBuildAs<ITypeQueryExecutor>(type);
+            _queryExecutors = _queryExecutors.AddOrUpdate(type, executor);
         }
 
-        method = QueryMethodAsync.MakeGenericMethod(type);
-        QueryAsyncMethods.Swap(d => d.AddOrUpdate(type, method));
-
-        return method;
+        return executor.QueryAsync(session, token, sql, parameters);
     }
+
+    /// <summary>
+    ///     Query by a user-supplied .Net document type and user-supplied SQL
+    /// </summary>
+    /// <param name="session"></param>
+    /// <param name="type"></param>
+    /// <param name="sql"></param>
+    /// <param name="token"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    public static Task<IReadOnlyList<object>> QueryAsync(this IQuerySession session, Type type, string sql,
+        params object[] parameters)
+    {
+        if (!_queryExecutors.TryFind(type, out var executor))
+        {
+            executor = typeof(TypeQueryExecutor<>).CloseAndBuildAs<ITypeQueryExecutor>(type);
+            _queryExecutors = _queryExecutors.AddOrUpdate(type, executor);
+        }
+
+        return executor.QueryAsync(session, CancellationToken.None, sql, parameters);
+    }
+
 }

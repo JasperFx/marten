@@ -4,6 +4,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx;
+using JasperFx.Events;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -88,7 +93,7 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
 
         async Task AssertGlobalProjectionUpdatedForTenant()
         {
-            var resource = await theSession.ForTenant(Tenancy.DefaultTenantId)
+            var resource = await theSession.ForTenant(StorageConstants.DefaultTenantId)
                 .Query<ResourcesGlobalSummary>().SingleOrDefaultAsync(r => r.Id == organisationId);
 
             resource.ShouldNotBeNull();
@@ -161,7 +166,7 @@ public enum ResourceState
     Enabled
 }
 
-public class ResourceProjection: SingleStreamProjection<Resource>
+public class ResourceProjection: SingleStreamProjection<Resource, Guid>
 {
     public ResourceProjection() =>
         DeleteEvent<ResourceRemovedEvent>();
@@ -206,39 +211,36 @@ public record CompanyLocationCreated(string Name);
 public record CompanyLocationUpdated(string NewName);
 public record CompanyLocationDeleted();
 
-public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation, Guid>
+public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLocation, Guid>
 {
     public static string ExpectedTenant;
 
     public CompanyLocationCustomProjection()
     {
-        this.AggregateByStream();
-
         this.IncludeType<CompanyLocationCreated>();
         this.IncludeType<CompanyLocationUpdated>();
         this.IncludeType<CompanyLocationDeleted>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CompanyLocation, Guid> slice, CancellationToken cancellation, ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override ValueTask<(CompanyLocation, ActionType)> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
+        IIdentitySetter<CompanyLocation, Guid> identitySetter, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
-        var location = slice.Aggregate;
+        var location = snapshot;
 
         // The session and the slice should be for the same tenant
         session.TenantId.ShouldBe(ExpectedTenant);
-        slice.Tenant.TenantId.ShouldBe(ExpectedTenant);
-        session.TenantId.ShouldBe(slice.Tenant.TenantId);
 
-        foreach (var data in slice.AllData())
+        foreach (var data in events.Select(x => x.Data))
         {
             switch (data)
             {
                 case CompanyLocationCreated c:
                     location = new CompanyLocation
                     {
-                        Id = slice.Id,
+                        Id = identity,
                         Name = c.Name,
                     };
-                    session.Store(location);
+
                     break;
 
                 case CompanyLocationUpdated u:
@@ -246,11 +248,11 @@ public class CompanyLocationCustomProjection : CustomProjection<CompanyLocation,
                     break;
 
                 case CompanyLocationDeleted d:
-                    session.Delete(location);
-                    break;
+                    return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Delete));
             }
         }
 
-        return ValueTask.CompletedTask;
+        return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Store));
     }
+
 }

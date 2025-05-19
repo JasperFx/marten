@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
       - master
+      - "7.0"
     paths-ignore:
       - 'documentation/**'
       - 'docs/**'
@@ -23,7 +25,7 @@ env:
   pg_db: marten_testing
   pg_user: postgres
   CONFIGURATION: Release
-  FRAMEWORK: net7.0
+  FRAMEWORK: net9.0
   DISABLE_TEST_PARALLELIZATION: true
   DEFAULT_SERIALIZER: "SystemTextJson"
   NUKE_TELEMETRY_OPTOUT: true
@@ -52,20 +54,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install .NET 6.0.x
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 6.0.x
-
-      - name: Install .NET 7.0.x
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 7.0.x
-
       - name: Install .NET 8.0.x
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
+          
+      - name: Install .NET 9.0.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
 
       - name: Install .NET Aspire workload
         run: |
@@ -88,11 +85,6 @@ jobs:
 
       - name: compile
         run: ./build.sh compile
-        shell: bash
-
-      - name: mocha
-        if: ${{ success() || failure() }}
-        run: ./build.sh mocha
         shell: bash
 
       - name: test-base-lib

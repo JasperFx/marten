@@ -23,12 +23,14 @@ public class includes_with_custom_mapping : IntegrationContext
         _testOutputHelper = testOutputHelper;
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
         StoreOptions(opts =>
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
         });
+
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var classrooms = Enumerable.Range(0, 5)
             .Select(i => new Classroom(CombGuidIdGeneration.NewGuid(), $"AA-{i}", 10 + i)).ToList();
@@ -41,7 +43,7 @@ public class includes_with_custom_mapping : IntegrationContext
         var teachers2 = teachers.Select(t => new SchoolUser2(t.Id, t.Name, t.HomeRoom, t.StaffId));
         var students2 = students.Select(s => new SchoolUser2(s.Id, s.Name, s.HomeRoom, s.StaffId));
 
-        return theStore.BulkInsertDocumentsAsync(
+        await theStore.BulkInsertDocumentsAsync(
             TenantId,
             [
                 ..classrooms, ..teachers, ..students, ..classrooms2, ..teachers2, ..students2
@@ -589,7 +591,7 @@ public class includes_with_custom_mapping : IntegrationContext
             .Where(u => u.Name == "Student-1002");
 
         LogCommand(query, FetchType.FetchOne);
-        
+
         var classroom = await query.SingleAsync();
 
         homeRoom.ShouldBeNull();

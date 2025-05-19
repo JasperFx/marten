@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
@@ -15,7 +17,7 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         StoreOptions(_ =>
         {
             _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.UseDefaultSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
+            _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.All);
             _.Projections.Snapshot<QuestMonstersWithPrivateConstructor>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<QuestMonstersWithNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
             _.Projections.Snapshot<WithDefaultPrivateConstructorNonDefaultPublicConstructor>(SnapshotLifecycle.Inline);
@@ -39,18 +41,18 @@ public class inline_aggregation_with_private_constructor: OneOffConfigurationsCo
         Verify<WithNonDefaultConstructorsPrivateAndPublicWithEqualParamsCount>();
     }
 
-    private void Verify<T>() where T : IMonstersView
+    private async Task Verify<T>() where T : IMonstersView
     {
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };
         var streamId = theSession.Events
             .StartStream(slayed1, slayed2).Id;
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var loadedView = theSession.Load<T>(streamId);
+        var loadedView = await theSession.LoadAsync<T>(streamId);
 
-        loadedView.ShouldNotBeNull();
+        loadedView.ShouldNotBe(default);
         loadedView!.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 

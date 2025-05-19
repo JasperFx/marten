@@ -135,13 +135,13 @@ internal class QueryCompiler
         return builder.BuildPlan(session, queryType, storeOptions);
     }
 
-    public static CompiledQueryPlan BuildQueryPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query)
+    public static CompiledQueryPlan BuildQueryPlan<TDoc, TOut>(QuerySession session, ICompiledQuery<TDoc, TOut> query) where TDoc : notnull
     {
         eliminateStringNulls(query);
 
         var plan = new CompiledQueryPlan(query.GetType(), typeof(TOut)){TenantId = session.TenantId};
 
-        assertValidityOfQueryType(plan, query.GetType());
+        assertValidityOfQueryType(plan, query.GetType(), session.Options);
 
         // This *could* throw
         var queryTemplate = plan.CreateQueryTemplate(query);
@@ -164,7 +164,7 @@ internal class QueryCompiler
     internal static LinqQueryParser BuildDatabaseCommand<TDoc, TOut>(QuerySession session,
         ICompiledQuery<TDoc, TOut> queryTemplate,
         QueryStatistics statistics,
-        CompiledQueryPlan queryPlan)
+        CompiledQueryPlan queryPlan) where TDoc : notnull
     {
         Expression expression = queryTemplate.QueryIs();
         if (expression is LambdaExpression lambda)
@@ -211,11 +211,22 @@ internal class QueryCompiler
     }
 
 
-    private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type)
+    private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type, StoreOptions options)
     {
         if (plan.InvalidMembers.Any())
         {
-            var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType().NameInCode()} {x.Name}")
+            // Remove any value types here!
+            foreach (var member in plan.InvalidMembers.Where(x => !x.GetRawMemberType()!.IsNullable()).ToArray())
+            {
+                if (options.TryFindValueType(member.GetMemberType()!) != null)
+                {
+                    plan.InvalidMembers.Remove(member);
+                }
+            }
+
+            if (!plan.InvalidMembers.Any()) return;
+
+            var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType()!.NameInCode()} {x.Name}")
                 .Join(", ");
             var message = $"Members {members} cannot be used as parameters to a compiled query";
 
@@ -223,7 +234,7 @@ internal class QueryCompiler
         }
     }
 
-    public class CompiledQueryPlanBuilder<TDoc, TOut>: ICompiledQueryPlanBuilder
+    public class CompiledQueryPlanBuilder<TDoc, TOut>: ICompiledQueryPlanBuilder where TDoc : notnull where TOut : notnull
     {
         public CompiledQueryPlan BuildPlan(QuerySession session, Type queryType, StoreOptions storeOptions)
         {
@@ -231,7 +242,7 @@ internal class QueryCompiler
 
             try
             {
-                query = Activator.CreateInstance(queryType);
+                query = Activator.CreateInstance(queryType)!;
             }
             catch (Exception e)
             {

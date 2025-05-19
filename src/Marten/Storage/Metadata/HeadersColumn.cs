@@ -7,6 +7,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal;
@@ -117,11 +118,6 @@ internal class HeadersArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code($"setHeaderParameter({parameters.Usage}, {{0}});", Use.Type<IMartenSession>());
-    }
-
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.Code($"writer.Write({typeof(DBNull).FullNameInCode()}.Value, {{0}});", DbType);
     }
 
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

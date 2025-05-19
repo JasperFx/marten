@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ public class deleting_multiple_documents: IntegrationContext
 {
     [Theory]
     [SessionTypes]
-    public void multiple_documents(DocumentTracking tracking)
+    public async Task multiple_documents(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
@@ -27,32 +28,32 @@ public class deleting_multiple_documents: IntegrationContext
 
         #endregion
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var documentSession = theStore.LightweightSession())
         {
-            var user = documentSession.Load<User>(user1.Id);
+            var user = await documentSession.LoadAsync<User>(user1.Id);
             user.FirstName = "Max";
 
             documentSession.Store(user);
 
             documentSession.Delete(company2);
 
-            documentSession.SaveChanges();
+            await documentSession.SaveChangesAsync();
         }
 
         using (var querySession = theStore.QuerySession())
         {
-            querySession.Load<User>(user1.Id).FirstName.ShouldBe("Max");
-            querySession.Load<Company>(company1.Id).Name.ShouldBe("Widgets, inc.");
-            querySession.Load<Company>(company2.Id).ShouldBeNull();
-            querySession.Load<Company>(company3.Id).Name.ShouldBe("SmallCo");
+            (await querySession.LoadAsync<User>(user1.Id)).FirstName.ShouldBe("Max");
+            (await querySession.LoadAsync<Company>(company1.Id)).Name.ShouldBe("Widgets, inc.");
+            (await querySession.LoadAsync<Company>(company2.Id)).ShouldBeNull();
+            (await querySession.LoadAsync<Company>(company3.Id)).Name.ShouldBe("SmallCo");
         }
     }
 
     [Theory]
     [SessionTypes]
-    public void delete_multiple_types_of_documents_with_delete_objects(DocumentTracking tracking)
+    public async Task delete_multiple_types_of_documents_with_delete_objects(DocumentTracking tracking)
     {
         using var session = OpenSession(tracking);
 
@@ -65,14 +66,14 @@ public class deleting_multiple_documents: IntegrationContext
 
         session.StoreObjects(new object[] { user1, issue1, company1 });
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // Delete a mix of documents types
         using (var documentSession = theStore.LightweightSession())
         {
             documentSession.DeleteObjects(new object[] { user1, company1 });
 
-            documentSession.SaveChanges();
+            await documentSession.SaveChangesAsync();
         }
 
         #endregion
@@ -80,10 +81,10 @@ public class deleting_multiple_documents: IntegrationContext
         using (var querySession = theStore.QuerySession())
         {
             // Assert the deleted documents no longer exist
-            querySession.Load<User>(user1.Id).ShouldBeNull();
-            querySession.Load<Company>(company1.Id).ShouldBeNull();
+            (await querySession.LoadAsync<User>(user1.Id)).ShouldBeNull();
+            (await querySession.LoadAsync<Company>(company1.Id)).ShouldBeNull();
 
-            querySession.Load<Issue>(issue1.Id).Title.ShouldBe("Running low on coffee");
+            (await querySession.LoadAsync<Issue>(issue1.Id)).Title.ShouldBe("Running low on coffee");
         }
     }
 

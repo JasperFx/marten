@@ -21,9 +21,7 @@ public class HiloIdGeneration: IIdGeneration
 
     public int MaxLo => _hiloSettings.MaxLo;
 
-    public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(int), typeof(long) };
-
-    public bool RequiresSequences { get; } = true;
+    public bool IsNumeric { get; } = true;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

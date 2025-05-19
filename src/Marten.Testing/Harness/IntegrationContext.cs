@@ -2,8 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
+using Microsoft.FSharp.Core;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -55,6 +60,23 @@ namespace Marten.Testing.Harness
         }
 
         /// <summary>
+        /// Build a unique document store with the same configuration as the basic,
+        /// Guid-identified store from IntegrationContext
+        /// </summary>
+        /// <returns></returns>
+        protected IDocumentStore SeparateStore()
+        {
+            return DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.AutoCreateSchemaObjects = AutoCreate.All;
+
+                opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                opts.ApplicationAssembly = GetType().Assembly;
+            });
+        }
+
+        /// <summary>
         /// Switch the DocumentStore between stream identity styles, but reuse
         /// the underlying document store
         /// </summary>
@@ -70,7 +92,7 @@ namespace Marten.Testing.Harness
             else
             {
                 _store = _fixture.StringStreamIdentifiers.Value;
-                _store.Advanced.Clean.DeleteAllEventData();
+                _store.Advanced.Clean.DeleteAllEventDataAsync().GetAwaiter().GetResult();
             }
         }
 
@@ -105,8 +127,6 @@ namespace Marten.Testing.Harness
 
             _store = new DocumentStore(options);
             Disposables.Add(_store);
-
-            _store.Advanced.Clean.CompletelyRemoveAll();
 
             return options.DatabaseSchemaName;
         }
@@ -171,7 +191,7 @@ namespace Marten.Testing.Harness
             return Task.CompletedTask;
         }
 
-        public Task DisposeAsync()
+        public virtual Task DisposeAsync()
         {
             Dispose();
             return Task.CompletedTask;

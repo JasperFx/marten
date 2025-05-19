@@ -14,19 +14,31 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-public class StringValueTypeMember<T>: StringMember, IValueTypeMember
+public class StringValueTypeMember<T>: StringMember, IValueTypeMember<T, string>
 {
     private readonly Func<T, string> _valueSource;
     private readonly IScalarSelectClause _selector;
 
     public StringValueTypeMember(IQueryableMember parent, Casing casing, MemberInfo member, ValueTypeInfo valueTypeInfo) : base(parent, casing, member)
     {
-        _valueSource = valueTypeInfo.ValueAccessor<T, string>();
-        var converter = valueTypeInfo.CreateConverter<T, string>();
-        _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
-            TypedLocator, converter,
-            valueTypeInfo.OuterType,
-            typeof(string));
+        MemberType = member.GetRawMemberType();
+        _valueSource = valueTypeInfo.UnWrapper<T, string>();
+        var converter = valueTypeInfo.CreateWrapper<T, string>();
+
+        if (typeof(T).IsClass)
+        {
+            _selector = typeof(ClassValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                typeof(string));
+        }
+        else
+        {
+            _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                typeof(string));
+        }
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)
@@ -50,7 +62,7 @@ public class StringValueTypeMember<T>: StringMember, IValueTypeMember
         return new MemberComparisonFilter(this, def, op);
     }
 
-    public object ConvertFromWrapperArray(object values)
+    public IEnumerable<string> ConvertFromWrapperArray(IEnumerable<T> values)
     {
         if (values is IEnumerable e)
         {

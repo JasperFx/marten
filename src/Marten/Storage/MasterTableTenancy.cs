@@ -5,13 +5,16 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
+using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
+using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
@@ -391,4 +394,24 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             AddColumn<string>("connection_string").NotNull();
         }
     }
+
+    public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        // TODO -- watch out for duplicate databases!!!
+        await BuildDatabases().ConfigureAwait(false);
+        var list = _databases.Enumerate().Select(pair =>
+        {
+            var descriptor = pair.Value.Describe();
+            descriptor.TenantIds.Add(pair.Key);
+            return descriptor;
+        }).ToList();
+
+        return new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.DynamicMultiple,
+            Databases = list
+        };
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.DynamicMultiple;
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -22,7 +23,6 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
     }
 
     [Fact]
-    [Obsolete("Obsolete")]
     public async Task can_properly_detect_changes_when_user_defined_type()
     {
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
@@ -183,7 +183,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Load<UserWithCustomType>(guyWithCustomType1.Id).CustomType.ShouldBe("test_cust_type");
+            (await session.LoadAsync<UserWithCustomType>(guyWithCustomType1.Id)).CustomType.ShouldBe("test_cust_type");
         }
 
         await using (var query = theStore.QuerySession())

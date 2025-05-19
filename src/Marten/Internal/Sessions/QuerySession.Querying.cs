@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,31 +18,29 @@ public partial class QuerySession
         return LinqConstants.IdListTableName + ++_tableNumber;
     }
 
-    public IMartenQueryable<T> Query<T>()
+    public IMartenQueryable<T> Query<T>() where T : notnull
     {
         return new MartenLinqQueryable<T>(this);
     }
 
-    public IReadOnlyList<T> Query<T>(string sql, params object[] parameters)
+    public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout) where T : notnull
     {
-        assertNotDisposed();
+        var queryable = new MartenLinqQueryable<T>(this);
+        queryable.MartenProvider.Waiter = new WaitForAggregate(timeout);
 
-        var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
-
-        if (!handler.SqlContainsCustomSelect)
-        {
-            Database.EnsureStorageExists(typeof(T));
-        }
-
-        var provider = new MartenLinqQueryProvider(this, typeof(T));
-        return provider.ExecuteHandler(handler);
+        return queryable;
     }
 
-    public async Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+    public Task<IReadOnlyList<T>> QueryAsync<T>(string sql, CancellationToken token, params object[] parameters)
+    {
+        return QueryAsync<T>(DefaultParameterPlaceholder, sql, token, parameters);
+    }
+
+    public async Task<IReadOnlyList<T>> QueryAsync<T>(char placeholder, string sql, CancellationToken token, params object[] parameters)
     {
         assertNotDisposed();
 
-        var handler = new UserSuppliedQueryHandler<T>(this, sql, parameters);
+        var handler = new UserSuppliedQueryHandler<T>(this, placeholder, sql, parameters);
 
         if (!handler.SqlContainsCustomSelect)
         {
@@ -57,42 +56,17 @@ public partial class QuerySession
         return QueryAsync<T>(sql, CancellationToken.None, parameters);
     }
 
-    // TODO -- Obsolete, remove in 8.0, replaced by AdvancedSql.Query*
-    #region Obsolete AdvancedSqlQuery*
-    public Task<IReadOnlyList<T>> AdvancedSqlQueryAsync<T>(string sql, CancellationToken token,
-        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T>(sql, token, parameters);
-
-    public Task<IReadOnlyList<(T1, T2)>> AdvancedSqlQueryAsync<T1, T2>(string sql, CancellationToken token,
-        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T1, T2>(sql, token, parameters);
-
-    public Task<IReadOnlyList<(T1, T2, T3)>> AdvancedSqlQueryAsync<T1, T2, T3>(string sql, CancellationToken token,
-        params object[] parameters) => ((IAdvancedSql)this).QueryAsync<T1, T2, T3>(sql, token, parameters);
-
-    public IReadOnlyList<T> AdvancedSqlQuery<T>(string sql, params object[] parameters) =>
-        ((IAdvancedSql)this).Query<T>(sql, parameters);
-
-    public IReadOnlyList<(T1, T2)> AdvancedSqlQuery<T1, T2>(string sql, params object[] parameters) =>
-        ((IAdvancedSql)this).Query<T1, T2>(sql, parameters);
-
-    public IReadOnlyList<(T1, T2, T3)> AdvancedSqlQuery<T1, T2, T3>(string sql, params object[] parameters) =>
-        ((IAdvancedSql)this).Query<T1, T2, T3>(sql, parameters);
-    #endregion
+    public Task<IReadOnlyList<T>> QueryAsync<T>(char placeholder, string sql, params object[] parameters)
+    {
+        return QueryAsync<T>(placeholder, sql, CancellationToken.None, parameters);
+    }
 
     public IBatchedQuery CreateBatchQuery()
     {
         return new BatchedQuery(this);
     }
 
-    public TOut Query<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
-    {
-        var source = _store.GetCompiledQuerySourceFor(query, this);
-        Database.EnsureStorageExists(typeof(TDoc));
-        var handler = (IQueryHandler<TOut>)source.Build(query, this);
-
-        return ExecuteHandler(handler);
-    }
-
-    public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default)
+    public async Task<TOut> QueryAsync<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query, CancellationToken token = default) where TDoc : notnull
     {
         var source = _store.GetCompiledQuerySourceFor(query, this);
         await Database.EnsureStorageExistsAsync(typeof(TDoc), token).ConfigureAwait(false);

@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
@@ -57,7 +58,7 @@ public class cannot_start_a_stream_with_zero_events : OneOffConfigurationsContex
     }
 
     [Fact]
-    public async Task Bug_1388_cannot_start_the_same_stream_twice_with_the_same_session()
+    public async Task cannot_start_the_same_stream_twice_with_the_same_session()
     {
         StoreOptions(x => x.Events.StreamIdentity = StreamIdentity.AsString);
 

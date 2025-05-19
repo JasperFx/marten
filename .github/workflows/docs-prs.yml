@@ -42,6 +42,11 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 8.0.x
+          
+      - name: Install .NET 9.0.x
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
 
       - name: Build docs
         run: ./build.sh docs-build

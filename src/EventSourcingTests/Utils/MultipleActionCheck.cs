@@ -6,12 +6,9 @@ using Shouldly;
 
 namespace EventSourcingTests.Utils;
 
+[Obsolete("Gotta be a better way to do this")]
 internal static class When
 {
-    public static MultipleActionCheck<T> CalledForEach<T>(IEnumerable<T> elements, Action<T, int> action)
-    {
-        return new MultipleActionCheck<T>(elements, action);
-    }
 
     public static MultipleActionCheck<T> CalledForEachAsync<T>(IEnumerable<T> elements, Func<T, int, Task> action)
     {
@@ -22,14 +19,7 @@ internal static class When
 internal class MultipleActionCheck<T>
 {
     private readonly T[] elements;
-    private readonly Action<T, int> action;
     private readonly Func<T, int, Task> asyncAction;
-
-    internal MultipleActionCheck(IEnumerable<T> elements, Action<T, int> action)
-    {
-        this.elements = elements.ToArray();
-        this.action = action;
-    }
 
     internal MultipleActionCheck(IEnumerable<T> elements, Func<T, int, Task> asyncAction)
     {
@@ -37,25 +27,9 @@ internal class MultipleActionCheck<T>
         this.asyncAction = asyncAction;
     }
 
-    public void ShouldSucceed()
-    {
-        PerformAction();
-    }
-
     public Task ShouldSucceedAsync()
     {
         return PerformActionAsync();
-    }
-
-    public Exception ShouldThrowIf(bool check)
-    {
-        if (!check)
-        {
-            ShouldSucceed();
-            return null;
-        }
-
-        return Should.Throw<Exception>(PerformAction);
     }
 
     public async Task<Exception> ShouldThrowIfAsync(bool check)
@@ -67,14 +41,6 @@ internal class MultipleActionCheck<T>
         }
 
         return await Should.ThrowAsync<Exception>(PerformActionAsync());
-    }
-
-    private void PerformAction()
-    {
-        for (var i = 0; i < elements.Length; i++)
-        {
-            action(elements[i], i);
-        }
     }
 
     private async Task PerformActionAsync()

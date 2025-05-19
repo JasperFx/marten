@@ -25,8 +25,6 @@ public class Bug_1723_inline_projections_get_cut_off : AggregationContext
 
         UsingDefinition<AllSync>();
 
-        _output.WriteLine(_projection.SourceCode());
-
         await InlineProject(x =>
         {
             x.Streams[stream1].IsNew = true;

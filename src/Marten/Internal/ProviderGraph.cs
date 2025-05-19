@@ -1,8 +1,10 @@
 #nullable enable
 using System;
+using ImTools;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.RuntimeCompiler;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
@@ -57,7 +59,7 @@ public class ProviderGraph: IProviderGraph
         if (documentType == typeof(IEvent))
         {
             var rules = _options.CreateGenerationRules();
-            _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
+            _options.EventGraph.InitializeSynchronously(rules, _options, null);
 
             _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
 
@@ -85,7 +87,7 @@ public class ProviderGraph: IProviderGraph
                 }
                 catch (Exception e)
                 {
-                    if (e.Message.Contains("is inaccessible due to its protection level"))
+                    if (e is InvalidOperationException && !mapping.DocumentType.IsPublic)
                     {
                         throw new InvalidOperationException(
                             $"Requested document type '{mapping.DocumentType.FullNameInCode()}' must be scoped as 'public' in order to be used as a document type inside of Marten",

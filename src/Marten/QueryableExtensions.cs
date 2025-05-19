@@ -1,13 +1,14 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Services.BatchQuerying;
@@ -24,10 +25,10 @@ public static class QueryableExtensions
     /// <param name="configureExplain"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static QueryPlan Explain<T>(this IQueryable<T> queryable,
-        Action<IConfigureExplainExpressions>? configureExplain = null)
+    public static Task<QueryPlan> ExplainAsync<T>(this IQueryable<T> queryable, CancellationToken token = default,
+        Action<IConfigureExplainExpressions>? configureExplain = null) where T : notnull
     {
-        return queryable.As<MartenLinqQueryable<T>>().Explain(configureExplain: configureExplain);
+        return queryable.As<MartenLinqQueryable<T>>().ExplainAsync(configureExplain: configureExplain, token: token);
     }
 
     #region ToList
@@ -40,7 +41,7 @@ public static class QueryableExtensions
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     public static Task<IReadOnlyList<T>> ToListAsync<T>(this IQueryable<T> queryable,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToListAsync<T>(token);
     }
@@ -55,7 +56,7 @@ public static class QueryableExtensions
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException"></exception>
-    public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
+    public static NpgsqlCommand ToCommand<T>(this IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany) where T : notnull
     {
         if (queryable is MartenLinqQueryable<T> q1)
         {
@@ -77,7 +78,7 @@ public static class QueryableExtensions
     /// <returns></returns>
     public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
         Expression<Func<T, object>> idSource,
-        Action<TInclude> callback) where TInclude : notnull
+        Action<TInclude> callback) where TInclude : notnull where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(idSource, callback);
     }
@@ -94,7 +95,7 @@ public static class QueryableExtensions
     /// <returns></returns>
     public static IMartenQueryable<T> Include<T, TInclude>(this IQueryable<T> queryable,
         Expression<Func<T, object>> idSource,
-        IList<TInclude> list) where TInclude : notnull
+        IList<TInclude> list) where TInclude : notnull where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(idSource, list);
     }
@@ -112,7 +113,7 @@ public static class QueryableExtensions
     /// <returns></returns>
     public static IMartenQueryable<T> Include<T, TKey, TInclude>(this IQueryable<T> queryable,
         Expression<Func<T, object>> idSource,
-        IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull
+        IDictionary<TKey, TInclude> dictionary) where TInclude : notnull where TKey : notnull where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>()
             .Include(idSource, dictionary);
@@ -130,7 +131,7 @@ public static class QueryableExtensions
     public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
         this IQueryable<T> queryable,
         Action<TInclude> callback)
-        where TInclude : notnull
+        where TInclude : notnull where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(callback);
     }
@@ -148,7 +149,7 @@ public static class QueryableExtensions
     public static IMartenQueryableIncludeBuilder<T, TInclude> Include<T, TInclude>(
         this IQueryable<T> queryable,
         IList<TInclude> list)
-        where TInclude : notnull
+        where TInclude : notnull where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(list);
     }
@@ -170,6 +171,7 @@ public static class QueryableExtensions
         IDictionary<TKey, TInclude> dictionary)
         where TInclude : notnull
         where TKey : notnull
+        where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
@@ -191,6 +193,7 @@ public static class QueryableExtensions
         IDictionary<TKey, IList<TInclude>> dictionary)
         where TInclude : notnull
         where TKey : notnull
+        where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
@@ -212,6 +215,7 @@ public static class QueryableExtensions
         IDictionary<TKey, List<TInclude>> dictionary)
         where TInclude : notnull
         where TKey : notnull
+        where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().Include(dictionary);
     }
@@ -224,7 +228,7 @@ public static class QueryableExtensions
     /// <param name="token"></param>
     /// <returns></returns>
     public static IAsyncEnumerable<T> ToAsyncEnumerable<T>(this IQueryable<T> queryable,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToAsyncEnumerable(token);
     }
@@ -237,58 +241,58 @@ public static class QueryableExtensions
     /// <param name="token"></param>
     /// <returns></returns>
     public static Task<int> StreamJsonArray<T>(this IQueryable<T> queryable, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().StreamJsonArray(destination, token);
     }
 
-    public static Task<string> ToJsonArray<T>(this IQueryable<T> queryable, CancellationToken token = default)
+    public static Task<string> ToJsonArray<T>(this IQueryable<T> queryable, CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToJsonArray(token);
     }
 
     public static Task StreamJsonFirst<T>(this IQueryable<T> queryable, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().StreamJsonFirst(destination, token);
     }
 
     public static async Task<bool> StreamJsonFirstOrDefault<T>(this IQueryable<T> queryable, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return await queryable.As<MartenLinqQueryable<T>>().StreamJsonFirstOrDefault(destination, token)
             .ConfigureAwait(false) > 0;
     }
 
     public static Task StreamJsonSingle<T>(this IQueryable<T> queryable, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().StreamJsonFirst(destination, token);
     }
 
     public static Task StreamJsonSingleOrDefault<T>(this IQueryable<T> queryable, Stream destination,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().StreamJsonSingleOrDefault(destination, token);
     }
 
-    public static Task<string> ToJsonFirst<T>(this IQueryable<T> queryable, CancellationToken token = default)
+    public static Task<string> ToJsonFirst<T>(this IQueryable<T> queryable, CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToJsonFirst(token);
     }
 
-    public static Task<string?> ToJsonFirstOrDefault<T>(this IQueryable<T> queryable, CancellationToken token = default)
+    public static Task<string?> ToJsonFirstOrDefault<T>(this IQueryable<T> queryable, CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToJsonFirstOrDefault(token);
     }
 
-    public static Task<string> ToJsonSingle<T>(this IQueryable<T> queryable, CancellationToken token = default)
+    public static Task<string> ToJsonSingle<T>(this IQueryable<T> queryable, CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToJsonSingle(token);
     }
 
     public static Task<string?> ToJsonSingleOrDefault<T>(this IQueryable<T> queryable,
-        CancellationToken token = default)
+        CancellationToken token = default) where T : notnull
     {
         return queryable.As<MartenLinqQueryable<T>>().ToJsonSingleOrDefault(token);
     }
@@ -297,7 +301,7 @@ public static class QueryableExtensions
 
     public static Task<bool> AnyAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -310,7 +314,7 @@ public static class QueryableExtensions
     public static Task<bool> AnyAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -331,7 +335,7 @@ public static class QueryableExtensions
 
     public static Task<TResult> SumAsync<TSource, TResult>(
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-        CancellationToken token = default)
+        CancellationToken token = default) where TResult : notnull
     {
         if (source == null)
         {
@@ -343,7 +347,7 @@ public static class QueryableExtensions
 
     public static Task<TResult> MaxAsync<TSource, TResult>(
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-        CancellationToken token = default)
+        CancellationToken token = default) where TResult : notnull
     {
         if (source == null)
         {
@@ -355,7 +359,7 @@ public static class QueryableExtensions
 
     public static Task<TResult> MinAsync<TSource, TResult>(
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
-        CancellationToken token = default)
+        CancellationToken token = default) where TResult : notnull
     {
         if (source == null)
         {
@@ -367,7 +371,7 @@ public static class QueryableExtensions
 
     public static Task<double> AverageAsync<TSource, TMember>(
         this IQueryable<TSource> source, Expression<Func<TSource, TMember>> expression,
-        CancellationToken token = default)
+        CancellationToken token = default) where TMember : notnull
     {
         if (source == null)
         {
@@ -383,7 +387,7 @@ public static class QueryableExtensions
 
     public static Task<int> CountAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -396,7 +400,7 @@ public static class QueryableExtensions
     public static Task<int> CountAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -413,7 +417,7 @@ public static class QueryableExtensions
 
     public static Task<long> LongCountAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -426,7 +430,7 @@ public static class QueryableExtensions
     public static Task<long> LongCountAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -447,7 +451,7 @@ public static class QueryableExtensions
 
     public static Task<TSource> FirstAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -460,7 +464,7 @@ public static class QueryableExtensions
     public static Task<TSource> FirstAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -477,7 +481,7 @@ public static class QueryableExtensions
 
     public static Task<TSource?> FirstOrDefaultAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -490,7 +494,7 @@ public static class QueryableExtensions
     public static Task<TSource?> FirstOrDefaultAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -511,7 +515,7 @@ public static class QueryableExtensions
 
     public static Task<TSource> SingleAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -524,7 +528,7 @@ public static class QueryableExtensions
     public static Task<TSource> SingleAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -541,7 +545,7 @@ public static class QueryableExtensions
 
     public static Task<TSource?> SingleOrDefaultAsync<TSource>(
         this IQueryable<TSource> source,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -554,7 +558,7 @@ public static class QueryableExtensions
     public static Task<TSource?> SingleOrDefaultAsync<TSource>(
         this IQueryable<TSource> source,
         Expression<Func<TSource, bool>> predicate,
-        CancellationToken token = default)
+        CancellationToken token = default) where TSource : notnull
     {
         if (source == null)
         {
@@ -779,7 +783,7 @@ public static class QueryableExtensions
                           && method.GetParameters().Length == 2)
             .MakeGenericMethod(typeof(T), targetType)
             .Invoke(null, new object[] { queryable, lambda });
-        return (IOrderedQueryable<T>)result;
+        return (IOrderedQueryable<T>)result!;
     }
 
     private static IBatchedOrderedQueryable<T> ApplyOrder<T>(
@@ -795,7 +799,7 @@ public static class QueryableExtensions
                           && method.GetParameters().Length == 1)
             .MakeGenericMethod(targetType)
             .Invoke(queryable, new object[] { lambda });
-        return (IBatchedOrderedQueryable<T>)result;
+        return (IBatchedOrderedQueryable<T>)result!;
     }
 
     internal static LambdaExpression CompileOrderBy<T>(string property, out Type targetType)
@@ -826,10 +830,10 @@ public static class QueryableExtensions
     #endregion
 
     private static MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
-        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private static MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
-        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic);
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
 
     /// <summary>
     /// Supply literal SQL fragments to be placed in the generated SQL for this LINQ query.
@@ -863,7 +867,7 @@ public static class QueryableExtensions
     /// </summary>
     /// <param name="stats"></param>
     /// <returns></returns>
-    public static IMartenQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats)
+    public static IMartenQueryable<T> Stats<T>(this IQueryable<T> queryable, out QueryStatistics stats) where T : notnull
     {
         // TODO -- make this be an expression here!
         var martenQueryable = queryable.As<MartenLinqQueryable<T>>();
@@ -874,7 +878,7 @@ public static class QueryableExtensions
     }
 
     internal static readonly MethodInfo IncludePlanMethod =
-        typeof(QueryableExtensions).GetMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic);
+        typeof(QueryableExtensions).GetMethod(nameof(IncludePlan), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     internal static IMartenQueryable<T> IncludePlan<T>(this IQueryable<T> queryable, IIncludePlan include)
     {

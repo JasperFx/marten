@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using EventSourcingTests.Projections;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -11,7 +13,24 @@ namespace EventSourcingTests;
 
 public class EventGraphTests
 {
-    private readonly EventGraph theGraph = new EventGraph(new StoreOptions());
+    private readonly EventGraph theGraph;
+
+    public EventGraphTests()
+    {
+        theGraph = new StoreOptions().EventGraph;
+    }
+
+    [Fact]
+    public void use_optimized_projection_rebuilds_is_false_by_default()
+    {
+        theGraph.UseOptimizedProjectionRebuilds.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void use_mandatory_stream_type_declaration_is_false()
+    {
+        theGraph.UseMandatoryStreamTypeDeclaration.ShouldBeFalse();
+    }
 
     [Fact]
     public void build_event()
@@ -66,7 +85,7 @@ public class EventGraphTests
         theGraph.AddEventType(typeof(MembersJoined));
         theGraph.AddEventType(typeof(MembersDeparted));
 
-        theGraph.EventMappingFor<IssueAssigned>().ShouldBeTheSameAs(theGraph.EventMappingFor<IssueAssigned>());
+        theGraph.EventMappingFor<IssueAssigned>().ShouldBeSameAs(theGraph.EventMappingFor<IssueAssigned>());
     }
 
     [Fact]
@@ -122,7 +141,13 @@ public class EventGraphTests
     [Fact]
     public void use_identity_map_for_inline_aggregates_is_false_by_default()
     {
-        theGraph.UseIdentityMapForInlineAggregates.ShouldBeFalse();
+        theGraph.UseIdentityMapForAggregates.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void archived_event_type_is_registered_by_default()
+    {
+        theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(Archived));
     }
 
     public class HouseRemodeling

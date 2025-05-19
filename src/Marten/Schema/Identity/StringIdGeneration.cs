@@ -11,9 +11,7 @@ namespace Marten.Schema.Identity;
 /// </summary>
 public class StringIdGeneration: IIdGeneration
 {
-    public IEnumerable<Type> KeyTypes { get; } = new[] { typeof(string) };
-
-    public bool RequiresSequences { get; } = false;
+    public bool IsNumeric { get; } = false;
 
     public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
     {

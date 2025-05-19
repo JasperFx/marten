@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Internals;
 using Marten.Internal;
 using Marten.Internal.Operations;

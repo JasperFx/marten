@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Npgsql;
 
@@ -19,7 +21,13 @@ public interface IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
-        DocumentTracking trackingMode = DocumentTracking.QueryOnly);
+        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull where TReturn : notnull;
+
+    /// <summary>
+    ///     Method to fetch Postgres server version
+    /// </summary>
+    /// <returns>Returns version</returns>
+    Version GetPostgresVersion();
 
     /// <summary>
     ///     Find the Postgresql EXPLAIN PLAN for this compiled query
@@ -28,11 +36,6 @@ public interface IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query);
-
-    /// <summary>
-    ///     Method to fetch Postgres server version
-    /// </summary>
-    /// <returns>Returns version</returns>
-    Version GetPostgresVersion();
+    Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
+        CancellationToken token = default) where TDoc : notnull where TReturn : notnull;
 }

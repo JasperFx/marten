@@ -20,7 +20,7 @@ var slayed2 = new MonsterSlayed { Name = "Dragon" };
 using (var session = theStore.LightweightSession())
 {
     session.Events.StartStream<Quest>(started.Name,started, joined, slayed1, slayed2);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L31-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-setup' title='Start of snippet'>anchor</a></sup>
@@ -95,7 +95,7 @@ using (var session = theStore.LightweightSession())
     });
 
     // Transactionally update the streams.
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioCopyAndReplaceStream.cs#L44-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-copyandtransformstream-transform' title='Start of snippet'>anchor</a></sup>

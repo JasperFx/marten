@@ -23,11 +23,18 @@ internal partial class LinqQueryParser
             return (IQueryHandler<TResult>)new ListQueryHandler<TDocument>(statement, selector);
         }
 
+        var documentType = typeof(TDocument);
+
+        // if (typeof(TResult).CanBeCastTo<IEnumerable<Nullable<TDocument>>>())
+        // {
+        //     return (IQueryHandler<TResult>)new ListQueryHandler<Nullable<TDocument>>(statement, selector);
+        // }
+
         throw new NotSupportedException("Marten does not know how to use result type " +
                                         typeof(TResult).FullNameInCode());
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>() where TResult : notnull
+    public IQueryHandler<TResult> BuildHandler<TResult>()
     {
         if (!_collectionUsages.Any())
         {
@@ -50,7 +57,7 @@ internal partial class LinqQueryParser
         return handler;
     }
 
-    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector) where TResult : notnull
+    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector)
     {
         if (selector.SingleValue)
         {

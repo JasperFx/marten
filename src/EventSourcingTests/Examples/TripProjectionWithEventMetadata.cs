@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -29,7 +30,7 @@ public class TripEnded{}
 
 #region sample_aggregation_using_event_metadata
 
-public class TripProjection: SingleStreamProjection<Trip>
+public class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     // Access event metadata through IEvent<T>
     public Trip Create(IEvent<TripStarted> @event)
@@ -65,7 +66,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 
         // Access to the current state as of the projection
         // event page being processed *right* now
-        var currentTrip = slice.Aggregate;
+        var currentTrip = slice.Snapshot;
 
         if (currentTrip.TotalMiles > 1000)
         {

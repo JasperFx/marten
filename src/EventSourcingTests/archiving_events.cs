@@ -1,14 +1,23 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.FetchForWriting;
+using EventSourcingTests.Projections;
+using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Events.Archiving;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
+using StronglyTypedIds;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -329,10 +338,11 @@ public class archiving_events: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         theSession.Events.Append(streamId, new BEvent());
-        var thrownException = Should.Throw<InvalidStreamOperationException>( () =>
+        var thrownException = await Should.ThrowAsync<InvalidStreamOperationException>( async () =>
         {
-            theSession.SaveChanges();
+            await theSession.SaveChangesAsync();
         });
+
         thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
     }
 
@@ -359,4 +369,366 @@ public class archiving_events: OneOffConfigurationsContext
         });
         thrownException.Message.ShouldBe($"Attempted to append event to archived stream with Id '{streamId}'.");
     }
+
+    [Fact]
+    public async Task capture_archived_event_with_inline_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public async Task capture_archived_event_with_inline_custom_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add(new CountedAggregateProjection2(), ProjectionLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<CountedAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public async Task capture_archived_event_with_async_projection_will_archive_the_stream()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        using var daemon = await theStore.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(120.Seconds());
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public async Task capture_archived_event_with_inline_projection_will_archive_the_stream_string_identified()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamKey == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task capture_archived_with_delete_event()
+    {
+        StoreOptions(opts => opts.Projections.Add<SimpleAggregateProjection>(ProjectionLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Deleted(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+
+        var doc = await theSession.LoadAsync<SimpleAggregate>(streamId);
+        doc.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task capture_archived_with_should_delete_event()
+    {
+        StoreOptions(opts => opts.Projections.Add<SimpleAggregateProjection>(ProjectionLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new MaybeDeleted(true), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+
+        var doc = await theSession.LoadAsync<SimpleAggregate>(streamId);
+        doc.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task capture_archived_event_with_inline_projection_will_archive_the_stream_guid_wrapped_strong_typed_identifier()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregateStrongTypedGuid>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregateStrongTypedGuid>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamId == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+
+    [Fact]
+    public async Task capture_archived_event_with_inline_projection_will_archive_the_stream_string_wrapped_strong_typed_identifier()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateStrongTypedString>(SnapshotLifecycle.Inline);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateStrongTypedGuid>(streamId, new AEvent(), new BEvent());
+        await theSession.SaveChangesAsync();
+
+        theSession.Events.Append(streamId, new DEvent(), new Archived("Complete"));
+        await theSession.SaveChangesAsync();
+
+        // All the events should be archived
+        var events = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived() && x.StreamKey == streamId).ToListAsync();
+
+        events.All(x => x.IsArchived).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_string_identity()
+    {
+        const string streamKey = "test-stream";
+        const string tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task using_with_conjoined_tenancy_and_for_tenant_guid_identity()
+    {
+        var streamKey = Guid.NewGuid();
+        var tenantId = "test-tenant";
+
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+            opts.Events.UseArchivedStreamPartitioning = true;
+        });
+
+        theSession.ForTenant(tenantId).Events.Append(streamKey, new TestEvent(1), new TestEvent(2));
+        await theSession.SaveChangesAsync();
+
+        theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
+        await theSession.SaveChangesAsync();
+
+        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+
+        // ASSERT
+        state.ShouldNotBeNull();
+        state.IsArchived.ShouldBeTrue();
+    }
+
+    internal record TestEvent(int Id);
 }
+
+public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, Guid>
+{
+    public SimpleAggregateProjection()
+    {
+        DeleteEvent<Deleted>();
+    }
+
+    public void Apply(SimpleAggregate aggregate, AEvent e) => aggregate.ACount++;
+
+    public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
+}
+
+public class CountedAggregateProjection2: SingleStreamProjection<CountedAggregate, Guid>
+{
+    public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent @event)
+    {
+        snapshot ??= new CountedAggregate();
+
+        switch (@event.Data)
+        {
+            case AEvent _:
+                snapshot.ACount++;
+                break;
+
+            case BEvent _:
+                snapshot.BCount++;
+                break;
+        }
+
+        return snapshot;
+    }
+}
+
+public record Deleted;
+
+public record MaybeDeleted(bool ShouldDelete);
+
+[StronglyTypedId(Template.Guid)]
+public partial struct GuidId;
+
+public class SimpleAggregateStrongTypedGuid
+{
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public GuidId? Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public void Apply(AEvent _)
+    {
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
+    }
+
+    public void Apply(CEvent _)
+    {
+        CCount++;
+    }
+
+    public void Apply(DEvent _)
+    {
+        DCount++;
+    }
+
+    public void Apply(EEvent _)
+    {
+        ECount++;
+    }
+
+}
+
+[StronglyTypedId(Template.String)]
+public partial struct StringId;
+
+public class SimpleAggregateStrongTypedString
+{
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public StringId? Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public void Apply(AEvent _)
+    {
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
+    }
+
+    public void Apply(CEvent _)
+    {
+        CCount++;
+    }
+
+    public void Apply(DEvent _)
+    {
+        DCount++;
+    }
+
+    public void Apply(EEvent _)
+    {
+        ECount++;
+    }
+
+}
+

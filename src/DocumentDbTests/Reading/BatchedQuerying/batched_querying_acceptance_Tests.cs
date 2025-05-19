@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.BatchedQuerying;
 
-public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
+public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly Target target1 = Target.Random();
@@ -46,6 +46,11 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
     public batched_querying_acceptance_Tests(ITestOutputHelper output)
     {
         _output = output;
+
+    }
+
+    public async Task InitializeAsync()
+    {
         StoreOptions(_ =>
         {
             _.Schema.For<User>().AddSubClass(typeof(AdminUser)).AddSubClass(typeof(SuperUser))
@@ -56,7 +61,12 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
         session.Store(target1, target2, target3);
         session.Store(user1, user2, admin1, admin2, super1, super2);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     public void sample_config()
@@ -121,26 +131,6 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
         #endregion
     }
 
-    [Fact]
-    public void can_query_synchronously_with_compiled_queries()
-    {
-        using var session = theStore.IdentitySession();
-
-        #region sample_batch-query-with-compiled-queries-synchronously
-
-        var batch = session.CreateBatchQuery();
-
-        var justin = batch.Query(new FindByFirstName { FirstName = "Justin" });
-        var tamba = batch.Query(new FindByFirstName { FirstName = "Tamba" });
-
-        batch.ExecuteSynchronously();
-
-        justin.Result.Id.ShouldBe(user1.Id);
-        tamba.Result.Id.ShouldBe(user2.Id);
-
-        #endregion
-    }
-
 
     public async Task sample_usage_of_compiled_query()
     {
@@ -148,7 +138,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
         #region sample_using-compiled-query
 
-        var justin = session.Query(new FindByFirstName { FirstName = "Justin" });
+        var justin = await session.QueryAsync(new FindByFirstName { FirstName = "Justin" });
 
         var tamba = await session.QueryAsync(new FindByFirstName { FirstName = "Tamba" });
 
@@ -212,7 +202,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
         (await firstUser).UserName.ShouldBe("A2");
         (await firstAdmin).UserName.ShouldBe("A3");
-        SpecificationExtensions.ShouldBeNull((await noneUser));
+        (await noneUser).ShouldBeNull();
     }
 
     [Fact]
@@ -230,7 +220,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
         (await tamba).FirstName.ShouldBe("Tamba");
         (await justin).FirstName.ShouldBe("Justin");
-        SpecificationExtensions.ShouldBeNull((await noneUser));
+        (await noneUser).ShouldBeNull();
     }
 
 
@@ -343,8 +333,8 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
         await batch.Execute();
 
-        SpecificationExtensions.ShouldNotBeNull((await task1).ShouldBeOfType<Target>());
-        SpecificationExtensions.ShouldNotBeNull((await task3).ShouldBeOfType<Target>());
+        (await task1).ShouldBeOfType<Target>();
+        (await task3).ShouldBeOfType<Target>();
     }
 
     [Fact]
@@ -458,9 +448,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
 
         (await toList).ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
     [Fact]
@@ -490,9 +480,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
         (await toList).Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).Name.ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).Name.ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
 
@@ -528,9 +518,9 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext
         (await toList).Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Derrick", "Dontari", "Eric", "Justin", "Sean", "Tamba");
         (await first).Name.ShouldBe("Derrick");
-        SpecificationExtensions.ShouldBeNull((await firstOrDefault));
+        (await firstOrDefault).ShouldBeNull();
         (await single).Name.ShouldBe("Tamba");
-        SpecificationExtensions.ShouldBeNull((await singleOrDefault));
+        (await singleOrDefault).ShouldBeNull();
     }
 
 

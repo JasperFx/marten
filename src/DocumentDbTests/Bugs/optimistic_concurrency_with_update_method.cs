@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Services;
@@ -25,27 +26,27 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     }
 
     [Fact]
-    public void can_update_with_optimistic_concurrency()
+    public async Task can_update_with_optimistic_concurrency()
     {
         var doc1 = new CoffeeShop();
         using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             session2.Update(doc2);
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session3 = theStore.QuerySession())
         {
-            session3.Load<CoffeeShop>(doc1.Id).Name.ShouldBe("Mozart's");
+            (await session3.LoadAsync<CoffeeShop>(doc1.Id)).Name.ShouldBe("Mozart's");
         }
     }
 
@@ -53,13 +54,13 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     public async Task can_update_with_optimistic_concurrency_async()
     {
         var doc1 = new CoffeeShop();
-        await using (var session1 = theStore.OpenSession())
+        await using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
             await session1.SaveChangesAsync();
         }
 
-        await using (var session2 = theStore.OpenSession())
+        await using (var session2 = theStore.LightweightSession())
         {
             var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
@@ -75,18 +76,18 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
     }
 
     [Fact]
-    public void update_with_stale_version_throws_exception()
+    public async Task update_with_stale_version_throws_exception()
     {
         var doc1 = new CoffeeShop();
         using (var session1 = theStore.LightweightSession())
         {
             session1.Insert(doc1);
-            session1.SaveChanges();
+            await session1.SaveChangesAsync();
         }
 
         using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match
@@ -94,9 +95,9 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
             session2.Update(doc2);
 
-            var ex = Exception<ConcurrencyException>.ShouldBeThrownBy(() =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
-                session2.SaveChanges();
+                await session2.SaveChangesAsync();
             });
 
             ex.Message.ShouldBe($"Optimistic concurrency check failed for {typeof(CoffeeShop).FullName} #{doc1.Id}");
@@ -115,7 +116,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         await using (var session2 = theStore.LightweightSession())
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match
@@ -123,7 +124,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
             session2.Update(doc2);
 
-            var ex = await Exception<ConcurrencyException>.ShouldBeThrownByAsync(async () =>
+            var ex = await Should.ThrowAsync<ConcurrencyException>(async () =>
             {
                 await session2.SaveChangesAsync();
             });
@@ -144,7 +145,7 @@ public class optimistic_concurrency_with_update_method: StoreContext<OptimisticC
 
         await using (var session2 = theStore.OpenSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled}))
         {
-            var doc2 = session2.Load<CoffeeShop>(doc1.Id);
+            var doc2 = await session2.LoadAsync<CoffeeShop>(doc1.Id);
             doc2.Name = "Mozart's";
 
             // Some random version that won't match

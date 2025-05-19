@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Events.CodeGeneration;
-using Marten.Internal.CodeGeneration;
+using JasperFx.Events;
+using Marten.Internal.Operations;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
@@ -20,24 +20,25 @@ public class StatementMap<T>: IEventHandler
     private readonly MemberInfo[] _pkMembers;
     private DbObjectName _functionIdentifier;
 
+    private readonly List<IParameterSetter<IEvent>> _setters = new();
+    private string _sql;
+    private readonly bool _streamIdentified;
+    private bool _hasBuiltPK;
+
     public StatementMap(FlatTableProjection parent, MemberInfo[] pkMembers)
     {
         _parent = parent;
         _pkMembers = pkMembers;
+
+        _streamIdentified = pkMembers.IsEmpty();
+        if (pkMembers.Any())
+        {
+            _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(pkMembers));
+            _hasBuiltPK = true;
+        }
     }
 
     Type IEventHandler.EventType => typeof(T);
-
-    IEventHandlingFrame IEventHandler.BuildFrame(EventGraph events, Table table)
-    {
-        if (_functionIdentifier == null)
-        {
-            createFunctionName(table);
-        }
-
-        return new CallUpsertFunctionFrame(typeof(T), _functionIdentifier, _columnMaps,
-            determinePkMembers(events).ToArray());
-    }
 
     bool IEventHandler.AssertValid(EventGraph events, out string? message)
     {
@@ -52,31 +53,35 @@ public class StatementMap<T>: IEventHandler
         yield return new FlatTableUpsertFunction(_functionIdentifier, table, _columnMaps);
     }
 
+    public void Compile(EventGraph events, Table table)
+    {
+        if (_streamIdentified && !_hasBuiltPK)
+        {
+            _hasBuiltPK = true;
+            var setter = events.StreamIdentity == StreamIdentity.AsGuid
+                ? (IParameterSetter<IEvent>)new ParameterSetter<IEvent, Guid>(e => e.StreamId)
+                : new ParameterSetter<IEvent, string>(e => e.StreamKey);
+
+            _setters.Insert(0, setter);
+        }
+
+        createFunctionName(table);
+        var parameters = _setters.Select(x => "?").Join(", ");
+        _sql = $"select {_functionIdentifier}({parameters})";
+    }
+
+    public void Handle(IDocumentOperations operations, IEvent e)
+    {
+        var op = new SqlOperation(_sql, e, _setters.ToArray());
+        operations.QueueOperation(op);
+    }
+
     private void createFunctionName(Table table)
     {
         var functionName = $"mt_upsert_{table.Identifier.Name.ToLower()}_{typeof(T).NameInCode().ToLower().Sanitize()}";
         _functionIdentifier = new PostgresqlObjectName(table.Identifier.Schema, functionName);
     }
 
-    private IEnumerable<MemberInfo> determinePkMembers(EventGraph events)
-    {
-        if (_pkMembers.Any())
-        {
-            yield return ReflectionHelper.GetProperty<IEvent<T>>(x => x.Data);
-            foreach (var member in _pkMembers) yield return member;
-
-            yield break;
-        }
-
-        if (events.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            yield return ReflectionHelper.GetProperty<IEvent<T>>(x => x.StreamId);
-        }
-        else
-        {
-            yield return ReflectionHelper.GetProperty<IEvent<T>>(x => x.StreamKey);
-        }
-    }
 
     /// <summary>
     ///     Map a single value in the event data to a column in the table
@@ -89,6 +94,8 @@ public class StatementMap<T>: IEventHandler
     {
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Value);
         _columnMaps.Add(map);
+
+        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
 
         return map.ResolveColumn(_parent.Table);
     }
@@ -105,6 +112,8 @@ public class StatementMap<T>: IEventHandler
     {
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Increment);
         _columnMaps.Add(map);
+
+        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
 
         return map.ResolveColumn(_parent.Table);
     }
@@ -131,6 +140,9 @@ public class StatementMap<T>: IEventHandler
     {
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Decrement);
         _columnMaps.Add(map);
+
+        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
+
 
         return map.ResolveColumn(_parent.Table);
     }

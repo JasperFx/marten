@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using Lamar;
 using JasperFx.CodeGeneration;

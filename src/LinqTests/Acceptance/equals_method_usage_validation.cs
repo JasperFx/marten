@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Testing.Harness;
@@ -25,7 +26,7 @@ public class equals_method_usage_validation : IntegrationContext
     }
 
     [Fact]
-    public void when_wrong_types_are_compared()
+    public async Task when_wrong_types_are_compared()
     {
         var queryTarget = new QueryTarget
         {
@@ -33,7 +34,7 @@ public class equals_method_usage_validation : IntegrationContext
         };
         theSession.Store(queryTarget);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         object notInt = "not int";
 
@@ -46,7 +47,7 @@ public class equals_method_usage_validation : IntegrationContext
     }
 
     [Fact]
-    public void when_wrong_types_are_compared_inside_a_negation()
+    public async Task when_wrong_types_are_compared_inside_a_negation()
     {
         var queryTarget = new QueryTarget
         {
@@ -54,7 +55,7 @@ public class equals_method_usage_validation : IntegrationContext
         };
         theSession.Store(queryTarget);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         object notInt = "not int";
 
@@ -67,7 +68,7 @@ public class equals_method_usage_validation : IntegrationContext
     }
 
     [Fact]
-    public void can_use_inside_of_compiled_query()
+    public async Task can_use_inside_of_compiled_query()
     {
         var queryTarget = new QueryTarget
         {
@@ -80,10 +81,11 @@ public class equals_method_usage_validation : IntegrationContext
 
         theSession.Store(queryTarget);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var itemFromDb =
-            theSession.Query(new CompiledQueryTarget() {IdProp = queryTarget.Id, IntProp = queryTarget.IntProp});
+            await theSession.QueryAsync(new CompiledQueryTarget() {IdProp = queryTarget.Id, IntProp = queryTarget.IntProp});
+
 
         Assert.NotNull(itemFromDb);
     }

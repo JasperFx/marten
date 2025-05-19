@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Testing.Harness;
 using Weasel.Core;
 using Weasel.Postgresql;

@@ -15,14 +15,14 @@ public class select_clause_usage: IntegrationContext
 {
     #region sample_one_field_projection
     [Fact]
-    public void use_select_in_query_for_one_field()
+    public async Task use_select_in_query_for_one_field()
     {
         theSession.Store(new User { FirstName = "Hank" });
         theSession.Store(new User { FirstName = "Bill" });
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
@@ -31,14 +31,14 @@ public class select_clause_usage: IntegrationContext
     #endregion
 
     [Fact]
-    public void use_select_in_query_for_one_field_and_first()
+    public async Task use_select_in_query_for_one_field_and_first()
     {
         theSession.Store(new User { FirstName = "Hank" });
         theSession.Store(new User { FirstName = "Bill" });
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
             .First().ShouldBe("Bill");
@@ -78,14 +78,14 @@ public class select_clause_usage: IntegrationContext
     }
 
     [Fact]
-    public void use_select_to_another_type()
+    public async Task use_select_to_another_type()
     {
         theSession.Store(new User { FirstName = "Hank" });
         theSession.Store(new User { FirstName = "Bill" });
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
             .ToArray()
@@ -96,14 +96,14 @@ public class select_clause_usage: IntegrationContext
 
     #region sample_get_first_projection
     [Fact]
-    public void use_select_to_another_type_with_first()
+    public async Task use_select_to_another_type_with_first()
     {
         theSession.Store(new User { FirstName = "Hank" });
         theSession.Store(new User { FirstName = "Bill" });
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
             .FirstOrDefault()
@@ -168,14 +168,14 @@ public class select_clause_usage: IntegrationContext
 
     #region sample_anonymous_type_projection
     [Fact]
-    public void use_select_to_transform_to_an_anonymous_type()
+    public async Task use_select_to_transform_to_an_anonymous_type()
     {
         theSession.Store(new User { FirstName = "Hank" });
         theSession.Store(new User { FirstName = "Bill" });
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
             .ToArray()
@@ -186,14 +186,14 @@ public class select_clause_usage: IntegrationContext
     #endregion
 
     [Fact]
-    public void use_select_with_multiple_fields_in_anonymous()
+    public async Task use_select_with_multiple_fields_in_anonymous()
     {
         theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
         theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var users = theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToList();
 
@@ -201,21 +201,21 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.First);
-            SpecificationExtensions.ShouldNotBeNull(x.Last);
+            x.First.ShouldNotBeNull();
+            x.Last.ShouldNotBeNull();
         });
     }
 
     #region sample_other_type_projection
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void use_select_with_multiple_fields_to_other_type()
+    public async Task use_select_with_multiple_fields_to_other_type()
     {
         theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
         theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
 
@@ -223,8 +223,8 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.First);
-            SpecificationExtensions.ShouldNotBeNull(x.Last);
+            x.First.ShouldNotBeNull();
+            x.Last.ShouldNotBeNull();
         });
     }
 
@@ -238,14 +238,14 @@ public class select_clause_usage: IntegrationContext
 
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void use_select_with_multiple_fields_to_other_type_using_constructor()
+    public async Task use_select_with_multiple_fields_to_other_type_using_constructor()
     {
         theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
         theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var users = theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName))
@@ -255,20 +255,20 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.FirstName);
-            SpecificationExtensions.ShouldNotBeNull(x.LastName);
+            x.FirstName.ShouldNotBeNull();
+            x.LastName.ShouldNotBeNull();
         });
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void use_select_with_multiple_fields_to_other_type_using_constructor_and_properties()
+    public async Task use_select_with_multiple_fields_to_other_type_using_constructor_and_properties()
     {
         theSession.Store(new User { FirstName = "Hank", LastName = "Aaron", Age = 20 });
         theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer", Age = 40 });
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell", Age = 60 });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers", Age = 80 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var users = theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName) { YearsOld = x.Age })
@@ -278,9 +278,9 @@ public class select_clause_usage: IntegrationContext
 
         users.Each(x =>
         {
-            SpecificationExtensions.ShouldNotBeNull(x.FirstName);
-            SpecificationExtensions.ShouldNotBeNull(x.LastName);
-            SpecificationExtensions.ShouldBeGreaterThan(x.YearsOld, 0);
+            x.FirstName.ShouldNotBeNull();
+            x.LastName.ShouldNotBeNull();
+            x.YearsOld.ShouldBeGreaterThan(0);
         });
     }
 
@@ -305,7 +305,7 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var users = await theSession
             .Query<User>()
@@ -320,11 +320,11 @@ public class select_clause_usage: IntegrationContext
 
     #region sample_deep_properties_projection
     [Fact]
-    public void transform_with_deep_properties()
+    public async Task transform_with_deep_properties()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
 
@@ -337,12 +337,12 @@ public class select_clause_usage: IntegrationContext
 
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void transform_with_deep_properties_to_anonymous_type()
+    public async Task transform_with_deep_properties_to_anonymous_type()
     {
         var target = Target.Random(true);
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var actual = theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
@@ -355,12 +355,12 @@ public class select_clause_usage: IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void transform_with_deep_properties_to_type_using_constructor()
+    public async Task transform_with_deep_properties_to_type_using_constructor()
     {
         var target = Target.Random(true);
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var actual = theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
@@ -373,12 +373,12 @@ public class select_clause_usage: IntegrationContext
     }
 
     [Fact]
-    public void use_select_in_query_for_one_object_property()
+    public async Task use_select_in_query_for_one_object_property()
     {
         var target = Target.Random(true);
 
         theSession.Store(target);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var actual = theSession.Query<Target>()
             .Where(x => x.Id == target.Id)

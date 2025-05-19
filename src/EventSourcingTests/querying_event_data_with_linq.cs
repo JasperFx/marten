@@ -2,8 +2,11 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using EventSourcingTests.FetchForWriting;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
+using Marten.Events.Archiving;
 using Marten.Testing.Harness;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
@@ -13,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
-public class querying_event_data_with_linq: OneOffConfigurationsContext
+public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -22,14 +25,25 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     private readonly MembersJoined joined2 = new MembersJoined { Members = new string[] { "Nynaeve", "Egwene" } };
     private readonly MembersDeparted departed2 = new MembersDeparted { Members = new[] { "Matt" } };
 
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        Dispose();
+        return Task.CompletedTask;
+    }
+
     #region sample_query-against-event-data
     [Fact]
-    public void can_query_against_event_type()
+    public async Task can_query_against_event_type()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -43,14 +57,14 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void can_query_against_event_type_with_camel_casing()
+    public async Task can_query_against_event_type_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -73,19 +87,19 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
             .Take(3)
             .ToCommand().CommandText;
 
-        sql.ShouldNotContain("d.data ->> 'EventTypeName' = :p1", StringComparisonOption.Default);
-        sql.ShouldNotContain("d.data ->> 'DotNetTypeName' = :p2", StringComparisonOption.Default);
+        sql.ShouldNotContain("d.data ->> 'EventTypeName' = :p1");
+        sql.ShouldNotContain("d.data ->> 'DotNetTypeName' = :p2");
     }
 
     [Fact]
-    public void can_query_against_event_type_with_snake_casing()
+    public async Task can_query_against_event_type_with_snake_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -104,19 +118,18 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
 
 
     [Fact]
-    public void can_query_against_event_type_with_different_schema_name_with_camel_casing()
+    public async Task can_query_against_event_type_with_different_schema_name_with_camel_casing()
     {
         StoreOptions(_ =>
         {
             _.Events.DatabaseSchemaName = SchemaName + "_events";
 
-            _.UseDefaultSerialization(EnumStorage.AsString, Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString, Casing.CamelCase);
 
             _.Events.AddEventType(typeof(MembersDeparted));
         });
 
-        theStore.Advanced.Clean.DeleteAllEventData();
-
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         theStore.StorageFeatures.FindMapping(typeof(MembersDeparted))
             .TableName.Schema.ShouldBe("querying_event_data_with_linq_events");
@@ -124,7 +137,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -136,12 +149,12 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_all_events()
+    public async Task can_fetch_all_events()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Events.QueryAllRawEvents().ToList();
 
@@ -160,14 +173,14 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     #endregion
 
     [Fact]
-    public void can_fetch_all_events_after_now()
+    public async Task can_fetch_all_events_after_now()
     {
         var now = DateTimeOffset.UtcNow;
 
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var past = now.AddSeconds(-1);
 
@@ -177,12 +190,12 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_all_events_before_now()
+    public async Task can_fetch_all_events_before_now()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
         var now = new DateTimeOffset(dbNow).AddSeconds(5);
@@ -196,36 +209,36 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_fetch_events_by_sequence()
+    public async Task can_fetch_events_by_sequence()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.Sequence <= 2).ShouldBe(2);
     }
 
     [Fact]
-    public void can_fetch_by_version()
+    public async Task can_fetch_by_version()
     {
         theSession.Events.StartStream<Quest>(joined1, departed1);
         theSession.Events.StartStream<Quest>(joined2, departed2);
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.Version == 1).ShouldBe(2);
     }
 
     [Fact]
-    public void can_search_by_stream()
+    public async Task can_search_by_stream()
     {
         var stream1 = theSession.Events.StartStream<Quest>(joined1, departed1).Id;
         var stream2 = theSession.Events.StartStream<Quest>(joined2, departed2).Id;
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.QueryAllRawEvents()
             .Count(x => x.StreamId == stream1).ShouldBe(2);
@@ -257,6 +270,53 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
         }
     }
 
+    [Fact] // was GH-2777
+    public async Task querying_with_linq_against_events_and_event_has_id_property()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Logger(new TestOutputMartenLogger(_output));
+        }, true);
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.Append("a", new DummyEvent("a"));
+
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.QuerySession())
+        {
+            var ids = await session.Events.QueryRawEventDataOnly<DummyEvent>()
+                .Select(d => d.Id)          // This causes the operation to fail
+                .ToListAsync();
+        }
+    }
+
+    [Fact] // was GH-2848
+    public async Task can_make_the_query_with_distinct_and_count()
+    {
+        await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.MaybeArchived())
+            .Select(x => x.StreamKey)
+            .Distinct()
+            .CountAsync();
+    }
+
+    [Fact]
+    public void generate_proper_sql_with_querying_against_event_id()
+    {
+        var eventsIds = new[] { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+        var command = theSession.Events.QueryAllRawEvents()
+            .Where(e => e.Id.In(eventsIds))
+            .Where(e => e.AnyTenant())
+            .ToCommand();
+
+        command.CommandText.ShouldContain("d.id = ANY(:p0)");
+        command.CommandText.ShouldNotContain("CAST(d.data ->> 'Id' as uuid)");
+    }
+
     /*
      * MORE!!!
      * Async everything
@@ -264,6 +324,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext
     public querying_event_data_with_linq(ITestOutputHelper output)
     {
         _output = output;
-        theStore.Advanced.Clean.DeleteAllEventData();
     }
 }
+
+public record DummyEvent(string Id);

@@ -11,6 +11,7 @@ public class JsonNetUpcastConfiguration
     public static Action<StoreOptions> V2WithTheSameName =>
         options =>
         {
+            options.UseNewtonsoftForSerialization();
             options.Events
                 .Upcast<V2.WithTheSameName.ShoppingCartOpened>(
                     Upcast(oldEvent =>
@@ -37,6 +38,7 @@ public class JsonNetUpcastConfiguration
     public static Action<StoreOptions> V3WithTheSameName =>
         options =>
         {
+            options.UseNewtonsoftForSerialization();
             options.Events
                 .Upcast<V3.WithTheSameName.ShoppingCartOpened>(
                     Upcast(oldEvent =>
@@ -84,6 +86,8 @@ public class JsonNetUpcastConfiguration
     public static Action<StoreOptions> V2WithDifferentName =>
         options =>
         {
+            options.UseNewtonsoftForSerialization();
+
             options.Events
                 .Upcast<V2.WithDifferentName.ShoppingCartOpenedV2>(
                     "shopping_cart_opened",
@@ -107,6 +111,7 @@ public class JsonNetUpcastConfiguration
     public static Action<StoreOptions> V3WithDifferentName =>
         options =>
         {
+            options.UseNewtonsoftForSerialization();
             options.Events
                 .Upcast<V3.WithDifferentName.ShoppingCartOpenedV3>(
                     "shopping_cart_opened",

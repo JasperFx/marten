@@ -1,6 +1,8 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
@@ -9,7 +11,7 @@ namespace EventSourcingTests.Bugs
     public class Bug_1019_event_type_not_found_bad_exception_message: BugIntegrationContext
     {
         [Fact]
-        public void unknown_type_should_report_type_name()
+        public async Task unknown_type_should_report_type_name()
         {
             var streamGuid = Guid.Parse("378b8405-8cdc-40ef-bafa-2033cd3c43c3");
             var typeName = "Bug1019.Product, EventSourcingTests";
@@ -18,7 +20,7 @@ namespace EventSourcingTests.Bugs
             {
                 var product = new Bug1019.Product { Id = 1, Name = "prod1", Price = 108 };
                 session.Events.Append(streamGuid, product);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
                 var command = session.Connection.CreateCommand();
                 command.CommandText = @"
 update
@@ -33,7 +35,13 @@ where
                 command.AddNamedParameter("newTypeName", "foo");
                 command.AddNamedParameter("originalTypeName", typeName);
                 command.ExecuteNonQuery();
-                Assert.Throws<UnknownEventTypeException>(() => session.Events.FetchStream(streamGuid)).Message.ShouldContain(newTypeName);
+
+                var ex = await Should.ThrowAsync<UnknownEventTypeException>(async () =>
+                {
+                    await session.Events.FetchStreamAsync(streamGuid);
+                });
+
+                ex.Message.ShouldContain(newTypeName);
             }
         }
 

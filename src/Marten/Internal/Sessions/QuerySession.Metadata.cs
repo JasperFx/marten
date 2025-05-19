@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Storage.Metadata;
 
 namespace Marten.Internal.Sessions;
@@ -25,23 +26,6 @@ public partial class QuerySession
         return StorageFor<TDoc>().VersionFor(entity, this);
     }
 
-    public DocumentMetadata? MetadataFor<T>(T entity) where T : notnull
-    {
-        assertNotDisposed();
-        if (entity == null)
-        {
-            throw new ArgumentNullException(nameof(entity));
-        }
-
-        Database.EnsureStorageExists(typeof(T));
-
-        var storage = StorageFor<T>();
-        var id = storage.IdentityFor(entity);
-        var handler = new EntityMetadataQueryHandler(id, storage);
-
-        return ExecuteHandler(handler);
-    }
-
     public async Task<DocumentMetadata> MetadataForAsync<T>(T entity, CancellationToken token = default)
         where T : notnull
     {
@@ -58,4 +42,10 @@ public partial class QuerySession
 
         return await ExecuteHandlerAsync(handler, token).ConfigureAwait(false);
     }
+
+    bool IMetadataContext.CausationIdEnabled => Options.EventGraph.Metadata.CausationId.Enabled;
+
+    bool IMetadataContext.CorrelationIdEnabled => Options.EventGraph.Metadata.CorrelationId.Enabled;
+
+    bool IMetadataContext.HeadersEnabled => Options.EventGraph.Metadata.Headers.Enabled;
 }

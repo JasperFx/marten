@@ -17,11 +17,6 @@ public class SubClassBulkLoader<T, TRoot>: IBulkLoader<T> where T : TRoot
         _inner = inner;
     }
 
-    public void Load(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents)
-    {
-        _inner.Load(tenant, serializer, conn, documents.OfType<TRoot>());
-    }
-
     public Task LoadAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn, IEnumerable<T> documents,
         CancellationToken cancellation)
     {
@@ -31,12 +26,6 @@ public class SubClassBulkLoader<T, TRoot>: IBulkLoader<T> where T : TRoot
     public string CreateTempTableForCopying()
     {
         return _inner.CreateTempTableForCopying();
-    }
-
-    public void LoadIntoTempTable(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,
-        IEnumerable<T> documents)
-    {
-        _inner.LoadIntoTempTable(tenant, serializer, conn, documents.OfType<TRoot>());
     }
 
     public Task LoadIntoTempTableAsync(Tenant tenant, ISerializer serializer, NpgsqlConnection conn,

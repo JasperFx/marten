@@ -100,7 +100,7 @@ With the configuration above, Marten will generate a foreign key constraint from
 ```sql
 ALTER TABLE public.mt_doc_issue
 ADD CONSTRAINT mt_doc_issue_bug_id_fkey FOREIGN KEY (bug_id)
-REFERENCES bug-tracker.bugs (id);
+REFERENCES bugtracker.bugs (id);
 ```
 
 ## Cascading deletes
@@ -145,5 +145,5 @@ public class Issue
     public Guid? OtherUserId { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/ForeignKeys/configuring_foreign_key_fields.cs#L68-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue-with-fk-attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/ForeignKeys/configuring_foreign_key_fields.cs#L69-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issue-with-fk-attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

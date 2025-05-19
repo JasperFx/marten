@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -15,7 +16,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
     {
     }
 
-    //[Fact] -- TODO -- too unreliable on CI
+    [Fact(Skip = "TODO -- too unreliable on CI")]
     public async Task throw_transformed_exception_with_details_redacted()
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -38,10 +39,10 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         };
 
         (await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException))
-            .Message.ShouldBe("duplicate key value violates unique constraint \"pk_mt_events_stream_and_version\"");
+            .Message.ShouldContain("pk_mt_events_stream_and_version");
     }
 
-    //[Fact] -- TODO -- too unreliable on CI
+    [Fact(Skip = "TODO -- too unreliable on CI")]
     public async Task throw_transformed_exception_with_details_available()
     {
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

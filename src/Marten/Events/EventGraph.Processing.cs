@@ -1,36 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Daemon.Resiliency;
+using JasperFx;
+using JasperFx.Blocks;
+using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Operations;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
-using Marten.Schema.Identity;
-using Weasel.Core;
 
 namespace Marten.Events;
-
-public enum EventAppendMode
-{
-    /// <summary>
-    /// Default behavior that ensures that all inline projections will have full access to all event
-    /// metadata including intended event sequences, versions, and timestamps
-    /// </summary>
-    Rich,
-
-    /// <summary>
-    /// Stripped down, more performant mode of appending events that will omit some event metadata within
-    /// inline projections
-    /// </summary>
-    Quick
-}
 
 public partial class EventGraph
 {
     private RetryBlock<UpdateBatch> _tombstones;
+
+    internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
+
+    public EventAppendMode AppendMode
+    {
+        get => EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
+        set => EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
+    }
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
     {
@@ -38,35 +32,6 @@ public partial class EventGraph
             ? _store.LightweightSession()
             : _store.LightweightSession(batch.TenantId!));
         await session.ExecuteBatchAsync(batch, cancellationToken).ConfigureAwait(false);
-    }
-
-    internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
-
-    public EventAppendMode AppendMode
-    {
-        get
-        {
-            return EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
-        }
-        set
-        {
-            EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
-        }
-    }
-
-    internal void ProcessEvents(DocumentSessionBase session)
-    {
-        if (!session.WorkTracker.Streams.Any())
-        {
-            return;
-        }
-
-        if (Options.AutoCreateSchemaObjects != AutoCreate.None)
-        {
-            session.Database.EnsureStorageExists(typeof(IEvent));
-        }
-
-        EventAppender.ProcessEvents(this, session, _inlineProjections.Value);
     }
 
     internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
@@ -84,7 +49,7 @@ public partial class EventGraph
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
     }
 
-    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
+    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, [NotNullWhen(true)]out UpdateBatch? batch)
     {
         if (session.WorkTracker.Streams.Any())
         {
@@ -105,8 +70,8 @@ public partial class EventGraph
                     Sequence = x.Sequence,
                     Version = x.Sequence, // this is important to avoid clashes on the id/version constraint
                     TenantId = x.TenantId,
-                    StreamId = EstablishTombstoneStream.StreamId,
-                    StreamKey = EstablishTombstoneStream.StreamKey,
+                    StreamId = Tombstone.StreamId,
+                    StreamKey = Tombstone.StreamKey,
                     Id = CombGuidIdGeneration.NewGuid(),
                     EventTypeName = mapping.EventTypeName,
                     DotNetTypeName = mapping.DotNetTypeName
@@ -122,20 +87,6 @@ public partial class EventGraph
 
         batch = null;
         return false;
-    }
-
-    internal void PostTombstones(UpdateBatch tombstoneBatch)
-    {
-        try
-        {
-            using var session = (DocumentSessionBase)_store.LightweightSession(tombstoneBatch.TenantId);
-            session.ExecuteBatch(tombstoneBatch);
-        }
-        catch (Exception)
-        {
-            // The IMartenLogger will log the exception
-            _tombstones.Post(tombstoneBatch);
-        }
     }
 
     public Task PostTombstonesAsync(UpdateBatch tombstoneBatch)

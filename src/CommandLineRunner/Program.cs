@@ -1,17 +1,17 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
+using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
-using Oakton;
-using Weasel.Core;
 using AEvent = EventSourcingTests.Aggregation.AEvent;
 using BEvent = EventSourcingTests.Aggregation.BEvent;
 using CEvent = EventSourcingTests.Aggregation.CEvent;
@@ -31,7 +31,7 @@ public static class Program
 {
     public static Task<int> Main(string[] args)
     {
-        return CreateHostBuilder(args).RunOaktonCommands(args);
+        return CreateHostBuilder(args).RunJasperFxCommands(args);
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args)
@@ -43,13 +43,21 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+
+                    // If you use compiled queries, you will need to register the
+                    // compiled query types with Marten ahead of time
+                    opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
                 });
 
                 services.AddMarten(opts =>
                 {
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
+                    opts.DisableNpgsqlLogging = true;
+
+                    opts.Events.UseOptimizedProjectionRebuilds = true;
 
                     opts.MultiTenantedWithSingleServer(
                         ConnectionSource.ConnectionString,
@@ -60,7 +68,7 @@ public static class Program
                     // *try* to use pre-generated code at runtime
                     opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
-                    opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
+                    //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()
@@ -86,7 +94,7 @@ public static class Program
                         .Add(new SimpleProjection(), ProjectionLifecycle.Inline);
 
                     // This is actually important to register "live" aggregations too for the code generation
-                    opts.Projections.LiveStreamAggregation<Trip>();
+                    //opts.Projections.LiveStreamAggregation<Trip>();
                 }).AddAsyncDaemon(DaemonMode.Solo);
             });
     }
@@ -121,11 +129,11 @@ public class Trip
     }
 }
 
-public class SimpleProjection: SingleStreamProjection<MyAggregate>
+public class SimpleProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public SimpleProjection()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     public MyAggregate Create(CreateEvent @event)

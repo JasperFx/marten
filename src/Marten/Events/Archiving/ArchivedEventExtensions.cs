@@ -1,3 +1,5 @@
+using JasperFx.Events;
+
 namespace Marten.Events.Archiving;
 
 public static class ArchivedEventExtensions

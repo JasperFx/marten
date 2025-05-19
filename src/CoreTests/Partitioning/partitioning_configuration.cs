@@ -37,7 +37,7 @@ public class partitioning_configuration : OneOffConfigurationsContext
         var table = tableFor<Target>();
 
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "true"));
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class partitioning_configuration : OneOffConfigurationsContext
         var table = tableFor<Target>();
 
         var partitioning = table.Partitioning.ShouldBeOfType<ListPartitioning>();
-        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "TRUE"));
+        partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "true"));
     }
 
     [Fact]
@@ -60,13 +60,13 @@ public class partitioning_configuration : OneOffConfigurationsContext
             .ShouldBeOfType<ListPartitioning>()
             .Partitions
             .Single()
-            .ShouldBe(new ListPartition("deleted", "TRUE"));
+            .ShouldBe(new ListPartition("deleted", "true"));
 
         tableFor<User>().Partitioning
             .ShouldBeOfType<ListPartitioning>()
             .Partitions
             .Single()
-            .ShouldBe(new ListPartition("deleted", "TRUE"));
+            .ShouldBe(new ListPartition("deleted", "true"));
     }
 
     [Fact]

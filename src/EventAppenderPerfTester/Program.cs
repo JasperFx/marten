@@ -3,7 +3,9 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
-using Oakton;
+using JasperFx;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 
 #region sample_disabling_npgsql_logging
 
@@ -18,7 +20,7 @@ builder.ConfigureServices(services =>
         opts.DisableNpgsqlLogging = true;
 
         opts.Events.AppendMode = EventAppendMode.Quick;
-        opts.Events.UseIdentityMapForInlineAggregates = true;
+        opts.Events.UseIdentityMapForAggregates = true;
 
         opts.Projections.Add<DaemonTests.TestingSupport.TripProjection>(ProjectionLifecycle.Inline);
     });
@@ -26,5 +28,5 @@ builder.ConfigureServices(services =>
 
 #endregion
 
-return await builder.RunOaktonCommands(args);
+return await builder.RunJasperFxCommands(args);
 

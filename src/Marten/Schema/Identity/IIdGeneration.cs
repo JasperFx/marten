@@ -13,15 +13,9 @@ namespace Marten.Schema.Identity;
 public interface IIdGeneration
 {
     /// <summary>
-    ///     What types are supported by this strategy? Example: string, or int/long, or Guid
+    ///     Does this strategy require number sequences
     /// </summary>
-    [Obsolete("Will be removed in Marten 8.0")]
-    IEnumerable<Type> KeyTypes { get; }
-
-    /// <summary>
-    ///     Does this strategy require HiLo sequences
-    /// </summary>
-    bool RequiresSequences { get; }
+    bool IsNumeric { get; }
 
     /// <summary>
     ///     This method must be implemented to build and set the identity on

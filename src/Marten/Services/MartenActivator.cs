@@ -1,5 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Microsoft.Extensions.Hosting;

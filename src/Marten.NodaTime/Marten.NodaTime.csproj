@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>NodaTime extension for Marten</Description>
-        <VersionPrefix>7.0.0-beta.5</VersionPrefix>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -15,23 +13,10 @@
         <RootNamespace>Marten.NodaTimePlugin</RootNamespace>
     </PropertyGroup>
 
-    <!--SourceLink specific settings-->
-    <PropertyGroup>
-        <RepositoryUrl>https://github.com/JasperFx/marten.git</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    </PropertyGroup>
-    <PropertyGroup>
-        <EnableSourceLink Condition=" '$(OS)' != 'Windows_NT' AND '$(MSBuildRuntimeType)' != 'Core' ">false</EnableSourceLink>
-        <EnableSourceControlManagerQueries>$(EnableSourceLink)</EnableSourceControlManagerQueries>
-    </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.1.0"/>
         <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2"/>
-        <PackageReference Include="Npgsql.NodaTime" Version="8.0.0"/>
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
+        <PackageReference Include="Npgsql.NodaTime" Version="9.0.2" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj"/>

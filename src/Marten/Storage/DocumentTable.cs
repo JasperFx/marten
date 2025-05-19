@@ -79,7 +79,16 @@ internal class DocumentTable: Table
         }
 
         Indexes.AddRange(mapping.Indexes);
+
+        // tenant_id should always be first
+        foreach (var foreignKey in mapping.ForeignKeys)
+        {
+            foreignKey.TryMoveTenantIdFirst(mapping);
+        }
+
         ForeignKeys.AddRange(mapping.ForeignKeys);
+
+        Partitioning = mapping.Partitioning;
 
         if (mapping.Partitioning != null && !mapping.IgnorePartitions)
         {
@@ -142,7 +151,7 @@ internal class DocumentTable: Table
         return base.Equals(other);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
         {

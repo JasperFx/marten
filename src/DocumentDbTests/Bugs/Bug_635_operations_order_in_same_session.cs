@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -11,7 +12,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_635_operations_order_in_same_session: IntegrationContext
 {
     [Fact]
-    public void deletewhere_and_store()
+    public async Task deletewhere_and_store()
     {
         var batchSize = 256;
 
@@ -20,7 +21,7 @@ public class Bug_635_operations_order_in_same_session: IntegrationContext
             theSession.Store(i % 2 == 0 ? new User { LastName = "batch-id1" } : new User { LastName = "batch-id2" });
         }
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var batch = new List<User>();
         var newBatchSize = 2;
@@ -37,7 +38,7 @@ public class Bug_635_operations_order_in_same_session: IntegrationContext
             //Then store all new documents, in this case they also match the delete criteria
             replaceSession.Store(batch.ToArray());
 
-            replaceSession.SaveChanges();
+            await replaceSession.SaveChangesAsync();
         }
 
         using (var querySession = theStore.QuerySession())

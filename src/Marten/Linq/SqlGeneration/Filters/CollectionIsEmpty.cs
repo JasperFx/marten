@@ -15,7 +15,8 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     public CollectionIsEmpty(ICollectionMember member)
     {
         _member = member;
-        var jsonPath = member.WriteJsonPath();
+        // deeply ashamed by the replace here, but it does work.
+        var jsonPath = member.WriteJsonPath().Replace("[*]", "");
         _text = $"d.data @? '$ ? (@.{jsonPath} == null || @.{jsonPath}.size() == 0)'";
     }
 
@@ -28,5 +29,4 @@ internal class CollectionIsEmpty: IReversibleWhereFragment
     {
         builder.Append(_text);
     }
-
 }

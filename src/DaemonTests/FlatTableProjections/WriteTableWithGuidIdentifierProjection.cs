@@ -7,7 +7,7 @@ public class WriteTableWithGuidIdentifierProjection: FlatTableProjection
 {
     public WriteTableWithGuidIdentifierProjection(): base("values", SchemaNameSource.DocumentSchema)
     {
-        ProjectionName = "Values";
+        Name = "Values";
 
         // Gotta have a primary key
         Table.AddColumn<Guid>("id").AsPrimaryKey();
@@ -46,6 +46,8 @@ public class WriteTableWithGuidIdentifierProjection: FlatTableProjection
             cmd.Decrement(x => x.D);
 
             cmd.Decrement("revision"); // assume to be an int or long here
+
+            cmd.Map(x => x.NullableNumber, "null_number");
 
             cmd.SetValue("status", "old");
         });

@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -31,13 +32,19 @@ internal class IsOneOf: IMethodCallParser
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
         }
-        else if (queryableMember is IValueTypeMember valueTypeMember)
+        else if (queryableMember.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>)))
         {
-            return new IsOneOfFilter(queryableMember, new CommandParameter(valueTypeMember.ConvertFromWrapperArray(values)));
+            /* Unwrapping is required for nullable value types of the form: System.Nullable`1[ValueTypeTests.StrongTypedId.Issue2Id][]
+             otherwise we get exceptions such as: Object of type 'System.Nullable`1[ValueTypeTests.StrongTypedId.Issue2Id][]' cannot be converted to type 'System.Collections.Generic.IEnumerable`1[ValueTypeTests.StrongTypedId.Issue2Id]'
+             */
+            var unwrappedValues = values.UnwrapIEnumerableOfNullables();
+            var commandParameter = queryableMember.CallGenericInterfaceMethod(typeof(IValueTypeMember<,>), "ConvertFromWrapperArray", unwrappedValues);
+            return new IsOneOfFilter(queryableMember, new CommandParameter(commandParameter));
         }
 
         return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }
+
 }
 
 internal class IsOneOfFilter: ISqlFragment

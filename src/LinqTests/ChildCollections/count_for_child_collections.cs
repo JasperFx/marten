@@ -16,11 +16,11 @@ public class count_for_child_collections : OneOffConfigurationsContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void GivenTwoLevelsOfChildCollections_WhenCountCalled_ThenReturnsProperCount()
+    public async Task GivenTwoLevelsOfChildCollections_WhenCountCalled_ThenReturnsProperCount()
     {
-        StoreOptions(op => op.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray));
+        StoreOptions(op => op.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray));
 
-        SetupTestData();
+        await SetupTestData();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
@@ -35,9 +35,9 @@ public class count_for_child_collections : OneOffConfigurationsContext
     [Fact]
     public async Task two_levels_of_child_collections_in_compiled_query()
     {
-        StoreOptions(op => op.UseDefaultSerialization(collectionStorage: CollectionStorage.AsArray));
+        StoreOptions(op => op.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray));
 
-        SetupTestData();
+        await SetupTestData();
 
         theSession.Logger = new TestOutputMartenLogger(_output);
 
@@ -62,7 +62,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
     }
 
-    private void SetupTestData()
+    private async Task SetupTestData()
     {
         var product1 = new Root
         {
@@ -138,7 +138,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
         theSession.Store(product1);
         theSession.Store(product2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
     public count_for_child_collections(ITestOutputHelper output)

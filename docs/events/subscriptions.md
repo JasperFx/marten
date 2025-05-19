@@ -240,6 +240,14 @@ Marten can support both the `Singleton` and `Scoped` lifetimes when using the Io
 subscription. If you specify `Transient`, Marten will still use the `Scoped` lifetime.
 :::
 
+::: warning
+Do not try to pull Marten's `IDocumentSession` or `IQuerySession` as IoC dependencies of your subscription as that
+can easily cause a bi-directional dependency issue that prevents application startup. Instead, *push* the `IDocumentOperations`
+from the subscription signature into your code that needs to use Marten during the execution of subscriptions. Failing
+that, the Marten team's suggestion is to have the subscription merely publish a message to a local service bus. [Wolverine](https://wolverinefx.net)
+is a great tool for this.
+:::
+
 Stateless subscriptions can simply be registered like this:
 
 <!-- snippet: sample_register_ConsoleSubscription -->

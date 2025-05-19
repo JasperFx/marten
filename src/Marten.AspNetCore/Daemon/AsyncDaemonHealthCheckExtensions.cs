@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -109,7 +110,7 @@ public static class AsyncDaemonHealthCheckExtensions
             {
                 var projectionsToCheck = _store.Options.Events.Projections()
                     .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
-                    .Select(x => $"{x.ProjectionName}:All")
+                    .Select(x => $"{x.Name}:All")
                     .ToHashSet();
 
                 var databases = await _store.Storage.AllDatabases().ConfigureAwait(false);

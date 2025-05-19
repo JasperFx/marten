@@ -13,7 +13,7 @@ class QuerySession
 class IDocumentSession
 class DocumentStore
 class IdentityMapDocumentSession
-class LightWeightDocumentSession
+class LightweightSession
 class DirtyCheckingDocumentSession
 
 IDocumentStore --> IQuerySession: Builds
@@ -25,7 +25,7 @@ IQuerySession <|.. IDocumentSession
 IDocumentStore <|.. DocumentStore
 
 IDocumentSession <|.. IdentityMapDocumentSession
-IDocumentSession <|.. LightWeightDocumentSession
+IDocumentSession <|.. LightweightSession
 IDocumentSession <|.. DirtyCheckingDocumentSession
 ```
 
@@ -46,7 +46,7 @@ types of sessions are:
 | `IDocumentStore.OpenSerializableSessionAsync()`         | Read/Write     | Yes              | No                 |
 
 ::: tip INFO
-The recommended session type for read/write operations is `LightWeightDocumentSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
+The recommended session type for read/write operations is `LightweightSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
 
 For read-only access, use `QuerySession`.
 :::
@@ -141,9 +141,9 @@ theStore.BulkInsert(new[] { user });
 // Open a document session with the identity map
 using var session = theStore.IdentitySession();
 session.Load<User>(user.Id)
-    .ShouldBeTheSameAs(session.Load<User>(user.Id));
+    .ShouldBeSameAs(session.Load<User>(user.Id));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L11-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
@@ -166,8 +166,8 @@ using (var session = theStore.IdentitySession())
     session.Store(target1, target2);
 
     // Both documents are in the identity map
-    session.Load<Target>(target1.Id).ShouldBeTheSameAs(target1);
-    session.Load<Target>(target2.Id).ShouldBeTheSameAs(target2);
+    session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
+    session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
 
     // Eject the 2nd document
     session.Eject(target2);
@@ -175,7 +175,7 @@ using (var session = theStore.IdentitySession())
     // Now that 2nd document is no longer in the identity map
     session.Load<Target>(target2.Id).ShouldBeNull();
 
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 }
 
 using (var session = theStore.QuerySession())
@@ -185,7 +185,7 @@ using (var session = theStore.QuerySession())
     session.Load<Target>(target2.Id).ShouldBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L14-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ejecting all pending changes from a Session

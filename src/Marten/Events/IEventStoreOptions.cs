@@ -4,13 +4,15 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Subscriptions;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events
 {
@@ -19,7 +21,7 @@ namespace Marten.Events
         /// <summary>
         ///     Configure whether event streams are identified with Guid or strings
         /// </summary>
-        StreamIdentity StreamIdentity { get; set; }
+        public StreamIdentity StreamIdentity { get; set; }
 
         /// <summary>
         ///     Configure the event sourcing storage for multi-tenancy
@@ -32,11 +34,18 @@ namespace Marten.Events
         bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
 
         /// <summary>
-        /// Opt into a performance optimization that directs Marten to always use the identity map for an
-        /// Inline single stream projection's aggregate type when FetchForWriting() is called. Default is false.
-        /// Do not use this if you manually alter the fetched aggregate from FetchForWriting() outside of Marten
+        /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+        /// running in an Inline lifecycle. Default is false;
         /// </summary>
-        bool UseIdentityMapForInlineAggregates { get; set; }
+        bool EnableSideEffectsOnInlineProjections { get; set; }
+
+        /// <summary>
+        /// Opt into a performance optimization that directs Marten to always use the identity map for an
+        /// as much as possible for FetchForWriting() or FetchLatest(). Note that this optimization is only
+        /// appropriate if using either immutable aggregations or when you do not mutate the aggregate yourself
+        /// outside of Marten internals
+        /// </summary>
+        bool UseIdentityMapForAggregates { get; set; }
 
         /// <summary>
         ///     Override the database schema name for event related tables. By default this
@@ -50,7 +59,7 @@ namespace Marten.Events
         /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
         /// in testing
         /// </summary>
-        TimeProvider TimeProvider { get; set; }
+        public TimeProvider TimeProvider { get; set; }
 
         /// <summary>
         /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
@@ -72,6 +81,20 @@ namespace Marten.Events
         /// aggregation projections
         /// </summary>
         public IMessageOutbox MessageOutbox { get; set; }
+
+        /// <summary>
+        /// Opt into some performance optimizations for projection rebuilds for both single stream and
+        /// multi-stream projections. This will result in new table columns and a potential database
+        /// migration. This will be a default in Marten 8.
+        /// </summary>
+        public bool UseOptimizedProjectionRebuilds { get; set; }
+
+        /// <summary>
+        /// Does Marten require a stream type for any new event streams? This will also
+        /// validate that an event stream already exists as part of appending events. Default in 7.0 is false,
+        /// but this will be true in 8.0
+        /// </summary>
+        public bool UseMandatoryStreamTypeDeclaration { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
@@ -328,6 +351,15 @@ namespace Marten.Events
         /// <param name="upcasters">Upcaster type transforming ("upcasting") event JSON payload from one schema to another.</param>
         /// <returns>Event store options, to allow fluent definition</returns>
         IEventStoreOptions Upcast<TUpcaster>() where TUpcaster : IEventUpcaster, new();
+
+        /// <summary>
+        /// Register a policy for how to remove or mask protected information
+        /// for an event type "T" or series of event types that can be cast
+        /// to "T"
+        /// </summary>
+        /// <param name="action"></param>
+        /// <typeparam name="T"></typeparam>
+        void AddMaskingRuleForProtectedInformation<T>(Action<T> action);
     }
 }
 
@@ -348,7 +380,7 @@ public static class EventStoreOptionsExtensions
     )
         where TEvent : class
     {
-        options.MapEventType<TEvent>(GetEventTypeNameWithSuffix(eventTypeName, suffix));
+        options.MapEventType<TEvent>(eventTypeName.GetEventTypeNameWithSuffix(suffix));
         return options;
     }
 
@@ -461,7 +493,7 @@ public static class EventStoreOptionsExtensions
         JsonTransformation jsonTransformation
     )
     {
-        return options.Upcast(eventType, GetEventTypeName(eventType), jsonTransformation);
+        return options.Upcast(eventType, eventType.GetEventTypeName(), jsonTransformation);
     }
 
     /// <summary>

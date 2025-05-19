@@ -105,7 +105,11 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
     [MemberData(nameof(Predicates))]
     public async Task having_type_with_CollectionToArrayJsonConverter_can_query_against_array_of_string(Expression<Func<TypeWithInnerCollectionsWithJsonConverterAttribute, bool>> predicate)
     {
-        SetupTestData();
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(TestData);
+            await session.SaveChangesAsync();
+        }
 
         await using var query = theStore.QuerySession();
         query.Logger = new TestOutputMartenLogger(_output);
@@ -115,13 +119,6 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
 
         results.Count.ShouldBe(2);
         results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
-    }
-
-    private void SetupTestData()
-    {
-        using var session = theStore.LightweightSession();
-        session.Store(TestData);
-        session.SaveChanges();
     }
 
     public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)

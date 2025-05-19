@@ -37,7 +37,7 @@ public interface IBatchQueryPlan<T>
 /// can be used both individually with IQuerySession.QueryByPlan() and with IBatchedQuery.QueryByPlan()
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public abstract class QueryListPlan<T> : IQueryPlan<IReadOnlyList<T>>, IBatchQueryPlan<IReadOnlyList<T>>
+public abstract class QueryListPlan<T> : IQueryPlan<IReadOnlyList<T>>, IBatchQueryPlan<IReadOnlyList<T>> where T : notnull
 {
     /// <summary>
     /// Return an IQueryable<T> from the IQuerySession to define the query plan

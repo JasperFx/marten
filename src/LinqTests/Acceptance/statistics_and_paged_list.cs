@@ -78,15 +78,14 @@ public class statistics_and_paged_list: IntegrationContext
     #endregion
 
     [Fact]
-    public void can_get_the_total_from_a_compiled_query()
+    public async Task can_get_the_total_from_a_compiled_query()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
-        var list = theSession
-            .Query(query)
-            .ToList();
+        var list = await theSession
+            .QueryAsync(query);
 
         list.Any().ShouldBeTrue();
 
@@ -117,7 +116,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_get_the_total_from_a_compiled_query_running_in_a_batch()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
 
@@ -133,31 +132,12 @@ public class statistics_and_paged_list: IntegrationContext
         query.Stats.TotalResults.ShouldBe(count);
     }
 
-    [Fact]
-    public void can_get_the_total_from_a_compiled_query_running_in_a_batch_sync()
-    {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
-
-        var query = new TargetPaginationQuery(2, 5);
-
-        var batch = theSession.CreateBatchQuery();
-
-        var targets = batch.Query(query);
-
-        batch.ExecuteSynchronously();
-
-        targets.Result
-            .Any().ShouldBeTrue();
-
-        query.Stats.TotalResults.ShouldBe(count);
-    }
 
     [Fact]
     public async Task can_get_the_total_in_batch_query()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         QueryStatistics stats = null;
 
@@ -173,32 +153,13 @@ public class statistics_and_paged_list: IntegrationContext
         stats.TotalResults.ShouldBe(count);
     }
 
-    [Fact]
-    public void can_get_the_total_in_batch_query_sync()
-    {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
-
-        QueryStatistics stats = null;
-
-        var batch = theSession.CreateBatchQuery();
-
-        var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
-            .ToList();
-
-        batch.ExecuteSynchronously();
-
-        list.Result.Any().ShouldBeTrue();
-
-        stats.TotalResults.ShouldBe(count);
-    }
 
     #region sample_using-query-statistics
     [Fact]
-    public void can_get_the_total_in_results()
+    public async Task can_get_the_total_in_results()
     {
         var count = theSession.Query<Target>().Count(x => x.Number > 10);
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         // We're going to use stats as an output
         // parameter to the call below, so we
@@ -206,11 +167,11 @@ public class statistics_and_paged_list: IntegrationContext
         // first
         QueryStatistics stats = null;
 
-        var list = theSession
+        var list = await theSession
             .Query<Target>()
             .Stats(out stats)
             .Where(x => x.Number > 10).Take(5)
-            .ToList();
+            .ToListAsync();
 
         list.Any().ShouldBeTrue();
 
@@ -225,7 +186,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_get_the_total_in_results_async()
     {
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
-        SpecificationExtensions.ShouldBeGreaterThan(count, 0);
+        count.ShouldBeGreaterThan(0);
 
         QueryStatistics stats = null;
 
@@ -237,16 +198,16 @@ public class statistics_and_paged_list: IntegrationContext
         stats.TotalResults.ShouldBe(count);
     }
 
-        private void BuildUpDocumentWithZeroRecords()
+     private async Task BuildUpDocumentWithZeroRecords()
     {
         var doc = new PaginationTestDocument();
         doc.Id = "test";
 
         theSession.Store(doc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Delete<PaginationTestDocument>(doc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
     }
 
     [Fact]
@@ -295,9 +256,9 @@ public class statistics_and_paged_list: IntegrationContext
         var pageSize = 10;
 
         var ex =
-            await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+            await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () => await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
-        SpecificationExtensions.ShouldContain(ex.Message, "pageNumber = 0. PageNumber cannot be below 1.");
+        ex.Message.ShouldContain("pageNumber = 0. PageNumber cannot be below 1.");
     }
 
     [Theory]
@@ -310,9 +271,9 @@ public class statistics_and_paged_list: IntegrationContext
         var pageSize = 0;
 
         var ex =
-            await Exception<ArgumentOutOfRangeException>.ShouldBeThrownByAsync(
+            await Should.ThrowAsync<ArgumentOutOfRangeException>(
                 async () =>  await toPagedList(theSession.Query<Target>(), pageNumber, pageSize));
-        SpecificationExtensions.ShouldContain(ex.Message, $"pageSize = 0. PageSize cannot be below 1.");
+        ex.Message.ShouldContain($"pageSize = 0. PageSize cannot be below 1.");
     }
 
     [Theory]
@@ -491,7 +452,7 @@ public class statistics_and_paged_list: IntegrationContext
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 5)) return;
 
-        BuildUpDocumentWithZeroRecords();
+        await BuildUpDocumentWithZeroRecords();
 
         var pageNumber = 1;
 
@@ -521,11 +482,11 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void try_to_use_in_compiled_query()
+    public async Task try_to_use_in_compiled_query()
     {
-        Exception<BadLinqExpressionException>.ShouldBeThrownBy(() =>
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            var data = theSession.Query(new TargetPage(1, 10));
+            var data = await theSession.QueryAsync(new TargetPage(1, 10));
         });
     }
 

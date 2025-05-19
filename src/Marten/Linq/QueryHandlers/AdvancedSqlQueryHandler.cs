@@ -18,7 +18,7 @@ namespace Marten.Linq.QueryHandlers;
 
 internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQueryHandler<IReadOnlyList<T>>
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters):base(sql, parameters)
+    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters): base(placeholder, sql, parameters)
     {
         RegisterResultType<T>(session);
     }
@@ -44,9 +44,9 @@ internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQuer
     }
 }
 
-internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>>
+internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>> where T2 : notnull where T1 : notnull
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters) : base(sql, parameters)
+    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
         RegisterResultType<T1>(session);
         RegisterResultType<T2>(session);
@@ -75,9 +75,9 @@ internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1,
         }
     }
 }
-internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>>
+internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>> where T1 : notnull where T2 : notnull where T3 : notnull
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, string sql, object[] parameters) : base(sql, parameters)
+    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
         RegisterResultType<T1>(session);
         RegisterResultType<T2>(session);
@@ -112,13 +112,15 @@ internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<
 
 internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 {
+    protected readonly char Placeholder;
     protected readonly object[] Parameters;
     protected readonly string Sql;
     protected List<ISelector> Selectors = new();
 
-    protected AdvancedSqlQueryHandlerBase(string sql, object[] parameters)
+    protected AdvancedSqlQueryHandlerBase(char placeholder, string sql, object[] parameters)
     {
         Sql = sql.TrimStart();
+        Placeholder = placeholder;
         Parameters = parameters;
     }
 
@@ -135,7 +137,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         }
         else
         {
-            var cmdParameters = builder.AppendWithParameters(Sql);
+            var cmdParameters = builder.AppendWithParameters(Sql, Placeholder);
             if (cmdParameters.Length != Parameters.Length)
             {
                 throw new InvalidOperationException("Wrong number of supplied parameters");
@@ -157,7 +159,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         }
     }
 
-    protected async Task<T> ReadNestedRowAsync<T>(DbDataReader reader, int rowIndex, CancellationToken token)
+    protected async Task<T?> ReadNestedRowAsync<T>(DbDataReader reader, int rowIndex, CancellationToken token) where T : notnull
     {
         var innerReader = reader.GetData(rowIndex) ??
                           throw new ArgumentException("Invalid row index", nameof(rowIndex));
@@ -172,7 +174,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return default;
     }
 
-    protected T ReadNestedRow<T>(DbDataReader reader, int rowIndex)
+    protected T? ReadNestedRow<T>(DbDataReader reader, int rowIndex) where T : notnull
     {
         var innerReader = reader.GetData(rowIndex) ??
                           throw new ArgumentException("Invalid row index", nameof(rowIndex));
@@ -206,7 +208,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return session.StorageFor<T>();
     }
 
-    protected void RegisterResultType<T>(IMartenSession session)
+    protected void RegisterResultType<T>(IMartenSession session) where T : notnull
     {
         var selectClause = GetSelectClause<T>(session);
         Selectors.Add(selectClause.BuildSelector(session));

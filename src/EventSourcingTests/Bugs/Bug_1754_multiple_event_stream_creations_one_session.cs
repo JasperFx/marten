@@ -5,6 +5,7 @@ using Bug1754;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
 using Xunit;
@@ -46,7 +47,7 @@ namespace EventSourcingTests.Bugs
         }
 
         [Fact]
-        public void should_be_able_to_handle_multiple_event_streams_in_one_session_sync()
+        public async Task should_be_able_to_handle_multiple_event_streams_in_one_session_sync()
         {
             using var documentStore = SeparateStore(x =>
             {
@@ -55,7 +56,7 @@ namespace EventSourcingTests.Bugs
                 x.Projections.Snapshot<DataItemAggregate>(SnapshotLifecycle.Inline);
             });
 
-            documentStore.Advanced.Clean.CompletelyRemoveAll();
+            await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using var session = documentStore.LightweightSession();
 
@@ -69,10 +70,10 @@ namespace EventSourcingTests.Bugs
             }
 
             session.Events.Append("original", new DataImportFinishedEvent {ImportCount = importCount});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             using var querySession = documentStore.QuerySession();
-            var importAggregate = querySession.Load<DataImportAggregate>(importStream.Key);
+            var importAggregate = await querySession.LoadAsync<DataImportAggregate>(importStream.Key);
             importAggregate.ShouldNotBeNull();
             importAggregate.ImportCount.ShouldBe(importCount);
         }

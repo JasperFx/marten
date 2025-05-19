@@ -19,7 +19,7 @@ public class select_many : IntegrationContext
 
     #region sample_can_do_simple_select_many_against_simple_array
     [Fact]
-    public void can_do_simple_select_many_against_simple_array()
+    public async Task can_do_simple_select_many_against_simple_array()
     {
         var product1 = new Product {Tags = new[] {"a", "b", "c"}};
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -28,7 +28,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -45,7 +45,7 @@ public class select_many : IntegrationContext
     #endregion
 
     [Fact]
-    public void distinct_and_count()
+    public async Task distinct_and_count()
     {
         var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
@@ -54,7 +54,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -70,7 +70,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void distinct_and_count_long()
+    public async Task distinct_and_count_long()
     {
         var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
@@ -79,7 +79,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -96,7 +96,7 @@ public class select_many : IntegrationContext
 
 
     [Fact]
-    public void can_do_simple_select_many_against_generic_list()
+    public async Task can_do_simple_select_many_against_generic_list()
     {
         var product1 = new ProductWithList { Tags = new List<string> { "a", "b", "c" } };
         var product2 = new ProductWithList { Tags = new List<string> { "b", "c", "d" } };
@@ -105,7 +105,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -122,7 +122,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_against_complex_type_with_count()
+    public async Task select_many_against_complex_type_with_count()
     {
         var product1 = new Product {Tags = new[] {"a", "b", "c"}};
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -131,7 +131,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -142,7 +142,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_count_when_none_match_does_not_throw()
+    public async Task select_many_with_count_when_none_match_does_not_throw()
     {
         var product1 = new Product { Tags = new[] { "a", "b", "c" } };
         var product2 = new Product { Tags = new[] { "b", "c", "d" } };
@@ -151,7 +151,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -203,22 +203,22 @@ public class select_many : IntegrationContext
                 .Where(p => p.Tags.Length == 1)
                 .SelectMany(x => x.Tags);
             var ex = await Record.ExceptionAsync(() => queryable.CountAsync());
-            SpecificationExtensions.ShouldBeNull(ex);
+            ex.ShouldBeNull();
         }
     }
 
     [Fact]
-    public void select_many_against_complex_type_without_transformation()
+    public async Task select_many_against_complex_type_without_transformation()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         var expectedCount = targets.SelectMany(x => x.Children).Count();
 
-        SpecificationExtensions.ShouldBeGreaterThan(expectedCount, 0);
+        expectedCount.ShouldBeGreaterThan(0);
 
         using (var session = theStore.LightweightSession())
         {
             session.Store(targets);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -229,7 +229,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_against_integer_array()
+    public async Task select_many_against_integer_array()
     {
         var product1 = new ProductWithNumbers {Tags = new[] {1, 2, 3}};
         var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
@@ -238,7 +238,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(product1, product2, product3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -279,7 +279,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_any()
+    public async Task select_many_with_any()
     {
         var product1 = new Product {Tags = new[] {"a", "b", "c"}};
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -292,7 +292,7 @@ public class select_many : IntegrationContext
             // Some Target docs w/ no children
             session.Store(Target.Random(), Target.Random(), Target.Random());
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -310,7 +310,7 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_with_any_async()
     {
-        theStore.Advanced.Clean.DeleteDocumentsByType(typeof(Target));
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
         var product1 = new Product {Tags = new[] {"a", "b", "c"}};
         var product2 = new Product {Tags = new[] {"b", "c", "d"}};
@@ -338,10 +338,10 @@ public class select_many : IntegrationContext
 
 
     [Fact]
-    public void select_many_with_chained_where()
+    public async Task select_many_with_chained_where()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
@@ -353,10 +353,10 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_chained_where_and_order()
+    public async Task select_many_with_chained_where_and_order()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
@@ -368,10 +368,10 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_chained_where_and_order_and_skip_and_take()
+    public async Task select_many_with_chained_where_and_order_and_skip_and_take()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var expected = targets
@@ -402,12 +402,12 @@ public class select_many : IntegrationContext
 
 
     [Fact]
-    public void select_many_with_stats()
+    public async Task select_many_with_stats()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
-        using var query = theStore.LightweightSession();
+        await using var query = theStore.LightweightSession();
         QueryStatistics stats;
 
         var actual = query.Query<Target>()
@@ -426,13 +426,13 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_with_includes()
+    public async Task select_many_with_includes()
     {
         var user1 = new User();
         var user2 = new User();
         var user3 = new User();
 
-        theStore.BulkInsert(new [] {user1, user2, user3});
+        await theStore.BulkInsertAsync(new [] {user1, user2, user3});
 
         var targets = Target.GenerateRandomData(1000).ToArray();
 
@@ -449,7 +449,7 @@ public class select_many : IntegrationContext
             }
         }
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.LightweightSession();
         var dict = new Dictionary<Guid, User>();
@@ -508,10 +508,10 @@ public class select_many : IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void select_many_with_select_transformation()
+    public async Task select_many_with_select_transformation()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
         var actual = query.Query<Target>()
@@ -570,7 +570,7 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void select_many_2_deep()
+    public async Task select_many_2_deep()
     {
         var group1 = new TargetGroup
         {
@@ -592,7 +592,7 @@ public class select_many : IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(groups);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using var query = theStore.QuerySession();

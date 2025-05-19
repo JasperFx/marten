@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
@@ -28,7 +29,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
+    public async Task can_insert_document_with_duplicated_field_with_DuplicatedFieldEnumStorage_set_to_string()
     {
         StoreOptions(options =>
         {
@@ -44,20 +45,20 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<Target>(document.Id);
+            var documentFromDb = await query.LoadAsync<Target>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            documentFromDb.ShouldNotBeNull();
             documentFromDb.Color.ShouldBe(document.Color);
         }
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_not_null_constraint()
+    public async Task can_insert_document_with_duplicated_field_with_not_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -77,21 +78,21 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<NonNullableDuplicateFieldTestDoc>(document.Id);
+            var documentFromDb = await query.LoadAsync<NonNullableDuplicateFieldTestDoc>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            documentFromDb.ShouldNotBeNull();
             documentFromDb.NonNullableDuplicateField.ShouldBe(document.NonNullableDuplicateField);
             documentFromDb.NonNullableDuplicateFieldViaAttribute.ShouldBe(document.NonNullableDuplicateFieldViaAttribute);
         }
     }
 
     [Fact]
-    public void can_insert_document_with_duplicated_field_with_null_constraint()
+    public async Task can_insert_document_with_duplicated_field_with_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -110,22 +111,22 @@ public class duplicated_field: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Insert(document);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<NullableDuplicateFieldTestDoc>(document.Id);
+            var documentFromDb = await query.LoadAsync<NullableDuplicateFieldTestDoc>(document.Id);
 
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDuplicateField);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableDateTimeDuplicateFieldViaAttribute);
-            SpecificationExtensions.ShouldBeNull(documentFromDb.NullableIntDuplicateFieldViaAttribute);
+            documentFromDb.ShouldNotBeNull();
+            documentFromDb.NullableDuplicateField.ShouldBeNull();
+            documentFromDb.NullableDateTimeDuplicateFieldViaAttribute.ShouldBeNull();
+            documentFromDb.NullableIntDuplicateFieldViaAttribute.ShouldBeNull();
         }
     }
 
     [Fact]
-    public void can_bulk_insert_document_with_duplicated_field_with_null_constraint()
+    public async Task can_bulk_insert_document_with_duplicated_field_with_null_constraint()
     {
         StoreOptions(options =>
         {
@@ -145,8 +146,7 @@ public class duplicated_field: OneOffConfigurationsContext
             })
             .ToArray();
 
-        var success = () => theStore.BulkInsert(successModels, BulkInsertMode.OverwriteExisting);
-        success.ShouldNotThrow();
+        await theStore.BulkInsertAsync(successModels, BulkInsertMode.OverwriteExisting);
     }
 
     [Fact]
@@ -208,7 +208,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_number()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_number()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -217,7 +217,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 
@@ -227,7 +227,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_enum()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_enum()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -236,7 +236,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 
@@ -246,7 +246,7 @@ public class duplicated_field: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void duplicate_and_search_off_of_deep_accessor_by_date()
+    public async Task duplicate_and_search_off_of_deep_accessor_by_date()
     {
         var targets = Target.GenerateRandomData(10).ToArray();
         StoreOptions(_ =>
@@ -255,7 +255,7 @@ public class duplicated_field: OneOffConfigurationsContext
         });
 
         targets.Each(x => theSession.Store(x));
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var thirdTarget = targets.ElementAt(2);
 

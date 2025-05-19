@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Schema;
 using Marten.Testing;
@@ -202,7 +203,7 @@ public class computed_indexes: OneOffConfigurationsContext
         var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
         var index = table.IndexFor("mt_doc_target_idx_stringstring_field");
 
-        index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON computed_indexes.mt_doc_target USING btree (upper((data ->> 'String'), upper((data ->> 'StringField'))));");
+        index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_stringstring_field ON computed_indexes.mt_doc_target USING btree (upper((data ->> 'String')), upper((data ->> 'StringField')));");
     }
 
     [Fact]

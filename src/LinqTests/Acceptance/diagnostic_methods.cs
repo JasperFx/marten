@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Documents;
@@ -14,7 +15,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void retrieves_query_plan()
+    public async Task retrieves_query_plan()
     {
         var user1 = new SimpleUser
         {
@@ -31,17 +32,17 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Explain();
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
+        var plan = await theSession.Query<SimpleUser>().ExplainAsync();
+        plan.ShouldNotBeNull();
+        plan.PlanWidth.ShouldBeGreaterThan(0);
+        plan.PlanRows.ShouldBeGreaterThan(0);
+        plan.TotalCost.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
-    public void retrieves_query_plan_with_where()
+    public async Task retrieves_query_plan_with_where()
     {
         var user1 = new SimpleUser
         {
@@ -58,17 +59,17 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5).Explain();
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanWidth, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanRows, 0);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.TotalCost, 0m);
+        var plan = await theSession.Query<SimpleUser>().Where(u => u.Number > 5).ExplainAsync();
+        plan.ShouldNotBeNull();
+        plan.PlanWidth.ShouldBeGreaterThan(0);
+        plan.PlanRows.ShouldBeGreaterThan(0);
+        plan.TotalCost.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
-    public void retrieves_query_plan_with_where_and_all_options_enabled()
+    public async Task retrieves_query_plan_with_where_and_all_options_enabled()
     {
         var user1 = new SimpleUser
         {
@@ -85,11 +86,11 @@ public class diagnostic_methods: OneOffConfigurationsContext
             Address = new SimpleAddress { HouseNumber = "12bis", Street = "rue de la martre" }
         };
         theSession.Store(user1, user2);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var plan = theSession.Query<SimpleUser>().Where(u => u.Number > 5)
+        var plan = await theSession.Query<SimpleUser>().Where(u => u.Number > 5)
             .OrderBy(x => x.Number)
-            .Explain(c =>
+            .ExplainAsync(configureExplain:c =>
             {
                 c
                     .Analyze()
@@ -98,10 +99,10 @@ public class diagnostic_methods: OneOffConfigurationsContext
                     .Timing()
                     .Verbose();
             });
-        SpecificationExtensions.ShouldNotBeNull(plan);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.ActualTotalTime, 0m);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.PlanningTime, 0m);
-        SpecificationExtensions.ShouldBeGreaterThan(plan.ExecutionTime, 0m);
+        plan.ShouldNotBeNull();
+        plan.ActualTotalTime.ShouldBeGreaterThan(0m);
+        plan.PlanningTime.ShouldBeGreaterThan(0m);
+        plan.ExecutionTime.ShouldBeGreaterThan(0m);
         plan.SortKey.ShouldContain("(((d.data ->> 'Number'::text))::integer)");
         plan.Plans.ShouldNotBeEmpty();
     }

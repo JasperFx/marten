@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -13,51 +14,47 @@ namespace LinqTests.Bugs;
 public class Bug_582_and_592_Skip_and_Take_in_compiled_queries: BugIntegrationContext
 {
     [Fact]
-    public void can_get_separate_pages()
+    public async Task can_get_separate_pages()
     {
         var targets = Target.GenerateRandomData(1000).ToArray();
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
-        using (var query = theStore.QuerySession())
+        await using var query = theStore.QuerySession();
+        var page1 = await query.QueryAsync(new PageOfTargets { Start = 10, Take = 17 });
+        var page2 = await query.QueryAsync(new PageOfTargets { Start = 50, Take = 11 });
+
+        page1.Count().ShouldBe(17);
+        page2.Count().ShouldBe(11);
+
+        foreach (var target in page1)
         {
-            var page1 = query.Query(new PageOfTargets { Start = 10, Take = 17 }).ToList();
-            var page2 = query.Query(new PageOfTargets { Start = 50, Take = 11 }).ToList();
-
-            page1.Count().ShouldBe(17);
-            page2.Count().ShouldBe(11);
-
-            foreach (var target in page1)
-            {
-                page2.Any(x => x.Id == target.Id).ShouldBeFalse();
-            }
+            page2.Any(x => x.Id == target.Id).ShouldBeFalse();
         }
     }
 
     [Fact]
-    public void can_get_separate_pages_with_enum_strings()
+    public async Task can_get_separate_pages_with_enum_strings()
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString);
         });
 
         var targets = Target.GenerateRandomData(1000).ToArray();
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
-        using (var query = theStore.QuerySession())
+        await using var query = theStore.QuerySession();
+        var page1 = await query.QueryAsync(new PageOfTargets { Start = 10, Take = 17 });
+        var page2 = await query.QueryAsync(new PageOfTargets { Start = 50, Take = 11 });
+
+        page1.Count().ShouldBe(17);
+        page2.Count().ShouldBe(11);
+
+        foreach (var target in page1)
         {
-            var page1 = query.Query(new PageOfTargets { Start = 10, Take = 17 }).ToList();
-            var page2 = query.Query(new PageOfTargets { Start = 50, Take = 11 }).ToList();
-
-            page1.Count().ShouldBe(17);
-            page2.Count().ShouldBe(11);
-
-            foreach (var target in page1)
-            {
-                page2.Any(x => x.Id == target.Id).ShouldBeFalse();
-            }
+            page2.Any(x => x.Id == target.Id).ShouldBeFalse();
         }
     }
 

@@ -4,7 +4,6 @@ using Marten.Services;
 using Npgsql;
 
 namespace Marten.Exceptions;
-#nullable enable
 
 public class MissingGinExtensionException: MartenException
 {

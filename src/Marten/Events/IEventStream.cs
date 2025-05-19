@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using JasperFx.Events;
 
 namespace Marten.Events;
 
-public interface IEventStream<T>
+public interface IEventStream<out T> where T: notnull
 {
-    T Aggregate { get; }
+    T? Aggregate { get; }
     long? StartingVersion { get; }
     long? CurrentVersion { get; }
 
@@ -22,12 +23,12 @@ public interface IEventStream<T>
     void AppendMany(IEnumerable<object> events);
 }
 
-internal class EventStream<T>: IEventStream<T>
+internal class EventStream<T>: IEventStream<T> where T: notnull
 {
     private readonly StreamAction _stream;
     private readonly Func<object, IEvent> _wrapper;
 
-    public EventStream(EventGraph events, Guid streamId, T aggregate, CancellationToken cancellation,
+    public EventStream(EventGraph events, Guid streamId, T? aggregate, CancellationToken cancellation,
         StreamAction stream)
     {
         _wrapper = o =>
@@ -44,7 +45,7 @@ internal class EventStream<T>: IEventStream<T>
         Aggregate = aggregate;
     }
 
-    public EventStream(EventGraph events, string streamKey, T aggregate, CancellationToken cancellation,
+    public EventStream(EventGraph events, string streamKey, T? aggregate, CancellationToken cancellation,
         StreamAction stream)
     {
         _wrapper = o =>
@@ -64,7 +65,7 @@ internal class EventStream<T>: IEventStream<T>
     public Guid Id => _stream.Id;
     public string Key => _stream.Key;
 
-    public T Aggregate { get; }
+    public T? Aggregate { get; }
     public long? StartingVersion => _stream.ExpectedVersionOnServer;
 
     public long? CurrentVersion => _stream.ExpectedVersionOnServer == null

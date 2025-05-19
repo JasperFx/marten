@@ -1,8 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,7 +72,7 @@ public class FlatImportProjection : FlatTableProjection
         // We need to explicitly add a primary key
         Table.AddColumn<Guid>("id").AsPrimaryKey();
 
-        TeardownDataOnRebuild = true;
+        Options.TeardownDataOnRebuild = true;
 
         Project<ImportStarted>(map =>
         {

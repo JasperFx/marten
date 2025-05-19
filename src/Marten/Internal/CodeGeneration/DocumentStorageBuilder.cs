@@ -214,22 +214,22 @@ internal class DocumentStorageBuilder
 
         method.Frames.Code($"BLOCK:if (session.{nameof(IDocumentSession.Concurrency)} == {{0}})",
             ConcurrencyChecks.Disabled);
-        writeReturnOfOperation(method, overwriteType);
+        writeReturnOfOperation(method, overwriteType, methodName);
         method.Frames.Code("END");
         method.Frames.Code("BLOCK:else");
-        writeReturnOfOperation(method, operationType);
+        writeReturnOfOperation(method, operationType, methodName);
         method.Frames.Code("END");
     }
 
     private void buildOperationMethod(GeneratedType type, DocumentOperations operations, string methodName)
     {
-        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName).GetValue(operations);
+        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName)!.GetValue(operations)!;
         var method = type.MethodFor(methodName);
 
-        writeReturnOfOperation(method, operationType);
+        writeReturnOfOperation(method, operationType, methodName);
     }
 
-    private void writeReturnOfOperation(GeneratedMethod method, GeneratedType operationType)
+    private void writeReturnOfOperation(GeneratedMethod method, GeneratedType operationType, string methodName)
     {
         var assembly = method.ParentType.ParentAssembly;
 

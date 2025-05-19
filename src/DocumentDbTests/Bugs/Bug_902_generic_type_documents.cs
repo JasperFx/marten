@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -9,7 +10,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_902_generic_type_documents: IntegrationContext
 {
     [Fact]
-    public void can_create_object_name()
+    public async Task can_create_object_name()
     {
         var doc2 = new MartenStoredState<Dictionary<string, string>>
         {
@@ -19,12 +20,12 @@ public class Bug_902_generic_type_documents: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            query.Load<MartenStoredState<Dictionary<string, string>>>(doc2.Id)
+            (await query.LoadAsync<MartenStoredState<Dictionary<string, string>>>(doc2.Id))
                 .Value["color"].ShouldBe("blue");
         }
     }

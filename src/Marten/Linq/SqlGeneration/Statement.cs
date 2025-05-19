@@ -121,7 +121,7 @@ public abstract partial class Statement: ISqlFragment
         }
     }
 
-    protected void endCommonTableExpression(ICommandBuilder sql, string suffix = null)
+    protected void endCommonTableExpression(ICommandBuilder sql, string? suffix = null)
     {
         switch (Mode)
         {

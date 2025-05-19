@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
@@ -17,7 +18,6 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
-using Weasel.Core;
 
 namespace EventPublisher;
 

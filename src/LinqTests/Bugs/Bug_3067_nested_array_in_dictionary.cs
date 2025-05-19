@@ -42,7 +42,7 @@ public class Bug_3067_nested_array_in_dictionary : BugIntegrationContext
                 .ToListAsync();
         });
 
-        ex.Message.ShouldContain("#>", StringComparisonOption.Default);
+        ex.Message.ShouldContain("#>");
     }
 
     [Fact]

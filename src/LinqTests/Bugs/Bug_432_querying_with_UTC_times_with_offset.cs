@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
@@ -19,7 +20,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_DateTime()
+    public async Task can_issue_queries_against_DateTime()
     {
         using (var session = theStore.LightweightSession())
         {
@@ -43,7 +44,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateClass>().Where(x => now >= x.DateTimeField)
                 .ToCommand();
@@ -71,9 +72,9 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_DateTime_with_camel_casing()
+    public async Task can_issue_queries_against_DateTime_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         using (var session = theStore.LightweightSession())
         {
@@ -97,7 +98,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateClass>().Where(x => now >= x.DateTimeField)
                 .ToCommand();
@@ -125,9 +126,9 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_DateTime_with_snake_casing()
+    public async Task can_issue_queries_against_DateTime_with_snake_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.SnakeCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.SnakeCase));
 
         using (var session = theStore.LightweightSession())
         {
@@ -151,7 +152,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateClass>().Where(x => now >= x.DateTimeField)
                 .ToCommand();
@@ -179,7 +180,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_DateTime_as_duplicated_column()
+    public async Task can_issue_queries_against_DateTime_as_duplicated_column()
     {
         StoreOptions(_ => _.Schema.For<DateClass>().Duplicate(x => x.DateTimeField));
 
@@ -205,7 +206,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateClass>().Where(x => now >= x.DateTimeField)
                 .ToCommand();
@@ -223,7 +224,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_the_datetime_offset()
+    public async Task can_issue_queries_against_the_datetime_offset()
     {
         using (var session = theStore.LightweightSession())
         {
@@ -247,7 +248,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeOffsetField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeOffsetField)
                 .ToCommand();
@@ -265,7 +266,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
     }
 
     [Fact]
-    public void can_issue_queries_against_the_datetime_offset_as_duplicate_field()
+    public async Task can_issue_queries_against_the_datetime_offset_as_duplicate_field()
     {
         StoreOptions(_ => _.Schema.For<DateOffsetClass>().Duplicate(x => x.DateTimeOffsetField));
 
@@ -291,7 +292,7 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
                 DateTimeOffsetField = now.Add(-5.Minutes())
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var cmd = session.Query<DateOffsetClass>().Where(x => now >= x.DateTimeOffsetField)
                 .ToCommand();

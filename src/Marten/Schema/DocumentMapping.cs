@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
@@ -15,6 +16,7 @@ using Marten.Schema.Identity.Sequences;
 using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -128,6 +130,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         StoreOptions.applyPostPolicies(this);
 
+        QueryMembers.TenancyStyle = TenancyStyle;
+
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
 
         if (DisablePartitioningIfAny)
@@ -222,7 +226,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public IList<ForeignKey> ForeignKeys { get; } = new List<ForeignKey>();
 
+    [IgnoreDescription]
     public SubClasses SubClasses { get; }
+
+    public string SubClassTypes => SubClasses.Any() ? SubClasses.Select(x => x.DocumentType.FullNameInCode()).Join(", ") : "None";
 
     public DbObjectName UpsertFunction =>
         new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");
@@ -425,7 +432,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         return index;
     }
 
-    public DocumentIndex AddLastModifiedIndex(Action<DocumentIndex> configure = null)
+    public DocumentIndex AddLastModifiedIndex(Action<DocumentIndex>? configure = null)
     {
         var index = new DocumentIndex(this, SchemaConstants.LastModifiedColumn);
         configure?.Invoke(index);
@@ -434,7 +441,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         return index;
     }
 
-    public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex> configure = null)
+    public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex>? configure = null)
     {
         var index = new DocumentIndex(this, SchemaConstants.CreatedAtColumn);
         configure?.Invoke(index);
@@ -443,7 +450,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         return index;
     }
 
-    public DocumentIndex AddDeletedAtIndex(Action<DocumentIndex> configure = null)
+    public DocumentIndex AddDeletedAtIndex(Action<DocumentIndex>? configure = null)
     {
         if (DeleteStyle != DeleteStyle.SoftDelete)
         {
@@ -477,7 +484,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     }
 
     public IndexDefinition AddUniqueIndex(MemberInfo[][] members,
-        UniqueIndexType indexType = UniqueIndexType.Computed, string indexName = null,
+        UniqueIndexType indexType = UniqueIndexType.Computed, string? indexName = null,
         IndexMethod indexMethod = IndexMethod.btree, TenancyScope tenancyScope = TenancyScope.Global)
     {
         if (indexType == UniqueIndexType.DuplicatedField)
@@ -520,7 +527,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     /// </remarks>
     public FullTextIndexDefinition AddFullTextIndex(
         string regConfig = FullTextIndexDefinition.DefaultRegConfig,
-        Action<FullTextIndexDefinition> configure = null
+        Action<FullTextIndexDefinition>? configure = null
     )
     {
         var index = FullTextIndexDefinitionFactory.From(this, regConfig);
@@ -540,7 +547,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     public FullTextIndexDefinition AddFullTextIndex(
         MemberInfo[][] members,
         string regConfig = FullTextIndexDefinition.DefaultRegConfig,
-        string indexName = null
+        string? indexName = null
     )
     {
         var index = FullTextIndexDefinitionFactory.From(this, members, regConfig);
@@ -568,7 +575,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     /// </summary>
     /// <param name="regConfig">The dictionary to used by the 'to_tsvector' function, defaults to 'english'.</param>
     /// <param name="configure">Optional action to further configure the ngram index</param>
-    public NgramIndex AddNgramIndex(Action<NgramIndex> configure = null)
+    public NgramIndex AddNgramIndex(Action<NgramIndex>? configure = null)
     {
         var index = new NgramIndex(this);
         configure?.Invoke(index);
@@ -580,7 +587,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     ///     Adds a full text index
     /// </summary>
     /// <param name="members">Document fields that should be use by ngram index</param>
-    public NgramIndex AddNgramIndex(MemberInfo[] members, string indexName = null)
+    public NgramIndex AddNgramIndex(MemberInfo[] members, string? indexName = null)
     {
         var index = new NgramIndex(this, members) { Name = indexName };
 
@@ -602,7 +609,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public DocumentForeignKey AddForeignKey(string memberName, Type referenceType)
     {
-        var member = DocumentType.GetProperty(memberName) ?? (MemberInfo)DocumentType.GetField(memberName);
+        var member = DocumentType.GetProperty(memberName) ?? (MemberInfo)DocumentType.GetField(memberName)!;
 
         return AddForeignKey(new MemberInfo[] { member }, referenceType);
     }
@@ -644,7 +651,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         return string.Join("_", parts);
     }
 
-    public DuplicatedField DuplicateField(string memberName, string pgType = null, bool notNull = false)
+    public DuplicatedField DuplicateField(string memberName, string? pgType = null, bool notNull = false)
     {
         var existing = QueryMembers.MemberFor(memberName);
         if (existing is DuplicatedField f) return f;
@@ -669,7 +676,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         return duplicate;
     }
 
-    public DuplicatedField DuplicateField(MemberInfo[] members, string pgType = null, string columnName = null,
+    public DuplicatedField DuplicateField(MemberInfo[] members, string? pgType = null, string? columnName = null,
         bool notNull = false)
     {
         var member = QueryMembers.FindMember(members[0]);
@@ -807,8 +814,8 @@ public class DocumentMapping<T>: DocumentMapping
     ///     field
     /// </param>
     /// <returns></returns>
-    public void Duplicate(Expression<Func<T, object>> expression, string pgType = null, NpgsqlDbType? dbType = null,
-        Action<DocumentIndex> configure = null, bool notNull = false)
+    public void Duplicate(Expression<Func<T, object>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
+        Action<DocumentIndex>? configure = null, bool notNull = false)
     {
         var visitor = new FindMembers();
         visitor.Visit(expression);
@@ -830,7 +837,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// </summary>
     /// <param name="expression"></param>
     /// <param name="configure"></param>
-    public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex> configure = null)
+    public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex>? configure = null)
     {
         if (expression.Body is NewExpression newExpression)
         {
@@ -853,7 +860,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// <param name="expressions"></param>
     /// <param name="configure"></param>
     public void Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions,
-        Action<ComputedIndex> configure = null)
+        Action<ComputedIndex>? configure = null)
     {
         var members = expressions
             .Select(FindMembers.Determine).ToArray();
@@ -940,7 +947,7 @@ public class DocumentCodeGen
 {
     public DocumentCodeGen(DocumentMapping mapping)
     {
-        AccessId = mapping.IdMember.GetRawMemberType().IsNullable()
+        AccessId = mapping.IdMember.GetRawMemberType()!.IsNullable()
             ? $"{mapping.IdMember.Name}.Value"
             : mapping.IdMember.Name;
 
@@ -958,4 +965,21 @@ public class DocumentCodeGen
 
     public string AccessId { get; }
     public string ParameterValue { get; }
+}
+
+internal static class ForeignKeyExtensions
+{
+    public static void TryMoveTenantIdFirst(this ForeignKey foreignKey, DocumentMapping mapping)
+    {
+        // Guard clause, do nothing if this document is not tenanted
+        if (mapping.TenancyStyle == TenancyStyle.Single) return;
+
+        foreignKey.ColumnNames = new string[] { TenantIdColumn.Name }
+            .Concat(foreignKey.ColumnNames.Where(x => x != TenantIdColumn.Name)).ToArray();
+
+        foreignKey.LinkedNames = new string[] { TenantIdColumn.Name }
+            .Concat(foreignKey.LinkedNames.Where(x => x != TenantIdColumn.Name)).ToArray();
+
+        foreignKey.Name = $"{mapping.TableName.Name}_{foreignKey.ColumnNames.Join("_")}_fkey";
+    }
 }

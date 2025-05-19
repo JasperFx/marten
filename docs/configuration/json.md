@@ -27,7 +27,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(); // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L83-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L81-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Enum Storage
@@ -46,7 +46,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L124-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L122-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Field Names Casing
@@ -72,7 +72,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L139-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L137-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Non Public Members Storage
@@ -90,7 +90,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L167-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L165-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use other options of `NonPublicMembersStorage`:
@@ -112,6 +112,20 @@ public class User
 {
     public int Id { get; init; }
 }
+```
+
+## Polymorphic Serialization <Badge type="warning" text=".NET 9+ & System.Text.Json Only" />
+
+::: tip
+This is specifically to do with types stored _within_ documents. For polymorphism at the root document level see [Multi Level Hierarchies](/documents/hierarchies#multi-level-hierarchies)
+:::
+
+Due to `jsonb` providing no guarantee on what order it stores properties in, metadata fields that usually sit at the start of a type can be in any position.
+
+When using types annotated with `[JsonDerivedType]`, you **MUST** opt into the ability for the serializer to find metadata fields that are out of order. 
+
+```cs
+options.AllowOutOfOrderMetadataProperties = true;
 ```
 
 ## Collection Storage <Badge type="warning" text="Newtonsoft Only" />
@@ -139,7 +153,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L154-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L152-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Configuration
@@ -167,7 +181,7 @@ var store = DocumentStore.For(_ =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L179-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L177-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning WARNING
@@ -206,7 +220,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer(serializer);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L99-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L97-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Integrating a Custom serializer
@@ -338,8 +352,6 @@ The code below is provided as an example only, `Jil` is no longer maintained
 and should not be used in your application.
 :::
 
-<!-- snippet: sample_JilSerializer -->
-<a id='snippet-sample_jilserializer'></a>
 ```cs
 public class JilSerializer : ISerializer
 {
@@ -408,13 +420,9 @@ public class JilSerializer : ISerializer
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/JilSerializer.cs#L15-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_jilserializer' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 Next, replace the default `ISerializer` when you bootstrap your `DocumentStore` as in this example below:
 
-<!-- snippet: sample_replacing_serializer_with_jil -->
-<a id='snippet-sample_replacing_serializer_with_jil'></a>
 ```cs
 var store = DocumentStore.For(_ =>
 {
@@ -424,5 +432,3 @@ var store = DocumentStore.For(_ =>
     _.Serializer<TestsSerializer>();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/JilSerializer.cs#L93-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_serializer_with_jil' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->

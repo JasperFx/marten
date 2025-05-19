@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core;
+using ImTools;
+using JasperFx;
+using JasperFx.Core.Descriptors;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
@@ -21,7 +24,7 @@ public interface IStaticMultiTenancy
     ///     connection string
     /// </param>
     /// <returns></returns>
-    IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string databaseIdentifier = null);
+    IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string? databaseIdentifier = null);
 
     void AddSingleTenantDatabase(string connectionString, string tenantId);
 }
@@ -37,6 +40,31 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         _dataSourceFactory = dataSourceFactory;
         Cleaner = new CompositeDocumentCleaner(this, options);
     }
+
+    public ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
+    {
+        // Tracking the databases against Marten's identifier
+        var dict = new Dictionary<string, DatabaseDescriptor>();
+        foreach (var entry in _databases.Enumerate())
+        {
+            dict[entry.Key] = entry.Value.Describe();
+        }
+
+        var usage = new DatabaseUsage
+        {
+            Cardinality = DatabaseCardinality.StaticMultiple,
+            Databases = dict.Values.ToList()
+        };
+
+        foreach (var pair in _tenants.Enumerate())
+        {
+            dict[pair.Value.Database.Identifier].TenantIds.Add(pair.Key);
+        }
+
+        return new ValueTask<DatabaseUsage>(usage);
+    }
+
+    public DatabaseCardinality Cardinality => DatabaseCardinality.StaticMultiple;
 
     public void Dispose()
     {
@@ -56,6 +84,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         return false;
     }
 
+
     /// <summary>
     ///     Register a database that will hold data for multiple conjoined tenants
     /// </summary>
@@ -65,7 +94,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
     ///     connection string
     /// </param>
     /// <returns></returns>
-    public IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string databaseIdentifier = null)
+    public IDatabaseExpression AddMultipleTenantDatabase(string connectionString, string? databaseIdentifier = null)
     {
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         var identifier = databaseIdentifier ?? $"{builder.Database}@{builder.Host}";
@@ -165,7 +194,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         public DatabaseExpression AsDefault()
         {
-            _parent.Default = new Tenant(DefaultTenantId, _database);
+            _parent.Default = new Tenant(StorageConstants.DefaultTenantId, _database);
             return this;
         }
     }

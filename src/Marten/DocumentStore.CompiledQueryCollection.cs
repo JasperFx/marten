@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ImTools;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -28,7 +30,7 @@ internal class CompiledQueryCollection
     }
 
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        QuerySession session)
+        QuerySession session) where TDoc : notnull
     {
         if (_querySources.TryFind(query.GetType(), out var source))
         {
@@ -66,7 +68,7 @@ public partial class DocumentStore: ICodeFileCollection
 
     IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
     {
-        var tenant = new Tenant(Marten.Storage.Tenancy.DefaultTenantId, new StandinDatabase(Options));
+        var tenant = new Tenant(StorageConstants.DefaultTenantId, new StandinDatabase(Options));
         using var lightweight =
             (QuerySession)LightweightSession(
                 new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
@@ -99,7 +101,7 @@ public partial class DocumentStore: ICodeFileCollection
     string ICodeFileCollection.ChildNamespace { get; } = "CompiledQueries";
 
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
-        QuerySession session)
+        QuerySession session) where TDoc : notnull
     {
         return session.TrackingMode switch
         {

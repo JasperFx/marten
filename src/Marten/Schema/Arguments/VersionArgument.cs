@@ -4,6 +4,7 @@ using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema.Identity;
@@ -17,7 +18,7 @@ internal class VersionArgument: UpsertArgument
 
     private static readonly MethodInfo _newGuid =
         typeof(Guid).GetMethod(nameof(Guid.NewGuid),
-            BindingFlags.Static | BindingFlags.Public);
+            BindingFlags.Static | BindingFlags.Public)!;
 
     public VersionArgument()
     {
@@ -44,24 +45,6 @@ internal class VersionArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code("setVersionParameter(parameterBuilder);");
-    }
-
-    public override void GenerateBulkWriterCode(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        if (mapping.Metadata.Version.Member == null)
-        {
-            load.Frames.Code($"writer.Write({typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid(), {{0}});",
-                NpgsqlDbType.Uuid);
-        }
-        else
-        {
-            load.Frames.Code($@"
-var version = {typeof(CombGuidIdGeneration).FullNameInCode()}.NewGuid();
-writer.Write(version, {{0}});
-", NpgsqlDbType.Uuid);
-
-            load.Frames.SetMemberValue(mapping.Metadata.Version.Member, "version", mapping.DocumentType, type);
-        }
     }
 
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)

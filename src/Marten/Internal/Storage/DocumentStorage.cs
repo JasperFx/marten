@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +17,7 @@ using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
+using Marten.Schema.Identity;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -46,6 +46,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     private readonly string[] _selectFields;
     private ISqlFragment? _defaultWhere;
     protected Action<T, TId> _setter;
+    protected Action<T, string> _setFromString = (_, _) => throw new NotSupportedException();
+    protected Action<T, Guid> _setFromGuid = (_, _) => throw new NotSupportedException();
+
+
     private readonly DocumentMapping _document;
 
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
@@ -84,6 +88,27 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         UseNumericRevisions = document.UseNumericRevisions;
 
         _setter = LambdaBuilder.Setter<T, TId>(document.IdMember)!;
+        if (typeof(TId) == typeof(Guid))
+        {
+            _setFromGuid = _setter.As<Action<T, Guid>>();
+        }
+        else if (typeof(TId) == typeof(string))
+        {
+            _setFromString = _setter.As<Action<T, string>>();
+        }
+        else if (document.IdStrategy is ValueTypeIdGeneration valueType)
+        {
+            if (valueType.SimpleType == typeof(Guid))
+            {
+                var converter = valueType.CreateWrapper<TId, Guid>();
+                _setFromGuid = (doc, guid) => _setter(doc, converter(guid));
+            }
+            else if (valueType.SimpleType == typeof(string))
+            {
+                var converter = valueType.CreateWrapper<TId, string>();
+                _setFromString = (doc, s) => _setter(doc, converter(s));
+            }
+        }
 
         DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
             ? new HardDelete(this)
@@ -127,32 +152,16 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
 
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        try
-        {
-            var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
-            database.RunSql(sql);
-        }
-        catch (PostgresException e)
-        {
-            if (!e.Message.Contains("does not exist"))
-            {
-                throw;
-            }
-        }
-    }
-
     public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
-        var sql = "truncate {0} cascade".ToFormat(TableName.QualifiedName);
+        var sql = $"truncate {TableName.QualifiedName} cascade";
         try
         {
             await database.RunSqlAsync(sql, ct).ConfigureAwait(false);
         }
         catch (PostgresException e)
         {
-            if (!e.Message.Contains("does not exist"))
+            if (e.SqlState != PostgresErrorCodes.UndefinedTable)
             {
                 throw;
             }
@@ -162,6 +171,16 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public void SetIdentity(T document, TId identity)
     {
         _setter(document, identity);
+    }
+
+    public void SetIdentityFromString(T document, string identityString)
+    {
+        _setFromString(document, identityString);
+    }
+
+    public void SetIdentityFromGuid(T document, Guid identityGuid)
+    {
+        _setFromGuid(document, identityGuid);
     }
 
 
@@ -313,10 +332,8 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _defaultWhere;
     }
 
-    public abstract T? Load(TId id, IMartenSession session);
     public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
-    public abstract IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
     public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -336,7 +353,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public abstract ISelector BuildSelector(IMartenSession session);
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
@@ -429,16 +446,6 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         }
     }
 
-
-    protected T? load(TId id, IMartenSession session)
-    {
-        var command = BuildLoadCommand(id, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector(session);
-
-        // TODO -- eliminate the downcast here!
-        return session.As<QuerySession>().LoadOne(command, selector);
-    }
-
     protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         var command = BuildLoadCommand(id, session.TenantId);
@@ -491,7 +498,7 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
         return _parent.BuildSelector(session);
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
     {
         return _parent.BuildHandler<T>(session, topStatement, currentStatement);
     }

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -26,7 +27,7 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_order_by_string_string_dictionaries()
+    public async Task can_order_by_string_string_dictionaries()
     {
         var car1 = new Car {Attributes = {{"one", "5"},{"anumber", "5"},{"color", "red"}}};
         var car2 = new Car {Attributes = {{"anumber", "3"}, {"color", "green"}}};
@@ -34,7 +35,7 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
         var car4 = new Car {Attributes = {{"anumber", "4"}, {"color", "purple"}}};
 
         theSession.Store(car1, car2, car3, car4);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
 

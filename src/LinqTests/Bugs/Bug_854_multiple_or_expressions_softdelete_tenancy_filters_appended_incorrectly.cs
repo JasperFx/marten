@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -15,7 +16,7 @@ public class SoftDeletedItem
 public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended_incorrectly: BugIntegrationContext
 {
     [Fact]
-    public void query_where_with_multiple_or_expressions_against_single_tenant()
+    public async Task query_where_with_multiple_or_expressions_against_single_tenant()
     {
         StoreOptions(_ =>
         {
@@ -24,7 +25,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
 
         Target[] reds = Target.GenerateRandomData(50).ToArray();
 
-        theStore.BulkInsert("Bug_854", reds);
+        await theStore.BulkInsertAsync("Bug_854", reds);
 
         var expected = reds.Where(x => x.String == "Red" || x.String == "Orange").Select(x => x.Id).OrderBy(x => x).ToArray();
 
@@ -38,7 +39,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
     }
 
     [Fact]
-    public void query_where_with_multiple_or_expresions_against_soft_Deletes()
+    public async Task query_where_with_multiple_or_expresions_against_soft_Deletes()
     {
         StoreOptions(_ => _.Schema.For<SoftDeletedItem>().SoftDeleted());
 
@@ -51,7 +52,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
         using (var session = theStore.LightweightSession())
         {
             session.Store(item1, item2, item3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

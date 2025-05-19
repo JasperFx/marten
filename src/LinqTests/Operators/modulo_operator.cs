@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
@@ -8,7 +9,7 @@ public class query_with_modulo_Tests : IntegrationContext
 {
     #region sample_querying-with-modulo
     [Fact]
-    public void use_modulo()
+    public async Task use_modulo()
     {
         theSession.Store(new Target{Color = Colors.Blue, Number = 1});
         theSession.Store(new Target{Color = Colors.Blue, Number = 2});
@@ -17,7 +18,7 @@ public class query_with_modulo_Tests : IntegrationContext
         theSession.Store(new Target{Color = Colors.Blue, Number = 5});
         theSession.Store(new Target{Color = Colors.Green, Number = 6});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToArray()
             .Select(x => x.Number)
@@ -26,7 +27,7 @@ public class query_with_modulo_Tests : IntegrationContext
     #endregion
 
     [Fact]
-    public void use_modulo_operands_reversed()
+    public async Task use_modulo_operands_reversed()
     {
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 2 });
@@ -35,7 +36,7 @@ public class query_with_modulo_Tests : IntegrationContext
         theSession.Store(new Target { Color = Colors.Blue, Number = 5 });
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => 0 == x.Number % 2 && Colors.Green > x.Color).ToArray()
             .Select(x => x.Number)

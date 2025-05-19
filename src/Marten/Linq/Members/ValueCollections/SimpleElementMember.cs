@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members.ValueCollections;
 
-internal class SimpleElementMember: IQueryableMember, IComparableMember
+public class SimpleElementMember: IQueryableMember, IComparableMember
 {
     public SimpleElementMember(Type memberType, string pgType)
     {

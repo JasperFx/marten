@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Documents;
@@ -38,7 +39,7 @@ public class when_using_inline_lambdas_to_define_immutable_projection : OneOffCo
 
     public record MyAggregateRecord(Guid Id, string Created, string UpdatedBy);
 
-    public class MyAggregateImmutableProjection: SingleStreamProjection<MyAggregateRecord>
+    public class MyAggregateImmutableProjection: SingleStreamProjection<MyAggregateRecord, Guid>
     {
         public MyAggregateImmutableProjection()
         {

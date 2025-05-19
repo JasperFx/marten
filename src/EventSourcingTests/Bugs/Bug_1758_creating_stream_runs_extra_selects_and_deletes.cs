@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Services;
@@ -14,7 +15,7 @@ namespace EventSourcingTests.Bugs;
 public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegrationContext
 {
     [Fact]
-    public void should_not_run_selects_and_deletes_to_non_affected_aggregates()
+    public async Task should_not_run_selects_and_deletes_to_non_affected_aggregates()
     {
         var logger = new CollectingLogger();
 
@@ -26,11 +27,11 @@ public class Bug_1758_creating_stream_runs_extra_selects_and_deletes : BugIntegr
             x.Logger(logger);
         });
 
-        documentStore.Advanced.Clean.CompletelyRemoveAll();
+        await documentStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
         using var session = documentStore.LightweightSession();
         var id = session.Events.StartStream<AggregateA>(new CreateAEvent {Name = "Test"}).Id;
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var commit = logger.LastCommit;
 

@@ -457,3 +457,111 @@ The `gap` metrics are a good health check on the performance of any given projec
 is growing, that's a sign that your projection or subscription isn't being able to keep up with the incoming
 events
 :::
+
+## High Water Mark <Badge type="tip" text="7.33" />
+
+One of the possible issues in Marten operation is "event skipping" in the async daemon where the high water mark
+detection grows "stale" because of gaps in the event sequence (generally caused by either very slow outstanding transactions or errors)
+and Marten emits an error message like this in the log file:
+
+```js
+"High Water agent is stale after threshold of {DelayInSeconds} seconds, skipping gap to events marked after {SafeHarborTime} for database {Name}"
+```
+
+With the recent prevalence of [Open Telemetry](https://opentelemetry.io/) tooling in the software industry, Marten
+is now emitting Open Telemetry spans and metrics around the high water mark detection in the async daemon.
+
+First off, Marten is emitting spans named either `marten.daemon.highwatermark` in the case of
+only targeting a single database, or `marten.[database name].daemon.highwatermark` in the case of 
+using multi-tenancy through a database per tenant. On these spans will be these tags:
+
+* `sequence` -- the largest event sequence that has been assigned to the database at this point
+* `status` -- either `CaughtUp`, `Changed`, or `Stale` meaning "all good", "proceeding normally", or "uh, oh, something is up with outstanding transactions"
+* `current.mark` -- the current, detected "high water mark" where Marten says is the ceiling on where events can be safely processed
+* `skipped` -- this tag will only be present as a "true" value if Marten is forcing the high water detection to skip stale gaps in the event sequence
+* `last.mark` -- if skipping event sequences, this will be the last good mark before the high water detection calculated the skip
+
+There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
+that just emits and update every time that Marten has to "skip" stale events.
+
+## Querying for Non Stale Data
+
+There are some potential benefits to running projections asynchronously, namely:
+
+* Avoiding concurrent updates to aggregated documents so that the results are accurate, especially when the aggregation is "multi-stream"
+* Putting the work of building aggregates into a background process so you don't take the performance "hit" of doing that work during requests from a client
+
+All that being said, using asynchronous projections means you're going into the realm of [eventual consistency](https://en.wikipedia.org/wiki/Eventual_consistency), and sometimes
+that's really inconvenient when your users or clients expect up to date information about the projected aggregate data. 
+
+Not to worry though, because Marten will allow you to "wait" for an asynchronous projection to catch up so that you
+can query the latest information as all the events captured at the time of the query are processed through the asynchronous
+projection like so:
+
+<!-- snippet: sample_using_query_for_non_stale_data -->
+<a id='snippet-sample_using_query_for_non_stale_data'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+    opts.Projections.Add<TripProjection>(ProjectionLifecycle.Async);
+}).AddAsyncDaemon(DaemonMode.HotCold);
+
+using var host = builder.Build();
+await host.StartAsync();
+
+// DocumentStore() is an extension method in Marten just
+// as a convenience method for test automation
+await using var session = host.DocumentStore().LightweightSession();
+
+// This query operation will first "wait" for the asynchronous projection building the
+// Trip aggregate document to catch up to at least the highest event sequence number assigned
+// at the time this method is called
+var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
+    .OrderByDescending(x => x.Started)
+    .Take(10)
+    .ToListAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L133-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to
+be both cautious with using this in general, and also cautious especially with the timeout setting. 
+
+## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />
+
+::: warning
+This will only work correctly *if* you have system downtime before migrating the new version of the code with this option
+enabled. This feature cannot support a "blue/green" deployment model. Marten needs to system to be at rest before it starts
+up the projection asynchronously or there's a chance you may "skip" events in the projection.
+:::
+
+During the course of a system's lifetime, you may find that you want to change a projection that's currently running
+with a lifecycle of `Inline` to running asynchronously instead. If you need to do this *and* there is no structural change
+to the projection that would require a projection rebuild, you can direct Marten to start that projection at the highest
+sequence number assigned by the system (not the high water mark, but the event sequence number which may be higher).
+
+To do so, use this option when registering the projection:
+
+<!-- snippet: sample_using_subscribe_as_inline_to_async -->
+<a id='snippet-sample_using_subscribe_as_inline_to_async'></a>
+```cs
+opts
+    .Projections
+    .Snapshot<SimpleAggregate>(SnapshotLifecycle.Async, o =>
+    {
+        // This option tells Marten to start the async projection at the highest
+        // event sequence assigned as the processing floor if there is no previous
+        // async daemon progress for this projection
+        o.SubscribeAsInlineToAsync();
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/converting_projection_from_inline_to_async.cs#L31-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_subscribe_as_inline_to_async' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Just to be clear, when Marten's async daemon starts a projection with this starting option:
+
+1. If there is no previously recorded progression, Marten will start processing this projection with the highest assigned event sequence
+   in the database as the floor and record that value as the current progress
+2. If there is a previously recorded progression, Marten will start processing this projection at the recorded sequence as normal

@@ -8,13 +8,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Marten.CommandLine\Marten.CommandLine.csproj"/>
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
             <Link>ConnectionSource.cs</Link>
         </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Marten\Marten.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -7,7 +8,7 @@ using Xunit;
 
 namespace DocumentDbTests.HierarchicalStorage;
 
-public class query_through_mixed_population_multi_tenanted: OneOffConfigurationsContext
+public class query_through_mixed_population_multi_tenanted: OneOffConfigurationsContext, IAsyncLifetime
 {
 
     public query_through_mixed_population_multi_tenanted()
@@ -19,14 +20,19 @@ public class query_through_mixed_population_multi_tenanted: OneOffConfigurations
                 _.Schema.For<User>().AddSubClass<SuperUser>().AddSubClass<AdminUser>().Duplicate(x => x.UserName);
             });
 
-        loadData();
+
     }
 
-    private void loadData()
+    public async Task InitializeAsync()
     {
-        using var session = theStore.LightweightSession("tenant_1");
+        await using var session = theStore.LightweightSession("tenant_1");
         session.Store(new User(), new AdminUser());
-        session.SaveChanges();
+        await session.SaveChangesAsync();
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]

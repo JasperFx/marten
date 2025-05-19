@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Internal;
@@ -98,6 +100,18 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
         CancellationToken token = default);
 
     /// <summary>
+    ///     Check the current progress of all asynchronous projections
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantId">
+    ///     Specify the database containing this tenant id. If omitted, this method uses the default
+    ///     database
+    /// </param>
+    /// <returns></returns>
+    Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names,
+        CancellationToken token = default);
+
+    /// <summary>
     ///     Check the current progress of a single projection or projection shard
     /// </summary>
     /// <param name="tenantId">
@@ -119,6 +133,13 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token);
+
+    /// <summary>
+    /// Fetch the highest assigned event sequence number in this database
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default);
 }
 
 public enum ConnectionUsage

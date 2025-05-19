@@ -230,7 +230,7 @@ New in Marten 1.2 is support for the Linq `Distinct()` operator:
 <a id='snippet-sample_get_distinct_strings'></a>
 ```cs
 [Fact]
-public void get_distinct_string()
+public async Task get_distinct_string()
 {
     theSession.Store(new Target {String = "one"});
     theSession.Store(new Target {String = "one"});
@@ -239,14 +239,14 @@ public void get_distinct_string()
     theSession.Store(new Target {String = "three"});
     theSession.Store(new Target {String = "three"});
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     var queryable = theSession.Query<Target>().Select(x => x.String).Distinct();
 
     queryable.ToList().Count.ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L56-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that the `Distinct()` keyword can be used with `Select()` transforms as well:
@@ -255,7 +255,7 @@ Do note that the `Distinct()` keyword can be used with `Select()` transforms as 
 <a id='snippet-sample_get_distinct_numbers'></a>
 ```cs
 [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-public void get_distinct_numbers()
+public async Task get_distinct_numbers()
 {
     theSession.Store(new Target {Number = 1, Decimal = 1.0M});
     theSession.Store(new Target {Number = 1, Decimal = 2.0M});
@@ -264,7 +264,7 @@ public void get_distinct_numbers()
     theSession.Store(new Target {Number = 2, Decimal = 2.0M});
     theSession.Store(new Target {Number = 2, Decimal = 1.0M});
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     var queryable = theSession.Query<Target>().Select(x => new
     {
@@ -275,7 +275,7 @@ public void get_distinct_numbers()
     queryable.ToList().Count.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L32-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L33-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Modulo Queries
@@ -286,7 +286,7 @@ Marten has the ability to use the modulo operator in Linq queries:
 <a id='snippet-sample_querying-with-modulo'></a>
 ```cs
 [Fact]
-public void use_modulo()
+public async Task use_modulo()
 {
     theSession.Store(new Target{Color = Colors.Blue, Number = 1});
     theSession.Store(new Target{Color = Colors.Blue, Number = 2});
@@ -295,12 +295,12 @@ public void use_modulo()
     theSession.Store(new Target{Color = Colors.Blue, Number = 5});
     theSession.Store(new Target{Color = Colors.Green, Number = 6});
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToArray()
         .Select(x => x.Number)
         .ShouldHaveTheSameElementsAs(2, 4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/modulo_operator.cs#L9-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/modulo_operator.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

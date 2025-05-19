@@ -9,6 +9,8 @@ using Xunit;
 using Bug2177;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Shouldly;
 
@@ -87,14 +89,14 @@ namespace Bug2177
         public User User { get; set; }
     }
 
-    public class TicketProjection: SingleStreamProjection<Ticket>
+    public class TicketProjection: SingleStreamProjection<Ticket, Guid>
     {
         public Ticket Create(TicketCreated created) =>
             new() { Id = created.TicketId, Name = created.Name };
 
-        public void Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session)
+        public async Task Apply(Ticket ticket, TicketAssigned assigned, IQuerySession session)
         {
-            ticket.User = session.Load<User>(assigned.UserId);
+            ticket.User = await session.LoadAsync<User>(assigned.UserId);
         }
     }
 }

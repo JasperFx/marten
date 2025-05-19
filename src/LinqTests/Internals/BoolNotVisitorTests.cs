@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Xunit.Abstractions;
@@ -22,12 +23,12 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void when_doc_with_bool_false_should_return_records()
+    public async Task when_doc_with_bool_false_should_return_records()
     {
         var docWithFlagFalse = new TestClass();
 
         theSession.Store(docWithFlagFalse);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var s = theStore.QuerySession();
         var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
@@ -37,10 +38,10 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void when_doc_with_bool_false_with_serializer_default_value_handling_null_should_return_records()
+    public async Task when_doc_with_bool_false_with_serializer_default_value_handling_null_should_return_records()
     {
         var serializer = new JsonNetSerializer();
-        serializer.Customize(s =>
+        serializer.Configure(s =>
         {
             s.DefaultValueHandling = Newtonsoft.Json.DefaultValueHandling.Ignore;
         });
@@ -51,7 +52,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         var docWithFlagFalse = new TestClass();
 
         theSession.Store(docWithFlagFalse);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var s = theStore.QuerySession())
         {

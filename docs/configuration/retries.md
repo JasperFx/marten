@@ -22,7 +22,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered

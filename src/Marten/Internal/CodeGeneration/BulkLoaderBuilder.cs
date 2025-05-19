@@ -59,13 +59,6 @@ public class BulkLoaderBuilder
             .Frames.ReturnNewStringConstant("CREATE_TEMP_TABLE_FOR_COPYING_SQL",
                 CreateTempTableForCopying().Replace("\"", "\\\""));
 
-        var load = type.MethodFor("LoadRow");
-
-        foreach (var argument in arguments)
-        {
-            argument.GenerateBulkWriterCode(type, load, _mapping);
-        }
-
         var loadAsync = type.MethodFor("LoadRowAsync");
 
         foreach (var argument in arguments)

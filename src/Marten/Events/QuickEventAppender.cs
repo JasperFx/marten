@@ -2,6 +2,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
+using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 
@@ -9,16 +12,6 @@ namespace Marten.Events;
 
 internal class QuickEventAppender: IEventAppender
 {
-    public void ProcessEvents(EventGraph eventGraph, DocumentSessionBase session, IProjection[] inlineProjections)
-    {
-        registerOperationsForStreams(eventGraph, session);
-
-        foreach (var projection in inlineProjections)
-        {
-            projection.Apply(session, session.WorkTracker.Streams.ToList());
-        }
-    }
-
     private static void registerOperationsForStreams(EventGraph eventGraph, DocumentSessionBase session)
     {
         var storage = session.EventStorage();
@@ -36,7 +29,7 @@ internal class QuickEventAppender: IEventAppender
 
                 foreach (var @event in stream.Events)
                 {
-                    session.QueueOperation(storage.QuickAppendEventWithVersion(eventGraph, session, stream, @event));
+                    session.QueueOperation(storage.QuickAppendEventWithVersion(stream, @event));
                 }
             }
             else
@@ -48,19 +41,21 @@ internal class QuickEventAppender: IEventAppender
                     session.QueueOperation(storage.UpdateStreamVersion(stream));
                     foreach (var @event in stream.Events)
                     {
-                        session.QueueOperation(storage.QuickAppendEventWithVersion(eventGraph, session, stream, @event));
+                        session.QueueOperation(storage.QuickAppendEventWithVersion(stream, @event));
                     }
                 }
                 else
                 {
                     stream.PrepareEvents(0, eventGraph, sequences, session);
-                    session.QueueOperation(storage.QuickAppendEvents(stream));
+                    var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
+                    quickAppendEvents.Events = eventGraph;
+                    session.QueueOperation(quickAppendEvents);
                 }
             }
         }
     }
 
-    public async Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session, IProjection[] inlineProjections,
+    public async Task ProcessEventsAsync(EventGraph eventGraph, DocumentSessionBase session, IInlineProjection<IDocumentOperations>[] inlineProjections,
         CancellationToken token)
     {
         registerOperationsForStreams(eventGraph, session);

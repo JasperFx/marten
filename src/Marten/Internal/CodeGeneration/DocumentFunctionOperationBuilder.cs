@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
@@ -108,19 +109,30 @@ internal class DocumentFunctionOperationBuilder
 
         if (_mapping.UseNumericRevisions)
         {
-            async.AsyncMode = AsyncMode.AsyncTask;
-            async.Frames.CodeAsync("BLOCK:if (await postprocessRevisionAsync({0}, {1}, {2}))",
-                Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
-            sync.Frames.Code("BLOCK:if (postprocessRevision({0}, {1}))", Use.Type<DbDataReader>(),
-                Use.Type<IList<Exception>>());
+            if (_role == OperationRole.Insert)
+            {
+                applyRevisionToDocument();
+                async.Frames.Code($"return {typeof(Task).FullNameInCode()}.{nameof(Task.CompletedTask)};");
+                return;
+            }
+            else
+            {
+                async.AsyncMode = AsyncMode.AsyncTask;
+                async.Frames.CodeAsync("BLOCK:if (await postprocessRevisionAsync({0}, {1}, {2}))",
+                    Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
+                sync.Frames.Code("BLOCK:if (postprocessRevision({0}, {1}))", Use.Type<DbDataReader>(),
+                    Use.Type<IList<Exception>>());
 
 
-            applyRevisionToDocument();
+                applyRevisionToDocument();
 
-            async.Frames.Code("END");
-            sync.Frames.Code("END");
+                async.Frames.Code("END");
+                sync.Frames.Code("END");
 
-            return;
+                return;
+            }
+
+
         }
 
         sync.Frames.Code("storeVersion();");

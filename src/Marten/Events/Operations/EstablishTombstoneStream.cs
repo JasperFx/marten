@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Schema;
@@ -13,16 +14,9 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-[DocumentAlias("tombstone")]
-internal class Tombstone
-{
-    public static readonly string Name = "tombstone";
-}
-
 internal class EstablishTombstoneStream: IStorageOperation
 {
-    public static readonly string StreamKey = "mt_tombstone";
-    public static readonly Guid StreamId = Guid.NewGuid();
+
     private readonly Action<NpgsqlParameter> _configureParameter;
     private readonly string _sessionTenantId;
 
@@ -31,13 +25,19 @@ internal class EstablishTombstoneStream: IStorageOperation
     public EstablishTombstoneStream(EventGraph events, string sessionTenantId)
     {
         _sessionTenantId = sessionTenantId;
-        var pkFields = events.TenancyStyle == TenancyStyle.Conjoined
-            ? "id, tenant_id"
-            : "id";
+        var pkFields = "id";
+        if (events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            pkFields += ", tenant_id";
+        }
+        if (events.UseArchivedStreamPartitioning)
+        {
+            pkFields += ", is_archived";
+        }
 
         _sql = $@"
-insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version)
-values (?, ?, 0)
+insert into {events.DatabaseSchemaName}.mt_streams (id, tenant_id, version, is_archived)
+values (?, ?, 0, false)
 ON CONFLICT ({pkFields})
 DO NOTHING
 ";
@@ -46,7 +46,7 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamId;
+                p.Value = Tombstone.StreamId;
                 p.NpgsqlDbType = NpgsqlDbType.Uuid;
             };
         }
@@ -54,7 +54,7 @@ DO NOTHING
         {
             _configureParameter = p =>
             {
-                p.Value = StreamKey;
+                p.Value = Tombstone.StreamKey;
                 p.NpgsqlDbType = NpgsqlDbType.Varchar;
             };
         }

@@ -1,14 +1,19 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 using JasperFx.Core;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
+using Marten.Patching;
 using Marten.Services;
 
 namespace Marten.Events.Daemon.Internals;
@@ -21,7 +26,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
-    private readonly DaemonSettings _settings;
+    private readonly ProjectionOptions _settings;
     private readonly CancellationToken _token;
     private OperationPage? _current;
     private DocumentSessionBase? _session;
@@ -35,15 +40,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public ShardExecutionMode Mode { get; }
 
-    public bool IsDisposed()
-    {
-        return _session == null;
-    }
+    public bool ShouldApplyListeners { get; set; }
 
-    internal ProjectionUpdateBatch(EventGraph events, DaemonSettings settings,
-        DocumentSessionBase? session, EventRange range, CancellationToken token, ShardExecutionMode mode)
+    internal ProjectionUpdateBatch(ProjectionOptions settings,
+        DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
     {
-        Range = range;
         _settings = settings;
         _session = session ?? throw new ArgumentNullException(nameof(session));
         _token = token;
@@ -55,17 +56,17 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             });
 
         startNewPage(session);
-
-        var progressOperation = range.BuildProgressionOperation(events);
-        Queue.Post(progressOperation);
     }
 
-    public EventRange Range { get; }
-
-    public Task WaitForCompletion()
+    public async Task WaitForCompletion()
     {
         Queue.Complete();
-        return Queue.Completion;
+
+        await Queue.Completion.ConfigureAwait(false);
+        foreach (var patch in _patches)
+        {
+            applyOperation(patch);
+        }
     }
 
     // TODO -- make this private
@@ -204,7 +205,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    public void PurgeOperations<T, TId>(TId id) where T : notnull where TId: notnull
     {
         // Do nothing here
     }
@@ -216,7 +217,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public async Task PostUpdateAsync(IMartenSession session)
     {
-        if (shouldApplyListeners())
+        if (!ShouldApplyListeners)
         {
             return;
         }
@@ -232,14 +233,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         }
     }
 
-    private bool shouldApplyListeners()
-    {
-        return Mode == ShardExecutionMode.Rebuild || !Range.Events.Any();
-    }
-
     public async Task PreUpdateAsync(IMartenSession session)
     {
-        if (shouldApplyListeners())
+        if (!ShouldApplyListeners)
         {
             return;
         }
@@ -264,11 +260,25 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _pages.Add(_current);
     }
 
+    private readonly List<IStorageOperation> _patches = new();
+
     private void processOperation(IStorageOperation operation)
     {
         if (_token.IsCancellationRequested)
             return;
 
+        // If there's one patch, then everything needs to be queued up for later
+        if (operation is PatchOperation || _patches.Any())
+        {
+            _patches.Add(operation);
+            return;
+        }
+
+        applyOperation(operation);
+    }
+
+    private void applyOperation(IStorageOperation operation)
+    {
         _current.Append(operation);
 
         _documentTypes.Fill(operation.DocumentType);
@@ -330,6 +340,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private IMessageBatch? _batch;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
+
     public async ValueTask<IMessageBatch> CurrentMessageBatch(DocumentSessionBase session)
     {
         if (_batch != null) return _batch;
@@ -350,4 +361,6 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             _semaphore.Release();
         }
     }
+
+
 }

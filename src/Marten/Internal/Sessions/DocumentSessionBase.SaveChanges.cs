@@ -5,7 +5,10 @@ using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core.Exceptions;
+using JasperFx.Events;
+using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Npgsql;
 using Weasel.Core;
@@ -14,56 +17,6 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
-    public void SaveChanges()
-    {
-        assertNotDisposed();
-
-        processChangeTrackers();
-        if (!_workTracker.HasOutstandingWork())
-        {
-            return;
-        }
-
-        try
-        {
-            Options.EventGraph.ProcessEvents(this);
-        }
-        catch (Exception)
-        {
-            tryApplyTombstoneBatch();
-            throw;
-        }
-
-        _workTracker.Sort(Options);
-
-        if (Options.AutoCreateSchemaObjects != AutoCreate.None)
-        {
-            foreach (var operationType in operationDocumentTypes()) Database.EnsureStorageExists(operationType);
-        }
-
-        foreach (var listener in Listeners)
-        {
-            listener.BeforeSaveChanges(this);
-        }
-
-        var batch = new UpdateBatch(_workTracker.AllOperations);
-
-        ExecuteBatch(batch);
-
-        resetDirtyChecking();
-
-        EjectPatchedTypes(_workTracker);
-        Logger.RecordSavedChanges(this, _workTracker);
-
-        foreach (var listener in Listeners)
-        {
-            listener.AfterCommit(this, _workTracker);
-        }
-
-        // Need to clear the unit of work here
-        _workTracker.Reset();
-    }
-
     public async Task SaveChangesAsync(CancellationToken token = default)
     {
         assertNotDisposed();
@@ -104,6 +57,15 @@ public abstract partial class DocumentSessionBase
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
 
+        if (_messageBatch != null)
+        {
+            await _messageBatch.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
+            // This is important, we need to throw this away on every commit and start w/ a fresh
+            // one on new transactions
+            _messageBatch = null;
+        }
+
+
         resetDirtyChecking();
 
         EjectPatchedTypes(_workTracker);
@@ -118,53 +80,23 @@ public abstract partial class DocumentSessionBase
         _workTracker.Reset();
     }
 
+    private IMessageBatch? _messageBatch;
+    internal virtual async ValueTask<IMessageBatch> StartMessageBatch()
+    {
+        _messageBatch ??= await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
+        return _messageBatch;
+    }
+
+    bool IStorageOperations.EnableSideEffectsOnInlineProjections => Options.Events.EnableSideEffectsOnInlineProjections;
+
+    async ValueTask<IMessageSink> IStorageOperations.GetOrStartMessageSink()
+    {
+        return await StartMessageBatch().ConfigureAwait(false);
+    }
+
     private IEnumerable<Type> operationDocumentTypes()
     {
         return _workTracker.Operations().Select(x => x.DocumentType).Where(x => x != null).Distinct();
-    }
-
-    internal void ExecuteBatch(IUpdateBatch batch)
-    {
-        var pages = batch.BuildPages(this);
-
-        var execution = new PagesExecution(pages, _connection);
-
-        try
-        {
-            try
-            {
-                Options.ResiliencePipeline.Execute(static (x, t) => x.Connection.ExecuteBatchPages(x.Pages, x.Exceptions), execution, CancellationToken.None);
-            }
-            catch (Exception e)
-            {
-                pages.SelectMany(x => x.Operations).OfType<IExceptionTransform>().Concat(MartenExceptionTransformer.Transforms).TransformAndThrow(e);
-            }
-
-            if (execution.Exceptions.Count == 1)
-            {
-                var ex = execution.Exceptions.Single();
-                ExceptionDispatchInfo.Throw(ex);
-            }
-
-            if (execution.Exceptions.Any())
-            {
-                throw new AggregateException(execution.Exceptions);
-            }
-        }
-        catch (Exception)
-        {
-            tryApplyTombstoneBatch();
-
-            throw;
-        }
-    }
-
-    private void tryApplyTombstoneBatch()
-    {
-        if (Options.EventGraph.TryCreateTombstoneBatch(this, out var tombstoneBatch))
-        {
-            Options.EventGraph.PostTombstones(tombstoneBatch);
-        }
     }
 
     internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection)

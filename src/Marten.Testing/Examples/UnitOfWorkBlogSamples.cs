@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -13,7 +14,7 @@ namespace Marten.Testing.Examples;
 public class UnitOfWorkBlogSamples: IntegrationContext
 {
     [Fact]
-    public void show_unit_of_work()
+    public async Task show_unit_of_work()
     {
         // theStore is a DocumentStore
         using var session = theStore.LightweightSession();
@@ -35,7 +36,7 @@ public class UnitOfWorkBlogSamples: IntegrationContext
         session.Delete<User>(Guid.NewGuid());
 
         // Persist in a single transaction
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // All of this was done in one batched command
         // in the same transaction

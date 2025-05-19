@@ -2,6 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Core;
+using JasperFx.Events;
+using Marten.Exceptions;
 using Marten.Schema.Identity;
 
 namespace Marten.Events;
@@ -62,6 +65,7 @@ internal partial class EventStore
 
     public StreamAction StartStream(Guid id, params object[] events)
     {
+        if (_store.Events.UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
         return _store.Events.StartStream(_session, id, events);
     }
 
@@ -72,6 +76,7 @@ internal partial class EventStore
 
     public StreamAction StartStream(string streamKey, params object[] events)
     {
+        if (_store.Events.UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
         return _store.Events.StartStream(_session, streamKey, events);
     }
 

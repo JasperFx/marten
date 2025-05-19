@@ -12,14 +12,14 @@ namespace DocumentDbTests.SessionMechanics;
 public class updating_by_batch : OneOffConfigurationsContext
 {
     [Fact]
-    public void can_make_updates_with_more_than_one_batch()
+    public async Task can_make_updates_with_more_than_one_batch()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
         StoreOptions(_ => _.UpdateBatchSize = 10);
 
         using var session = theStore.LightweightSession();
         session.Store(targets);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Query<Target>().Count().ShouldBe(100);
     }
@@ -40,7 +40,7 @@ public class updating_by_batch : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_delete_and_make_updates_with_more_than_one_batch_GH_987()
+    public async Task can_delete_and_make_updates_with_more_than_one_batch_GH_987()
     {
         var targets = Target.GenerateRandomData(100).ToArray();
         StoreOptions(_ =>
@@ -52,7 +52,7 @@ public class updating_by_batch : OneOffConfigurationsContext
         session.DeleteWhere<Target>(t => t.Id != Guid.Empty);
         session.Store(targets);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Query<Target>().Count().ShouldBe(100);
     }

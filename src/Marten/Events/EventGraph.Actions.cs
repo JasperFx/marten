@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Linq;
+using JasperFx.Events;
+using Marten.Exceptions;
 using Marten.Internal.Sessions;
 
 namespace Marten.Events;
@@ -92,7 +94,6 @@ public partial class EventGraph
         {
             throw new ArgumentOutOfRangeException(nameof(id), "Cannot use an empty Guid as the stream id");
         }
-
 
         var stream = new StreamAction(id, StreamActionType.Start) { TenantId = session.TenantId };
 

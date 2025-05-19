@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit.Abstractions;
 
 namespace LinqTests.Bugs;
@@ -20,7 +22,7 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
     }
 
     [Fact]
-    public void correctly_use_include_when_not_deleted()
+    public async Task correctly_use_include_when_not_deleted()
     {
         var user = new User();
         var issue = new Issue
@@ -32,7 +34,7 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
@@ -49,7 +51,7 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
     }
 
     [Fact]
-    public void include_finds_nothing_when_it_is_soft_deleted()
+    public async Task include_finds_nothing_when_it_is_soft_deleted()
     {
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 5)) return;
@@ -64,13 +66,13 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())

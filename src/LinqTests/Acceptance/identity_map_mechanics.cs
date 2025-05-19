@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Acceptance;
 
@@ -33,7 +34,7 @@ public class identity_map_mechanics: IntegrationContext
 
         await session.SaveChangesAsync();
 
-        (await session.LoadAsync<User>(user1.Id)).ShouldBeTheSameAs(user1);
+        (await session.LoadAsync<User>(user1.Id)).ShouldBeSameAs(user1);
 
         return session;
     }
@@ -43,10 +44,10 @@ public class identity_map_mechanics: IntegrationContext
     {
         await using var session = await identitySessionWithData();
         session.Query<User>()
-            .Single(x => x.FirstName == "Jeremy").ShouldBeTheSameAs(user1);
+            .Single(x => x.FirstName == "Jeremy").ShouldBeSameAs(user1);
 
         session.Query<User>()
-            .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeTheSameAs(user4);
+            .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeSameAs(user4);
     }
 
 
@@ -55,11 +56,11 @@ public class identity_map_mechanics: IntegrationContext
     {
         await using var session = await identitySessionWithData();
         session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .First().ShouldBeTheSameAs(user3);
+            .First().ShouldBeSameAs(user3);
 
 
         session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .FirstOrDefault().ShouldBeTheSameAs(user3);
+            .FirstOrDefault().ShouldBeSameAs(user3);
     }
 
     [Fact]
@@ -69,9 +70,9 @@ public class identity_map_mechanics: IntegrationContext
         var users = session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .ToArray();
 
-        users[0].ShouldBeTheSameAs(user3);
-        users[1].ShouldBeTheSameAs(user2);
-        users[2].ShouldBeTheSameAs(user1);
+        users[0].ShouldBeSameAs(user3);
+        users[1].ShouldBeSameAs(user2);
+        users[2].ShouldBeSameAs(user1);
     }
 
     [Fact]
@@ -81,12 +82,12 @@ public class identity_map_mechanics: IntegrationContext
         var u1 = await session.Query<User>().Where(x => x.FirstName == "Jeremy")
             .SingleAsync();
 
-        u1.ShouldBeTheSameAs(user1);
+        u1.ShouldBeSameAs(user1);
 
         var u2 = await session.Query<User>().Where(x => x.FirstName == user4.FirstName)
             .SingleOrDefaultAsync();
 
-        u2.ShouldBeTheSameAs(user4);
+        u2.ShouldBeSameAs(user4);
     }
 
 
@@ -97,13 +98,13 @@ public class identity_map_mechanics: IntegrationContext
         var u1 = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstAsync();
 
-        u1.ShouldBeTheSameAs(user3);
+        u1.ShouldBeSameAs(user3);
 
 
         var u2 = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .FirstOrDefaultAsync();
 
-        u2.ShouldBeTheSameAs(user3);
+        u2.ShouldBeSameAs(user3);
     }
 
 
@@ -114,8 +115,8 @@ public class identity_map_mechanics: IntegrationContext
         var users = await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
             .ToListAsync();
 
-        users[0].ShouldBeTheSameAs(user3);
-        users[1].ShouldBeTheSameAs(user2);
-        users[2].ShouldBeTheSameAs(user1);
+        users[0].ShouldBeSameAs(user3);
+        users[1].ShouldBeSameAs(user2);
+        users[2].ShouldBeSameAs(user1);
     }
 }

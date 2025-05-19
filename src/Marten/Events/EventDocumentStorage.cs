@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Operations;
 using Marten.Events.Schema;
@@ -77,11 +78,6 @@ public abstract class EventDocumentStorage: IEventStorage
 
     public EventGraph Events { get; }
 
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        database.RunSql($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade");
-    }
-
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
         return database.RunSqlAsync($"truncate table {Events.DatabaseSchemaName}.mt_streams cascade", ct: ct);
@@ -109,6 +105,16 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
+    public void SetIdentityFromString(IEvent document, string identityString)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void SetIdentityFromGuid(IEvent document, Guid identityGuid)
+    {
+        throw new NotImplementedException();
+    }
+
     public string FromObject { get; }
     public Type SelectedType => typeof(IEvent);
 
@@ -128,7 +134,7 @@ public abstract class EventDocumentStorage: IEventStorage
     }
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where T : notnull
     {
         return LinqQueryParser.BuildHandler<IEvent, T>(this, topStatement);
     }
@@ -167,7 +173,7 @@ public abstract class EventDocumentStorage: IEventStorage
 
     public object IdentityFor(IEvent document)
     {
-        return Events.StreamIdentity == StreamIdentity.AsGuid ? document.Id : document.StreamKey;
+        return (Events.StreamIdentity == StreamIdentity.AsGuid ? document.Id : document.StreamKey)!;
     }
 
     public Type IdType { get; }
@@ -267,7 +273,7 @@ public abstract class EventDocumentStorage: IEventStorage
         catch (Exception e)
         {
             var sequence = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
-            throw new EventDeserializationFailureException(sequence, e);
+            throw new EventDeserializationFailureException(sequence, mapping, e);
         }
 
         await ApplyReaderDataToEventAsync(reader, @event, token).ConfigureAwait(false);
@@ -300,7 +306,7 @@ public abstract class EventDocumentStorage: IEventStorage
     }
 
     public virtual IStorageOperation
-        QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream, IEvent e)
+        QuickAppendEventWithVersion(StreamAction stream, IEvent e)
     {
         throw new NotSupportedException(
             "You will have to re-generate the Marten code before the \"quick append events\" feature is available");

@@ -1,4 +1,6 @@
 using System;
+using System.Threading.Tasks;
+using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -20,7 +22,7 @@ public class foreign_keys: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_insert_document_with_existing_value_of_foreign_key()
+    public async Task can_insert_document_with_existing_value_of_foreign_key()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
@@ -28,7 +30,7 @@ public class foreign_keys: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         var issue = new Issue { AssigneeId = user.Id };
@@ -43,16 +45,16 @@ public class foreign_keys: OneOffConfigurationsContext
 
         var issue = new Issue { AssigneeId = Guid.NewGuid() };
 
-        Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
+        Should.Throw<Marten.Exceptions.MartenCommandException>(async () =>
         {
             using var session = theStore.LightweightSession();
             session.Insert(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         });
     }
 
     [Fact]
-    public void can_update_document_with_existing_value_of_foreign_key_to_other_existing_value()
+    public async Task can_update_document_with_existing_value_of_foreign_key_to_other_existing_value()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
@@ -64,7 +66,7 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user, otherUser);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         issue.AssigneeId = otherUser.Id;
@@ -73,7 +75,7 @@ public class foreign_keys: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_update_document_with_existing_value_of_foreign_key_to_null()
+    public async Task can_update_document_with_existing_value_of_foreign_key_to_null()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
@@ -85,7 +87,7 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user, otherUser);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         issue.AssigneeId = null;
@@ -94,7 +96,7 @@ public class foreign_keys: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void cannot_update_document_with_existing_value_of_foreign_key_to_not_existing()
+    public async Task cannot_update_document_with_existing_value_of_foreign_key_to_not_existing()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
@@ -106,23 +108,23 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user, otherUser);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         issue.AssigneeId = Guid.NewGuid();
 
-        Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
+        await Should.ThrowAsync<Marten.Exceptions.MartenCommandException>(async () =>
         {
             using (var session = theStore.LightweightSession())
             {
                 session.Update(issue);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         });
     }
 
     [Fact]
-    public void can_delete_document_with_foreign_key()
+    public async Task can_delete_document_with_foreign_key()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Cascade);
 
@@ -133,24 +135,24 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldNotBeNull();
         }
     }
 
     [Fact]
-    public void can_delete_document_that_is_referenced_by_foreignkey_with_cascadedeletes_from_other_document()
+    public async Task can_delete_document_that_is_referenced_by_foreignkey_with_cascadedeletes_from_other_document()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Cascade);
 
@@ -161,24 +163,24 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete(user);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldBeNull(query.Load<User>(user.Id));
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldBeNull();
         }
     }
 
     [Fact]
-    public void cannot_delete_document_that_is_referenced_by_foreignkey_without_cascadedeletes_from_other_document()
+    public async Task cannot_delete_document_that_is_referenced_by_foreignkey_without_cascadedeletes_from_other_document()
     {
         ConfigureForeignKeyWithCascadingDeletes(CascadeAction.Restrict);
 
@@ -189,22 +191,22 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Should.Throw<Marten.Exceptions.MartenCommandException>(() =>
+        Should.Throw<Marten.Exceptions.MartenCommandException>(async () =>
         {
             using (var session = theStore.LightweightSession())
             {
                 session.Delete(user);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         });
 
         using (var query = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldNotBeNull(query.Load<Issue>(issue.Id));
-            SpecificationExtensions.ShouldNotBeNull(query.Load<User>(user.Id));
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldNotBeNull();
+            (await query.LoadAsync<User>(user.Id)).ShouldNotBeNull();
         }
     }
 
@@ -216,24 +218,22 @@ public class foreign_keys: OneOffConfigurationsContext
         });
     }
 
-    private void ShouldProperlySave(Issue issue)
+    private async Task ShouldProperlySave(Issue issue)
     {
         using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var documentFromDb = query.Load<Issue>(issue.Id);
-
-            SpecificationExtensions.ShouldNotBeNull(documentFromDb);
+            (await query.LoadAsync<Issue>(issue.Id)).ShouldNotBeNull();
         }
     }
 
     [Fact]
-    public void persist_and_overwrite_foreign_key()
+    public async Task persist_and_overwrite_foreign_key()
     {
         StoreOptions(_ =>
         {
@@ -247,7 +247,7 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         issue.AssigneeId = user.Id;
@@ -255,7 +255,7 @@ public class foreign_keys: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         issue.AssigneeId = null;
@@ -263,12 +263,12 @@ public class foreign_keys: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void throws_exception_if_trying_to_delete_referenced_user()
+    public async Task throws_exception_if_trying_to_delete_referenced_user()
     {
         StoreOptions(_ =>
         {
@@ -285,21 +285,21 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(user);
             session.Store(issue);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Exception<Marten.Exceptions.MartenCommandException>.ShouldBeThrownBy(() =>
+        await Should.ThrowAsync<MartenCommandException>(async () =>
         {
             using (var session = theStore.LightweightSession())
             {
                 session.Delete(user);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         });
     }
 
     [Fact]
-    public void persist_without_referenced_user()
+    public async Task persist_without_referenced_user()
     {
         StoreOptions(_ =>
         {
@@ -310,12 +310,12 @@ public class foreign_keys: OneOffConfigurationsContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(new Issue());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void order_inserts()
+    public async Task order_inserts()
     {
         StoreOptions(_ =>
         {
@@ -332,13 +332,13 @@ public class foreign_keys: OneOffConfigurationsContext
         session.Store(issue);
         session.Store(user);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
     public void throws_exception_on_cyclic_dependency()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             StoreOptions(_ =>
             {
@@ -351,7 +351,7 @@ public class foreign_keys: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void id_can_be_a_foreign_key()
+    public async Task id_can_be_a_foreign_key()
     {
         StoreOptions(_ =>
         {
@@ -365,27 +365,27 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(node1);
             session.Store(node2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            node1 = session.Load<Node1>(node1.Id);
-            node2 = session.Load<Node2>(node2.Id);
+            node1 = await session.LoadAsync<Node1>(node1.Id);
+            node2 = await session.LoadAsync<Node2>(node2.Id);
             node1.ShouldNotBeNull();
             node2.ShouldNotBeNull();
             session.Delete(node1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Node2>(node2.Id).ShouldBeNull();
+            (await session.LoadAsync<Node2>(node2.Id)).ShouldBeNull();
         }
     }
 
     [Fact]
-    public void non_standard_id_can_be_a_foreign_key()
+    public async Task non_standard_id_can_be_a_foreign_key()
     {
         StoreOptions(_ =>
         {
@@ -401,22 +401,22 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             session.Store(node1);
             session.Store(node2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            node1 = session.Load<Node1>(node1.Id);
-            node2 = session.Load<Node2>(node2.NonStandardId);
+            node1 = await session.LoadAsync<Node1>(node1.Id);
+            node2 = await session.LoadAsync<Node2>(node2.NonStandardId);
             node1.ShouldNotBeNull();
             node2.ShouldNotBeNull();
             session.Delete(node1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Node2>(node2.Id).ShouldBeNull();
+            (await session.LoadAsync<Node2>(node2.Id)).ShouldBeNull();
         }
     }
 

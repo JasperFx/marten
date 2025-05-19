@@ -2,6 +2,8 @@ using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using System.Linq;
+using System.Threading.Tasks;
+using JasperFx.Events;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,13 +19,13 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
     }
 
     [Fact]
-    public void ensure_tombstone_event_has_sequence_set()
+    public async Task ensure_tombstone_event_has_sequence_set()
     {
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Events.Append(stream, 2, departed);
 
@@ -33,10 +35,13 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
             var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
 
             session.Events.Append(stream, joined3, departed3);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
-        Assert.Throws<EventStreamUnexpectedMaxEventIdException>(() => theSession.SaveChanges());
+        await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
 
         var firstSequence = theSession.Events.QueryAllRawEvents()
             .OrderBy(e => e.Sequence)

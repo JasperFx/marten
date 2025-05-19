@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -71,9 +72,6 @@ public class ConfiguringDocumentStore
 
             // This is still mandatory
             _.Connection("some connection string");
-
-            // Override the JSON Serialization
-            _.Serializer<TestsSerializer>();
         });
         #endregion
     }

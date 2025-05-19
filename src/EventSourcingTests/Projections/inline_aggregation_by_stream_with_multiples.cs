@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -26,7 +27,7 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
     [Theory]
     [InlineData(TenancyStyle.Single)]
     [InlineData(TenancyStyle.Conjoined)]
-    public void run_multiple_aggregates_sync(TenancyStyle tenancyStyle)
+    public async Task run_multiple_aggregates_sync(TenancyStyle tenancyStyle)
     {
         #region sample_registering-quest-party
 
@@ -47,20 +48,20 @@ public class inline_aggregation_by_stream_with_multiples: OneOffConfigurationsCo
 
         #endregion
 
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
-            _.Projections.Snapshot<QuestMonsters>(SnapshotLifecycle.Inline);
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestMonsters>(SnapshotLifecycle.Inline);
         });
 
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        theSession.Load<QuestMonsters>(streamId).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
+        (await theSession.LoadAsync<QuestMonsters>(streamId)).Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        theSession.Load<QuestParty>(streamId).Members
+        (await theSession.LoadAsync<QuestParty>(streamId)).Members
             .ShouldHaveTheSameElementsAs("Garion", "Polgara", "Belgarath", "Silk", "Barak");
     }
 

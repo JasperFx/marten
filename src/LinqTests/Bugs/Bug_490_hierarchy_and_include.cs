@@ -46,7 +46,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
     }
 
     [Fact]
-    public void load_abstract_type_with_include()
+    public async Task load_abstract_type_with_include()
     {
         var account = new Account()
         {
@@ -64,7 +64,7 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
         };
 
         theSession.Store(activity);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.QuerySession())
         {
@@ -72,7 +72,8 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             session.Query<Activity>()
                 .Include(a => a.AccountId, accounts)
                 .ToList()
-                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+                .ShouldNotBeNull()
+                .ShouldNotBeSameAs(activity);
 
             accounts.First().Id.ShouldBe(1);
         }
@@ -105,7 +106,8 @@ public class Bug_490_hierarchy_and_include: BugIntegrationContext
             (await session.Query<Activity>()
                     .Include(a => a.AccountId, accounts)
                     .ToListAsync())
-                .ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+                .ShouldNotBeNull()
+                .ShouldNotBeSameAs(activity);
 
             accounts.First().Id.ShouldBe(1);
         }

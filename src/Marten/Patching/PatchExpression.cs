@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
 using JasperFx.Core;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
@@ -122,6 +124,17 @@ internal class PatchExpression<T>: IPatchExpression<T>
         _patchSet.Add(new PatchData(Items: patch, false));
         return this;
     }
+
+    public IPatchExpression<T> Increment(Expression<Func<T, decimal>> expression, decimal increment = 1)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "increment_float");
+        patch.Add("increment", increment);
+        patch.Add("path", toPath(expression));
+        _patchSet.Add(new PatchData(Items: patch, false));
+        return this;
+    }
+
     //TODO NRT - Annotations are currently inaccurate here due to lack of null guards. Replace with guards in .NET 6+
     public IPatchExpression<T> Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
     {
@@ -140,6 +153,20 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var patch = new Dictionary<string, object>();
         patch.Add("type", "append_if_not_exists");
         patch.Add("value", element);
+        patch.Add("path", toPath(expression));
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+
+        return this;
+    }
+
+    public IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("expression", toPathExpression(predicate));
         patch.Add("path", toPath(expression));
 
         var possiblyPolymorphic = element!.GetType() != typeof(TElement);
@@ -181,6 +208,23 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return this;
     }
 
+    public IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate, int? index = null)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "insert_if_not_exists");
+        patch.Add("value", element);
+        patch.Add("expression", toPathExpression(predicate));
+        patch.Add("path", toPath(expression));
+        if (index.HasValue)
+        {
+            patch.Add("index", index);
+        }
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
+    }
+
     public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst)
     {
         var patch = new Dictionary<string, object>();
@@ -191,6 +235,18 @@ internal class PatchExpression<T>: IPatchExpression<T>
 
         var possiblyPolymorphic = element!.GetType() != typeof(TElement);
         _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+        return this;
+    }
+
+    public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, Expression<Func<TElement, bool>> predicate, RemoveAction action = RemoveAction.RemoveFirst)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "remove");
+        patch.Add("expression", toPathExpression(predicate));
+        patch.Add("path", toPath(expression));
+        patch.Add("action", (int)action);
+
+        _patchSet.Add(new PatchData(Items: patch, PossiblyPolymorphic: false));
         return this;
     }
 
@@ -256,6 +312,9 @@ internal class PatchExpression<T>: IPatchExpression<T>
         // TODO -- don't like this. Smells like duplication in logic
         return visitor.Members.Select(x => x.Name.FormatCase(_session.Serializer.Casing)).Join(".");
     }
+
+    private string toPathExpression(Expression expression)
+        => new JsonPathCreator(_session.Serializer).Build(expression);
 
     private DbObjectName PatchFunction => new PostgresqlObjectName(_session.Options.DatabaseSchemaName, "mt_jsonb_patch");
 }

@@ -5,19 +5,24 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using ImTools;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql;
 
 namespace Marten.Storage;
 
-public class StorageFeatures: IFeatureSchema
+public class StorageFeatures: IFeatureSchema, IDescribeMyself
 {
     private readonly Ref<ImHashMap<Type, IDocumentMappingBuilder>> _builders =
         Ref.Of(ImHashMap<Type, IDocumentMappingBuilder>.Empty);
@@ -262,11 +267,16 @@ public class StorageFeatures: IFeatureSchema
 
     internal void PostProcessConfiguration()
     {
+        if (_options.Advanced.UseNGramSearchWithUnaccent)
+            ExtendedSchemaObjects.Add(new Extension("unaccent"));
+
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamp", "text");
         SystemFunctions.AddSystemFunction(_options, "mt_immutable_timestamptz", "text");
-        SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text");
-        SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text");
-        SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_immutable_time", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_immutable_date", "text");
+        SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text,boolean");
+        SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text,boolean");
+        SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text,boolean");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_append", "jsonb,text[],jsonb,boolean");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_copy", "jsonb,text[],text[]");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_duplicate", "jsonb,text[],jsonb");
@@ -277,6 +287,7 @@ public class StorageFeatures: IFeatureSchema
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_path_to_array", "text,char(1)");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_remove", "jsonb,text[],jsonb");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_patch", "jsonb,jsonb");
+        SystemFunctions.AddSystemFunction(_options, "mt_safe_unaccent", "boolean,text");
 
         Add(SystemFunctions);
 
@@ -338,7 +349,7 @@ public class StorageFeatures: IFeatureSchema
 
     internal bool SequenceIsRequired()
     {
-        return DocumentMappingsWithSchema.Any(x => x.IdStrategy.RequiresSequences);
+        return DocumentMappingsWithSchema.Any(x => x.IdStrategy.IsNumeric);
     }
 
     internal IEnumerable<Type> GetTypeDependencies(Type type)
@@ -400,5 +411,16 @@ public class StorageFeatures: IFeatureSchema
                 _builders.Swap(d => d.AddOrUpdate(builder.DocumentType, builder));
             }
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+        foreach (var mapping in AllDocumentMappings)
+        {
+            description.Children[mapping.DocumentType.FullNameInCode()] = new OptionsDescription(mapping);
+        }
+
+        return description;
     }
 }

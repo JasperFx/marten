@@ -43,7 +43,7 @@ var store = DocumentStore.For(opts =>
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L47-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L48-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As long as you're using a permissive auto creation mode (i.e., not _None_), you should be able to code in your application model
@@ -60,8 +60,7 @@ It's somewhat unlikely that any self-respecting DBA is going to allow your appli
 so we're stuck needing some kind of migration strategy as we add document types, Javascript transformations, and retrofit indexes. Fortunately, we've got
 a strong facility to detect and generate database migration scripts.
 
-In usage, you would first need to tell Marten about every possible document type, any event store usage, and any
-[javascript transforms](/documents/plv8) so that Marten
+In usage, you would first need to tell Marten about every possible document type and any event store usage so that Marten
 "knows" how to make the full comparison:
 
 <!-- snippet: sample_configure-document-types-upfront -->
@@ -109,10 +108,14 @@ The command above will generate a file called "1.initial.sql" to update the sche
 mechanism covers:
 
 1. Creates any missing database schemas
-1. Document storage tables, "upsert" functions, and any configured indexes -- including missing columns or column type changes
-1. Javascript transforms
-1. The Hilo support table
-1. The Event Store schema objects
+2. Document storage tables, "upsert" functions, and any configured indexes -- including missing columns or column type changes
+3. Javascript transforms
+4. The Hilo support table
+5. The Event Store schema objects
+
+### Include in your ci/cd pipeline
+
+While there are many options to include these exported scripts in your ci/cd pipeline, we have an example using [grate](https://erikbra.github.io/grate/) on the [DevOps page](/devops/devops).
 
 ## Apply All Outstanding Changes Upfront
 
@@ -146,7 +149,12 @@ Lastly, Marten V5 adds a new option to have the latest database changes detected
 // The normal Marten configuration
 services.AddMarten(opts =>
     {
+        // This helps isolate a test, not something you need to do
+        // in normal usage
+        opts.ApplyChangesLockId += 18;
+
         opts.Connection(ConnectionSource.ConnectionString);
+        opts.DatabaseSchemaName = "apply_changes";
         opts.RegisterDocumentType<User>();
     })
 
@@ -154,7 +162,7 @@ services.AddMarten(opts =>
     // database changes on application startup
     .ApplyAllDatabaseChangesOnStartup();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L150-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applyalldatabasechangesonstartup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/MartenServiceCollectionExtensionsTests.cs#L151-L169' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applyalldatabasechangesonstartup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the option above, Marten is calling the same functionality within an `IHostedService` background task.

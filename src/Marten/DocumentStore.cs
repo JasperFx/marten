@@ -5,14 +5,16 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
-using Marten.Events.Daemon.Internals;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services;
@@ -27,7 +29,7 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-public partial class DocumentStore: IDocumentStore, IAsyncDisposable
+public partial class DocumentStore: IDocumentStore, IDescribeMyself
 {
     private readonly IMartenLogger _logger;
     private readonly INpgsqlDataSourceFactory dataSourceFactory;
@@ -55,7 +57,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
         StorageFeatures.PostProcessConfiguration();
         Events.Initialize(this);
-        Options.Projections.AssertValidity(this);
+        Options.Projections.AssertValidity(Options);
 
         Advanced = new AdvancedOperations(this);
 
@@ -69,19 +71,6 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         warnIfAsyncDaemonIsDisabledWithAsyncProjections();
 
         options.ApplyMetricsIfAny();
-    }
-
-    private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
-    {
-        if (Options.Projections.HasAnyAsyncProjections() && Options.Projections.AsyncMode == DaemonMode.Disabled)
-        {
-            Console.WriteLine("Warning: The async daemon is disabled.");
-            var asyncProjectionList =
-                Options.Projections.All.Where(x => x.Lifecycle == ProjectionLifecycle.Async).Select(x => x.ToString())!
-                    .Join(", ");
-            Console.WriteLine(
-                $"Projections {asyncProjectionList} will not be executed without the async daemon enabled");
-        }
     }
 
     public ITenancy Tenancy => Options.Tenancy;
@@ -111,50 +100,11 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public AdvancedOperations Advanced { get; }
 
-    public void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string? updateCondition = null)
-    {
-        var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
-        bulkInsertion.BulkInsert(documents, mode, batchSize, updateCondition);
-    }
-
-    public void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents,
-        Transaction transaction, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string? updateCondition = null)
-    {
-        var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
-        bulkInsertion.BulkInsertEnlistTransaction(documents, transaction, mode, batchSize, updateCondition);
-    }
-
-    public void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
-        bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
-    }
-
-    public void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000,
-        string? updateCondition = null)
-    {
-        var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(Options.MaybeCorrectTenantId(tenantId)), Options);
-        bulkInsertion.BulkInsert(documents, mode, batchSize, updateCondition);
-    }
-
-    public void BulkInsertDocuments(string tenantId, IEnumerable<object> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000)
-    {
-        var bulkInsertion = new BulkInsertion(Tenancy.GetTenant(Options.MaybeCorrectTenantId(tenantId)), Options);
-        bulkInsertion.BulkInsertDocuments(documents, mode, batchSize);
-    }
-
     public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000,
         string? updateCondition = null,
-        CancellationToken cancellation = default)
+        CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, updateCondition, cancellation);
@@ -165,7 +115,7 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000,
         string? updateCondition = null,
-        CancellationToken cancellation = default)
+        CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, updateCondition, cancellation);
@@ -177,10 +127,19 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000,
         string? updateCondition = null,
-        CancellationToken cancellation = default)
+        CancellationToken cancellation = default) where T : notnull
     {
-        var bulkInsertion = new BulkInsertion(await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+        var bulkInsertion =
+            new BulkInsertion(
+                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, updateCondition, cancellation).ConfigureAwait(false);
+    }
+
+    public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
+        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
+    {
+        var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
+        return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
     }
 
     public Task BulkInsertDocumentsAsync(IEnumerable<object> documents,
@@ -195,59 +154,34 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000, CancellationToken cancellation = default)
     {
-        var bulkInsertion = new BulkInsertion(await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+        var bulkInsertion =
+            new BulkInsertion(
+                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
     public IDiagnostics Diagnostics { get; }
 
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
     public IDocumentSession OpenSession(SessionOptions options)
     {
         return openSession(options);
     }
 
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public IDocumentSession OpenSession(
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    ) =>
-        openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel });
-
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public IDocumentSession OpenSession(
-        string tenantId,
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    ) =>
-        openSession(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId) });
-
-    public IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        IdentitySession(new SessionOptions { IsolationLevel = isolationLevel });
+    public IDocumentSession IdentitySession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    {
+        return IdentitySession(new SessionOptions { IsolationLevel = isolationLevel });
+    }
 
     public IDocumentSession IdentitySession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    ) =>
-        IdentitySession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId) });
+    )
+    {
+        return IdentitySession(new SessionOptions
+        {
+            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+        });
+    }
 
     public IDocumentSession IdentitySession(SessionOptions options)
     {
@@ -257,20 +191,27 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public Task<IDocumentSession> IdentitySerializableSessionAsync(
         CancellationToken cancellation = default
-    ) =>
-        IdentitySerializableSessionAsync(
+    )
+    {
+        return IdentitySerializableSessionAsync(
             new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
             cancellation
         );
+    }
 
     public Task<IDocumentSession> IdentitySerializableSessionAsync(
         string tenantId,
         CancellationToken cancellation = default
-    ) =>
-        IdentitySerializableSessionAsync(
-            new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId) },
+    )
+    {
+        return IdentitySerializableSessionAsync(
+            new SessionOptions
+            {
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            },
             cancellation
         );
+    }
 
     public Task<IDocumentSession> IdentitySerializableSessionAsync(
         SessionOptions options,
@@ -282,14 +223,21 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         return OpenSerializableSessionAsync(options, cancellation);
     }
 
-    public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        DirtyTrackedSession(new SessionOptions { IsolationLevel = isolationLevel });
+    public IDocumentSession DirtyTrackedSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    {
+        return DirtyTrackedSession(new SessionOptions { IsolationLevel = isolationLevel });
+    }
 
     public IDocumentSession DirtyTrackedSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    ) =>
-        DirtyTrackedSession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId) });
+    )
+    {
+        return DirtyTrackedSession(new SessionOptions
+        {
+            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+        });
+    }
 
     public IDocumentSession DirtyTrackedSession(SessionOptions options)
     {
@@ -299,16 +247,23 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         CancellationToken cancellation = default
-    ) =>
-        DirtyTrackedSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
+    )
+    {
+        return DirtyTrackedSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
             cancellation);
+    }
 
     public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         string tenantId,
         CancellationToken cancellation = default
-    ) =>
-        DirtyTrackedSerializableSessionAsync(
-            new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId) }, cancellation);
+    )
+    {
+        return DirtyTrackedSerializableSessionAsync(
+            new SessionOptions
+            {
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            }, cancellation);
+    }
 
     public Task<IDocumentSession> DirtyTrackedSerializableSessionAsync(
         SessionOptions options,
@@ -320,14 +275,21 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         return OpenSerializableSessionAsync(options, cancellation);
     }
 
-    public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted) =>
-        LightweightSession(new SessionOptions { IsolationLevel = isolationLevel });
+    public IDocumentSession LightweightSession(IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    {
+        return LightweightSession(new SessionOptions { IsolationLevel = isolationLevel });
+    }
 
     public IDocumentSession LightweightSession(
         string tenantId,
         IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    ) =>
-        LightweightSession(new SessionOptions { IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId) });
+    )
+    {
+        return LightweightSession(new SessionOptions
+        {
+            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+        });
+    }
 
     public IDocumentSession LightweightSession(SessionOptions options)
     {
@@ -337,16 +299,23 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
 
     public Task<IDocumentSession> LightweightSerializableSessionAsync(
         CancellationToken cancellation = default
-    ) =>
-        LightweightSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
+    )
+    {
+        return LightweightSerializableSessionAsync(new SessionOptions { IsolationLevel = IsolationLevel.Serializable },
             cancellation);
+    }
 
     public Task<IDocumentSession> LightweightSerializableSessionAsync(
         string tenantId,
         CancellationToken cancellation = default
-    ) =>
-        LightweightSerializableSessionAsync(
-            new SessionOptions { IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId) }, cancellation);
+    )
+    {
+        return LightweightSerializableSessionAsync(
+            new SessionOptions
+            {
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            }, cancellation);
+    }
 
     public Task<IDocumentSession> LightweightSerializableSessionAsync(
         SessionOptions options,
@@ -365,11 +334,15 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         return new QuerySession(this, options, connection);
     }
 
-    public IQuerySession QuerySession() =>
-        QuerySession(Marten.Storage.Tenancy.DefaultTenantId);
+    public IQuerySession QuerySession()
+    {
+        return QuerySession(StorageConstants.DefaultTenantId);
+    }
 
-    public IQuerySession QuerySession(string tenantId) =>
-        QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
+    public IQuerySession QuerySession(string tenantId)
+    {
+        return QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
+    }
 
     public async Task<IQuerySession> QuerySerializableSessionAsync(
         SessionOptions options,
@@ -382,37 +355,21 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         return new QuerySession(this, options, connection);
     }
 
-    public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default) =>
-        QuerySerializableSessionAsync(Marten.Storage.Tenancy.DefaultTenantId, cancellation);
+    public Task<IQuerySession> QuerySerializableSessionAsync(CancellationToken cancellation = default)
+    {
+        return QuerySerializableSessionAsync(StorageConstants.DefaultTenantId, cancellation);
+    }
 
     public Task<IQuerySession> QuerySerializableSessionAsync(
         string tenantId,
         CancellationToken cancellation = default
-    ) =>
-        QuerySerializableSessionAsync(
-            new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable }, cancellation);
-
-    public IProjectionDaemon BuildProjectionDaemon(
-        string? tenantIdOrDatabaseIdentifier = null,
-        ILogger? logger = null
     )
     {
-        if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
-        {
-            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
-        }
-
-        AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
-
-        logger ??= new NulloLogger();
-
-        var database = tenantIdOrDatabaseIdentifier.IsEmpty()
-            ? Tenancy.Default.Database
-            : Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
-
-        var detector = new HighWaterDetector((MartenDatabase)database, Events, logger);
-
-        return new ProjectionDaemon(this, (MartenDatabase)database, logger, detector, new AgentFactory(this));
+        return QuerySerializableSessionAsync(
+            new SessionOptions
+            {
+                TenantId = Options.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable
+            }, cancellation);
     }
 
     public async ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(
@@ -462,36 +419,41 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         return session;
     }
 
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public Task<IDocumentSession> OpenSessionAsync(
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
-        CancellationToken token = default
-    ) =>
-        OpenSerializableSessionAsync(new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel },
-            token);
+    private void warnIfAsyncDaemonIsDisabledWithAsyncProjections()
+    {
+        if (Options.Projections.HasAnyAsyncProjections() && Options.Projections.AsyncMode == DaemonMode.Disabled)
+        {
+            Console.WriteLine("Warning: The async daemon is disabled.");
+            var asyncProjectionList =
+                Options.Projections.All.Where(x => x.Lifecycle == ProjectionLifecycle.Async).Select(x => x.ToString())!
+                    .Join(", ");
+            Console.WriteLine(
+                $"Projections {asyncProjectionList} will not be executed without the async daemon enabled");
+        }
+    }
 
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    public Task<IDocumentSession> OpenSessionAsync(
-        string tenantId,
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted,
-        CancellationToken token = default
-    ) =>
-        OpenSerializableSessionAsync(
-            new SessionOptions { Tracking = tracking, IsolationLevel = isolationLevel, TenantId = tenantId }, token);
+    public IProjectionDaemon BuildProjectionDaemon(
+        string? tenantIdOrDatabaseIdentifier = null,
+        ILogger? logger = null
+    )
+    {
+        if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
+        {
+            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+        }
+
+        AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
+
+        logger ??= new NulloLogger();
+
+        var database = tenantIdOrDatabaseIdentifier.IsEmpty()
+            ? Tenancy.Default.Database
+            : Tenancy.GetTenant(tenantIdOrDatabaseIdentifier).Database;
+
+        var detector = new HighWaterDetector((MartenDatabase)database, Events, logger);
+
+        return new ProjectionDaemon(this, (MartenDatabase)database, logger, detector);
+    }
 
     /// <summary>
     ///     Quick way to stand up a DocumentStore to the given database connection
@@ -559,5 +521,10 @@ public partial class DocumentStore: IDocumentStore, IAsyncDisposable
         {
             throw new DefaultTenantUsageDisabledException();
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        return OptionsDescription.For(Options);
     }
 }

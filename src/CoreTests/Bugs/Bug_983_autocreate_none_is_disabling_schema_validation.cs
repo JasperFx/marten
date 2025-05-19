@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
 using Xunit;
@@ -25,9 +27,9 @@ public class Bug_983_autocreate_none_is_disabling_schema_validation: BugIntegrat
             cfg.AutoCreateSchemaObjects = AutoCreate.None;
         });
 
-        await Exception<DatabaseValidationException>.ShouldBeThrownByAsync(() =>
+        await Should.ThrowAsync<DatabaseValidationException>(async () =>
         {
-            return theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+            await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         });
     }
 

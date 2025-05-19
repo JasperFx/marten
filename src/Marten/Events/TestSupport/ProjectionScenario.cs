@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 
 namespace Marten.Events.TestSupport;
@@ -21,7 +22,7 @@ public partial class ProjectionScenario: IEventOperations
 
     internal IProjectionDaemon Daemon { get; private set; }
 
-    internal ScenarioStep NextStep => _steps.Any() ? _steps.Peek() : null;
+    internal ScenarioStep? NextStep => _steps.Count != 0 ? _steps.Peek() : null;
 
     internal IDocumentSession Session { get; private set; }
 

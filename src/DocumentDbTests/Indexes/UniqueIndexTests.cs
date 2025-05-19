@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Schema;
@@ -50,8 +52,6 @@ public class UniqueUser
 
 public class UniqueIndexTests: OneOffConfigurationsContext
 {
-    public const string UniqueSqlState = "23505";
-
     public UniqueIndexTests()
     {
         StoreOptions(opts =>
@@ -63,7 +63,7 @@ public class UniqueIndexTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_documents_with_the_same_value_for_unique_field_with_multiple_properties_when_created_then_throws_exception()
     {
         //1. Create Events
@@ -85,16 +85,16 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         //3. Unique Exception Was thrown
         try
         {
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         catch (DocumentAlreadyExistsException exception)
         {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
         }
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_documents_with_the_same_value_for_unique_field_with_single_property_when_created_then_throws_exception()
     {
         //1. Create Events
@@ -111,16 +111,16 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         //3. Unique Exception Was thrown
         try
         {
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         catch (DocumentAlreadyExistsException exception)
         {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
         }
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_events_with_the_same_value_for_unique_field_with_multiple_properties_when_inline_transformation_is_applied_then_throws_exception()
     {
         //1. Create Events
@@ -141,16 +141,16 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         //3. Unique Exception Was thrown
         try
         {
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         catch (MartenCommandException exception)
         {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
         }
     }
 
     [Fact]
-    public void
+    public async Task
         given_two_events_with_the_same_value_for_unique_field_with_single_property_when_inline_transformation_is_applied_then_throws_exception()
     {
         //1. Create Events
@@ -168,11 +168,11 @@ public class UniqueIndexTests: OneOffConfigurationsContext
         //3. Unique Exception Was thrown
         try
         {
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
         catch (DocumentAlreadyExistsException exception)
         {
-            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(UniqueSqlState);
+            ((PostgresException)exception.InnerException)?.SqlState.ShouldBe(PostgresErrorCodes.UniqueViolation);
         }
     }
 }

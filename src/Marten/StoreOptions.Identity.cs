@@ -2,22 +2,41 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
-using Marten.Linq.Members;
+using Marten.Internal.Storage;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
-using CombGuidIdGeneration = Marten.Schema.Identity.CombGuidIdGeneration;
+using Microsoft.FSharp.Core;
 
 namespace Marten;
 
 public partial class StoreOptions
 {
+    internal IDocumentStorage<TDoc, TId> ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking tracking) where TDoc : notnull where TId : notnull
+    {
+        var provider = Providers.StorageFor<TDoc>();
+        var raw = provider.Select(tracking);
+
+        if (raw is IDocumentStorage<TDoc, TId> storage) return storage;
+
+        var valueTypeInfo = TryFindValueType(raw.IdType);
+        if (valueTypeInfo == null)
+            throw new InvalidOperationException(
+                $"Invalid identifier type for aggregate {typeof(TDoc).FullNameInCode()}. Id type is {raw.IdType.FullNameInCode()}");
+
+        return typeof(ValueTypeIdentifiedDocumentStorage<,,>).CloseAndBuildAs<IDocumentStorage<TDoc, TId>>(
+            valueTypeInfo, raw, typeof(TDoc), typeof(TId),
+            raw.IdType);
+    }
+
+
     internal IIdGeneration DetermineIdStrategy(Type documentType, MemberInfo idMember)
     {
-        var idType = idMember.GetMemberType();
+        var idType = idMember.GetMemberType()!;
 
         if (!idMemberIsSettable(idMember) && !FSharpDiscriminatedUnionIdGeneration.IsFSharpSingleCaseDiscriminatedUnion(idType))
         {
@@ -31,7 +50,7 @@ public partial class StoreOptions
 
         if (idType == typeof(Guid))
         {
-            return new CombGuidIdGeneration();
+            return new SequentialGuidIdGeneration();
         }
 
         if (idType == typeof(int) || idType == typeof(long))
@@ -68,6 +87,12 @@ public partial class StoreOptions
         return ValueTypes.FirstOrDefault(x => x.OuterType == idType);
     }
 
+    internal ValueTypeInfo FindOrCreateValueType(Type idType)
+    {
+        var valueType = ValueTypes.FirstOrDefault(x => x.OuterType == idType);
+        return valueType ?? RegisterValueType(idType);
+    }
+
     /// <summary>
     /// Register a custom value type with Marten. Doing this enables Marten
     /// to use this type correctly within LINQ expressions. The "value type"
@@ -83,6 +108,15 @@ public partial class StoreOptions
         {
             valueProperty = type.GetProperties().Where(x => x.Name != "Tag").SingleOrDefaultIfMany();
         }
+        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        {
+            var innerType = type.GetGenericArguments().Single();
+            valueProperty = type.GetProperty("Value");
+            var optionBuilder = type.GetMethod("Some", BindingFlags.Static | BindingFlags.Public);
+            var valueType = new ValueTypeInfo(type, innerType, valueProperty, optionBuilder);
+            ValueTypes.Add(valueType);
+            return valueType;
+        }
         else
         {
             valueProperty = type.GetProperties().SingleOrDefaultIfMany();
@@ -95,7 +129,7 @@ public partial class StoreOptions
 
         if (ctor != null)
         {
-            var valueType = new Internal.ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
+            var valueType = new ValueTypeInfo(type, valueProperty.PropertyType, valueProperty, ctor);
             ValueTypes.Add(valueType);
             return valueType;
         }
@@ -114,5 +148,24 @@ public partial class StoreOptions
             "Unable to determine either a builder static method or a constructor to use");
     }
 
-    internal List<Internal.ValueTypeInfo> ValueTypes { get; } = new();
+    public void RegisterFSharpOptionValueTypes()
+    {
+        RegisterValueType(typeof(FSharpOption<Guid>));
+        RegisterValueType(typeof(FSharpOption<string>));
+        RegisterValueType(typeof(FSharpOption<long>));
+        RegisterValueType(typeof(FSharpOption<int>));
+        RegisterValueType(typeof(FSharpOption<bool>));
+        RegisterValueType(typeof(FSharpOption<decimal>));
+        RegisterValueType(typeof(FSharpOption<char>));
+        RegisterValueType(typeof(FSharpOption<double>));
+        RegisterValueType(typeof(FSharpOption<float>));
+        RegisterValueType(typeof(FSharpOption<uint>));
+        RegisterValueType(typeof(FSharpOption<ulong>));
+        RegisterValueType(typeof(FSharpOption<short>));
+        RegisterValueType(typeof(FSharpOption<ushort>));
+        RegisterValueType(typeof(FSharpOption<DateTime>));
+        RegisterValueType(typeof(FSharpOption<DateTimeOffset>));
+    }
+
+    internal List<ValueTypeInfo> ValueTypes { get; } = new();
 }

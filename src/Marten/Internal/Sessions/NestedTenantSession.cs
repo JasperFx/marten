@@ -2,6 +2,8 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
+using Marten.Events.Aggregation;
 using Marten.Internal.Storage;
 using Marten.Storage;
 
@@ -66,5 +68,10 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     {
         // Do nothing!
         return ValueTask.CompletedTask;
+    }
+
+    internal override ValueTask<IMessageBatch> StartMessageBatch()
+    {
+        return Parent.As<DocumentSessionBase>().StartMessageBatch();
     }
 }

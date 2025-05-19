@@ -80,7 +80,7 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult: notnull
     {
         _topStatement = topStatement;
         return (IQueryHandler<TResult>)this;

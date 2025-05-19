@@ -39,7 +39,7 @@ public class SubClasses: IEnumerable<SubClassMapping>
         _subClasses.Add(subclass);
     }
 
-    public void Add(Type subclassType, string alias = null)
+    public void Add(Type subclassType, string? alias = null)
     {
         VerifyIsSubclass(subclassType);
 
@@ -52,7 +52,7 @@ public class SubClasses: IEnumerable<SubClassMapping>
         if (!subclassType.CanBeCastTo(_parent.DocumentType))
         {
             throw new ArgumentOutOfRangeException(nameof(subclassType),
-                $"Type '{subclassType.GetFullName()}' cannot be cast to '{_parent.DocumentType.GetFullName()}'");
+                $"Type '{subclassType.FullNameInCode()}' cannot be cast to '{_parent.DocumentType.FullNameInCode()}'");
         }
     }
 

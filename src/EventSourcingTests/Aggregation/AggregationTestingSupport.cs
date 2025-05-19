@@ -1,5 +1,6 @@
 using System;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Schema;
@@ -15,7 +16,7 @@ public class TestEventScenario
 
 public class TestEventSlice: EventSlice<MyAggregate, Guid>
 {
-    public TestEventSlice(Guid id) : base(id, new Tenant("SomeName", Substitute.For<IMartenDatabase>()))
+    public TestEventSlice(Guid id) : base(id, "SomeName")
     {
     }
 

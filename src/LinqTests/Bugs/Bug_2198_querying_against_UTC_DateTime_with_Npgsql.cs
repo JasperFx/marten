@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -10,7 +11,7 @@ namespace LinqTests.Bugs;
 public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegrationContext
 {
     [Fact]
-    public void query()
+    public async Task query()
     {
         theSession.Store(new Target{Number = 1, Date = DateTime.UtcNow.AddMinutes(30)});
         theSession.Store(new Target{Number = 2, Date = DateTime.UtcNow.AddDays(1)});
@@ -18,7 +19,7 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
         theSession.Store(new Target{Number = 4, Date = DateTime.UtcNow.AddHours(-2)});
         theSession.Store(new Target{Number = 5, Date = DateTime.UtcNow.AddHours(-3)});
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         Should.Throw<InvalidUtcDateTimeUsageException>(() =>
         {
@@ -31,7 +32,7 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
     }
 
     [Fact]
-    public void can_index_against_datetime_offset()
+    public async Task can_index_against_datetime_offset()
     {
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
@@ -46,7 +47,7 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
         theSession.Store(new Target { Number = 4, DateOffset = DateTimeOffset.UtcNow.AddHours(-2) });
         theSession.Store(new Target { Number = 5, DateOffset = DateTimeOffset.UtcNow.AddHours(-3) });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
 
         theSession.Query<Target>()

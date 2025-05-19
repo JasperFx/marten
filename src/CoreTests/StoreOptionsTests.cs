@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Text.Json;
+using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.Core.Descriptors;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -22,6 +24,12 @@ public class StoreOptionsTests
     {
         new StoreOptions()
             .UseStickyConnectionLifetimes.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void STJ_is_the_default_serializer()
+    {
+        new StoreOptions().Serializer().ShouldBeOfType<SystemTextJsonSerializer>();
     }
 
     [Fact]
@@ -95,7 +103,7 @@ public class StoreOptionsTests
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
             .Select(x => x.DocumentType.Name)
-            .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
+            .ShouldBe(["Company", "Issue", "Target", "User"]);
     }
 
     [Fact]
@@ -247,7 +255,7 @@ public class StoreOptionsTests
     public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage(EnumStorage enumStorage)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(enumStorage);
+        storeOptions.UseSystemTextJsonForSerialization(enumStorage);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
     }
@@ -256,12 +264,12 @@ public class StoreOptionsTests
     public void duplicated_field_enum_storage_should_be_the_same_as_enum_storage_when_enum_storage_was_updated()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
         //update EnumStorage
-        storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsString);
 
         storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
@@ -271,7 +279,7 @@ public class StoreOptionsTests
     public void enum_storage_should_not_change_when_duplicated_field_enum_storage_was_changed()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
@@ -287,7 +295,7 @@ public class StoreOptionsTests
         duplicated_field_enum_storage_after_it_had_value_assigned_should_not_change_when_enum_storage_was_updated()
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(EnumStorage.AsInteger);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsInteger);
 
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(storeOptions.EnumStorage);
 
@@ -295,7 +303,7 @@ public class StoreOptionsTests
         storeOptions.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsInteger;
 
         //update EnumStorage
-        storeOptions.UseDefaultSerialization(EnumStorage.AsString);
+        storeOptions.UseSystemTextJsonForSerialization(EnumStorage.AsString);
 
         storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
@@ -439,6 +447,13 @@ public class StoreOptionsTests
         var options = new StoreOptions { TenantIdStyle = style };
 
         options.MaybeCorrectTenantId(tenantId).ShouldBe(corrected);
+    }
+
+    [Fact]
+    public void can_generate_options_description()
+    {
+        // just a smoke test
+        var description = new OptionsDescription(new StoreOptions());
     }
 
 

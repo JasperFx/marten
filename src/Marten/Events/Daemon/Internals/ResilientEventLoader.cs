@@ -1,7 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using OpenTelemetry.Trace;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Polly;
 
 namespace Marten.Events.Daemon.Internals;
@@ -24,7 +25,7 @@ internal class ResilientEventLoader: IEventLoader
             }
             catch (Exception e)
             {
-                activity?.RecordException(e);
+                activity?.AddException(e);
                 throw;
             }
             finally

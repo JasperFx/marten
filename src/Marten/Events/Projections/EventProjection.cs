@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Events.CodeGeneration;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
+using JasperFx.Events.Projections;
+using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Weasel.Core;
 
 namespace Marten.Events.Projections;
@@ -15,40 +15,9 @@ namespace Marten.Events.Projections;
 /// <summary>
 ///     This is the "do anything" projection type
 /// </summary>
-public abstract partial class EventProjection: GeneratedProjection, IProjectionSchemaSource
+public abstract class EventProjection: JasperFxEventProjectionBase<IDocumentOperations, IQuerySession>,
+    IValidatedProjection<StoreOptions>, IProjectionSchemaSource, IMartenRegistrable
 {
-    private readonly CreateMethodCollection _createMethods;
-
-    private readonly Lazy<IProjection> _generatedProjection;
-    private readonly string _inlineTypeName;
-    private readonly ProjectMethodCollection _projectMethods;
-    private Type _generatedType;
-
-    private GeneratedType _inlineType;
-    private bool _isAsync;
-
-    public EventProjection(): base("Projections")
-    {
-        _projectMethods = new ProjectMethodCollection(GetType());
-        _createMethods = new CreateMethodCollection(GetType());
-
-        ProjectionName = GetType().FullNameInCode();
-        _inlineTypeName = GetType().ToSuffixedTypeName("InlineProjection");
-
-        _generatedProjection = new Lazy<IProjection>(() =>
-        {
-            if (_generatedType == null)
-            {
-                throw new InvalidOperationException("The EventProjection has not created its inner IProjection");
-            }
-
-            var projection = (IProjection)Activator.CreateInstance(_generatedType, this);
-            foreach (var setter in _inlineType.Setters) setter.SetInitialValue(projection);
-
-            return projection;
-        });
-    }
-
     /// <summary>
     ///     Use to register additional or custom schema objects like database tables that
     ///     will be used by this projection. Originally meant to support projecting to flat
@@ -56,63 +25,97 @@ public abstract partial class EventProjection: GeneratedProjection, IProjectionS
     /// </summary>
     public IList<ISchemaObject> SchemaObjects { get; } = new List<ISchemaObject>();
 
+    public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure) where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>().As<EventProjection>();
+                    configure?.Invoke(projection);
+
+                    opts.Projections.Add(projection, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
+    public static void Register<TConcrete, TStore>(IServiceCollection services, ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime, Action<ProjectionBase>? configure)
+        where TStore : IDocumentStore where TConcrete : class
+    {
+        switch (lifetime)
+        {
+            case ServiceLifetime.Singleton:
+                services.AddSingleton<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var projection = s.GetRequiredService<TConcrete>();
+                    var wrapper =
+                        new ProjectionWrapper<IDocumentOperations, IQuerySession>((IProjection)projection, lifecycle);
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add(wrapper, lifecycle);
+                });
+                break;
+
+            case ServiceLifetime.Transient:
+            case ServiceLifetime.Scoped:
+                services.AddScoped<TConcrete>();
+                services.ConfigureMarten<TStore>((s, opts) =>
+                {
+                    var wrapper = typeof(ScopedProjectionWrapper<,,>).CloseAndBuildAs<ProjectionBase>(s,
+                        typeof(TConcrete), typeof(IDocumentOperations), typeof(IQuerySession));
+
+                    wrapper.Lifecycle = lifecycle;
+                    configure?.Invoke(wrapper);
+
+                    opts.Projections.Add((IProjectionSource<IDocumentOperations, IQuerySession>)wrapper, lifecycle);
+                });
+                break;
+        }
+    }
+
     IEnumerable<ISchemaObject> IProjectionSchemaSource.CreateSchemaObjects(EventGraph events)
     {
         return SchemaObjects;
     }
 
-
-    protected override bool needsSettersGenerated()
+    [JasperFxIgnore]
+    public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
-        return _inlineType == null;
+        AssembleAndAssertValidity();
+
+        return ArraySegment<string>.Empty;
     }
 
-    protected override ValueTask<EventRangeGroup> groupEvents(DocumentStore store, IMartenDatabase daemonDatabase,
-        EventRange range,
-        CancellationToken cancellationToken)
+    // TODO upstream change
+    protected sealed override void storeEntity<T>(IDocumentOperations ops, T entity)
     {
-        return new ValueTask<EventRangeGroup>(
-            new TenantedEventRangeGroup(
-                store,
-                daemonDatabase,
-                _generatedProjection.Value,
-                Options,
-                range,
-                cancellationToken
-            )
-        );
+        ops.Store(entity);
     }
 
-
-    [MartenIgnore]
-    public void Project<TEvent>(Action<TEvent, IDocumentOperations> project)
+    public bool TryBuildReplayExecutor(DocumentStore store, IMartenDatabase database, out IReplayExecutor? executor)
     {
-        _projectMethods.AddLambda(project, typeof(TEvent));
+        executor = default;
+        return false;
     }
-
-    [MartenIgnore]
-    public void ProjectAsync<TEvent>(Func<TEvent, IDocumentOperations, Task> project)
-    {
-        _projectMethods.AddLambda(project, typeof(TEvent));
-    }
-}
-
-public abstract class SyncEventProjection<T>: SyncEventProjectionBase where T : EventProjection
-{
-    public SyncEventProjection(T projection)
-    {
-        Projection = projection;
-    }
-
-    public T Projection { get; }
-}
-
-public abstract class AsyncEventProjection<T>: AsyncEventProjectionBase where T : EventProjection
-{
-    public AsyncEventProjection(T projection)
-    {
-        Projection = projection;
-    }
-
-    public T Projection { get; }
 }

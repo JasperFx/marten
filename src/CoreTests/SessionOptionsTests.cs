@@ -3,6 +3,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
@@ -51,8 +52,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var database = Substitute.For<IMartenDatabase>();
         var options = SessionOptions.ForDatabase(database);
 
-        options.Tenant?.Database.ShouldBeTheSameAs(database);
-        options.Tenant?.TenantId.ShouldBe(Tenancy.DefaultTenantId);
+        options.Tenant?.Database.ShouldBeSameAs(database);
+        options.Tenant?.TenantId.ShouldBe(StorageConstants.DefaultTenantId);
         options.OwnsConnection.ShouldBeTrue();
         options.OwnsTransactionLifecycle.ShouldBeTrue();
     }
@@ -135,21 +136,21 @@ public class SessionOptionsTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void can_choke_on_custom_timeout()
+    public async Task can_choke_on_custom_timeout()
     {
         var options = new SessionOptions { Timeout = 1 };
 
         using var session = theStore.LightweightSession(options);
-        var e = Assert.Throws<Marten.Exceptions.MartenCommandException>(() =>
+        var e = await Should.ThrowAsync<Marten.Exceptions.MartenCommandException>(async () =>
         {
-            session.Query<FryGuy>("select pg_sleep(2)");
+            await session.QueryAsync<FryGuy>("select pg_sleep(2)");
         });
 
         Assert.Contains("Timeout during reading attempt", e.InnerException?.InnerException?.Message);
     }
 
     [Fact]
-    public void default_timeout_should_be_npgsql_default_ie_30()
+    public async Task default_timeout_should_be_npgsql_default_ie_30()
     {
         // TODO -- do this without the Preview command. Check against the session itself
         StoreOptions(opts =>
@@ -162,25 +163,25 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = new SessionOptions();
 
         using var query = theStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(30, cmd.Command.CommandTimeout);
     }
 
 
     [Fact]
-    public void can_define_custom_timeout()
+    public async Task can_define_custom_timeout()
     {
         // TODO -- do this without the Preview command. Check against the session itself
         var options = new SessionOptions { Timeout = 15 };
 
         using var query = theStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
 
         Assert.Equal(15, cmd.Command.CommandTimeout);
     }
 
     [Fact]
-    public void can_define_custom_timeout_via_pgcstring()
+    public async Task can_define_custom_timeout_via_pgcstring()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -192,14 +193,13 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         });
 
         using var query = documentStore.LightweightSession();
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(1, cmd.Command.CommandTimeout);
         Assert.Equal(1, query.Connection?.CommandTimeout);
     }
 
     [Fact]
-    [Obsolete("Obsolete")]
-    public void can_override_pgcstring_timeout_in_sessionoptions()
+    public async Task can_override_pgcstring_timeout_in_sessionoptions()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -213,13 +213,13 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         var options = new SessionOptions { Timeout = 60 };
 
         using var query = documentStore.QuerySession(options);
-        var cmd = query.Query<FryGuy>().Explain();
+        var cmd = await query.Query<FryGuy>().ExplainAsync();
         Assert.Equal(60, cmd.Command.CommandTimeout);
         Assert.Equal(1, query.Connection?.CommandTimeout);
     }
 
     [Fact]
-    public void session_with_custom_connection_reusable_after_saveChanges()
+    public async Task session_with_custom_connection_reusable_after_saveChanges()
     {
         var connectionStringBuilder = new NpgsqlConnectionStringBuilder(ConnectionSource.ConnectionString);
 
@@ -237,8 +237,8 @@ public class SessionOptionsTests: OneOffConfigurationsContext
 
         using var session = documentStore.LightweightSession(options);
         session.Store(testObject);
-        session.SaveChanges();
-        session.Load<FryGuy>(testObject.Id).ShouldNotBeNull();
+        await session.SaveChangesAsync();
+        (await session.LoadAsync<FryGuy>(testObject.Id)).ShouldNotBeNull();
     }
 
     [Fact]

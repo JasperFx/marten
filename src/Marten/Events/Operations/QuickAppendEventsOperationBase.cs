@@ -6,6 +6,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
+using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Npgsql;
@@ -20,6 +22,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         Stream = stream;
     }
+
+    public EventGraph Events { get; set; }
 
     public StreamAction Stream { get; }
 
@@ -43,11 +47,25 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         {
             var values = reader.GetFieldValue<long[]>(0);
 
+            var finalVersion = values[0];
+            foreach (var e in Stream.Events.Reverse())
+            {
+                e.Version = finalVersion;
+                finalVersion--;
+            }
+
             // Ignore the first value
             for (int i = 1; i < values.Length; i++)
             {
                 // Only setting the sequence to aid in tombstone processing
                 Stream.Events[i - 1].Sequence = values[i];
+            }
+
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 1)
+            {
+                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                    ? Stream.Id
+                    : Stream.Key);
             }
         }
     }
@@ -109,11 +127,25 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         {
             var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
 
+            var finalVersion = values[0];
+            foreach (var e in Stream.Events.Reverse())
+            {
+                e.Version = finalVersion;
+                finalVersion--;
+            }
+
             // Ignore the first value
             for (int i = 1; i < values.Length; i++)
             {
                 // Only setting the sequence to aid in tombstone processing
                 Stream.Events[i - 1].Sequence = values[i];
+            }
+
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 1)
+            {
+                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                    ? Stream.Id
+                    : Stream.Key);
             }
         }
     }

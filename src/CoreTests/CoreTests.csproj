@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="..\DaemonTests\DaemonTests.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
@@ -16,20 +16,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="13.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
         <PackageReference Include="Microsoft.FeatureManagement" Version="3.2.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
-        <PackageReference Include="Npgsql.DependencyInjection" Version="8.0.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+        <PackageReference Include="Npgsql.DependencyInjection" Version="9.0.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit" Version="2.6.2" />
-        <PackageReference Include="NSubstitute" Version="5.1.0" />
-        <PackageReference Include="Shouldly" Version="4.2.1" />
+        <PackageReference Include="xunit" Version="2.9.2" />
+        <PackageReference Include="NSubstitute" Version="5.3.0" />
+        <PackageReference Include="Shouldly" Version="4.3.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -114,11 +111,14 @@
         <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
             <Link>Harness\TestsSettings.cs</Link>
         </Compile>
+        <Compile Include="..\Marten.Testing\MartenHostEnvironment.cs">
+          <Link>MartenHostEnvironment.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\RecordingLogger.cs">
+          <Link>RecordingLogger.cs</Link>
+        </Compile>
         <Compile Include="..\Marten.Testing\SchemaMigrationExtensions.cs">
             <Link>SchemaMigrationExtensions.cs</Link>
-        </Compile>
-        <Compile Include="..\Marten.Testing\JilSerializer.cs">
-            <Link>JilSerializer.cs</Link>
         </Compile>
         <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>

@@ -1,8 +1,10 @@
 #nullable enable
+using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
+using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.Services.BatchQuerying;
@@ -30,9 +32,4 @@ internal class BatchQueryItem<T>: IBatchQueryItem
         Completion.SetResult(result);
     }
 
-    public void Read(DbDataReader reader, IMartenSession session)
-    {
-        var result = _handler.Handle(reader, session);
-        Completion.SetResult(result);
-    }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Shouldly;

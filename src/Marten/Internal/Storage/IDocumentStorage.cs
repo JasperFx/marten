@@ -1,10 +1,10 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.Events.Aggregation;
 using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Linq;
@@ -40,9 +40,6 @@ public interface IDocumentStorage: ISelectClause
     TenancyStyle TenancyStyle { get; }
     Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default);
 
-    [Obsolete("Use async method instead.")]
-    void TruncateDocumentStorage(IMartenDatabase database);
-
     ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session);
 
     ISqlFragment? DefaultWhereFragment();
@@ -69,7 +66,7 @@ internal class CreateFromDocumentMapping: Variable
 
 public class DocumentProvider<T> where T : notnull
 {
-    public DocumentProvider(IBulkLoader<T>? bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight,
+    public DocumentProvider(IBulkLoader<T> bulkLoader, IDocumentStorage<T> queryOnly, IDocumentStorage<T> lightweight,
         IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking)
     {
         BulkLoader = bulkLoader;
@@ -79,11 +76,29 @@ public class DocumentProvider<T> where T : notnull
         DirtyTracking = dirtyTracking;
     }
 
-    public IBulkLoader<T>? BulkLoader { get; }
+    public IBulkLoader<T> BulkLoader { get; }
     public IDocumentStorage<T> QueryOnly { get; }
     public IDocumentStorage<T> Lightweight { get; }
     public IDocumentStorage<T> IdentityMap { get; }
     public IDocumentStorage<T> DirtyTracking { get; }
+
+    public IDocumentStorage<T> Select(DocumentTracking tracking)
+    {
+        switch (tracking)
+        {
+            case DocumentTracking.None:
+                return Lightweight;
+            case DocumentTracking.QueryOnly:
+                return QueryOnly;
+            case DocumentTracking.DirtyTracking:
+                return DirtyTracking;
+            case DocumentTracking.IdentityOnly:
+                return IdentityMap;
+
+            default:
+                throw new ArgumentOutOfRangeException(nameof(tracking));
+        }
+    }
 }
 
 public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
@@ -112,23 +127,16 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     void RemoveDirtyTracker(IMartenSession session, object id);
     IDeletion HardDeleteForDocument(T document, string tenantId);
 
+    void SetIdentityFromString(T document, string identityString);
+    void SetIdentityFromGuid(T document, Guid identityGuid);
 }
 
-public interface IDocumentStorage<T, TId>: IDocumentStorage<T> where T : notnull where TId : notnull
+public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<T, TId> where T : notnull where TId : notnull
 {
-    /// <summary>
-    ///     Assign the given identity to the document
-    /// </summary>
-    /// <param name="document"></param>
-    /// <param name="identity"></param>
-    void SetIdentity(T document, TId identity);
-
     IDeletion DeleteForId(TId id, string tenantId);
 
-    T? Load(TId id, IMartenSession session);
     Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
 
-    IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session);
     Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
 

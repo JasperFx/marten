@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -10,7 +11,7 @@ namespace LinqTests.Bugs;
 public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContext
 {
     [Fact]
-    public void can_do_any_with_contains_against_IList()
+    public async Task can_do_any_with_contains_against_IList()
     {
         var doc1 = new DocWithLists { Names = new List<string> { "Jeremy", "Josh", "Corey" } };
         var doc2 = new DocWithLists { Names = new List<string> { "Jeremy", "Lindsey", "Max" } };
@@ -18,7 +19,7 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
 
         using var session = theStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var searchNames = new[] { "Jeremy", "Josh" };
 
@@ -34,9 +35,9 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
     }
 
     [Fact]
-    public void can_do_any_with_contains_against_IList_with_camel_casing()
+    public async Task can_do_any_with_contains_against_IList_with_camel_casing()
     {
-        StoreOptions(_ => _.UseDefaultSerialization(casing: Casing.CamelCase));
+        StoreOptions(_ => _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase));
 
         var doc1 = new DocWithLists { Names = new List<string> { "Jeremy", "Josh", "Corey" } };
         var doc2 = new DocWithLists { Names = new List<string> { "Jeremy", "Lindsey", "Max" } };
@@ -44,7 +45,7 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
 
         using var session = theStore.LightweightSession();
         session.Store(doc1, doc2, doc3);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var searchNames = new[] { "Jeremy", "Josh" };
 

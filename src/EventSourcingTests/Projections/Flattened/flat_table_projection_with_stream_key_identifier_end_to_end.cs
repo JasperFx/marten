@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;

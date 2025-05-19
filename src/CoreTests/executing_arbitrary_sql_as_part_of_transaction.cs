@@ -3,6 +3,7 @@ using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
+using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
@@ -44,6 +45,8 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
         theSession.Store(Target.Random());
         var json = "{ \"answer\": 42 }";
         theSession.QueueSqlCommand("insert into data (raw_value) values (?::jsonb)", json);
+        // Use ^ as the parameter placeholder
+        theSession.QueueSqlCommand('^', "insert into data (raw_value) values (^::jsonb)", json);
         #endregion
 
         await theSession.SaveChangesAsync();
@@ -55,7 +58,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
             var names = await conn.CreateCommand("select name from names order by name")
                 .FetchListAsync<string>();
 
-            names.ShouldHaveTheSameElementsAs("Babu", "Jeremy", "Oskar");
+            names.ShouldBe(["Babu", "Jeremy", "Oskar"]);
         }
     }
 }

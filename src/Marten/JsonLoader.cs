@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 
@@ -17,29 +18,20 @@ internal class JsonLoader: IJsonLoader
         _session = session;
     }
 
-    public string? FindById<T>(string id) where T : class
+    public Task<string?> FindByIdAsync<T>(object id, CancellationToken token = default) where T : class
     {
-        return findJsonById<T, string>(id);
+        if (id == null)
+        {
+            throw new ArgumentNullException(nameof(id));
+        }
+
+        var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
+        return streamer.FindByIdAsync(id, token);
     }
 
     public Task<string?> FindByIdAsync<T>(string id, CancellationToken token) where T : class
     {
         return findJsonByIdAsync<T, string>(id, token);
-    }
-
-    public string? FindById<T>(int id) where T : class
-    {
-        return findJsonById<T, int>(id);
-    }
-
-    public string? FindById<T>(long id) where T : class
-    {
-        return findJsonById<T, long>(id);
-    }
-
-    public string? FindById<T>(Guid id) where T : class
-    {
-        return findJsonById<T, Guid>(id);
     }
 
     public Task<string?> FindByIdAsync<T>(int id, CancellationToken token = new()) where T : class
@@ -55,6 +47,43 @@ internal class JsonLoader: IJsonLoader
     public Task<string?> FindByIdAsync<T>(Guid id, CancellationToken token = new()) where T : class
     {
         return findJsonByIdAsync<T, Guid>(id, token);
+    }
+
+    public Task<bool> StreamById<T>(object id, Stream destination, CancellationToken token = default) where T : class
+    {
+        if (id == null)
+        {
+            throw new ArgumentNullException(nameof(id));
+        }
+
+        var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
+        return streamer.StreamJsonById(id, destination, token);
+    }
+
+    private interface IStreamer<T>
+    {
+        Task<bool> StreamJsonById(object id, Stream destination, CancellationToken token);
+        Task<string?> FindByIdAsync(object id, CancellationToken token);
+    }
+
+    private class Streamer<T, TId>: IStreamer<T> where T : class where TId : notnull
+    {
+        private readonly JsonLoader _parent;
+
+        public Streamer(JsonLoader parent)
+        {
+            _parent = parent;
+        }
+
+        public Task<string?> FindByIdAsync(object id, CancellationToken token)
+        {
+            return _parent.findJsonByIdAsync<T, TId>((TId)id, token);
+        }
+
+        public Task<bool> StreamJsonById(object id, Stream destination, CancellationToken token)
+        {
+            return _parent.streamJsonById<T, TId>((TId)id, destination, token);
+        }
     }
 
     public Task<bool> StreamById<T>(int id, Stream destination, CancellationToken token = default) where T : class
@@ -80,16 +109,6 @@ internal class JsonLoader: IJsonLoader
     public Task<string?> FindJsonByIdAsync<T>(int id, CancellationToken token) where T : class
     {
         return findJsonByIdAsync<T, int>(id, token);
-    }
-
-    private string? findJsonById<T, TId>(TId id) where T : notnull where TId : notnull
-    {
-        _session.Database.EnsureStorageExists(typeof(T));
-
-        var storage = _session.QueryStorageFor<T, TId>();
-        var command = storage.BuildLoadCommand(id, _session.TenantId);
-
-        return _session.LoadOne(command, LinqConstants.StringValueSelector);
     }
 
     private async Task<string?> findJsonByIdAsync<T, TId>(TId id, CancellationToken token)

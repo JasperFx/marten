@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Services;

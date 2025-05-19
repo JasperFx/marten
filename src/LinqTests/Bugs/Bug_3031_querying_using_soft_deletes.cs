@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
 using Marten.Testing.Harness;
@@ -30,14 +31,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
     // Fails with "System.InvalidOperationException":
     // "Document type object is not configured as soft deleted"
     [Fact]
-    public void test_any_maybe_deleted_in_generic_method()
+    public async Task test_any_maybe_deleted_in_generic_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -50,14 +51,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
     // Works fine
     [Fact]
-    public void test_any_maybe_deleted_in_non_generic_method()
+    public async Task test_any_maybe_deleted_in_non_generic_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -71,14 +72,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
     // Fails with "System.InvalidOperationException":
     // "Document type object is not configured as soft deleted"
     [Fact]
-    public void test_any_maybe_deleted_in_generic_extension_method()
+    public async Task test_any_maybe_deleted_in_generic_extension_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -96,14 +97,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
     // Fails with "System.InvalidOperationException":
     // "Document type object is not configured as soft deleted"
     [Fact]
-    public void test_list_maybe_deleted_in_generic_extension_method()
+    public async Task test_list_maybe_deleted_in_generic_extension_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -117,14 +118,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
     // Working fine
     [Fact]
-    public void test_any_maybe_deleted_in_extension_method()
+    public async Task test_any_maybe_deleted_in_extension_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -138,14 +139,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
     // Working fine
     [Fact]
-    public void test_list_maybe_deleted_in_extension_method()
+    public async Task test_list_maybe_deleted_in_extension_method()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -159,14 +160,14 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
     // Working fine
     [Fact]
-    public void test_any()
+    public async Task test_any()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
 
         using (var sessionX = theStore.LightweightSession())
         {
             sessionX.Store(entity, entity);
-            sessionX.SaveChanges();
+            await sessionX.SaveChangesAsync();
         }
 
         using var session = theStore.QuerySession();
@@ -180,7 +181,7 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
     // Working fine
     [Fact]
-    public void test_list()
+    public async Task test_list()
     {
         var entity = new Entity { Id = Guid.NewGuid() };
         var entityDeleted = new Entity { Id = Guid.NewGuid() };
@@ -188,13 +189,13 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(entity, entityDeleted);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<Entity>(entityDeleted.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using var query = theStore.QuerySession();

@@ -1,6 +1,8 @@
 #nullable enable
+using JasperFx;
 using Marten.Internal;
 using Marten.Linq.Members;
+using Marten.Storage;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -41,6 +43,16 @@ internal class SubQueryFilter: ISubQueryFilter
         if (Not)
         {
             builder.Append("NOT(");
+        }
+
+        if (builder.TenantId != StorageConstants.DefaultTenantId && Member is ChildCollectionMember child)
+        {
+            if (child.Ancestors[0] is DocumentQueryableMemberCollection c && c.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                builder.Append("d.tenant_id = ");
+                builder.AppendParameter(builder.TenantId);
+                builder.Append(" and ");
+            }
         }
 
         builder.Append("d.ctid in (select ctid from ");

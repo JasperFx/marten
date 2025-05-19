@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
@@ -20,18 +21,19 @@ public class known_exception_causes_dueto_pg9: IntegrationContext
         });
 
         e.Reason.ShouldBe(NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10);
-        SpecificationExtensions.ShouldContain(e.Message, KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
+        e.Message.ShouldContain(KnownNotSupportedExceptionCause.ToTsvectorOnJsonb.Description);
     }
 
     [PgVersionTargetedFact(MaximumVersion = "10.0")]
-    public void can_totsvector_other_than_jsonb_without_FTS_exception()
+    public async Task can_totsvector_other_than_jsonb_without_FTS_exception()
     {
-        var e = Assert.Throws<MartenCommandException>(() =>
+        var e = await Should.ThrowAsync<MartenCommandException>(async () =>
         {
             using var session = theStore.QuerySession();
-            session.Query<User>("to_tsvector(?)", 0).ToList();
+            await session.QueryAsync<User>("to_tsvector(?)", 0);
         });
-        SpecificationExtensions.ShouldNotBeOfType<MartenCommandNotSupportedException>(e);
+
+        e.ShouldNotBeOfType<MartenCommandNotSupportedException>();
     }
 
     public known_exception_causes_dueto_pg9(DefaultStoreFixture fixture) : base(fixture)

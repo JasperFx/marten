@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Microsoft.Extensions.Hosting;
@@ -45,12 +46,31 @@ public class Optimizations
             opts.Events.AppendMode = EventAppendMode.Quick;
 
             // Little more involved, but this can reduce the number
-            // of database queries necessary to process inline projections
-            // during command handling with some significant
-            // caveats
-            opts.Events.UseIdentityMapForInlineAggregates = true;
+            // of database queries necessary to process projections
+            // during CQRS command handling with certain workflows
+            opts.Events.UseIdentityMapForAggregates = true;
+
+            // Opts into a mode where Marten is able to rebuild single
+            // stream projections faster by building one stream at a time
+            // Does require new table migrations for Marten 7 users though
+            opts.Events.UseOptimizedProjectionRebuilds = true;
+        });
+
+        #endregion
+
+        #region sample_turn_on_optimizations_for_rebuilding
+
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection("some connection string");
+
+            // Opts into a mode where Marten is able to rebuild single // [!code ++]
+            // stream projections faster by building one stream at a time // [!code ++]
+            // Does require new table migrations for Marten 7 users though // [!code ++]
+            opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
         });
 
         #endregion
     }
+
 }

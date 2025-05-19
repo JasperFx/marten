@@ -1,4 +1,5 @@
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace CoreTests.Diagnostics;

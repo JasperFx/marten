@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
@@ -147,10 +148,10 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection1", "All"), 1000)));
+            new EventRange(new ShardName("Projection1", "All", 1), 1000)));
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection2", "All"), 1000)));
+            new EventRange(new ShardName("Projection2", "All", 1), 1000)));
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
@@ -232,17 +233,19 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         var allSchemas = theStore.Tenancy.Default.Database.AllSchemaNames();
 
-        int GetSequenceCount(IDocumentStore store)
+        async Task<int> GetSequenceCount(IDocumentStore store)
         {
             using var session = store.QuerySession();
-            return session.Query<int>(@"select count(*) from information_schema.sequences s
-where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas).First();
+            var values = await session.QueryAsync<int>(@"select count(*) from information_schema.sequences s
+where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas);
+
+            return values.First();
         }
 
-        GetSequenceCount(theStore).ShouldBeGreaterThan(0);
+        (await GetSequenceCount(theStore)).ShouldBeGreaterThan(0);
 
         await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        GetSequenceCount(theStore).ShouldBe(0);
+        (await GetSequenceCount(theStore)).ShouldBe(0);
     }
 }

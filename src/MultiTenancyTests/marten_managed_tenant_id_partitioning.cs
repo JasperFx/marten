@@ -3,13 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
+using Marten.Events;
+using Marten.Metadata;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.FSharp.Control;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
@@ -26,8 +30,10 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         await conn.OpenAsync();
         try
         {
-            await conn.CreateCommand($"delete from tenants.{MartenManagedTenantListPartitions.TableName}")
-                .ExecuteNonQueryAsync();
+            await conn.DropSchemaAsync("tenants");
+
+            // await conn.CreateCommand($"delete from tenants.{MartenManagedTenantListPartitions.TableName}")
+            //     .ExecuteNonQueryAsync();
         }
         catch (Exception)
         {
@@ -72,6 +78,120 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
         assertTableHasTenantPartitions(userTable, "a1", "a2", "a3");
 
+    }
+
+    [Fact]
+    public async Task add_then_remove_tenants_at_runtime()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+        }, true);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var statuses = await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+
+        foreach (var status in statuses)
+        {
+            status.Status.ShouldBe(PartitionMigrationStatus.Complete);
+        }
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+
+        await theStore.Advanced.RemoveMartenManagedTenantsAsync(["a2"], CancellationToken.None);
+
+        var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
+        assertTableHasTenantPartitions(targetTable, "a1", "a3");
+
+        var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
+        assertTableHasTenantPartitions(userTable, "a1", "a3");
+    }
+
+    [Fact]
+    public async Task delete_all_tenant_data_will_drop_partitions()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+        }, true);
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        var statuses = await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+
+        foreach (var status in statuses)
+        {
+            status.Status.ShouldBe(PartitionMigrationStatus.Complete);
+        }
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+
+        await theStore.Advanced.DeleteAllTenantDataAsync("a2", CancellationToken.None);
+
+        var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
+        assertTableHasTenantPartitions(targetTable, "a1", "a3");
+
+        var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
+        assertTableHasTenantPartitions(userTable, "a1", "a3");
+    }
+
+
+
+    [Fact]
+    public async Task should_not_build_storage_for_live_aggregations()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            opts.Schema.For<Target>();
+            opts.Schema.For<User>();
+
+            opts.Projections.LiveStreamAggregation<SimpleAggregate>();
+        }, true);
+
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent()).Id;
+        await theSession.SaveChangesAsync();
+
+        var aggregate = theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        aggregate.ShouldNotBeNull();
+
+        await theStore
+            .Advanced
+            // This is ensuring that there are tenant id partitions for all multi-tenanted documents
+            // with the named tenant ids
+            .AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "a2", "a3");
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // Seeing if the table for SimpleAggregate exists, and it should *not*
+        var table = await theStore.Storage.Database.ExistingTableFor(typeof(SimpleAggregate));
+        table.ShouldBeNull();
     }
 
     [Fact]
@@ -128,7 +248,11 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         // Little overlap to prove it's idempotent
-        await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "b1", "b2");
+        var statuses = await theStore.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "a1", "b1", "b2");
+        foreach (var status in statuses)
+        {
+            status.Status.ShouldBe(PartitionMigrationStatus.Complete);
+        }
 
         var targetTable = await theStore.Storage.Database.ExistingTableFor(typeof(Target));
         assertTableHasTenantPartitions(targetTable, "a1", "a2", "a3", "b1", "b2");
@@ -136,6 +260,8 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
         var userTable = await theStore.Storage.Database.ExistingTableFor(typeof(User));
         assertTableHasTenantPartitions(userTable, "a1", "a2", "a3", "b1", "b2");
     }
+
+
 
     private void assertTableHasTenantPartitions(Table table, params string[] tenantIds)
     {
@@ -233,4 +359,49 @@ public class DocThatShouldBeExempted2
 {
     public Guid Id { get; set; }
 }
+
+public class SimpleAggregate : IRevisioned
+{
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public Guid Id { get; set; }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+
+    public void Apply(AEvent _)
+    {
+        ACount++;
+    }
+
+    public void Apply(BEvent _)
+    {
+        BCount++;
+    }
+
+    public void Apply(CEvent _)
+    {
+        CCount++;
+    }
+
+    public void Apply(DEvent _)
+    {
+        DCount++;
+    }
+
+    public void Apply(EEvent _)
+    {
+        ECount++;
+    }
+}
+
+public class BEvent{}
+public class CEvent{}
+public class DEvent{}
+public class EEvent{}
+
 

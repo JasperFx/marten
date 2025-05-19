@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -59,6 +60,8 @@ public class Order
 }
 
 #endregion
+
+
 
 public record MarkItemReady(Guid OrderId, string ItemName, int Version);
 
@@ -217,7 +220,7 @@ public static class BootstrappingSample
 
             // Opt into an optimization for the inline aggregates
             // used with FetchForWriting()
-            opts.Projections.UseIdentityMapForInlineAggregates = true;
+            opts.Projections.UseIdentityMapForAggregates = true;
         })
 
         // This is also a performance optimization in Marten to disable the
@@ -227,4 +230,29 @@ public static class BootstrappingSample
 
         #endregion
     }
+
+    #region sample_handling_shiporder_and_emitting_archived_event
+
+    public static async Task HandleAsync(ShipOrder command, IDocumentSession session)
+    {
+        var stream = await session.Events.FetchForWriting<Order>(command.OrderId);
+        var order = stream.Aggregate;
+
+        if (!order.Shipped.HasValue)
+        {
+            // Mark it as shipped
+            stream.AppendOne(new OrderShipped());
+
+            // But also, the order is done, so let's mark it as archived too!
+            stream.AppendOne(new Archived("Shipped"));
+
+            await session.SaveChangesAsync();
+        }
+    }
+
+    #endregion
 }
+
+public record ShipOrder(Guid OrderId);
+
+

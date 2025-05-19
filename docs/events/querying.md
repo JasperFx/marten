@@ -144,7 +144,7 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L8-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L9-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream State
@@ -271,12 +271,12 @@ We urge caution about this functionality because it requires a search against th
 <a id='snippet-sample_query-against-event-data'></a>
 ```cs
 [Fact]
-public void can_query_against_event_type()
+public async Task can_query_against_event_type()
 {
     theSession.Events.StartStream<Quest>(joined1, departed1);
     theSession.Events.StartStream<Quest>(joined2, departed2);
 
-    theSession.SaveChanges();
+    await theSession.SaveChangesAsync();
 
     theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
     theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
@@ -287,7 +287,7 @@ public void can_query_against_event_type()
         .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L25-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L27-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
@@ -305,7 +305,7 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
         .ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L151-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L153-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This mechanism will allow you to query by any property of the `IEvent` interface shown above.
@@ -322,5 +322,5 @@ var raw = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.EventTypesAre(typeof(CEvent), typeof(DEvent)))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L246-L252' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L248-L254' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

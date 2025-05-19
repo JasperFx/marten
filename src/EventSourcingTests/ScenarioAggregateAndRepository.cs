@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;

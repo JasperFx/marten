@@ -1,18 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <!-- Leave this be -->
-        <TargetFrameworks>net8.0</TargetFrameworks>
-
         <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="FSharp.SystemTextJson" Version="1.3.13" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
-        <PackageReference Include="Vogen" Version="4.0.8" />
-        <PackageReference Include="xunit" Version="2.8.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1">
+        <PackageReference Include="Vogen" Version="7.0.0" />
+        <PackageReference Include="xunit" Version="2.9.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
@@ -20,8 +17,6 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
-        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
-        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
         <PackageReference Include="StronglyTypedId" Version="1.0.0-beta08" PrivateAssets="all" ExcludeAssets="runtime" />
     </ItemGroup>
 
@@ -36,5 +31,19 @@
 
     <ItemGroup>
       <Compile Remove="AssemblyInfo.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\TeamProvider700129768.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Team3Provider396017422.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Team2Provider1170066519.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\TeacherProvider944571072.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\ReferenceTypeOrderProvider1892982689.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\OrderProvider347010495.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\InvoiceProvider1724721064.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Invoice3Provider479877132.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\Invoice2Provider479877131.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\GradeProvider907442297.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Internal\Generated\DocumentStorage\" />
     </ItemGroup>
 </Project>

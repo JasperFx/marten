@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 
@@ -10,9 +11,9 @@ namespace Marten;
 /// <summary>
 ///     Basic storage operations for document types, but cannot initiate any actual writes
 /// </summary>
-public interface IDocumentOperations: IQuerySession
+public interface IDocumentOperations: IQuerySession, IStorageOperations
 {
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Mark this entity for deletion upon the next call to SaveChanges()
@@ -101,7 +102,7 @@ public interface IDocumentOperations: IQuerySession
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="revision"></param>
-    void UpdateRevision<T>(T entity, int revision);
+    void UpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     /// Explicitly marks a document as needing to be updated and supplies the
@@ -112,7 +113,7 @@ public interface IDocumentOperations: IQuerySession
     /// <param name="entity"></param>
     /// <param name="revision"></param>
     /// <typeparam name="T"></typeparam>
-    void TryUpdateRevision<T>(T entity, int revision);
+    void TryUpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     ///     Store an enumerable of potentially mixed documents
@@ -233,10 +234,19 @@ public interface IDocumentOperations: IQuerySession
     void QueueSqlCommand(string sql, params object[] parameterValues);
 
     /// <summary>
+    ///     Registers a SQL command to be executed with the underlying unit of work as part of the batched command.
+    ///     Use <paramref name="placeholder"/> to specify a character that will be replaced by positional parameters.
+    /// </summary>
+    /// <param name="placeholder"></param>
+    /// <param name="sql"></param>
+    /// <param name="parameterValues"></param>
+    void QueueSqlCommand(char placeholder, string sql, params object[] parameterValues);
+
+    /// <summary>
     /// In the case of a lightweight session, this will direct Marten to opt into identity map mechanics
     /// for only the document type T. This is a micro-optimization added for the event sourcing + projections
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public void UseIdentityMapFor<T>();
+    public void UseIdentityMapFor<T>() where T : notnull;
 }

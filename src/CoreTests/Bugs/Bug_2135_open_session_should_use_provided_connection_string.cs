@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Bug2135;
+using JasperFx;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;

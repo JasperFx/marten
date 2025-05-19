@@ -19,6 +19,8 @@ public class Bug_PR_2277_upsert_deleted_with_unique_key: IntegrationContext
             _.Schema.For<RecordA>().Duplicate(r => r.UniqueKey, configure: c => c.IsUnique = true);
         });
 
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+
         var recordA = new RecordA { Id = Guid.NewGuid(), UniqueKey = "test123" };
         var recordB = new RecordB { Id = Guid.NewGuid(), UniqueKey = "test123" };
         await theStore.BulkInsertAsync(new[] { recordA });

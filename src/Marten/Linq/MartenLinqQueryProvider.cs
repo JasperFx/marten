@@ -7,6 +7,7 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
@@ -15,6 +16,8 @@ using Marten.Linq.Selectors;
 using Marten.Util;
 
 namespace Marten.Linq;
+
+internal record WaitForAggregate(TimeSpan Timeout);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -28,7 +31,9 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
     public Type SourceType { get; }
 
-    internal QueryStatistics Statistics { get; set; } = null!;
+    internal WaitForAggregate? Waiter { get; set; }
+
+    internal QueryStatistics? Statistics { get; set; }
 
     public IQueryable CreateQuery(Expression expression)
     {
@@ -70,11 +75,16 @@ internal class MartenLinqQueryProvider: IQueryProvider
         {
             await _session.Database.EnsureStorageExistsAsync(documentType, cancellationToken).ConfigureAwait(false);
         }
+
+        if (Waiter != null)
+        {
+            await _session.Database.WaitForNonStaleProjectionDataAsync(SourceType, Waiter.Timeout, cancellationToken).ConfigureAwait(false);
+        }
     }
 
 
     public async Task<TResult?> ExecuteAsync<TResult>(Expression expression, CancellationToken token,
-        SingleValueMode valueMode)
+        SingleValueMode valueMode) where TResult : notnull
     {
         try
         {
@@ -134,6 +144,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
         return default;
     }
 
+    [Obsolete(QuerySession.SynchronousRemoval)]
     public T? ExecuteHandler<T>(IQueryHandler<T> handler)
     {
         try

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,7 @@ namespace Marten;
 ///     The core abstraction for a Marten document and event store. This should probably be scoped as a
 ///     singleton in your system
 /// </summary>
-public interface IDocumentStore: IDisposable
+public interface IDocumentStore: IDisposable, IAsyncDisposable
 {
     /// <summary>
     ///     Information about the current configuration of this IDocumentStore
@@ -39,28 +40,6 @@ public interface IDocumentStore: IDisposable
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
-    ///     a large number of documents of type "T" to the database. This operation is transactional.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="documents"></param>
-    /// <param name="mode"></param>
-    /// <param name="batchSize"></param>
-    /// <param name="updateCondition">
-    ///     Raw sql that is used as the <c>WHERE</c> clause of the <c>ON CONFLICT DO UPDATE</c> statement when configured for <see cref="BulkInsertMode.OverwriteExisting"/>.
-    ///     Use <c>d.</c> to refer to the existing record in the table and <c>excluded.</c> to refer to the conflicting record that was excluded from insertion.
-    ///
-    ///     <para>
-    ///         Example:
-    ///         <code>
-    ///             "d.export_date &lt;= excluded.export_date"
-    ///         </code>
-    ///     </para>
-    /// </param>
-    void BulkInsert<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string? updateCondition = null);
-
-    /// <summary>
-    ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
     ///     a large number of documents of type "T" to the database. This operation enlists an existing transaction.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -79,8 +58,9 @@ public interface IDocumentStore: IDisposable
     ///         </code>
     ///     </para>
     /// </param>
-    void BulkInsertEnlistTransaction<T>(IReadOnlyCollection<T> documents, Transaction transaction,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
+    Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
+        string? updateCondition = null, CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -102,8 +82,9 @@ public interface IDocumentStore: IDisposable
     ///     </para>
     /// </param>
     /// <param name="batchSize"></param>
-    void BulkInsert<T>(string tenantId, IReadOnlyCollection<T> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000, string? updateCondition = null);
+    Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
+        BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
+        string? updateCondition = null, CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -125,7 +106,7 @@ public interface IDocumentStore: IDisposable
     ///     </para>
     /// </param>
     Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, string? updateCondition = null, CancellationToken cancellation = default);
+        int batchSize = 1000, string? updateCondition = null, CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -149,7 +130,7 @@ public interface IDocumentStore: IDisposable
     /// </param>
     Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents, Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        string? updateCondition = null, CancellationToken cancellation = default);
+        string? updateCondition = null, CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Uses Postgresql's COPY ... FROM STDIN BINARY feature to efficiently store
@@ -173,44 +154,7 @@ public interface IDocumentStore: IDisposable
     /// </param>
     Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        string? updateCondition = null, CancellationToken cancellation = default);
-
-    /// <summary>
-    ///     Open a new IDocumentSession with the supplied DocumentTracking.
-    ///     "IdentityOnly" is the default.
-    /// </summary>
-    /// <param name="tracking"></param>
-    /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    IDocumentSession OpenSession(
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    );
-
-    /// <summary>
-    ///     Open a new IDocumentSession with the supplied DocumentTracking.
-    ///     "IdentityOnly" is the default.
-    /// </summary>
-    /// <param name="tracking"></param>
-    /// <returns></returns>
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
-    IDocumentSession OpenSession(
-        string tenantId,
-        DocumentTracking tracking = DocumentTracking.IdentityOnly,
-        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted
-    );
+        string? updateCondition = null, CancellationToken cancellation = default) where T : notnull;
 
     /// <summary>
     ///     Open a new IDocumentSession with the supplied options
@@ -415,25 +359,6 @@ public interface IDocumentStore: IDisposable
     /// <param name="options">Additional options for session. DocumentTracking is not applicable for IQuerySession.</param>
     /// <returns></returns>
     Task<IQuerySession> QuerySerializableSessionAsync(SessionOptions options, CancellationToken token = default);
-
-    /// <summary>
-    ///     Bulk insert a potentially mixed enumerable of document types
-    /// </summary>
-    /// <param name="documents"></param>
-    /// <param name="mode"></param>
-    /// <param name="batchSize"></param>
-    void BulkInsertDocuments(IEnumerable<object> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000);
-
-    /// <summary>
-    ///     Bulk insert a potentially mixed enumerable of document types
-    /// </summary>
-    /// <param name="documents"></param>
-    /// <param name="mode"></param>
-    /// <param name="batchSize"></param>
-    void BulkInsertDocuments(string tenantId, IEnumerable<object> documents,
-        BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000);
 
     /// <summary>
     ///     Bulk insert a potentially mixed enumerable of document types

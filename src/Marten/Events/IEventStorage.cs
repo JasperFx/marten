@@ -1,3 +1,4 @@
+using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -53,6 +54,6 @@ public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
 
     IStorageOperation QuickAppendEvents(StreamAction stream);
 
-    IStorageOperation QuickAppendEventWithVersion(EventGraph events, IMartenSession session, StreamAction stream,
+    IStorageOperation QuickAppendEventWithVersion(StreamAction stream,
         IEvent e);
 }

@@ -5,7 +5,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Marten.Internal.CodeGeneration;
 
-public abstract class DocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector
+public abstract class DocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector where TId : notnull
 {
     protected readonly Dictionary<TId, T> _identityMap;
     protected readonly DocumentMapping _mapping;
@@ -29,7 +29,7 @@ public abstract class DocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector
     }
 }
 
-public abstract class RevisionedDocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector
+public abstract class RevisionedDocumentSelectorWithIdentityMap<T, TId>: IDocumentSelector where TId : notnull
 {
     protected readonly Dictionary<TId, T> _identityMap;
     protected readonly DocumentMapping _mapping;

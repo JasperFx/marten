@@ -2,8 +2,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Storage;
+using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events;
@@ -99,7 +101,10 @@ internal partial class EventStore
         }
         catch (Exception e)
         {
-            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.Message.Contains("current transaction is aborted"))
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.InnerException is NpgsqlException
+                {
+                    SqlState: PostgresErrorCodes.InFailedSqlTransaction
+                })
             {
                 throw new StreamLockedException(streamKey, e.InnerException);
             }
@@ -129,10 +134,14 @@ internal partial class EventStore
         }
         catch (Exception e)
         {
-            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.Message.Contains("current transaction is aborted"))
+            if (e.Message.Contains(MartenCommandException.MaybeLockedRowsMessage) || e.InnerException is NpgsqlException
+                {
+                    SqlState: PostgresErrorCodes.InFailedSqlTransaction
+                })
             {
                 throw new StreamLockedException(streamId, e.InnerException);
             }
+
             throw;
         }
     }

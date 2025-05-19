@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -9,7 +10,7 @@ namespace DocumentDbTests.Bugs;
 public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
 {
     [Fact]
-    public void does_indeed_assign_the_id_during_bulk_insert()
+    public async Task does_indeed_assign_the_id_during_bulk_insert()
     {
         var docs = new IntDoc[50];
         for (var i = 0; i < docs.Length; i++)
@@ -17,7 +18,7 @@ public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
             docs[i] = new IntDoc();
         }
 
-        theStore.BulkInsert(docs);
+        await theStore.BulkInsertAsync(docs);
 
         using (var session = theStore.QuerySession())
         {

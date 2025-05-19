@@ -24,13 +24,13 @@ builder.ConfigureServices(services =>
         opts.DisableNpgsqlLogging = true;
 
         opts.Events.AppendMode = EventAppendMode.Quick;
-        opts.Events.UseIdentityMapForInlineAggregates = true;
+        opts.Events.UseIdentityMapForAggregates = true;
 
         opts.Projections.Add<DaemonTests.TestingSupport.TripProjection>(ProjectionLifecycle.Inline);
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventAppenderPerfTester/Program.cs#L8-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disabling_npgsql_logging' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventAppenderPerfTester/Program.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disabling_npgsql_logging' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The Marten team will be considering reversing the default for this behavior in Marten 8.
@@ -86,13 +86,6 @@ public interface IDocumentSessionListener
     Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token);
 
     /// <summary>
-    ///     Called just after IDocumentSession.SaveChanges() is called, but before
-    ///     any database calls are made
-    /// </summary>
-    /// <param name="session"></param>
-    void BeforeSaveChanges(IDocumentSession session);
-
-    /// <summary>
     ///     Called just after IDocumentSession.SaveChanges() is called,
     ///     but before any database calls are made
     /// </summary>
@@ -100,13 +93,6 @@ public interface IDocumentSessionListener
     /// <param name="token"></param>
     /// <returns></returns>
     Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token);
-
-    /// <summary>
-    ///     After an IDocumentSession is committed
-    /// </summary>
-    /// <param name="session"></param>
-    /// <param name="commit"></param>
-    void AfterCommit(IDocumentSession session, IChangeSet commit);
 
     /// <summary>
     ///     Called after a document is loaded
@@ -120,7 +106,7 @@ public interface IDocumentSessionListener
     void DocumentAddedForStorage(object id, object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L27-L103' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IDocumentSessionListener.cs#L27-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_idocumentsessionlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can build and inject your own listeners by adding them to the `StoreOptions` object you use to configure a `DocumentStore`:
@@ -140,7 +126,7 @@ using (var store = SeparateStore(_ =>
            _.Listeners.Add(stub2);
        }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Global_DocumentSessionListener_Tests.cs#L22-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering-a-document-session-listener-1'></a>
 ```cs
 var stub1 = new StubDocumentSessionListener();
@@ -152,7 +138,7 @@ using (var store = SeparateStore(_ =>
            _.AutoCreateSchemaObjects = AutoCreate.All;
        }))
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Local_DocumentSessionListener_Tests.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/Using_Local_DocumentSessionListener_Tests.cs#L20-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-a-document-session-listener-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The listeners can be used to modify an `IDocumentSession` and its related unit of work just before persisting. Marten itself will be using this mechanism
@@ -168,7 +154,7 @@ query what was done after a commit is made:
 // with empty implementations of each method you may find helpful
 public class SimpleSessionListener: DocumentSessionListenerBase
 {
-    public override void BeforeSaveChanges(IDocumentSession session)
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         // Use pending changes to preview what is about to be
         // persisted
@@ -189,9 +175,11 @@ public class SimpleSessionListener: DocumentSessionListenerBase
         // organized into streams that will be appended to the event store
         pending.Streams()
             .Each(s => Debug.WriteLine(s));
+
+        return Task.CompletedTask;
     }
 
-    public override void AfterCommit(IDocumentSession session, IChangeSet commit)
+    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
     {
         // See what was just persisted, and possibly carry out post
         // commit actions
@@ -201,10 +189,12 @@ public class SimpleSessionListener: DocumentSessionListenerBase
         last.Updated.Each(x => Debug.WriteLine($"{x} was updated"));
         last.Deleted.Each(x => Debug.WriteLine($"{x} was deleted"));
         last.Inserted.Each(x => Debug.WriteLine($"{x} was inserted"));
+
+        return Task.CompletedTask;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SimpleSessionListener.cs#L8-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_custom_session_listener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/SimpleSessionListener.cs#L10-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_custom_session_listener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of Marten 1.4, you can also register `IDocumentSessionListener` objects scoped to a particular session with the
@@ -247,7 +237,7 @@ public class FakeListener: IChangeListener
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/basic_async_daemon_tests.cs#L77-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L81-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asyncdaemonlistener' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Wiring a Async Daemon listener:
@@ -261,7 +251,7 @@ StoreOptions(x =>
     x.Projections.AsyncListeners.Add(listener);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/basic_async_daemon_tests.cs#L107-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Internals/basic_functionality.cs#L111-L120' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asynclisteners' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Logging
@@ -365,7 +355,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L174-L181' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L182-L189' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -377,7 +367,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L183-L189' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L191-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -505,7 +495,7 @@ public class Trade
     public double Value { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L12-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trade_document_type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L13-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trade_document_type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `[DuplicateField]` attribute directs Marten to duplicate the value of `Value` into a separate database field for more efficient querying. Now, let's say that we want to search for every `Trade` document with a value of over 2,000, but we want to see the SQL query that Marten will build for that query first:
@@ -519,7 +509,7 @@ var cmd = queryable.ToCommand(FetchType.FetchMany);
 
 Debug.WriteLine(cmd.CommandText);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L30-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_preview_linq_command' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L31-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_preview_linq_command' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The sql string in our debug window for the code above is:
@@ -539,7 +529,7 @@ The `IMartenLogger` can be swapped out on any `IQuerySession` or `IDocumentSessi
 // session to pipe Marten logging to the xUnit.Net output
 theSession.Logger = new TestOutputMartenLogger(_output);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L301-L307' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L310-L316' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_replacing_logger_per_session' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Previewing the PostgreSQL Query Plan
@@ -550,7 +540,7 @@ Marten has a helper to find and preview the [PostgreSQL EXPLAIN plan](http://www
 <a id='snippet-sample_preview_linq_explain_plan'></a>
 ```cs
 // Explain() is an extension method off of IQueryable<T>
-var plan = queryable.Explain();
+var plan = await queryable.ExplainAsync();
 Console.WriteLine($"NodeType: {plan.NodeType}");
 Console.WriteLine($"RelationName: {plan.RelationName}");
 Console.WriteLine($"Alias: {plan.Alias}");
@@ -559,7 +549,7 @@ Console.WriteLine($"TotalCost: {plan.TotalCost}");
 Console.WriteLine($"PlanRows: {plan.PlanRows}");
 Console.WriteLine($"PlanWidth: {plan.PlanWidth}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L38-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_preview_linq_explain_plan' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L39-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_preview_linq_explain_plan' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The console output for the code below (on my box) was:
@@ -591,7 +581,7 @@ using (var session = theStore.QuerySession())
     session.RequestCount.ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L53-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_request_count' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/DiagnosticsExamples.cs#L54-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_request_count' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 At this point, Marten does not have any built in support for asserting requests per session thresholds like other tools. While I think that we are uncomfortable with that functionality ever being turned on in production, it should be easily feasible to build those kinds of automated threshold testing like "fail the test if there were more than 25 requests issued for any given HTTP request."
@@ -605,5 +595,5 @@ Marten provides a helper method to fetch the PostgreSQL server version exposed v
 ```cs
 var pgVersion = theStore.Diagnostics.GetPostgresVersion();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L11-L13' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Diagnostics/ability_to_fetch_postgres_server_version.cs#L12-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_postgres_version' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

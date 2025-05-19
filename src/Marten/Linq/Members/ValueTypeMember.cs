@@ -16,13 +16,13 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
 
-public interface IValueTypeMember: IQueryableMember
+public interface IValueTypeMember<TOuter, TInner>: IQueryableMember
 {
-    object ConvertFromWrapperArray(object values);
+    IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values);
     ISelectClause BuildSelectClause(string fromObject);
 }
 
-public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
+public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember<TOuter, TInner>
 {
     private readonly Func<TOuter, TInner> _valueSource;
     private readonly IScalarSelectClause _selector;
@@ -31,12 +31,24 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
         base(parent, casing, member,
             PostgresqlProvider.Instance.GetDatabaseType(valueTypeInfo.SimpleType, EnumStorage.AsInteger))
     {
-        _valueSource = valueTypeInfo.ValueAccessor<TOuter, TInner>();
-        var converter = valueTypeInfo.CreateConverter<TOuter, TInner>();
-        _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
-            TypedLocator, converter,
-            valueTypeInfo.OuterType,
-            valueTypeInfo.SimpleType);
+        _valueSource = valueTypeInfo.UnWrapper<TOuter, TInner>();
+        var converter = valueTypeInfo.CreateWrapper<TOuter, TInner>();
+
+        if (typeof(TOuter).IsClass)
+        {
+            _selector = typeof(ClassValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                valueTypeInfo.SimpleType);
+        }
+        else
+        {
+            _selector = typeof(ValueTypeSelectClause<,>).CloseAndBuildAs<IScalarSelectClause>(
+                TypedLocator, converter,
+                valueTypeInfo.OuterType,
+                valueTypeInfo.SimpleType);
+        }
+
     }
 
     public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict,
@@ -56,12 +68,13 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var value = _valueSource(constant.Value.As<TOuter>());
+        var value = constant.Value is TInner ? (TInner)constant.Value : _valueSource(constant.Value.As<TOuter>());
+
         var def = new CommandParameter(Expression.Constant(value));
         return new MemberComparisonFilter(this, def, op);
     }
 
-    public object ConvertFromWrapperArray(object values)
+    public IEnumerable<TInner> ConvertFromWrapperArray(IEnumerable<TOuter> values)
     {
         if (values is IEnumerable e)
         {

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 
@@ -14,7 +15,7 @@ public class Bug_1256_querying_against_a_uint_type: IntegrationContext
     }
 
     [Fact]
-    public void can_use_in_where_clauses()
+    public async Task can_use_in_where_clauses()
     {
         var doc1 = new DocWithUint { Number = 1 };
         var doc2 = new DocWithUint { Number = 2 };
@@ -25,7 +26,7 @@ public class Bug_1256_querying_against_a_uint_type: IntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(doc1, doc2, doc3, doc4, doc5);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             session.Query<DocWithUint>().Count(x => x.Number > 3).ShouldBe(2);
         }

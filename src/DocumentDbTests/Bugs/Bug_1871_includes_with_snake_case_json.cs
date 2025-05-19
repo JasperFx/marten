@@ -45,7 +45,7 @@ public class Bug_1871_includes_with_snake_case_json : BugIntegrationContext
     {
         StoreOptions(opts =>
         {
-            opts.UseDefaultSerialization(casing: Casing.SnakeCase);
+            opts.UseSystemTextJsonForSerialization(casing: Casing.SnakeCase);
             opts.Logger(new TestOutputMartenLogger(_output));
         });
 

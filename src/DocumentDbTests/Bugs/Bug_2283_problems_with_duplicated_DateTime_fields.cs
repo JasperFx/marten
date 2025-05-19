@@ -17,7 +17,7 @@ public class Bug_2283_problems_with_duplicated_DateTime_fields: BugIntegrationCo
         StoreOptions(opts =>
         {
             opts.Schema.For<MyModel>().Duplicate(x => x.Date);
-            opts.UseDefaultSerialization();
+            opts.UseSystemTextJsonForSerialization();
         });
         var model1 = new MyModel { UserId = Guid.NewGuid(), Date = DateTime.Now };
 
@@ -35,7 +35,7 @@ public class Bug_2283_problems_with_duplicated_DateTime_fields: BugIntegrationCo
         StoreOptions(opts =>
         {
             opts.Schema.For<MyModel>().Duplicate(x => x.Date);
-            opts.UseDefaultSerialization();
+            opts.UseSystemTextJsonForSerialization();
         });
         var model1 = new MyModel { UserId = Guid.NewGuid(), DateTimeOffset = DateTimeOffset.UtcNow };
 

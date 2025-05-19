@@ -53,7 +53,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void doc_has_projected_data_after_storage()
+        public async Task doc_has_projected_data_after_storage()
         {
             StoreOptions(c =>
             {
@@ -66,19 +66,19 @@ namespace DocumentDbTests.Metadata
             using (var session = theStore.LightweightSession())
             {
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var loaded = session.Load<DocWithMeta>(doc.Id);
-                ShouldBeTestExtensions.ShouldNotBe(loaded.LastModified, DateTimeOffset.MinValue);
+                var loaded = await session.LoadAsync<DocWithMeta>(doc.Id);
+                loaded.LastModified.ShouldNotBe(DateTimeOffset.MinValue);
             }
         }
 
         [Fact]
-        public void doc_metadata_is_read_only_on_store()
+        public async Task doc_metadata_is_read_only_on_store()
         {
             var doc = new DocWithAttributeMeta();
 
@@ -87,13 +87,13 @@ namespace DocumentDbTests.Metadata
                 doc.LastModified = DateTime.UtcNow.AddYears(-1);
                 doc.Version = Guid.Empty;
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var loaded = session.Load<DocWithAttributeMeta>(doc.Id);
+                var loaded = await session.LoadAsync<DocWithAttributeMeta>(doc.Id);
                 loaded.DocType.ShouldBeNull();
                 loaded.TenantId.ShouldBeNull();
                 (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan(TimeSpan.FromMinutes(1));
@@ -105,7 +105,7 @@ namespace DocumentDbTests.Metadata
 
 
         [Fact]
-        public void doc_metadata_is_mapped_for_query_includes()
+        public async Task doc_metadata_is_mapped_for_query_includes()
         {
             StoreOptions(c =>
             {
@@ -120,9 +120,9 @@ namespace DocumentDbTests.Metadata
                 session.Store(include);
                 doc.IncludedDocId = include.Id;
                 session.Store(doc);
-                session.MetadataFor(include).ShouldBeNull();
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                (await session.MetadataForAsync(include)).ShouldBeNull();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
@@ -138,7 +138,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void doc_metadata_is_updated_for_user_supplied_query()
+        public async Task doc_metadata_is_updated_for_user_supplied_query()
         {
             StoreOptions(c =>
             {
@@ -151,24 +151,24 @@ namespace DocumentDbTests.Metadata
             using (var session = theStore.LightweightSession())
             {
                 session.Store(doc);
-                session.MetadataFor(doc).ShouldBeNull();
-                session.SaveChanges();
+                (await session.MetadataForAsync(doc)).ShouldBeNull();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
+                var userQuery = (await session.QueryAsync<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'")).Single();
                 userQuery.Description = "updated via a user SQL query";
                 ShouldBeTestExtensions.ShouldNotBe(userQuery.LastModified, DateTimeOffset.MinValue);
                 lastMod = userQuery.LastModified;
                 session.Store(userQuery);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.LightweightSession())
             {
-                var userQuery = session.Query<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'").Single();
-                ShouldBeTestExtensions.ShouldBeGreaterThanOrEqualTo(userQuery.LastModified, lastMod);
+                var userQuery = (await session.QueryAsync<DocWithMeta>($"where data ->> 'Id' = '{doc.Id.ToString()}'")).Single();
+                userQuery.LastModified.ShouldBeGreaterThanOrEqualTo(lastMod);
             }
         }
 
@@ -234,7 +234,7 @@ namespace DocumentDbTests.Metadata
             (DateTime.UtcNow - loaded.LastModified.ToUniversalTime()).ShouldBeLessThan<TimeSpan>(TimeSpan.FromMinutes(1));
         }
 
-        public void doc_metadata_is_mapped_for_doc_hierarchies()
+        public async Task doc_metadata_is_mapped_for_doc_hierarchies()
         {
             StoreOptions(c =>
             {
@@ -259,7 +259,7 @@ namespace DocumentDbTests.Metadata
                 var emerald = new EmeraldGreenDocWithMeta { Description = "emerald doc" };
 
                 session.Store(doc, red, green, blue, emerald);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = theStore.IdentitySession())
@@ -276,12 +276,12 @@ namespace DocumentDbTests.Metadata
                 ShouldBeStringTestExtensions.ShouldBe(redDocs.First().DocType, "red_doc_with_meta");
                 session.Delete(redDocs.First());
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
         }
 
         [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_field()
+        public async Task versions_are_assigned_during_bulk_inserts_as_field()
         {
             var docs = new AttVersionedDoc[100];
             for (var i = 0; i < docs.Length; i++)
@@ -289,7 +289,7 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new AttVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            await theStore.BulkInsertAsync(docs);
 
             foreach (var doc in docs)
             {
@@ -301,7 +301,7 @@ namespace DocumentDbTests.Metadata
         }
 
         [Fact]
-        public void versions_are_assigned_during_bulk_inserts_as_prop()
+        public async Task versions_are_assigned_during_bulk_inserts_as_prop()
         {
             var docs = new PropVersionedDoc[100];
             for (int i = 0; i < docs.Length; i++)
@@ -309,7 +309,7 @@ namespace DocumentDbTests.Metadata
                 docs[i] = new PropVersionedDoc();
             }
 
-            theStore.BulkInsert(docs);
+            await theStore.BulkInsertAsync(docs);
 
             foreach (var doc in docs)
             {

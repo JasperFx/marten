@@ -63,7 +63,7 @@ public class NonStandardDoc
     public string Name;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L73-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_identityattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L74-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_identityattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The identity property or field can also be configured through `StoreOptions` by using the `Schema` to obtain a document mapping:
@@ -73,7 +73,7 @@ The identity property or field can also be configured through `StoreOptions` by 
 ```cs
 storeOptions.Schema.For<OverriddenIdDoc>().Identity(x => x.Name);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L57-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-override-id-fluent-interance' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L58-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-override-id-fluent-interance' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Guid Identifiers
@@ -92,7 +92,7 @@ options.Policies.ForAllDocuments(m =>
 {
     if (m.IdType == typeof(Guid))
     {
-        m.IdStrategy = new CombGuidIdGeneration();
+        m.IdStrategy = new SequentialGuidIdGeneration();
     }
 });
 ```
@@ -104,7 +104,7 @@ It is also possible use the SequentialGuid id generation algorithm for a specifi
 <!-- snippet: sample_configuring-mapping-specific-sequentialguid -->
 <a id='snippet-sample_configuring-mapping-specific-sequentialguid'></a>
 ```cs
-options.Schema.For<UserWithGuid>().IdStrategy(new CombGuidIdGeneration());
+options.Schema.For<UserWithGuid>().IdStrategy(new SequentialGuidIdGeneration());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CombGuidIdGenerationTests.cs#L82-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-sequentialguid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -225,7 +225,7 @@ public class DocumentWithStringId
     public string Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L30-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L31-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a _HiLo_ sequence number.
@@ -243,7 +243,7 @@ var store = DocumentStore.For(opts =>
         .DocumentAlias("doc");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L41-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Identity Strategies
@@ -255,9 +255,7 @@ A custom ID generator strategy should implement [IIdGeneration](https://github.c
 ```cs
 public class CustomIdGeneration : IIdGeneration
 {
-    public IEnumerable<Type> KeyTypes { get; } = new Type[] {typeof(string)};
-
-    public bool RequiresSequences { get; } = false;
+    public bool IsNumeric { get; } = false;
     public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
     {
         var document = new Use(mapping.DocumentType);
@@ -267,7 +265,7 @@ public class CustomIdGeneration : IIdGeneration
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L16-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L17-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
@@ -287,7 +285,7 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L39-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L38-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It is also possible define a custom id generation algorithm for a specific document type.
@@ -297,7 +295,7 @@ It is also possible define a custom id generation algorithm for a specific docum
 ```cs
 options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L70-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L69-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Strong Typed Identifiers <Badge type="tip" text="7.20" />
@@ -314,7 +312,7 @@ document types, but there is still no direct support for supplying strong typed 
 This may change in Marten 8.0.
 :::
 
-Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifie) using a couple different strategies.
+Marten can now support [strong typed identifiers](https://en.wikipedia.org/wiki/Strongly_typed_identifier) using a couple different strategies.
 As of this moment, Marten can automatically use types that conform to one of two patterns:
 
 <!-- snippet: sample_valid_strong_typed_identifiers -->
@@ -369,7 +367,7 @@ public class Invoice
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The usage of our `Invoice` document is essentially the same as a document type with the primitive identifier types:
@@ -396,14 +394,17 @@ public async Task update_a_document_smoke_test()
     loaded.Name.ShouldBeNull("updated");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+::: tip
+Marten 7.31.0 "fixed" it so that you don't have to use `Nullable<T>` for the identity member of strong typed identifiers.
+:::
 
 As you might infer -- or not -- there's a couple rules and internal behavior:
 
 * The identity selection is done just the same as the primitive types, Marten is either looking for an `id`/`Id` member, or a member decorated with
   `[Identity]`
-* If Marten is going to assign the identity, you will need to use `Nullable<T>` for the identity member of the document
 * There is a new `IQuerySession.LoadAsync<T>(object id)` overload that was specifically built for strong typed identifiers
 * For `Guid`-wrapped values, Marten is assigning missing identity values based on its sequential `Guid` support
 * For `int` or `long`-wrapped values, Marten is using its HiLo support to define the wrapped values
@@ -456,6 +457,26 @@ public async Task load_many()
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/long_based_document_operations.cs#L130-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_strong_typed_identifier_and_is_one_of' title='Start of snippet'>anchor</a></sup>
+<a id='snippet-sample_strong_typed_identifier_and_is_one_of-1'></a>
+```cs
+[Fact]
+public async Task load_many()
+{
+    var issue1 = new Issue3{Name = Guid.NewGuid().ToString()};
+    var Issue3 = new Issue3{Name = Guid.NewGuid().ToString()};
+    var issue3 = new Issue3{Name = Guid.NewGuid().ToString()};
+    theSession.Store(issue1, Issue3, issue3);
+
+    await theSession.SaveChangesAsync();
+
+    var results = await theSession.Query<Issue3>()
+        .Where(x => x.Id.IsOneOf(issue1.Id, Issue3.Id, issue3.Id))
+        .ToListAsync();
+
+    results.Count.ShouldBe(3);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/long_based_document_operations.cs#L402-L421' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_strong_typed_identifier_and_is_one_of-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
@@ -529,7 +550,7 @@ public class LimitedDoc
     public LowerLimit Lower { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L74-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L127-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_limited_doc-1'></a>
 ```cs
 [ValueObject<long>]
@@ -554,7 +575,7 @@ public class LimitedDoc
     public Description? Description { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L217-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L217-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_limited_doc-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the `UpperLimit` and `LowerLimit` value types can be registered with Marten like so:
@@ -567,7 +588,7 @@ And the `UpperLimit` and `LowerLimit` value types can be registered with Marten 
 opts.RegisterValueType(typeof(UpperLimit));
 opts.RegisterValueType(typeof(LowerLimit));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L17-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L21-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_registering_value_types-1'></a>
 ```cs
 // opts is a StoreOptions just like you'd have in
@@ -577,7 +598,7 @@ opts.RegisterValueType(typeof(UpperLimit));
 opts.RegisterValueType(typeof(LowerLimit));
 opts.RegisterValueType(typeof(Description));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_value_types-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And that will enable you to seamlessly use the value types in LINQ expressions like so:
@@ -605,7 +626,7 @@ public async Task store_several_and_order_by()
     ordered.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc3.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L28-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/linq_querying_with_value_types.cs#L32-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_using_value_type_in_linq-1'></a>
 ```cs
 [Fact]
@@ -653,5 +674,5 @@ public async Task store_several_and_use_in_LINQ_order_by()
     orderedByGuidBased.ShouldHaveTheSameElementsAs(doc1.Id, doc4.Id, doc2.Id, doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/Vogen/linq_querying_with_value_types.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/linq_querying_with_value_types.cs#L29-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_value_type_in_linq-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

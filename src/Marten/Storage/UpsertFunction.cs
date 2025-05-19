@@ -28,8 +28,9 @@ internal class UpsertFunction: Function
     protected readonly string _versionColumnName;
     protected readonly string _tenantVersionWhereClause;
     protected readonly string _andTenantVersionWhereClause;
+    private readonly string _currentVersionGuardCondition;
 
-    public UpsertFunction(DocumentMapping mapping, DbObjectName identifier = null, bool disableConcurrency = false):
+    public UpsertFunction(DocumentMapping mapping, DbObjectName? identifier = null, bool disableConcurrency = false):
         base(identifier ?? mapping.UpsertFunction)
     {
         _mapping = mapping;
@@ -48,7 +49,7 @@ internal class UpsertFunction: Function
 
         Arguments.Add(new UpsertArgument
         {
-            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = new[] { mapping.IdMember }, ParameterValue = mapping.CodeGen.ParameterValue
+            Arg = "docId", PostgresType = pgIdType, Column = "id", Members = [mapping.IdMember], ParameterValue = mapping.CodeGen.ParameterValue
         });
 
         Arguments.Add(new DocJsonBodyArgument());
@@ -90,11 +91,17 @@ internal class UpsertFunction: Function
         {
             _versionSourceTable = $"{_mapping.StoreOptions.Events.DatabaseSchemaName}.mt_streams";
             _versionColumnName = "version";
+
+            // In this case, we want it to fail only if the current version of the events is equal to or greater than the stored version
+            _currentVersionGuardCondition = "if current_version > revision then";
         }
         else
         {
             _versionSourceTable = _tableName.QualifiedName;
             _versionColumnName = "mt_version";
+
+            // In this case, we want it to fail if the current version is equal to or greater than the stored version
+            _currentVersionGuardCondition = "if current_version >= revision then";
         }
 
         if (mapping.TenancyStyle == TenancyStyle.Conjoined)
@@ -127,7 +134,7 @@ internal class UpsertFunction: Function
 
         var systemUpdates = _mapping.Metadata.LastModified.Enabled
             ? new[] { $"{SchemaConstants.LastModifiedColumn} = transaction_timestamp()" }
-            : new string[0];
+            : Array.Empty<string>();
         var updates = ordered.Where(x => x.Column != "id" && x.Column.IsNotEmpty())
             .Select(x => $"\"{x.Column}\" = {x.Arg}").Concat(systemUpdates).Join(", ");
 
@@ -196,12 +203,18 @@ DECLARE
   current_version INTEGER;
 BEGIN
 
+SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
 if revision = 0 then
-  SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
   if current_version is not null then
     {revisionModification}
   else
     revision = 1;
+  end if;
+else
+  if current_version is not null then
+    {_currentVersionGuardCondition}
+      return 0;
+    end if;
   end if;
 end if;
 

@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -44,42 +45,42 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
     }
 
     [Fact]
-    public void try_to_insert_event_with_string_identifiers()
+    public async Task try_to_insert_event_with_string_identifiers()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
     [Fact]
-    public void try_to_insert_event_with_string_identifiers_non_typed()
+    public async Task try_to_insert_event_with_string_identifiers_non_typed()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.FetchStream("First").Count.ShouldBe(2);
+            (await session.Events.FetchStreamAsync("First")).Count.ShouldBe(2);
         }
     }
 
     [Fact]
-    public void fetch_state()
+    public async Task fetch_state()
     {
         using (var session = theStore.LightweightSession())
         {
             session.Events.Append("First", new MembersJoined(), new MembersJoined());
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            var state = session.Events.FetchStreamState("First");
+            var state = await session.Events.FetchStreamStateAsync("First");
             state.Key.ShouldBe("First");
             state.Version.ShouldBe(2);
         }

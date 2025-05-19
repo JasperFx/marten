@@ -44,7 +44,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             sess.Patch<Model>(id).Set(x => x.Name, "bar");
             await sess.SaveChangesAsync();
             sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
-            sess.Load<Model>(id).Name.ShouldBe("bar");
+            (await sess.LoadAsync<Model>(id)).Name.ShouldBe("bar");
         }
     }
 
@@ -220,6 +220,36 @@ public class PatchExpressionTests : OneOffConfigurationsContext
         _expression.Increment(x => x.Float, 5);
 
         _expression.Patch["path"].ShouldBe("Float");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(5);
+    }
+
+    [Fact]
+    public void increment_decimal_with_default()
+    {
+        _expression.Increment(x => x.Decimal);
+
+        _expression.Patch["path"].ShouldBe("Decimal");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(1);
+    }
+
+    [Fact]
+    public void increment_decimal_with_default_deep()
+    {
+        _expression.Increment(x => x.Inner.Inner.Decimal);
+
+        _expression.Patch["path"].ShouldBe("Inner.Inner.Decimal");
+        _expression.Patch["type"].ShouldBe("increment_float");
+        _expression.Patch["increment"].ShouldBe(1);
+    }
+
+    [Fact]
+    public void increment_decimal_with_explicit_interval()
+    {
+        _expression.Increment(x => x.Decimal, 5);
+
+        _expression.Patch["path"].ShouldBe("Decimal");
         _expression.Patch["type"].ShouldBe("increment_float");
         _expression.Patch["increment"].ShouldBe(5);
     }
@@ -422,8 +452,8 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     [Fact]
     public void duplicate_property_no_target()
     {
-        SpecificationExtensions.ShouldContain(Assert.Throws<ArgumentException>(() => _expression.Duplicate(x => x.String))
-            .Message, "At least one destination must be given");
+        var ex = Should.Throw<ArgumentException>(() => _expression.Duplicate(x => x.String));
+        ex.Message.ShouldContain("At least one destination must be given");
     }
 
     [Fact]
@@ -431,7 +461,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(casing: Casing.CamelCase);
+            _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
         });
 
         using var session = theStore.LightweightSession();
@@ -467,23 +497,28 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_append_with_sub_types_in_collection()
+    public async Task can_append_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup();
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
             session.Patch<ItemGroup>(group.Id).Append(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(3);
             group2.Items[0].ShouldBeOfType<Item>();
@@ -493,23 +528,28 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_append_if_not_exists_with_sub_types_in_collection()
+    public async Task can_append_if_not_exists_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup();
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new Item{Name = "One"});
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
             session.Patch<ItemGroup>(group.Id).AppendIfNotExists(x => x.Items, new NumberedItem(){Name = "Three", Number = 3});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(3);
             group2.Items[0].ShouldBeOfType<Item>();
@@ -519,24 +559,29 @@ public class PatchExpressionTests : OneOffConfigurationsContext
     }
 
     [SerializerTypeTargetedFact(RunFor = SerializerType.Newtonsoft)]
-    public void can_insert_if_not_exists_with_sub_types_in_collection()
+    public async Task can_insert_if_not_exists_with_sub_types_in_collection()
     {
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+        });
+
         var group = new ItemGroup
         {
             Items = new List<Item>{new Item{Name = "regular"}}
         };
         theSession.Store(group);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Patch<ItemGroup>(group.Id).Insert(x => x.Items, new ColoredItem{Name = "Two", Color = "Blue"});
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var group2 = query.Load<ItemGroup>(group.Id);
+            var group2 = await query.LoadAsync<ItemGroup>(group.Id);
 
             group2.Items.Count.ShouldBe(2);
             group2.Items.Last().ShouldBeOfType<ColoredItem>();
@@ -545,7 +590,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
 
 
     [Fact]
-    public void save_large_bundle_of_operations()
+    public async Task save_large_bundle_of_operations()
     {
         var id1 = Guid.NewGuid();
         var id2 = Guid.NewGuid();
@@ -603,32 +648,32 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             session.Patch<TestModel1>(x => x.ObjectId == id1 && x.DefinitionId == 1)
                 .Set(x => x.Mode, 1);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 #nullable enable
     [Fact]
-    public void can_patch_nullable_field()
+    public async Task can_patch_nullable_field()
     {
         var model = new TestModel7();
         var nullModel = new TestModel7() { NullableObjectId = Guid.NewGuid()};
         theSession.Store(model, nullModel);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         var id = Guid.NewGuid();
         using (var session = theStore.LightweightSession())
         {
             session.Patch<TestModel7>(model.Id).Set(x => x.NullableObjectId, id);
             session.Patch<TestModel7>(nullModel.Id).Set(x => x.NullableObjectId, null);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var query = theStore.QuerySession())
         {
-            var model1 = query.Load<TestModel7>(model.Id);
+            var model1 = await query.LoadAsync<TestModel7>(model.Id);
             model1!.NullableObjectId.ShouldBe(id);
 
-            var model2 = query.Load<TestModel7>(nullModel.Id);
+            var model2 = await query.LoadAsync<TestModel7>(nullModel.Id);
             Assert.Null(model2!.NullableObjectId);
         }
     }

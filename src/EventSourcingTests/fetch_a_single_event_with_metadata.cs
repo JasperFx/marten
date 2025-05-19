@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -24,7 +25,7 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
         new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
     [Fact]
-    public void fetch_with_metadata_synchronously()
+    public async Task fetch_with_metadata_synchronously()
     {
         StoreOptions(x =>
         {
@@ -40,9 +41,9 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
 
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var events = theSession.Events.FetchStream(streamId);
+        var events = await theSession.Events.FetchStreamAsync(streamId);
         events.Count.ShouldBe(5);
         events.ShouldAllBe(e =>
             e.Headers != null && e.Headers.ContainsKey("HeaderKey") && "HeaderValue".Equals(e.Headers["HeaderKey"]));
@@ -78,23 +79,23 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
     }
 
     [Fact]
-    public void fetch_synchronously()
+    public async Task fetch_synchronously()
     {
         var streamId = theSession.Events
             .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var events = theSession.Events.FetchStream(streamId);
+        var events = await theSession.Events.FetchStreamAsync(streamId);
 
-        SpecificationExtensions.ShouldBeNull(theSession.Events.Load(Guid.NewGuid()));
+        (await theSession.Events.LoadAsync(Guid.NewGuid())).ShouldBeNull();
 
         // Knowing the event type
-        var slayed1_2 = theSession.Events.Load<MonsterSlayed>(events[2].Id);
+        var slayed1_2 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id));
         slayed1_2.Version.ShouldBe(3);
         slayed1_2.Data.Name.ShouldBe("Troll");
 
         // Not knowing the event type
-        var slayed1_3 = theSession.Events.Load<MonsterSlayed>(events[2].Id).ShouldBeOfType<Event<MonsterSlayed>>();
+        var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id)).ShouldBeOfType<Event<MonsterSlayed>>();
         slayed1_3.Version.ShouldBe(3);
         slayed1_3.Data.Name.ShouldBe("Troll");
     }
@@ -108,8 +109,8 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
 
         var events = await theSession.Events.FetchStreamAsync(streamId);
 
-        SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync(Guid.NewGuid())));
-        SpecificationExtensions.ShouldBeNull((await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid())));
+        (await theSession.Events.LoadAsync(Guid.NewGuid())).ShouldBeNull();
+        (await theSession.Events.LoadAsync<MonsterSlayed>(Guid.NewGuid())).ShouldBeNull();
 
         // Knowing the event type
         var slayed1_2 = await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id);
@@ -146,7 +147,7 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
         (await slayed2_2).ShouldBeOfType<Event<MonsterSlayed>>()
             .Data.Name.ShouldBe("Dragon");
 
-        SpecificationExtensions.ShouldBeNull((await missing));
+        (await missing).ShouldBeNull();
     }
 
     public fetch_a_single_event_with_metadata(DefaultStoreFixture fixture): base(fixture)

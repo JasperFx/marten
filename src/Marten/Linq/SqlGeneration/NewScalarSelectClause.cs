@@ -74,7 +74,7 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 

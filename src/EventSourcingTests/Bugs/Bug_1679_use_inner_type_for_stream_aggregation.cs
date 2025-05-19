@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Harness;
+using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Bugs;
@@ -32,15 +34,15 @@ public class Bug_1679_use_inner_type_for_stream_aggregation : AggregationContext
     {
         public Guid Id { get; set; }
 
-        public void Apply(EventA @event){}
-        public void Apply(IEvent<EventB> @event){}
+        public void Apply(AEvent @event){}
+        public void Apply(IEvent<BEvent> @event){}
 
-        public InnerAggregate Apply(IEvent<EventC> @event)
+        public InnerAggregate Apply(IEvent<CEvent> @event)
         {
             return this;
         }
 
-        public Task<InnerAggregate> Apply(EventD @event, IQuerySession session)
+        public Task<InnerAggregate> Apply(DEvent @event, IQuerySession session)
         {
             return Task.FromResult(this);
         }

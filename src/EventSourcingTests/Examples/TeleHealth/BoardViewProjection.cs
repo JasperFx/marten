@@ -1,21 +1,21 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Marten;
-using Marten.Events;
-using Marten.Events.Aggregation;
+using JasperFx.Events;
 using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-public class BoardViewProjection: ExperimentalMultiStreamProjection<BoardView, Guid>
+public class BoardViewProjection: MultiStreamProjection<BoardView, Guid>
 {
-    protected override ValueTask GroupEvents(IEventGrouping<Guid> grouping, IQuerySession session, List<IEvent> events)
+    public BoardViewProjection()
     {
-        grouping.AddEventsWithMetadata<BoardStateEvent>(e => e.StreamId, events);
-        grouping.AddEvents<IBoardEvent>(x => x.BoardId, events);
+        CustomGrouping((_, events, grouping) =>
+        {
+            grouping.AddEvents<IEvent<BoardStateEvent>>(e => e.StreamId, events);
+            grouping.AddEvents<IBoardEvent>(x => x.BoardId, events);
 
-        return ValueTask.CompletedTask;
+            return Task.CompletedTask;
+        });
     }
 
     public BoardView Create(BoardOpened opened)

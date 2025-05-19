@@ -1,5 +1,7 @@
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Storage;
@@ -74,6 +76,40 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
     }
 
     [Fact]
+    public async Task build_description()
+    {
+        theTenancy.WithTenants("tenant1", "tenant2", "tenant3")
+            .InDatabaseNamed("database1");
+
+        theTenancy.WithTenants("tenant4", "tenant5")
+            .InDatabaseNamed("database2");
+
+        theTenancy.WithTenants("tenant6");
+
+        await theTenancy.BuildDatabases();
+
+        theTenancy.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        var description = await theTenancy.DescribeDatabasesAsync(CancellationToken.None);
+
+        description.Cardinality.ShouldBe(DatabaseCardinality.DynamicMultiple);
+
+        description.MainDatabase.ShouldBeNull();
+
+        description.Databases.Select(x => x.DatabaseName).OrderBy(x => x)
+            .ShouldBe(["database1", "database2", "tenant6"]);
+
+        description.Databases.Single(x => x.DatabaseName == "database1")
+            .TenantIds.ShouldBe(["tenant1", "tenant2", "tenant3"]);
+
+        description.Databases.Single(x => x.DatabaseName == "database2")
+            .TenantIds.ShouldBe(["tenant4", "tenant5"]);
+
+        description.Databases.Single(x => x.DatabaseName == "tenant6")
+            .TenantIds.ShouldBe(["tenant6"]);
+    }
+
+    [Fact]
     public void clean_should_be_a_composite()
     {
         theTenancy.Cleaner.ShouldBeOfType<CompositeDocumentCleaner>();
@@ -88,7 +124,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
 
         var database2 = await theTenancy.FindOrCreateDatabase("tenant1");
 
-        database.ShouldBeTheSameAs(database);
+        database.ShouldBeSameAs(database);
     }
 
     [Fact]
@@ -108,7 +144,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         var database = await theTenancy.FindOrCreateDatabase("tenant1");
         (await DatabaseExists("tenant1")).ShouldBeTrue();
         var tenant = theTenancy.GetTenant("tenant1");
-        tenant.Database.ShouldBeTheSameAs(database);
+        tenant.Database.ShouldBeSameAs(database);
         tenant.TenantId.ShouldBe("tenant1");
     }
 
@@ -119,7 +155,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         var tenant = theTenancy.GetTenant("tenant1");
         (await DatabaseExists("tenant1")).ShouldBeTrue();
         var database = await theTenancy.FindOrCreateDatabase("tenant1");
-        tenant.Database.ShouldBeTheSameAs(database);
+        tenant.Database.ShouldBeSameAs(database);
         tenant.TenantId.ShouldBe("tenant1");
     }
 
@@ -130,7 +166,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         var database = await theTenancy.FindOrCreateDatabase("tenant1");
         (await DatabaseExists("tenant1")).ShouldBeTrue();
         var tenant = await theTenancy.GetTenantAsync("tenant1");
-        tenant.Database.ShouldBeTheSameAs(database);
+        tenant.Database.ShouldBeSameAs(database);
         tenant.TenantId.ShouldBe("tenant1");
     }
 
@@ -141,7 +177,7 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
         var tenant = await theTenancy.GetTenantAsync("tenant1");
         (await DatabaseExists("tenant1")).ShouldBeTrue();
         var database = await theTenancy.FindOrCreateDatabase("tenant1");
-        tenant.Database.ShouldBeTheSameAs(database);
+        tenant.Database.ShouldBeSameAs(database);
         tenant.TenantId.ShouldBe("tenant1");
     }
 
@@ -156,9 +192,9 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
 
         databases.Select(x => x.Identifier).ShouldHaveTheSameElementsAs("tenant1", "tenant2", "tenant3");
 
-        databases[0].ShouldBeTheSameAs(await theTenancy.FindOrCreateDatabase("tenant1"));
-        databases[1].ShouldBeTheSameAs(await theTenancy.FindOrCreateDatabase("tenant2"));
-        databases[2].ShouldBeTheSameAs(await theTenancy.FindOrCreateDatabase("tenant3"));
+        databases[0].ShouldBeSameAs(await theTenancy.FindOrCreateDatabase("tenant1"));
+        databases[1].ShouldBeSameAs(await theTenancy.FindOrCreateDatabase("tenant2"));
+        databases[2].ShouldBeSameAs(await theTenancy.FindOrCreateDatabase("tenant3"));
     }
 
     [Fact]
@@ -175,8 +211,8 @@ public class SingleServerMultiTenancyTests: IAsyncLifetime
 
         databases.Select(x => x.Identifier).ShouldHaveTheSameElementsAs("database1", "database2");
 
-        databases[0].ShouldBeTheSameAs(await theTenancy.FindOrCreateDatabase("database1"));
-        databases[1].ShouldBeTheSameAs(await theTenancy.FindOrCreateDatabase("database2"));
+        databases[0].ShouldBeSameAs(await theTenancy.FindOrCreateDatabase("database1"));
+        databases[1].ShouldBeSameAs(await theTenancy.FindOrCreateDatabase("database2"));
     }
 
     [Fact]

@@ -37,7 +37,7 @@ internal class SelectCtidSelectClause: ISelectClause
     }
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where T: notnull
     {
         throw new NotSupportedException();
     }

@@ -1,5 +1,11 @@
 # Explicit Aggregations
 
+::: warning
+The recipe in this documentation section is perfect for complicated projection lifecycles, but does not always play
+nicely with Marten's `AggregateStreamAsync()` API. We recommend using `FetchLatest()` with this projection recipe
+for read only access.
+:::
+
 The original concept for Marten projections was the conventional method model (`Apply()` / `Create()` / `ShouldDelete()` methods), but we
 quickly found out that the workflow generated from these methods just isn't sufficient for many user needs. At the same time,
 other users just prefer explicit code anyway, so Marten provides the `CustomProjection<TDoc, TId>` base class as a way to 
@@ -27,7 +33,7 @@ public class Increment
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L462-L480' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L696-L714' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -51,7 +57,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L442-L460' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L676-L694' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -115,6 +121,11 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
             }
         }
 
+        // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
+        // AggregateStreamAsync(), you must make this call
+        // FetchLatest() will work w/o any other changes though
+        slice.Aggregate = aggregate;
+
         // Apply any updates!
         if (aggregate != null)
         {
@@ -126,7 +137,7 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L482-L550' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L716-L787' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping
@@ -168,7 +179,7 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L40-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L95-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).

@@ -3,12 +3,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Internals;
+using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
-using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -54,8 +55,7 @@ public class aggregation_projection_validation_rules
         });
 
         message.ShouldContain(
-            $"Id type mismatch",
-            StringComparisonOption.Default);
+            $"Id type mismatch");
     }
 
 
@@ -66,10 +66,7 @@ public class aggregation_projection_validation_rules
         {
             x.Events.StreamIdentity = StreamIdentity.AsString;
             x.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
-        }).ShouldContain(
-            $"Id type mismatch",
-            StringComparisonOption.Default
-        );
+        }).ShouldContain("Id type mismatch");
     }
 
     [Fact]
@@ -80,8 +77,7 @@ public class aggregation_projection_validation_rules
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
         }).ShouldContain(
-            $"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)",
-            StringComparisonOption.Default);
+            $"Tenancy storage style mismatch between the events (Conjoined) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Single)");
     }
 
     [Fact]
@@ -109,8 +105,7 @@ public class aggregation_projection_validation_rules
             opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
             opts.Schema.For<GuidIdentifiedAggregate>().MultiTenanted();
         }).ShouldContain(
-            $"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)",
-            StringComparisonOption.Default);
+            $"Tenancy storage style mismatch between the events (Single) and the aggregate type {typeof(GuidIdentifiedAggregate).FullNameInCode()} (Conjoined)");
     }
 
     [Fact]
@@ -122,7 +117,7 @@ public class aggregation_projection_validation_rules
         }).ShouldNotBeNull();
     }
 
-    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate>
+    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate, Guid>
     {
     }
 
@@ -159,10 +154,11 @@ public class aggregation_projection_validation_rules
         var projection = new AllGood();
         var options = new StoreOptions();
         options.Schema.For<MyAggregate>().SoftDeleted();
-
         var errors = projection.ValidateConfiguration(options).ToArray();
-        errors.Single().ShouldBe("AggregateProjection cannot support aggregates that are soft-deleted");
+        errors.Single().ShouldBe("SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection");
     }
+
+    // TODO -- move these tests to JasperFx's EventTests
 
     [Fact]
     public void find_bad_method_names_that_are_not_ignored()
@@ -171,8 +167,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
         ex.Message.ShouldContain(
-            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'",
-            StringComparisonOption.NormalizeWhitespaces);
+            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
     }
 
     [Fact]
@@ -183,7 +178,7 @@ public class aggregation_projection_validation_rules
         ex.InvalidMethods.Single()
             .Errors
             .ShouldContain(
-                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, JasperFx.Events.IEvent, JasperFx.Events.IEvent<{typeof(AEvent).FullNameInCode()}>");
     }
 
     [Fact]
@@ -209,7 +204,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
         ex.InvalidMethods.Single()
             .Errors.ShouldContain(
-                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, Marten.Events.IEvent, Marten.Events.IEvent<{typeof(AEvent).FullNameInCode()}>",
+                $"Parameter of type 'Marten.IDocumentOperations' is not supported. Valid options are System.Threading.CancellationToken, Marten.IQuerySession, {typeof(MyAggregate).FullNameInCode()}, {typeof(AEvent).FullNameInCode()}, JasperFx.Events.IEvent, JasperFx.Events.IEvent<{typeof(AEvent).FullNameInCode()}>",
                 "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
     }
 
@@ -225,14 +220,14 @@ public class aggregation_projection_validation_rules
     }
 }
 
-public class MissingMandatoryType: SingleStreamProjection<MyAggregate>
+public class MissingMandatoryType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event)
     {
     }
 }
 
-public class BadReturnType: SingleStreamProjection<MyAggregate>
+public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
 {
     public string Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -240,28 +235,28 @@ public class BadReturnType: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class MissingEventType1: SingleStreamProjection<MyAggregate>
+public class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
 {
-    public void Apply(MyAggregate aggregate, IDocumentOperations operations)
+    public void Apply(MyAggregate aggregate, IQuerySession session)
     {
     }
 }
 
-public class CanGuessEventType: SingleStreamProjection<MyAggregate>
+public class CanGuessEventType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
     {
     }
 }
 
-public class InvalidArgumentType: SingleStreamProjection<MyAggregate>
+public class InvalidArgumentType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
     }
 }
 
-public class BadMethodName: SingleStreamProjection<MyAggregate>
+public class BadMethodName: SingleStreamProjection<MyAggregate, Guid>
 {
     public void DoStuff(AEvent @event, MyAggregate aggregate)
     {
@@ -273,11 +268,11 @@ public class BadMethodName: SingleStreamProjection<MyAggregate>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate>
+public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     [MartenIgnore]

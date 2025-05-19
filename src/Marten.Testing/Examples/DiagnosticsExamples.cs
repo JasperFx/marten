@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Testing.Documents;
@@ -22,7 +23,7 @@ public class Trade
 
 public class DiagnosticsExamples: IntegrationContext
 {
-    public void use_diagnostics()
+    public async Task use_diagnostics()
     {
         // Marten is NOT coupled to StructureMap, but we
         // use it in our test suite for convenience
@@ -37,7 +38,7 @@ public class DiagnosticsExamples: IntegrationContext
 
         #region sample_preview_linq_explain_plan
         // Explain() is an extension method off of IQueryable<T>
-        var plan = queryable.Explain();
+        var plan = await queryable.ExplainAsync();
         Console.WriteLine($"NodeType: {plan.NodeType}");
         Console.WriteLine($"RelationName: {plan.RelationName}");
         Console.WriteLine($"Alias: {plan.Alias}");

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq;
@@ -41,7 +42,7 @@ public interface IBatchEvents
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <returns></returns>
-    Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTime? timestamp = null,
+    Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 
     /// <summary>
@@ -52,7 +53,7 @@ public interface IBatchEvents
     /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
     /// <param name="fromVersion">If set, queries for events on or from this version</param>
     /// <returns></returns>
-    Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTime? timestamp = null,
+    Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
 }
 
@@ -114,6 +115,17 @@ public interface IBatchedQuery
     Task<IReadOnlyList<T>> Query<T>(string sql, params object[] parameters) where T : class;
 
     /// <summary>
+    ///     Execute a user provided query against "T".
+    ///      Use <paramref name="placeholder"/> to specify a character that will be replaced by positional parameters.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="placeholder"></param>
+    /// <param name="sql"></param>
+    /// <param name="parameters"></param>
+    /// <returns></returns>
+    Task<IReadOnlyList<T>> Query<T>(char placeholder, string sql, params object[] parameters) where T : class;
+
+    /// <summary>
     ///     Execute this batched query
     /// </summary>
     /// <param name="token"></param>
@@ -135,11 +147,6 @@ public interface IBatchedQuery
     /// <param name="query"></param>
     /// <returns></returns>
     Task<TResult> Query<TDoc, TResult>(ICompiledQuery<TDoc, TResult> query) where TDoc : class;
-
-    /// <summary>
-    ///     Force the batched query to execute synchronously
-    /// </summary>
-    void ExecuteSynchronously();
 
     /// <summary>
     /// Used internally by Marten. Allows for the usage of any old IQueryHandler<T>

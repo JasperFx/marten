@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JasperFx.Core.Descriptors;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core.Migrations;
@@ -20,7 +21,7 @@ public interface ITenancyWithMasterDatabase
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
 /// </summary>
-public interface ITenancy: IDatabaseSource, IDisposable
+public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
 {
     /// <summary>
     ///     The default tenant. This can be null.

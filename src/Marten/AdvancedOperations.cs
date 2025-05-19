@@ -4,16 +4,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
+using Marten.Events.Protected;
 using Marten.Events.TestSupport;
+using Marten.Internal;
 using Marten.Schema;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables.Partitioning;
 
@@ -189,7 +191,7 @@ public class AdvancedOperations
             .Projections
             .All
             .Where(x => x.Lifecycle == ProjectionLifecycle.Async)
-            .SelectMany(x => x.AsyncProjectionShards(_store))
+            .SelectMany(x => x.Shards())
             .Select(x => x.Name)
             .ToList();
     }
@@ -207,7 +209,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
@@ -224,7 +226,7 @@ public class AdvancedOperations
     {
         await using var session = _store.LightweightSession();
         var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
-        session.Store(document);
+        session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
@@ -235,7 +237,7 @@ public class AdvancedOperations
     /// </summary>
     /// <param name="token"></param>
     /// <param name="tenantIds"></param>
-    public Task AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
+    public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
     {
         var dict = new Dictionary<string, string>();
         foreach (var tenantId in tenantIds)
@@ -273,5 +275,57 @@ public class AdvancedOperations
             database,
             tenantIdToPartitionMapping,
             token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Drop a tenant partition from all tables that use the Marten managed tenant partitioning. NOTE: you have to supply
+    /// the partition suffix for the tenant, not necessarily the tenant id. In most cases we think this will probably
+    /// be the same value, but you may have to "sanitize" the suffix name
+    /// </summary>
+    /// <param name="suffixes"></param>
+    /// <param name="token"></param>
+    /// <exception cref="InvalidOperationException"></exception>
+    public async Task RemoveMartenManagedTenantsAsync(string[] suffixes, CancellationToken token)
+    {
+        if (_store.Options.TenantPartitions == null)
+        {
+            throw new InvalidOperationException(
+                $"Marten-managed per-tenant partitioning is not active in this store. Did you miss a call to {nameof(StoreOptions)}.{nameof(StoreOptions.Policies)}.{nameof(StoreOptions.PoliciesExpression.PartitionMultiTenantedDocumentsUsingMartenManagement)}()?");
+        }
+
+        if (_store.Tenancy is not DefaultTenancy)
+            throw new InvalidOperationException(
+                "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+        var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
+
+
+        var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+        await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
+            token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Delete all data for a given tenant id and drop any partitions for that tenant id if
+    /// using by tenant partitioning managed by Marten
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public Task DeleteAllTenantDataAsync(string tenantId, CancellationToken token)
+    {
+        var cleaner = new TenantDataCleaner(tenantId, _store);
+        return cleaner.ExecuteAsync(token);
+    }
+
+    /// <summary>
+    /// Configure and execute a batch masking of protected data for a subset of the events
+    /// in the event store
+    /// </summary>
+    /// <returns></returns>
+    public Task ApplyEventDataMasking(Action<IEventDataMasking> configure, CancellationToken token = default)
+    {
+        var masking = new EventDataMasking(_store);
+        configure(masking);
+        return masking.ApplyAsync(token);
     }
 }

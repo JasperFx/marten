@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -11,14 +12,14 @@ public class Bug_503_query_on_null_complex_object: IntegrationContext
     private readonly ITestOutputHelper _output;
 
     [Fact]
-    public void should_not_blow_up_when_querying_for_null_object()
+    public async Task should_not_blow_up_when_querying_for_null_object()
     {
         using (var sessionOne = theStore.LightweightSession())
         {
             sessionOne.Store(new Target { String = "Something", Inner = new Target(), AnotherString = "first" });
             sessionOne.Store(new Target { String = "Something", Inner = null, AnotherString = "second" });
 
-            sessionOne.SaveChanges();
+            await sessionOne.SaveChangesAsync();
         }
 
         using (var querySession = theStore.QuerySession())

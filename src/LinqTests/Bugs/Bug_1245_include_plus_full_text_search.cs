@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 
@@ -36,7 +37,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
-    public void can_do_include_with_full_text_search()
+    public async Task can_do_include_with_full_text_search()
     {
         var term = "content";
         var userDictionary = new Dictionary<Guid, Bug1245User>();
@@ -50,7 +51,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
             session.Store(newEmail);
         }
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         var query = session.Query<Email>()
             .Include(x => x.UserId, userDictionary)

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events.Grouping;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
@@ -12,8 +14,13 @@ using Polly;
 
 namespace Marten.Internal.Sessions;
 
-public partial class QuerySession: IMartenSession, IQuerySession
+public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuerySession<IQuerySession>
 {
+    public const string SynchronousRemoval =
+        "All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent";
+
+    internal const char DefaultParameterPlaceholder = '?';
+
     private readonly DocumentStore _store;
     private readonly ResiliencePipeline _resilience;
 
@@ -117,5 +124,10 @@ public partial class QuerySession: IMartenSession, IQuerySession
     {
         // This is literally like this *just* to make mocking easier -- even though I don't agree with that often!
         return plan.Fetch(this, token);
+    }
+
+    IQuerySession ITenantedQuerySession<IQuerySession>.ForTenant(string tenantId)
+    {
+        return ForTenant(tenantId);
     }
 }

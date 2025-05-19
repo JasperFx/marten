@@ -20,7 +20,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back()
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back()
     {
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -28,9 +28,9 @@ public class
         var id = "First";
 
         theSession.Events.StartStream<Quest>(id, joined, departed);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
-        var streamEvents = theSession.Events.FetchStream(id);
+        var streamEvents = await theSession.Events.FetchStreamAsync(id);
 
         streamEvents.Count().ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -93,7 +93,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq()
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq()
     {
         #region sample_start-stream-with-aggregate-type
 
@@ -102,7 +102,7 @@ public class
 
         var id = "Fourth";
         theSession.Events.StartStream<Quest>(id, joined, departed);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         #endregion
 
@@ -119,7 +119,7 @@ public class
     }
 
     [Fact]
-    public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts()
+    public async Task live_aggregate_equals_inlined_aggregate_without_hidden_contracts()
     {
         var questId = "Fifth";
 
@@ -134,20 +134,20 @@ public class
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
             session.Events.StartStream<Quest>(questId, started, joined1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            var liveAggregate = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
-            var inlinedAggregate = session.Load<QuestPartyWithStringIdentifier>(questId);
+            var liveAggregate = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
+            var inlinedAggregate = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
             liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
             inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
         }
     }
 
     [Fact]
-    public void open_persisted_stream_in_new_store_with_same_settings()
+    public async Task open_persisted_stream_in_new_store_with_same_settings()
     {
         var questId = "Sixth";
 
@@ -158,30 +158,30 @@ public class
             var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
             session.Events.StartStream<Quest>(questId, started, joined1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         // events-aggregate-on-the-fly - works with same store
         using (var session = theStore.LightweightSession())
         {
             // questId is the id of the stream
-            var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId);
+            var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
 
             party.ShouldNotBeNull();
 
-            var party_at_version_3 = session.Events
-                .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
+            var party_at_version_3 = await session.Events
+                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
 
             party_at_version_3.ShouldNotBeNull();
 
-            var party_yesterday = session.Events
-                .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+            var party_yesterday = await session.Events
+                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
             party_yesterday.ShouldBeNull();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            var party = session.Load<QuestPartyWithStringIdentifier>(questId);
+            var party = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
             party.ShouldNotBeNull();
         }
 
@@ -190,7 +190,7 @@ public class
         //Inline is working
         using (var session = newStore.LightweightSession())
         {
-            var party = session.Load<QuestPartyWithStringIdentifier>(questId);
+            var party = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
             party.ShouldNotBeNull();
         }
 
@@ -208,15 +208,15 @@ public class
         using (var session = newStore.LightweightSession())
         {
             // questId is the id of the stream
-            var party = session.Events.AggregateStream<QuestPartyWithStringIdentifier>(questId); //Here we get NPE
+            var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId); //Here we get NPE
             party.ShouldNotBeNull();
 
-            var party_at_version_3 = session.Events
-                .AggregateStream<QuestPartyWithStringIdentifier>(questId, 3);
+            var party_at_version_3 = await session.Events
+                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
             party_at_version_3.ShouldNotBeNull();
 
-            var party_yesterday = session.Events
-                .AggregateStream<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
+            var party_yesterday = await session.Events
+                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
             party_yesterday.ShouldBeNull();
         }
     }
@@ -245,7 +245,7 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 
@@ -273,12 +273,12 @@ public class
             await session.SaveChangesAsync();
 
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-            SpecificationExtensions.ShouldNotBeNull(party);
+            party.ShouldNotBeNull();
         }
     }
 
     [Fact]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided()
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided()
     {
         using var session = theStore.LightweightSession();
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -286,9 +286,9 @@ public class
 
         var id = "Tenth";
         session.Events.StartStream<Quest>(id, joined, departed);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var streamEvents = session.Events.FetchStream(id);
+        var streamEvents = await session.Events.FetchStreamAsync(id);
 
         streamEvents.Count().ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -298,7 +298,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back()
+    public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back()
     {
         using var session = theStore.LightweightSession();
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -308,9 +308,9 @@ public class
         session.Events.StartStream<Quest>(id, joined);
         session.Events.Append(id, departed);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var streamEvents = session.Events.FetchStream(id);
+        var streamEvents = await session.Events.FetchStreamAsync(id);
 
         streamEvents.Count().ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -320,7 +320,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_an_existing_stream_and_fetch_the_events_back()
+    public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back()
     {
         var id = "Twelth";
         var started = new QuestStarted();
@@ -328,7 +328,7 @@ public class
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(id, started);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -339,9 +339,9 @@ public class
             session.Events.Append(id, joined);
             session.Events.Append(id, departed);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            var streamEvents = session.Events.FetchStream(id);
+            var streamEvents = await session.Events.FetchStreamAsync(id);
 
             streamEvents.Count().ShouldBe(3);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
@@ -354,7 +354,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema()
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema()
     {
         using var session = theStore.LightweightSession();
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -362,9 +362,9 @@ public class
 
         var id = "Thirteen";
         session.Events.StartStream<Quest>(id, joined, departed);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var streamEvents = session.Events.FetchStream(id);
+        var streamEvents = await session.Events.FetchStreamAsync(id);
 
         streamEvents.Count().ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -375,7 +375,7 @@ public class
 
 
     [Fact]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema()
+    public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema()
     {
         using var session = theStore.LightweightSession();
         var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
@@ -385,9 +385,9 @@ public class
         session.Events.StartStream<Quest>(id, joined);
         session.Events.Append(id, departed);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var streamEvents = session.Events.FetchStream(id);
+        var streamEvents = await session.Events.FetchStreamAsync(id);
 
         streamEvents.Count().ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -397,7 +397,7 @@ public class
     }
 
     [Fact]
-    public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema()
+    public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema()
     {
         var id = "Fifteen";
         var started = new QuestStarted();
@@ -405,7 +405,7 @@ public class
         using (var session = theStore.LightweightSession())
         {
             session.Events.StartStream<Quest>(id, started);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
@@ -415,9 +415,9 @@ public class
 
             session.Events.Append(id, joined, departed);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            var streamEvents = session.Events.FetchStream(id);
+            var streamEvents = await session.Events.FetchStreamAsync(id);
 
             streamEvents.Count().ShouldBe(3);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();

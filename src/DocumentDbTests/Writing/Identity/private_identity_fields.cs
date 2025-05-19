@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -13,26 +14,26 @@ public class private_identity_fields : IntegrationContext
     }
 
     [Fact]
-    public void when_id_setter_is_private()
+    public async Task when_id_setter_is_private()
     {
         var user = new UserWithPrivateId();
 
         theSession.Store(user);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         user.Id.ShouldNotBe(Guid.Empty);
 
-        var issue = theSession.Load<Issue>(user.Id);
+        var issue = await theSession.LoadAsync<Issue>(user.Id);
         issue.ShouldBeNull();
     }
 
     [Fact]
-    public void when_no_id_setter()
+    public async Task when_no_id_setter()
     {
         var user = new UserWithoutIdSetter();
 
         theSession.Store(user);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         user.Id.ShouldBe(Guid.Empty);
     }

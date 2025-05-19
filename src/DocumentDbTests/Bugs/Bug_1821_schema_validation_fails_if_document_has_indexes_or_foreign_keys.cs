@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 
 using Bug1821;
+using JasperFx;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Weasel.Core;

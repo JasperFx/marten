@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
 using Npgsql;
 using Weasel.Core;
@@ -118,12 +120,6 @@ namespace Marten.Testing.Harness
             {
                 disposable.Dispose();
             }
-        }
-
-        protected Task AppendEvent(Guid streamId, params object[] events)
-        {
-            theSession.Events.Append(streamId, events);
-            return theSession.SaveChangesAsync();
         }
     }
 }

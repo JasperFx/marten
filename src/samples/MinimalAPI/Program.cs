@@ -1,10 +1,11 @@
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
-using Marten.Events.Projections;
+using JasperFx;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Oakton;
 
 #region sample_using_WebApplication_1
 
@@ -12,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Easiest to just do this right after creating builder
 // Must be done before calling builder.Build() at least
-builder.Host.ApplyOaktonExtensions();
+builder.Host.ApplyJasperFxExtensions();
 
 #endregion
 
@@ -28,6 +29,10 @@ builder.Services.AddMarten(opts =>
     opts.Connection(ConnectionSource.ConnectionString);
     opts.RegisterDocumentType<User>();
     opts.DatabaseSchemaName = "cli";
+
+    opts.Events.UseArchivedStreamPartitioning = true;
+
+    opts.Schema.For<Target>().SoftDeletedWithPartitioningAndIndex();
 
     // Register all event store projections ahead of time
     opts.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async);
@@ -50,8 +55,8 @@ app.MapControllers();
 
 #region sample_using_WebApplication_2
 
-// Instead of App.Run(), use the app.RunOaktonCommands(args)
+// Instead of App.Run(), use the app.RunJasperFxCommands(args)
 // as the last line of your Program.cs file
-return await app.RunOaktonCommands(args);
+return await app.RunJasperFxCommands(args);
 
 #endregion

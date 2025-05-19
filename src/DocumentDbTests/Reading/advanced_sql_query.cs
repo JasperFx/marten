@@ -139,6 +139,34 @@ public class advanced_sql_query: IntegrationContext
     }
 
     [Fact]
+    public async Task can_query_with_parameters()
+    {
+        await using var session = theStore.LightweightSession();
+        session.Store(new DocWithMeta { Id = 1, Name = "Max" });
+        await session.SaveChangesAsync();
+
+        #region sample_advanced_sql_query_parameters
+        var schema = session.DocumentStore.Options.Schema;
+
+        var name = (await session.AdvancedSql.QueryAsync<string>(
+            $"select data ->> ? from {schema.For<DocWithMeta>()} limit 1",
+            CancellationToken.None,
+            "Name")).First();
+
+        // Use ^ as the parameter placeholder
+        var name2 = (await session.AdvancedSql.QueryAsync<string>(
+            '^',
+            $"select data ->> ^ from {schema.For<DocWithMeta>()} limit 1",
+            CancellationToken.None,
+            "Name")).First();
+
+        #endregion
+
+        name.ShouldBe("Max");
+        name2.ShouldBe("Max");
+    }
+
+    [Fact]
     public async Task can_async_stream_multiple_documents_and_scalar()
     {
         await using var session = theStore.LightweightSession();
@@ -188,27 +216,6 @@ public class advanced_sql_query: IntegrationContext
         collectedResults[2].totalResults.ShouldBe(3);
         collectedResults[2].doc.Name.ShouldBe("Michael");
         collectedResults[2].detail.Detail.ShouldBe("Is a good chess player");
-    }
-
-    [Fact]
-    public void can_query_synchrounously()
-    {
-        using var session = theStore.LightweightSession();
-
-        var singleResult  = session.AdvancedSql.Query<int>("select 5 from (values(1)) as dummy").First();
-        var tuple2Result = session.AdvancedSql.Query<int, string>(
-            "select row(5), row('foo')from (values(1)) as dummy").First();
-        var tuple3Result = session.AdvancedSql.Query<int, string, bool>(
-            "select row(5), row('foo'), row(true) from (values(1)) as dummy").First();
-
-        singleResult.ShouldBe(5);
-
-        tuple2Result.Item1.ShouldBe(5);
-        tuple2Result.Item2.ShouldBe("foo");
-
-        tuple3Result.Item1.ShouldBe(5);
-        tuple3Result.Item2.ShouldBe("foo");
-        tuple3Result.Item3.ShouldBe(true);
     }
 
     public class DocWithoutMeta

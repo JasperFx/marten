@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.Resiliency;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 

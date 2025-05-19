@@ -1,8 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
 using JasperFx.Core;
 using Marten.Testing.Harness;
+using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
@@ -12,7 +14,7 @@ namespace Marten.Testing.Examples;
 public class Setting_Timestamp_on_all_changes_by_base_class_Tests
 {
     [Fact]
-    public void demonstration()
+    public async Task demonstration()
     {
         using (var store = DocumentStore.For(_ =>
                {
@@ -32,7 +34,7 @@ public class Setting_Timestamp_on_all_changes_by_base_class_Tests
                 session.Store(doc2s);
                 session.Store(doc3s);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             doc1s.Each(x => x.Timestamp.ShouldNotBeNull());
@@ -44,15 +46,11 @@ public class Setting_Timestamp_on_all_changes_by_base_class_Tests
 
 public class TimestampListener: DocumentSessionListenerBase
 {
-    public override void BeforeSaveChanges(IDocumentSession session)
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
     {
         var entities = session.PendingChanges.AllChangedFor<BaseEntity>();
         entities.Each(x => x.Timestamp = DateTimeOffset.UtcNow);
-    }
-
-    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
-    {
-        return Task.Factory.StartNew(() => BeforeSaveChanges(session));
+        return Task.CompletedTask;
     }
 }
 

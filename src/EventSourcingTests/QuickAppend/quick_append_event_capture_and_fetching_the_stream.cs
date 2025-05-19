@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
+using JasperFx;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -21,7 +23,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
     private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
-    private static readonly string[] DefaultTenant = { Tenancy.DefaultTenantId };
+    private static readonly string[] DefaultTenant = { StorageConstants.DefaultTenantId };
 
     public quick_append_event_capture_and_fetching_the_stream(ITestOutputHelper output)
     {
@@ -39,11 +41,11 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants)
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, _) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
             using var session = store.LightweightSession(tenantId);
             session.Logger = new TestOutputMartenLogger(_output);
@@ -52,9 +54,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            var streamEvents = session.Events.FetchStream(id);
+            var streamEvents = await session.Events.FetchStreamAsync(id);
 
             streamEvents.Count().ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -62,8 +64,8 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
             streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-            streamEvents.Each(e => ShouldBeTestExtensions.ShouldNotBe(e.Timestamp, default(DateTimeOffset)));
-        }).ShouldSucceed();
+            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
@@ -132,7 +134,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, _) =>
+        When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
             using var session = store.LightweightSession(tenantId);
 
@@ -140,7 +142,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
             var streamEvents = session.Events.QueryAllRawEvents()
                 .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
@@ -152,18 +154,18 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             streamEvents.ElementAt(1).Version.ShouldBe(2);
 
             streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle,
+    public async Task live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle,
         string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
         var questId = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -176,17 +178,17 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
                 session.Events.StartStream<Quest>(questId, started, joined1);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var liveAggregate = session.Events.AggregateStream<QuestParty>(questId);
-                var inlinedAggregate = session.Load<QuestParty>(questId);
+                var liveAggregate = await session.Events.AggregateStreamAsync<QuestParty>(questId);
+                var inlinedAggregate = await session.LoadAsync<QuestParty>(questId);
                 liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
                 inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
             }
-        }).ShouldThrowIf(
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
@@ -194,12 +196,12 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void open_persisted_stream_in_new_store_with_same_settings(TenancyStyle tenancyStyle, string[] tenants)
+    public async Task open_persisted_stream_in_new_store_with_same_settings(TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
         var questId = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -208,31 +210,31 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
                 session.Events.StartStream<Quest>(questId, started, joined1);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             // events-aggregate-on-the-fly - works with same store
             using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId);
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
 
                 party.Id.ShouldBe(questId);
                 party.ShouldNotBeNull();
 
-                var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, 3);
 
                 party_at_version_3.ShouldNotBeNull();
 
-                var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
+                var party_yesterday = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                 party_yesterday.ShouldBeNull();
             }
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var party = session.Load<QuestParty>(questId);
+                var party = await session.LoadAsync<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
             }
 
@@ -241,8 +243,8 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             //Inline is working
             using (var session = store.LightweightSession(tenantId))
             {
-                var party = session.Load<QuestParty>(questId);
-                SpecificationExtensions.ShouldNotBeNull(party);
+                var party = await session.LoadAsync<QuestParty>(questId);
+                party.ShouldNotBeNull();
             }
 
             //GetAll
@@ -251,7 +253,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
                 foreach (var party in parties)
                 {
-                    SpecificationExtensions.ShouldNotBeNull(party);
+                    party.ShouldNotBeNull();
                 }
             }
 
@@ -259,18 +261,18 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             using (var session = store.LightweightSession(tenantId))
             {
                 // questId is the id of the stream
-                var party = session.Events.AggregateStream<QuestParty>(questId); //Here we get NPE
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId); //Here we get NPE
                 party.Id.ShouldBe(questId);
 
-                var party_at_version_3 = session.Events
-                    .AggregateStream<QuestParty>(questId, 3);
+                var party_at_version_3 = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, 3);
                 party_at_version_3.Id.ShouldBe(questId);
 
-                var party_yesterday = session.Events
-                    .AggregateStream<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
+                var party_yesterday = await session.Events
+                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
                 party_yesterday.ShouldBeNull();
             }
-        }).ShouldThrowIf(
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
@@ -278,12 +280,12 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void query_before_saving(TenancyStyle tenancyStyle, string[] tenants)
+    public async Task query_before_saving(TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
         var questId = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -298,12 +300,12 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
 
                 session.Events.StartStream<Quest>(questId, started, joined1);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var party = session.Events.AggregateStream<QuestParty>(questId);
+                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
                 party.Id.ShouldBe(questId);
             }
-        }).ShouldThrowIf(
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
@@ -344,12 +346,12 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided(
         TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -358,9 +360,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -368,17 +370,17 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
+    public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
         string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -389,9 +391,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 session.Events.StartStream<Quest>(id, joined);
                 session.Events.Append(id, departed);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -399,26 +401,26 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_an_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
+    public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
         string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
         var id = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             var started = new QuestStarted();
 
             using (var session = store.LightweightSession(tenantId))
             {
                 session.Events.StartStream<Quest>(id, started);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.LightweightSession(tenantId))
@@ -429,9 +431,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 session.Events.Append(id, joined);
                 session.Events.Append(id, departed);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
@@ -441,7 +443,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(2).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(2).Version.ShouldBe(3);
             }
-        }).ShouldThrowIf(
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
@@ -449,12 +451,12 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema(
         TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -462,9 +464,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
                 var id = session.Events.StartStream<Quest>(joined, departed).Id;
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -472,18 +474,18 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void
+    public async Task
         capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided_in_another_database_schema(
             TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -492,9 +494,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -502,19 +504,19 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
 
-                streamEvents.Each(x => SpecificationExtensions.ShouldBeGreaterThan(x.Sequence, 0L));
+                streamEvents.Each(x => x.Sequence.ShouldBeGreaterThan(0L));
             }
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
+    public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema(
         TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             using (var session = store.LightweightSession(tenantId))
             {
@@ -525,9 +527,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 session.Events.StartStream<Quest>(id, joined);
                 session.Events.Append(id, departed);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
@@ -535,26 +537,26 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(1).Version.ShouldBe(2);
             }
-        }).ShouldSucceed();
+        }).ShouldSucceedAsync();
     }
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
+    public async Task capture_events_to_an_existing_stream_and_fetch_the_events_back_in_another_database_schema(
         TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
         var id = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             var started = new QuestStarted();
 
             using (var session = store.LightweightSession(tenantId))
             {
                 session.Events.StartStream<Quest>(id, started);
-                session.SaveChanges();
+                await session.SaveChangesAsync();
             }
 
             using (var session = store.LightweightSession(tenantId))
@@ -564,9 +566,9 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 session.Events.Append(id, joined, departed);
 
-                session.SaveChanges();
+                await session.SaveChangesAsync();
 
-                var streamEvents = session.Events.FetchStream(id);
+                var streamEvents = await session.Events.FetchStreamAsync(id);
 
                 streamEvents.Count().ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
@@ -576,7 +578,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
                 streamEvents.ElementAt(2).Data.ShouldBeOfType<MembersDeparted>();
                 streamEvents.ElementAt(2).Version.ShouldBe(3);
             }
-        }).ShouldThrowIf(
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );
@@ -584,66 +586,30 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void assert_on_max_event_id_on_event_stream_append(
+    public async Task assert_on_max_event_id_on_event_stream_append(
         TenancyStyle tenancyStyle, string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
 
         var id = Guid.NewGuid();
 
-        When.CalledForEach(tenants, (tenantId, index) =>
+        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
         {
             var started = new QuestStarted();
 
-            using (var session = store.LightweightSession(tenantId))
-            {
-                session.Events.StartStream<Quest>(id, started);
-                session.SaveChanges();
+            using var session = store.LightweightSession(tenantId);
+            session.Events.StartStream<Quest>(id, started);
+            await session.SaveChangesAsync();
 
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
 
-                // Events are appended into the stream only if the maximum event id for the stream
-                // would be 3 after the append operation.
-                session.Events.Append(id, 3, joined, departed);
+            // Events are appended into the stream only if the maximum event id for the stream
+            // would be 3 after the append operation.
+            session.Events.Append(id, 3, joined, departed);
 
-                session.SaveChanges();
-            }
-        }).ShouldThrowIf(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
-            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
-        );
-    }
-
-    [Theory]
-    [MemberData(nameof(SessionParams))]
-    public void capture_immutable_events(TenancyStyle tenancyStyle, string[] tenants)
-    {
-        var store = ConfigureStore(tenancyStyle);
-
-        var id = Guid.NewGuid();
-
-        When.CalledForEach(tenants, (tenantId, index) =>
-        {
-            var immutableEvent = new ImmutableEvent(id, "some-name");
-
-            using (var session = store.LightweightSession(tenantId))
-            {
-                session.Events.Append(id, immutableEvent);
-                session.SaveChanges();
-            }
-
-            using (var session = store.LightweightSession(tenantId))
-            {
-                var streamEvents = session.Events.FetchStream(id);
-
-                streamEvents.Count.ShouldBe(1);
-                var @event = streamEvents.ElementAt(0).Data.ShouldBeOfType<ImmutableEvent>();
-
-                @event.Id.ShouldBe(id);
-                @event.Name.ShouldBe("some-name");
-            }
-        }).ShouldThrowIf(
+            await session.SaveChangesAsync();
+        }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
             (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
         );

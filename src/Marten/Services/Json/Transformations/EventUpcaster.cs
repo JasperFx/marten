@@ -4,7 +4,7 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Exceptions;
-using static Marten.Events.EventMappingExtensions;
+using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Services.Json.Transformations;
 
@@ -124,7 +124,7 @@ public abstract class EventUpcaster: IEventUpcaster
     /// <summary>
     ///     Event type name that you would like to transform. By default it uses the default convention
     /// </summary>
-    public virtual string EventTypeName => GetEventTypeName(EventType);
+    public virtual string EventTypeName => EventType.GetEventTypeName();
 
     public abstract object FromDbDataReader(ISerializer serializer, DbDataReader dbDataReader, int index);
 
@@ -316,17 +316,17 @@ public abstract class EventUpcaster<TOldEvent, TEvent>: EventUpcaster<TEvent>
 ///         AsyncOnlyEventUpcaster&#60;ShoppingCartOpened, ShoppingCartInitializedWithStatus&#62;
 /// {
 ///     private readonly IClientRepository _clientRepository;
-/// 
+///
 ///     public ShoppingCartOpenedAsyncOnlyUpcaster(IClientRepository clientRepository) =>
 ///         _clientRepository = clientRepository;
-/// 
+///
 ///     protected override async Task&#60;ShoppingCartInitializedWithStatus&#62; UpcastAsync(
 ///         ShoppingCartOpened oldEvent,
 ///         CancellationToken ct
 ///     )
 ///     {
 ///         var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
-/// 
+///
 ///         return new ShoppingCartInitializedWithStatus(
 ///             oldEvent.ShoppingCartId,
 ///             new Client(oldEvent.ClientId, clientName),
@@ -396,7 +396,7 @@ public abstract class AsyncOnlyEventUpcaster<TOldEvent, TEvent>: EventUpcaster<T
     /// )
     /// {
     ///     var clientName = await _clientRepository.GetClientName(oldEvent.ClientId, ct);
-    /// 
+    ///
     ///     return new ShoppingCartInitializedWithStatus(
     ///         oldEvent.ShoppingCartId,
     ///         new Client(oldEvent.ClientId, clientName),

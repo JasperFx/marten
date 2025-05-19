@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Npgsql;
@@ -26,7 +28,7 @@ public class Diagnostics: IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
-        DocumentTracking trackingMode = DocumentTracking.QueryOnly)
+        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull where TReturn : notnull
     {
         using var session = OpenQuerySession(trackingMode);
         var source = _store.GetCompiledQuerySourceFor(query, session);
@@ -48,13 +50,13 @@ public class Diagnostics: IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    public QueryPlan ExplainPlan<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query)
+    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default) where TDoc : notnull where TReturn : notnull
     {
         var cmd = PreviewCommand(query);
 
-        using var conn = _store.Tenancy.Default.Database.CreateConnection();
-        conn.Open();
-        return conn.ExplainQuery(_store.Serializer, cmd)!;
+        await using var conn = _store.Tenancy.Default.Database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
     }
 
     /// <summary>

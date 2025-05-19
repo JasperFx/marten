@@ -26,9 +26,9 @@ using Weasel.Postgresql.SqlGeneration;
 namespace Marten.Internal.Storage;
 
 internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns
-    where T : TRoot
+    where T : notnull, TRoot where TId : notnull where TRoot : notnull
 {
-    private readonly ISqlFragment _defaultWhere;
+    private readonly ISqlFragment? _defaultWhere;
     private readonly string[] _fields;
     private readonly SubClassMapping _mapping;
     private readonly IDocumentStorage<TRoot, TId> _parent;
@@ -50,12 +50,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public object RawIdentityValue(object id)
     {
         return _parent.RawIdentityValue(id);
-    }
-
-    public void TruncateDocumentStorage(IMartenDatabase database)
-    {
-        database.RunSql(
-            $"delete from {_parent.TableName.QualifiedName} where {SchemaConstants.DocumentTypeColumn} = '{_mapping.Alias}'");
     }
 
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
@@ -92,7 +86,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
@@ -113,7 +107,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return query.CombineAnd(extras);
     }
 
-    public ISqlFragment DefaultWhereFragment()
+    public ISqlFragment? DefaultWhereFragment()
     {
         return _defaultWhere;
     }
@@ -188,19 +182,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.DeleteForId(id, tenant);
     }
 
-    public T Load(TId id, IMartenSession session)
-    {
-        var doc = _parent.Load(id, session);
-
-        if (doc is T x)
-        {
-            return x;
-        }
-
-        return default;
-    }
-
-    public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public async Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
 
@@ -210,11 +192,6 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         }
 
         return default;
-    }
-
-    public IReadOnlyList<T> LoadMany(TId[] ids, IMartenSession session)
-    {
-        return _parent.LoadMany(ids, session).OfType<T>().ToList();
     }
 
     public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token)
@@ -272,6 +249,16 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.HardDeleteForDocument(document, tenantId);
     }
 
+    public void SetIdentityFromString(T document, string identityString)
+    {
+        _parent.SetIdentityFromString(document, identityString);
+    }
+
+    public void SetIdentityFromGuid(T document, Guid identityGuid)
+    {
+        _parent.SetIdentityFromGuid(document, identityGuid);
+    }
+
     private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
     {
         yield return toBasicWhere();
@@ -302,7 +289,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         }
     }
 
-    public ISqlFragment determineWhereFragment()
+    public ISqlFragment? determineWhereFragment()
     {
         var defaults = defaultFilters().ToArray();
         return defaults.Length switch

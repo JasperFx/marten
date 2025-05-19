@@ -11,7 +11,6 @@ using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Operations;
 using Marten.Services;
 using Npgsql;
-using OpenTelemetry.Trace;
 
 namespace Marten.Internal.Sessions;
 
@@ -72,7 +71,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -88,7 +87,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -104,7 +103,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -120,7 +119,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -136,7 +135,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -152,7 +151,7 @@ internal class EventTracingConnectionLifetime:
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -169,13 +168,13 @@ internal class EventTracingConnectionLifetime:
         }
         catch (AggregateException e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
 
             throw;
         }
@@ -193,12 +192,12 @@ internal class EventTracingConnectionLifetime:
         }
         catch (AggregateException e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
             throw;
         }
         catch (Exception e)
         {
-            _databaseActivity?.RecordException(e);
+            _databaseActivity?.AddException(e);
             throw;
         }
     }

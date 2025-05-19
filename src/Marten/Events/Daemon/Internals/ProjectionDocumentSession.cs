@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;

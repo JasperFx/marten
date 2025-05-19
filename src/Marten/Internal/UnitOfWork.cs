@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Operations;
 using Marten.Services;
@@ -188,7 +190,7 @@ internal class UnitOfWork: ISessionWorkTracker
         return clone;
     }
 
-    public void Eject<T>(T document)
+    public void Eject<T>(T document) where T: notnull
     {
         var operations = operationsFor(typeof(T));
         var matching = operations.OfType<IDocumentStorageOperation>().Where(x => ReferenceEquals(document, x.Document))
@@ -217,12 +219,12 @@ internal class UnitOfWork: ISessionWorkTracker
         Streams.Clear();
     }
 
-    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    public void PurgeOperations<T, TId>(TId id) where T : notnull where TId : notnull
     {
         _operations.RemoveAll(op => op is StorageOperation<T, TId> storage && storage.Id.Equals(id));
     }
 
-    public bool TryFindStream(string streamKey, out StreamAction stream)
+    public bool TryFindStream(string streamKey, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
             .FirstOrDefault(x => x.Key == streamKey);
@@ -230,7 +232,7 @@ internal class UnitOfWork: ISessionWorkTracker
         return stream != null;
     }
 
-    public bool TryFindStream(Guid streamId, out StreamAction stream)
+    public bool TryFindStream(Guid streamId, [NotNullWhen(true)]out StreamAction? stream)
     {
         stream = Streams
             .FirstOrDefault(x => x.Id == streamId);
@@ -238,7 +240,7 @@ internal class UnitOfWork: ISessionWorkTracker
         return stream != null;
     }
 
-    private bool shouldSort(StoreOptions options, out IComparer<IStorageOperation> comparer)
+    private bool shouldSort(StoreOptions options, [NotNullWhen(true)]out IComparer<IStorageOperation>? comparer)
     {
         comparer = null;
         if (_operations.Count <= 1)
@@ -288,7 +290,7 @@ internal class UnitOfWork: ISessionWorkTracker
             _topologicallyOrderedTypes = topologicallyOrderedTypes;
         }
 
-        public int Compare(IStorageOperation x, IStorageOperation y)
+        public int Compare(IStorageOperation? x, IStorageOperation? y)
         {
             if (ReferenceEquals(x, y))
             {
@@ -338,7 +340,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
             do
             {
-                index = _topologicallyOrderedTypes.IndexOf(documentType);
+                index = Array.IndexOf(_topologicallyOrderedTypes, documentType);
                 documentType = documentType.BaseType;
             } while (index == -1 && documentType != null);
 
@@ -355,7 +357,7 @@ internal class UnitOfWork: ISessionWorkTracker
             _topologicallyOrderedTypes = topologicallyOrderedTypes;
         }
 
-        public int Compare(IStorageOperation x, IStorageOperation y)
+        public int Compare(IStorageOperation? x, IStorageOperation? y)
         {
             if (ReferenceEquals(x, y))
             {
@@ -387,7 +389,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
             do
             {
-                index = _topologicallyOrderedTypes.IndexOf(documentType);
+                index = Array.IndexOf(_topologicallyOrderedTypes, documentType);
                 documentType = documentType.BaseType;
             } while (index == -1 && documentType != null);
 

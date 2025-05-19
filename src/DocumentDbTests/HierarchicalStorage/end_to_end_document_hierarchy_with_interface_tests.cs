@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -23,43 +24,43 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
     }
 
     [Fact]
-    public void persists_subclass()
+    public async Task persists_subclass()
     {
         var policy = new LinuxPolicy {Name = Guid.NewGuid().ToString()};
         using (var session = theStore.LightweightSession())
         {
             session.Store(policy);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
     }
 
 
     [Fact]
-    public void query_for_only_a_subclass_with_string_where_clause()
+    public async Task query_for_only_a_subclass_with_string_where_clause()
     {
         var policy = new LinuxPolicy {VersionId = Guid.NewGuid(), Name = Guid.NewGuid().ToString()};
         using (var session = theStore.LightweightSession())
         {
             session.Store(policy);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())
         {
-            session.Query<IPolicy>($"Where id = \'{policy.VersionId}\'").Single()
+            (await session.QueryAsync<IPolicy>($"Where id = \'{policy.VersionId}\'")).Single()
                 .VersionId.ShouldBe(policy.VersionId);
         }
     }
 
 
     [Fact]
-    public void query_for_only_a_subclass_with_where_clause()
+    public async Task query_for_only_a_subclass_with_where_clause()
     {
         var policy = new LinuxPolicy {VersionId = Guid.NewGuid(), Name = Guid.NewGuid().ToString()};
         using (var session = theStore.LightweightSession())
         {
             session.Store(policy);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession())

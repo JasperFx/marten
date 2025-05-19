@@ -50,7 +50,7 @@ public class last_modified_queries: IntegrationContext
 
 
     [Fact]
-    public void query_modified_since_docs()
+    public async Task query_modified_since_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -59,14 +59,14 @@ public class last_modified_queries: IntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user4);
+        var metadata = await session.MetadataForAsync(user4);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.LastModified;
         session.Store(user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         // no where clause
         session.Query<User>().Where(x => x.ModifiedSince(epoch))
@@ -82,7 +82,7 @@ public class last_modified_queries: IntegrationContext
     }
 
     [Fact]
-    public void query_modified_before_docs()
+    public async Task query_modified_before_docs()
     {
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
@@ -91,12 +91,12 @@ public class last_modified_queries: IntegrationContext
 
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         session.Store(user3, user4);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
-        var metadata = session.MetadataFor(user4);
+        var metadata = await session.MetadataForAsync(user4);
         metadata.ShouldNotBeNull();
 
         var epoch = metadata.LastModified;

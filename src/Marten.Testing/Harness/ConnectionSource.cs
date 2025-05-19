@@ -3,7 +3,7 @@ using Weasel.Postgresql.Connections;
 
 namespace Marten.Testing.Harness;
 
-public class ConnectionSource: ConnectionFactory
+public class ConnectionSource
 {
     // ;Persist Security Info=true
 
@@ -19,8 +19,4 @@ public class ConnectionSource: ConnectionFactory
                 "You need to set the connection string for your local Postgresql database in the environment variable 'marten_testing_database'");
     }
 
-
-    public ConnectionSource(): base(new DefaultNpgsqlDataSourceFactory(), ConnectionString)
-    {
-    }
 }

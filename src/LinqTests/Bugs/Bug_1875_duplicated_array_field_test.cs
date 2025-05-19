@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -9,7 +10,7 @@ namespace LinqTests.Bugs;
 public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
 {
     [Fact]
-    public void query_on_duplicated_number_array_field_test()
+    public async Task query_on_duplicated_number_array_field_test()
     {
         StoreOptions(_ =>
         {
@@ -23,7 +24,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
                 NumberArray = new []{ 1, 2 }
             });
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
@@ -34,7 +35,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
     }
 
     [Fact]
-    public void query_on_duplicated_guid_array_field_test()
+    public async Task query_on_duplicated_guid_array_field_test()
     {
         StoreOptions(_ =>
         {
@@ -46,7 +47,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
         using (var session = theStore.LightweightSession())
         {
             session.Store(target);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())

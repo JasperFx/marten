@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal.DirtyTracking;
@@ -20,11 +23,8 @@ public interface IRevisionedOperation
     bool IgnoreConcurrencyViolation { get; set; }
 }
 
-public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation
+public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExceptionTransform, IRevisionedOperation where TId: notnull
 {
-    private const string ExpectedMessage = "23505: duplicate key value violates unique constraint";
-
-
     private readonly T _document;
     protected readonly TId _id;
     private readonly string _tableName;
@@ -131,9 +131,14 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (reader.Read())
         {
             var revision = reader.GetFieldValue<int>(0);
+            if (revision == 0)
+            {
+                exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                return false;
+            }
             if (Revision != 0) // don't care about zero or 1
             {
-                if (revision > Revision)
+                if (revision >= Revision)
                 {
                     exceptions.Add(new ConcurrencyException(typeof(T), _id));
                     success = false;
@@ -158,6 +163,11 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
             var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
+            if (revision == 0)
+            {
+                exceptions.Add(new ConcurrencyException(typeof(T), _id));
+                return false;
+            }
             if (Revision != 0) // don't care about zero or 1
             {
                 if (revision > Revision)
@@ -230,7 +240,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         }
     }
 
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         transformed = null;
 
@@ -239,16 +249,11 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
             original = m.InnerException;
         }
 
-        if (original.Message.Contains(ExpectedMessage))
+        if (original is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgresException &&
+            postgresException.TableName == _tableName)
         {
-            if (original is PostgresException e)
-            {
-                if (e.TableName == _tableName)
-                {
-                    transformed = new DocumentAlreadyExistsException(original, typeof(T), _id);
-                    return true;
-                }
-            }
+            transformed = new DocumentAlreadyExistsException(original, typeof(T), _id);
+            return true;
         }
 
         return false;

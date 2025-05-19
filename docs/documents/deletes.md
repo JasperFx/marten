@@ -54,7 +54,7 @@ Marten also provides the ability to delete any documents of a certain type meeti
 ```cs
 theSession.DeleteWhere<Target>(x => x.Double == 578);
 
-theSession.SaveChanges();
+await theSession.SaveChangesAsync();
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/delete_many_documents_by_query.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletewhere' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -79,17 +79,17 @@ var company1 = new Company { Name = "ECorp" };
 
 session.StoreObjects(new object[] { user1, issue1, company1 });
 
-session.SaveChanges();
+await session.SaveChangesAsync();
 
 // Delete a mix of documents types
 using (var documentSession = theStore.LightweightSession())
 {
     documentSession.DeleteObjects(new object[] { user1, company1 });
 
-    documentSession.SaveChanges();
+    await documentSession.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L59-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L60-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Soft Deletes
@@ -179,7 +179,7 @@ in this acceptance test from the Marten codebase:
 <a id='snippet-sample_query_soft_deleted_docs'></a>
 ```cs
 [Fact]
-public void query_soft_deleted_docs()
+public async Task query_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -188,11 +188,11 @@ public void query_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // Deleting 'bar' and 'baz'
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause, deleted docs should be filtered out
     session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -203,11 +203,11 @@ public void query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L284-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L293-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
-public void query_soft_deleted_docs()
+public async Task query_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -216,11 +216,11 @@ public void query_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // Deleting 'bar' and 'baz'
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause, deleted docs should be filtered out
     session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -231,7 +231,7 @@ public void query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L974-L1000' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L983-L1009' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The SQL generated for the first call to `Query<User>()` above would be:
@@ -249,7 +249,7 @@ as shown in this acceptance tests:
 <a id='snippet-sample_query_maybe_soft_deleted_docs'></a>
 ```cs
 [Fact]
-public void query_maybe_soft_deleted_docs()
+public async Task query_maybe_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -258,10 +258,10 @@ public void query_maybe_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause, all documents are returned
     session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -275,11 +275,11 @@ public void query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L312-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L321-L349' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_maybe_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
-public void query_maybe_soft_deleted_docs()
+public async Task query_maybe_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -288,10 +288,10 @@ public void query_maybe_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause, all documents are returned
     session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -305,7 +305,7 @@ public void query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1002-L1030' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1011-L1039' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Partitioning by Deleted Status <Badge type="tip" text="7.26" />
@@ -337,7 +337,7 @@ var store = DocumentStore.For(opts =>
     opts.Policies.AllDocumentsSoftDeletedWithPartitioning();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1407-L1423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1416-L1432' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The attribute style of configuration also supports partitioning like so:
@@ -351,7 +351,7 @@ public class SoftDeletedAndPartitionedDocument
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1438-L1446' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1447-L1455' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Only Deleted Documents
@@ -363,7 +363,7 @@ as shown below:
 <a id='snippet-sample_query_is_soft_deleted_docs'></a>
 ```cs
 [Fact]
-public void query_is_soft_deleted_docs()
+public async Task query_is_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -372,10 +372,10 @@ public void query_is_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause
     session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -389,11 +389,11 @@ public void query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L342-L370' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L351-L379' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_is_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
-public void query_is_soft_deleted_docs()
+public async Task query_is_soft_deleted_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -402,10 +402,10 @@ public void query_is_soft_deleted_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.DeleteWhere<User>(x => x.UserName.StartsWith("b"));
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     // no where clause
     session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
@@ -419,7 +419,7 @@ public void query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1032-L1060' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1041-L1069' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Documents Deleted Before or After a Specific Time
@@ -431,7 +431,7 @@ and the counterpart `DeletedSince(DateTimeOffset)` as show below:
 <a id='snippet-sample_query_soft_deleted_since'></a>
 ```cs
 [Fact]
-public void query_is_soft_deleted_since_docs()
+public async Task query_is_soft_deleted_since_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -440,24 +440,24 @@ public void query_is_soft_deleted_since_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.Delete(user3);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L372-L396' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L381-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_since-1'></a>
 ```cs
 [Fact]
-public void query_is_soft_deleted_since_docs()
+public async Task query_is_soft_deleted_since_docs()
 {
     var user1 = new User { UserName = "foo" };
     var user2 = new User { UserName = "bar" };
@@ -466,20 +466,20 @@ public void query_is_soft_deleted_since_docs()
 
     using var session = theStore.LightweightSession();
     session.Store(user1, user2, user3, user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.Delete(user3);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
-    session.SaveChanges();
+    await session.SaveChangesAsync();
 
     session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1062-L1086' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1071-L1095' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:

@@ -18,9 +18,9 @@ public class using_long_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         await using var session = theStore.LightweightSession();
-        session.Load<LongDoc>(456).ShouldNotBeNull();
+        (await session.LoadAsync<LongDoc>(456)).ShouldNotBeNull();
 
-        session.Load<LongDoc>(222).ShouldBeNull();
+        (await session.LoadAsync<LongDoc>(222)).ShouldBeNull();
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class using_long_identity : IntegrationContext
 
         theSession.Store(doc);
 
-        SpecificationExtensions.ShouldBeGreaterThan(doc.Id, 0L);
+        doc.Id.ShouldBeGreaterThan(0L);
 
         var doc2 = new LongDoc { Id = 0 };
         theSession.Store(doc2);
@@ -41,37 +41,37 @@ public class using_long_identity : IntegrationContext
     }
 
     [Fact]
-    public void persist_and_delete()
+    public async Task persist_and_delete()
     {
         var LongDoc = new LongDoc { Id = 567 };
 
         theSession.Store(LongDoc);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<LongDoc>((int) LongDoc.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            SpecificationExtensions.ShouldBeNull(session.Load<LongDoc>(LongDoc.Id));
+            (await session.LoadAsync<LongDoc>(LongDoc.Id)).ShouldBeNull();
         }
     }
 
     [Fact]
-    public void load_by_array_of_ids()
+    public async Task load_by_array_of_ids()
     {
         theSession.Store(new LongDoc{Id = 3});
         theSession.Store(new LongDoc{Id = 4});
         theSession.Store(new LongDoc{Id = 5});
         theSession.Store(new LongDoc{Id = 6});
         theSession.Store(new LongDoc{Id = 7});
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.LoadMany<LongDoc>(4, 5, 6).Count().ShouldBe(3);
+        (await session.LoadManyAsync<LongDoc>(4, 5, 6)).Count().ShouldBe(3);
     }
 
     public using_long_identity(DefaultStoreFixture fixture) : base(fixture)

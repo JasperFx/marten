@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -9,14 +10,14 @@ namespace DocumentDbTests.Bugs
     {
         #region sample_can_select_from_the_same_table
         [Fact]
-        public void can_select_from_the_same_table()
+        public async Task can_select_from_the_same_table()
         {
             using var session = theStore.LightweightSession();
             var product1 = new Area1.Product { Name = "Paper", Price = 10 };
             session.Store(product1);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            var product2 = session.Load<Area2.Product>(product1.Id);
+            var product2 = await session.LoadAsync<Area2.Product>(product1.Id);
 
             product2.Name.ShouldBe(product1.Name);
         }

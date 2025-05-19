@@ -77,16 +77,17 @@
           "items": {
             "type": "string",
             "enum": [
+              "Attach",
               "Benchmarks",
               "ClearInlineSamples",
               "Compile",
               "Connection",
+              "Detach",
               "Docs",
               "DocsBuild",
               "Init",
               "InitDb",
               "InstallMdSnippets",
-              "Mocha",
               "NpmInstall",
               "Pack",
               "PublishDocs",
@@ -103,12 +104,10 @@
               "TestDocumentDb",
               "TestEventSourcing",
               "TestExtensions",
-              "TestExtensionsIncludingPlv8",
               "TestLinq",
               "TestMultiTenancy",
               "TestNodaTime",
               "TestPatching",
-              "TestPlv8",
               "TestValueTypes"
             ]
           }
@@ -123,16 +122,17 @@
           "items": {
             "type": "string",
             "enum": [
+              "Attach",
               "Benchmarks",
               "ClearInlineSamples",
               "Compile",
               "Connection",
+              "Detach",
               "Docs",
               "DocsBuild",
               "Init",
               "InitDb",
               "InstallMdSnippets",
-              "Mocha",
               "NpmInstall",
               "Pack",
               "PublishDocs",
@@ -149,12 +149,10 @@
               "TestDocumentDb",
               "TestEventSourcing",
               "TestExtensions",
-              "TestExtensionsIncludingPlv8",
               "TestLinq",
               "TestMultiTenancy",
               "TestNodaTime",
               "TestPatching",
-              "TestPlv8",
               "TestValueTypes"
             ]
           }

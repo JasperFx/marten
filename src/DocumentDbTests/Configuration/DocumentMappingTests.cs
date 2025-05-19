@@ -187,7 +187,7 @@ public class DocumentMappingTests
         EnumStorage enumStorage, NpgsqlDbType expectedNpgsqlDbType)
     {
         var storeOptions = new StoreOptions();
-        storeOptions.UseDefaultSerialization(enumStorage);
+        storeOptions.UseSystemTextJsonForSerialization(enumStorage);
 
         var mapping = new DocumentMapping<Target>(storeOptions);
 
@@ -533,7 +533,7 @@ public class DocumentMappingTests
     [Fact]
     public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(
+        Should.Throw<InvalidOperationException>(
             () => { DocumentMapping.For<StringId>().HiloSettings = new HiloSettings(); });
     }
 
@@ -581,7 +581,7 @@ public class DocumentMappingTests
     public void use_guid_id_generation_for_guid_id()
     {
         var mapping = DocumentMapping.For<UpperCaseProperty>();
-        mapping.IdStrategy.ShouldBeOfType<CombGuidIdGeneration>();
+        mapping.IdStrategy.ShouldBeOfType<SequentialGuidIdGeneration>();
     }
 
     [Fact]
@@ -622,7 +622,7 @@ public class DocumentMappingTests
     [Fact]
     public void trying_to_index_deleted_at_when_not_soft_deleted_document_throws()
     {
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
+        Should.Throw<InvalidOperationException>(() => DocumentMapping.For<IntId>().AddDeletedAtIndex());
     }
 
     [Fact]
@@ -836,9 +836,7 @@ public class DocumentMappingTests
 
     public class CustomIdGeneration: IIdGeneration
     {
-        public IEnumerable<Type> KeyTypes { get; }
-
-        public bool RequiresSequences { get; } = false;
+        public bool IsNumeric { get; } = false;
 
         public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
         {

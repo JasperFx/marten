@@ -1,6 +1,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Core.Reflection;
+using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -10,20 +14,22 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 
-internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class
+internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
-    private readonly ILiveAggregator<TDoc> _aggregator;
+    private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
     private readonly IDocumentStorage<TDoc, TId> _documentStorage;
-    private readonly EventGraph _events;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> documentStorage)
     {
-        _events = events;
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
-        _aggregator = _events.Options.Projections.AggregatorFor<TDoc>();
+
+        var raw = events.Options.Projections.AggregatorFor<TDoc>();
+
+        _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
+                      ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), _documentStorage.IdType, typeof(TId), typeof(IQuerySession));
     }
 
     public async Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
@@ -57,19 +63,27 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            var document = await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+            var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
             if (document != null)
             {
                 _documentStorage.SetIdentity(document, id);
             }
 
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
-            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            if (e.InnerException is NpgsqlException { SqlState: PostgresErrorCodes.InFailedSqlTransaction })
             {
                 throw new StreamLockedException(id, e.InnerException);
             }
@@ -118,16 +132,23 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
             await reader.NextResultAsync(cancellation).ConfigureAwait(false);
             var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
-            var document = await _aggregator.BuildAsync(events, session, default, cancellation).ConfigureAwait(false);
+            var document = await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
 
-
-            return version == 0
+            var stream = version == 0
                 ? _identityStrategy.StartStream(document, session, id, cancellation)
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
+
+            // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
+            if (session.Options.Events.UseIdentityMapForAggregates)
+            {
+                session.StoreDocumentInItemMap(id, stream);
+            }
+
+            return stream;
         }
         catch (Exception e)
         {
-            if (e.InnerException is NpgsqlException inner && inner.Message.Contains("current transaction is aborted"))
+            if (e.InnerException is NpgsqlException { SqlState: PostgresErrorCodes.InFailedSqlTransaction })
             {
                 throw new StreamLockedException(id, e.InnerException);
             }
@@ -139,5 +160,34 @@ internal class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TD
 
             throw;
         }
+    }
+
+    public async ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        // Optimization for having called FetchForWriting, then FetchLatest on same session in short order
+        if (session.Options.Events.UseIdentityMapForAggregates)
+        {
+            if (session.TryGetAggregateFromIdentityMap<IEventStream<TDoc>, TId>(id, out var stream))
+            {
+                var starting = stream.Aggregate;
+                var appendedEvents = stream.Events;
+
+                return await _aggregator.BuildAsync(appendedEvents, session, starting, id, _documentStorage, cancellation).ConfigureAwait(false);
+            }
+        }
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        var builder = new BatchBuilder{TenantId = session.TenantId};
+
+        var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
+        handler.ConfigureCommand(builder, session);
+
+        await using var reader =
+            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+
+        var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+        return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
     }
 }

@@ -1,7 +1,9 @@
 #nullable enable
 using System;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
@@ -101,7 +103,7 @@ public partial class QuerySession
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public virtual void UseIdentityMapFor<T>()
+    public virtual void UseIdentityMapFor<T>() where T : notnull
     {
         // Nothing by default
     }

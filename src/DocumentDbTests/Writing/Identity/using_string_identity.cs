@@ -11,17 +11,17 @@ namespace DocumentDbTests.Writing.Identity;
 public class using_string_identity : IntegrationContext
 {
     [Fact]
-    public void persist_and_load()
+    public async Task persist_and_load()
     {
         var account = new Account{Id = "email@server.com"};
 
         theSession.Store(account);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.Load<Account>("email@server.com").ShouldNotBeNull();
+        (await session.LoadAsync<Account>("email@server.com")).ShouldNotBeNull();
 
-        session.Load<Account>("nonexistent@server.com").ShouldBeNull();
+        (await session.LoadAsync<Account>("nonexistent@server.com")).ShouldBeNull();
     }
 
     #region sample_persist_and_load_async
@@ -45,7 +45,7 @@ public class using_string_identity : IntegrationContext
     {
         var account = new Account {Id = null};
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Store(account);
         });
@@ -57,34 +57,34 @@ public class using_string_identity : IntegrationContext
     {
         var account = new Account { Id = string.Empty };
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() =>
+        Should.Throw<InvalidOperationException>(() =>
         {
             theSession.Store(account);
         });
     }
 
     [Fact]
-    public void persist_and_delete()
+    public async Task persist_and_delete()
     {
         var account = new Account { Id = "email@server.com" };
 
         theSession.Store(account);
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using (var session = theStore.LightweightSession())
         {
             session.Delete<Account>(account.Id);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Account>(account.Id).ShouldBeNull();
+            (await session.LoadAsync<Account>(account.Id)).ShouldBeNull();
         }
     }
 
     [Fact]
-    public void load_by_array_of_ids()
+    public async Task load_by_array_of_ids()
     {
         theSession.Store(new Account { Id = "A" });
         theSession.Store(new Account { Id = "B" });
@@ -92,10 +92,10 @@ public class using_string_identity : IntegrationContext
         theSession.Store(new Account { Id = "D" });
         theSession.Store(new Account { Id = "E" });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        session.LoadMany<Account>("A", "B", "E").Count().ShouldBe(3);
+        (await session.LoadManyAsync<Account>("A", "B", "E")).Count().ShouldBe(3);
     }
 
     public using_string_identity(DefaultStoreFixture fixture) : base(fixture)

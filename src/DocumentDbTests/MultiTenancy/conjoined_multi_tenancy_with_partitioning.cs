@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -15,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace DocumentDbTests.MultiTenancy;
 
-public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext
+public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
@@ -39,18 +40,26 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
                     .AddPartition("blue", "Blue");
             });
         });
+    }
 
+    public async Task InitializeAsync()
+    {
         using (var session = theStore.LightweightSession("Red"))
         {
             session.Store(targetRed1, targetRed2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Blue"))
         {
             session.Store(targetBlue1, targetBlue2);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
+    }
+
+    public Task DisposeAsync()
+    {
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -62,37 +71,20 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void cannot_load_by_id_across_tenants()
+    public async Task cannot_load_by_id_across_tenants()
     {
         using (var red = theStore.QuerySession("Red"))
         {
-            red.Load<Target>(targetRed1.Id).ShouldNotBeNull();
-            red.Load<Target>(targetBlue1.Id).ShouldBeNull();
+            (await red.LoadAsync<Target>(targetRed1.Id)).ShouldNotBeNull();
+            (await red.LoadAsync<Target>(targetBlue1.Id)).ShouldBeNull();
         }
 
         using (var blue = theStore.QuerySession("Blue"))
         {
-            blue.Load<Target>(targetBlue1.Id).ShouldNotBeNull();
-            blue.Load<Target>(targetRed1.Id).ShouldBeNull();
+            (await blue.LoadAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
+            (await blue.LoadAsync<Target>(targetRed1.Id)).ShouldBeNull();
         }
     }
-
-    [Fact]
-    public void cannot_load_json_by_id_across_tenants()
-    {
-        using (var red = theStore.QuerySession("Red"))
-        {
-            red.Json.FindById<Target>(targetRed1.Id).ShouldNotBeNull();
-            red.Json.FindById<Target>(targetBlue1.Id).ShouldBeNull();
-        }
-
-        using (var blue = theStore.QuerySession("Blue"))
-        {
-            blue.Json.FindById<Target>(targetBlue1.Id).ShouldNotBeNull();
-            blue.Json.FindById<Target>(targetRed1.Id).ShouldBeNull();
-        }
-    }
-
 
     [Fact]
     public async Task cannot_load_json_by_id_across_tenants_async()
@@ -116,26 +108,14 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     {
         await using (var red = theStore.QuerySession("Red"))
         {
-            SpecificationExtensions.ShouldNotBeNull(await red.LoadAsync<Target>(targetRed1.Id));
-            SpecificationExtensions.ShouldBeNull(await red.LoadAsync<Target>(targetBlue1.Id));
+            (await red.LoadAsync<Target>(targetRed1.Id)).ShouldNotBeNull();
+            (await red.LoadAsync<Target>(targetBlue1.Id)).ShouldBeNull();
         }
 
         await using (var blue = theStore.QuerySession("Blue"))
         {
-            SpecificationExtensions.ShouldNotBeNull(await blue.LoadAsync<Target>(targetBlue1.Id));
-            SpecificationExtensions.ShouldBeNull(await blue.LoadAsync<Target>(targetRed1.Id));
-        }
-    }
-
-    [Fact]
-    public void cannot_load_by_many_id_across_tenants()
-    {
-        using (var red = theStore.QuerySession("Red"))
-        {
-            red.LoadMany<Target>(targetRed1.Id, targetRed2.Id).Count.ShouldBe(2);
-            red.LoadMany<Target>(targetBlue1.Id, targetBlue1.Id, targetRed1.Id)
-                .Single()
-                .Id.ShouldBe(targetRed1.Id);
+            (await blue.LoadAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
+            (await blue.LoadAsync<Target>(targetRed1.Id)).ShouldBeNull();
         }
     }
 
@@ -203,31 +183,31 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         await using (var session = theStore.LightweightSession("123"))
         {
-            var target = session.Load<Target>(guid);
+            var target = await session.LoadAsync<Target>(guid);
             target.ShouldNotBeNull();
             target.String.ShouldBe("123");
         }
 
         await using (var session = theStore.LightweightSession("abc"))
         {
-            var target = session.Load<Target>(guid);
+            var target = await session.LoadAsync<Target>(guid);
             target.ShouldNotBeNull();
             target.String.ShouldBe("abc");
         }
     }
 
     [Fact]
-    public void can_upsert_in_multi_tenancy()
+    public async Task can_upsert_in_multi_tenancy()
     {
         using var session = theStore.LightweightSession("123");
         session.Store(Target.GenerateRandomData(10).ToArray());
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
     [Fact]
-    public void can_bulk_insert_with_multi_tenancy_on()
+    public async Task can_bulk_insert_with_multi_tenancy_on()
     {
-        theStore.BulkInsert("345", Target.GenerateRandomData(100).ToArray());
+        await theStore.BulkInsertAsync("345", Target.GenerateRandomData(100).ToArray());
     }
 
     [Fact]
@@ -248,8 +228,8 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         await batch.Execute();
 
-        SpecificationExtensions.ShouldNotBeNull(await foundRed);
-        SpecificationExtensions.ShouldBeNull(await notFoundGreen);
+        (await foundRed).ShouldNotBeNull();
+        (await notFoundGreen).ShouldBeNull();
 
         var found = await queryForReds;
 
@@ -263,7 +243,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void can_query_on_multi_tenanted_and_non_tenanted_documents()
+    public async Task can_query_on_multi_tenanted_and_non_tenanted_documents()
     {
         #region sample_tenancy-mixed-tenancy-non-tenancy-sample
 
@@ -276,28 +256,28 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             opts.Schema.For<Issue>().MultiTenanted(); // tenanted
         });
 
-        store.Advanced.Clean.DeleteAllDocuments();
+        await store.Advanced.Clean.DeleteAllDocumentsAsync();
 
         // Add documents to tenant Green
         var greens = Target.GenerateRandomData(10).ToArray();
-        store.BulkInsert("Green", greens);
+        await store.BulkInsertAsync("Green", greens);
 
         // Add documents to tenant Red
         var reds = Target.GenerateRandomData(11).ToArray();
-        store.BulkInsert("Red", reds);
+        await store.BulkInsertAsync("Red", reds);
 
         // Add non-tenanted documents
         // User is non-tenanted in schema
         var user1 = new User { UserName = "Frank" };
         var user2 = new User { UserName = "Bill" };
-        store.BulkInsert(new[] { user1, user2 });
+        await store.BulkInsertAsync(new[] { user1, user2 });
 
         // Add documents to default tenant
         // Note that schema for Issue is multi-tenanted hence documents will get added
         // to default tenant if tenant is not passed in the bulk insert operation
         var issue1 = new Issue { Title = "Test issue1" };
         var issue2 = new Issue { Title = "Test issue2" };
-        store.BulkInsert(new[] { issue1, issue2 });
+        await store.BulkInsertAsync(new[] { issue1, issue2 });
 
         // Create a session with tenant Green
         using (var session = store.QuerySession("Green"))
@@ -309,7 +289,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             session.Query<User>().Count().ShouldBe(2);
 
             // Query documents in default tenant from a session using tenant Green
-            session.Query<Issue>().Count(x => x.TenantIsOneOf(Tenancy.DefaultTenantId)).ShouldBe(2);
+            session.Query<Issue>().Count(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId)).ShouldBe(2);
 
             // Query documents from tenant Red from a session using tenant Green
             session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
@@ -337,17 +317,17 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
 
     [Fact]
-    public void query_within_all_tenants()
+    public async Task query_within_all_tenants()
     {
-        theStore.Advanced.Clean.DeleteAllDocuments();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var reds = Target.GenerateRandomData(50).ToArray();
         var greens = Target.GenerateRandomData(75).ToArray();
         var blues = Target.GenerateRandomData(25).ToArray();
 
-        theStore.BulkInsert("Red", reds);
-        theStore.BulkInsert("Green", greens);
-        theStore.BulkInsert("Blue", blues);
+        await theStore.BulkInsertAsync("Red", reds);
+        await theStore.BulkInsertAsync("Green", greens);
+        await theStore.BulkInsertAsync("Blue", blues);
 
         var expected = reds.Concat(greens).Concat(blues)
             .Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToArray();
@@ -367,17 +347,17 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void query_within_all_tenants_with_compound_where()
+    public async Task query_within_all_tenants_with_compound_where()
     {
-        theStore.Advanced.Clean.DeleteAllDocuments();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var reds = Target.GenerateRandomData(50).ToArray();
         var greens = Target.GenerateRandomData(75).ToArray();
         var blues = Target.GenerateRandomData(25).ToArray();
 
-        theStore.BulkInsert("Red", reds);
-        theStore.BulkInsert("Green", greens);
-        theStore.BulkInsert("Blue", blues);
+        await theStore.BulkInsertAsync("Red", reds);
+        await theStore.BulkInsertAsync("Green", greens);
+        await theStore.BulkInsertAsync("Blue", blues);
 
         var expected = reds.Concat(greens).Concat(blues)
             .Where(x => x.Flag && x.String != null).Select(x => x.Id).OrderBy(x => x).ToArray();
@@ -464,7 +444,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
     }
 
     [Fact]
-    public void will_not_cross_the_streams()
+    public async Task will_not_cross_the_streams()
     {
         var user = new User { UserName = "Me" };
         user.Id = Guid.NewGuid();
@@ -472,7 +452,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         using (var red = theStore.LightweightSession("Red"))
         {
             red.Store(user);
-            red.SaveChanges();
+            await red.SaveChangesAsync();
         }
 
         using (var green = theStore.LightweightSession("Green"))
@@ -481,24 +461,24 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
             // Nothing should happen here
             green.Store(greenUser);
-            green.SaveChanges();
+            await green.SaveChangesAsync();
         }
 
         // Still got the original data
         using (var query = theStore.QuerySession("Red"))
         {
-            query.Load<User>(user.Id).UserName.ShouldBe("Me");
+            (await query.LoadAsync<User>(user.Id)).UserName.ShouldBe("Me");
         }
     }
 
     [Fact]
-    public void bulk_insert_respects_tenancy()
+    public async Task bulk_insert_respects_tenancy()
     {
         var reds = Target.GenerateRandomData(20).ToArray();
         var greens = Target.GenerateRandomData(15).ToArray();
 
-        theStore.BulkInsert("Red", reds);
-        theStore.BulkInsert("Green", greens);
+        await theStore.BulkInsertAsync("Red", reds);
+        await theStore.BulkInsertAsync("Green", greens);
 
         Guid[] actualReds = null;
         Guid[] actualGreens = null;
@@ -553,13 +533,13 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
 
     [Fact]
-    public void write_to_tenant_with_explicitly_overridden_tenant()
+    public async Task write_to_tenant_with_explicitly_overridden_tenant()
     {
         var reds = Target.GenerateRandomData(50).ToArray();
         var greens = Target.GenerateRandomData(75).ToArray();
         var blues = Target.GenerateRandomData(25).ToArray();
 
-        theStore.Advanced.Clean.DeleteAllDocuments();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         using (var session = theStore.LightweightSession())
         {
@@ -567,7 +547,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             session.ForTenant("Green").Store(greens);
             session.ForTenant("Blue").Store(blues);
 
-            session.SaveChanges();
+            await session.SaveChangesAsync();
         }
 
         using (var red = theStore.QuerySession("Red"))

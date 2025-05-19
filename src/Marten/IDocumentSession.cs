@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
+using Marten.Internal.Sessions;
 using Marten.Services;
 
 namespace Marten;
@@ -35,7 +36,7 @@ public interface IDocumentSession: IDocumentOperations
     /// <summary>
     ///     Access to the event store functionality
     /// </summary>
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Override whether or not this session honors optimistic concurrency checks
@@ -52,11 +53,6 @@ public interface IDocumentSession: IDocumentOperations
     ///     process name for this unit of work
     /// </summary>
     string? LastModifiedBy { get; set; }
-
-    /// <summary>
-    ///     Saves all the pending changes and deletions to the server in a single Postgresql transaction.
-    /// </summary>
-    void SaveChanges();
 
     /// <summary>
     ///     Asynchronously saves all the pending changes and deletions to the server in a single Postgresql transaction

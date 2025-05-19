@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -26,8 +27,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     internal DocumentSessionBase(
         DocumentStore store,
         SessionOptions sessionOptions,
-        IConnectionLifetime connection
-    ): base(store, sessionOptions, connection)
+        IConnectionLifetime connection): base(store, sessionOptions, connection)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = new UnitOfWork(this);
@@ -37,22 +37,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         DocumentStore store,
         SessionOptions sessionOptions,
         IConnectionLifetime connection,
-        ISessionWorkTracker workTracker,
-        Tenant? tenant = default
+        ISessionWorkTracker workTracker, Tenant? tenant = default
     ): base(store, sessionOptions, connection, tenant)
     {
         Concurrency = sessionOptions.ConcurrencyChecks;
         _workTracker = workTracker;
-    }
-
-    internal ValueTask<IMessageBatch> CurrentMessageBatch()
-    {
-        if (_workTracker is ProjectionUpdateBatch batch)
-        {
-            return batch.CurrentMessageBatch(this);
-        }
-
-        throw new InvalidOperationException("This session is not a ProjectionDocumentSession");
     }
 
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
@@ -111,7 +100,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
-    public void TryUpdateRevision<T>(T entity, int revision)
+    public void TryUpdateRevision<T>(T entity, int revision) where T : notnull
     {
         assertNotDisposed();
 
@@ -226,12 +215,17 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void QueueSqlCommand(string sql, params object[] parameterValues)
     {
+        QueueSqlCommand(DefaultParameterPlaceholder, sql, parameterValues: parameterValues);
+    }
+
+    public void QueueSqlCommand(char placeholder, string sql, params object[] parameterValues)
+    {
         sql = sql.TrimEnd(';');
         if (sql.Contains(';'))
             throw new ArgumentOutOfRangeException(nameof(sql),
                 "You must specify one SQL command at a time because of Marten's usage of command batching. ';' cannot be used as a command separator here.");
 
-        var operation = new ExecuteSqlStorageOperation(sql, parameterValues);
+        var operation = new ExecuteSqlStorageOperation(placeholder, sql, parameterValues);
         QueueOperation(operation);
     }
 
@@ -253,7 +247,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    public new IEventStore Events => (IEventStore)base.Events;
+    public new IEventStoreOperations Events => (IEventStoreOperations)base.Events;
 
 
     public void QueueOperation(IStorageOperation storageOperation)
@@ -337,7 +331,6 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         // Nothing
     }
-
 
     private void store<T>(IEnumerable<T> entities) where T : notnull
     {
@@ -429,5 +422,40 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         {
             foreach (var document in objects.OfType<T>()) session.Delete(document);
         }
+    }
+
+    internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class where TId : notnull
+    {
+        if (ItemMap.ContainsKey(typeof(TDoc)))
+        {
+            ItemMap[typeof(TDoc)].As<Dictionary<TId, TDoc>>()[id] = document;
+        }
+        else
+        {
+            var dict = new Dictionary<TId, TDoc>();
+            dict[id] = document;
+            ItemMap[typeof(TDoc)] = dict;
+        }
+    }
+
+    internal bool TryGetAggregateFromIdentityMap<TDoc, TId>(TId id, [NotNullWhen(true)]out TDoc? document) where TDoc: notnull where TId : notnull
+    {
+        if (Options.EventGraph.UseIdentityMapForAggregates)
+        {
+            if (ItemMap.TryGetValue(typeof(TDoc), out var raw))
+            {
+                if (raw is Dictionary<TId, TDoc> dict)
+                {
+                    if (dict.TryGetValue(id, out var doc))
+                    {
+                        document = doc;
+                        return true;
+                    }
+                }
+            }
+        }
+
+        document = default;
+        return false;
     }
 }

@@ -260,7 +260,7 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         StoreOptions(_ =>
         {
             _.Events.MetadataConfig.EnableAll();
-            _.UseDefaultSerialization(serializerType: SerializerType.SystemTextJson);
+            _.UseSystemTextJsonForSerialization();
         });
 
         var streamId = theSession.Events
@@ -275,7 +275,7 @@ public class flexible_event_metadata: OneOffConfigurationsContext
         StoreOptions(_ =>
         {
             _.Events.MetadataConfig.EnableAll();
-            _.UseDefaultSerialization(serializerType: SerializerType.Newtonsoft);
+            _.UseSystemTextJsonForSerialization();
         });
 
         var streamId = theSession.Events

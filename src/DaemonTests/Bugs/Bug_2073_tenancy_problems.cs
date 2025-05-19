@@ -1,6 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -80,11 +83,11 @@ public record UpdateDoc(string DocumentId, string Content);
 // projection
 public record Document([property: Identity] string DocumentId, string Owner, string Content);
 
-public class DocumentProjection: SingleStreamProjection<Document>
+public class DocumentProjection: SingleStreamProjection<Document, string>
 {
     public DocumentProjection()
     {
-        ProjectionName = "Document";
+        Name = "Document";
     }
 
     public Document Create(CreateDoc @event)

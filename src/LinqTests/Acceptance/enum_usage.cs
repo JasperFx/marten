@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
@@ -9,7 +10,7 @@ using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance;
 
-public class enum_usage : OneOffConfigurationsContext
+public class enum_usage: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -19,17 +20,17 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_jil_that_are_not_duplicated()
+    public async Task use_enum_values_with_jil_that_are_not_duplicated()
     {
-        theSession.Store(new Target{Color = Colors.Blue, Number = 1});
-        theSession.Store(new Target{Color = Colors.Red, Number = 2});
-        theSession.Store(new Target{Color = Colors.Green, Number = 3});
-        theSession.Store(new Target{Color = Colors.Blue, Number = 4});
-        theSession.Store(new Target{Color = Colors.Red, Number = 5});
-        theSession.Store(new Target{Color = Colors.Green, Number = 6});
-        theSession.Store(new Target{Color = Colors.Blue, Number = 7});
+        theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
+        theSession.Store(new Target { Color = Colors.Red, Number = 2 });
+        theSession.Store(new Target { Color = Colors.Green, Number = 3 });
+        theSession.Store(new Target { Color = Colors.Blue, Number = 4 });
+        theSession.Store(new Target { Color = Colors.Red, Number = 5 });
+        theSession.Store(new Target { Color = Colors.Green, Number = 6 });
+        theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -37,7 +38,7 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_not_duplicated()
+    public async Task use_enum_values_with_newtonsoft_that_are_not_duplicated()
     {
         StoreOptions(_ => _.Serializer<JsonNetSerializer>());
 
@@ -49,7 +50,7 @@ public class enum_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -57,9 +58,9 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_not_duplicated_and_stored_as_strings()
+    public async Task use_enum_values_with_newtonsoft_that_are_not_duplicated_and_stored_as_strings()
     {
-        StoreOptions(_ => _.Serializer(new JsonNetSerializer {EnumStorage = EnumStorage.AsString}));
+        StoreOptions(_ => _.Serializer(new JsonNetSerializer { EnumStorage = EnumStorage.AsString }));
 
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
@@ -69,7 +70,7 @@ public class enum_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -78,7 +79,7 @@ public class enum_usage : OneOffConfigurationsContext
 
 
     [Fact]
-    public void use_enum_values_with_jil_that_are_duplicated()
+    public async Task use_enum_values_with_jil_that_are_duplicated()
     {
         StoreOptions(_ =>
         {
@@ -93,7 +94,7 @@ public class enum_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -101,7 +102,7 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_duplicated()
+    public async Task use_enum_values_with_newtonsoft_that_are_duplicated()
     {
         StoreOptions(_ =>
         {
@@ -117,7 +118,7 @@ public class enum_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -125,11 +126,11 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_duplicated_as_string_storage()
+    public async Task use_enum_values_with_newtonsoft_that_are_duplicated_as_string_storage()
     {
         StoreOptions(_ =>
         {
-            _.UseDefaultSerialization(EnumStorage.AsString);
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsString);
             _.Schema.For<Target>().Duplicate(x => x.Color);
         });
 
@@ -141,7 +142,7 @@ public class enum_usage : OneOffConfigurationsContext
         theSession.Store(new Target { Color = Colors.Green, Number = 6 });
         theSession.Store(new Target { Color = Colors.Blue, Number = 7 });
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -149,10 +150,8 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
 
-
-
     [Fact]
-    public void use_enum_values_with_jil_that_are_duplicated_with_bulk_import()
+    public async Task use_enum_values_with_jil_that_are_duplicated_with_bulk_import()
     {
         StoreOptions(_ =>
         {
@@ -161,16 +160,13 @@ public class enum_usage : OneOffConfigurationsContext
 
         var targets = new Target[]
         {
-            new Target {Color = Colors.Blue, Number = 1},
-            new Target {Color = Colors.Red, Number = 2},
-            new Target {Color = Colors.Green, Number = 3},
-            new Target {Color = Colors.Blue, Number = 4},
-            new Target {Color = Colors.Red, Number = 5},
-            new Target {Color = Colors.Green, Number = 6},
-            new Target {Color = Colors.Blue, Number = 7}
+            new() { Color = Colors.Blue, Number = 1 }, new() { Color = Colors.Red, Number = 2 },
+            new() { Color = Colors.Green, Number = 3 }, new() { Color = Colors.Blue, Number = 4 },
+            new() { Color = Colors.Red, Number = 5 }, new() { Color = Colors.Green, Number = 6 },
+            new() { Color = Colors.Blue, Number = 7 }
         };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -178,7 +174,7 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_enum_values_with_newtonsoft_that_are_duplicated_with_bulk_import()
+    public async Task use_enum_values_with_newtonsoft_that_are_duplicated_with_bulk_import()
     {
         StoreOptions(_ =>
         {
@@ -188,16 +184,13 @@ public class enum_usage : OneOffConfigurationsContext
 
         var targets = new Target[]
         {
-            new Target {Color = Colors.Blue, Number = 1},
-            new Target {Color = Colors.Red, Number = 2},
-            new Target {Color = Colors.Green, Number = 3},
-            new Target {Color = Colors.Blue, Number = 4},
-            new Target {Color = Colors.Red, Number = 5},
-            new Target {Color = Colors.Green, Number = 6},
-            new Target {Color = Colors.Blue, Number = 7}
+            new() { Color = Colors.Blue, Number = 1 }, new() { Color = Colors.Red, Number = 2 },
+            new() { Color = Colors.Green, Number = 3 }, new() { Color = Colors.Blue, Number = 4 },
+            new() { Color = Colors.Red, Number = 5 }, new() { Color = Colors.Green, Number = 6 },
+            new() { Color = Colors.Blue, Number = 7 }
         };
 
-        theStore.BulkInsert(targets);
+        await theStore.BulkInsertAsync(targets);
 
         theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
             .Select(x => x.Number)
@@ -205,14 +198,14 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_nullable_enum_values_as_part_of_in_query()
+    public async Task use_nullable_enum_values_as_part_of_in_query()
     {
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
-        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
-        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
-        theSession.Store(new Target{NullableEnum = null, Number = 5});
-        theSession.SaveChanges();
+        theSession.Store(new Target { NullableEnum = Colors.Green, Number = 1 });
+        theSession.Store(new Target { NullableEnum = Colors.Blue, Number = 2 });
+        theSession.Store(new Target { NullableEnum = Colors.Red, Number = 3 });
+        theSession.Store(new Target { NullableEnum = Colors.Green, Number = 4 });
+        theSession.Store(new Target { NullableEnum = null, Number = 5 });
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
             .ToList();
@@ -221,14 +214,14 @@ public class enum_usage : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void use_nullable_enum_values_as_part_of_notin_query()
+    public async Task use_nullable_enum_values_as_part_of_notin_query()
     {
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 1});
-        theSession.Store(new Target{NullableEnum = Colors.Blue, Number = 2});
-        theSession.Store(new Target{NullableEnum = Colors.Red, Number = 3});
-        theSession.Store(new Target{NullableEnum = Colors.Green, Number = 4});
-        theSession.Store(new Target{NullableEnum = null, Number = 5});
-        theSession.SaveChanges();
+        theSession.Store(new Target { NullableEnum = Colors.Green, Number = 1 });
+        theSession.Store(new Target { NullableEnum = Colors.Blue, Number = 2 });
+        theSession.Store(new Target { NullableEnum = Colors.Red, Number = 3 });
+        theSession.Store(new Target { NullableEnum = Colors.Green, Number = 4 });
+        theSession.Store(new Target { NullableEnum = null, Number = 5 });
+        await theSession.SaveChangesAsync();
 
         var results = theSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
             .ToList();

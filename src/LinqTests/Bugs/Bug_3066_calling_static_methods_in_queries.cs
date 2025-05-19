@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -16,14 +17,14 @@ public class Bug_3066_calling_static_methods_in_queries : BugIntegrationContext
     }
 
     [Fact]
-    public void GettingPropertyFromTypedObjectCreatedFromStaticMethod()
+    public async Task GettingPropertyFromTypedObjectCreatedFromStaticMethod()
     {
         StoreOptions(opts =>
         {
             opts.RegisterDocumentType<Account>();
         });
 
-        var queryPlan = theSession.Query<Account>().Where(x => x.Id == AccountId.New("123").Value).Explain();
+        var queryPlan = await theSession.Query<Account>().Where(x => x.Id == AccountId.New("123").Value).ExplainAsync();
         _testOutputHelper.WriteLine(queryPlan.Command.CommandText);
     }
 

@@ -82,6 +82,15 @@ public interface IPatchExpression<T>
     IPatchExpression<T> Increment(Expression<Func<T, float>> expression, float increment = 1);
 
     /// <summary>
+    /// Increment a single field or property by adding the increment value
+    /// to the persisted value
+    /// </summary>
+    /// <param name="expression"></param>
+    /// <param name="increment"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Increment(Expression<Func<T, decimal>> expression, decimal increment = 1);
+
+    /// <summary>
     /// Append an element to the end of a child collection on the persisted
     /// document
     /// </summary>
@@ -100,6 +109,17 @@ public interface IPatchExpression<T>
     /// <param name="element"></param>
     /// <returns></returns>
     IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
+
+    /// <summary>
+    /// Append an element to the end of a child collection on the persisted
+    /// document if the element does not already exist by predicate
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="element"></param>
+    /// <param name="predicate"></param>
+    /// <returns></returns>
+    IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate);
 
     /// <summary>
     /// Insert an element at the designated index to a child collection on the persisted document
@@ -123,6 +143,18 @@ public interface IPatchExpression<T>
     IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, int? index = null);
 
     /// <summary>
+    /// Insert an element at the designated index to a child collection on the persisted document
+    /// if the value does not already exist by predicate
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="element"></param>
+    /// <param name="predicate"></param>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    IPatchExpression<T> InsertIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, Expression<Func<TElement, bool>> predicate, int? index = null);
+
+    /// <summary>
     /// Remove element from a child collection on the persisted document
     /// </summary>
     /// <typeparam name="TElement"></typeparam>
@@ -131,6 +163,16 @@ public interface IPatchExpression<T>
     /// <param name="action"></param>
     /// <returns></returns>
     IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst);
+
+    /// <summary>
+    /// Remove element from a child collection by predicate on the persisted document
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="predicate"></param>
+    /// <param name="action"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, Expression<Func<TElement, bool>> predicate, RemoveAction action = RemoveAction.RemoveFirst);
 
     /// <summary>
     /// Rename a property or field in the persisted JSON document

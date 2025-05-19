@@ -9,6 +9,7 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.RuntimeCompiler;
 using Marten.Events.Archiving;
 using Marten.Events.Operations;
@@ -49,7 +50,7 @@ internal static class EventDocumentStorageGenerator
 
         Debug.WriteLine(builderType.SourceCode);
 
-        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
+        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType!, options)!;
     }
 
     public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)

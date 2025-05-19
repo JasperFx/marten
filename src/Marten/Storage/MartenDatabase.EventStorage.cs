@@ -3,12 +3,18 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
@@ -16,8 +22,10 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage;
 
-public partial class MartenDatabase
+public partial class MartenDatabase : IEventDatabase
 {
+    private string _storageIdentifier;
+
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
     {
         var sql =
@@ -37,6 +45,26 @@ public partial class MartenDatabase
             await conn.CloseAsync().ConfigureAwait(false);
         }
     }
+
+    string IEventDatabase.StorageIdentifier => _storageIdentifier;
+
+    /// <summary>
+    /// Fetch the highest assigned event sequence number in this database
+    /// </summary>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        var highest = (long)await conn
+            .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
+            .ExecuteScalarAsync(token).ConfigureAwait(false)!;
+
+        return highest;
+    }
+
 
     /// <summary>
     ///     Fetch the current size of the event store tables, including the current value
@@ -106,7 +134,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
             new ProjectionProgressStatement(Options.EventGraph),
-            new ShardStateSelector());
+            new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -116,6 +144,29 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
         return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
+            new ProjectionProgressStatement(Options.EventGraph){Names = names},
+            new ShardStateSelector(Options.EventGraph));
+
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+
+        var builder = new CommandBuilder();
+        handler.ConfigureCommand(builder, null);
+
+        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+        return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+    }
+
+    Task IEventDatabase.WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
+    {
+        return this.WaitForNonStaleProjectionDataAsync(timeout);
     }
 
     /// <summary>
@@ -135,7 +186,7 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         var statement = new ProjectionProgressStatement(Options.EventGraph) { Name = name };
 
         var handler = new OneResultHandler<ShardState>(statement,
-            new ShardStateSelector(), true, false);
+            new ShardStateSelector(Options.EventGraph), true, false);
 
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -156,6 +207,26 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
     /// </summary>
     public ShardStateTracker Tracker { get; private set; }
 
+    async Task IEventDatabase.StoreDeadLetterEventAsync(object storage, DeadLetterEvent deadLetterEvent,
+        CancellationToken token)
+    {
+        try
+        {
+            using var session = storage.As<DocumentStore>().LightweightSession(SessionOptions.ForDatabase(this));
+            session.Store(deadLetterEvent);
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // TODO -- something to log this?
+        }
+    }
+
+    Task IEventDatabase.EnsureStorageExistsAsync(Type storageType, CancellationToken token)
+    {
+        return EnsureStorageExistsAsync(storageType, token).AsTask();
+    }
+
     internal IProjectionDaemon StartProjectionDaemon(DocumentStore store, ILogger? logger = null)
     {
         logger ??= store.Options.LogFactory?.CreateLogger<ProjectionDaemon>() ??
@@ -163,6 +234,6 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         var detector = new HighWaterDetector(this, Options.EventGraph, logger);
 
-        return new ProjectionDaemon(store, this, logger, detector, new AgentFactory(store));
+        return new ProjectionDaemon(store, this, logger, detector);
     }
 }

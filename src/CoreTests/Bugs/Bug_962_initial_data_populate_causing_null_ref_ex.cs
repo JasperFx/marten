@@ -38,14 +38,14 @@ public class Bug_962_initial_data_populate_causing_null_ref_ex
         await using var session = store.QuerySession();
         foreach (var initialUser in InitialDatasets.Users)
         {
-            var user = session.Load<User>(initialUser.Id);
+            var user = await session.LoadAsync<User>(initialUser.Id);
             user.FirstName.ShouldBe(initialUser.FirstName);
             user.LastName.ShouldBe(initialUser.LastName);
         }
 
         foreach (var initialCompany in InitialDatasets.Companies)
         {
-            var company = session.Load<Company>(initialCompany.Id);
+            var company = await session.LoadAsync<Company>(initialCompany.Id);
             company.Name.ShouldBe(initialCompany.Name);
         }
 

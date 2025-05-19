@@ -13,39 +13,39 @@ public class identity_map_mechanics: IntegrationContext
 {
     [Theory]
     [SessionTypes]
-    public void when_loading_then_the_document_should_be_returned(DocumentTracking tracking)
+    public async Task when_loading_then_the_document_should_be_returned(DocumentTracking tracking)
     {
         var user = new User { FirstName = "Tim", LastName = "Cools" };
         var session = OpenSession(tracking);
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
-        var first = identitySession.Load<User>(user.Id);
-        var second = identitySession.Load<User>(user.Id);
+        var first = await identitySession.LoadAsync<User>(user.Id);
+        var second = await identitySession.LoadAsync<User>(user.Id);
 
         first.ShouldBeSameAs(second);
     }
 
     [Theory]
     [SessionTypes]
-    public void when_loading_by_ids_then_the_same_document_should_be_returned(DocumentTracking tracking)
+    public async Task when_loading_by_ids_then_the_same_document_should_be_returned(DocumentTracking tracking)
     {
         var user = new User { FirstName = "Tim", LastName = "Cools" };
         var session = OpenSession(tracking);
         session.Store(user);
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using var identitySession = theStore.IdentitySession();
-        var first = identitySession.Load<User>(user.Id);
-        var second = identitySession.LoadMany<User>(user.Id)
+        var first = await identitySession.LoadAsync<User>(user.Id);
+        var second = (await identitySession.LoadManyAsync<User>(user.Id))
             .SingleOrDefault();
 
         first.ShouldBeSameAs(second);
     }
 
     [Fact]
-    public void when_querying_and_modifying_multiple_documents_should_track_and_persist()
+    public async Task when_querying_and_modifying_multiple_documents_should_track_and_persist()
     {
         var user1 = new User { FirstName = "James", LastName = "Worthy 1" };
         var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
@@ -54,7 +54,7 @@ public class identity_map_mechanics: IntegrationContext
         using var session = theStore.LightweightSession();
         session.Store(user1, user2, user3);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
@@ -65,7 +65,7 @@ public class identity_map_mechanics: IntegrationContext
                 user.LastName += " - updated";
             }
 
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session2 = theStore.IdentitySession())
@@ -78,7 +78,7 @@ public class identity_map_mechanics: IntegrationContext
     }
 
     [Fact]
-    public void when_querying_and_modifying_multiple_documents_should_track_and_persist_dirty()
+    public async Task when_querying_and_modifying_multiple_documents_should_track_and_persist_dirty()
     {
         var user1 = new User { FirstName = "James", LastName = "Worthy 1" };
         var user2 = new User { FirstName = "James", LastName = "Worthy 2" };
@@ -89,7 +89,7 @@ public class identity_map_mechanics: IntegrationContext
         session.Store(user2);
         session.Store(user3);
 
-        session.SaveChanges();
+        await session.SaveChangesAsync();
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
@@ -100,7 +100,7 @@ public class identity_map_mechanics: IntegrationContext
                 user.LastName += " - updated";
             }
 
-            session2.SaveChanges();
+            await session2.SaveChangesAsync();
         }
 
         using (var session2 = theStore.IdentitySession())
@@ -114,12 +114,12 @@ public class identity_map_mechanics: IntegrationContext
 
     [Theory]
     [SessionTypes]
-    public void then_a_document_can_be_added_with_then_specified_id(DocumentTracking tracking)
+    public async Task then_a_document_can_be_added_with_then_specified_id(DocumentTracking tracking)
     {
         var id = Guid.NewGuid();
 
         var session = OpenSession(tracking);
-        var notFound = session.Load<User>(id);
+        var notFound = await session.LoadAsync<User>(id);
 
         var replacement = new User { Id = id, FirstName = "Tim", LastName = "Cools" };
 
@@ -130,14 +130,14 @@ public class identity_map_mechanics: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.DirtyTracking)]
     [InlineData(DocumentTracking.IdentityOnly)]
-    public void finding_documents_in_map_but_not_yet_persisted(DocumentTracking tracking)
+    public async Task finding_documents_in_map_but_not_yet_persisted(DocumentTracking tracking)
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
         var session = OpenSession(tracking);
         session.Store(user1);
 
-        var fromSession = session.Load<User>(user1.Id);
+        var fromSession = await session.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldBeSameAs(user1);
     }
@@ -145,7 +145,7 @@ public class identity_map_mechanics: IntegrationContext
     [Theory]
     [InlineData(DocumentTracking.DirtyTracking)]
     [InlineData(DocumentTracking.IdentityOnly)]
-    public void finding_documents_in_map_but_not_yet_persisted_2(DocumentTracking tracking)
+    public async Task finding_documents_in_map_but_not_yet_persisted_2(DocumentTracking tracking)
     {
         var user1 = new User { FirstName = "Tim", LastName = "Cools" };
 
@@ -153,7 +153,7 @@ public class identity_map_mechanics: IntegrationContext
         session.Store(user1);
         session.Store(user1);
 
-        var fromSession = session.Load<User>(user1.Id);
+        var fromSession = await session.LoadAsync<User>(user1.Id);
 
         fromSession.ShouldBeSameAs(user1);
     }
@@ -169,7 +169,7 @@ public class identity_map_mechanics: IntegrationContext
         var session = OpenSession(tracking);
         session.Store(user1);
 
-        Exception<InvalidOperationException>.ShouldBeThrownBy(() => session.Store(user2))
+        Should.Throw<InvalidOperationException>(() => session.Store(user2))
             .Message.ShouldBe("Document 'Marten.Testing.Documents.User' with same Id already added to the session.");
     }
 
@@ -207,8 +207,8 @@ public class identity_map_mechanics: IntegrationContext
         var target2 = await lightweight.LoadAsync<Target>(target.Id);
         var target3 = await lightweight.LoadAsync<Target>(target.Id);
 
-        target1.ShouldBeTheSameAs(target2);
-        target1.ShouldBeTheSameAs(target3);
+        target1.ShouldBeSameAs(target2);
+        target1.ShouldBeSameAs(target3);
     }
 
     public identity_map_mechanics(DefaultStoreFixture fixture): base(fixture)

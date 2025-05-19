@@ -1,5 +1,13 @@
 # Aggregate Projections
 
+::: tip
+Definitely check out the content on [CQRS Command Handler Workflow for Capturing Events](/scenarios/command_handler_workflow)
+and [Reading Aggregates](/events/projections/read-aggregates) to get the best possible performance and
+development usability for aggregate projections with Marten. Also see the combination with [Wolverine](https://wolverinefx.net)
+in its [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/marten/event-sourcing.html) for literally the 
+lowest code ceremony possible to use Marten within a CQRS architecture.
+:::
+
 _Aggregate Projections_ in Marten combine some sort of grouping of events and process them to create a single
 aggregated document representing the state of those events. To jump into a simple example, here's a simple aggregated
 view called `QuestParty` that creates an aggregated view of `MembersJoined`, `MembersDeparted`, and `QuestStarted` events related to a group of heroes traveling on a quest in your favorite fantasy novel:
@@ -99,10 +107,14 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L43-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And register that projection like this:
+
+::: tip
+Remember to start the Async Daemon when using async projections, see [Asynchronous Projections Daemon](/events/projections/async-daemon.html)
+:::
 
 <!-- snippet: sample_registering_an_aggregate_projection -->
 <a id='snippet-sample_registering_an_aggregate_projection'></a>
@@ -166,11 +178,25 @@ public class Payment
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L104-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L138-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_strong_typed_identifier_for_aggregate_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just note that for single stream aggregations, your strong typed identifier types will need to wrap either a `Guid` or
 `string` depending on your application's `StreamIdentity`. 
+
+At this point, the `FetchForWriting` and `FetchForLatest` APIs do not directly support strongly typed identifiers and you
+will have to just pass in the wrapped, primitive value like this:
+
+<!-- snippet: sample_use_fetch_for_writing_with_strong_typed_identifier -->
+<a id='snippet-sample_use_fetch_for_writing_with_strong_typed_identifier'></a>
+```cs
+private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId id, IDocumentSession session)
+{
+    var stream = await session.Events.FetchForWriting<Payment>(id.Value);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L91-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Aggregate Creation
 
@@ -236,7 +262,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L112-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L113-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -272,7 +298,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L43-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `IEvent<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
@@ -312,7 +338,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L168-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L169-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
@@ -348,7 +374,7 @@ public class TripProjection: SingleStreamProjection<Trip>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L43-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L44-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Apply()` methods can accept any combination of these arguments:
@@ -517,7 +543,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L112-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L113-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's an example of using the various ways of doing `Trip` stream aggregation:
@@ -551,7 +577,7 @@ internal async Task use_a_stream_aggregation()
     var trip = await session.Events.AggregateStreamAsync<Trip>(tripId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L80-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L81-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Aggregate Versioning
@@ -684,9 +710,13 @@ public class TripProjection: SingleStreamProjection<Trip>
 
 ## Working with Event Metadata <Badge type="tip" text="7.12" />
 
+::: info
+As of Marten 7.33, this mechanism executes for every single event in the current event slice in order.
+:::
+
 At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
-or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically take your
-aggregated document with metadata from the very last event the projection is encountering at one time. _If_ you are using
+or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically tag your
+aggregated document with metadata from applied events. _If_ you are using
 either `SingleStreamProjection<T>` or `MultiStreamProjection<TDoc, TId>` as the base class for a projection, you can 
 override the `ApplyMetadata(T aggregate, IEvent lastEvent)` method in your projection to manually map event metadata to 
 your aggregate in any way you wish.
@@ -705,6 +735,8 @@ public class Item
     public bool Completed { get; set; }
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
+
+    public int Version { get; set; }
 }
 
 public record ItemStarted(string Description);
@@ -736,16 +768,15 @@ public class ItemProjection: SingleStreamProjection<Item>
         // Apply the last timestamp
         aggregate.LastModified = lastEvent.Timestamp;
 
-        if (lastEvent.Headers.TryGetValue("last-modified-by", out var person))
-        {
-            aggregate.LastModifiedBy = person?.ToString() ?? "System";
-        }
+        var person = lastEvent.GetHeader("last-modified-by");
+
+        aggregate.LastModifiedBy = person?.ToString() ?? "System";
 
         return aggregate;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L46-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L171-L223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the same projection in usage in a unit test to see how it's all put together:
@@ -753,37 +784,35 @@ And the same projection in usage in a unit test to see how it's all put together
 <!-- snippet: sample_apply_metadata -->
 <a id='snippet-sample_apply_metadata'></a>
 ```cs
-public class using_apply_metadata : OneOffConfigurationsContext
+[Fact]
+public async Task apply_metadata()
 {
-    [Fact]
-    public async Task apply_metadata()
+    StoreOptions(opts =>
     {
-        StoreOptions(opts =>
-        {
-            opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
+        opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
 
-            // THIS IS NECESSARY FOR THIS SAMPLE!
-            opts.Events.MetadataConfig.HeadersEnabled = true;
-        });
+        // THIS IS NECESSARY FOR THIS SAMPLE!
+        opts.Events.MetadataConfig.HeadersEnabled = true;
+    });
 
-        // Setting a header value on the session, which will get tagged on each
-        // event captured by the current session
-        theSession.SetHeader("last-modified-by", "Glenn Frey");
+    // Setting a header value on the session, which will get tagged on each
+    // event captured by the current session
+    theSession.SetHeader("last-modified-by", "Glenn Frey");
 
-        var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
-        await theSession.SaveChangesAsync();
+    var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
+    await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
-        await theSession.SaveChangesAsync();
+    theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
+    await theSession.SaveChangesAsync();
 
-        var item = await theSession.LoadAsync<Item>(id);
+    var item = await theSession.LoadAsync<Item>(id);
 
-        // RIP Glenn Frey, take it easy!
-        item.LastModifiedBy.ShouldBe("Glenn Frey");
-    }
+    // RIP Glenn Frey, take it easy!
+    item.LastModifiedBy.ShouldBe("Glenn Frey");
+    item.Version.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L12-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L16-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Raising Events, Messages, or other Operations in Aggregation Projections <Badge type="tip" text="7.27" />
@@ -880,7 +909,7 @@ public class TripProjection: SingleStreamProjection<Trip>
 A couple important facts about this new functionality:
 
 - The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
-  be called during projection rebuilds or `Inline` projection usage
+  be called during projection rebuilds or `Inline` projection usage **unless you explicitly enable this behavior as shown below**
 - Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
 - You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
   is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
@@ -890,3 +919,13 @@ A couple important facts about this new functionality:
 This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project, 
 but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
 to join the [Marten Discord room](https://discord.gg/BGkCDx5d). 
+
+### Side Effects in Inline Projections <Badge type="tip" text="7.40" />
+
+By default, Marten will only process projection "side effects" during continuous asynchronous processing. However, if you
+wish to use projection side effects while running projections with an `Inline` lifecycle, you can do that with this setting:
+
+snippet: sample_using_EnableSideEffectsOnInlineProjections
+
+This functionality was originally written as a way of sending external messages to a separate system carrying the new state of a single stream projection
+any time new events were captured on an event stream. 

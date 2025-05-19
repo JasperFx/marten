@@ -1,5 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Shouldly;
 
 namespace LinqTests.Bugs;
 
@@ -37,7 +39,7 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
     }
 
     [Fact]
-    public void persist_and_load_subclass_with_abstract_parent()
+    public async Task persist_and_load_subclass_with_abstract_parent()
     {
         var activity = new StatusActivity()
         {
@@ -48,16 +50,16 @@ public class Bug_276_Query_by_abstract_type_in_hierarchy: BugIntegrationContext
         using (var session = theStore.IdentitySession())
         {
             session.Store(activity);
-            session.SaveChanges();
+            await session.SaveChangesAsync();
 
-            session.Load<Activity>(activity.Id).ShouldBeTheSameAs(activity);
-            session.Load<StatusActivity>(activity.Id).ShouldBeTheSameAs(activity);
+            (await session.LoadAsync<Activity>(activity.Id)).ShouldBeSameAs(activity);
+            (await session.LoadAsync<StatusActivity>(activity.Id)).ShouldBeSameAs(activity);
         }
 
         using (var session = theStore.QuerySession())
         {
-            session.Load<Activity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
-            session.Load<StatusActivity>(activity.Id).ShouldNotBeTheSameAs(activity).ShouldNotBeNull();
+            (await session.LoadAsync<Activity>(activity.Id)).ShouldNotBeNull().ShouldNotBeSameAs(activity);
+            (await session.LoadAsync<StatusActivity>(activity.Id)).ShouldNotBeNull().ShouldNotBeSameAs(activity);
         }
     }
 }

@@ -46,7 +46,6 @@ internal class DocumentSchema: IFeatureSchema
     public IEnumerable<Type> DependentTypes()
     {
         yield return typeof(SystemFunctions);
-
         foreach (var referencedType in _mapping.ReferencedTypes()) yield return referencedType;
     }
 

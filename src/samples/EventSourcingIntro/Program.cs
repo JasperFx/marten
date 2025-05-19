@@ -1,4 +1,5 @@
-﻿using Marten;
+﻿using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 
@@ -20,15 +21,15 @@ var warehouseProductReadModel = warehouseRepository.Get(id);
 DemoConsole.WriteWithColour($"{warehouseProductReadModel?.QuantityOnHand ?? 0} items of stock in the warehouse for {id}");
 
 var handler = new WarehouseProductHandler(id, documentStore);
-handler.ReceiveProduct(100);
+await handler.ReceiveProduct(100);
 
 DemoConsole.WriteWithColour($"Received 100 items of stock into the warehouse for {id}");
 
-handler.ShipProduct(10);
+await handler.ShipProduct(10);
 
 DemoConsole.WriteWithColour($"Shipped 10 items of stock out of the warehouse for {id}");
 
-handler.AdjustInventory(5,"Ordered too many");
+await handler.AdjustInventory(5,"Ordered too many");
 
 DemoConsole.WriteWithColour($"Found 5 items of stock hiding in the warehouse for {id} and have adjusted the stock count");
 
@@ -70,7 +71,7 @@ public class WarehouseProductReadModel
     public int QuantityOnHand { get; set; }
 }
 
-public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel>
+public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel, Guid>
 {
     public WarehouseProductProjection()
     {
@@ -131,11 +132,11 @@ public class WarehouseProductHandler
         this.documentStore = documentStore;
     }
 
-    public void ShipProduct(int quantity)
+    public async Task ShipProduct(int quantity)
     {
-        using var session = documentStore.LightweightSession();
+        await using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
+        var warehouseProduct = await session.Events.AggregateStreamAsync<WarehouseProductWriteModel>(id);
 
         if (quantity > warehouseProduct?.QuantityOnHand)
         {
@@ -143,22 +144,22 @@ public class WarehouseProductHandler
         }
 
         session.Events.Append(id, new ProductShipped(id, quantity, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
-    public void ReceiveProduct(int quantity)
+    public async Task ReceiveProduct(int quantity)
     {
         using var session = documentStore.LightweightSession();
 
         session.Events.Append(id, new ProductReceived(id, quantity, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 
-    public void AdjustInventory(int quantity, string reason)
+    public async Task AdjustInventory(int quantity, string reason)
     {
         using var session = documentStore.LightweightSession();
 
-        var warehouseProduct = session.Events.AggregateStream<WarehouseProductWriteModel>(id);
+        var warehouseProduct = await session.Events.AggregateStreamAsync<WarehouseProductWriteModel>(id);
 
         if (warehouseProduct?.QuantityOnHand + quantity < 0)
         {
@@ -166,7 +167,7 @@ public class WarehouseProductHandler
         }
 
         session.Events.Append(id, new InventoryAdjusted(id, quantity, reason, DateTime.UtcNow));
-        session.SaveChanges();
+        await session.SaveChangesAsync();
     }
 }
 

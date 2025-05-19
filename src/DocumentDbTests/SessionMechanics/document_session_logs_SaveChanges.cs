@@ -14,7 +14,7 @@ namespace DocumentDbTests.SessionMechanics;
 public class document_session_logs_SaveChanges : IntegrationContext
 {
     [Fact]
-    public void records_on_SaveChanges()
+    public async Task records_on_SaveChanges()
     {
         var logger = new RecordingLogger();
 
@@ -22,7 +22,7 @@ public class document_session_logs_SaveChanges : IntegrationContext
 
         theSession.Store(Target.Random());
 
-        theSession.SaveChanges();
+        await theSession.SaveChangesAsync();
 
         logger.LastSession.ShouldBe(theSession);
     }

@@ -9,6 +9,7 @@ using Marten.Linq.Parsing;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;

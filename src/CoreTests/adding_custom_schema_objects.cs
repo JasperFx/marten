@@ -37,7 +37,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
         var feature = theStore.Options.Storage.AllActiveFeatures(theStore.Storage.Database)
             .OfType<StorageFeatures>().Single().As<IFeatureSchema>();
 
-        feature.Objects.Single().ShouldBeTheSameAs(table);
+        feature.Objects.Single().ShouldBeSameAs(table);
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
         martenException.InnerException.ShouldNotBeNull();
         martenException.InnerException.As<PostgresException>().ShouldSatisfyAllConditions(
             e => e.SqlState.ShouldBe(PostgresErrorCodes.UndefinedFunction),
-            e => e.MessageText.ShouldBe("function unaccent(unknown) does not exist")
+            e => e.MessageText.ShouldContain("unaccent(unknown)")
         );
     }
 
