@@ -56,11 +56,11 @@ internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
         var searchTerm = (string)expression.Arguments[1].Value();
 
         var regConfig = expression.Arguments.Count > 2
-            ? expression.Arguments[2].Value() as string
+            ? (expression.Arguments[2].Value() as string)!
             : FullTextIndexDefinition.DefaultRegConfig;
 
         return new FullTextWhereFragment(
-            memberCollection as DocumentMapping,
+            options.FindOrResolveDocumentType(memberCollection.ElementType) as DocumentMapping,
             searchFunction,
             searchTerm,
             regConfig);
