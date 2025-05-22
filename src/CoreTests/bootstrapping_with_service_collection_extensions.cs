@@ -50,7 +50,7 @@ public class bootstrapping_with_service_collection_extensions
 
                 services.AddJasperFx(opts =>
                 {
-                    opts.Development.AutoCreate = AutoCreate.None;
+                    opts.Development.ResourceAutoCreate = AutoCreate.None;
                     opts.GeneratedCodeOutputPath = "/";
                     opts.Development.GeneratedCodeMode = TypeLoadMode.Static;
 

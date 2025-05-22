@@ -410,7 +410,7 @@ public class additional_document_store_registration_and_optimized_artifact_workf
 
                 services.AddJasperFx(opts =>
                 {
-                    opts.Development.AutoCreate = AutoCreate.None;
+                    opts.Development.ResourceAutoCreate = AutoCreate.None;
                     opts.GeneratedCodeOutputPath = "/";
                     opts.Development.GeneratedCodeMode = TypeLoadMode.Auto;
 
