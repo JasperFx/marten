@@ -13,7 +13,7 @@ public async Task when_find_then_a_json_should_be_returned()
     theSession.Store(issue);
     await theSession.SaveChangesAsync();
 
-    var json = theSession.Json.FindById<Issue>(issue.Id);
+    var json = await theSession.Json.FindByIdAsync<Issue>(issue.Id);
     json.ShouldBe($"{{\"Id\": \"{issue.Id}\", \"Tags\": null, \"BugId\": null, \"Title\": \"Issue 2\", \"Number\": 0, \"Status\": null, \"AssigneeId\": null, \"ReporterId\": null}}");
 }
 ```

@@ -19,7 +19,7 @@ public sealed record MembersDeparted(Guid QuestId, int Day, string Location, str
 
 public sealed record MembersEscaped(Guid QuestId, string Location, string[] Members);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L8-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L9-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_event-store-quickstart -->
@@ -49,7 +49,7 @@ session.Events.Append(questId, joined2, joined3, arrived);
 // Save the pending changes to db
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L90-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L91-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event-store-quickstart' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 At some point we would like to know what members are currently part of the quest party. To keep things simple, we're going to use Marten's _live_ stream aggregation feature to model a `QuestParty` that updates itself based on our events:
@@ -80,7 +80,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
         };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L26-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, we'll use the live projection to aggregate the quest stream for a single quest party like this:
@@ -98,7 +98,7 @@ var party_at_version_3 = await session2.Events
 var party_yesterday = await session2.Events
     .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L118-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L119-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Simple, right? The above code will load the events from the database and run them through the `Create` & `Apply` handlers of the `QuestParty` projection, returning the current state of our party.
@@ -110,7 +110,7 @@ What about the quest itself? On top of seeing our in-progress quest, we also wan
 ```cs
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 
-public sealed class QuestProjection: SingleStreamProjection<Quest>
+public sealed class QuestProjection: SingleStreamProjection<Quest, Guid>
 {
     public static Quest Create(QuestStarted started) => new(started.QuestId, [], [], started.Name, false);
     public static Quest Apply(MembersJoined joined, Quest party) =>
@@ -136,7 +136,7 @@ public sealed class QuestProjection: SingleStreamProjection<Quest>
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L53-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_quest' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L54-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_quest' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -154,7 +154,7 @@ var store = DocumentStore.For(_ =>
     _.Projections.Add<QuestProjection>(ProjectionLifecycle.Inline); // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L136-L142' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-quest-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L137-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_adding-quest-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then we can persist some events and immediately query the state of our quest:
@@ -175,5 +175,5 @@ var questState = await session.LoadAsync<Quest>(questId);
 
 var finishedQuests = await session.Query<Quest>().Where(x => x.isFinished).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L146-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-quest-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L147-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-quest-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

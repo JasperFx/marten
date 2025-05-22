@@ -15,7 +15,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.DatabaseSchemaName = "events";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L12-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_event_store_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L13-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_set_event_store_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream Identity
@@ -40,7 +40,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.StreamIdentity = StreamIdentity.AsString;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L26-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_stream_identity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L27-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_stream_identity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Stream identity effects the underlying database schema of the Event Store related tables. Namely, using string identities configures `stream_id` in the `mt_events` table to be `varchar`, whereas `uuid` would be used for GUIDs. The same applies to the `id` column in `mt_streams` table.
@@ -60,7 +60,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.TenancyStyle = TenancyStyle.Conjoined;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L237-L247' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L235-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, if you try to define projection with a single tenancy, Marten will throw an exception at runtime informing you about the mismatch.
@@ -72,7 +72,7 @@ You can enable global projections for conjoined tenancy.
 ```cs
 opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregation_projection_validation_rules.cs#L89-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_global_projections_for_conjoined_tenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregation_projection_validation_rules.cs#L90-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_global_projections_for_conjoined_tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

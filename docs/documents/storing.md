@@ -96,7 +96,7 @@ Marten supports [Postgresql's COPY](http://www.postgresql.org/docs/9.4/static/sq
 var data = Target.GenerateRandomData(100).ToArray();
 
 // Load all of these into a Marten-ized database
-theStore.BulkInsert(data, batchSize: 500);
+await theStore.BulkInsertAsync(data, batchSize: 500);
 
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);

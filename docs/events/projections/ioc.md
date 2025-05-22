@@ -16,7 +16,7 @@ Let's say you have a custom aggregation projection like this one below that need
 <!-- snippet: sample_ProductProjection -->
 <a id='snippet-sample_productprojection'></a>
 ```cs
-public class ProductProjection: CustomProjection<Product, Guid>
+public class ProductProjection: SingleStreamProjection<Product, Guid>
 {
     private readonly IPriceLookup _lookup;
 
@@ -24,39 +24,25 @@ public class ProductProjection: CustomProjection<Product, Guid>
     public ProductProjection(IPriceLookup lookup)
     {
         _lookup = lookup;
-        AggregateByStream();
-        ProjectionName = "Product";
+        Name = "Product";
     }
 
-    public override ValueTask ApplyChangesAsync(
-        DocumentSessionBase session,
-        EventSlice<Product, Guid> slice,
-        CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline
-    )
+    public override Product Evolve(Product snapshot, Guid id, IEvent e)
     {
-        slice.Aggregate ??= new Product { Id = slice.Id };
+        snapshot ??= new Product { Id = id };
 
-        foreach (var data in slice.AllData())
+        if (e.Data is ProductRegistered r)
         {
-            if (data is ProductRegistered r)
-            {
-                slice.Aggregate.Price = _lookup.PriceFor(r.Category);
-                slice.Aggregate.Name = r.Name;
-                slice.Aggregate.Category = r.Category;
-            }
+            snapshot.Price = _lookup.PriceFor(r.Category);
+            snapshot.Name = r.Name;
+            snapshot.Category = r.Category;
         }
 
-        if (slice.Aggregate != null)
-        {
-            session.Store(slice.Aggregate);
-        }
-
-        return ValueTask.CompletedTask;
+        return snapshot;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/projections_with_IoC_services.cs#L390-L432' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L390-L418' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -85,7 +71,7 @@ using var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/projections_with_IoC_services.cs#L67-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L69-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that we're having to explicitly specify the projection lifecycle for the projection used within

@@ -83,11 +83,11 @@ Marten also allows you to run projection queries on deep (nested) properties:
 <a id='snippet-sample_deep_properties_projection'></a>
 ```cs
 [Fact]
-public void transform_with_deep_properties()
+public async Task transform_with_deep_properties()
 {
     var targets = Target.GenerateRandomData(100).ToArray();
 
-    theStore.BulkInsert(targets);
+    await theStore.BulkInsertAsync(targets);
 
     var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
 

@@ -17,7 +17,7 @@ var store = DocumentStore.For(_ =>
     _.Events.DatabaseSchemaName = "events";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L202-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L200-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Database Tables
@@ -54,8 +54,6 @@ the error handling policies in your application's Marten configuration.
 
 Hopefully, it's relatively clear how the fields in `mt_events` map to the `IEvent` interface in Marten:
 
-<!-- snippet: sample_event_metadata -->
-<a id='snippet-sample_event_metadata'></a>
 ```cs
 /// <summary>
 ///     A reference to the stream that contains
@@ -107,8 +105,6 @@ public string? CorrelationId { get; set; }
 /// </summary>
 public Dictionary<string, object>? Headers { get; set; }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L184-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.
 
@@ -131,5 +127,5 @@ builder.Services.AddMarten(opts =>
     opts.Events.EnableUniqueIndexOnEventId = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/opting_into_index_on_event_id.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optional_event_store_indexes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/opting_into_index_on_event_id.cs#L20-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optional_event_store_indexes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

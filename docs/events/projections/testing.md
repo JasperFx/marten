@@ -52,7 +52,7 @@ public class Invoice
     public void Apply(InvoiceApproved _) => Status = InvoiceStatus.Approved;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L27-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L28-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation
@@ -94,7 +94,7 @@ public async Task test_live_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L79-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_live_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L80-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_live_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Inline Aggregation
@@ -143,7 +143,7 @@ public async Task test_inline_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L115-L155' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_inline_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L116-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_testing_inline_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Async Projections
@@ -210,7 +210,7 @@ public async Task test_async_aggregation()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L157-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_test_of_async_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L158-L210' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_test_of_async_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The approach above is pretty simple, but it definitely works against your ability to parallelize tests by rewinding the 
@@ -292,7 +292,7 @@ public async Task test_async_aggregation_with_wait_for()
     invoice.Status.ShouldBe(InvoiceStatus.Paid);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L211-L268' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_wait_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L212-L269' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_wait_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the version above, we can just be using a shared `IHost` and the async daemon already running continuously, pump in 
@@ -324,7 +324,7 @@ public static Invoice Create(IEvent<InvoiceCreated> created)
     };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L42-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L43-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 But of course, if that timestamp has some meaning later on and you have any kind of business rules that may need to key
@@ -395,7 +395,7 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
     invoice.Created.ShouldBe(eventsTimeProvider.Start);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L271-L333' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_fake_time_provider' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L272-L334' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_fake_time_provider' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the sample above, I used the `FakeTimeProvider` from the Microsoft.Extensions.TimeProvider.Testing Nuget package.

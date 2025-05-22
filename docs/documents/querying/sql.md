@@ -12,8 +12,8 @@ Here's the simplest possible usage to query for `User` documents with a `WHERE` 
 <!-- snippet: sample_query_for_whole_document_by_where_clause -->
 <a id='snippet-sample_query_for_whole_document_by_where_clause'></a>
 ```cs
-var millers = session
-    .Query<User>("where data ->> 'LastName' = 'Miller'");
+var millers = await session
+    .QueryAsync<User>("where data ->> 'LastName' = 'Miller'");
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L10-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_whole_document_by_where_clause' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -23,8 +23,8 @@ Or with parameterized SQL:
 <!-- snippet: sample_query_with_sql_and_parameters -->
 <a id='snippet-sample_query_with_sql_and_parameters'></a>
 ```cs
-var millers = session
-    .Query<User>("where data ->> 'LastName' = ?", "Miller");
+var millers = await session
+    .QueryAsync<User>("where data ->> 'LastName' = ?", "Miller");
 
 // custom placeholder parameter
 var millers2 = await session

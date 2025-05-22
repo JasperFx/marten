@@ -33,7 +33,7 @@ public class Increment
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L696-L714' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L563-L581' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
@@ -57,7 +57,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L676-L694' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L543-L561' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -68,14 +68,10 @@ With all that being done, here's a sample aggregation that inherits from the Mar
 <!-- snippet: sample_custom_aggregate_with_start_and_stop -->
 <a id='snippet-sample_custom_aggregate_with_start_and_stop'></a>
 ```cs
-public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Guid>
+public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {
-        // I'm telling Marten that events are assigned to the aggregate
-        // document by the stream id
-        AggregateByStream();
-
         // This is an optional, but potentially important optimization
         // for the async daemon so that it sets up an allow list
         // of the event types that will be run through this projection
@@ -85,59 +81,60 @@ public class StartAndStopProjection: CustomProjection<StartAndStopAggregate, Gui
         IncludeType<Increment>();
     }
 
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session,
-        EventSlice<StartAndStopAggregate, Guid> slice, CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
+    public override (StartAndStopAggregate?, ActionType) DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
+        IReadOnlyList<IEvent> events)
     {
-        var aggregate = slice.Aggregate;
+        var actionType = ActionType.Store;
 
-        foreach (var data in slice.AllData())
+        if (snapshot == null && events.HasNoEventsOfType<Start>())
         {
+            return (snapshot, ActionType.Nothing);
+        }
+
+        var eventData = events.ToQueueOfEventData();
+        while (eventData.Any())
+        {
+            var data = eventData.Dequeue();
             switch (data)
             {
                 case Start:
-                    aggregate = new StartAndStopAggregate
+                    snapshot = new StartAndStopAggregate
                     {
                         // Have to assign the identity ourselves
-                        Id = slice.Id
+                        Id = identity
                     };
                     break;
-                case Increment when aggregate is { Deleted: false }:
+
+                case Increment when snapshot is { Deleted: false }:
+
+                    if (actionType == ActionType.StoreThenSoftDelete) continue;
+
                     // Use explicit code to only apply this event
-                    // if the aggregate already exists
-                    aggregate.Increment();
+                    // if the snapshot already exists
+                    snapshot.Increment();
                     break;
-                case End when aggregate is { Deleted: false }:
-                    // This will be a "soft delete" because the aggregate type
+
+                case End when snapshot is { Deleted: false }:
+                    // This will be a "soft delete" because the snapshot type
                     // implements the IDeleted interface
-                    session.Delete(aggregate);
-                    aggregate.Deleted = true; // Got to help Marten out a little bit here
+                    snapshot.Deleted = true;
+                    actionType = ActionType.StoreThenSoftDelete;
                     break;
-                case Restart when aggregate == null || aggregate.Deleted:
+
+                case Restart when snapshot == null || snapshot.Deleted:
                     // Got to "undo" the soft delete status
-                    session
-                        .UndoDeleteWhere<StartAndStopAggregate>(x => x.Id == slice.Id);
+                    actionType = ActionType.UnDeleteAndStore;
+                    snapshot.Deleted = false;
                     break;
             }
         }
 
-        // THIS IS IMPORTANT. *IF* you want to use a CustomProjection with
-        // AggregateStreamAsync(), you must make this call
-        // FetchLatest() will work w/o any other changes though
-        slice.Aggregate = aggregate;
-
-        // Apply any updates!
-        if (aggregate != null)
-        {
-            session.Store(aggregate);
-        }
-
-        // We didn't do anything that required an asynchronous call
-        return new ValueTask();
+        return (snapshot, actionType);
     }
+
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/CustomProjectionTests.cs#L716-L787' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L583-L651' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping
@@ -160,17 +157,44 @@ as shown below:
 <!-- snippet: sample_using_simple_explicit_code_for_live_aggregation -->
 <a id='snippet-sample_using_simple_explicit_code_for_live_aggregation'></a>
 ```cs
-public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
+public class CountedAggregate: IRevisioned
 {
-    public override SimpleAggregate Apply(SimpleAggregate snapshot, IReadOnlyList<IEvent> events)
+    // This will be the aggregate version
+    public int Version { get; set; }
+
+    public Guid Id
     {
-        snapshot ??= new SimpleAggregate();
-        foreach (var e in events.Select(x => x.Data))
+        get;
+        set;
+    }
+
+    public int ACount { get; set; }
+    public int BCount { get; set; }
+    public int CCount { get; set; }
+    public int DCount { get; set; }
+    public int ECount { get; set; }
+}
+
+public class ExplicitCounter: SingleStreamProjection<CountedAggregate, Guid>
+{
+    public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent e)
+    {
+        snapshot ??= new CountedAggregate();
+
+        switch (e.Data)
         {
-            if (e is AEvent) snapshot.ACount++;
-            if (e is BEvent) snapshot.BCount++;
-            if (e is CEvent) snapshot.CCount++;
-            if (e is DEvent) snapshot.DCount++;
+            case AEvent:
+                snapshot.ACount++;
+                break;
+            case BEvent:
+                snapshot.BCount++;
+                break;
+            case CEvent:
+                snapshot.CCount++;
+                break;
+            case DEvent:
+                snapshot.DCount++;
+                break;
         }
 
         // You have to explicitly return the new value
@@ -179,7 +203,7 @@ public class ExplicitCounter: CustomProjection<SimpleAggregate, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L95-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/using_explicit_code_for_live_aggregation.cs#L98-L146' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_simple_explicit_code_for_live_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that this usage is valid for all possible projection lifecycles now (`Live`, `Inline`, and `Async`).

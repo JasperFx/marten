@@ -64,7 +64,7 @@ Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the s
 ```cs
 using (var session = theStore.LightweightSession())
 {
-    var events = session.Events.FetchStream(started.Name);
+    var events = await session.Events.FetchStreamAsync(started.Name);
 
     var transformedEvents = events.SelectMany(x =>
     {

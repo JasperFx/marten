@@ -12,28 +12,29 @@ public class SampleEventProjection : EventProjection
 {
     public SampleEventProjection()
     {
-        // Inline document operations
-        Project<Event1>((e, ops) =>
-        {
-            // I'm creating a single new document, but
-            // I can do as many operations as I want
-            ops.Store(new Document1
-            {
-                Id = e.Id
-            });
-        });
-
-        Project<StopEvent1>((e, ops) =>
-        {
-            ops.Delete<Document1>(e.Id);
-        });
-
-        ProjectAsync<Event3>(async (e, ops) =>
-        {
-            var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
-            // now use the lookup document and the event to carry
-            // out other document operations against the ops parameter
-        });
+        throw new NotImplementedException();
+        // // Inline document operations
+        // Project<Event1>((e, ops) =>
+        // {
+        //     // I'm creating a single new document, but
+        //     // I can do as many operations as I want
+        //     ops.Store(new Document1
+        //     {
+        //         Id = e.Id
+        //     });
+        // });
+        //
+        // Project<StopEvent1>((e, ops) =>
+        // {
+        //     ops.Delete<Document1>(e.Id);
+        // });
+        //
+        // ProjectAsync<Event3>(async (e, ops) =>
+        // {
+        //     var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
+        //     // now use the lookup document and the event to carry
+        //     // out other document operations against the ops parameter
+        // });
     }
 
     // This is the conventional method equivalents to the inline calls above
@@ -61,7 +62,7 @@ public class SampleEventProjection : EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L70-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L72-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that at any point you can access event metadata by accepting `IEvent<T>` where `T` is the event type instead of just the event type. You can also take in an additional variable for `IEvent` to just
@@ -83,7 +84,7 @@ var store = DocumentStore.For(opts =>
     opts.Projections.Add(new SampleEventProjection(), ProjectionLifecycle.Async);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L13-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L15-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `EventProjection` supplies the `ProjectEvent()` and `ProjectEventAsync()` methods if you prefer to use inline Lambda methods to define the operations
@@ -138,7 +139,7 @@ var store = DocumentStore.For(opts =>
     );
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L12-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection_registration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection_registration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Usage of `EnableDocumentTrackingByIdentity` is shown below for an `EventProjection` that potentially makes several changes to the same document:
@@ -174,28 +175,29 @@ public class TrackedEventProjection: EventProjection
 {
     public TrackedEventProjection()
     {
-        ProjectAsync<Run>(async (run, ops) =>
-        {
-            var game = await ops.LoadAsync<BaseballGame>(run.GameId);
-
-            var updatedGame = run.Team switch
-            {
-                Team.HomeTeam => game with
-                {
-                    HomeRuns = game.HomeRuns + 1,
-                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
-                },
-                Team.VisitingTeam => game with
-                {
-                    VisitorRuns = game.VisitorRuns + 1,
-                    PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
-                },
-            };
-
-            ops.Store(updatedGame);
-        });
+        throw new NotImplementedException("Redo");
+        // ProjectAsync<Run>(async (run, ops) =>
+        // {
+        //     var game = await ops.LoadAsync<BaseballGame>(run.GameId);
+        //
+        //     var updatedGame = run.Team switch
+        //     {
+        //         Team.HomeTeam => game with
+        //         {
+        //             HomeRuns = game.HomeRuns + 1,
+        //             PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+        //         },
+        //         Team.VisitingTeam => game with
+        //         {
+        //             VisitorRuns = game.VisitorRuns + 1,
+        //             PlayersWithRuns = game.PlayersWithRuns.Add(run.Player)
+        //         },
+        //     };
+        //
+        //     ops.Store(updatedGame);
+        // });
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L31-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L32-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -39,7 +39,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseOptimizedProjectionRebuilds = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L31-L58' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L32-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_event_sourcing' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The archived stream option is further described in the section on [Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning).
@@ -78,12 +78,12 @@ public class DayProjection: MultiStreamProjection<Day, int>
         // You can also access Event data
         FanOut<Travel, Stop>(x => x.Data.Stops);
 
-        ProjectionName = "Day";
+        Name = "Day";
 
         // Opt into 2nd level caching of up to 100
         // most recently encountered aggregates as a
         // performance optimization
-        CacheLimitPerTenant = 1000;
+        Options.CacheLimitPerTenant = 1000;
 
         // With large event stores of relatively small
         // event objects, moving this number up from the
@@ -92,8 +92,15 @@ public class DayProjection: MultiStreamProjection<Day, int>
         Options.BatchSize = 5000;
     }
 
-    public void Apply(Day day, TripStarted e) => day.Started++;
-    public void Apply(Day day, TripEnded e) => day.Ended++;
+    public void Apply(Day day, TripStarted e)
+    {
+        day.Started++;
+    }
+
+    public void Apply(Day day, TripEnded e)
+    {
+        day.Ended++;
+    }
 
     public void Apply(Day day, Movement e)
     {
@@ -117,10 +124,13 @@ public class DayProjection: MultiStreamProjection<Day, int>
         }
     }
 
-    public void Apply(Day day, Stop e) => day.Stops++;
+    public void Apply(Day day, Stop e)
+    {
+        day.Stops++;
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/ViewProjectionTests.cs#L132-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Aggregations/multi_stream_projections.cs#L220-L290' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten is using a most recently used cache for the projected documents that are being built by an aggregation projection

@@ -32,7 +32,7 @@ var store = DocumentStore.For(opts =>
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L48-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L56-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:
@@ -124,7 +124,7 @@ using var host = builder.Build();
 // NOTE: The new database will only be built upon the call to IHost.StartAsync()
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/create_database_Tests.cs#L20-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/StressTests/create_database_Tests.cs#L21-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_create_database' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Databases are checked for existence upon store initialization. By default, connection attempts are made against the databases specified for tenants. If a connection attempt results in an invalid catalog error (3D000), database creation is triggered. `ITenantDatabaseCreationExpressions.CheckAgainstPgDatabase` can be used to alter this behavior to check for database existence from `pg_database`.

@@ -24,10 +24,13 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+The basic [IEvent](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/Event.cs#L34-L176) abstraction and quite a bit of other generic
+event sourcing code moved in Marten 8.0 to the shared JasperFx.Events library.
+:::
+
 The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by internal `Event<T>`):
 
-<!-- snippet: sample_IEvent -->
-<a id='snippet-sample_ievent'></a>
 ```cs
 public interface IEvent
 {
@@ -132,5 +135,4 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L9-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+

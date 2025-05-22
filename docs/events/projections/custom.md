@@ -10,27 +10,9 @@ To build your own Marten projection, you just need a class that implements the `
 ///     IProjection implementations define the projection type and handle its projection document lifecycle
 ///     Optimized for inline usage
 /// </summary>
-public interface IProjection
-{
-    /// <summary>
-    ///     Apply inline projections during synchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams);
-
-    /// <summary>
-    ///     Apply inline projections during asynchronous operations
-    /// </summary>
-    /// <param name="operations"></param>
-    /// <param name="streams"></param>
-    /// <param name="cancellation"></param>
-    /// <returns></returns>
-    Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-        CancellationToken cancellation);
-}
+public interface IProjection: IJasperFxProjection<IDocumentOperations>, IMartenRegistrable
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `StreamAction` aggregates outstanding events by the event stream, which is how Marten tracks events inside of an `IDocumentSession` that has
@@ -46,9 +28,9 @@ public class QuestPatchTestProjection: IProjection
 
     public string Name { get; set; }
 
-    public void Apply(IDocumentOperations operations, IReadOnlyList<StreamAction> streams)
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
-        var questEvents = streams.SelectMany(x => x.Events).OrderBy(s => s.Sequence).Select(s => s.Data);
+        var questEvents = events.Select(s => s.Data);
 
         foreach (var @event in questEvents)
         {
@@ -61,17 +43,11 @@ public class QuestPatchTestProjection: IProjection
                 operations.Patch<QuestPatchTestProjection>(started.Id).Set(x => x.Name, "New Name");
             }
         }
-    }
-
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
-        CancellationToken cancellation)
-    {
-        Apply(operations, streams);
         return Task.CompletedTask;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1161-L1194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1196-L1223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the custom projection can be registered in your Marten `DocumentStore` like this:
@@ -90,5 +66,5 @@ var store = DocumentStore.For(opts =>
     opts.Projections.Add(new QuestPatchTestProjection(), ProjectionLifecycle.Async);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1113-L1126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1148-L1161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_custom_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

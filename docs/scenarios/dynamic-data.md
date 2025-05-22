@@ -20,7 +20,7 @@ var records = new dynamic[]
     new {detector = "aisle-1", timestamp = "2020-01-21 11:14:19.100", temperature = -1.0}
 };
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L22-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-records' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-records' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To store and later read back these records, we create a wrapper type with a `dynamic` property to present our record.
@@ -34,7 +34,7 @@ public class TemperatureData
     public dynamic Values { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L11-L17' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-type' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L12-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-type' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We then read and serialize our records into our newly introduced intermediate type and persist an array of its instances via `BulkInsert`. Lastly, we read back the records, via the non-generic `Query` extension method, passing in predicates that take into account the non-uniform fields of the source documents. After reading back the data for _sensor-1_, we calculate the average of its recorded temperatures:
@@ -45,18 +45,18 @@ We then read and serialize our records into our newly introduced intermediate ty
 var docs = records.Select(x => new TemperatureData {Values = x}).ToArray();
 
 // Persist our records
-theStore.BulkInsertDocuments(docs);
+await theStore.BulkInsertDocumentsAsync(docs);
 
 using var session = theStore.QuerySession();
 // Read back the data for "aisle-1"
-dynamic[] tempsFromDb = session.Query(typeof(TemperatureData),
+dynamic[] tempsFromDb = (await session.QueryAsync(typeof(TemperatureData),
     "where data->'Values'->>'detector' = :sensor OR data->'Values'->>'sensor' = :sensor",
-    new {sensor = "aisle-1"}).ToArray();
+    new {sensor = "aisle-1"})).ToArray();
 
 var temperatures = tempsFromDb.Select(x => (decimal)x.Values.temperature);
 
 Assert.Equal(15.675m, temperatures.Average());
 Assert.Equal(4, tempsFromDb.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L35-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-insertandquery' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/persist_and_query_via_dynamic.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-scenarios-dynamic-insertandquery' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

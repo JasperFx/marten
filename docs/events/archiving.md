@@ -31,7 +31,7 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L34-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archive_stream_usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L37-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archive_stream_usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
@@ -55,7 +55,7 @@ var events = await theSession.Events
     .Where(x => x.IsArchived)
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L234-L241' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L237-L244' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for all events both archived and not archived with `MaybeArchived()`
@@ -67,7 +67,7 @@ like so:
 var events = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.MaybeArchived()).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L269-L274' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L272-L277' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />
@@ -100,7 +100,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseArchivedStreamPartitioning = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L13-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_stream_archival_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L14-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_stream_archival_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
@@ -112,12 +112,14 @@ table, copy all the existing data from the temp table to the new partitioned tab
 
 ## Archived Event <Badge type="tip" text="7.34" />
 
+::: tip
+The `Archived` type moved into the shared JasperFx.Events library for Marten 8.0.
+:::
+
 Marten has a built in event named `Archived` that can be appended to any event stream:
 
-<!-- snippet: sample_Archived_event -->
-<a id='snippet-sample_archived_event'></a>
 ```cs
-namespace Marten.Events;
+namespace JasperFx.Events;
 
 /// <summary>
 /// The presence of this event marks a stream as "archived" when it is processed
@@ -125,8 +127,6 @@ namespace Marten.Events;
 /// </summary>
 public record Archived(string Reason);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Archived.cs#L1-L11' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archived_event' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 When this event is appended to an event stream *and* that event is processed through any type of single stream projection
 for that event stream (snapshot or what we used to call a "self-aggregate", `SingleStreamProjection`, or `CustomProjection` with the `AggregateByStream` option),
@@ -175,7 +175,7 @@ public class Order
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L23-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_for_optimized_command_handling' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L24-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order_for_optimized_command_handling' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, let's say we're having the `Order` aggregate snapshotted so that it's updated every time new events 
@@ -203,7 +203,7 @@ builder.Services.AddMarten(opts =>
 // need that tracking at runtime
 .UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L209-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L210-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, let's say as a way to keep our application performing as well as possible, we'd like to be aggressive about archiving
@@ -230,7 +230,7 @@ public static async Task HandleAsync(ShipOrder command, IDocumentSession session
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L233-L252' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_handling_shiporder_and_emitting_archived_event' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L234-L253' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_handling_shiporder_and_emitting_archived_event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If an `Order` hasn't already shipped, one of the outcomes of that command handler executing is that the entire event stream

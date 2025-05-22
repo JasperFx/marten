@@ -402,7 +402,7 @@ var repository = new CashRegisterRepository(theSession);
 
 await repository.Store(openedCashierShift, cashierShiftOpened);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L181-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L182-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and read snapshot and following event with:
@@ -412,7 +412,7 @@ and read snapshot and following event with:
 ```cs
 var currentState = await repository.Get(financialAccountId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L224-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L222-L226' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation from Linq Queries
@@ -432,7 +432,7 @@ var questParty = await theSession.Events
 
     .AggregateToAsync<QuestParty>();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L43-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L29-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 These methods are extension methods in the `Marten.Events` namespace.

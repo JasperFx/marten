@@ -87,7 +87,7 @@ var matter = theStore.StorageFeatures.FindFeature(typeof(MatterId)).Objects.OfTy
 
 await using var session = theStore.LightweightSession();
 // Generate a new, unique identifier
-var nextMatter = session.NextInSequence(matter);
+var nextMatter = await session.NextInSequenceAsync(matter);
 
 var contract = new Contract { Id = Guid.NewGuid(), Matter = nextMatter };
 
@@ -109,9 +109,9 @@ Lastly, we have an extension method (used above) as a shorthand for generating t
 public static class SessionExtensions
 {
     // A shorthand for generating the required SQL statement for a sequence value query
-    public static int NextInSequence(this IQuerySession session, Sequence sequence)
+    public static async Task<int> NextInSequenceAsync(this IQuerySession session, Sequence sequence)
     {
-        return session.Query<int>("select nextval(?)", sequence.Identifier.QualifiedName).First();
+        return (await session.QueryAsync<int>("select nextval(?)", sequence.Identifier.QualifiedName)).First();
     }
 }
 ```

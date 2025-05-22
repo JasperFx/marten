@@ -39,7 +39,7 @@ var store = DocumentStore.For(opts =>
     opts.TenantIdStyle = TenantIdStyle.ForceUpperCase;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L14-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MultiTenancy.cs#L15-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_tenant_id_style' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Static Database to Tenant Mapping
@@ -317,7 +317,7 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
     bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L19-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L21-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Assuming that we have a custom `ITenancy` model:

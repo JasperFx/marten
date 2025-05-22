@@ -136,14 +136,14 @@ Marten's `IDocumentSession` implements the [_Identity Map_](https://en.wikipedia
 <a id='snippet-sample_using-identity-map'></a>
 ```cs
 var user = new User { FirstName = "Tamba", LastName = "Hali" };
-theStore.BulkInsert(new[] { user });
+await theStore.BulkInsertAsync(new[] { user });
 
 // Open a document session with the identity map
 using var session = theStore.IdentitySession();
-session.Load<User>(user.Id)
-    .ShouldBeSameAs(session.Load<User>(user.Id));
+(await session.LoadAsync<User>(user.Id))
+    .ShouldBeSameAs(await session.LoadAsync<User>(user.Id));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L11-L19' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/IdentityMapTests.cs#L14-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-identity-map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that using the identity map functionality can be wasteful if you aren't able to take advantage of the identity map caching in a session. In those cases, you may want to either use the `IDocumentStore.LightweightSession()` which forgos the identity map functionality, or use the read only `IQuerySession` alternative. RavenDb users will note that Marten does not (yet) support any notion of `Evict()` to manually remove documents from identity map tracking to avoid memory usage problems. Our hope is that the existence of the lightweight session and the read only interface will alleviate the memory explosion problems that you can run into with naive usage of identity maps or the dirty checking when fetching a large number of documents.
@@ -166,14 +166,14 @@ using (var session = theStore.IdentitySession())
     session.Store(target1, target2);
 
     // Both documents are in the identity map
-    session.Load<Target>(target1.Id).ShouldBeSameAs(target1);
-    session.Load<Target>(target2.Id).ShouldBeSameAs(target2);
+    (await session.LoadAsync<Target>(target1.Id)).ShouldBeSameAs(target1);
+    (await session.LoadAsync<Target>(target2.Id)).ShouldBeSameAs(target2);
 
     // Eject the 2nd document
     session.Eject(target2);
 
     // Now that 2nd document is no longer in the identity map
-    session.Load<Target>(target2.Id).ShouldBeNull();
+    (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
 
     await session.SaveChangesAsync();
 }
@@ -182,7 +182,7 @@ using (var session = theStore.QuerySession())
 {
     // The 2nd document was ejected before the session
     // was saved, so it was never persisted
-    session.Load<Target>(target2.Id).ShouldBeNull();
+    (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
@@ -327,7 +327,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics

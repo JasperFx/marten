@@ -10,7 +10,7 @@ public class DistanceProjection: EventProjection
 {
     public DistanceProjection()
     {
-        ProjectionName = "Distance";
+        Name = "Distance";
     }
 
     // Create a new Distance document based on a Travel event
@@ -20,7 +20,7 @@ public class DistanceProjection: EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L161-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_create_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L146-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_create_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_rebuild-single-projection -->
@@ -36,7 +36,7 @@ await PublishSingleThreaded();
 // rebuild projection `Distance`
 await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L92-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L77-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
@@ -67,7 +67,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L60-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L61-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this mode, Marten will rebuild single stream projection documents stream by stream in the reverse order that the 
@@ -86,5 +86,5 @@ on `IDocumentStore`:
 ```cs
 await theStore.Advanced.RebuildSingleStreamAsync<SimpleAggregate>(streamId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L31-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

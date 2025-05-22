@@ -45,7 +45,7 @@ builder.Services.AddMarten(opts =>
     })
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L12-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The classic `Rich` mode will append events in a two step process where the local session will first determine all possible
@@ -113,7 +113,7 @@ public async Task start_stream_with_guid_stream_identifiers(IDocumentSession ses
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L40-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_stream_with_guid_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L41-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_stream_with_guid_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For stream identity (strings vs. Guids), see [here](/events/configuration).
@@ -138,7 +138,7 @@ session.Events.Append(id, joined, departed);
 
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L582-L591' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L583-L592' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Mandatory Stream Types <Badge type="tip" text="7.30" />
@@ -171,7 +171,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseMandatoryStreamTypeDeclaration = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L150-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L151-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This causes a couple side effects that **force stricter usage of Marten**:
@@ -202,7 +202,7 @@ public async Task append_optimistic(IDocumentSession session, Guid streamId, obj
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L75-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_optimistic_event' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L76-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_optimistic_event' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Serialized Access to the Stream
@@ -229,7 +229,7 @@ public async Task append_exclusive(IDocumentSession session, Guid streamId)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L89-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_exclusive_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L90-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append_exclusive_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This usage will in effect serialize access to a single event stream.
@@ -257,10 +257,7 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     // This will tell you the current progress of each known projection shard
     // according to the latest recorded mark in the database
     var allProgress = await store.Advanced.AllProjectionProgress();
-    foreach (var state in allProgress)
-    {
-        Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
-    }
+    foreach (var state in allProgress) Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
 
     // This will allow you to retrieve some basic statistics about the event store
     var stats = await store.Advanced.FetchEventStoreStatistics();
@@ -272,5 +269,5 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L111-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
