@@ -48,7 +48,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FSharp.Core" Version="9.0.100" />
+        <PackageReference Include="FSharp.Core" Version="[8.0.100,)" />
         <PackageReference Include="JasperFx.Core" Version="1.12.0" />
         <PackageReference Include="JasperFx.CodeGeneration" Version="3.7.2" />
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="3.7.2" />
