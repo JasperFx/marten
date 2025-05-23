@@ -971,8 +971,8 @@ internal static class ForeignKeyExtensions
 {
     public static void TryMoveTenantIdFirst(this ForeignKey foreignKey, DocumentMapping mapping)
     {
-        // Guard clause, do nothing if this document is not tenanted
-        if (mapping.TenancyStyle == TenancyStyle.Single) return;
+        // Guard clause, do nothing if this document is not tenanted or foreign key doesn't contain tenant id
+        if (mapping.TenancyStyle == TenancyStyle.Single || foreignKey.ColumnNames.Any(x => x != TenantIdColumn.Name)) return;
 
         foreignKey.ColumnNames = new string[] { TenantIdColumn.Name }
             .Concat(foreignKey.ColumnNames.Where(x => x != TenantIdColumn.Name)).ToArray();
