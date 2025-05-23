@@ -1,6 +1,7 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -308,13 +309,51 @@ internal class SimpleExpression: ExpressionVisitor
         if (node.Object == null &&
             node.Method.DeclaringType == typeof(string) &&
             node.Method.Name == "Compare" &&
-            node.Arguments.Count == 2 &&
             node.Method.IsStatic)
         {
-            var leftArg = new SimpleExpression(_queryableMembers, node.Arguments[0]);
-            var rightArg = new SimpleExpression(_queryableMembers, node.Arguments[1]);
-            Comparable = new StringCompareComparable(leftArg, rightArg);
-            return null;
+            var parameters = node.Method.GetParameters();
+            if (parameters.Length is >= 2 and <= 4)
+            {
+                var leftArg = new SimpleExpression(_queryableMembers, node.Arguments[0]);
+                var rightArg = new SimpleExpression(_queryableMembers, node.Arguments[1]);
+
+                StringComparison? stringComparison = null;
+                var ignoreCase = false;
+                CultureInfo culture = null;
+                var compareOptions = CompareOptions.None;
+
+                for (var i = 2; i < node.Arguments.Count; i++)
+                {
+                    var argExpr = node.Arguments[i];
+                    var argValue = argExpr.ReduceToConstant().Value;
+
+                    switch (argValue)
+                    {
+                        case StringComparison sc:
+                            stringComparison = sc;
+                            break;
+                        case bool ic:
+                            ignoreCase = ic;
+                            break;
+                        case CultureInfo ci:
+                            culture = ci;
+                            break;
+                        case CompareOptions co:
+                            compareOptions = co;
+                            break;
+                    }
+                }
+
+                Comparable = new StringCompareComparable(
+                    leftArg,
+                    rightArg,
+                    stringComparison,
+                    ignoreCase,
+                    culture,
+                    compareOptions
+                );
+                return null;
+            }
         }
 
         if (node.Method.DeclaringType == typeof(string) &&
