@@ -120,6 +120,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         outbox
             .Batches
             .SelectMany(x => x.Messages)
+            .Select(x => x.message)
             .OfType<WasDeleted>().Single().Id.ShouldBe(streamId);
 
     }
@@ -347,7 +348,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
 
         await daemon.WaitForNonStaleData(120.Seconds());
 
-        var expected = outbox.Batches.SelectMany(x => x.Messages).OfType<GotB>().Single();
+        var expected = outbox.Batches.SelectMany(x => x.Messages).Select(x => x.message).OfType<GotB>().Single();
         expected.streamId.ShouldBe(stream3);
 
         foreach (var batch in outbox.Batches)

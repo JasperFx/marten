@@ -5,11 +5,6 @@ namespace Marten.Internal.OpenTelemetry;
 
 internal static class MartenTracing
 {
-    // See https://opentelemetry.io/docs/reference/specification/trace/semantic_conventions/messaging/ for more information
-    public const string TenantId = "tenant.id";
-    public const string EventType = "event.type";
-
-
     internal static ActivitySource ActivitySource { get; } = new(
         "Marten",
         typeof(MartenTracing).Assembly.GetName().Version!.ToString());

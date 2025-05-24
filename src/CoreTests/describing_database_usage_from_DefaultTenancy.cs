@@ -1,7 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;

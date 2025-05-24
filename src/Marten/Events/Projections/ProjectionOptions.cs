@@ -7,6 +7,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Fetching;
+using Marten.Internal.OpenTelemetry;
 using Marten.Schema;
 using Marten.Subscriptions;
 
@@ -27,9 +28,11 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public readonly List<IChangeListener> AsyncListeners = new();
 
-    internal ProjectionOptions(StoreOptions options): base(options.EventGraph)
+    internal ProjectionOptions(StoreOptions options): base(options.EventGraph, "marten")
     {
         _options = options;
+
+        ActivitySource = MartenTracing.ActivitySource;
     }
 
     /// <summary>

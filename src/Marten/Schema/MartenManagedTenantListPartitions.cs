@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -41,6 +42,7 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
         if (mapping.TenancyStyle == TenancyStyle.Single) return;
         if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
         if (mapping.DisablePartitioningIfAny) return;
+        if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
 
         mapping.Partitioning =
             new ListPartitioning { Columns = [TenantIdColumn.Name] }.UsePartitionManager(Partitions);

@@ -34,7 +34,10 @@ internal class HighWaterDetector: IHighWaterDetector
         _settings = graph.Options.Projections;
 
         DatabaseIdentity = runner.Identifier;
+        DatabaseUri = runner.Describe().DatabaseUri();
     }
+
+    public Uri DatabaseUri { get; }
 
     /// <summary>
     /// Advance the high water mark to the latest detected sequence

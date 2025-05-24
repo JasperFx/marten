@@ -200,6 +200,8 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         return state?.Sequence ?? 0;
     }
 
+    public Uri DatabaseUri => Describe().DatabaseUri();
+
     /// <summary>
     ///     *If* a projection daemon has been started for this database, this
     ///     is the ShardStateTracker for the running daemon. This is useful in testing

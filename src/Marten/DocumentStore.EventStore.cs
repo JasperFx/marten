@@ -7,8 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
@@ -33,10 +34,27 @@ namespace Marten;
 
 public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
+
     static DocumentStore()
     {
         ProjectionExceptions.RegisterTransientExceptionType<NpgsqlException>();
         ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
+    }
+
+    DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
+
+    bool IEventStore.HasMultipleTenants
+    {
+        get
+        {
+            if (Options.Tenancy.Cardinality != DatabaseCardinality.Single) return true;
+
+            if (Options.Events.TenancyStyle == TenancyStyle.Conjoined) return true;
+
+            if (Options.Storage.AllDocumentMappings.Any(x => x.TenancyStyle == TenancyStyle.Conjoined)) return true;
+
+            return false;
+        }
     }
 
     IEventRegistry IEventStore<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
@@ -61,13 +79,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         return Options.Projections.AllShards();
     }
 
-    Meter IEventStore<IDocumentOperations, IQuerySession>.Meter => Options.OpenTelemetry.Meter;
+    Meter IEventStore.Meter => Options.OpenTelemetry.Meter;
 
-    ActivitySource IEventStore<IDocumentOperations, IQuerySession>.ActivitySource => MartenTracing.ActivitySource;
+    ActivitySource IEventStore.ActivitySource => MartenTracing.ActivitySource;
 
     TimeProvider IEventStore<IDocumentOperations, IQuerySession>.TimeProvider => Options.Events.TimeProvider;
 
-    string IEventStore<IDocumentOperations, IQuerySession>.MetricsPrefix => "marten";
+    string IEventStore.MetricsPrefix => "marten";
 
     AutoCreate IEventStore<IDocumentOperations, IQuerySession>.AutoCreateSchemaObjects =>
         Options.AutoCreateSchemaObjects;
@@ -207,7 +225,16 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         {
             // We want to explicitly add in the archived event
             var allTypes = filterable.IncludedEventTypes.Concat([typeof(Archived)]).ToArray();
+            if (filterable is IAggregateProjection aggregateProjection)
+            {
+                var compactedType = typeof(Compacted<>).MakeGenericType(aggregateProjection.AggregateType);
+                allTypes = allTypes.Concat([compactedType])
+                    .ToArray();
+            }
+
             yield return new EventTypeFilter(Options.EventGraph, allTypes);
+
+
         }
 
         if (filterable.StreamType != null)
@@ -276,7 +303,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             Database = await Options.Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
         };
 
-        Options.Projections.Describe(usage);
+        Options.Projections.Describe(usage, this);
 
         foreach (var eventMapping in Options.EventGraph.AllEvents())
         {

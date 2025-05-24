@@ -25,11 +25,19 @@ using Marten.Util;
 using NSubstitute;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
-public class CustomProjectionTests
+public class using_explicit_code_for_aggregations
 {
+    private readonly ITestOutputHelper _output;
+
+    public using_explicit_code_for_aggregations(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Theory]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, true)]
@@ -88,6 +96,13 @@ public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
 
 public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
+    private readonly ITestOutputHelper _output;
+
+    public custom_projection_end_to_end(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     private void appendCustomEvent(int number, char letter)
     {
         theSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
@@ -210,6 +225,8 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         {
             opts.Projections.Add(new MyCustomGuidProjection(), ProjectionLifecycle.Inline);
         });
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<MyCustomGuidAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());

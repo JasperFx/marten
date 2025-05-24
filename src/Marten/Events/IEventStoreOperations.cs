@@ -380,4 +380,6 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Guid CompletelyReplaceEvent<T>(long sequence, T eventBody) where T : class;
+
 }
+

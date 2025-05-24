@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text.Json;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Services;

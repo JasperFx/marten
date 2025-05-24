@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;

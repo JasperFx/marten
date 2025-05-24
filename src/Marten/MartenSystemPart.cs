@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CommandLine;
 using JasperFx.CommandLine.Descriptions;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.Resources;
 using Weasel.Core.CommandLine;
 

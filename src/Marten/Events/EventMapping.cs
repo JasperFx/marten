@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using Marten.Events.Archiving;
 using Marten.Internal;
