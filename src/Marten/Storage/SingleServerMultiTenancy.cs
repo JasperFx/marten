@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten.Schema;
 using Npgsql;

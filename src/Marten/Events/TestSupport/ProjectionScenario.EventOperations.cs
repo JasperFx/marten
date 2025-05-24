@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -408,5 +409,15 @@ public partial class ProjectionScenario
     public void AppendEvents(Action<IEventOperations> appendAction)
     {
         AppendEvents("Appending events...", appendAction);
+    }
+
+    public Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)
+    {
+        throw new NotSupportedException();
     }
 }

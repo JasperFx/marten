@@ -16,4 +16,8 @@
       <PackageReference Include="FSharp.Core" Version="9.0.100" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx\JasperFx.csproj" />
+    </ItemGroup>
+
 </Project>

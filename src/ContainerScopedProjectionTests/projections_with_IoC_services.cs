@@ -76,7 +76,7 @@ public class projections_with_IoC_services
                 services.AddMarten(opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
-                        opts.DatabaseSchemaName = "ioc";
+                        opts.DatabaseSchemaName = "ioc5";
                         opts.ApplyChangesLockId = opts.ApplyChangesLockId + 2;
                     })
                     // Note that this is chained after the call to AddMarten()
@@ -137,7 +137,7 @@ public class projections_with_IoC_services
         product.Name.ShouldBe("Ankle Socks");
 
         var source = store.Options.As<StoreOptions>().Projections.All.Single();
-        source.Describe().SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
+        source.Describe((IEventStore)host.DocumentStore()).SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class projections_with_IoC_services
         product.Name.ShouldBe("Ankle Socks");
 
         var source = store.Options.As<StoreOptions>().Projections.All.Single();
-        source.Describe().SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
+        source.Describe((IEventStore)host.DocumentStore()).SubscriptionType.ShouldBe(SubscriptionType.SingleStreamProjection);
     }
 
     [Fact]

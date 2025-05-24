@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using JasperFx.Events;
 
 namespace Marten.Events;
@@ -217,4 +218,16 @@ public interface IEventOperations
     /// <param name="events"></param>
     /// <returns></returns>
     StreamAction StartStream(params object[] events);
+
+    /// <summary>
+    /// Compact a stream by replacing its first event with a Compacted<T> event that establishes
+    /// the snapshot. Do this when you do not care about older stream data, but do want to
+    /// keep the database size down for better performance
+    /// </summary>
+    /// <param name="streamKey">The string identifier for the stream</param>
+    /// <param name="configure">Configure the compacting request. Default is to compact at the latest point</param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null);
+    Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null);
 }

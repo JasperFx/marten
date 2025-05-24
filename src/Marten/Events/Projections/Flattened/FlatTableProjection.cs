@@ -50,9 +50,9 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
 
     Type ISubscriptionSource.ImplementationType => GetType();
 
-    SubscriptionDescriptor ISubscriptionSource<IDocumentOperations, IQuerySession>.Describe()
+    SubscriptionDescriptor ISubscriptionSource.Describe(IEventStore store)
     {
-        return new SubscriptionDescriptor(this);
+        return new SubscriptionDescriptor(this, store);
     }
 
     public SchemaNameSource SchemaNameSource { get; }

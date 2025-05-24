@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Descriptors;
 using Marten.Events.Operations;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Operations;
@@ -43,7 +44,7 @@ internal class EventTracingConnectionLifetime:
         _telemetryOptions = telemetryOptions;
 
         var currentActivity = Activity.Current ?? null;
-        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.TenantId, tenantId) });
+        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(OtelConstants.TenantId, tenantId) });
         _databaseActivity = MartenTracing.StartConnectionActivity(currentActivity, tags);
     }
 

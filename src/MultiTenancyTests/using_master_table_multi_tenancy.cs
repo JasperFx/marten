@@ -2,7 +2,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Services;

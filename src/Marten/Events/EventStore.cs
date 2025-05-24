@@ -26,11 +26,5 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
         _session.QueueOperation(op);
     }
 
-    public Guid CompletelyReplaceEvent<T>(long sequence, T eventBody) where T : class
-    {
-        var op = new ReplaceEventOperation<T>(_store.Events, eventBody, sequence);
-        _session.QueueOperation(op);
 
-        return op.Id;
-    }
 }

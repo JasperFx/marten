@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using Marten;
@@ -30,7 +31,7 @@ public class when_registering_an_eventprojection_through_ioc_as_scoped: IAsyncLi
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.DatabaseSchemaName = "ioc";
+                    opts.DatabaseSchemaName = "ioc6";
 
 
                 }).AddProjectionWithServices<LetterProjection2>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped,
@@ -131,6 +132,6 @@ public class when_registering_an_eventprojection_through_ioc_as_scoped: IAsyncLi
     [Fact]
     public void categorized_as_event_projection()
     {
-        source.Describe().SubscriptionType.ShouldBe(SubscriptionType.EventProjection);
+        source.Describe((IEventStore)_host.DocumentStore()).SubscriptionType.ShouldBe(SubscriptionType.EventProjection);
     }
 }

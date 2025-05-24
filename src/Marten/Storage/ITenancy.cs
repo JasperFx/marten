@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten.Exceptions;
 using Marten.Schema;

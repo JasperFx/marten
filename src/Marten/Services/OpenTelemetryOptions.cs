@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptors;
+using JasperFx.Descriptors;
 using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
 
@@ -65,8 +65,8 @@ public sealed class OpenTelemetryOptions
             {
                 counter.Add(1, new TagList
                 {
-                    { MartenTracing.EventType, e.EventTypeName },
-                    { MartenTracing.TenantId, e.TenantId }
+                    { OtelConstants.EventType, e.EventTypeName },
+                    { OtelConstants.TenantId, e.TenantId }
                 });
             }
         });

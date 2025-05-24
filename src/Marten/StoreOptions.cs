@@ -9,8 +9,8 @@ using System.Text.Json;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
-using JasperFx.Core.Descriptors;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
 using JasperFx.MultiTenancy;
 using Marten.Events;
@@ -777,6 +777,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             return ForAllDocuments(mapping =>
             {
                 if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+                if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
                 mapping.TenancyStyle = TenancyStyle.Conjoined;
             });
         }
