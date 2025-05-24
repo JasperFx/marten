@@ -345,7 +345,7 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
 
     /// <summary>
     /// Advanced usage! If you have some need to overwrite the data or headers of an existing event,
-    /// this registers an operation with the current session to do so
+    /// this registers an operation with the current session to do so.
     /// </summary>
     /// <param name="e"></param>
     void OverwriteEvent(IEvent e);
@@ -369,4 +369,15 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    /// Completely replace event data at a specified spot in the event store without changing
+    /// any stream identity or version information. Replaces all header information with empty.
+    /// This was originally meant for stream compacting
+    /// </summary>
+    /// <param name="sequence"></param>
+    /// <param name="eventBody"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Guid CompletelyReplaceEvent<T>(long sequence, T eventBody) where T : class;
 }
