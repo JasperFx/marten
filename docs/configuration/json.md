@@ -55,7 +55,7 @@ By default, Marten stores field names "as they are" (C# naming convention is Pas
 
 You can have them also automatically formatted to:
 
-- `CamelCase`,
+- `camelCase`,
 - `snake_case`
 
 by changing the relevant serializer settings:
