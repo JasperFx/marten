@@ -35,7 +35,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
+            var duration = _timestamp.HasValue ? Stopwatch.GetElapsedTime(_timestamp!.Value) : 0.Seconds();
             var parameters = command.Parameters
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
