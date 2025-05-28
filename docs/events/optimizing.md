@@ -145,4 +145,3 @@ data set is in your Marten database. To that end, you have a pair of complementa
 
 * [Event Archiving](/events/archiving)
 * [Stream Compacting](/events/compacting)
-
