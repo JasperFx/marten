@@ -99,7 +99,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinimalAPI", "samples\Minim
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventAppenderPerfTester", "EventAppenderPerfTester\EventAppenderPerfTester.csproj", "{931E4B08-6A37-44CC-AE8B-97D9FC9B1E85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build", "..\build\build.csproj", "{3A64FDA6-3CC6-4410-BB06-047065203F7F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "build", "..\build\build.csproj", "{B9CF8AA4-ABB1-442E-B3D3-760A448286A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -239,10 +239,10 @@ Global
 		{931E4B08-6A37-44CC-AE8B-97D9FC9B1E85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{931E4B08-6A37-44CC-AE8B-97D9FC9B1E85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{931E4B08-6A37-44CC-AE8B-97D9FC9B1E85}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3A64FDA6-3CC6-4410-BB06-047065203F7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3A64FDA6-3CC6-4410-BB06-047065203F7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3A64FDA6-3CC6-4410-BB06-047065203F7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3A64FDA6-3CC6-4410-BB06-047065203F7F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9CF8AA4-ABB1-442E-B3D3-760A448286A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9CF8AA4-ABB1-442E-B3D3-760A448286A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9CF8AA4-ABB1-442E-B3D3-760A448286A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9CF8AA4-ABB1-442E-B3D3-760A448286A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
