@@ -440,54 +440,6 @@ public static class MartenServiceCollectionExtensions
 
         public IServiceCollection Services { get; }
 
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow()
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(string developmentEnvironment)
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
-        {
-            Services.AddSingleton<IConfigureMarten<T>>(new OptimizedArtifactsWorkflow<T>(typeLoadMode));
-            return this;
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode,
-            string developmentEnvironment)
-        {
-            Services.AddSingleton<IConfigureMarten<T>>(
-                new OptimizedArtifactsWorkflow<T>(typeLoadMode, developmentEnvironment));
-            return this;
-        }
-
         /// <summary>
         ///     Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
         /// </summary>
@@ -780,61 +732,6 @@ public static class MartenServiceCollectionExtensions
             return this;
         }
 
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <returns></returns>
-        public MartenConfigurationExpression OptimizeArtifactWorkflow()
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
-        {
-            var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
-            Services.AddSingleton<IConfigureMarten>(configure);
-
-            return this;
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(string developmentEnvironment)
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode,
-            string developmentEnvironment)
-        {
-            var configure = new OptimizedArtifactsWorkflow(typeLoadMode, developmentEnvironment);
-            Services.AddSingleton<IConfigureMarten>(configure);
-
-            return this;
-        }
-
         /// <summary>
         ///     Adds initial data sets to the Marten store and ensures that they will be
         ///     executed upon IHost initialization
@@ -1031,42 +928,6 @@ internal class LambdaConfigureMarten<T>: LambdaConfigureMarten, IConfigureMarten
     }
 }
 
-[Obsolete(StoreOptions.PreferJasperFxMessage)]
-internal class OptimizedArtifactsWorkflow: IConfigureMarten
-{
-    private readonly string _developmentEnvironment = "Development";
-    private readonly TypeLoadMode _productionMode;
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode)
-    {
-        _productionMode = productionMode;
-    }
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode, string developmentEnvironment): this(productionMode)
-    {
-        _developmentEnvironment = developmentEnvironment;
-    }
-
-    public void Configure(IServiceProvider services, StoreOptions options)
-    {
-        var environment = services.GetRequiredService<IHostEnvironment>();
-
-        if (environment.IsEnvironment(_developmentEnvironment))
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-            options.GeneratedCodeMode = TypeLoadMode.Auto;
-        }
-        else
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.None;
-            options.GeneratedCodeMode = _productionMode;
-
-
-            options.SourceCodeWritingEnabled = false;
-        }
-    }
-}
-
 internal interface IDocumentStoreSource
 {
     IDocumentStore Resolve(IServiceProvider serviceProvider);
@@ -1077,18 +938,5 @@ internal class DocumentStoreSource<T>: IDocumentStoreSource where T : IDocumentS
     public IDocumentStore Resolve(IServiceProvider services)
     {
         return services.GetRequiredService<T>();
-    }
-}
-
-internal class OptimizedArtifactsWorkflow<T>: OptimizedArtifactsWorkflow, IConfigureMarten<T>
-    where T : IDocumentStore
-{
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode): base(productionMode)
-    {
-    }
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode, string developmentEnvironment): base(productionMode,
-        developmentEnvironment)
-    {
     }
 }

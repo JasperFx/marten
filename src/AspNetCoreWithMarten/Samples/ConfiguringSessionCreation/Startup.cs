@@ -1,4 +1,6 @@
 using System.Data;
+using JasperFx;
+using JasperFx.CodeGeneration;
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,13 +60,18 @@ public class Startup
             {
                 opts.Connection(connectionString);
             })
-            // Using the "Optimized artifact workflow" for Marten >= V5
-            // sets up your Marten configuration based on your environment
-            // See https://martendb.io/configuration/optimized_artifact_workflow.html
-            .OptimizeArtifactWorkflow()
+
             // Chained helper to replace the built in
             // session factory behavior
             .BuildSessionsWith<CustomSessionFactory>();
+
+        // In a "Production" environment, we're turning off the
+        // automatic database migrations and dynamic code generation
+        services.CritterStackDefaults(x =>
+        {
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+        });
         #endregion
     }
 
