@@ -137,3 +137,12 @@ Marten is using a most recently used cache for the projected documents that are 
 so that updates from new events can be directly applied to the in memory documents instead of having to constantly
 load those documents over and over again from the database as new events trickle in. This is of course much more effective
 when your projection is constantly updating a relatively small number of different aggregates.
+
+## Keeping the Database Smaller
+
+One great way to maintain performance over time as a system database grows is to simply keep a lid on how big the **active**
+data set is in your Marten database. To that end, you have a pair of complementary tools:
+
+* [Event Archiving](/events/archiving)
+* [Stream Compacting](/events/compacting)
+

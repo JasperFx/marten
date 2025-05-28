@@ -27,6 +27,38 @@ public class stream_compacting : OneOffConfigurationsContext
     public CEvent C() => new CEvent();
     public DEvent D() => new DEvent();
 
+    public record Equipment;
+
+    #region sample_using_stream_compacting
+
+    public static async Task compact(IDocumentSession session, Guid equipmentId, IEventsArchiver archiver)
+    {
+        // Maybe we have ceased to care about old movements of a piece of equipment
+        // But we want to retain an accurate positioning over the past year
+        // Yes, maybe we should have done a "closing the books" pattern, but we didn't
+        // So instead, let's just "compact" the stream
+
+        await session.Events.CompactStreamAsync<Equipment>(equipmentId, x =>
+        {
+            // We could say "compact" all events for this stream
+            // from version 1000 and below
+            x.Version = 1000;
+
+            // Or instead say, "compact all events older than 30 days ago":
+            x.Timestamp = DateTimeOffset.UtcNow.Subtract(30.Days());
+
+            // Carry out some kind of user defined archiving process to
+            // "move" the about to be archived events to something like an S3 bucket
+            // or an Azure Blob or even just to another table
+            x.Archiver = archiver;
+
+            // Pass in a cancellation token because this might take a bit...
+            x.CancellationToken = CancellationToken.None;
+        });
+    }
+
+    #endregion
+
     [Fact]
     public async Task start_with_self_aggregate()
     {

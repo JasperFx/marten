@@ -157,6 +157,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Event Store',
           collapsed: true,
           items: [
+            { text: 'Understanding Event Sourcing', link: '/events/learning' },  
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
             { text: 'Storage', link: '/events/storage' },
@@ -194,9 +195,10 @@ const config: UserConfig<DefaultTheme.Config> = {
               link: '/events/versioning'
             },
             {
-              text: 'Multitenancy',
+              text: 'Multi-Tenancy',
               link: '/events/multitenancy'
-            }, 
+            },
+              {text: 'Stream Compacting', link: '/events/compacting'},
               {
                   text: 'Removing Protected Information',
                   link: '/events/protection'
@@ -205,7 +207,6 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
             },
-            { text: 'Understanding Event Sourcing', link: '/events/learning' },
           ]
         },
         {

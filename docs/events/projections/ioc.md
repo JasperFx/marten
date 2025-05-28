@@ -60,7 +60,7 @@ using var host = await Host.CreateDefaultBuilder()
         services.AddMarten(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
-                opts.DatabaseSchemaName = "ioc";
+                opts.DatabaseSchemaName = "ioc5";
                 opts.ApplyChangesLockId = opts.ApplyChangesLockId + 2;
             })
             // Note that this is chained after the call to AddMarten()
