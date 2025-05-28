@@ -135,4 +135,3 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
-
