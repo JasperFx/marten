@@ -163,14 +163,18 @@ public class StreamCompactingRequest<T>
     }
 }
 
+#region sample_IEventsArchiver
+
 /// <summary>
-/// Callback interface for executing
+/// Callback interface for executing event archiving
 /// </summary>
 public interface IEventsArchiver
 {
     Task MaybeArchiveAsync<T>(IDocumentOperations operations, StreamCompactingRequest<T> request, IReadOnlyList<IEvent> events,
         CancellationToken cancellation);
 }
+
+#endregion
 
 internal class DeleteEventsOperation: IStorageOperation
 {
