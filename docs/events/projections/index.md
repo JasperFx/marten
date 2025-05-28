@@ -127,7 +127,7 @@ Refer to [Rebuilding Projections](/events/projections/rebuilding) for more detai
 ::: warning
 Marten by default while creating new object tries to use <b>default constructor</b>. Default constructor doesn't have to be public, might be also private or protected.
 
-If class does not have the default constructor then it creates an uninitialized object (see [here](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8) for more info)
+If class does not have the default constructor then it creates an uninitialized object (see [the Microsoft documentation](https://docs.microsoft.com/en-us/dotnet/api/system.runtime.serialization.formatterservices.getuninitializedobject?view=netframework-4.8) for more info)
 
 Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
 :::

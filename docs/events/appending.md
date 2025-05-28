@@ -116,7 +116,7 @@ public async Task start_stream_with_guid_stream_identifiers(IDocumentSession ses
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/StartStreamSamples.cs#L41-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_stream_with_guid_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For stream identity (strings vs. Guids), see [here](/events/configuration).
+For stream identity (strings vs. Guids), see [event store configuration](/events/configuration).
 
 Note that `StartStream` checks for an existing stream and throws `ExistingStreamIdCollisionException` if a matching stream already exists.
 
