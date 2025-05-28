@@ -211,9 +211,7 @@ class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() =>
         {
-            // TODO -- put codegen test back
-            //var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test" };
-            var codegenCommands = new[] { "codegen delete", "codegen write" };
+            var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test" };
             foreach (var command in codegenCommands)
             {
                 DotNetRun(s => s
