@@ -24,8 +24,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\.github\workflows\docs-prs.yml = ..\.github\workflows\docs-prs.yml
 		..\.github\workflows\docs.yml = ..\.github\workflows\docs.yml
 		..\.github\workflows\on-manual-do-nuget-publish.yml = ..\.github\workflows\on-manual-do-nuget-publish.yml
-		..\.github\workflows\on-push-do-ci-build-pg12-plv8-jsonnet.yml = ..\.github\workflows\on-push-do-ci-build-pg12-plv8-jsonnet.yml
-		..\.github\workflows\on-push-do-ci-build-pg12-plv8-systemtextjson.yml = ..\.github\workflows\on-push-do-ci-build-pg12-plv8-systemtextjson.yml
 		..\.github\workflows\on-push-do-ci-build-pg15-jsonnet.yml = ..\.github\workflows\on-push-do-ci-build-pg15-jsonnet.yml
 		..\.github\workflows\on-push-do-ci-build-pgLatest-systemtextjson.yml = ..\.github\workflows\on-push-do-ci-build-pgLatest-systemtextjson.yml
 	EndProjectSection
