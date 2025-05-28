@@ -81,7 +81,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     /// Configure tenant id behavior within this Marten DocumentStore
     /// </summary>
-    public TenantIdStyle TenantIdStyle { get; set; } = TenantIdStyle.CaseSensitive;
+    public TenantIdStyle TenantIdStyle
+    {
+        get => _tenantIdStyle.HasValue ? _tenantIdStyle.Value : TenantIdStyle.CaseSensitive;
+        set => _tenantIdStyle = value;
+    }
 
     /// <summary>
     ///     Add, remove, or reorder global session listeners
@@ -409,6 +413,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private readonly EventGraph _eventGraph;
     private readonly LinqParsing _linq;
     private int _updateBatchSize = 500;
+    private TenantIdStyle? _tenantIdStyle;
 
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 

@@ -88,6 +88,11 @@ public partial class StoreOptions: ICodeFileCollection
     {
         if (options == null) return;
 
+        if (!_tenantIdStyle.HasValue)
+        {
+            _tenantIdStyle = options.TenantIdStyle;
+        }
+
         ApplicationAssembly ??= options.ApplicationAssembly;
         GeneratedCodeOutputPath ??= options.GeneratedCodeOutputPath;
         _generatedCodeMode ??= options.ActiveProfile.GeneratedCodeMode;

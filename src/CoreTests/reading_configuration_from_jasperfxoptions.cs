@@ -4,6 +4,7 @@ using JasperFx.Core;
 using Lamar;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ using Xunit;
 
 namespace CoreTests;
 
-public class using_optimized_artifact_workflow
+public class reading_configuration_from_jasperfxoptions
 {
     [Fact]
     public void all_the_defaults()
@@ -35,6 +36,40 @@ public class using_optimized_artifact_workflow
         rules.GeneratedNamespace.ShouldBe("Marten.Generated");
         rules.SourceCodeWritingEnabled.ShouldBeTrue();
 
+    }
+
+    [Fact]
+    public void can_override_tenancy_id_style()
+    {
+        using var container = Container.For(services =>
+        {
+            services.AddMarten(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.TenantIdStyle = TenantIdStyle.ForceLowerCase;
+            });
+
+            services.CritterStackDefaults(x => x.TenantIdStyle = TenantIdStyle.ForceUpperCase);
+        });
+
+        container.GetInstance<IDocumentStore>().As<DocumentStore>().Options.TenantIdStyle.ShouldBe(TenantIdStyle.ForceLowerCase);
+    }
+
+    [Fact]
+    public void use_default_tenancy_id_style()
+    {
+        using var container = Container.For(services =>
+        {
+            services.AddMarten(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                // opts.TenantIdStyle = TenantIdStyle.ForceLowerCase;
+            });
+
+            services.CritterStackDefaults(x => x.TenantIdStyle = TenantIdStyle.ForceUpperCase);
+        });
+
+        container.GetInstance<IDocumentStore>().As<DocumentStore>().Options.TenantIdStyle.ShouldBe(TenantIdStyle.ForceUpperCase);
     }
 
     public static async Task bootstrapping_example()
@@ -95,6 +130,8 @@ public class using_optimized_artifact_workflow
 
                     x.Development.GeneratedCodeMode = TypeLoadMode.Auto;
                     x.Development.ResourceAutoCreate = AutoCreate.CreateOrUpdate;
+
+                    x.TenantIdStyle = TenantIdStyle.ForceLowerCase;
                 });
             })
             .UseEnvironment("Development")
@@ -104,6 +141,8 @@ public class using_optimized_artifact_workflow
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
 
         var rules = store.Options.CreateGenerationRules();
+
+        store.Options.TenantIdStyle.ShouldBe(TenantIdStyle.ForceLowerCase);
 
         store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
         store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
