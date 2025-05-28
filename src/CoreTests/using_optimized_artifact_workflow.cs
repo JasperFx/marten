@@ -44,11 +44,15 @@ public class using_optimized_artifact_workflow
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten("connection string")
+                services.AddMarten("connection string");
 
-                    // This feature opts into the new
-                    // "Optimized artifact workflow" for Marten >= V5
-                    .OptimizeArtifactWorkflow();
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
             }).StartAsync();
 
         #endregion
@@ -61,13 +65,16 @@ public class using_optimized_artifact_workflow
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten("connection string")
+                services.AddMarten("connection string");
 
-                    // This feature opts into the new
-                    // "Optimized artifact workflow" for Marten >= V5
-                    .OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
             }).StartAsync();
-
         #endregion
     }
 
@@ -77,7 +84,18 @@ public class using_optimized_artifact_workflow
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+
+                    x.Development.GeneratedCodeMode = TypeLoadMode.Auto;
+                    x.Development.ResourceAutoCreate = AutoCreate.CreateOrUpdate;
+                });
             })
             .UseEnvironment("Development")
             .Start();
@@ -100,7 +118,16 @@ public class using_optimized_artifact_workflow
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Auto;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                    x.Production.SourceCodeWritingEnabled = false;
+                });
             })
             .UseEnvironment("Production")
             .Start();
@@ -132,7 +159,16 @@ public class using_optimized_artifact_workflow
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                    x.Production.SourceCodeWritingEnabled = false;
+                });
             })
             .UseEnvironment("Production")
             .Start();
@@ -155,7 +191,19 @@ public class using_optimized_artifact_workflow
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow("Local");
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.CreateOrUpdate;
+
+                    x.Development.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                    x.DevelopmentEnvironmentName = "Local";
+                });
             })
             .UseEnvironment("Local")
             .Start();

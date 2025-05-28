@@ -1,5 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx;
+using JasperFx.CodeGeneration;
 using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Schema;
@@ -35,11 +37,15 @@ public class MultipleDocumentStores
                     .AddAsyncDaemon(DaemonMode.HotCold)
 
                     // Use IInitialData
-                    .InitializeWith(new DefaultDataSet())
+                    .InitializeWith(new DefaultDataSet());
 
-                    // Use the V5 optimized artifact workflow
-                    // with the separate store as well
-                    .OptimizeArtifactWorkflow();
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
             }).StartAsync();
 
         #endregion

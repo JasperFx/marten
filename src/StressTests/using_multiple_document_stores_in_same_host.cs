@@ -181,14 +181,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
 
 
             })
@@ -214,14 +222,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
             })
             .UseEnvironment("Production")
             .Start();
@@ -279,14 +295,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 });
 
 
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(typeof(IFirstStore).Assembly);
-                }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
             })
             .Start();
@@ -310,7 +334,7 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
@@ -322,6 +346,14 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 services.ConfigureMarten<IFirstStore>(opts =>
                 {
                     opts.AutoCreateSchemaObjects = AutoCreate.None;
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
                 });
             })
             .Start();
@@ -339,13 +371,21 @@ public class additional_document_store_registration_and_optimized_artifact_workf
 
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                 }).AddAsyncDaemon(DaemonMode.HotCold);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
 
             })
