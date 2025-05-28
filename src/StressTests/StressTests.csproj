@@ -5,7 +5,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\lamar\src\Lamar.Microsoft.DependencyInjection\Lamar.Microsoft.DependencyInjection.csproj" />
         <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
@@ -14,6 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
+        <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0-alpha-4" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
