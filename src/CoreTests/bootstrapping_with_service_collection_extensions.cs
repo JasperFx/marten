@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using Npgsql;
 using Shouldly;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Xunit;
 
 namespace CoreTests;
@@ -523,5 +524,8 @@ public class bootstrapping_with_service_collection_extensions
         container.GetInstance<IDatabaseSource>().ShouldBeSameAs(store.As<DocumentStore>().Tenancy);
 
         container.Model.For<IOptions<JasperFxOptions>>().Default.ShouldNotBeNull();
+
+        container.GetInstance<IMasterTableMultiTenancy>()
+            .ShouldBeSameAs(store);
     }
 }

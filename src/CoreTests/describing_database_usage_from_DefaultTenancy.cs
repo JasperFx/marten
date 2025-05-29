@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -19,7 +20,7 @@ public class describing_database_usage_from_DefaultTenancy : IntegrationContext
     public async Task create_usage()
     {
         theStore.Options.Tenancy.ShouldBeOfType<DefaultTenancy>();
-        theStore.Options.Tenancy.Cardinality.ShouldBe(DatabaseCardinality.Single);
+        theStore.Options.Tenancy.As<IDatabaseUser>().Cardinality.ShouldBe(DatabaseCardinality.Single);
         var description = await theStore.Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
 
         description.Cardinality.ShouldBe(DatabaseCardinality.Single);

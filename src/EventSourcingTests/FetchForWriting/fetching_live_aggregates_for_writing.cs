@@ -553,6 +553,35 @@ public class SimpleAggregate : IRevisioned
         ECount++;
     }
 
+    protected bool Equals(SimpleAggregate other)
+    {
+        return Version == other.Version && Id.Equals(other.Id) && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        return Equals((SimpleAggregate)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Version, Id, ACount, BCount, CCount, DCount, ECount);
+    }
 }
 
 
@@ -634,6 +663,36 @@ public class SimpleAggregateAsString
     public void Apply(EEvent _)
     {
         ECount++;
+    }
+
+    protected bool Equals(SimpleAggregateAsString other)
+    {
+        return Version == other.Version && Id == other.Id && ACount == other.ACount && BCount == other.BCount && CCount == other.CCount && DCount == other.DCount && ECount == other.ECount;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        return Equals((SimpleAggregateAsString)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Version, Id, ACount, BCount, CCount, DCount, ECount);
     }
 }
 

@@ -29,11 +29,6 @@ namespace Marten.Events
         TenancyStyle TenancyStyle { get; set; }
 
         /// <summary>
-        /// Enables global project projections (with single tenancy style) for events with conjoined tenancy
-        /// </summary>
-        bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
-
-        /// <summary>
         /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
         /// running in an Inline lifecycle. Default is false;
         /// </summary>

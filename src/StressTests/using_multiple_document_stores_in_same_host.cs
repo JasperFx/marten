@@ -20,6 +20,7 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Xunit;
 
 namespace StressTests;
@@ -54,6 +55,16 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 return opts;
             });
         });
+    }
+
+    [Fact]
+    public void all_stores_are_registered_as_master_table_tenancy()
+    {
+        var masterTableTenancyList = theContainer.GetAllInstances<IMasterTableMultiTenancy>();
+        masterTableTenancyList.Count.ShouldBe(3);
+        masterTableTenancyList.Any(x => x.GetType() == typeof(DocumentStore)).ShouldBeTrue();
+        masterTableTenancyList.OfType<IFirstStore>().Any().ShouldBeTrue();
+        masterTableTenancyList.OfType<ISecondStore>().Any().ShouldBeTrue();
     }
 
     [Fact]

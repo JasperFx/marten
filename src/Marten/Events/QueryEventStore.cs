@@ -79,6 +79,8 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
+        if (version != 0 && version > events.Last().Version) return null;
+
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
@@ -93,6 +95,35 @@ internal class QueryEventStore: IQueryEventStore
         return aggregate;
     }
 
+    public async Task<T?> AggregateStreamToLastKnownAsync<T>(Guid streamId, long version = 0,
+        DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class
+    {
+        var events = await FetchStreamAsync(streamId, version, timestamp, 0, token).ConfigureAwait(false);
+        if (!events.Any())
+        {
+            return null;
+        }
+
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+
+        T? aggregate = null;
+        while (aggregate == null && events.Any())
+        {
+            aggregate = await aggregator.BuildAsync(events, _session, default, token).ConfigureAwait(false);
+            events = events.SkipLast(1).ToList();
+        }
+
+        if (aggregate != null)
+        {
+            var storage = _session.StorageFor<T>();
+            storage.SetIdentityFromGuid(aggregate, streamId);
+        }
+
+        return aggregate;
+    }
+
+
     public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
     {
@@ -102,9 +133,38 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
+        if (version != 0 && version > events.Last().Version) return null;
+
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
+
+        if (aggregate != null)
+        {
+            var storage = _session.StorageFor<T>();
+            storage.SetIdentityFromString(aggregate, streamKey);
+        }
+
+        return aggregate;
+    }
+
+    public async Task<T?> AggregateStreamToLastKnownAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class
+    {
+        var events = await FetchStreamAsync(streamKey, version, timestamp, 0, token).ConfigureAwait(false);
+        if (!events.Any())
+        {
+            return null;
+        }
+
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+
+        T? aggregate = null;
+        while (aggregate == null && events.Any())
+        {
+            aggregate = await aggregator.BuildAsync(events, _session, default, token).ConfigureAwait(false);
+            events = events.SkipLast(1).ToList();
+        }
 
         if (aggregate != null)
         {

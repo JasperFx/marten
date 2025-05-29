@@ -8,6 +8,7 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
@@ -34,7 +35,6 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
             opts.Schema.For<ResourcesGlobalSummary>().SingleTenanted();
 
@@ -109,7 +109,6 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
             opts.Schema.For<CompanyLocation>().SoftDeleted();
             opts.Projections.Add(new CompanyLocationCustomProjection(), ProjectionLifecycle.Inline);
@@ -191,6 +190,7 @@ public class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGl
 {
     public ResourcesGlobalSummaryProjection()
     {
+        TenancyGrouping = TenancyGrouping.AcrossTenants;
         Identity<ResourceCreatedEvent>(e => e.OrganisationId);
         Identity<ResourceRemovedEvent>(e => e.OrganisationId);
     }

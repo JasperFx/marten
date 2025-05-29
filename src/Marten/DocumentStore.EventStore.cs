@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
@@ -41,13 +42,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
     }
 
-    DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
+    DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.As<IDatabaseUser>().Cardinality;
 
     bool IEventStore.HasMultipleTenants
     {
         get
         {
-            if (Options.Tenancy.Cardinality != DatabaseCardinality.Single) return true;
+            if (Options.Tenancy.As<IDatabaseUser>().Cardinality != DatabaseCardinality.Single) return true;
 
             if (Options.Events.TenancyStyle == TenancyStyle.Conjoined) return true;
 

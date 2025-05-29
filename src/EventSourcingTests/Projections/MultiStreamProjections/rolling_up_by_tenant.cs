@@ -21,7 +21,6 @@ public class rolling_up_by_tenant : OneOffConfigurationsContext
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Add<RollupProjection>(ProjectionLifecycle.Async);
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
         });
 
         var session1 = theStore.LightweightSession("one");
@@ -59,7 +58,6 @@ public class rolling_up_by_tenant : OneOffConfigurationsContext
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Projections.Add<Rollup2Projection>(ProjectionLifecycle.Async);
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
         });
 
         var session1 = theStore.LightweightSession("one");
