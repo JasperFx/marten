@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -972,7 +973,7 @@ internal static class ForeignKeyExtensions
     public static void TryMoveTenantIdFirst(this ForeignKey foreignKey, DocumentMapping mapping)
     {
         // Guard clause, do nothing if this document is not tenanted or foreign key doesn't contain tenant id
-        if (mapping.TenancyStyle == TenancyStyle.Single || foreignKey.ColumnNames.Any(x => x != TenantIdColumn.Name)) return;
+        if (mapping.TenancyStyle == TenancyStyle.Single || !foreignKey.ColumnNames.Contains(StorageConstants.TenantIdColumn)) return;
 
         foreignKey.ColumnNames = new string[] { TenantIdColumn.Name }
             .Concat(foreignKey.ColumnNames.Where(x => x != TenantIdColumn.Name)).ToArray();

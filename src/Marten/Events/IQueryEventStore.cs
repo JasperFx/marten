@@ -65,6 +65,32 @@ public interface IQueryEventStore
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class;
 
     /// <summary>
+    ///     Perform a live aggregation of the raw events in this stream to a T object, but return the last known
+    /// version of the aggregate in case the aggregate itself is marked as deleted at a specific version
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="streamId"></param>
+    /// <param name="version">If set, queries for events up to and including this version</param>
+    /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<T?> AggregateStreamToLastKnownAsync<T>(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class;
+
+    /// <summary>
+    /// Perform a live aggregation of the raw events in this stream to a T object, but return the last known
+    /// version of the aggregate in case the aggregate itself is marked as deleted at a specific version
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="streamKey"></param>
+    /// <param name="version">If set, queries for events up to and including this version</param>
+    /// <param name="timestamp">If set, queries for events captured on or before this timestamp</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<T?> AggregateStreamToLastKnownAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class;
+
+    /// <summary>
     ///     Query directly against ONLY the raw event data. Use IQuerySession.Query() for aggregated documents!
     /// </summary>
     /// <typeparam name="T"></typeparam>

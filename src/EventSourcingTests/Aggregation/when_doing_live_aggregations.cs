@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.FetchForWriting;
 using JasperFx.Events;
 using Marten;
 using Marten.Events;
@@ -43,6 +44,43 @@ public class when_doing_live_aggregations : AggregationContext
         aggregate.BCount.ShouldBe(2);
         aggregate.CCount.ShouldBe(3);
         aggregate.DCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task when_requesting_an_aggregate_for_an_invalid_version()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new CEvent(),
+            new DEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate1 = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        var aggregateAt4 = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId, version:4);
+        var aggregateAt5 = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId, version: 5);
+
+        aggregateAt4.ShouldBe(aggregate1);
+
+        aggregateAt5.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task when_requesting_an_aggregate_for_an_invalid_version_with_string_identifiers()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new CEvent(),
+            new DEvent());
+        await theSession.SaveChangesAsync();
+
+        var aggregate1 = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        var aggregateAt4 = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId, version:4);
+        var aggregateAt5 = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId, version: 5);
+
+        aggregateAt4.ShouldBe(aggregate1);
+
+        aggregateAt5.ShouldBeNull();
     }
 
     [Fact]

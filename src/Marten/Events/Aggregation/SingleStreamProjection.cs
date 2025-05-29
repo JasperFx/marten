@@ -46,12 +46,9 @@ public class SingleStreamProjection<TDoc, TId>:
 
         foreach (var p in validateDocumentIdentity(options, mapping)) yield return p;
 
-        if (options.Events.TenancyStyle != mapping.TenancyStyle
-            && (options.Events.TenancyStyle == TenancyStyle.Single
-                || (options.Events is
-                        { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
-                    && Lifecycle != ProjectionLifecycle.Live))
-           )
+        if (options.Events.TenancyStyle != mapping.TenancyStyle)
+
+        if (Lifecycle != ProjectionLifecycle.Live && options.Events.TenancyStyle != mapping.TenancyStyle)
         {
             yield return
                 $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle})";

@@ -25,7 +25,6 @@ namespace Marten.Events.Projections;
 /// <typeparam name="TId"></typeparam>
 public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProjectionBase<TDoc, TId, IDocumentOperations, IQuerySession>, IMartenAggregateProjection, IValidatedProjection<StoreOptions>, IMartenRegistrable where TDoc : notnull where TId : notnull
 {
-    // TODO -- put the exception types in a constant somewhere
     protected MultiStreamProjection(): base()
     {
     }
@@ -49,12 +48,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
         set => Options.CacheLimitPerTenant = value;
     }
 
-    // TODO -- need to add this all the way back in JasperFx.Events
-    // public override SubscriptionDescriptor Describe()
-    // {
-    //     return new SubscriptionDescriptor(this, SubscriptionType.MultiStreamProjection);
-    // }
-
     [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {
@@ -66,16 +59,21 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
                 $"Id type mismatch. The projection identity type is {typeof(TId).FullNameInCode()}, but the aggregate document {typeof(TDoc).FullNameInCode()} id type is {mapping.IdType.NameInCode()}";
         }
 
-        // TODO -- revisit this with
-        if (options.Events.TenancyStyle != mapping.TenancyStyle
-            && (options.Events.TenancyStyle == TenancyStyle.Single
-                || options.Events is
-                    { TenancyStyle: TenancyStyle.Conjoined, EnableGlobalProjectionsForConjoinedTenancy: false }
-                && Lifecycle != ProjectionLifecycle.Live)
-           )
+        if (Lifecycle != ProjectionLifecycle.Live && options.Events.TenancyStyle == TenancyStyle.Conjoined && mapping.TenancyStyle == TenancyStyle.Single)
         {
-            yield return
-                $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle})";
+            if (TenancyGrouping == TenancyGrouping.RespectTenant)
+            {
+                yield return $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle}) but the {nameof(TenancyGrouping)} is {TenancyGrouping}. Set to {TenancyGrouping.AcrossTenants} to explicitly enable the grouping across tenants";
+            }
+        }
+
+        if (Lifecycle != ProjectionLifecycle.Live && mapping.TenancyStyle == TenancyStyle.Conjoined &&
+            options.Events.TenancyStyle == TenancyStyle.Single)
+        {
+            if (TenancyGrouping == TenancyGrouping.RespectTenant)
+            {
+                yield return $"Tenancy storage style mismatch between the events ({options.Events.TenancyStyle}) and the aggregate type {typeof(TDoc).FullNameInCode()} ({mapping.TenancyStyle}) but the {nameof(TenancyGrouping)} is {TenancyGrouping}. Set to {TenancyGrouping.AcrossTenants} to explicitly enable the grouping across tenants";
+            }
         }
 
         if (mapping.DeleteStyle == DeleteStyle.SoftDelete && IsUsingConventionalMethods)

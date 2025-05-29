@@ -85,7 +85,7 @@ public class using_static_database_multitenancy: IAsyncLifetime
     [Fact]
     public async Task describing_the_database_usage()
     {
-        theStore.Options.Tenancy.Cardinality.ShouldBe(DatabaseCardinality.StaticMultiple);
+        theStore.Options.Tenancy.As<IDatabaseUser>().Cardinality.ShouldBe(DatabaseCardinality.StaticMultiple);
 
         var description = await theStore.Options.Tenancy.DescribeDatabasesAsync(CancellationToken.None);
 

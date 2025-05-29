@@ -26,6 +26,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 
 namespace Marten;
 
@@ -195,6 +196,8 @@ public static class MartenServiceCollectionExtensions
             return new DocumentStore(options);
         });
 
+        services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<IDocumentStore>());
+
         // This can be overridden by the expression following
         services.AddSingleton<ISessionFactory, DefaultSessionFactory>(sp =>
         {
@@ -298,6 +301,10 @@ public static class MartenServiceCollectionExtensions
         stores.Add(config);
 
         services.AddSingleton<T>(s => config.Build(s));
+
+
+        services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<T>());
+
 
         services.AddSingleton<ICodeFileCollection>(s =>
         {

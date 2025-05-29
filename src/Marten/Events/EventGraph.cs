@@ -148,8 +148,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// </summary>
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
-    public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
-
     public bool UseIdentityMapForAggregates { get; set; }
 
     /// <summary>

@@ -151,6 +151,9 @@ public class
     {
         var questId = "Sixth";
 
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+        await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(QuestPartyWithStringIdentifier));
+
         using (var session = theStore.LightweightSession())
         {
             //Note "Id = questId" @see live_aggregate_equals_inlined_aggregate...
@@ -172,7 +175,7 @@ public class
             var party_at_version_3 = await session.Events
                 .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
 
-            party_at_version_3.ShouldNotBeNull();
+            party_at_version_3.ShouldBeNull();
 
             var party_yesterday = await session.Events
                 .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
@@ -210,10 +213,6 @@ public class
             // questId is the id of the stream
             var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId); //Here we get NPE
             party.ShouldNotBeNull();
-
-            var party_at_version_3 = await session.Events
-                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
-            party_at_version_3.ShouldNotBeNull();
 
             var party_yesterday = await session.Events
                 .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
