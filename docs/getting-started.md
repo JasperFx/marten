@@ -55,7 +55,7 @@ Use of the `.AddMarten` integration is not mandatory, see [Creating a standalone
 
 ## Postgres
 
-The next step is to get access to a PostgreSQL **12+** database schema. If you want to let Marten build database schema objects on the fly at development time,
+The next step is to get access to a PostgreSQL **13+** database schema. If you want to let Marten build database schema objects on the fly at development time,
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements.
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).

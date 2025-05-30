@@ -76,8 +76,9 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Introduction',
           collapsed: true,
           items: [
-            { text: 'What is Marten?', link: '/introduction' },
-            { text: 'Getting Started', link: '/getting-started' }
+            { text: 'What is Marten?', link: '/introduction' },        
+            { text: 'Getting Started', link: '/getting-started' },
+            { text: 'Support Policy', link: '/support-policy' },
           ]
         },
         {
