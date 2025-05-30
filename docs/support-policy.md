@@ -4,7 +4,6 @@ Community support (via our Github & Discord) is offered for the current major ve
 
 Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) are granted priority for questions, feature requests and bug fixes. Support for previous versions of Marten is also available under these plans.
 
-
 | Marten Version | End-of-Life |     Status      |  Support Options   |
 | -------------- | :---------: | :-------------: | :----------------: |
 | 8              |   Current   |     Current     | Community/JasperFx |
