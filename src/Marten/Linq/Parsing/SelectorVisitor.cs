@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
+using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
 using Marten.Util;
@@ -58,7 +59,19 @@ public class SelectorVisitor: ExpressionVisitor
             return null;
         }
 
-        return base.VisitMethodCall(node);
+        try
+        {
+            return base.VisitMethodCall(node);
+        }
+        catch (BadLinqExpressionException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            SelectParser.ThrowForUnsupportedMethod(node, e);
+            return null;
+        }
     }
 
     protected override Expression VisitUnary(UnaryExpression node)
