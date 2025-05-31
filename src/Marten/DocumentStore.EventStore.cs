@@ -42,13 +42,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         ProjectionExceptions.RegisterTransientExceptionType<MartenCommandException>();
     }
 
-    DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.As<IDatabaseUser>().Cardinality;
+    DatabaseCardinality IEventStore.DatabaseCardinality => Options.Tenancy.Cardinality;
 
     bool IEventStore.HasMultipleTenants
     {
         get
         {
-            if (Options.Tenancy.As<IDatabaseUser>().Cardinality != DatabaseCardinality.Single) return true;
+            if (Options.Tenancy.Cardinality != DatabaseCardinality.Single) return true;
 
             if (Options.Events.TenancyStyle == TenancyStyle.Conjoined) return true;
 

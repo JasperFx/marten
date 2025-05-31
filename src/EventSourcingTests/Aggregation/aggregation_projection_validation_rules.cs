@@ -151,8 +151,6 @@ public class aggregation_projection_validation_rules
         errors.Single().ShouldBe("SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection");
     }
 
-    // TODO -- move these tests to JasperFx's EventTests
-
     [Fact]
     public void find_bad_method_names_that_are_not_ignored()
     {
@@ -160,7 +158,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
         ex.Message.ShouldContain(
-            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
+            "Unrecognized method name 'DoStuff'. Either mark with [JasperFxIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
     }
 
     [Fact]
