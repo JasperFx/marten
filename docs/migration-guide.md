@@ -168,7 +168,7 @@ You can also read more in [Jeremy's blog post from](https://jeremydmiller.com/20
 AutoCreateSchemaObjects = AutoCreate.All
 ```
 
-- To keep [enum fields](/documents/indexing/duplicated-fields) being stored as `varchar` set store options to:
+* To keep [enum fields](/documents/indexing/duplicated-fields) being stored as `varchar` set store options to:
 
 ```csharp
 DuplicatedFieldEnumStorage = EnumStorage.AsString;
