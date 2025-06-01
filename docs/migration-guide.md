@@ -1,5 +1,49 @@
 # Migration Guide
 
+## Key Changes in 8.0.0
+
+The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
+
+Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at this moment. 
+
+Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
+asynchronous APIs. For example, a call to `IQuerySession.Load<MyEntity(id)` will have to be changed to `await IQuerySession.LoadAsync<MyEntity>(id)`.
+The only exception is the LINQ `ToList()/ToArray()` type operators that result in making database calls with synchronous
+APIs. The Marten team expects that these will probably be removed in Marten 9 and throw `NotSupportedException` exceptions asking
+you to switch to asynchronous methods instead.
+
+The basic shared dependencies underneath Marten and its partner project [Wolverine](https://wolverinefx.net) were consolidated
+for the V8 release into the new, core [JasperFx and JasperFx.Events](https://github.com/jasperfx/jasperfx) libraries. This is
+going to cause some changes to your Marten system when you upgrade:
+
+* JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
+  this point forward, the core JasperFx library has all the command line parsing and you can pretty well change "Oakton" in your code to "JasperFx"
+* The previous "Marten.CommandLine" Nuget was combined into the core Marten library
+* Some core types like `IEvent` and `StreamAction` moved into the new JasperFx.Events library. Hopefully your IDE can help you change namespace references in your code
+
+The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
+for entity types, ancillary document stores, and some internals of the event store still exists unchanged.
+
+The projection base classes changed somewhat for Marten 8:
+
+* The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document (For example, `InvoiceProjection : SingleStreamProjection<Invoice>` in V7 becomes `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>' in V8). This compromise was made to better support the increasing widespread usage of strong typed identifiers.
+* Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach
+* `CustomProjection` has been deprecated and marked as `[Obsolete]`! Moreover, it's just a direct subclass of `MultiStreamProjection` now
+* There is also an option in `EventProjection` to use explicit code in place of the its conventional usage, and this is the new recommended approach
+  for projections that do not fit either of the aggregation use cases (`SingleStream/MultiStreamProjection`)
+
+On the bright side, we believe that the "event slicing" usage in Marten 8 is significantly easier to use than it was before.
+
+The existing "Optimized Artifacts Workflow" was completely removed in V8. Instead though, there is a new option shown below:
+
+snippet: sample_AddMartenWithCustomSessionCreation
+
+Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs
+`Production` time for frequently variable settings like the generated code loading behavior or the classic `AutoCreate` setting
+for whether or not Marten should do runtime migrations of the database structure. Better yet, these settings are global across
+the entire application so that you no longer have to specify the same variable behavior for [Wolverine](https://wolverinefx.net) when using
+both tools together. 
+
 ## Key Changes in 7.0.0
 
 The V7 release significantly impacted Marten internals and also included support for .NET 8 and and upgrade to Npgsql 8.
