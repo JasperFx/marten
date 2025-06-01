@@ -4,6 +4,8 @@
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
 
+V8 depends on Npgsql 9+. 
+
 Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at this moment. 
 
 Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
