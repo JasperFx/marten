@@ -43,6 +43,9 @@ internal class StreamsTable: Table
             Type = "timestamptz", Writes = false, AllowNulls = false, DefaultExpression = "(now())"
         });
 
+        AddColumn("snapshot", "jsonb");
+        AddColumn("snapshot_version", "integer");
+
         AddColumn(new StreamTableColumn("created", x => x.Created)
         {
             Type = "timestamptz", Writes = false, AllowNulls = false, DefaultExpression = "(now())"
