@@ -42,6 +42,7 @@ const config: UserConfig<DefaultTheme.Config> = {
       { text: 'Intro', link: '/introduction' },
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
+      { text: 'Tutorials', link: '/tutorials/', activeMatch: '/tutorials/' },
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/' },
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
@@ -73,22 +74,6 @@ const config: UserConfig<DefaultTheme.Config> = {
 
     sidebar: {
       '/': [
-        {
-          text: 'Tutorial',
-          collapsed: true,
-          items: [
-            { text: 'Building a Freight & Delivery System', link: '/tutorials/introduction' },
-            { text: 'Getting Started', link: '/tutorials/getting-started' },
-            { text: 'Modeling documents', link: '/tutorials/modeling-documents' },
-            { text: 'Evolve to event sourcing', link: '/tutorials/evolve-to-event-sourcing' },
-            { text: 'Event-Sourced Aggregate', link: '/tutorials/event-sourced-aggregate' },
-            { text: 'Read model projections', link: '/tutorials/read-model-projections' },
-            { text: 'Cross-Aggregate Views', link: '/tutorials/cross-aggregate-views' },
-            { text: 'Distributed systems with Wolverine', link: '/tutorials/wolverine-integration' },
-            { text: 'Advanced Considerations', link: '/tutorials/advanced-considerations' },
-            { text: 'Conclusion', link: '/tutorials/conclusion' }
-          ]
-        },
         {
           text: 'Introduction',
           collapsed: true,
@@ -225,6 +210,22 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
             },
+          ]
+        },
+        {
+          text: 'Tutorials',
+          collapsed: true,
+          items: [
+            { text: 'Building a Freight & Delivery System', link: '/tutorials/' },
+            { text: 'Getting Started', link: '/tutorials/getting-started' },
+            { text: 'Modeling documents', link: '/tutorials/modeling-documents' },
+            { text: 'Evolve to event sourcing', link: '/tutorials/evolve-to-event-sourcing' },
+            { text: 'Event-Sourced Aggregate', link: '/tutorials/event-sourced-aggregate' },
+            { text: 'Read model projections', link: '/tutorials/read-model-projections' },
+            { text: 'Cross-Aggregate Views', link: '/tutorials/cross-aggregate-views' },
+            { text: 'Distributed systems with Wolverine', link: '/tutorials/wolverine-integration' },
+            { text: 'Advanced Considerations', link: '/tutorials/advanced-considerations' },
+            { text: 'Conclusion', link: '/tutorials/conclusion' }
           ]
         },
         {
