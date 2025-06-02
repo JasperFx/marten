@@ -35,7 +35,7 @@ DocumentStore.For(_ =>
 
 ## Tenant Id
 
-When working with multitenancy tables, you might wonder if you ever need a single index on the tenantId column, given that it's already the first part of your composite primary key. While the composite key is often sufficient for most queries, there are cases where a dedicated index on just tenantId could still be beneficial for performance on specific query. In that case you can ask Marten to create an index for you on the document's `tenant_id` metadata column either using `IndexedTenantIdAttribute`: 
+When working with multi-tenancy tables, you might wonder if you ever need a single index on the tenantId column, given that it's already the first part of your composite primary key. While the composite key is often sufficient for most queries, there are cases where a dedicated index on just tenantId could still be beneficial for performance on specific query. In that case you can ask Marten to create an index for you on the document's `tenant_id` metadata column either using `IndexedTenantIdAttribute`: 
 
 <!-- snippet: sample_index-tenant-id-via-attribute -->
 <a id='snippet-sample_index-tenant-id-via-attribute'></a>
