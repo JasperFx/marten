@@ -15,14 +15,15 @@ internal class DocumentTable: Table
 {
     private readonly DocumentMapping _mapping;
 
-    public DocumentTable(DocumentMapping mapping): base(mapping.TableName)
+    public DocumentTable(DocumentMapping mapping) : base(mapping.TableName)
     {
         // validate to ensure document has an Identity field or property
         mapping.CompileAndValidate();
 
         _mapping = mapping;
 
-        foreach (var index in mapping.IgnoredIndexes) IgnoredIndexes.Add(index);
+        foreach (var index in mapping.IgnoredIndexes)
+            IgnoredIndexes.Add(index);
 
         var idColumn = new IdColumn(mapping);
 
@@ -31,8 +32,6 @@ internal class DocumentTable: Table
         if (mapping.TenancyStyle == TenancyStyle.Conjoined && mapping.PrimaryKeyTenancyOrdering == PrimaryKeyTenancyOrdering.TenantId_Then_Id)
         {
             AddColumn(mapping.Metadata.TenantId).AsPrimaryKey();
-
-            Indexes.Add(new DocumentIndex(mapping, TenantIdColumn.Name));
         }
 
         AddColumn(idColumn).AsPrimaryKey();
