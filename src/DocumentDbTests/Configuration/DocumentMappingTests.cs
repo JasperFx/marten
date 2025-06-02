@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Exceptions;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
@@ -646,6 +644,23 @@ public class DocumentMappingTests
 
         var table = new DocumentTable(mapping);
         table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void add_the_tenant_id_index_when_it_is_conjoined_tenancy_and_PrimaryKeyTenancyOrdering_id_then_tenant()
+    {
+        var options = new StoreOptions();
+        options.Connection(ConnectionSource.ConnectionString);
+        options.Policies.AllDocumentsAreMultiTenanted();
+
+        var mapping = new DocumentMapping(typeof(User), options);
+        mapping.TenancyStyle = TenancyStyle.Conjoined;
+        mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
+
+        var table = new DocumentTable(mapping);
+        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
     }
 
     [Fact]
