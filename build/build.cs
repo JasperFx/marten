@@ -287,10 +287,10 @@ class Build : NukeBuild
     Target PublishDocsPreview => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
-    
+
     Target PublishDocs => _ => _
-        .DependsOn(NpmInstall, InstallMdSnippets)
-        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy:prod")));
+        .DependsOn(NpmInstall, InstallMdSnippets, DocsBuild)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
     
     Target Benchmarks => _ => _
         .Executes(() =>
