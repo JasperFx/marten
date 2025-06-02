@@ -286,17 +286,11 @@ class Build : NukeBuild
     
     Target PublishDocsPreview => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets)
-        .Executes(() => {
-            Solution.SuppressBuildProjectCheck = true;
-            NpmTasks.NpmRun(s => s.SetCommand("deploy-preview"));
-        });
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy-preview")));
 
     Target PublishDocs => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets, DocsBuild)
-        .Executes(() => {
-            Solution.SuppressBuildProjectCheck = true;
-            NpmTasks.NpmRun(s => s.SetCommand("deploy"));
-        });
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
     
     Target Benchmarks => _ => _
         .Executes(() =>
