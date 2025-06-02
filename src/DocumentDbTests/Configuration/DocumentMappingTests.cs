@@ -640,7 +640,6 @@ public class DocumentMappingTests
         options.Policies.AllDocumentsAreMultiTenanted();
 
         var mapping = new DocumentMapping(typeof(User), options);
-        mapping.TenancyStyle = TenancyStyle.Conjoined;
 
         var table = new DocumentTable(mapping);
         table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
@@ -651,27 +650,24 @@ public class DocumentMappingTests
     public void try_add_the_tenant_id_index_manually_when_it_is_not_multi_tenancy()
     {
         var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
-        options.Policies.AllDocumentsAreMultiTenanted();
 
-        var mapping = new DocumentMapping(typeof(User), options);
-        mapping.TenancyStyle = TenancyStyle.Single;
-        mapping.AddTenantIdIndex();
+        var mapping = new DocumentMapping(typeof(User), options)
+        {
+            TenancyStyle = TenancyStyle.Single
+        };
+        mapping.AddTenantIdIndex(); // this should do nothing since it is not multi-tenancy
 
         var table = new DocumentTable(mapping);
-        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
         table.Indexes.ShouldBeEmpty();
     }
 
     [Fact]
-    public void add_the_tenant_id_index_manually_when_it_is_conjoined_tenancy()
+    public void add_the_tenant_id_index_manually_when_it_is_multi_tenancy()
     {
         var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
         options.Policies.AllDocumentsAreMultiTenanted();
 
         var mapping = new DocumentMapping(typeof(User), options);
-        mapping.TenancyStyle = TenancyStyle.Conjoined;
         mapping.AddTenantIdIndex();
 
         var table = new DocumentTable(mapping);
@@ -683,12 +679,11 @@ public class DocumentMappingTests
     public void add_the_tenant_id_index_when_it_is_conjoined_tenancy_and_PrimaryKeyTenancyOrdering_id_then_tenant()
     {
         var options = new StoreOptions();
-        options.Connection(ConnectionSource.ConnectionString);
-        options.Policies.AllDocumentsAreMultiTenanted();
-
-        var mapping = new DocumentMapping(typeof(User), options);
-        mapping.TenancyStyle = TenancyStyle.Conjoined;
-        mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
+        var mapping = new DocumentMapping(typeof(User), options)
+        {
+            TenancyStyle = TenancyStyle.Conjoined,
+            PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId
+        };
 
         var table = new DocumentTable(mapping);
         table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
