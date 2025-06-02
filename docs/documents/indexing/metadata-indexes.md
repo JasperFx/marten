@@ -33,13 +33,43 @@ DocumentStore.For(_ =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L18-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-last-modified-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Tenant Id
+
+When working with multitenancy tables, you might wonder if you ever need a single index on the tenantId column, given that it's already the first part of your composite primary key. While the composite key is often sufficient for most queries, there are cases where a dedicated index on just tenantId could still be beneficial for performance on specific query. In that case you can ask Marten to create an index for you on the document's `tenant_id` metadata column either using `IndexedTenantIdAttribute`: 
+
+<!-- snippet: sample_index-tenant-id-via-attribute -->
+<a id='snippet-sample_index-tenant-id-via-attribute'></a>
+```cs
+[IndexedTenantId]
+public class TenantIdIndexCustomer
+{
+    public Guid Id { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/MartenRegistryTests.cs#L165-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-tenant-id-via-attribute' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Or by using the fluent interface:
+
+<!-- snippet: sample_index-tenantId-via-fi -->
+<a id='snippet-sample_index-tenantId-via-fi'></a>
+```cs
+DocumentStore.For(_ =>
+{
+    _.Schema.For<User>().MultiTenanted();
+    _.Schema.For<User>().IndexTenantId();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L32-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-tenantId-via-fi' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Soft Delete
 
 If using the [soft deletes](/documents/deletes) functionality you can ask Marten
 to create a partial index on the deleted documents either using `SoftDeletedAttribute`:
 
 <!-- snippet: sample_SoftDeletedWithIndexAttribute -->
-<a id='snippet-sample_softdeletedwithindexattribute'></a>
+<a id='snippet-sample_SoftDeletedWithIndexAttribute'></a>
 ```cs
 [SoftDeleted(Indexed = true)]
 public class IndexedSoftDeletedDoc
@@ -47,7 +77,7 @@ public class IndexedSoftDeletedDoc
     public Guid Id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedwithindexattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_SoftDeletedWithIndexAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface:
