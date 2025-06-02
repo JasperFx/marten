@@ -6,8 +6,8 @@
     "vitepress-build": "vitepress build docs",
     "docs": "concurrently --group mdsnippets \"vitepress dev docs --port 5050 --open\"",
     "docs-build": "concurrently --group mdsnippets \"vitepress build docs\"",
-    "deploy": "netlify deploy",
-    "deploy:prod": "concurrently --group mdsnippets \"vitepress build docs\" \"netlify deploy\""
+    "deploy-preview": "netlify deploy",
+    "deploy": "netlify deploy --prod"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
