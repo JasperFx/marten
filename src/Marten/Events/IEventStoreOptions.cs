@@ -80,8 +80,26 @@ namespace Marten.Events
         /// <summary>
         /// Opt into some performance optimizations for projection rebuilds for both single stream and
         /// multi-stream projections. This will result in new table columns and a potential database
-        /// migration. This will be a default in Marten 8.
+        /// migration.
         /// </summary>
+        /// <remarks>
+        /// <b>Important Limitations and Future Plans:</b>
+        ///
+        /// This optimized rebuild functionality is currently very limited. It is only
+        /// usable if there is exactly *one* single stream projection consuming events from
+        /// any given event stream. If your application has two or more single stream projection
+        /// views for the same events (a perfectly valid and common use case), enabling these
+        /// optimized rebuilds will **not result in correct behavior**.
+        ///
+        /// The MartenDB creator has noted that the current limitations of this optimization
+        /// are a known area for improvement. This functionality may either be thoroughly
+        /// re-addressed and fixed within MartenDB, or potentially externalized into a future
+        /// commercial add-on product (e.g., "CritterWatch"), which is planned to offer more
+        /// advanced event store tooling. Developers should be aware that while this feature
+        /// offers performance benefits in specific, limited scenarios, its broader application
+        /// for multiple single stream projections is currently not supported and may be subject
+        /// to significant changes in its implementation or availability in future versions.
+        /// </remarks>
         public bool UseOptimizedProjectionRebuilds { get; set; }
 
         /// <summary>

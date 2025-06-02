@@ -41,15 +41,16 @@ await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
 
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 
-::: tip
-This optimization will be turned on by default in Marten 8, but we didn't want to force anyone using Marten 7 to have
-to upgrade their database without the explicit opt in configuration.
-:::
-
 ::: warning
 Sorry, but this feature is pretty limited right now. This optimization is only today usable if there is exactly *one*
 single stream projection using any given event stream. If you have two or more single stream projection views for the same
 events -- which is a perfectly valid use case and not uncommon -- the optimized rebuilds will not result in correct behavior.
+
+The current limitations of this optimized rebuild feature are a known area for improvement. 
+The MartenDB creator has indicated that this functionality may either be thoroughly re-addressed and fixed within MartenDB,
+or potentially externalized into a future commercial add-on product (e.g., "CritterWatch") designed to provide more advanced event store tooling.
+Developers should be aware that while this feature offers performance benefits in specific, limited scenarios,
+its broader application for multiple single stream projections is currently not supported and may be subject to future changes in its implementation or availability.
 :::
 
 Marten can optimize the projection rebuilds of single stream projections by opting into this flag in your configuration:
