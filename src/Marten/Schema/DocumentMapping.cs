@@ -81,7 +81,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 {
     internal static bool IsValidIdentityType(Type identityType)
     {
-        if (identityType == null) return false;
+        if (identityType == null)
+            return false;
 
         if (identityType.IsGenericType && identityType.IsNullable())
         {
@@ -410,7 +411,6 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
                    .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
                ?? fieldsWithTypeValidForId
                    .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
-
     }
 
     private static PropertyInfo[] GetProperties(Type type)
@@ -440,6 +440,26 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         Indexes.Add(index);
 
         return index;
+    }
+
+    /// <summary>
+    ///     Creates an index on the tenantId column. 
+    /// </summary>
+    /// <remarks>
+    ///     Only applicable when using multi-tenancy for this table
+    /// </remarks>
+    public DocumentIndex? AddTenantIdIndex(Action<DocumentIndex>? configure = null)
+    {
+        if (TenancyStyle == TenancyStyle.Conjoined)
+        {
+            var index = new DocumentIndex(this, TenantIdColumn.Name);
+            configure?.Invoke(index);
+            Indexes.Add(index);
+
+            return index;
+        }
+
+        return null;
     }
 
     public DocumentIndex AddCreatedAtIndex(Action<DocumentIndex>? configure = null)
@@ -504,7 +524,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         {
             var index = new ComputedIndex(
                 this,
-                members) { Method = indexMethod, Name = indexName, IsUnique = true, TenancyScope = tenancyScope };
+                members)
+            { Method = indexMethod, Name = indexName, IsUnique = true, TenancyScope = tenancyScope };
 
             var existing = Indexes.OfType<ComputedIndex>().FirstOrDefault(x => x.Name == index.Name);
             if (existing != null)
@@ -655,7 +676,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     public DuplicatedField DuplicateField(string memberName, string? pgType = null, bool notNull = false)
     {
         var existing = QueryMembers.MemberFor(memberName);
-        if (existing is DuplicatedField f) return f;
+        if (existing is DuplicatedField f)
+            return f;
 
         var member = (QueryableMember)existing;
 
@@ -690,8 +712,10 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
         if (member is DuplicatedField d)
         {
-            if (pgType != null) d.PgType = pgType;
-            if (columnName != null) d.ColumnName = columnName;
+            if (pgType != null)
+                d.PgType = pgType;
+            if (columnName != null)
+                d.ColumnName = columnName;
             d.NotNull = notNull;
             return d;
         }
@@ -783,7 +807,8 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     internal Type InnerIdType()
     {
-        if (IdStrategy is ValueTypeIdGeneration sti) return sti.SimpleType;
+        if (IdStrategy is ValueTypeIdGeneration sti)
+            return sti.SimpleType;
 
         var memberType = _idMember.GetMemberType();
         return memberType.IsNullable() ? memberType.GetGenericArguments()[0] : memberType;
@@ -798,7 +823,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
 public class DocumentMapping<T>: DocumentMapping
 {
-    public DocumentMapping(StoreOptions storeOptions): base(typeof(T), storeOptions)
+    public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
     {
         var configure = typeof(T).GetMethod("ConfigureMarten", BindingFlags.Static | BindingFlags.Public);
         configure?.Invoke(null, new object[] { this });
@@ -973,7 +998,8 @@ internal static class ForeignKeyExtensions
     public static void TryMoveTenantIdFirst(this ForeignKey foreignKey, DocumentMapping mapping)
     {
         // Guard clause, do nothing if this document is not tenanted or foreign key doesn't contain tenant id
-        if (mapping.TenancyStyle == TenancyStyle.Single || !foreignKey.ColumnNames.Contains(StorageConstants.TenantIdColumn)) return;
+        if (mapping.TenancyStyle == TenancyStyle.Single || !foreignKey.ColumnNames.Contains(StorageConstants.TenantIdColumn))
+            return;
 
         foreignKey.ColumnNames = new string[] { TenantIdColumn.Name }
             .Concat(foreignKey.ColumnNames.Where(x => x != TenantIdColumn.Name)).ToArray();

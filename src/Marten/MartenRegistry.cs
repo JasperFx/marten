@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
-using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -14,11 +13,9 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -48,7 +45,8 @@ internal class DocumentMappingBuilder<T>: IDocumentMappingBuilder
     public DocumentMapping Build(StoreOptions options)
     {
         var mapping = new DocumentMapping<T>(options);
-        foreach (var alteration in _alterations) alteration(mapping);
+        foreach (var alteration in _alterations)
+            alteration(mapping);
 
         return mapping;
     }
@@ -73,7 +71,7 @@ public class MartenRegistry
         _storeOptions = storeOptions;
     }
 
-    protected MartenRegistry(): this(new StoreOptions())
+    protected MartenRegistry() : this(new StoreOptions())
     {
     }
 
@@ -317,6 +315,18 @@ public class MartenRegistry
         public DocumentMappingExpression<T> IndexCreatedAt(Action<DocumentIndex>? configure = null)
         {
             _builder.Alter = m => m.AddCreatedAtIndex(configure);
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Creates an index on the tenantId
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> IndexTenantId(Action<DocumentIndex>? configure = null)
+        {
+            _builder.Alter = m => m.AddTenantIdIndex(configure);
 
             return this;
         }
