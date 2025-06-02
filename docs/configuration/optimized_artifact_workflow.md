@@ -10,7 +10,7 @@ immediate developer productivity:
 ```cs
 var store = DocumentStore.For("connection string");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L122-L126' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L188-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration above, as needed, behind the scenes Marten is:
@@ -39,14 +39,18 @@ options, use this option in Marten bootstrapping:
 using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
-        services.AddMarten("connection string")
+        services.AddMarten("connection string");
 
-            // This feature opts into the new
-            // "Optimized artifact workflow" for Marten >= V5
-            .OptimizeArtifactWorkflow();
+        // In a "Production" environment, we're turning off the
+        // automatic database migrations and dynamic code generation
+        services.CritterStackDefaults(x =>
+        {
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+        });
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L42-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L77-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on a local developer box, Marten is using:
@@ -76,12 +80,16 @@ pre-built ahead of time:
 using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
-        services.AddMarten("connection string")
+        services.AddMarten("connection string");
 
-            // This feature opts into the new
-            // "Optimized artifact workflow" for Marten >= V5
-            .OptimizeArtifactWorkflow(TypeLoadMode.Static);
+        // In a "Production" environment, we're turning off the
+        // automatic database migrations and dynamic code generation
+        services.CritterStackDefaults(x =>
+        {
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+        });
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L59-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L98-L113' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
