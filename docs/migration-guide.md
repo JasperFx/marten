@@ -4,31 +4,44 @@
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
 
-V8 depends on Npgsql 9+. 
+### General
 
-Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at this moment. 
+* 8.0 depends on Npgsql 9 and requires Postgres 13+. Postgres 12 is no longer supported.
 
-Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
+* Marten 8 drops support for .NET 6 and .NET 7. Only .NET 8 and 9 are supported at the moment (.NET 10 is untested).
+
+* Marten 8 **eliminated almost all synchronous API signatures that result in database calls**. Instead you will need to use
 asynchronous APIs. For example, a call to `IQuerySession.Load<MyEntity(id)` will have to be changed to `await IQuerySession.LoadAsync<MyEntity>(id)`.
 The only exception is the LINQ `ToList()/ToArray()` type operators that result in making database calls with synchronous
-APIs. The Marten team expects that these will probably be removed in Marten 9 and throw `NotSupportedException` exceptions asking
+APIs. Due to Npgsql dropping support for sync APIs in Npgsql 10, these APIs will be removed in Marten 9 and throw `NotSupportedException` exceptions asking
 you to switch to asynchronous methods instead.
 
-The basic shared dependencies underneath Marten and its partner project [Wolverine](https://wolverinefx.net) were consolidated
+* Nullable Reference Types has been enabled across the entire project which will result in some APIs appearing nullable or non-nullable when they weren't in the past. Please open an issue if you run into incorrect annotations.
+
+* The basic shared dependencies underneath Marten and its partner project [Wolverine](https://wolverinefx.net) were consolidated
 for the V8 release into the new, core [JasperFx and JasperFx.Events](https://github.com/jasperfx/jasperfx) libraries. This is
 going to cause some changes to your Marten system when you upgrade:
 
-* JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
-  this point forward, the core JasperFx library has all the command line parsing and you can pretty well change "Oakton" in your code to "JasperFx"
-* The previous "Marten.CommandLine" Nuget was combined into the core Marten library
 * Some core types like `IEvent` and `StreamAction` moved into the new JasperFx.Events library. Hopefully your IDE can help you change namespace references in your code
 
-The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
+* JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
+  this point forward, the core JasperFx library has all the command line parsing and you can pretty well change "Oakton" in your code to "JasperFx"
+
+* The previous "Marten.CommandLine" Nuget was combined into the core Marten library
+
+* The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
 for entity types, ancillary document stores, and some internals of the event store still exists unchanged.
 
-The projection base classes changed somewhat for Marten 8:
+### Event Sourcing
 
-* The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document (For example, `InvoiceProjection : SingleStreamProjection<Invoice>` in V7 becomes `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>' in V8). This compromise was made to better support the increasing widespread usage of strong typed identifiers.
+The projection base classes have minor changes in Marten 8:
+
+* The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document. This compromise was made to better support the increasing widespread usage of strong typed identifiers.
+
+v7: `InvoiceProjection : SingleStreamProjection<Invoice>`
+
+v8: `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>`
+
 * Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach
 * `CustomProjection` has been deprecated and marked as `[Obsolete]`! Moreover, it's just a direct subclass of `MultiStreamProjection` now
 * There is also an option in `EventProjection` to use explicit code in place of the its conventional usage, and this is the new recommended approach
@@ -36,9 +49,34 @@ The projection base classes changed somewhat for Marten 8:
 
 On the bright side, we believe that the "event slicing" usage in Marten 8 is significantly easier to use than it was before.
 
+### Conventions
+
 The existing "Optimized Artifacts Workflow" was completely removed in V8. Instead though, there is a new option shown below:
 
-snippet: sample_AddMartenWithCustomSessionCreation
+<!-- snippet: sample_AddMartenWithCustomSessionCreation -->
+<a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
+```cs
+var connectionString = Configuration.GetConnectionString("postgres");
+
+services.AddMarten(opts =>
+    {
+        opts.Connection(connectionString);
+    })
+
+    // Chained helper to replace the built in
+    // session factory behavior
+    .BuildSessionsWith<CustomSessionFactory>();
+
+// In a "Production" environment, we're turning off the
+// automatic database migrations and dynamic code generation
+services.CritterStackDefaults(x =>
+{
+    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+    x.Production.ResourceAutoCreate = AutoCreate.None;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs
 `Production` time for frequently variable settings like the generated code loading behavior or the classic `AutoCreate` setting
