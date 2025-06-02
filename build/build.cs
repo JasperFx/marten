@@ -54,7 +54,8 @@ class Build : NukeBuild
         .Executes(() => File.WriteAllText("src/Marten.Testing/connection.txt", ConnectionString));
 
     Target NpmInstall => _ => _
-        .Executes(() => NpmTasks.NpmInstall());
+        .Executes(() => NpmTasks.NpmInstall(c => c
+            .SetProcessArgumentConfigurator(args => args.Add("--loglevel=error"))));
    
     Target Compile => _ => _
         .DependsOn(Restore)
