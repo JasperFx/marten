@@ -648,6 +648,38 @@ public class DocumentMappingTests
     }
 
     [Fact]
+    public void try_add_the_tenant_id_index_manually_when_it_is_not_multi_tenancy()
+    {
+        var options = new StoreOptions();
+        options.Connection(ConnectionSource.ConnectionString);
+        options.Policies.AllDocumentsAreMultiTenanted();
+
+        var mapping = new DocumentMapping(typeof(User), options);
+        mapping.TenancyStyle = TenancyStyle.Single;
+        mapping.AddTenantIdIndex();
+
+        var table = new DocumentTable(mapping);
+        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void add_the_tenant_id_index_manually_when_it_is_conjoined_tenancy()
+    {
+        var options = new StoreOptions();
+        options.Connection(ConnectionSource.ConnectionString);
+        options.Policies.AllDocumentsAreMultiTenanted();
+
+        var mapping = new DocumentMapping(typeof(User), options);
+        mapping.TenancyStyle = TenancyStyle.Conjoined;
+        mapping.AddTenantIdIndex();
+
+        var table = new DocumentTable(mapping);
+        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
+    }
+
+    [Fact]
     public void add_the_tenant_id_index_when_it_is_conjoined_tenancy_and_PrimaryKeyTenancyOrdering_id_then_tenant()
     {
         var options = new StoreOptions();
