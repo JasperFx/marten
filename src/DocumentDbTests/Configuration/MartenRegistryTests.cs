@@ -6,6 +6,7 @@ using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -135,8 +136,20 @@ public class MartenRegistryTests: OneOffConfigurationsContext
         index.Method.ShouldBe(IndexMethod.brin);
     }
 
+    [Fact]
+    public void tenant_id_index_is_added()
+    {
+        var store = SeparateStore(_ =>
+        {
+            _.Policies.AllDocumentsAreMultiTenanted();
+            _.Schema.For<TenantIdIndexCustomer>();
+        });
 
-    [IndexedTenantId]
+        var mapping = store.StorageFeatures.MappingFor(typeof(TenantIdIndexCustomer)).As<DocumentMapping>();
+
+        mapping.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
+    }
+
     public class Organization
     {
         public Guid Id { get; set; }
@@ -148,6 +161,14 @@ public class MartenRegistryTests: OneOffConfigurationsContext
         public string OtherProp;
         public string OtherField { get; set; }
     }
+
+    #region sample_index-tenant-id-via-attribute
+    [IndexedTenantId]
+    public class TenantIdIndexCustomer
+    {
+        public Guid Id { get; set; }
+    }
+    #endregion
 
     #region sample_OrganizationRegistry
 
