@@ -30,8 +30,9 @@ const config: UserConfig<DefaultTheme.Config> = {
 
     nav: [
       {
-        text: 'latest (v7.x)',
+        text: 'latest (v8.x)',
         items: [
+          { text: 'v7.x', link: 'https://marten-docs-v7.netlify.app', target: "_blank" },
           { text: 'v6.x', link: 'https://marten-docs-v6.netlify.app', target: "_blank" },
           { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" },
           { text: 'v4.x', link: 'https://marten-docs-v4.netlify.app', target: "_blank" },
@@ -92,7 +93,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Introduction',
           collapsed: true,
           items: [
-            { text: 'What is Marten?', link: '/introduction' },        
+            { text: 'What is Marten?', link: '/introduction' },
             { text: 'Getting Started', link: '/getting-started' },
             { text: 'Support Policy', link: '/support-policy' },
           ]
@@ -174,7 +175,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Event Store',
           collapsed: true,
           items: [
-            { text: 'Understanding Event Sourcing', link: '/events/learning' },  
+            { text: 'Understanding Event Sourcing', link: '/events/learning' },
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
             { text: 'Storage', link: '/events/storage' },
@@ -183,7 +184,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
             { text: 'Optimizing Performance', link: '/events/optimizing' },
-              
+
             {
               text: 'Projections Overview', link: '/events/projections/', collapsed: true, items: [
                 {
@@ -191,7 +192,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
                     { text: 'Multi-Stream Projections', link: '/events/projections/multi-stream-projections' },
                     { text: 'Explicit Aggregations', link: '/events/projections/custom-aggregates' },
-                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates'}]
+                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates' }]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
@@ -215,11 +216,11 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Multi-Tenancy',
               link: '/events/multitenancy'
             },
-              {text: 'Stream Compacting', link: '/events/compacting'},
-              {
-                  text: 'Removing Protected Information',
-                  link: '/events/protection'
-              },
+            { text: 'Stream Compacting', link: '/events/compacting' },
+            {
+              text: 'Removing Protected Information',
+              link: '/events/protection'
+            },
             {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
