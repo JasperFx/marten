@@ -36,23 +36,96 @@ return await app.RunJasperFxCommands(args);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L56-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Once the _Marten.CommandLine_ Nuget is installed and Oakton is handling your command line parsing, you should be able to see the Marten commands by typing `dotnet run -- help` in the command line terminal of your choice at the root of your project:
+In your command line in the project directory, you can run:
 
 ```bash
-  ----------------------------------------------------------------------------------------------------------
-    Available commands:
-  ----------------------------------------------------------------------------------------------------------
-        check-env -> Execute all environment checks against the application
-         describe -> Writes out a description of your running application to either the console or a file
-             help -> list all the available commands
-     marten-apply -> Applies all outstanding changes to the database based on the current configuration
-    marten-assert -> Assert that the existing database matches the current Marten configuration
-      marten-dump -> Dumps the entire DDL for the configured Marten database
-     marten-patch -> Evaluates the current configuration against the database and writes a patch and drop file if there are any differences
-      projections -> Rebuilds all projections of specified kind
-              run -> Start and run this .Net application
-  ----------------------------------------------------------------------------------------------------------
+dotnet -- help
 ```
+
+And you will be given a list of commands.
+
+
+
+```bash
+The available commands are:
+
+  Alias         Description
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  check-env     Execute all environment checks against the application
+  codegen       Utilities for working with JasperFx.CodeGeneration and JasperFx.RuntimeCompiler
+  db-apply      Applies all outstanding changes to the database(s) based on the current configuration
+  db-assert     Assert that the existing database(s) matches the current configuration
+  db-dump       Dumps the entire DDL for the configured Marten database
+  db-list       List all database(s) based on the current configuration
+  db-patch      Evaluates the current configuration against the database and writes a patch and drop file if there are any differences
+  describe      Writes out a description of your running application to either the console or a file
+  help          List all the available commands
+  projections   Asynchronous projection and projection rebuilds
+  resources     Check, setup, or teardown stateful resources of this system
+  run           Start and run this .Net application
+  storage       Administer the Wolverine message storage
+```
+
+For any of the listed commands, you can run:
+
+`dotnet -- help ` *`command`*
+
+To see more information about the use of that command.
+
+
+
+## Example Commands
+
+Run these commands in your project's directory.
+
+### List Your Projections
+```bash
+dotnet run -- projections list
+```
+
+### Rebuild Your Projections
+
+To rebuild *all* of your projections:
+
+```bash
+dotnet run -- projections rebuild
+```
+To rebuild a single projection:
+
+```bash
+ dotnet run -- projections -p Course rebuild
+```
+(where `Course` is the name of the projection, from the list)
+
+### Creating a SQL Script from your Marten Database
+
+```sh
+dotnet run -- db-dump -d Marten ./marten.sql
+```
+### Codegen
+
+You can use the CLI to preview, generate, write, or test the code generation:
+
+To Test Codegen:
+
+```bash
+dotnet run -- codegen test
+```
+
+To preview codegen:
+
+```bash
+dotnet run -- codegen preview
+```
+
+To write the codegen to your project (in the `internal/codegen` directory):
+
+```bash
+dotnet run -- codegen write
+```
+
+
+## Outside the Dotnet CLI
 
 If you're not using the dotnet CLI yet, you'd just need to compile your new console application like you've always done and call the exe directly. If you're familiar with the *nix style of command-line interfaces ala Git, you should feel right at home with the command line usage in Marten.
 
