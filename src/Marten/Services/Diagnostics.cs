@@ -56,7 +56,14 @@ public class Diagnostics: IDiagnostics
 
         await using var conn = _store.Tenancy.Default.Database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
-        return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
+        try
+        {
+            return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>

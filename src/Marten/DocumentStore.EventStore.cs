@@ -192,8 +192,12 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         {
             sessionOptions.Tracking = DocumentTracking.IdentityOnly;
         }
+        else
+        {
+            sessionOptions.Tracking = DocumentTracking.None;
+        }
 
-        var session = (DocumentSessionBase)IdentitySession(sessionOptions);
+        var session = (DocumentSessionBase)OpenSession(sessionOptions);
         var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
         {
             ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
