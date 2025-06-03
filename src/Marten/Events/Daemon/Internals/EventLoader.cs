@@ -84,49 +84,56 @@ internal sealed class EventLoader: IEventLoader
         var runtime = request.Runtime;
 
         await using var reader = await session.ExecuteReaderAsync(_command, token).ConfigureAwait(false);
-        while (await reader.ReadAsync(token).ConfigureAwait(false))
+        try
         {
-            try
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                // as a decorator
-                var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
+                try
+                {
+                    // as a decorator
+                    var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
 
-                if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
-                {
-                    @event.AggregateTypeName =
-                        await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
-                }
+                    if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
+                    {
+                        @event.AggregateTypeName =
+                            await reader.GetFieldValueAsync<string>(_aggregateIndex, token).ConfigureAwait(false);
+                    }
 
-                page.Add(@event);
+                    page.Add(@event);
+                }
+                catch (UnknownEventTypeException e)
+                {
+                    if (request.ErrorOptions.SkipUnknownEvents)
+                    {
+                        runtime.Logger.EventUnknown(e.EventTypeName);
+                        skippedEvents++;
+                    }
+                    else
+                    {
+                        // Let any other exception throw
+                        throw;
+                    }
+                }
+                catch (EventDeserializationFailureException e)
+                {
+                    if (request.ErrorOptions.SkipSerializationErrors)
+                    {
+                        runtime.Logger.EventDeserializationException(e.InnerException!.GetType().Name!, e.Sequence);
+                        runtime.Logger.EventDeserializationExceptionDebug(e);
+                        await runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
+                        skippedEvents++;
+                    }
+                    else
+                    {
+                        // Let any other exception throw
+                        throw;
+                    }
+                }
             }
-            catch (UnknownEventTypeException e)
-            {
-                if (request.ErrorOptions.SkipUnknownEvents)
-                {
-                    runtime.Logger.EventUnknown(e.EventTypeName);
-                    skippedEvents++;
-                }
-                else
-                {
-                    // Let any other exception throw
-                    throw;
-                }
-            }
-            catch (EventDeserializationFailureException e)
-            {
-                if (request.ErrorOptions.SkipSerializationErrors)
-                {
-                    runtime.Logger.EventDeserializationException(e.InnerException!.GetType().Name!, e.Sequence);
-                    runtime.Logger.EventDeserializationExceptionDebug(e);
-                    await runtime.RecordDeadLetterEventAsync(e.ToDeadLetterEvent(request.Name)).ConfigureAwait(false);
-                    skippedEvents++;
-                }
-                else
-                {
-                    // Let any other exception throw
-                    throw;
-                }
-            }
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
         }
 
         page.CalculateCeiling(_batchSize, request.HighWater, skippedEvents);

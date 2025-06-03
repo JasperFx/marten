@@ -25,6 +25,10 @@ public partial class MartenDatabase : ISingleQueryRunner
                 Console.WriteLine(e);
                 throw;
             }
+            finally
+            {
+                await conn.CloseAsync().ConfigureAwait(false);
+            }
 
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
             await using var reader = await command.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
@@ -33,16 +37,11 @@ public partial class MartenDatabase : ISingleQueryRunner
             {
                 return await Handler.HandleAsync(reader, cancellation).ConfigureAwait(false);
             }
-            catch (InvalidOperationException e)
-            {
-                throw;
-            }
             finally
             {
                 try
                 {
                     await reader.CloseAsync().ConfigureAwait(false);
-                    await reader.DisposeAsync().ConfigureAwait(false);
                     await conn.CloseAsync().ConfigureAwait(false);
                 }
                 catch (Exception)
@@ -64,9 +63,16 @@ public partial class MartenDatabase : ISingleQueryRunner
         await using var conn = CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
 
-        command.Connection = conn;
+        try
+        {
+            command.Connection = conn;
 
-        await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+            await command.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)

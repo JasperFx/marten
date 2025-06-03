@@ -138,13 +138,18 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         var list = preselectLoadedDocuments(ids, session, out var command);
         var selector = (ISelector<T>)BuildSelector(session);
 
-        await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+        await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        try
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
                 var document = await selector.ResolveAsync(reader, token).ConfigureAwait(false);
                 list.Add(document);
             }
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
         }
 
         return list;

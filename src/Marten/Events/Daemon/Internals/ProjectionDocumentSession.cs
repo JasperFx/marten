@@ -18,7 +18,7 @@ internal class ProjectionDocumentSession: DocumentSessionBase
 
     public ProjectionDocumentSession(DocumentStore store,
         ISessionWorkTracker workTracker,
-        SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, new TransactionalConnection(sessionOptions), workTracker)
+        SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, new AutoClosingLifetime(sessionOptions, store.Options), workTracker)
     {
         Mode = mode;
     }

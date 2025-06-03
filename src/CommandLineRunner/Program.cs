@@ -43,7 +43,7 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
 
                     // If you use compiled queries, you will need to register the
                     // compiled query types with Marten ahead of time
@@ -52,7 +52,7 @@ public static class Program
 
                 services.AddMarten(opts =>
                 {
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
                     opts.DisableNpgsqlLogging = true;
