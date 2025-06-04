@@ -15,7 +15,7 @@ namespace Marten;
 public partial class StoreOptions: ICodeFileCollection
 {
     internal const string PreferJasperFxMessage =
-        "Prefer using the IServiceCollection.AddJasperFx() API to override code generation and AutoCreate configuration across all JasperFx/Critter Stack tools. This API will be removed in Marten 9";
+        "Prefer using the IServiceCollection.CritterStackDefaults() API to override code generation and AutoCreate configuration across all JasperFx/Critter Stack tools. This API will be removed in Marten 9";
 
     /// <summary>
     ///     The main application assembly. By default this is the entry assembly for the application,
