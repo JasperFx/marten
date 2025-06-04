@@ -38,7 +38,23 @@ public class removing_protected_information : OneOffConfigurationsContext
         theEvents.TryMask(@event).ShouldBeTrue();
 
         started.Name.ShouldBe("****");
+    }
 
+    private record AccountChangedRecord(string FirstName, string LastName);
+
+    [Fact]
+    public void match_exactly_on_event_type_when_record()
+    {
+        theEvents.AddMaskingRuleForProtectedInformation<AccountChangedRecord>(x => x with { LastName = "****" });
+
+        var started = new AccountChangedRecord("John", "Doe");
+
+        var @event = new Event<AccountChangedRecord>(started);
+
+        theEvents.TryMask(@event).ShouldBeTrue();
+
+        started.FirstName.ShouldBe("John");
+        started.LastName.ShouldBe("****");
     }
 
     [Fact]
@@ -441,8 +457,6 @@ public class removing_protected_information : OneOffConfigurationsContext
         brandybuck.Data.Members.All(x => x != "*****").ShouldBeTrue();
     }
 }
-
-
 
 public interface IAccountEvent
 {
