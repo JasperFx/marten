@@ -1,9 +1,7 @@
 #nullable enable
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -19,8 +17,7 @@ public class DateTimeOffsetMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        var updatedRawLocator = RawLocator.Replace("d.", "");
-        return TypedLocator.Replace(RawLocator, updatedRawLocator);
+        return TypedLocator.Replace("d.data ->", "data ->");
     }
 
     public override ISqlFragment CreateComparison(string op, ConstantExpression constant)
