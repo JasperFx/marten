@@ -14,7 +14,8 @@ public class DateTimeMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        var updatedRawLocator = RawLocator.Replace("d.", "", StringComparison.InvariantCulture);
+        return TypedLocator.Replace(RawLocator, updatedRawLocator, StringComparison.InvariantCulture);
     }
 }
 
@@ -27,7 +28,8 @@ public class DateOnlyMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        var updatedRawLocator = RawLocator.Replace("d.", "");
+        return TypedLocator.Replace(RawLocator, updatedRawLocator);
     }
 
 }
@@ -41,7 +43,8 @@ public class TimeOnlyMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        var updatedRawLocator = RawLocator.Replace("d.", "");
+        return TypedLocator.Replace(RawLocator, updatedRawLocator);
     }
 
 }
