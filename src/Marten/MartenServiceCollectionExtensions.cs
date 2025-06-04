@@ -180,6 +180,8 @@ public static class MartenServiceCollectionExtensions
             return options;
         });
 
+        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
+
         services.AddSingleton<IDocumentStore>(s =>
         {
             var options = s.GetRequiredService<StoreOptions>();
@@ -312,7 +314,7 @@ public static class MartenServiceCollectionExtensions
             return new DocumentStore(options);
         });
 
-        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s));
+        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s).EventGraph);
 
         return new MartenStoreExpression<T>(services);
     }
