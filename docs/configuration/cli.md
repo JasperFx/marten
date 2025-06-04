@@ -44,8 +44,6 @@ dotnet -- help
 
 And you will be given a list of commands.
 
-
-
 ```bash
 The available commands are:
 
@@ -71,8 +69,6 @@ For any of the listed commands, you can run:
 `dotnet -- help ` *`command`*
 
 To see more information about the use of that command.
-
-
 
 ## Example Commands
 
@@ -123,7 +119,6 @@ To write the codegen to your project (in the `internal/codegen` directory):
 ```bash
 dotnet run -- codegen write
 ```
-
 
 ## Outside the Dotnet CLI
 
