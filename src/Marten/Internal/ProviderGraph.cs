@@ -59,7 +59,7 @@ public class ProviderGraph: IProviderGraph
         if (documentType == typeof(IEvent))
         {
             var rules = _options.CreateGenerationRules();
-            _options.EventGraph.InitializeSynchronously(rules, _options, null);
+            _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
 
             _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
 

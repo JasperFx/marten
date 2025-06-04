@@ -3,7 +3,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.CodeGeneration;
 using JasperFx.CommandLine.Descriptions;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten;
 using Marten.Testing.Documents;
@@ -104,6 +106,15 @@ public class jasper_fx_mechanics
                     return opts;
                 });
             }).StartAsync();
+
+        // Really unrelated and you shouldn't do this, but also I'm adding this assertion
+        var firstStoreEventGraph = host.DocumentStore<IFirstStore>().As<DocumentStore>().Options.EventGraph;
+        var secondStoreEventGraph = host.DocumentStore<IFirstStore>().As<DocumentStore>().Options.EventGraph;
+
+        var codeCollections = host.Services.GetServices<ICodeFileCollection>().ToArray();
+
+        codeCollections.ShouldContain(firstStoreEventGraph);
+        codeCollections.ShouldContain(secondStoreEventGraph);
 
         var part1 = host.Services
             .GetServices<ISystemPart>()

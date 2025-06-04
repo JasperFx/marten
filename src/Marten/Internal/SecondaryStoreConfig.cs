@@ -32,9 +32,11 @@ internal class SecondaryDocumentStores: ICodeFileCollection
     {
         get
         {
-            var rules = _files.First().BuildStoreOptions(Services).CreateGenerationRules();
+            var parentRules = _files.First().BuildStoreOptions(Services).CreateGenerationRules();
+            var rules = new GenerationRules();
 
-            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
+            rules.GeneratedNamespace = "Marten.Generated";
+            rules.GeneratedCodeOutputPath = parentRules.GeneratedCodeOutputPath.ParentDirectory();
 
             return rules;
         }

@@ -1,4 +1,8 @@
 using System.Runtime.CompilerServices;
+using JasperFx.Core;
+using JasperFx.Core.TypeScanning;
+
+[assembly:IgnoreAssembly]
 
 [assembly: InternalsVisibleTo("Marten.Testing")]
 [assembly: InternalsVisibleTo("Marten.CommandLine")]

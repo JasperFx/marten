@@ -43,12 +43,12 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     // If you use compiled queries, you will need to register the
                     // compiled query types with Marten ahead of time
                     opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
-                });
+                }).AddAsyncDaemon(DaemonMode.Solo);
 
                 services.AddMarten(opts =>
                 {
@@ -66,7 +66,7 @@ public static class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 

@@ -9,6 +9,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
 using Marten;
+using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Sessions;
@@ -163,7 +164,7 @@ public class bootstrapping_with_service_collection_extensions
             }).Build();
 
         var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.ApplicationAssembly.ShouldBe(Assembly.GetEntryAssembly());
+        store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
         store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory
             .AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
 
@@ -522,6 +523,8 @@ public class bootstrapping_with_service_collection_extensions
         container.GetInstance<IQuerySession>().ShouldNotBeNull();
 
         container.GetInstance<IDatabaseSource>().ShouldBeSameAs(store.As<DocumentStore>().Tenancy);
+
+        container.GetAllInstances<ICodeFileCollection>().OfType<EventGraph>().Count().ShouldBe(1);
 
         container.Model.For<IOptions<JasperFxOptions>>().Default.ShouldNotBeNull();
 
