@@ -17,11 +17,11 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-    // By a single, concrete type
-    opts.Events.AddMaskingRuleForProtectedInformation<AccountChanged>(x =>
+    // By a single, concrete type (class or record)
+    opts.Events.AddMaskingRuleForProtectedInformation<AccountChanged>(x => x with
     {
         // I'm only masking a single property here, but you could do as much as you want
-        x.Name = "****";
+        Name = "****"
     });
 
     // Maybe you have an interface that multiple event types implement that would help
