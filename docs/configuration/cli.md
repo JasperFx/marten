@@ -66,7 +66,9 @@ The available commands are:
 
 For any of the listed commands, you can run:
 
-`dotnet -- help ` *`command`*
+```bash
+dotnet -- help [command]
+```
 
 To see more information about the use of that command.
 
@@ -75,13 +77,14 @@ To see more information about the use of that command.
 Run these commands in your project's directory.
 
 ### List Your Projections
+
 ```bash
 dotnet run -- projections list
 ```
 
 ### Rebuild Your Projections
 
-To rebuild *all* of your projections:
+To rebuild _all_ of your projections:
 
 ```bash
 dotnet run -- projections rebuild
@@ -98,6 +101,7 @@ To rebuild a single projection:
 ```sh
 dotnet run -- db-dump -d Marten ./marten.sql
 ```
+
 ### Codegen
 
 You can use the CLI to preview, generate, write, or test the code generation:
