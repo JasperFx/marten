@@ -20,8 +20,6 @@ For our delivery system, this means:
 - Natural modeling of workflows and temporal logic
 - Easier integration with external systems through event publishing
 
----
-
 ## Identifying Events (Event Modeling)
 
 The first step is to define our domain events. These events should represent meaningful transitions or actions in the freight shipping process. Based on our earlier description, we have a few key moments:
