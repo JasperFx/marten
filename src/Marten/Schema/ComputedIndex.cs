@@ -83,8 +83,8 @@ public class ComputedIndex: IndexDefinition
                 casing = Casings.Default;
             }
 
-            var rawLocator = member.RawLocator.Replace("d.", "");
-            var typedLocator = member.TypedLocator.Replace(member.RawLocator, rawLocator);
+            var rawLocator = member.RawLocator.Replace("d.data ->", "data ->");
+            var typedLocator = member.TypedLocator.Replace("d.data ->", "data ->");
 
             var sql = member.MemberType.IsEnumerable()
                 ? member is ChildCollectionMember ? typedLocator : rawLocator
