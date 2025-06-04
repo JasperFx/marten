@@ -14,7 +14,6 @@ public class Bug_2169_concurrency_error : BugIntegrationContext
         StoreOptions(options =>
         {
             options.Schema.For<TestObject>().Duplicate(x => x.SomeIntData);
-            options.Schema.For<TestObject>().UniqueIndex(x => x.Id);
             options.Schema.For<TestObject>().UseOptimisticConcurrency(true);
         });
 
