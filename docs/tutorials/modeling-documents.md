@@ -2,16 +2,12 @@
 
 In this chapter, we'll define the domain model for our freight and delivery system and store it in PostgreSQL using Marten as a document database.
 
----
-
 ## Learning Goals
 
 - Design C# document types (`Shipment`, `Driver`)
 - Store documents using Marten
 - Query documents using LINQ
 - Understand Marten's identity and schema conventions
-
----
 
 ## Defining Documents
 
@@ -41,8 +37,6 @@ public class Driver
 
 Once defined, Marten will automatically create tables like `mt_doc_shipment` and `mt_doc_driver` with a `jsonb` column to store the data.
 
----
-
 ## Storing Documents
 
 ```csharp
@@ -70,8 +64,6 @@ await session.SaveChangesAsync();
 
 Marten uses PostgreSQL's `INSERT ... ON CONFLICT DO UPDATE` under the hood to perform upserts.
 
----
-
 ## Querying Documents
 
 Use LINQ queries to fetch or filter data:
@@ -96,8 +88,6 @@ var active = await querySession
 
 > You can also project into DTOs or anonymous types for performance if you don’t need the full document.
 
----
-
 ## Indexing Fields for Performance
 
 If you frequently query by certain fields, consider duplicating them as indexed columns:
@@ -109,8 +99,6 @@ opts.Schema.For<Shipment>().Duplicate(x => x.AssignedDriverId);
 
 This improves query performance by creating indexes on those columns outside the JSON.
 
----
-
 ## Visual Recap
 
 ```mermaid
@@ -119,8 +107,6 @@ flowchart TB
     A2[Driver Registered] -->|Store| C["mt_doc_driver (JSONB)"]
     B -->|Query: Destination = Chicago| D[LINQ Result]
 ```
-
----
 
 ## Summary
 

@@ -7,8 +7,6 @@ This integration serves **two distinct purposes**:
 1. Event-driven messaging and transactional command handling
 2. Coordinated background projection processing in distributed environments
 
----
-
 ## Reliable Messaging with Aggregates
 
 When using event sourcing, emitting events from domain aggregates is common — and often, we want to trigger side effects (notifications, follow-up commands, integration events). With just Marten, you'd need to handle messaging yourself, risking lost messages in case of failure.
@@ -43,8 +41,6 @@ Wolverine will:
 
 The outbox ensures **exactly-once** messaging. The inbox can guarantee that incoming messages are processed **only once**, even across retries.
 
----
-
 ### Distributed Projections in Multi-Node Environments
 
 If you run your freight system across multiple nodes (e.g. for horizontal scaling or redundancy), Marten’s async projection daemon needs coordination — to avoid multiple nodes processing the same projection.
@@ -71,8 +67,6 @@ builder.Services.AddMarten(opts =>
 ```
 
 This ensures that your projection daemon is managed by Wolverine’s distributed coordinator.
-
----
 
 ### Summary
 

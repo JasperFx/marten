@@ -2,8 +2,6 @@
 
 > This tutorial introduces you to Marten through a real-world use case: building a freight and delivery management system using documents and event sourcing. You'll learn not just how to use Marten, but also why and when to apply different features, and how to integrate them with Wolverine for a complete CQRS and messaging architecture.
 
----
-
 ## What You Will Learn
 
 - Why Marten's approach to Postgres as a document and event database is unique and powerful
@@ -13,8 +11,6 @@
 - How to use projections to maintain real-time read models
 - How to reliably send notifications using the Wolverine outbox
 - How to scale with async projections and optimize performance
-
----
 
 ## Why Marten? The Power of Postgres + .NET
 
