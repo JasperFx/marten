@@ -83,9 +83,9 @@ internal class FuncMasker<T> : IMasker where T : notnull
 
     public bool TryMask(IEvent @event)
     {
-        if (@event is IEvent<T> e)
+        if (@event is Event<T> e)
         {
-            e.WithData(_masking(e.Data));
+            e.Data = _masking(e.Data);
             return true;
         }
 
