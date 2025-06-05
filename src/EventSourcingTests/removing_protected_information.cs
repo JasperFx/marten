@@ -53,8 +53,8 @@ public class removing_protected_information : OneOffConfigurationsContext
 
         theEvents.TryMask(@event).ShouldBeTrue();
 
-        started.FirstName.ShouldBe("John");
-        started.LastName.ShouldBe("****");
+        @event.Data.FirstName.ShouldBe("John");
+        @event.Data.LastName.ShouldBe("****");
     }
 
     [Fact]
