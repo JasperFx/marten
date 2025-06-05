@@ -352,9 +352,18 @@ namespace Marten.Events
         /// for an event type "T" or series of event types that can be cast
         /// to "T"
         /// </summary>
-        /// <param name="action"></param>
+        /// <param name="action">Action to mask the current object</param>
         /// <typeparam name="T"></typeparam>
         void AddMaskingRuleForProtectedInformation<T>(Action<T> action);
+
+        /// <summary>
+        /// Register a policy for how to remove or mask protected information
+        /// for an event type "T" or series of event types that can be cast
+        /// to "T"
+        /// </summary>
+        /// <param name="func">Function to replace the event with a masked event</param>
+        /// <typeparam name="T"></typeparam>
+        void AddMaskingRuleForProtectedInformation<T>(Func<T, T> func);
     }
 }
 
