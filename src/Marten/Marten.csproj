@@ -19,6 +19,7 @@
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Schema\SQL\*.*" />
+
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
 
@@ -39,7 +40,7 @@
         <PackageReference Include="JasperFx.Events" Version="1.2.0" />
         <PackageReference Include="JasperFx" Version="1.2.0" />
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.1.0" />
+        <PackageReference Include="Weasel.Postgresql" Version="8.1.1" />
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props" />
