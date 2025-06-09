@@ -57,7 +57,7 @@ public class jasper_fx_mechanics
             .SingleOrDefault();
 
         part.ShouldNotBeNull();
-        part.SubjectUri.ShouldBe(new Uri("marten://documentstore"));
+        part.SubjectUri.ShouldBe(new Uri("marten://store"));
         part.Title.ShouldBe("Marten");
 
         var resources = await part.FindResources();
