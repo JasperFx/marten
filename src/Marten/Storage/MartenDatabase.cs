@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
@@ -101,6 +102,7 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     public override DatabaseDescriptor Describe()
     {
         var descriptor = base.Describe();
+        descriptor.SubjectUri = MartenSystemPart.MartenStoreUri;
         descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
         return descriptor;
     }

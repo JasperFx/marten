@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.CommandLine;
 using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -185,6 +186,14 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IDocumentStore>(s =>
         {
             var options = s.GetRequiredService<StoreOptions>();
+
+            // for the purpose of not losing your sanity
+            // when running command line tools
+            if (JasperFxEnvironment.RunQuiet)
+            {
+                options.DisableNpgsqlLogging = true;
+            }
+
             if (options.Logger().GetType() != typeof(NulloMartenLogger))
             {
                 return new DocumentStore(options);

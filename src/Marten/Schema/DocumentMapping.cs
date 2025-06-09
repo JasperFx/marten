@@ -149,6 +149,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
 
     public IPartitionStrategy? Partitioning { get; set; }
 
+    [IgnoreDescription]
     public DocumentCodeGen? CodeGen { get; private set; }
 
     internal DocumentQueryableMemberCollection QueryMembers { get; }
@@ -443,7 +444,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
     }
 
     /// <summary>
-    ///     Creates an index on the tenantId column. 
+    ///     Creates an index on the tenantId column.
     /// </summary>
     /// <remarks>
     ///     Only applicable when using multi-tenancy for this table
