@@ -12,6 +12,8 @@ namespace Marten;
 
 internal class MartenSystemPart : SystemPartBase
 {
+    public static Uri MartenStoreUri { get; } = new Uri("marten://store");
+
     private readonly IDocumentStore _store;
 
     protected MartenSystemPart(IDocumentStore store, string title, Uri subjectUri) : base(title, subjectUri)
@@ -19,7 +21,7 @@ internal class MartenSystemPart : SystemPartBase
         _store = store;
     }
 
-    public MartenSystemPart(IDocumentStore store) : this(store, "Marten", new Uri("marten://documentstore"))
+    public MartenSystemPart(IDocumentStore store) : this(store, "Marten", MartenStoreUri)
     {
 
     }
