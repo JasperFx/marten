@@ -21,8 +21,7 @@ public partial class StoreOptions
         var provider = Providers.StorageFor<TDoc>();
         var raw = provider.Select(tracking);
 
-        if (raw is IDocumentStorage<TDoc, TId> storage)
-            return storage;
+        if (raw is IDocumentStorage<TDoc, TId> storage) return storage;
 
         var valueTypeInfo = TryFindValueType(raw.IdType);
         if (valueTypeInfo == null)
@@ -77,10 +76,8 @@ public partial class StoreOptions
 
     private bool idMemberIsSettable(MemberInfo idMember)
     {
-        if (idMember is FieldInfo f)
-            return f.IsPublic;
-        if (idMember is PropertyInfo p)
-            return p.CanWrite && p.SetMethod != null;
+        if (idMember is FieldInfo f) return f.IsPublic;
+        if (idMember is PropertyInfo p) return p.CanWrite && p.SetMethod != null;
 
         return false;
     }
@@ -94,19 +91,6 @@ public partial class StoreOptions
     {
         var valueType = ValueTypes.FirstOrDefault(x => x.OuterType == idType);
         return valueType ?? RegisterValueType(idType);
-    }
-
-    /// <summary>
-    /// Register a custom value type with Marten. Doing this enables Marten
-    /// to use this type correctly within LINQ expressions. The "TValueType"
-    /// should wrap a single, primitive value with a single public get-able
-    /// property
-    /// </summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public ValueTypeInfo RegisterValueType<TValueType>() where TValueType : notnull
-    {
-        return RegisterValueType(typeof(TValueType));
     }
 
     /// <summary>
@@ -138,8 +122,7 @@ public partial class StoreOptions
             valueProperty = type.GetProperties().SingleOrDefaultIfMany();
         }
 
-        if (valueProperty == null || !valueProperty.CanRead)
-            throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
+        if (valueProperty == null || !valueProperty.CanRead) throw new InvalidValueTypeException(type, "Must be only a single public, 'gettable' property");
 
         var ctor = type.GetConstructors()
             .FirstOrDefault(x => x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
