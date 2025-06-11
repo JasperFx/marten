@@ -22,10 +22,7 @@ public partial class StoreOptions
 {
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent)
     {
-        if (member == null)
-        {
-            throw new ArgumentNullException(nameof(member));
-        }
+        ArgumentNullException.ThrowIfNull(member);
 
         var memberType = member.GetMemberType();
 

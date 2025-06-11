@@ -28,10 +28,7 @@ internal class EventTracingConnectionLifetime:
     public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, string tenantId,
         OpenTelemetryOptions telemetryOptions)
     {
-        if (innerConnectionLifetime == null)
-        {
-            throw new ArgumentNullException(nameof(innerConnectionLifetime));
-        }
+        ArgumentNullException.ThrowIfNull(innerConnectionLifetime);
 
         if (string.IsNullOrWhiteSpace(tenantId))
         {

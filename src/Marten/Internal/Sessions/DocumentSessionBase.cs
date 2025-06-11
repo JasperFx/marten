@@ -62,10 +62,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     public void Store<T>(params T[] entities) where T : notnull
     {
-        if (entities == null)
-        {
-            throw new ArgumentNullException(nameof(entities));
-        }
+        ArgumentNullException.ThrowIfNull(entities);
 
         if (typeof(T).IsGenericEnumerable())
         {
@@ -124,10 +121,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         assertNotDisposed();
 
-        if (entities == null)
-        {
-            throw new ArgumentNullException(nameof(entities));
-        }
+        ArgumentNullException.ThrowIfNull(entities);
 
         if (typeof(T).IsGenericEnumerable())
         {
@@ -162,10 +156,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     {
         assertNotDisposed();
 
-        if (entities == null)
-        {
-            throw new ArgumentNullException(nameof(entities));
-        }
+        ArgumentNullException.ThrowIfNull(entities);
 
         if (typeof(T).IsGenericEnumerable())
         {

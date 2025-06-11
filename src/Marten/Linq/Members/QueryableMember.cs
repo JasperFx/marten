@@ -28,7 +28,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
     /// <param name="member"></param>
     protected QueryableMember(IQueryableMember parent, Casing casing, MemberInfo member)
     {
-        if (parent == null) throw new ArgumentNullException(nameof(parent));
+        ArgumentNullException.ThrowIfNull(parent);
 
         Member = member;
         MemberType = member is ElementMember m ? m.ReflectedType : member.GetMemberType()!;
