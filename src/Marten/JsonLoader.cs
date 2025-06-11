@@ -20,10 +20,7 @@ internal class JsonLoader: IJsonLoader
 
     public Task<string?> FindByIdAsync<T>(object id, CancellationToken token = default) where T : class
     {
-        if (id == null)
-        {
-            throw new ArgumentNullException(nameof(id));
-        }
+        ArgumentNullException.ThrowIfNull(id);
 
         var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
         return streamer.FindByIdAsync(id, token);
@@ -51,10 +48,7 @@ internal class JsonLoader: IJsonLoader
 
     public Task<bool> StreamById<T>(object id, Stream destination, CancellationToken token = default) where T : class
     {
-        if (id == null)
-        {
-            throw new ArgumentNullException(nameof(id));
-        }
+        ArgumentNullException.ThrowIfNull(id);
 
         var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
         return streamer.StreamJsonById(id, destination, token);

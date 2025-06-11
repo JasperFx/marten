@@ -16,10 +16,7 @@ internal static class SchemaBuilder
 
     public static string GetJavascript(StoreOptions options, string jsfile, string? @namespace = null)
     {
-        if (options == null)
-        {
-            throw new ArgumentNullException(nameof(options));
-        }
+        ArgumentNullException.ThrowIfNull(options);
 
         @namespace ??= typeof(SchemaBuilder).Namespace;
 

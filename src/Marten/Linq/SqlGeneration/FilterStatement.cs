@@ -55,10 +55,7 @@ internal class FilterStatement: SelectorStatement
 {
     public FilterStatement(IMartenSession session, Statement parent, ISqlFragment where)
     {
-        if (where == null)
-        {
-            throw new ArgumentNullException(nameof(where));
-        }
+        ArgumentNullException.ThrowIfNull(where);
 
         Wheres.Add(where);
 
