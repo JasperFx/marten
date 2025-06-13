@@ -19,17 +19,7 @@ With Wolverine:
 
 Example:
 
-```csharp
-[AggregateHandler]
-public static IEnumerable<object> Handle(PickupShipment cmd, FreightShipment shipment)
-{
-    if (shipment.Status != ShipmentStatus.Scheduled)
-        throw new InvalidOperationException("Cannot pick up unscheduled shipment");
-
-    yield return new ShipmentPickedUp(cmd.Timestamp);
-    yield return new NotifyDispatchCenter(shipment.Id, "PickedUp");
-}
-```
+<<< @/src/samples/FreightShipping/WolverineIntegration.cs#aggregate-handler
 
 Wolverine will:
 
@@ -53,18 +43,7 @@ Wolverine offers cluster-wide coordination:
 
 Configuration:
 
-```csharp
-builder.Services.AddMarten(opts =>
-{
-    opts.Connection(connectionString);
-    opts.Projections.Add<FreightShipmentProjection>(ProjectionLifecycle.Async);
-    opts.Projections.Add<DailyStatsProjection>(ProjectionLifecycle.Async);
-})
-.IntegrateWithWolverine(cfg =>
-{
-    cfg.UseWolverineManagedEventSubscriptionDistribution = true;
-});
-```
+<<< @/src/samples/FreightShipping/WolverineIntegration.cs#wolverine-integration
 
 This ensures that your projection daemon is managed by Wolverine’s distributed coordinator.
 
