@@ -54,7 +54,7 @@ public class Bug_2025_event_inheritance_in_projection : IntegrationContext
 
         public void Apply(IdentityAdded @event)
         {
-            if (@event is null) throw new ArgumentNullException();
+            ArgumentNullException.ThrowIfNull(@event);
 
             LastName = @event.LastName;
             FirstName = @event.FirstName;

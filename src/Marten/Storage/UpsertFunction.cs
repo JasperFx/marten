@@ -35,10 +35,7 @@ internal class UpsertFunction: Function
     {
         _mapping = mapping;
         _disableConcurrency = disableConcurrency;
-        if (mapping == null)
-        {
-            throw new ArgumentNullException(nameof(mapping));
-        }
+        ArgumentNullException.ThrowIfNull(mapping);
 
         _tableName = mapping.TableName;
 

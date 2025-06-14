@@ -20,10 +20,7 @@ internal class JsonArrayPool<T>: IArrayPool<T>
 
     public void Return(T[]? array)
     {
-        if (array == null)
-        {
-            throw new ArgumentNullException(nameof(array));
-        }
+        ArgumentNullException.ThrowIfNull(array);
 
         _inner.Return(array);
     }

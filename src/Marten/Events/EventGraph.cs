@@ -158,10 +158,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     public IEvent BuildEvent(object eventData)
     {
-        if (eventData == null)
-        {
-            throw new ArgumentNullException(nameof(eventData));
-        }
+        ArgumentNullException.ThrowIfNull(eventData);
 
         var mapping = EventMappingFor(eventData.GetType());
         return mapping.Wrap(eventData);

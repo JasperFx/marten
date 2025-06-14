@@ -193,10 +193,7 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
 
     internal IDocumentMapping FindMapping(Type documentType)
     {
-        if (documentType == null)
-        {
-            throw new ArgumentNullException(nameof(documentType));
-        }
+        ArgumentNullException.ThrowIfNull(documentType);
 
         if (!_mappings.Value.TryFind(documentType, out var value))
         {
