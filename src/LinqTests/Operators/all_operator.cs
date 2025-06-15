@@ -19,13 +19,13 @@ public class all_operator: IntegrationContext
     [Fact]
     public async Task invoking_queryable_all_operation_test1()
     {
-        theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
-        theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Sam" , Roles = new []{ "R1", "R2"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
+        theSession.Store(new User { FirstName = "Hank" , Roles = ["R1", default(string)]});
+        theSession.Store(new User { FirstName = "Bill" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Sam" , Roles = ["R1", "R2"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
@@ -38,13 +38,13 @@ public class all_operator: IntegrationContext
     [Fact]
     public async Task invoking_queryable_all_operation_test2()
     {
-        theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
-        theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Sam" , Roles = new []{ "R1", "R2"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
+        theSession.Store(new User { FirstName = "Hank" , Roles = ["R1", default(string)]});
+        theSession.Store(new User { FirstName = "Bill" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Sam" , Roles = ["R1", "R2"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
@@ -57,13 +57,13 @@ public class all_operator: IntegrationContext
     [Fact]
     public async Task invoking_queryable_all_operation_test3()
     {
-        theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
-        theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Sam" , Roles = new []{ "R1", "R2"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
+        theSession.Store(new User { FirstName = "Hank" , Roles = ["R1", default(string)]});
+        theSession.Store(new User { FirstName = "Bill" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Sam" , Roles = ["R1", "R2"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
         var results = theSession.Query<User>()
@@ -76,13 +76,13 @@ public class all_operator: IntegrationContext
     [Fact]
     public async Task invoking_queryable_all_operation_test4()
     {
-        theSession.Store(new User { FirstName = "Hank" , Roles = new []{ "R1", default(string)}});
-        theSession.Store(new User { FirstName = "Bill" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Sam" , Roles = new []{ "R1", "R2"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R3", "R5"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Tom" , Roles = new []{ "R1", "R1"} });
-        theSession.Store(new User { FirstName = "Joe" , Roles = new []{ default(string), default(string)} });
+        theSession.Store(new User { FirstName = "Hank" , Roles = ["R1", default(string)]});
+        theSession.Store(new User { FirstName = "Bill" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Sam" , Roles = ["R1", "R2"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R3", "R5"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Tom" , Roles = ["R1", "R1"] });
+        theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
         /* SHOULD BE
@@ -114,22 +114,22 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     {
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            FirstName = "Bill" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
         await theSession.SaveChangesAsync();
@@ -146,22 +146,22 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     {
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            FirstName = "Bill" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
         await theSession.SaveChangesAsync();
@@ -178,22 +178,22 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     {
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            FirstName = "Bill" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
         await theSession.SaveChangesAsync();
@@ -210,22 +210,22 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
     {
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Bill" , Roles = new []{ "R1", default(string)},
+            FirstName = "Bill" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F1"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = "F1"}, new(){ Name = "F2"}}
         });
         theSession.Store(new User
         {
-            FirstName = "Joe" , Roles = new []{ "R1", default(string)},
+            FirstName = "Joe" , Roles = ["R1", default(string)],
             Friends = new List<Friend> { new(){ Name = default}, new(){ Name = default}}
         });
         await theSession.SaveChangesAsync();
