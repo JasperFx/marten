@@ -83,13 +83,13 @@ internal sealed class KnownNotSupportedExceptionCause
         "Full Text Search needs at least Postgres version 10.",
         NotSupportedReason.FullTextSearchNeedsAtLeastPostgresVersion10,
         e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
-             new Regex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist").IsMatch(pe.Message));
+             KnownNotSupportedExceptionCauseRegexExpressions.ToTsvectorOnJsonbRegex().IsMatch(pe.Message));
 
     internal static readonly KnownNotSupportedExceptionCause WebStyleSearch = new(
         "Full Text Search needs at least Postgres version 10.",
         NotSupportedReason.WebStyleSearchNeedsAtLeastPostgresVersion11,
         e => e is PostgresException pe && pe.SqlState == PostgresErrorCodes.UndefinedFunction &&
-             new Regex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist").IsMatch(pe.Message));
+             KnownNotSupportedExceptionCauseRegexExpressions.WebStyleSearchRegex().IsMatch(pe.Message));
 
     internal static readonly KnownNotSupportedExceptionCause[] KnownCauses = { ToTsvectorOnJsonb, WebStyleSearch };
     private readonly Func<Exception, bool> match;
@@ -107,5 +107,14 @@ internal sealed class KnownNotSupportedExceptionCause
     internal bool Matches(Exception e)
     {
         return match(e);
+    }
+
+    private static partial class KnownNotSupportedExceptionCauseRegexExpressions
+    {
+        [GeneratedRegex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist")]
+        internal static partial Regex ToTsvectorOnJsonbRegex();
+
+        [GeneratedRegex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist")]
+        internal static partial Regex WebStyleSearchRegex();
     }
 }
