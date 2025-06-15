@@ -86,7 +86,7 @@ public class removing_protected_information : OneOffConfigurationsContext
             theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
@@ -140,7 +140,7 @@ public class removing_protected_information : OneOffConfigurationsContext
             theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
@@ -200,7 +200,7 @@ public class removing_protected_information : OneOffConfigurationsContext
             theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
@@ -262,7 +262,7 @@ public class removing_protected_information : OneOffConfigurationsContext
             theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam")).Id;
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         var streamId2 = theSession.Events.StartStream<Quest>(new QuestStarted{Name = "Find the Eye of the World"}, new MembersJoined(1, "Fal Dara", "Rand", "Perrin", "Mat")).Id;
@@ -321,7 +321,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam"));
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         var streamId2 = Guid.NewGuid().ToString();
@@ -384,7 +384,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam"), new MembersJoined(3, "Brandybuck", "Merry", "Pippin"));
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         await theStore.Advanced.ApplyEventDataMasking(x =>
@@ -432,7 +432,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted{Name = "Find Gandalf"}, new MembersJoined(1, "Hobbiton", "Frodo", "Sam"), new MembersJoined(3, "Brandybuck", "Merry", "Pippin"));
         await theSession.SaveChangesAsync();
 
-        theSession.Events.Append(streamId, new MembersDeparted { Members = new string[] { "Frodo" } });
+        theSession.Events.Append(streamId, new MembersDeparted { Members = ["Frodo"] });
         await theSession.SaveChangesAsync();
 
         await theStore.Advanced.ApplyEventDataMasking(x =>

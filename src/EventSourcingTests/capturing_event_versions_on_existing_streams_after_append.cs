@@ -67,8 +67,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.StartStream<Quest>(streamId, joined, departed);
             await session.SaveChangesAsync();
@@ -86,8 +86,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined2 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined2 = new MembersJoined { Members = ["Egwene"] };
+            var departed2 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(streamId, joined2, departed2);
             await session.SaveChangesAsync();
@@ -100,8 +100,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined3 = new MembersJoined { Members = ["Egwene"] };
+            var departed3 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(streamId, joined3, departed3);
             await session.SaveChangesAsync();
@@ -121,8 +121,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.StartStream<Quest>(streamId, joined, departed);
             await session.SaveChangesAsync();
@@ -135,8 +135,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined2 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined2 = new MembersJoined { Members = ["Egwene"] };
+            var departed2 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(streamId, joined2, departed2);
             await session.SaveChangesAsync();
@@ -149,8 +149,8 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
         {
             session.Logger = logger;
 
-            var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined3 = new MembersJoined { Members = ["Egwene"] };
+            var departed3 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(streamId, joined3, departed3);
             await session.SaveChangesAsync();

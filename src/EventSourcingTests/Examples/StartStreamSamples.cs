@@ -42,8 +42,8 @@ public class StartStreamSamples
 
     public async Task start_stream_with_guid_stream_identifiers(IDocumentSession session)
     {
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         // Let Marten assign a new Stream Id, and mark the stream with an aggregate type
         // 'Quest'

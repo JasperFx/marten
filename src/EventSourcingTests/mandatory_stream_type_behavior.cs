@@ -27,12 +27,12 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
 
         Should.Throw<StreamTypeMissingException>(() =>
         {
-            theSession.Events.StartStream(Guid.NewGuid(), new object[] { new AEvent() });
+            theSession.Events.StartStream(Guid.NewGuid(), [new AEvent()]);
         });
 
         Should.Throw<StreamTypeMissingException>(() =>
         {
-            theSession.Events.StartStream(new object[] { new AEvent() });
+            theSession.Events.StartStream([new AEvent()]);
         });
 
         Should.Throw<StreamTypeMissingException>(() =>
@@ -52,7 +52,7 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
 
         Should.Throw<StreamTypeMissingException>(() =>
         {
-            theSession.Events.StartStream(Guid.NewGuid().ToString(), new object[] { new AEvent() });
+            theSession.Events.StartStream(Guid.NewGuid().ToString(), [new AEvent()]);
         });
 
         Should.Throw<StreamTypeMissingException>(() =>

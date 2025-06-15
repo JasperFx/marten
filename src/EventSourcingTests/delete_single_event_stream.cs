@@ -21,13 +21,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 
@@ -53,13 +53,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession("one"))
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 
@@ -84,13 +84,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 
@@ -116,13 +116,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await using (var session = theStore.LightweightSession("one"))
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 
@@ -151,13 +151,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 
@@ -187,13 +187,13 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession("one"))
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream1, joined, departed);
 
-            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined2 = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed2 = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(stream2, joined2, departed2);
 

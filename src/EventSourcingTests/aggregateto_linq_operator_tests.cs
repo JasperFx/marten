@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,11 +13,11 @@ namespace EventSourcingTests;
 
 public class aggregateTo_linq_operator_tests: DestructiveIntegrationContext
 {
-    private readonly MembersJoined _joined1 = new() { Members = new[] { "Rand", "Matrim", "Perrin", "Thom" } };
-    private readonly MembersDeparted _departed1 = new() { Members = new[] {"Thom"} };
+    private readonly MembersJoined _joined1 = new() { Members = ["Rand", "Matrim", "Perrin", "Thom"] };
+    private readonly MembersDeparted _departed1 = new() { Members = ["Thom"] };
 
-    private readonly MembersJoined _joined2 = new() { Members = new[] {"Elayne", "Moiraine", "Elmindreda"} };
-    private readonly MembersDeparted _departed2 = new() { Members = new[] {"Moiraine"} };
+    private readonly MembersJoined _joined2 = new() { Members = ["Elayne", "Moiraine", "Elmindreda"] };
+    private readonly MembersDeparted _departed2 = new() { Members = ["Moiraine"] };
 
     [Fact]
     public async Task can_aggregate_events_to_aggregate_type_asynchronously()

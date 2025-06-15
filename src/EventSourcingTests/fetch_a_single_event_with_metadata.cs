@@ -15,14 +15,14 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
 
     private readonly MembersJoined joined = new MembersJoined
     {
-        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+        Day = 2, Location = "Faldor's Farm", Members = ["Garion", "Polgara", "Belgarath"]
     };
 
     private readonly MonsterSlayed slayed1 = new MonsterSlayed { Name = "Troll" };
     private readonly MonsterSlayed slayed2 = new MonsterSlayed { Name = "Dragon" };
 
     private readonly MembersJoined joined2 =
-        new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+        new MembersJoined { Day = 5, Location = "Sendaria", Members = ["Silk", "Barak"] };
 
     [Fact]
     public async Task fetch_with_metadata_synchronously()

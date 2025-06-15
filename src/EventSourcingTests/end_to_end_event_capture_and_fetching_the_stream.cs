@@ -20,9 +20,9 @@ namespace EventSourcingTests;
 public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
-    private static readonly string[] SameTenants = { "tenant", "tenant" };
-    private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
-    private static readonly string[] DefaultTenant = { StorageConstants.DefaultTenantId };
+    private static readonly string[] SameTenants = ["tenant", "tenant"];
+    private static readonly string[] DifferentTenants = ["tenant", "differentTenant"];
+    private static readonly string[] DefaultTenant = [StorageConstants.DefaultTenantId];
 
     public end_to_end_event_capture_and_fetching_the_stream(ITestOutputHelper output)
     {
@@ -51,8 +51,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             #region sample_start-stream-with-aggregate-type
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
@@ -84,8 +84,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             #region sample_start-stream-with-aggregate-type
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
@@ -117,8 +117,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             #region sample_start-stream-with-aggregate-type
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
@@ -151,8 +151,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             #region sample_start-stream-with-aggregate-type
 
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             var id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();
@@ -288,8 +288,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             {
                 #region sample_start-stream-with-existing-guid
 
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
@@ -319,8 +319,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
@@ -360,8 +360,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             using (var session = store.LightweightSession(tenantId))
             {
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 session.Events.Append(id, joined);
                 session.Events.Append(id, departed);
@@ -395,8 +395,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 var id = session.Events.StartStream<Quest>(joined, departed).Id;
                 await session.SaveChangesAsync();
@@ -424,8 +424,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined, departed);
@@ -455,8 +455,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 var id = Guid.NewGuid();
                 session.Events.StartStream<Quest>(id, joined);
@@ -498,8 +498,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             {
                 #region sample_append-events
 
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 session.Events.Append(id, joined, departed);
 
@@ -543,8 +543,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
                 session.Events.StartStream<Quest>(id, started);
                 await session.SaveChangesAsync();
 
-                var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-                var departed = new MembersDeparted { Members = new[] { "Thom" } };
+                var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+                var departed = new MembersDeparted { Members = ["Thom"] };
 
                 // Events are appended into the stream only if the maximum event id for the stream
                 // would be 3 after the append operation.

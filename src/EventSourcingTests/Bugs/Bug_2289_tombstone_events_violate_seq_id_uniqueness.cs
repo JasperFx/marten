@@ -21,8 +21,8 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
     [Fact]
     public async Task ensure_tombstone_event_has_sequence_set()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
         await theSession.SaveChangesAsync();
@@ -31,8 +31,8 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
 
         using (var session = theStore.LightweightSession())
         {
-            var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined3 = new MembersJoined { Members = ["Egwene"] };
+            var departed3 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(stream, joined3, departed3);
             await session.SaveChangesAsync();

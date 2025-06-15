@@ -18,8 +18,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task should_check_max_event_id_on_append()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
         theSession.Events.Append(stream, 2, departed);
@@ -35,8 +35,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task should_not_append_events_when_unexpected_max_version()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var stream = theSession.Events.StartStream<Quest>(joined).Id;
         await theSession.SaveChangesAsync();
@@ -45,8 +45,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined3 = new MembersJoined { Members = ["Egwene"] };
+            var departed3 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(stream, joined3, departed3);
             await session.SaveChangesAsync();
@@ -68,8 +68,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     {
         UseStreamIdentity(StreamIdentity.AsString);
 
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var stream = "First";
 
@@ -89,8 +89,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     {
         UseStreamIdentity(StreamIdentity.AsString);
 
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var stream = "Another";
         theSession.Events.Append(stream, joined);
@@ -100,8 +100,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            var joined3 = new MembersJoined { Members = new[] { "Egwene" } };
-            var departed3 = new MembersDeparted { Members = new[] { "Perrin" } };
+            var joined3 = new MembersJoined { Members = ["Egwene"] };
+            var departed3 = new MembersDeparted { Members = ["Perrin"] };
 
             session.Events.Append(stream, joined3, departed3);
             await session.SaveChangesAsync();
@@ -121,7 +121,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task should_check_max_event_id_on_append_to_empty_stream()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
 
         var stream = Guid.NewGuid();
 
@@ -137,7 +137,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task happy_path_on_append_to_empty_stream()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
 
         var stream = Guid.NewGuid();
 
@@ -151,7 +151,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public void should_assert_that_the_expected_version_would_be_impossible()
     {
-        var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
 
         var stream = Guid.NewGuid();
 
