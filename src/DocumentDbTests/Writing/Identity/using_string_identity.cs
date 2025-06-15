@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
@@ -95,7 +95,7 @@ public class using_string_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        (await session.LoadManyAsync<Account>("A", "B", "E")).Count().ShouldBe(3);
+        (await session.LoadManyAsync<Account>("A", "B", "E")).Count.ShouldBe(3);
     }
 
     public using_string_identity(DefaultStoreFixture fixture) : base(fixture)

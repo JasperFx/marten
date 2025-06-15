@@ -223,7 +223,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
 
     public void Compile(MethodCallExpression methodCallExpression)
     {
-        if (Wheres.Count() == 1)
+        if (Wheres.Count == 1)
         {
             switch (Wheres.Single())
             {

@@ -255,7 +255,7 @@ public class compiled_queries: IntegrationContext
         stream.Position = 0;
 
         var users = theStore.Options.Serializer().FromJson<User[]>(stream);
-        users.Count().ShouldBe(2);
+        users.Length.ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
         users.ElementAt(1).UserName.ShouldBe("shadetreedev");
     }
@@ -270,7 +270,7 @@ public class compiled_queries: IntegrationContext
         stream.Position = 0;
 
         var users = theStore.Options.Serializer().FromJson<User[]>(stream);
-        users.Count().ShouldBe(2);
+        users.Length.ShouldBe(2);
         users.ElementAt(0).UserName.ShouldBe("jdm");
         users.ElementAt(1).UserName.ShouldBe("shadetreedev");
     }
