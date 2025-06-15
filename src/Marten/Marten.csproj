@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <Description>.NET Transactional Document DB and Event Store on PostgreSQL</Description>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
@@ -10,6 +10,11 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <PropertyGroup>
+        <!-- https://devblogs.microsoft.com/dotnet/producing-packages-with-source-link/#using-source-link -->    
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <DebugType>embedded</DebugType>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_grams_array.sql" />
@@ -41,6 +46,7 @@
         <PackageReference Include="JasperFx" Version="1.2.0" />
         <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0" />
         <PackageReference Include="Weasel.Postgresql" Version="8.1.1" />
+        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props" />
