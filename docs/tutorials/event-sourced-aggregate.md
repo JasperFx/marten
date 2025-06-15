@@ -6,54 +6,7 @@ Fortunately, Marten can do a lot of this heavy lifting for us if we define how o
 
 ## Defining the Aggregate with Static Apply Methods
 
-```csharp
-public class FreightShipment
-{
-    public Guid Id { get; private set; }
-    public string Origin { get; private set; }
-    public string Destination { get; private set; }
-    public ShipmentStatus Status { get; private set; }
-    public DateTime ScheduledAt { get; private set; }
-    public DateTime? PickedUpAt { get; private set; }
-    public DateTime? DeliveredAt { get; private set; }
-    public DateTime? CancelledAt { get; private set; }
-    public string CancellationReason { get; private set; }
-
-    public static FreightShipment Create(ShipmentScheduled @event)
-    {
-        return new FreightShipment
-        {
-            Id = @event.ShipmentId,
-            Origin = @event.Origin,
-            Destination = @event.Destination,
-            Status = ShipmentStatus.Scheduled,
-            ScheduledAt = @event.ScheduledAt
-        };
-    }
-
-    public static FreightShipment Apply(FreightShipment current, ShipmentPickedUp @event)
-    {
-        current.Status = ShipmentStatus.InTransit;
-        current.PickedUpAt = @event.PickedUpAt;
-        return current;
-    }
-
-    public static FreightShipment Apply(FreightShipment current, ShipmentDelivered @event)
-    {
-        current.Status = ShipmentStatus.Delivered;
-        current.DeliveredAt = @event.DeliveredAt;
-        return current;
-    }
-
-    public static FreightShipment Apply(FreightShipment current, ShipmentCancelled @event)
-    {
-        current.Status = ShipmentStatus.Cancelled;
-        current.CancelledAt = @event.CancelledAt;
-        current.CancellationReason = @event.Reason;
-        return current;
-    }
-}
-```
+<<< @/src/samples/FreightShipping/EventSourcedAggregate.cs#define-aggregate
 
 ### Comparison to Document Modeling
 
@@ -84,11 +37,7 @@ We’ll explore both, starting with on-demand aggregation.
 
 Marten provides an easy way to aggregate a stream of events into an object: `AggregateStreamAsync<T>()`. We can use this to fetch the latest state without having stored a document. For example:
 
-```csharp
-// Assuming we have a stream of events for shipmentId (from earlier Part)
-var currentState = await session.Events.AggregateStreamAsync<FreightShipment>(shipmentId);
-Console.WriteLine($"State: {currentState.Status}, PickedUpAt: {currentState.PickedUpAt}");
-```
+<<< @/src/samples/FreightShipping/EventSourcedAggregate.cs#live-aggregate
 
 When this code runs, Marten will fetch all events for the given stream ID from the database, then create a `FreightShipment` and apply each event (using the `Apply` methods we defined) to produce `currentState`. If our earlier events were Scheduled, PickedUp, Delivered, the resulting `currentState` should have `Status = Delivered` and the `PickedUpAt`/`DeliveredAt` times set appropriately.
 
@@ -102,69 +51,15 @@ In some scenarios, we want Marten to automatically maintain a document that refl
 
 To do this, we can register a `SingleStreamProjection<T>` and configure it to run inline. This projection class applies events from one stream and writes the resulting document to the database as part of the same transaction.
 
-```csharp
-public class ShipmentView
-{
-    public Guid Id { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
-    public string Status { get; set; }
-    public DateTime? PickedUpAt { get; set; }
-    public DateTime? DeliveredAt { get; set; }
-}
-
-public class ShipmentViewProjection : SingleStreamProjection<ShipmentView>
-{
-    public ShipmentView Create(ShipmentScheduled @event) => new ShipmentView
-    {
-        Id = @event.ShipmentId,
-        Origin = @event.Origin,
-        Destination = @event.Destination,
-        Status = "Scheduled"
-    };
-
-    public void Apply(ShipmentView view, ShipmentPickedUp @event)
-    {
-        view.Status = "InTransit";
-        view.PickedUpAt = @event.PickedUpAt;
-    }
-
-    public void Apply(ShipmentView view, ShipmentDelivered @event)
-    {
-        view.Status = "Delivered";
-        view.DeliveredAt = @event.DeliveredAt;
-    }
-}
-```
+<<< @/src/samples/FreightShipping/EventSourcedAggregate.cs#single-stream-projection
 
 Register the projection during configuration:
 
-```csharp
-var store = DocumentStore.For(opts =>
-{
-    opts.Connection(connectionString);
-    opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Inline);
-});
-```
+<<< @/src/samples/FreightShipping/EventSourcedAggregate.cs#store-setup
 
 Let’s illustrate how this works with our shipment example:
 
-```csharp
-using var session = store.LightweightSession();
-
-var sid = Guid.NewGuid();
-var evt1 = new ShipmentScheduled(sid, "Los Angeles", "Tokyo", DateTime.UtcNow);
-session.Events.StartStream<ShipmentView>(sid, evt1);
-await session.SaveChangesAsync();  // Inserts initial ShipmentView
-
-var evt2 = new ShipmentPickedUp(DateTime.UtcNow.AddHours(2));
-session.Events.Append(sid, evt2);
-await session.SaveChangesAsync();  // Updates ShipmentView.Status and PickedUpAt
-
-var doc = await session.LoadAsync<ShipmentView>(sid);
-Console.WriteLine(doc.Status);         // InTransit
-Console.WriteLine(doc.PickedUpAt);    // Set to pickup time
-```
+<<< @/src/samples/FreightShipping/EventSourcedAggregate.cs#shipment-example
 
 This flow shows that each time we append an event, Marten applies the changes immediately and updates the document inside the same transaction. This ensures strong consistency between the event stream and the projected view.
 

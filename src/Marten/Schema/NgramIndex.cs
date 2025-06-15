@@ -75,7 +75,8 @@ public class NgramIndex: IndexDefinition
 
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[] members)
     {
-        var dataConfig = $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.data ->", "data ->")}";
+        var dataConfig = $"{mapping.QueryMembers.MemberFor(members).TypedLocator.Replace("d.", "")}";
+
         return $"{dataConfig}";
     }
 }

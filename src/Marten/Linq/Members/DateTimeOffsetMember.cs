@@ -17,7 +17,7 @@ public class DateTimeOffsetMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.data ->", "data ->");
+        return TypedLocator.Replace("d.", "");
     }
 
     public override ISqlFragment CreateComparison(string op, ConstantExpression constant)

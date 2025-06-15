@@ -31,12 +31,7 @@ The first step is to define our domain events. These events should represent mea
 
 Each of these will be an event. In naming events, a common best practice is to use past-tense verbs or descriptive phrases because events represent **something that has happened**. Also, events should carry the data relevant to that change. Let’s define our events as C# record types:
 
-```csharp
-public record ShipmentScheduled(Guid ShipmentId, string Origin, string Destination, DateTime ScheduledAt);
-public record ShipmentPickedUp(DateTime PickedUpAt);
-public record ShipmentDelivered(DateTime DeliveredAt);
-public record ShipmentCancelled(string Reason, DateTime CancelledAt);
-```
+<<< @/src/samples/FreightShipping/EvolveToEventSourcing.cs#identify-events
 
 We’ve declared four event types:
 
@@ -66,28 +61,7 @@ In this diagram, **Scheduled**, **InTransit**, **Delivered**, and **Cancelled** 
 
 Marten’s event store allows us to record these events in the database. Each shipment’s events will be stored in order within its own stream. Let’s see how to append events using Marten. We’ll simulate creating a shipment and then recording a pickup and delivery:
 
-```csharp
-using var session = store.LightweightSession();
-
-// 1. Start a new event stream for a shipment
-var shipmentId = Guid.NewGuid();
-var scheduleEvent = new ShipmentScheduled(shipmentId, "Rotterdam", "New York", DateTime.UtcNow);
-session.Events.StartStream<FreightShipment>(shipmentId, scheduleEvent);
-await session.SaveChangesAsync();
-Console.WriteLine($"Started stream {shipmentId} with ShipmentScheduled.");
-
-// 2. Append a ShipmentPickedUp event (in a real scenario, later in time)
-var pickupEvent = new ShipmentPickedUp(DateTime.UtcNow.AddHours(5));
-session.Events.Append(shipmentId, pickupEvent);
-
-// 3. Append a ShipmentDelivered event
-var deliveredEvent = new ShipmentDelivered(DateTime.UtcNow.AddDays(1));
-session.Events.Append(shipmentId, deliveredEvent);
-
-// 4. Commit the new events
-await session.SaveChangesAsync();
-Console.WriteLine($"Appended PickedUp and Delivered events to stream {shipmentId}.");
-```
+<<< @/src/samples/FreightShipping/EvolveToEventSourcing.cs#storing-events
 
 Let’s break down what’s happening:
 
