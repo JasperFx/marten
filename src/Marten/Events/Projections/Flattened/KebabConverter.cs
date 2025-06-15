@@ -17,13 +17,13 @@ internal static class KebabConverter
 
         return str2.TrimStart('-');
     }
+}
 
-    private static partial class KebabConverterRegexExpressions
-    {
-        [GeneratedRegex("[A-Z][a-z]+")]
-        internal static partial Regex PascalWordRegex();
+internal static partial class KebabConverterRegexExpressions
+{
+    [GeneratedRegex("[A-Z][a-z]+")]
+    internal static partial Regex PascalWordRegex();
 
-        [GeneratedRegex("[A-Z]+")]
-        internal static partial Regex AllCapsWordRegex();
-    }
+    [GeneratedRegex("[A-Z]+")]
+    internal static partial Regex AllCapsWordRegex();
 }
