@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -79,21 +79,12 @@ public class Target
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
-        switch (_random.Next(0, 2))
+        target.Color = _random.Next(0, 2) switch
         {
-            case 0:
-                target.Color = Colors.Blue;
-                break;
-
-            case 1:
-                target.Color = Colors.Green;
-                break;
-
-            default:
-                target.Color = Colors.Red;
-                break;
-        }
-
+            0 => Colors.Blue,
+            1 => Colors.Green,
+            _ => Colors.Red,
+        };
         var value = _random.Next(0, 100);
         if (value > 10) target.NullableNumber = value;
 

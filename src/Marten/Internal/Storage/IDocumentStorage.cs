@@ -84,20 +84,14 @@ public class DocumentProvider<T> where T : notnull
 
     public IDocumentStorage<T> Select(DocumentTracking tracking)
     {
-        switch (tracking)
+        return tracking switch
         {
-            case DocumentTracking.None:
-                return Lightweight;
-            case DocumentTracking.QueryOnly:
-                return QueryOnly;
-            case DocumentTracking.DirtyTracking:
-                return DirtyTracking;
-            case DocumentTracking.IdentityOnly:
-                return IdentityMap;
-
-            default:
-                throw new ArgumentOutOfRangeException(nameof(tracking));
-        }
+            DocumentTracking.None => Lightweight,
+            DocumentTracking.QueryOnly => QueryOnly,
+            DocumentTracking.DirtyTracking => DirtyTracking,
+            DocumentTracking.IdentityOnly => IdentityMap,
+            _ => throw new ArgumentOutOfRangeException(nameof(tracking)),
+        };
     }
 }
 

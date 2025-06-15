@@ -43,17 +43,13 @@ public class TripStream
     public static Direction RandomDirection()
     {
         var index = Random.Shared.Next(0, 3);
-        switch (index)
+        return index switch
         {
-            case 0:
-                return Direction.East;
-            case 1:
-                return Direction.North;
-            case 2:
-                return Direction.South;
-            default:
-                return Direction.West;
-        }
+            0 => Direction.East,
+            1 => Direction.North,
+            2 => Direction.South,
+            _ => Direction.West,
+        };
     }
 
     public static TimeOnly RandomTime()

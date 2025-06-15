@@ -55,17 +55,12 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
 
         public ISqlFragment BuildWrappedFilter(IDocumentStorage<T> storage, IMartenSession session)
         {
-            switch (Wheres.Count)
+            return Wheres.Count switch
             {
-                case 0:
-                    return storage.DefaultWhereFragment();
-
-                case 1:
-                    return storage.FilterDocuments(Wheres.Single(), session);
-
-                default:
-                    return storage.FilterDocuments(CompoundWhereFragment.And(Wheres), session);
-            }
+                0 => storage.DefaultWhereFragment(),
+                1 => storage.FilterDocuments(Wheres.Single(), session),
+                _ => storage.FilterDocuments(CompoundWhereFragment.And(Wheres), session),
+            };
         }
     }
 
