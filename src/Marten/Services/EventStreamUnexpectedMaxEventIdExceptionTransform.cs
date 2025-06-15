@@ -17,7 +17,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string StreamId = "streamid";
     private const string Version = "version";
 
-    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)] out Exception? transformed)
     {
         if (!Matches(original))
         {
@@ -68,10 +68,10 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
             && pe.SqlState == PostgresErrorCodes.UniqueViolation
             && (pe.ConstraintName == "pk_mt_events_stream_and_version" || pe.ConstraintName == "mt_events_default_stream_id_version_is_archived_idx");
     }
+}
 
-    private static partial class EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions
-    {
-        [GeneratedRegex(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)")]
-        internal static partial Regex EventStreamUniqueExceptionDetailsRegex();
-    }
+internal static partial class EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions
+{
+    [GeneratedRegex(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)")]
+    internal static partial Regex EventStreamUniqueExceptionDetailsRegex();
 }

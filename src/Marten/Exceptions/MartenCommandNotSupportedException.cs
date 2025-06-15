@@ -41,7 +41,7 @@ public class MartenCommandNotSupportedException: MartenCommandException
         NpgsqlCommand? command,
         Exception innerException,
         string? message = null
-    ): base(command, innerException, message)
+    ) : base(command, innerException, message)
     {
         Reason = reason;
     }
@@ -54,7 +54,7 @@ public class MartenCommandNotSupportedException: MartenCommandException
 
 internal class MartenCommandNotSupportedExceptionTransform: IExceptionTransform
 {
-    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)] out Exception? transformed)
     {
         if (original is NpgsqlException e)
         {
@@ -108,13 +108,13 @@ internal sealed class KnownNotSupportedExceptionCause
     {
         return match(e);
     }
+}
 
-    private static partial class KnownNotSupportedExceptionCauseRegexExpressions
-    {
-        [GeneratedRegex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist")]
-        internal static partial Regex ToTsvectorOnJsonbRegex();
+internal static partial class KnownNotSupportedExceptionCauseRegexExpressions
+{
+    [GeneratedRegex(@"function to_tsvector\((?:regconfig, )?jsonb\) does not exist")]
+    internal static partial Regex ToTsvectorOnJsonbRegex();
 
-        [GeneratedRegex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist")]
-        internal static partial Regex WebStyleSearchRegex();
-    }
+    [GeneratedRegex(@"function websearch_to_tsquery\((?:regconfig, )?text\) does not exist")]
+    internal static partial Regex WebStyleSearchRegex();
 }
