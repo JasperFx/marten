@@ -303,10 +303,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().AnyAsync(token);
     }
@@ -316,15 +313,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).AnyAsync(token);
     }
@@ -337,10 +328,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
         CancellationToken token = default) where TResult : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.Select(expression).As<MartenLinqQueryable<TResult>>().SumAsync<TResult>(token);
     }
@@ -349,10 +337,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
         CancellationToken token = default) where TResult : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.Select(expression).As<MartenLinqQueryable<TResult>>().MaxAsync<TResult>(token);
     }
@@ -361,10 +346,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source, Expression<Func<TSource, TResult>> expression,
         CancellationToken token = default) where TResult : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.Select(expression).As<MartenLinqQueryable<TResult>>().MinAsync<TResult>(token);
     }
@@ -373,10 +355,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source, Expression<Func<TSource, TMember>> expression,
         CancellationToken token = default) where TMember : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.Select(expression).As<MartenLinqQueryable<TMember>>().AverageAsync(token);
     }
@@ -389,10 +368,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().CountAsync(token);
     }
@@ -402,15 +378,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).CountAsync(token);
     }
@@ -419,10 +389,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().CountLongAsync(token);
     }
@@ -432,15 +399,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).LongCountAsync(token);
     }
@@ -453,10 +414,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().FirstAsync<TSource>(token);
     }
@@ -466,15 +424,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).FirstAsync(token);
     }
@@ -483,10 +435,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().FirstOrDefaultAsync<TSource>(token);
     }
@@ -496,15 +445,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).FirstOrDefaultAsync(token);
     }
@@ -517,10 +460,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().SingleAsync<TSource>(token);
     }
@@ -530,15 +470,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).SingleAsync(token);
     }
@@ -547,10 +481,7 @@ public static class QueryableExtensions
         this IQueryable<TSource> source,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
         return source.As<MartenLinqQueryable<TSource>>().SingleOrDefaultAsync<TSource>(token);
     }
@@ -560,15 +491,9 @@ public static class QueryableExtensions
         Expression<Func<TSource, bool>> predicate,
         CancellationToken token = default) where TSource : notnull
     {
-        if (source == null)
-        {
-            throw new ArgumentNullException(nameof(source));
-        }
+        ArgumentNullException.ThrowIfNull(source);
 
-        if (predicate == null)
-        {
-            throw new ArgumentNullException(nameof(predicate));
-        }
+        ArgumentNullException.ThrowIfNull(predicate);
 
         return source.Where(predicate).SingleOrDefaultAsync(token);
     }

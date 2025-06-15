@@ -95,6 +95,19 @@ public partial class StoreOptions
 
     /// <summary>
     /// Register a custom value type with Marten. Doing this enables Marten
+    /// to use this type correctly within LINQ expressions. The "TValueType"
+    /// should wrap a single, primitive value with a single public get-able
+    /// property
+    /// </summary>
+    /// <param name="type"></param>
+    /// <returns></returns>
+    public ValueTypeInfo RegisterValueType<TValueType>() where TValueType : notnull
+    {
+        return RegisterValueType(typeof(TValueType));
+    }
+
+    /// <summary>
+    /// Register a custom value type with Marten. Doing this enables Marten
     /// to use this type correctly within LINQ expressions. The "value type"
     /// should wrap a single, primitive value with a single public get-able
     /// property

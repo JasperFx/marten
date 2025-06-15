@@ -74,8 +74,7 @@ namespace Marten.Testing.Harness
 
         public static void ShouldContain(this DbObjectName[] names, string qualifiedName)
         {
-            if (names == null)
-                throw new ArgumentNullException(nameof(names));
+            ArgumentNullException.ThrowIfNull(names);
 
             var function = DbObjectName.Parse(PostgresqlProvider.Instance, qualifiedName);
             names.ShouldContain(function);

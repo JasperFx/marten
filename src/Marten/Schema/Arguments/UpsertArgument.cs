@@ -35,10 +35,7 @@ public class UpsertArgument
         get => _postgresType;
         set
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException();
-            }
+            ArgumentNullException.ThrowIfNull(value);
 
             _postgresType = value.Contains("(")
                 ? value.Split('(')[0].Trim()
