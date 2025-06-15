@@ -17,9 +17,6 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string StreamId = "streamid";
     private const string Version = "version";
 
-    private static readonly Regex EventStreamUniqueExceptionDetailsRegex =
-        new(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
-
     public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if (!Matches(original))
@@ -37,7 +34,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 
         if (!string.IsNullOrEmpty(postgresException.Detail) && !postgresException.Detail.EqualsIgnoreCase(DetailsRedactedMessage))
         {
-            var details = EventStreamUniqueExceptionDetailsRegex.Match(postgresException.Detail);
+            var details = EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions.EventStreamUniqueExceptionDetailsRegex().Match(postgresException.Detail);
 
             if (details.Groups[StreamId].Success)
             {
@@ -70,5 +67,11 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
         return e is PostgresException pe
             && pe.SqlState == PostgresErrorCodes.UniqueViolation
             && (pe.ConstraintName == "pk_mt_events_stream_and_version" || pe.ConstraintName == "mt_events_default_stream_id_version_is_archived_idx");
+    }
+
+    private static partial class EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions
+    {
+        [GeneratedRegex(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)")]
+        internal static partial Regex EventStreamUniqueExceptionDetailsRegex();
     }
 }
