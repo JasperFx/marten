@@ -87,18 +87,13 @@ public class Diagnostics: IDiagnostics
 
     private QuerySession OpenQuerySession(DocumentTracking tracking)
     {
-        switch (tracking)
+        return tracking switch
         {
-            case DocumentTracking.None:
-                return (QuerySession)_store.LightweightSession();
-            case DocumentTracking.QueryOnly:
-                return (QuerySession)_store.QuerySession();
-            case DocumentTracking.IdentityOnly:
-                return (QuerySession)_store.IdentitySession();
-            case DocumentTracking.DirtyTracking:
-                return (QuerySession)_store.DirtyTrackedSession();
-        }
-
-        throw new ArgumentOutOfRangeException(nameof(tracking));
+            DocumentTracking.None => (QuerySession)_store.LightweightSession(),
+            DocumentTracking.QueryOnly => (QuerySession)_store.QuerySession(),
+            DocumentTracking.IdentityOnly => (QuerySession)_store.IdentitySession(),
+            DocumentTracking.DirtyTracking => (QuerySession)_store.DirtyTrackedSession(),
+            _ => throw new ArgumentOutOfRangeException(nameof(tracking)),
+        };
     }
 }

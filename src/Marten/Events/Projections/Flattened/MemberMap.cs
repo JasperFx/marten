@@ -44,37 +44,25 @@ internal class MemberMap<TEvent, TMember>: IColumnMap
         _tableColumn ??= table.ColumnFor(ColumnName);
 
 
-        switch (_mapType)
+        return _mapType switch
         {
-            case ColumnMapType.Increment:
-                return $"{ColumnName} = {table.Identifier.Name}.{ColumnName} + {_tableColumn.ToArgumentName()}";
-
-            case ColumnMapType.Value:
-                return $"{ColumnName} = {_tableColumn.ToArgumentName()}";
-
-            case ColumnMapType.Decrement:
-                return $"{ColumnName} = {table.Identifier.Name}.{ColumnName} - {_tableColumn.ToArgumentName()}";
-
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            ColumnMapType.Increment => $"{ColumnName} = {table.Identifier.Name}.{ColumnName} + {_tableColumn.ToArgumentName()}",
+            ColumnMapType.Value => $"{ColumnName} = {_tableColumn.ToArgumentName()}",
+            ColumnMapType.Decrement => $"{ColumnName} = {table.Identifier.Name}.{ColumnName} - {_tableColumn.ToArgumentName()}",
+            _ => throw new ArgumentOutOfRangeException(),
+        };
     }
 
     public bool RequiresInput => true;
 
     public string ToInsertExpression(Table table)
     {
-        switch (_mapType)
+        return _mapType switch
         {
-            case ColumnMapType.Increment:
-            case ColumnMapType.Value:
-                return table.ColumnFor(ColumnName).ToArgumentName();
-
-            case ColumnMapType.Decrement:
-                return "-" + table.ColumnFor(ColumnName).ToArgumentName();
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            ColumnMapType.Increment or ColumnMapType.Value => table.ColumnFor(ColumnName).ToArgumentName(),
+            ColumnMapType.Decrement => "-" + table.ColumnFor(ColumnName).ToArgumentName(),
+            _ => throw new ArgumentOutOfRangeException(),
+        };
     }
 
 }
