@@ -259,7 +259,7 @@ public class int_based_document_operations : IAsyncLifetime
 }
 
 [ValueObject<int>]
-public partial struct OrderId;
+public readonly partial struct OrderId;
 
 public class Order
 {

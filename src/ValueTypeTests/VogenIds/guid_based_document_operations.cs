@@ -287,7 +287,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
 #region sample_invoice_with_vogen_id
 
 [ValueObject<Guid>]
-public partial struct InvoiceId;
+public readonly partial struct InvoiceId;
 
 public class Invoice
 {
@@ -303,4 +303,4 @@ public class Invoice
 
 
 [ValueObject<Guid>]
-public partial struct WrongId;
+public readonly partial struct WrongId;
