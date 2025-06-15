@@ -127,10 +127,10 @@ public class LimitedDocQuery: ICompiledListQuery<LimitedDoc>
 #region sample_limited_doc
 
 [ValueObject<int>]
-public partial struct UpperLimit;
+public readonly partial struct UpperLimit;
 
 [ValueObject<int>]
-public partial struct LowerLimit;
+public readonly partial struct LowerLimit;
 
 public class LimitedDoc
 {
