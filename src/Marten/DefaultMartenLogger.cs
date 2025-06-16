@@ -88,7 +88,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
+            var duration = _timestamp.HasValue ? Stopwatch.GetElapsedTime(_timestamp!.Value) : 0.Seconds();
             _loggerOutput.RecordSavedChanges(commit.Updated.Count(),
                 duration.TotalMilliseconds,
                 commit.Inserted.Count(),
