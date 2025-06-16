@@ -207,16 +207,16 @@ public class linq_querying_with_value_types: OneOffConfigurationsContext
 }
 
 [StronglyTypedId(Template.Long)]
-public partial struct UpperLimit;
+public readonly partial struct UpperLimit;
 
 [StronglyTypedId(Template.Int)]
-public partial struct LowerLimit;
+public readonly partial struct LowerLimit;
 
 [StronglyTypedId(Template.String)]
-public partial struct Description;
+public readonly partial struct Description;
 
 [StronglyTypedId(Template.Guid)]
-public partial struct GuidId;
+public readonly partial struct GuidId;
 
 public class LimitedDoc
 {

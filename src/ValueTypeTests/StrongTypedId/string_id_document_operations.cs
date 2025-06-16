@@ -237,10 +237,10 @@ public class string_id_document_operations : IDisposable, IAsyncDisposable
 }
 
 [StronglyTypedId(Template.String)]
-public partial struct Team2Id;
+public readonly partial struct Team2Id;
 
 [StronglyTypedId(Template.String)]
-public partial struct WrongStringId;
+public readonly partial struct WrongStringId;
 
 
 public class Team2

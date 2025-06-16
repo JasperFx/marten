@@ -48,21 +48,12 @@ public class TargetIntId
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
-        switch (_random.Next(0, 2))
+        target.Color = _random.Next(0, 2) switch
         {
-            case 0:
-                target.Color = Colors.Blue;
-                break;
-
-            case 1:
-                target.Color = Colors.Green;
-                break;
-
-            default:
-                target.Color = Colors.Red;
-                break;
-        }
-
+            0 => Colors.Blue,
+            1 => Colors.Green,
+            _ => Colors.Red,
+        };
         target.Long = 100 * _random.Next();
         target.Double = _random.NextDouble();
         target.Long = _random.Next() * 10000;

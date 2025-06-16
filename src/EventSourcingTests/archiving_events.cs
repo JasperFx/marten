@@ -647,7 +647,7 @@ public record Deleted;
 public record MaybeDeleted(bool ShouldDelete);
 
 [StronglyTypedId(Template.Guid)]
-public partial struct GuidId;
+public readonly partial struct GuidId;
 
 public class SimpleAggregateStrongTypedGuid
 {
@@ -690,7 +690,7 @@ public class SimpleAggregateStrongTypedGuid
 }
 
 [StronglyTypedId(Template.String)]
-public partial struct StringId;
+public readonly partial struct StringId;
 
 public class SimpleAggregateStrongTypedString
 {

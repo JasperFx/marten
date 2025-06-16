@@ -41,7 +41,7 @@ public class registration
 
 public record struct ExternalId(string Value);
 
-public struct SpecialValue
+public readonly struct SpecialValue
 {
     private SpecialValue(string value)
     {

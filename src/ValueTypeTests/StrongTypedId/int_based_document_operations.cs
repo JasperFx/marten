@@ -262,7 +262,7 @@ public class int_based_document_operations : IAsyncLifetime
 #region sample_order2_with_STRONG_TYPED_identifier
 
 [StronglyTypedId(Template.Int)]
-public partial struct Order2Id;
+public readonly partial struct Order2Id;
 
 public class Order2
 {

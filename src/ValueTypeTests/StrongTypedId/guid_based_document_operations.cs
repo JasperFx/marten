@@ -279,10 +279,10 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
 
 
 [StronglyTypedId(Template.Guid)]
-public partial struct Invoice2Id;
+public readonly partial struct Invoice2Id;
 
 [StronglyTypedId(Template.Guid)]
-public partial struct WrongId;
+public readonly partial struct WrongId;
 
 public class Invoice2
 {
