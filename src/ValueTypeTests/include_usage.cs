@@ -108,7 +108,7 @@ public class include_usage : IAsyncDisposable
 }
 
 [ValueObject<Guid>]
-public partial struct TeacherId;
+public readonly partial struct TeacherId;
 
 public class Teacher
 {
@@ -116,7 +116,7 @@ public class Teacher
 }
 
 [ValueObject<Guid>]
-public partial struct ClassId;
+public readonly partial struct ClassId;
 
 public class Class
 {
@@ -125,7 +125,7 @@ public class Class
 }
 
 [ValueObject<Guid>]
-public partial struct GradeId;
+public readonly partial struct GradeId;
 
 public class Grade
 {

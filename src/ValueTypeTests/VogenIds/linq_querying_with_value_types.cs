@@ -217,16 +217,16 @@ public class linq_querying_with_value_types : OneOffConfigurationsContext
 #region sample_limited_doc
 
 [ValueObject<long>]
-public partial struct UpperLimit;
+public readonly partial struct UpperLimit;
 
 [ValueObject<int>]
-public partial struct LowerLimit;
+public readonly partial struct LowerLimit;
 
 [ValueObject<string>]
-public partial struct Description;
+public readonly partial struct Description;
 
 [ValueObject<Guid>]
-public partial struct GuidId;
+public readonly partial struct GuidId;
 
 public class LimitedDoc
 {

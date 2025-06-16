@@ -36,18 +36,13 @@ internal class ElementComparisonFilter: ISqlFragment, ICollectionAware
 
     ICollectionAwareFilter ICollectionAware.BuildFragment(ICollectionMember member, ISerializer serializer)
     {
-        switch (Op)
+        return Op switch
         {
-            case "=":
-                return ContainmentWhereFilter.ForValue(member, Value, serializer);
-
-            case "!=":
-                return (ICollectionAwareFilter)ContainmentWhereFilter.ForValue(member, Value, serializer).Reverse();
-
-            default:
-                throw new BadLinqExpressionException(
-                    $"Marten does not (yet) support the {Op} operator in element member queries");
-        }
+            "=" => ContainmentWhereFilter.ForValue(member, Value, serializer),
+            "!=" => (ICollectionAwareFilter)ContainmentWhereFilter.ForValue(member, Value, serializer).Reverse(),
+            _ => throw new BadLinqExpressionException(
+                                $"Marten does not (yet) support the {Op} operator in element member queries"),
+        };
     }
 
     bool ICollectionAware.SupportsContainment()

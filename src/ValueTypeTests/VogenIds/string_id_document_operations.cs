@@ -236,10 +236,10 @@ public class string_id_document_operations : IDisposable, IAsyncDisposable
 }
 
 [ValueObject<string>]
-public partial struct TeamId;
+public readonly partial struct TeamId;
 
 [ValueObject<string>]
-public partial struct WrongStringId;
+public readonly partial struct WrongStringId;
 
 
 public class Team
