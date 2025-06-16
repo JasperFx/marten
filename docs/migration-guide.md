@@ -32,6 +32,9 @@ going to cause some changes to your Marten system when you upgrade:
 * The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
 for entity types, ancillary document stores, and some internals of the event store still exists unchanged.
 
+* The Open Telemetry span names inside the async daemon do not embed the database identifier in the case of multi-tenancy through separate databases. Instead,
+  all projection and subscription activity has the same naming, but the database is a tag on the span if you want to disambiguate the work. 
+
 ### Event Sourcing
 
 The projection base classes have minor changes in Marten 8:
