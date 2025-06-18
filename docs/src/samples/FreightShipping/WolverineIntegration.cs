@@ -12,6 +12,8 @@ public static class WolverineIntegration
 {
     public static async Task RunDaemon(CancellationToken cancellationToken)
     {
+        var connectionString = Utils.GetConnectionString();
+        
         var builder = Host.CreateDefaultBuilder();
         
         #region wolverine-integration    
@@ -19,7 +21,7 @@ public static class WolverineIntegration
         {
             services.AddMarten(opts =>
                 {
-                    opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+                    opts.Connection(connectionString);
                     opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
                     opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
                     opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Async);

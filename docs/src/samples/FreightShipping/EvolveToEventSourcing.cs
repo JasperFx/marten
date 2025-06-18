@@ -7,10 +7,11 @@ public static class EvolveToEventSourcing
 {
     public static async Task Run()
     {
+        var connectionString = Utils.GetConnectionString();
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+            opts.Connection(connectionString);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
         });
         #endregion store-setup

@@ -5,6 +5,7 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -18,13 +19,14 @@ public static class CrossAggregateViews
 {
     public static async Task RunDaemon(CancellationToken cancellationToken)
     {
+        var connectionString = Utils.GetConnectionString();
         #region async-daemon-setup
         await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddMarten(opts =>
                     {
-                        opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+                        opts.Connection(connectionString);
                         opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
                         opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
                     })
@@ -40,10 +42,11 @@ public static class CrossAggregateViews
 
     public static async Task Run()
     {
+        var connectionString = Utils.GetConnectionString();
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+            opts.Connection(connectionString);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
             
             #region projection-setup

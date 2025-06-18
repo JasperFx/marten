@@ -39,7 +39,7 @@ static async Task ShowUsage()
 {
     await Console.Out.WriteLineAsync("Valid commands are:\n" +
                                      "getting-started\n" +
-                                     "modeling-documents.\n" +
+                                     "modeling-documents\n" +
                                      "evolve-to-eventsourcing\n" +
                                      "eventsourced-aggregate\n" +
                                      "cross-aggregate-views-async-daemon\n" +
