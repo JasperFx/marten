@@ -1,4 +1,6 @@
 using FreightShipping.EventSourcedAggregate;
+using JasperFx;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Microsoft.Extensions.Hosting;
@@ -8,22 +10,30 @@ namespace FreightShipping;
 
 public static class WolverineIntegration
 {
-    public static void Run()
+    public static async Task RunDaemon(CancellationToken cancellationToken)
     {
-        var builder = Host.CreateApplicationBuilder();
+        var builder = Host.CreateDefaultBuilder();
         
-        #region wolverine-integration
-        builder.Services.AddMarten(opts =>
+        #region wolverine-integration    
+        await builder.ConfigureServices(services =>
         {
-            opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
-            opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
-            opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Async);
+            services.AddMarten(opts =>
+                {
+                    opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+                    opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
+                    opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
+                    opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Async);
+                })
+                .AddAsyncDaemon(DaemonMode.HotCold)
+                .IntegrateWithWolverine(cfg =>
+                {
+                    cfg.UseWolverineManagedEventSubscriptionDistribution = true;
+                });
         })
-        .IntegrateWithWolverine(cfg =>
-        {
-            cfg.UseWolverineManagedEventSubscriptionDistribution = true;
-        });
+        .StartAsync(cancellationToken);
         #endregion wolverine-integration
+
+        await Task.Delay(Timeout.Infinite, cancellationToken); // keep alive
     }
 }
 

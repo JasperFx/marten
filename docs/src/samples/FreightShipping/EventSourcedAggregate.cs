@@ -44,7 +44,7 @@ public static class EventSourcedAggregate
         #region live-aggregate
         // Assuming we have a stream of events for shipmentId (from earlier Part)
         var currentState = await session.Events.AggregateStreamAsync<FreightShipment>(shipmentId);
-        Console.WriteLine($"State: {currentState.Status}, PickedUpAt: {currentState.PickedUpAt}");
+        Console.WriteLine($"State: {currentState!.Status}, PickedUpAt: {currentState.PickedUpAt}");
         #endregion live-aggregate
         
         #region shipment-example
@@ -57,10 +57,10 @@ public static class EventSourcedAggregate
 
         var evt2 = new ShipmentPickedUp(DateTime.UtcNow.AddHours(2));
         session2.Events.Append(sid, evt2);
-        await session.SaveChangesAsync();  // Updates ShipmentView.Status and PickedUpAt
+        await session2.SaveChangesAsync();  // Updates ShipmentView.Status and PickedUpAt
 
-        var doc = await session.LoadAsync<ShipmentView>(sid);
-        Console.WriteLine(doc.Status);         // InTransit
+        var doc = await session2.LoadAsync<ShipmentView>(sid);
+        Console.WriteLine(doc!.Status);         // InTransit
         Console.WriteLine(doc.PickedUpAt);    // Set to pickup time
         #endregion shipment-example
     }

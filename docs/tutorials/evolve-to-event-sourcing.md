@@ -70,3 +70,7 @@ Let’s break down what’s happening:
 - **Committing events**: The second `SaveChangesAsync()` writes both the pickup and delivered events to the database in one transaction. If something went wrong (say a violation of a concurrency check), none of the events would be stored. After this, our stream has three events in order: Scheduled (version 1), PickedUp (version 2), Delivered (version 3).
 
 At this point, the event store contains a full history for the shipment. We can retrieve the raw events if needed via Marten’s API (for example, `session.Events.FetchStream(shipmentId)` would give us all events for that stream). But more typically, we want to derive the **current state** or some useful representation from these events. That’s the role of an **aggregate** or **projection**, which we’ll explore next.
+
+::: info
+You can access the full source code of the tutorials [here](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping).
+:::

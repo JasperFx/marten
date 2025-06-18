@@ -1,15 +1,44 @@
 using FreightShipping.EventSourcedAggregate;
 using JasperFx;
+using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Daemon;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FreightShipping;
 
 using Marten.Events.Projections;
 
-public class CrossAggregateViews
+
+
+public static class CrossAggregateViews
 {
-    public async Task Run()
+    public static async Task RunDaemon(CancellationToken cancellationToken)
+    {
+        #region async-daemon-setup
+        await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                    {
+                        opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+                        opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
+                        opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
+                    })
+                    // Turn on the async daemon in "Solo" mode
+                    // there are other modes, but this is the simplest
+                    .AddAsyncDaemon(DaemonMode.Solo);
+            })
+            .StartAsync(cancellationToken);
+        #endregion async-daemon-setup
+
+        await Task.Delay(Timeout.Infinite, cancellationToken); // keep alive
+    }
+
+    public static async Task Run()
     {
         #region store-setup
         var store = DocumentStore.For(opts =>
@@ -26,10 +55,12 @@ public class CrossAggregateViews
         #region query-daily-deliveries
         await using var session = store.LightweightSession();
         var lastWeek = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7));
+        
         var stats = await session.Query<DailyShipmentsDelivered>()
-            .Where(x => x.Id >= lastWeek)
+            .Where(x => x.DeliveredDate >= lastWeek)
             .OrderBy(x => x.Id)
             .ToListAsync();
+        Console.WriteLine(stats.Count);
 
         foreach(var dayStat in stats)
         {
@@ -42,18 +73,19 @@ public class CrossAggregateViews
 #region view-doc
 public class DailyShipmentsDelivered
 {
-    public DateOnly Id { get; set; }        // using DateOnly as the document Id (the day)
+    public string Id { get; set; }
+    public DateOnly DeliveredDate { get; set; }
     public int DeliveredCount { get; set; }
 }
 #endregion view-doc
 
 #region daily-shipment-projection
-public class DailyShipmentsProjection : MultiStreamProjection<DailyShipmentsDelivered, DateOnly>
+public class DailyShipmentsProjection : MultiStreamProjection<DailyShipmentsDelivered, string>
 {
     public DailyShipmentsProjection()
     {
-        // Group events by the DateOnly key (extracted from DeliveredAt)
-        Identity<ShipmentDelivered>(e => DateOnly.FromDateTime(e.DeliveredAt));
+        // Group events by the DateOnly key as string (extracted from DeliveredAt)
+        Identity<ShipmentDelivered>(e => e.DeliveredAt.ToString("yyyy-MM-dd"));
     }
 
     public DailyShipmentsDelivered Create(ShipmentDelivered @event)
@@ -61,7 +93,8 @@ public class DailyShipmentsProjection : MultiStreamProjection<DailyShipmentsDeli
         // Create a new view for the date if none exists
         return new DailyShipmentsDelivered 
         {
-            Id = DateOnly.FromDateTime(@event.DeliveredAt),
+            Id = @event.DeliveredAt.ToString("yyyy-MM-dd"),
+            DeliveredDate = DateOnly.FromDateTime(@event.DeliveredAt),
             DeliveredCount = 1
         };
     }

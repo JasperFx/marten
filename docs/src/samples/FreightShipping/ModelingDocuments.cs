@@ -21,20 +21,21 @@ public static class ModelingDocuments
         #endregion store-setup
         
         #region storing-documents
+        var driver = new Driver
+        {
+            Id = Guid.NewGuid(),
+            Name = "Alice Smith",
+            LicenseNumber = "A123456"
+        };
+        
         var shipment = new Shipment
         {
             Id = Guid.NewGuid(),
             Origin = "New York",
             Destination = "Chicago",
             CreatedAt = DateTime.UtcNow,
+            AssignedDriverId = driver.Id,
             Status = "Created"
-        };
-
-        var driver = new Driver
-        {
-            Id = Guid.NewGuid(),
-            Name = "Alice Smith",
-            LicenseNumber = "A123456"
         };
 
         await using var session = store.LightweightSession();
@@ -48,17 +49,20 @@ public static class ModelingDocuments
 
         // Load by Id
         var existingShipment = await querySession.LoadAsync<Shipment>(shipment.Id);
+        Console.WriteLine($"Loaded shipment {existingShipment!.Id} with status {existingShipment.Status}");
 
         // Filter by destination
         var shipmentsToChicago = await querySession
             .Query<Shipment>()
             .Where(x => x.Destination == "Chicago")
             .ToListAsync();
+        Console.WriteLine($"Found {shipmentsToChicago.Count} shipments to Chicago");
 
         // Count active shipments per driver
         var active = await querySession
             .Query<Shipment>()
             .CountAsync(x => x.AssignedDriverId == driver.Id && x.Status != "Delivered");
+        Console.WriteLine($"Driver {driver.Name} has {active} active shipments");
         #endregion querying-documents
     }
 }

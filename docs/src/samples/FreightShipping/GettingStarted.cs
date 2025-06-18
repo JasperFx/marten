@@ -34,7 +34,7 @@ public static class GettingStarted
 
         // 3. Later... load the shipment by Id
         var loaded = await session.LoadAsync<FreightShipment>(shipment.Id);
-        Console.WriteLine($"Shipment status: {loaded.Status}");  // Outputs: Scheduled
+        Console.WriteLine($"Shipment status: {loaded!.Status}");  // Outputs: Scheduled
         #endregion create-shipment-doc
 
         #region update-shipment-doc
