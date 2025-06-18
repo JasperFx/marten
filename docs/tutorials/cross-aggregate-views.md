@@ -26,7 +26,7 @@ We would register this projection as typically **async** (since multi-stream pro
 
 <<< @/src/samples/FreightShipping/CrossAggregateViews.cs#projection-setup
 
-You will also need to have the async projections daemon running as a seperate application (as a console app) as below and this is an important step for all projections configured to run asynchronously. And the daemon has to be kept running continously as well.
+You will also need to have the async projections daemon running as a separate application (as a console app) as below and this is an important step for all projections configured to run asynchronously. And the daemon has to be kept running continuously as well.
 
 <<< @/src/samples/FreightShipping/CrossAggregateViews.cs#async-daemon-setup
 
