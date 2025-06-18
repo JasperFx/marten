@@ -72,5 +72,6 @@ Let’s break down what’s happening:
 At this point, the event store contains a full history for the shipment. We can retrieve the raw events if needed via Marten’s API (for example, `session.Events.FetchStream(shipmentId)` would give us all events for that stream). But more typically, we want to derive the **current state** or some useful representation from these events. That’s the role of an **aggregate** or **projection**, which we’ll explore next.
 
 ::: info
-You can access the full source code of the tutorials [here](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping).
+You can access the [FreightShipping tutorial source code](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
 :::
+
