@@ -74,4 +74,3 @@ At this point, the event store contains a full history for the shipment. We can 
 ::: info
 You can access the [FreightShipping tutorial source code](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
 :::
-
