@@ -11,7 +11,7 @@ public static class EvolveToEventSourcing
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection(connectionString);
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
         });
         #endregion store-setup

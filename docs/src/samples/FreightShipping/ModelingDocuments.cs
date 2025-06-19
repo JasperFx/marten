@@ -11,12 +11,14 @@ public static class ModelingDocuments
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection(connectionString);
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
 
             #region indexing-fields
             opts.Schema.For<Shipment>().Duplicate(x => x.Status);
+            #pragma warning disable CS8603 // Possible null reference return.
             opts.Schema.For<Shipment>().Duplicate(x => x.AssignedDriverId);
+            #pragma warning restore CS8603 // Possible null reference return.
             #endregion indexing-fields
         });
         #endregion store-setup
@@ -72,18 +74,18 @@ public static class ModelingDocuments
 public class Shipment
 {
     public Guid Id { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
+    public required string Origin { get; set; }
+    public required string Destination { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
-    public string Status { get; set; }
+    public required string Status { get; set; }
     public Guid? AssignedDriverId { get; set; }
 }
 
 public class Driver
 {
     public Guid Id { get; set; }
-    public string Name { get; set; }
-    public string LicenseNumber { get; set; }
+    public required string Name { get; set; }
+    public string LicenseNumber { get; set; } = null!;
 }
 #endregion models

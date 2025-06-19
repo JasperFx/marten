@@ -21,7 +21,7 @@ public static class WolverineIntegration
         {
             services.AddMarten(opts =>
                 {
-                    opts.Connection(connectionString);
+                    opts.Connection(connectionString!);
                     opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
                     opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
                     opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Async);

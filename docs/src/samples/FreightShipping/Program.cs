@@ -1,50 +1,57 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
+using System.Collections.Specialized;
 using FreightShipping;
 using FreightShipping.EventSourcedAggregate;
 
+using var cts = new CancellationTokenSource();
+
+var commandMap = new OrderedDictionary(StringComparer.OrdinalIgnoreCase)
+{
+    ["getting-started"] = () => RunAndWait(GettingStarted.Run, true),
+    ["modeling-documents"] = () => RunAndWait(ModelingDocuments.Run, true),
+    ["evolve-to-event-sourcing"] = () => RunAndWait(EvolveToEventSourcing.Run, true),
+    ["event-sourced-aggregate"] = () => RunAndWait(EventSourcedAggregate.Run, true),
+    // ReSharper disable once AccessToDisposedClosure
+    ["cross-aggregate-views-async-daemon"] = () => _ = CrossAggregateViews.RunDaemon(cts.Token),
+    ["cross-aggregate-views"] = () => RunAndWait(CrossAggregateViews.Run, true),
+    // ReSharper disable once AccessToDisposedClosure
+    ["wolverine-integration"] = () => CrossAggregateViews.RunDaemon(cts.Token)
+};
+
+var commands = commandMap.Keys.Cast<string>().ToArray();
+
 if (args.Length == 0)
 {
-    await ShowUsage();
+    await ShowUsage(commands);
     return;
 }
 
 var command = args[0].ToLowerInvariant();
-using var cts = new CancellationTokenSource();
 
 // Ctrl + C
-Console.CancelKeyPress += (sender, e) =>
+Console.CancelKeyPress += (_, e) =>
 {
     Console.WriteLine("Ctrl+C pressed. Shutting down...");
     e.Cancel = true; // prevent immediate termination
+    // ReSharper disable once AccessToDisposedClosure
     cts.Cancel();
 };
 
-var task = command switch
+if (commandMap.Contains(command))
 {
-    "getting-started"    => RunAndWait(GettingStarted.Run, true),
-    "modeling-documents" => RunAndWait(ModelingDocuments.Run, true),
-    "evolve-to-eventsourcing" => RunAndWait(EvolveToEventSourcing.Run, true),
-    "eventsourced-aggregate" => RunAndWait(EventSourcedAggregate.Run, true),
-    "cross-aggregate-views-async-daemon" => _ = CrossAggregateViews.RunDaemon(cts.Token),
-    "cross-aggregate-views" => RunAndWait(CrossAggregateViews.Run, true),
-    "wolverine-integration" => CrossAggregateViews.RunDaemon(cts.Token),
-    _ => ShowUsage()
-};
+    await (((Func<Task>)commandMap[command]!))();
+}
+else
+{
+    await ShowUsage(commands);
+}
 
-await task;
 return;
 
-static async Task ShowUsage()
+static async Task ShowUsage(string[] commands)
 {
-    await Console.Out.WriteLineAsync("Valid commands are:\n" +
-                                     "getting-started\n" +
-                                     "modeling-documents\n" +
-                                     "evolve-to-eventsourcing\n" +
-                                     "eventsourced-aggregate\n" +
-                                     "cross-aggregate-views-async-daemon\n" +
-                                     "cross-aggregate-views\n" +
-                                     "wolverine-integration");
+    await Console.Out.WriteLineAsync(string.Join("\n", new[] { "Available commands:" }.Concat(commands)));
 }
 
 static async Task RunAndWait(Func<Task> handler, bool waitForKey = false)

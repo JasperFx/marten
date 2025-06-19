@@ -11,7 +11,7 @@ public static class GettingStarted
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection(connectionString);
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
         });
         #endregion store-setup
@@ -53,8 +53,8 @@ public enum ShipmentStatus { Scheduled, InTransit, Delivered, Cancelled }
 public class FreightShipment
 {
     public Guid Id { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
+    public string Origin { get; set; } = null!;
+    public string Destination { get; set; } = null!;
     public ShipmentStatus Status { get; set; }
     public DateTime ScheduledAt { get; set; }
     public DateTime? PickedUpAt { get; set; }

@@ -1,12 +1,7 @@
-using FreightShipping.EventSourcedAggregate;
 using JasperFx;
-using JasperFx.Core;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Daemon;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace FreightShipping;
@@ -26,7 +21,7 @@ public static class CrossAggregateViews
             {
                 services.AddMarten(opts =>
                     {
-                        opts.Connection(connectionString);
+                        opts.Connection(connectionString!);
                         opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
                         opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
                     })
@@ -46,7 +41,7 @@ public static class CrossAggregateViews
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection(connectionString);
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
             
             #region projection-setup
@@ -76,7 +71,7 @@ public static class CrossAggregateViews
 #region view-doc
 public class DailyShipmentsDelivered
 {
-    public string Id { get; set; }
+    public required string Id { get; set; }
     public DateOnly DeliveredDate { get; set; }
     public int DeliveredCount { get; set; }
 }
