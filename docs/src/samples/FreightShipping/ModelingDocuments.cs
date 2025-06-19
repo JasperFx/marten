@@ -74,18 +74,18 @@ public static class ModelingDocuments
 public class Shipment
 {
     public Guid Id { get; set; }
-    public required string Origin { get; set; }
-    public required string Destination { get; set; }
+    public string Origin { get; set; } = null!;
+    public string Destination { get; set; } = null!;
     public DateTime CreatedAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
-    public required string Status { get; set; }
+    public string Status { get; set; } = null!;
     public Guid? AssignedDriverId { get; set; }
 }
 
 public class Driver
 {
     public Guid Id { get; set; }
-    public required string Name { get; set; }
+    public string Name { get; set; } = null!;
     public string LicenseNumber { get; set; } = null!;
 }
 #endregion models

@@ -71,7 +71,7 @@ public static class CrossAggregateViews
 #region view-doc
 public class DailyShipmentsDelivered
 {
-    public required string Id { get; set; }
+    public string Id { get; set; } = null!;
     public DateOnly DeliveredDate { get; set; }
     public int DeliveredCount { get; set; }
 }

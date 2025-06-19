@@ -122,8 +122,8 @@ public class FreightShipment
 public class ShipmentView
 {
     public Guid Id { get; set; }
-    public required string Origin { get; set; }
-    public required string Destination { get; set; }
+    public string Origin { get; set; } = null!;
+    public string Destination { get; set; } = null!;
     public string? Status { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
