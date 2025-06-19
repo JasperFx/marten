@@ -58,5 +58,5 @@ flowchart TB
 - Index fields you query often for better performance
 
 ::: info
-You can access the [FreightShipping tutorial source code](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
+You can access the source code of [FreightShipping tutorial](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
 :::
