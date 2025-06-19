@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,7 +39,7 @@ public class select_many : IntegrationContext
 
             var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
             names
-                .Count().ShouldBe(9);
+                .Count.ShouldBe(9);
         }
     }
     #endregion
@@ -117,7 +117,7 @@ public class select_many : IntegrationContext
 
             var names = query.Query<ProductWithList>().SelectMany(x => x.Tags).ToList();
             names
-                .Count().ShouldBe(9);
+                .Count.ShouldBe(9);
         }
     }
 
@@ -249,7 +249,7 @@ public class select_many : IntegrationContext
 
             var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
             names
-                .Count().ShouldBe(9);
+                .Count.ShouldBe(9);
         }
     }
 
@@ -274,7 +274,7 @@ public class select_many : IntegrationContext
 
             var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
             names
-                .Count().ShouldBe(9);
+                .Count.ShouldBe(9);
         }
     }
 
