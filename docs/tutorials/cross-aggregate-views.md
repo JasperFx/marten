@@ -50,6 +50,4 @@ All of it can be done with Marten using the event data we already collect, witho
 
 Now that we’ve seen how Marten handles documents, single-stream aggregates, and multi-stream projections, let’s discuss how Marten integrates with an external library called **Wolverine** to scale out and manage these projections in a robust way.
 
-::: info
-You can access the [source code FreightShipping tutorial](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
-:::
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

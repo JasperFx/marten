@@ -57,6 +57,4 @@ flowchart TB
 - You can query documents using LINQ
 - Index fields you query often for better performance
 
-::: info
-You can access the source code of [FreightShipping tutorial](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
-:::
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

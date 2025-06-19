@@ -28,3 +28,5 @@ When building projections, especially multi-step ones, it’s good to follow cle
 Marten will persist projection results as documents (or in user-defined tables for certain custom projections). By default, the document type name will determine the table name. For example, `FreightShipment` documents go in the `mt_doc_freightshipment` table (by Marten’s conventions). You can customize this via Marten’s schema config if needed.
 
 Now, let’s move on to a more advanced kind of projection: combining events from **multiple streams**.
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

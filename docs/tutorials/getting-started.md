@@ -57,6 +57,4 @@ This will update the existing JSON document in place (Marten knows it's an updat
 
 However, one drawback of the document-only approach is that we lose the historical changes. Each update overwrites the previous state. If we later want to know *when* a shipment was picked up or delivered, we have those timestamps, but what if we need more detail or want an audit trail? We might log or archive old versions, but that gets complex. This is where **event sourcing** comes in. Instead of just storing the final state, we capture each state change as an event. Let's see how Marten allows us to evolve our design to an event-sourced model without abandoning the benefits of the document store.
 
-::: info
-You can access the source code of [FreightShipping tutorial](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
-:::
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

@@ -21,3 +21,5 @@ We encourage you to explore Marten’s documentation and experiment further:
 - Look into Marten’s support for **sagas** (long-running workflows) and how events can drive them.
 
 With Marten and PostgreSQL, you have a potent combination of conventional technology and innovative patterns. We hope this freight shipment example showed you how to harness Marten’s power in a real-world scenario. Happy coding with Marten!
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

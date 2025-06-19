@@ -65,6 +65,4 @@ This flow shows that each time we append an event, Marten applies the changes im
 
 Note that this is not the same as aggregating a domain model like `FreightShipment` using `AggregateStreamAsync<T>`. Instead, we're producing a derived view (or read model) designed for fast queries, based on a subset of event data.
 
-::: info
-You can access the source code of [FreightShipping tutorial](https://github.com/JasperFx/marten/tree/cfff44de42b099f4a795dbb240c53fc4d2cb1a95/docs/src/samples/FreightShipping) on GitHub.
-:::
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

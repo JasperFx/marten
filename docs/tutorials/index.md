@@ -26,3 +26,5 @@ The answer lies in the unique strengths of PostgreSQL:
 - **One database for everything** — No need to manage separate infrastructure for documents, events, messages, and relational queries. Marten and Wolverine build on the same reliable engine.
 
 Using Marten gives you the flexibility of NoSQL without leaving the safety and robustness of PostgreSQL. This hybrid approach enables high productivity, strong consistency, and powerful event-driven architectures in .NET applications.
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->
