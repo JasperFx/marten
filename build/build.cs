@@ -264,6 +264,7 @@ class Build : NukeBuild
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("docs-build")));
 
     Target CreateFreightShippingTutorialZip => _ => _
+        .DependsOn(DocsBuild)
         .Executes(() =>
         {
             var sourceDir = "./docs/src/samples/FreightShipping";
