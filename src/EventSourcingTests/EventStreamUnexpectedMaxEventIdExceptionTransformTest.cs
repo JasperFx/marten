@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -22,8 +22,8 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
         var streamId = Guid.NewGuid();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
         theSession.Events.StartStream<Quest>(streamId, joined);
         theSession.Events.Append(streamId, departed);
         await theSession.SaveChangesAsync();
@@ -51,8 +51,8 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         StoreOptions(storeOptions => storeOptions.Connection(connectionString));
 
         var streamId = Guid.NewGuid();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
         theSession.Events.StartStream<Quest>(streamId, joined);
         theSession.Events.Append(streamId, departed);
         await theSession.SaveChangesAsync();

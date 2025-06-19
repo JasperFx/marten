@@ -21,8 +21,8 @@ public class fetching_stream_state_before_aggregator_is_registered: IntegrationC
 
         await using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.StartStream<QuestParty>(streamId, joined, departed);
             await session.SaveChangesAsync();
@@ -97,8 +97,8 @@ public class fetching_stream_state: IntegrationContext
 
     protected override Task fixtureSetup()
     {
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         theStreamId = theSession.Events.StartStream<Quest>(joined, departed).Id;
         return theSession.SaveChangesAsync();
@@ -176,8 +176,8 @@ public class fetching_stream_state_string_id: IntegrationContext
     {
         UseStreamIdentity(StreamIdentity.AsString);
 
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         theStreamKey = Guid.NewGuid().ToString();
         theSession.Events.StartStream<Quest>(theStreamKey, joined, departed);
@@ -250,8 +250,8 @@ public class fetching_stream_state_string_id: IntegrationContext
 
         await using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             id = session.Events.StartStream<Quest>(joined, departed).Id;
             await session.SaveChangesAsync();

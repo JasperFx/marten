@@ -28,7 +28,7 @@ public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
         });
 
         var user1a = new User();
-        var issue1a = new Issue { AssigneeId = user1a.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue1a = new Issue { AssigneeId = user1a.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         await using (var session = theStore.LightweightSession("one"))
         {
@@ -38,7 +38,7 @@ public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
         }
 
         var user2a = new User();
-        var issue2a = new Issue { AssigneeId = user2a.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue2a = new Issue { AssigneeId = user2a.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
 
         await using (var session = theStore.LightweightSession("two"))

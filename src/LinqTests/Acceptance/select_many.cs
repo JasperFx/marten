@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,9 +21,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task can_do_simple_select_many_against_simple_array()
     {
-        var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-        var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-        var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+        var product1 = new Product {Tags = ["a", "b", "c"]};
+        var product2 = new Product {Tags = ["b", "c", "d"]};
+        var product3 = new Product {Tags = ["d", "e", "f"]};
 
         using (var session = theStore.LightweightSession())
         {
@@ -124,9 +124,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_against_complex_type_with_count()
     {
-        var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-        var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-        var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+        var product1 = new Product {Tags = ["a", "b", "c"]};
+        var product2 = new Product {Tags = ["b", "c", "d"]};
+        var product3 = new Product {Tags = ["d", "e", "f"]};
 
         using (var session = theStore.LightweightSession())
         {
@@ -144,9 +144,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_with_count_when_none_match_does_not_throw()
     {
-        var product1 = new Product { Tags = new[] { "a", "b", "c" } };
-        var product2 = new Product { Tags = new[] { "b", "c", "d" } };
-        var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+        var product1 = new Product { Tags = ["a", "b", "c"] };
+        var product2 = new Product { Tags = ["b", "c", "d"] };
+        var product3 = new Product { Tags = ["d", "e", "f"] };
 
         using (var session = theStore.LightweightSession())
         {
@@ -167,9 +167,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_against_complex_type_with_count_async()
     {
-        var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-        var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-        var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+        var product1 = new Product {Tags = ["a", "b", "c"]};
+        var product2 = new Product {Tags = ["b", "c", "d"]};
+        var product3 = new Product {Tags = ["d", "e", "f"]};
 
         await using (var session = theStore.LightweightSession())
         {
@@ -187,9 +187,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_with_count_when_none_match_does_not_throw_async()
     {
-        var product1 = new Product { Tags = new[] { "a", "b", "c" } };
-        var product2 = new Product { Tags = new[] { "b", "c", "d" } };
-        var product3 = new Product { Tags = new[] { "d", "e", "f" } };
+        var product1 = new Product { Tags = ["a", "b", "c"] };
+        var product2 = new Product { Tags = ["b", "c", "d"] };
+        var product3 = new Product { Tags = ["d", "e", "f"] };
 
         await using (var session = theStore.LightweightSession())
         {
@@ -231,9 +231,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_against_integer_array()
     {
-        var product1 = new ProductWithNumbers {Tags = new[] {1, 2, 3}};
-        var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
-        var product3 = new ProductWithNumbers {Tags = new[] {3, 4, 5}};
+        var product1 = new ProductWithNumbers {Tags = [1, 2, 3]};
+        var product2 = new ProductWithNumbers {Tags = [2, 3, 4]};
+        var product3 = new ProductWithNumbers {Tags = [3, 4, 5]};
 
         using (var session = theStore.LightweightSession())
         {
@@ -256,9 +256,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_against_integer_array_async()
     {
-        var product1 = new ProductWithNumbers {Tags = new[] {1, 2, 3}};
-        var product2 = new ProductWithNumbers {Tags = new[] {2, 3, 4}};
-        var product3 = new ProductWithNumbers {Tags = new[] {3, 4, 5}};
+        var product1 = new ProductWithNumbers {Tags = [1, 2, 3]};
+        var product2 = new ProductWithNumbers {Tags = [2, 3, 4]};
+        var product3 = new ProductWithNumbers {Tags = [3, 4, 5]};
 
         await using (var session = theStore.LightweightSession())
         {
@@ -281,9 +281,9 @@ public class select_many : IntegrationContext
     [Fact]
     public async Task select_many_with_any()
     {
-        var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-        var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-        var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+        var product1 = new Product {Tags = ["a", "b", "c"]};
+        var product2 = new Product {Tags = ["b", "c", "d"]};
+        var product3 = new Product {Tags = ["d", "e", "f"]};
 
         using (var session = theStore.LightweightSession())
         {
@@ -312,9 +312,9 @@ public class select_many : IntegrationContext
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
-        var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-        var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-        var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+        var product1 = new Product {Tags = ["a", "b", "c"]};
+        var product2 = new Product {Tags = ["b", "c", "d"]};
+        var product3 = new Product {Tags = ["d", "e", "f"]};
 
         await using (var session = theStore.LightweightSession())
         {

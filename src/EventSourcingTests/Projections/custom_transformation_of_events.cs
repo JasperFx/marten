@@ -24,12 +24,12 @@ public class project_events_from_multiple_streams_into_view: OneOffConfiguration
     private readonly MonsterQuestsAdded monsterQuestsAdded = new MonsterQuestsAdded { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
     private readonly MonsterQuestsRemoved monsterQuestsRemoved = new MonsterQuestsRemoved { QuestIds = new List<Guid> { streamId, streamId2 }, Name = "Dragon" };
     private readonly QuestEnded ended = new QuestEnded { Id = streamId, Name = "Find the Orb" };
-    private readonly MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
+    private readonly MembersJoined joined = new MembersJoined { QuestId = streamId, Day = 2, Location = "Faldor's Farm", Members = ["Garion", "Polgara", "Belgarath"] };
     private readonly MonsterSlayed slayed1 = new MonsterSlayed { QuestId = streamId, Name = "Troll" };
     private readonly MonsterSlayed slayed2 = new MonsterSlayed { QuestId = streamId, Name = "Dragon" };
     private readonly MonsterDestroyed destroyed = new MonsterDestroyed { QuestId = streamId, Name = "Troll" };
-    private readonly MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
-    private readonly MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = new[] { "Silk", "Barak" } };
+    private readonly MembersDeparted departed = new MembersDeparted { QuestId = streamId, Day = 5, Location = "Sendaria", Members = ["Silk", "Barak"] };
+    private readonly MembersJoined joined2 = new MembersJoined { QuestId = streamId, Day = 5, Location = "Sendaria", Members = ["Silk", "Barak"] };
 
 
 

@@ -115,7 +115,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_containment_where_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -142,7 +142,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -165,7 +165,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_containment_where_for_a_single_document()
     {
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -191,7 +191,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -217,7 +217,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -243,7 +243,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -269,7 +269,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
 
         var user = new User();
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -292,9 +292,9 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_any_array_containment_where_for_a_single_document()
     {
         var user = new User();
-        var issue1 = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
-        var issue2 = new Issue { AssigneeId = user.Id, Tags = new[] { "TAG" }, Title = "Garage Door is busted" };
-        var issue3 = new Issue { AssigneeId = user.Id, Tags = new string[] { }, Title = "Garage Door is busted" };
+        var issue1 = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
+        var issue2 = new Issue { AssigneeId = user.Id, Tags = ["TAG"], Title = "Garage Door is busted" };
+        var issue3 = new Issue { AssigneeId = user.Id, Tags = [], Title = "Garage Door is busted" };
 
         var requestedTags = new[] { "DIY", "TAG" };
 
@@ -322,7 +322,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task include_with_generic_type()
     {
         var user = new UserWithInterface { Id = Guid.NewGuid(), UserName = "Jens" };
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using var session = theStore.IdentitySession();
         session.Store<object>(user, issue);
@@ -783,9 +783,9 @@ public class end_to_end_query_with_include: IntegrationContext
 
         await theStore.BulkInsertAsync(new User[] { user1, user2, user3, user4, user5, user6, user7 });
 
-        var group1 = new Group { Name = "Odds", Users = new[] { user1.Id, user3.Id, user5.Id, user7.Id } };
+        var group1 = new Group { Name = "Odds", Users = [user1.Id, user3.Id, user5.Id, user7.Id] };
 
-        var group2 = new Group { Name = "Evens", Users = new[] { user2.Id, user4.Id, user6.Id } };
+        var group2 = new Group { Name = "Evens", Users = [user2.Id, user4.Id, user6.Id] };
 
         using (var session = theStore.LightweightSession())
         {
@@ -912,8 +912,8 @@ public class end_to_end_query_with_include: IntegrationContext
 
         await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
-        var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
-        var group2 = new Group { Name = "Empty", Users = new Guid[0] };
+        var group1 = new Group { Name = "Users", Users = [user1.Id, user2.Id, user3.Id] };
+        var group2 = new Group { Name = "Empty", Users = [] };
 
         using (var session = theStore.LightweightSession())
         {

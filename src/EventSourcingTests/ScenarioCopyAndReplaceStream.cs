@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten.Testing.Harness;
@@ -30,7 +30,7 @@ public class ScenarioCopyAndReplaceStream : StoreContext<StringIdentifiedStreams
     {
         #region sample_scenario-copyandtransformstream-setup
         var started = new QuestStarted { Name = "Find the Orb" };
-        var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = new[] { "Garion", "Polgara", "Belgarath" } };
+        var joined = new MembersJoined { Day = 2, Location = "Faldor's Farm", Members = ["Garion", "Polgara", "Belgarath"] };
         var slayed1 = new MonsterSlayed { Name = "Troll" };
         var slayed2 = new MonsterSlayed { Name = "Dragon" };
 

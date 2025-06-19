@@ -114,7 +114,7 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         EmptyNumberArray.NumberArray = Array.Empty<int>();
 
         HasNumberArray = targets[1];
-        HasNumberArray.NumberArray = new[] { 1, 2, 3 };
+        HasNumberArray.NumberArray = [1, 2, 3];
 
         NullNumberArray = targets[2];
         NullNumberArray.NumberArray = null;

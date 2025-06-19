@@ -16,7 +16,7 @@ public class flexible_event_metadata: OneOffConfigurationsContext
 
     private readonly MembersJoined joined = new MembersJoined
     {
-        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+        Day = 2, Location = "Faldor's Farm", Members = ["Garion", "Polgara", "Belgarath"]
     };
 
     private readonly MonsterSlayed slayed = new MonsterSlayed { Name = "Troll" };

@@ -44,8 +44,8 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
 
         using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(id, joined, departed);
 
@@ -87,13 +87,13 @@ public class get_committed_events_from_listener_Tests : OneOffConfigurationsCont
         using (var session = theStore.LightweightSession())
         {
             session.Events.Append(id1,
-                new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } },
-                new MembersDeparted { Members = new[] { "Thom" } });
+                new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] },
+                new MembersDeparted { Members = ["Thom"] });
 
             session.Events.Append(id2,
-                new MembersJoined { Members = new string[] { "Spock", "Kirk", "Picard" } },
-                new MembersJoined { Members = new string[] { "Riker" } },
-                new MembersDeparted { Members = new[] { "Kirk" } });
+                new MembersJoined { Members = ["Spock", "Kirk", "Picard"] },
+                new MembersJoined { Members = ["Riker"] },
+                new MembersDeparted { Members = ["Kirk"] });
 
             await session.SaveChangesAsync();
 

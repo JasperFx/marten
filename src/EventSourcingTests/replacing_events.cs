@@ -14,8 +14,8 @@ public class replacing_events : OneOffConfigurationsContext
     public async Task simple_replacement_default_settings()
     {
         var streamId = Guid.NewGuid();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         theSession.Events.StartStream<Quest>(streamId, joined, departed);
         await theSession.SaveChangesAsync();
@@ -56,8 +56,8 @@ public class replacing_events : OneOffConfigurationsContext
         });
 
         var streamId = Guid.NewGuid();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         theSession.Events.StartStream<Quest>(streamId, joined, departed);
         await theSession.SaveChangesAsync();

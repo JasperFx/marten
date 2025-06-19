@@ -21,7 +21,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
         {
             session.Store(new Target
             {
-                NumberArray = new []{ 1, 2 }
+                NumberArray = [1, 2]
             });
 
             await session.SaveChangesAsync();
@@ -42,7 +42,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
             _.Schema.For<Target>().Duplicate(t => t.GuidArray, "uuid[]");
         });
 
-        var target = new Target {GuidArray = new Guid[] {Guid.NewGuid(), Guid.NewGuid()}};
+        var target = new Target {GuidArray = [Guid.NewGuid(), Guid.NewGuid()]};
 
         using (var session = theStore.LightweightSession())
         {

@@ -22,8 +22,8 @@ public class
     [Fact]
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back()
     {
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "First";
 
@@ -46,8 +46,8 @@ public class
     {
         #region sample_start-stream-with-aggregate-type
 
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Second";
         theSession.Events.StartStream<Quest>(id, joined, departed);
@@ -71,8 +71,8 @@ public class
     {
         #region sample_start-stream-with-aggregate-type
 
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Third";
         theSession.Events.StartStream<Quest>(id, joined, departed);
@@ -97,8 +97,8 @@ public class
     {
         #region sample_start-stream-with-aggregate-type
 
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Fourth";
         theSession.Events.StartStream<Quest>(id, joined, departed);
@@ -280,8 +280,8 @@ public class
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_with_stream_id_provided()
     {
         using var session = theStore.LightweightSession();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Tenth";
         session.Events.StartStream<Quest>(id, joined, departed);
@@ -300,8 +300,8 @@ public class
     public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back()
     {
         using var session = theStore.LightweightSession();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Eleventh";
         session.Events.StartStream<Quest>(id, joined);
@@ -332,8 +332,8 @@ public class
 
         using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(id, joined);
             session.Events.Append(id, departed);
@@ -356,8 +356,8 @@ public class
     public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_in_another_database_schema()
     {
         using var session = theStore.LightweightSession();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Thirteen";
         session.Events.StartStream<Quest>(id, joined, departed);
@@ -377,8 +377,8 @@ public class
     public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back_in_another_database_schema()
     {
         using var session = theStore.LightweightSession();
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         var id = "Fourteen";
         session.Events.StartStream<Quest>(id, joined);
@@ -409,8 +409,8 @@ public class
 
         using (var session = theStore.LightweightSession())
         {
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+            var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+            var departed = new MembersDeparted { Members = ["Thom"] };
 
             session.Events.Append(id, joined, departed);
 
@@ -438,8 +438,8 @@ public class
         session.Events.StartStream<Quest>(id, started);
         await session.SaveChangesAsync();
 
-        var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-        var departed = new MembersDeparted { Members = new[] { "Thom" } };
+        var joined = new MembersJoined { Members = ["Rand", "Matt", "Perrin", "Thom"] };
+        var departed = new MembersDeparted { Members = ["Thom"] };
 
         // Events are appended into the stream only if the maximum event id for the stream
         // would be 3 after the append operation.
