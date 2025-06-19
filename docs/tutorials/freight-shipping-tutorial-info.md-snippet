@@ -6,6 +6,6 @@ If you want to have the source code in your local machine:
 1. Ensure you have [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) installed in your machine.
 2. Do a git clone of the Marten repository by running `https://github.com/JasperFx/marten.git`.
 3. Goto to path `docs/src/samples/FreightShipping` and run the project using `dotnet run`, it will show you the list of commands for each tutorial page.
-4. You can set up the Postgres database as outlined in the [docker-compose.yml](https://github.com/JasperFx/marten/blob/master/docs/src/samples/FreightShipping/docker-compose.yml) file. You can run your own Postgres instance and update the connection string accordingly in [appsetting.json](https://github.com/JasperFx/marten/blob/master/docs/src/samples/FreightShipping/appsettings.json) file
+4. You can set up the Postgres database as outlined in the [docker-compose.yml](https://github.com/JasperFx/marten/blob/master/docs/src/samples/FreightShipping/docker-compose.yml) file. Or run your own Postgres instance and update the connection string accordingly in [appsetting.json](https://github.com/JasperFx/marten/blob/master/docs/src/samples/FreightShipping/appsettings.json) file
 5. Run say `dotnet run -- getting-started` to run the sample code in [Getting Started page](/tutorials/getting-started). Similarly the other list of commands will correspond the tutorial pages accordingly.
 :::
