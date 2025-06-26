@@ -11,6 +11,9 @@ public readonly partial struct GuidId;
 [ValueObject<int>]
 public readonly partial struct IntId;
 
+[ValueObject<int>]
+public readonly partial struct WeirdNamed;
+
 [ValueObject<long>]
 public readonly partial struct LongId;
 

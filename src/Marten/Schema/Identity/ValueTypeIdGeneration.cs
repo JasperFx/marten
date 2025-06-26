@@ -144,11 +144,6 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
             return false;
         }
 
-        if (!idType.Name.EndsWith("Id"))
-        {
-            return false;
-        }
-
         if (!idType.IsPublic && !idType.IsNestedPublic)
         {
             return false;
