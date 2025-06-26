@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
@@ -182,4 +183,76 @@ public class fetch_latest_async_aggregate: OneOffConfigurationsContext
         document.DCount.ShouldBe(2);
     }
 
+    [Fact]
+    public async Task fetch_latest_immutable_aggregate_running_inline()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseIdentityMapForAggregates = true;
+
+            opts.Projections.Snapshot<TestAggregateImmutable>(SnapshotLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<TestAggregateImmutable>(streamId, new CreatedEvent(streamId, "Foo", new()), new UpdatedEvent(Guid.NewGuid(), "Bar", new()));
+        await theSession.SaveChangesAsync();
+
+        var aggregate = await theSession.Events.FetchLatest<TestAggregateImmutable>(streamId);
+        aggregate.Name.ShouldBe("Bar");
+        aggregate.Id.ShouldBe(streamId);
+
+        using var session2 = theStore.LightweightSession();
+        session2.Events.Append(streamId, new UpdatedEvent(Guid.NewGuid(), "Random", new()));
+        await session2.SaveChangesAsync();
+
+        var aggregate2 = await session2.Events.FetchLatest<TestAggregateImmutable>(streamId);
+        aggregate2.Name.ShouldBe("Random");
+    }
+
+    [Fact]
+    public async Task fetch_latest_immutable_aggregate_running_inline_and_identity_map()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseIdentityMapForAggregates = true;
+
+            opts.Projections.Snapshot<TestAggregateImmutable>(SnapshotLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        using var session1 = theStore.IdentitySession();
+
+        session1.Events.StartStream<TestAggregateImmutable>(streamId, new CreatedEvent(streamId, "Foo", new()), new UpdatedEvent(Guid.NewGuid(), "Bar", new()));
+        await session1.SaveChangesAsync();
+
+        var aggregate = await session1.Events.FetchLatest<TestAggregateImmutable>(streamId);
+        aggregate.Name.ShouldBe("Bar");
+        aggregate.Id.ShouldBe(streamId);
+
+        using var session2 = theStore.IdentitySession();
+        session2.Events.Append(streamId, new UpdatedEvent(Guid.NewGuid(), "Random", new()));
+        await session2.SaveChangesAsync();
+
+        var aggregate2 = await session2.Events.FetchLatest<TestAggregateImmutable>(streamId);
+        aggregate2.Name.ShouldBe("Random");
+    }
+}
+
+public record CreatedEvent(Guid Id, string Name, Dictionary<int, string> TestData);
+
+public record UpdatedEvent(Guid Id, string Name, Dictionary<int, string> TestData);
+
+public record TestAggregateImmutable(Guid Id, string Name, Dictionary<int, string> TestData)
+{
+    public static TestAggregateImmutable Create(IEvent<CreatedEvent> @event)
+    {
+        return new TestAggregateImmutable(@event.StreamId, @event.Data.Name, @event.Data.TestData);
+    }
+
+    public TestAggregateImmutable Apply(UpdatedEvent @event)
+    {
+        return this with { Name = @event.Name, TestData = @event.TestData };
+    }
 }
