@@ -1,6 +1,7 @@
 
 import type { DefaultTheme, UserConfig } from "vitepress"
 import { withMermaid } from "vitepress-plugin-mermaid"
+import llmstxt from 'vitepress-plugin-llms'
 
 const config: UserConfig<DefaultTheme.Config> = {
   base: '/',
@@ -381,6 +382,9 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
       ]
     }
+  },
+  vite: {
+    plugins: [llmstxt()]
   }
 }
 
