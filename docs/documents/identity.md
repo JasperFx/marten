@@ -528,6 +528,13 @@ public async Task include_a_single_reference()
 
 ### LINQ Support
 
+::: tip
+If you want to use custom value types in Marten and especially if you want to involve these value types in LINQ queries,
+the Marten team _strongly_ suggests you use either Vogen or StronglyTypedId that are tested today with Marten. There's some
+inherent complexity around how these types are serialized to JSON that Marten assumes, and these existing libraries already
+handle that for you. We will not officially support custom value types within Marten documents otherwise. 
+:::
+
 There's a possible timing issue with the strong typed identifiers. Every time that Marten evaluates the identity strategy
 for a document that uses a strong typed identifier, Marten "remembers" that that type is a custom value type and will always
 treat any usage of that value type as being the actual wrapped value when constructing any SQL. You _might_ need to 
