@@ -215,6 +215,36 @@ public class Day
     public double East { get; set; }
     public double West { get; set; }
     public double South { get; set; }
+
+    protected bool Equals(Day other)
+    {
+        return Id == other.Id && North.Equals(other.North) && East.Equals(other.East) && West.Equals(other.West) && South.Equals(other.South);
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is null)
+        {
+            return false;
+        }
+
+        if (ReferenceEquals(this, obj))
+        {
+            return true;
+        }
+
+        if (obj.GetType() != GetType())
+        {
+            return false;
+        }
+
+        return Equals((Day)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id, North, East, West, South);
+    }
 }
 
 #region sample_showing_fanout_rules
