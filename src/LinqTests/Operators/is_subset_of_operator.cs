@@ -70,7 +70,7 @@ public class is_subset_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(2);
+        found.Length.ShouldBe(2);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
@@ -108,7 +108,7 @@ select d.id, d.data from public.mt_doc_target as d where CAST(d.data ->> 'TagsHa
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(2);
+        found.Length.ShouldBe(2);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 }
