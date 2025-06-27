@@ -62,7 +62,7 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(3);
+        found.Length.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
@@ -85,7 +85,7 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(3);
+        found.Length.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
