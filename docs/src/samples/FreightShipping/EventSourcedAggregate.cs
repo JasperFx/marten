@@ -3,23 +3,26 @@ using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 
+// ReSharper disable once CheckNamespace
 namespace FreightShipping.EventSourcedAggregate;
 
 public static class EventSourcedAggregate
 {
     public static async Task Run()
     {
+        var connectionString = Utils.GetConnectionString();
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
             opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Inline);
         });
         #endregion store-setup
         
         #region storing-events
-        using var session = store.LightweightSession();
+
+        await using var session = store.LightweightSession();
 
         // 1. Start a new event stream for a shipment
         var shipmentId = Guid.NewGuid();
@@ -44,7 +47,7 @@ public static class EventSourcedAggregate
         #region live-aggregate
         // Assuming we have a stream of events for shipmentId (from earlier Part)
         var currentState = await session.Events.AggregateStreamAsync<FreightShipment>(shipmentId);
-        Console.WriteLine($"State: {currentState.Status}, PickedUpAt: {currentState.PickedUpAt}");
+        Console.WriteLine($"State: {currentState!.Status}, PickedUpAt: {currentState.PickedUpAt}");
         #endregion live-aggregate
         
         #region shipment-example
@@ -57,10 +60,10 @@ public static class EventSourcedAggregate
 
         var evt2 = new ShipmentPickedUp(DateTime.UtcNow.AddHours(2));
         session2.Events.Append(sid, evt2);
-        await session.SaveChangesAsync();  // Updates ShipmentView.Status and PickedUpAt
+        await session2.SaveChangesAsync();  // Updates ShipmentView.Status and PickedUpAt
 
-        var doc = await session.LoadAsync<ShipmentView>(sid);
-        Console.WriteLine(doc.Status);         // InTransit
+        var doc = await session2.LoadAsync<ShipmentView>(sid);
+        Console.WriteLine(doc!.Status);         // InTransit
         Console.WriteLine(doc.PickedUpAt);    // Set to pickup time
         #endregion shipment-example
     }
@@ -70,14 +73,14 @@ public static class EventSourcedAggregate
 public class FreightShipment
 {
     public Guid Id { get; private set; }
-    public string Origin { get; private set; }
-    public string Destination { get; private set; }
+    public string Origin { get; private set; } = null!;
+    public string Destination { get; private set; } = null!;
     public ShipmentStatus Status { get; private set; }
     public DateTime ScheduledAt { get; private set; }
     public DateTime? PickedUpAt { get; private set; }
     public DateTime? DeliveredAt { get; private set; }
     public DateTime? CancelledAt { get; private set; }
-    public string CancellationReason { get; private set; }
+    public string? CancellationReason { get; private set; }
 
     public static FreightShipment Create(ShipmentScheduled @event)
     {
@@ -119,9 +122,9 @@ public class FreightShipment
 public class ShipmentView
 {
     public Guid Id { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
-    public string Status { get; set; }
+    public string Origin { get; set; } = null!;
+    public string Destination { get; set; } = null!;
+    public string? Status { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? DeliveredAt { get; set; }
 }

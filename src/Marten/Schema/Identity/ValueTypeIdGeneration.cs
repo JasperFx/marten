@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Reflection;
 using System.Threading;
 using JasperFx.CodeGeneration;
@@ -133,6 +134,10 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
     public static bool IsCandidate(Type idType, [NotNullWhen(true)]out ValueTypeIdGeneration? idGeneration)
     {
+        idGeneration = default;
+        if (idType == typeof(Type)) return false;
+        if (idType == typeof(BigInteger)) return false;
+
         if (idType.IsGenericType && idType.IsNullable())
         {
             idType = idType.GetGenericArguments().Single();
@@ -140,11 +145,6 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
 
         idGeneration = null;
         if (idType.IsClass)
-        {
-            return false;
-        }
-
-        if (!idType.Name.EndsWith("Id"))
         {
             return false;
         }

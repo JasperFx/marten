@@ -56,3 +56,5 @@ flowchart TB
 - Marten stores them in PostgreSQL using `jsonb`
 - You can query documents using LINQ
 - Index fields you query often for better performance
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

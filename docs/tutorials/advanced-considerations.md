@@ -76,3 +76,5 @@ flowchart TD
 ```
 
 In summary, Marten’s `ProjectionVersion` feature and Wolverine’s projection distribution **work in tandem** to support zero-downtime deployments for projection changes. Use `ProjectionVersion` when you need to introduce breaking changes to a projection’s shape or data – it gives you a clean slate in the database for the new logic. Use Wolverine’s capabilities to **isolate the new projection to specific nodes**, ensuring old and new versions don’t interfere . By using both strategies together, your freight system can deploy updates (like a new `DailyShipmentsProjection` schema) with minimal disruption: the new projection back-fills data while the old one handles live traffic, and a smooth cutover ensures continuity . This approach, as described in [Jeremy Miller’s 2025 write-up on zero-downtime projections](https://jeremydmiller.com/2025/03/26/projections-consistency-models-and-zero-downtime-deployments-with-the-critter-stack/), lets you evolve your event-driven system confidently without ever putting up a “service unavailable” sign.
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

@@ -73,3 +73,5 @@ sequenceDiagram
     Marten-->>Wolverine: Committed
     Wolverine-->>Dispatch: Publish NotifyDispatchCenter
 ```
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

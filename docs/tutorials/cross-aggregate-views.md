@@ -18,13 +18,17 @@ Marten’s `MultiStreamProjection<TDoc, TId>` base class makes this easier. We c
 
 In this `DailyShipmentsProjection`:
 
-- We use `Identity<ShipmentDelivered>(Func<ShipmentDelivered, DateOnly>)` to tell Marten how to determine the grouping key (the `Id` of our view document) for each `ShipmentDelivered` event. Here we take the event’s timestamp and convert it to a DateOnly (year-month-day) – that’s our grouping key.
+- We use `Identity<ShipmentDelivered>(Func<ShipmentDelivered, string>)` to tell Marten how to determine the grouping key (the `Id` of our view document) for each `ShipmentDelivered` event. Here we take the event’s timestamp and convert it to a string (year-month-day) – that’s our grouping key.
 - The `Create` method specifies what to do if an event arrives for a date that doesn’t yet have a document. We create a new `DailyShipmentsDelivered` with count 1.
 - The `Apply` method defines how to update an existing document when another event for that same date arrives – we just increment the counter.
 
 We would register this projection as typically **async** (since multi-stream projections are by default registered async for safety):
 
 <<< @/src/samples/FreightShipping/CrossAggregateViews.cs#projection-setup
+
+You will also need to have the async projections daemon running as a separate application (as a console app) as below and this is an important step for all projections configured to run asynchronously. And the daemon has to be kept running continuously as well.
+
+<<< @/src/samples/FreightShipping/CrossAggregateViews.cs#async-daemon-setup
 
 With this in place, whenever a `ShipmentDelivered` event is stored, the async projection daemon will eventually invoke our projection. All delivered events on the same day will funnel into the same `DailyShipmentsDelivered` document (with Id = that date). Marten ensures that events are processed in order and handles concurrency so that our counts don’t collide (under high load, async projection uses locking to avoid race conditions, which is one reason multi-stream is best as async).
 
@@ -45,3 +49,5 @@ All of it can be done with Marten using the event data we already collect, witho
 **Tip:** For multi-stream projections, consider the volume of data for each grouping key. Our daily summary is a natural grouping (there’s a finite number of days, and each day gets a cumulative count). If you tried to use a highly unique key (like each event creating its own group), that might just be a degenerate case of one event per group – which could have been done as individual documents anyway. Use multi-stream grouping when events truly need to be summarized or combined.
 
 Now that we’ve seen how Marten handles documents, single-stream aggregates, and multi-stream projections, let’s discuss how Marten integrates with an external library called **Wolverine** to scale out and manage these projections in a robust way.
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->

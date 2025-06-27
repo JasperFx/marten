@@ -87,7 +87,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     public IAggregatorSource<IQuerySession>? Build<TDoc>()
     {
-        var idType = new DocumentMapping(typeof(TDoc), Options).IdType;
+        var idType = Options.Storage.MappingFor(typeof(TDoc)).IdType;
         return typeof(SingleStreamProjection<,>)
             .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
     }

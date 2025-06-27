@@ -7,10 +7,11 @@ public static class GettingStarted
 {
     public static async Task Run()
     {
+        var connectionString = Utils.GetConnectionString();
         #region store-setup
         var store = DocumentStore.For(opts =>
         {
-            opts.Connection("Host=localhost;Database=myapp;Username=myuser;Password=mypwd");
+            opts.Connection(connectionString!);
             opts.AutoCreateSchemaObjects = AutoCreate.All; // Dev mode: create tables if missing
         });
         #endregion store-setup
@@ -34,7 +35,7 @@ public static class GettingStarted
 
         // 3. Later... load the shipment by Id
         var loaded = await session.LoadAsync<FreightShipment>(shipment.Id);
-        Console.WriteLine($"Shipment status: {loaded.Status}");  // Outputs: Scheduled
+        Console.WriteLine($"Shipment status: {loaded!.Status}");  // Outputs: Scheduled
         #endregion create-shipment-doc
 
         #region update-shipment-doc
@@ -52,8 +53,8 @@ public enum ShipmentStatus { Scheduled, InTransit, Delivered, Cancelled }
 public class FreightShipment
 {
     public Guid Id { get; set; }
-    public string Origin { get; set; }
-    public string Destination { get; set; }
+    public string Origin { get; set; } = null!;
+    public string Destination { get; set; } = null!;
     public ShipmentStatus Status { get; set; }
     public DateTime ScheduledAt { get; set; }
     public DateTime? PickedUpAt { get; set; }

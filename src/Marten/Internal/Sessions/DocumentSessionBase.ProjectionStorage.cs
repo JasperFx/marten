@@ -84,6 +84,10 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     public void Store(TDoc snapshot, TId id, string tenantId)
     {
         _storage.SetIdentity(snapshot, id);
+
+        // Put it in the identity map -- if necessary
+        _storage.Store(_session, snapshot);
+
         var upsert = _storage.Upsert(snapshot, _session, tenantId);
         _session.QueueOperation(upsert);
     }

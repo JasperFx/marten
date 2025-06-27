@@ -64,3 +64,5 @@ Let’s illustrate how this works with our shipment example:
 This flow shows that each time we append an event, Marten applies the changes immediately and updates the document inside the same transaction. This ensures strong consistency between the event stream and the projected view.
 
 Note that this is not the same as aggregating a domain model like `FreightShipment` using `AggregateStreamAsync<T>`. Instead, we're producing a derived view (or read model) designed for fast queries, based on a subset of event data.
+
+<!--@include: ./freight-shipping-tutorial-info.md-snippet-->
