@@ -29,7 +29,7 @@ public partial class ProjectionScenario
     public StreamAction Append(Guid stream, params object[] events)
     {
         var step = action(e => e.Append(stream, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"Append({stream}, events)";
         }
@@ -74,7 +74,7 @@ public partial class ProjectionScenario
     public StreamAction Append(Guid stream, long expectedVersion, params object[] events)
     {
         var step = action(e => e.Append(stream, expectedVersion, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"Append({stream}, {expectedVersion}, events)";
         }
@@ -106,7 +106,7 @@ public partial class ProjectionScenario
     public StreamAction Append(string stream, long expectedVersion, params object[] events)
     {
         var step = action(e => e.Append(stream, expectedVersion, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"Append(\"{stream}\", {expectedVersion}, events)";
         }
@@ -122,7 +122,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream<TAggregate>(Guid id, params object[] events) where TAggregate : class
     {
         var step = action(e => e.StartStream<TAggregate>(id, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream<{typeof(TAggregate).FullNameInCode()}>({id}, events)";
         }
@@ -154,7 +154,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream(Type aggregateType, Guid id, params object[] events)
     {
         var step = action(e => e.StartStream(aggregateType, id, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream({aggregateType.FullNameInCode()}>({id}, events)";
         }
@@ -187,7 +187,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream<TAggregate>(string streamKey, params object[] events) where TAggregate : class
     {
         var step = action(e => e.StartStream<TAggregate>(streamKey, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream<{typeof(TAggregate).FullNameInCode()}>(\"{streamKey}\", events)";
         }
@@ -219,7 +219,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream(Type aggregateType, string streamKey, params object[] events)
     {
         var step = action(e => e.StartStream(aggregateType, streamKey, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream({aggregateType.FullNameInCode()}>(\"{streamKey}\", events)";
         }
@@ -250,7 +250,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream(Guid id, params object[] events)
     {
         var step = action(e => e.StartStream(id, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream({id}, events)";
         }
@@ -280,7 +280,7 @@ public partial class ProjectionScenario
     public StreamAction StartStream(string streamKey, params object[] events)
     {
         var step = action(e => e.StartStream(streamKey, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream(\"{streamKey}\", events)";
         }
@@ -313,7 +313,7 @@ public partial class ProjectionScenario
     {
         var streamId = Guid.NewGuid();
         var step = action(e => e.StartStream<TAggregate>(streamId, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream<{typeof(TAggregate).FullNameInCode()}>(events)";
         }
@@ -347,7 +347,7 @@ public partial class ProjectionScenario
     {
         var streamId = Guid.NewGuid();
         var step = action(e => e.StartStream(aggregateType, streamId, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = $"StartStream({aggregateType.FullNameInCode()}>(events)";
         }
@@ -380,7 +380,7 @@ public partial class ProjectionScenario
     {
         var streamId = Guid.NewGuid();
         var step = action(e => e.StartStream(streamId, events));
-        if (events.Count() > 3)
+        if (events.Length > 3)
         {
             step.Description = "StartStream(events)";
         }

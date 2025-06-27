@@ -227,7 +227,7 @@ public class full_text_index: OneOffConfigurationsContext
 
         #endregion
 
-        result.Count().ShouldBe(1);
+        result.Count.ShouldBe(1);
     }
 
     [PgVersionTargetedFact(MinimumVersion = "10.0")]
