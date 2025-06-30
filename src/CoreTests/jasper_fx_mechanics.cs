@@ -139,6 +139,39 @@ public class jasper_fx_mechanics
         usage2.SubjectUri.ShouldBe(new Uri("marten://isecondstore"));
     }
 
+        [Fact]
+    public async Task add_marten_store_for_ancillary_stores_respects_JasperFxOptions()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMartenStore<IFirstStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "first_store";
+                });
+
+                services.AddMartenStore<ISecondStore>(services =>
+                {
+                    var opts = new StoreOptions();
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "second_store";
+
+                    return opts;
+                });
+
+                services.CritterStackDefaults(opts =>
+                {
+                    opts.Development.GeneratedCodeMode = TypeLoadMode.Auto;
+                    opts.Production.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                });
+            }).StartAsync();
+
+        host.Services.GetRequiredService<IFirstStore>().Options.As<StoreOptions>().GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
+        host.Services.GetRequiredService<ISecondStore>().Options.As<StoreOptions>().GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
+    }
+
     [Fact]
     public async Task integration_with_describe_command_line()
     {
