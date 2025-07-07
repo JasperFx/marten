@@ -10,7 +10,7 @@ There is a shared NuGet package called _JasperFx_ that can be used to quickly ad
 your .Net Core application that uses Marten. _JasperFx_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
 is the actual command line parser in this case.
 
-To use the expanded command line options to a .NET application, add a reference to the _JasperFx_ Nuget and add this line of code to your `Program.cs`:
+To use the expanded command line options to a .NET application, add a reference to the _JasperFx_ NuGet and add this line of code to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>
