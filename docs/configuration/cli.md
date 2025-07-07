@@ -1,15 +1,16 @@
 # Command Line Tooling
 
 ::: warning
-The usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the
+The usage of JasperFx shown in this document is only valid for applications bootstrapped with the
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
-There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
-your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
+
+There is a shared NuGet package called _JasperFx_ that can be used to quickly add command-line tooling directly to
+your .Net Core application that uses Marten. _JasperFx_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
 is the actual command line parser in this case.
 
-To use the expanded command line options to a .NET application, add a reference to the _Marten.CommandLine_ Nuget and add this line of code to your `Program.cs`:
+To use the expanded command line options to a .NET application, add a reference to the _JasperFx_ Nuget and add this line of code to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>
