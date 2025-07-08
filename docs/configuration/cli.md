@@ -1,7 +1,7 @@
 # Command Line Tooling
 
 ::: warning
-The usage of Marten.CommandLine shown in this document is only valid for applications bootstrapped with the
+The usage of JasperFx commands shown in this document are only valid for applications bootstrapped with the
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
@@ -15,11 +15,12 @@ JasperFxEnvironment.AutoStartHost = true;
 Without this setting, creating the test server will fail. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
 :::
 
-There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
-your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
-is the actual command line parser in this case.
+Through dependencies on the _JasperFx_ and _Weasel_ libraries, Marten has support for command line tools to apply or generate
+database migrations from the command line. Marten also has support for running or rebuilding projections from the command line.
+Lastly, Marten has a more recent command for some advanced Event Store management features that might be useful in deployment
+scenarios. 
 
-To use the expanded command line options to a .NET application, add a reference to the _Marten.CommandLine_ Nuget and add this line of code to your `Program.cs`:
+To use the expanded command line options to a .NET application, add this last line of code shown below to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>
@@ -68,6 +69,7 @@ The available commands are:
   db-patch      Evaluates the current configuration against the database and writes a patch and drop file if there are any differences
   describe      Writes out a description of your running application to either the console or a file
   help          List all the available commands
+  marten        Advanced Marten operations to 'heal' event store projection issues or reset data  
   projections   Asynchronous projection and projection rebuilds
   resources     Check, setup, or teardown stateful resources of this system
   run           Start and run this .Net application
@@ -186,3 +188,49 @@ In all cases, the commands expose usage help through "marten help [command]." Ea
 ## Projections Support
 
 See [the Async Daemon documentation](/events/projections/async-daemon.md) for more information about the newly improved `projections` command.
+
+## Event Store Management or Resetting Data
+
+Some of the operations on `IDocumentStore.Advanced` are now available from the command line for easier usage within
+automated deployment scripts. 
+
+If you'll type out:
+
+```bash
+dotnet run -- help marten
+```
+
+You'll see this output:
+
+```text
+marten - Advanced Marten operations to 'heal' event store projection issues or reset data
+└── Advanced Marten operations to 'heal' event store projection issues or reset data
+    └── dotnet run -- marten 
+        ├── [-a, --advance]
+        ├── [-c, --correct]
+        ├── [-t, --tenant-id <tenantid>]
+        ├── [-r, --reset]
+        ├── [-v, --env-variable <environmentvariable>]
+        ├── [-c, --contentroot <contentroot>]
+        ├── [-a, --applicationname <applicationname>]
+        ├── [-e, --environment <environment>]
+        ├── [-v, --verbose]
+        ├── [-l, --log-level Trace|Debug|Information|Warning|Error|Critical|None]
+        └── [--config:<prop> <value>]
+
+                                                                                                                                                                          
+                                                                  Usage   Description                                                                                     
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+                                                        [-a, --advance]   Advance the high water mark to the highest detected point                                       
+                                                        [-c, --correct]   Try to correct the event progression based on the event sequence after *some* database hiccups  
+                                           [-t, --tenant-id <tenantid>]   Limit the operation to a single tenant if specified                                             
+                                                          [-r, --reset]   Reset all Marten data                                                                           
+                             [-v, --env-variable <environmentvariable>]   Value in the form <KEY=VALUE> to set an environment variable for this process                   
+                                      [-c, --contentroot <contentroot>]   Override the IHostEnvironment.ContentRoot                                                       
+                              [-a, --applicationname <applicationname>]   Override the IHostEnvironment.ApplicationName                                                   
+                                      [-e, --environment <environment>]   Override the IHostEnvironment.EnvironmentName                                                   
+                                                        [-v, --verbose]   Write out much more information at startup and enables console logging                          
+  [-l, --log-level Trace|Debug|Information|Warning|Error|Critical|None]   Override the log level                                                                          
+                                              [--config:<prop> <value>]   Overwrite individual configuration items   
+```
+
