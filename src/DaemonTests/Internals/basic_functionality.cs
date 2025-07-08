@@ -4,14 +4,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.Core;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events;
 using Marten.Events.Daemon.Internals;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Testing.Harness;
+using Npgsql;
 using NSubstitute;
 using Shouldly;
+using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using Xunit.Abstractions;
@@ -75,6 +80,43 @@ public class basic_functionality: DaemonContext
         await PublishSingleThreaded();
 
         await theStore.Advanced.AdvanceHighWaterMarkToLatestAsync(CancellationToken.None);
+
+    }
+
+    [Fact]
+    public async Task try_correct_progression()
+    {
+        StoreOptions(x => x.Projections.Add(new TripProjectionWithCustomName(), ProjectionLifecycle.Async));
+
+        using var daemon = await StartDaemon();
+        await daemon.StartAllAsync();
+
+        NumberOfStreams = 10;
+        await PublishSingleThreaded();
+
+        await theStore.WaitForNonStaleProjectionDataAsync(5.Seconds());
+
+        await daemon.StopAllAsync();
+
+        var highest = (await theStore.Advanced.AllProjectionProgress()).First().Sequence;
+
+        using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        await conn.CreateCommand(
+                $"update {theStore.Options.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq")
+            .With("seq", highest + 100)
+            .ExecuteNonQueryAsync();
+
+        await conn.CloseAsync();
+
+        await theStore.Advanced.TryCorrectProgressInDatabaseAsync(CancellationToken.None);
+
+        var stats = await theStore.Advanced.AllProjectionProgress();
+        foreach (var shardState in stats)
+        {
+            shardState.Sequence.ShouldBe(highest);
+        }
 
     }
 
