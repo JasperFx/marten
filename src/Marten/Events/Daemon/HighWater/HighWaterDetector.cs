@@ -150,6 +150,20 @@ internal class HighWaterDetector: IHighWaterDetector
         await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
     }
 
+    public async Task TryCorrectProgressInDatabaseAsync(CancellationToken token)
+    {
+        var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
+        if (statistics.LastMark > statistics.HighestSequence)
+        {
+            await using var cmd =
+                new NpgsqlCommand(
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp()")
+                    .With("seq", statistics.HighestSequence);
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
+    }
+
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)
     {
         return await _runner.Query(_highWaterStatisticsDetector, token).ConfigureAwait(false);

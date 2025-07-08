@@ -57,6 +57,41 @@ public class AdvancedOperations
         }
     }
 
+
+    /// <summary>
+    /// If the "high water mark" and event progression values somehow advance beyond the highest
+    /// event sequence, this resets the values back to the highest sequential number. This is very unlikely
+    /// to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
+    /// that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
+    /// now in Marten internals, but this method exists "just in case"
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    public async Task TryCorrectProgressInDatabaseAsync(CancellationToken cancellationToken)
+    {
+        var databases = await _store.Tenancy.BuildDatabases().ConfigureAwait(false);
+        foreach (var database in databases)
+        {
+            var detector = new HighWaterDetector((MartenDatabase)database, _store.Events, NullLogger.Instance);
+            await detector.TryCorrectProgressInDatabaseAsync(cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// If the "high water mark" and event progression values somehow advance beyond the highest
+    /// event sequence, this resets the values back to the highest sequential number. This is very unlikely
+    /// to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
+    /// that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
+    /// now in Marten internals, but this method exists "just in case"
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    public async Task TryCorrectProgressInDatabaseAsync(string tenantId, CancellationToken cancellationToken)
+    {
+        tenantId = _store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+        var detector = new HighWaterDetector((MartenDatabase)tenant.Database, _store.Events, NullLogger.Instance);
+        await detector.TryCorrectProgressInDatabaseAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     ///     Mostly for testing support. Register a new IInitialData object
     ///     that would be called from ResetAllData() later.
