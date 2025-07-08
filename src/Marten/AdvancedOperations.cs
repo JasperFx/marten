@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,9 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
-using Marten.Events.Projections;
 using Marten.Events.Protected;
 using Marten.Events.TestSupport;
 using Marten.Internal;
@@ -42,10 +39,16 @@ public class AdvancedOperations
     public ISerializer Serializer => _store.Serializer;
 
     /// <summary>
-    /// Advance the high water mark to the latest detected sequence. Use with caution!
-    /// This is mostly meant for teams that retrofit asynchronous projections to a
-    /// very large event store that has never before used projections. This will help
-    /// the daemon start and function in its "catch up" mode
+    ///     Mostly for testing support. Register a new IInitialData object
+    ///     that would be called from ResetAllData() later.
+    /// </summary>
+    public List<IInitialData> InitialDataCollection => _store.Options.InitialData;
+
+    /// <summary>
+    ///     Advance the high water mark to the latest detected sequence. Use with caution!
+    ///     This is mostly meant for teams that retrofit asynchronous projections to a
+    ///     very large event store that has never before used projections. This will help
+    ///     the daemon start and function in its "catch up" mode
     /// </summary>
     public async Task AdvanceHighWaterMarkToLatestAsync(CancellationToken token)
     {
@@ -57,13 +60,28 @@ public class AdvancedOperations
         }
     }
 
+    /// <summary>
+    ///     Advance the high water mark to the latest detected sequence. Use with caution!
+    ///     This is mostly meant for teams that retrofit asynchronous projections to a
+    ///     very large event store that has never before used projections. This will help
+    ///     the daemon start and function in its "catch up" mode
+    /// </summary>
+    public async Task AdvanceHighWaterMarkToLatestAsync(string tenantId, CancellationToken token)
+    {
+        tenantId = _store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        var tenant = await _store.Tenancy.GetTenantAsync(tenantId).ConfigureAwait(false);
+
+        var detector = new HighWaterDetector((MartenDatabase)tenant.Database, _store.Events, NullLogger.Instance);
+        await detector.AdvanceHighWaterMarkToLatest(token).ConfigureAwait(false);
+    }
+
 
     /// <summary>
-    /// If the "high water mark" and event progression values somehow advance beyond the highest
-    /// event sequence, this resets the values back to the highest sequential number. This is very unlikely
-    /// to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
-    /// that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
-    /// now in Marten internals, but this method exists "just in case"
+    ///     If the "high water mark" and event progression values somehow advance beyond the highest
+    ///     event sequence, this resets the values back to the highest sequential number. This is very unlikely
+    ///     to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
+    ///     that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
+    ///     now in Marten internals, but this method exists "just in case"
     /// </summary>
     /// <param name="cancellationToken"></param>
     public async Task TryCorrectProgressInDatabaseAsync(CancellationToken cancellationToken)
@@ -77,11 +95,11 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// If the "high water mark" and event progression values somehow advance beyond the highest
-    /// event sequence, this resets the values back to the highest sequential number. This is very unlikely
-    /// to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
-    /// that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
-    /// now in Marten internals, but this method exists "just in case"
+    ///     If the "high water mark" and event progression values somehow advance beyond the highest
+    ///     event sequence, this resets the values back to the highest sequential number. This is very unlikely
+    ///     to occur *now*, but there was a scenario where a Marten application connected to a PostgreSQL database
+    ///     that was being shut down could see inconsistent data from PostgreSQL. We believe this has been addressed
+    ///     now in Marten internals, but this method exists "just in case"
     /// </summary>
     /// <param name="cancellationToken"></param>
     public async Task TryCorrectProgressInDatabaseAsync(string tenantId, CancellationToken cancellationToken)
@@ -91,12 +109,6 @@ public class AdvancedOperations
         var detector = new HighWaterDetector((MartenDatabase)tenant.Database, _store.Events, NullLogger.Instance);
         await detector.TryCorrectProgressInDatabaseAsync(cancellationToken).ConfigureAwait(false);
     }
-
-    /// <summary>
-    ///     Mostly for testing support. Register a new IInitialData object
-    ///     that would be called from ResetAllData() later.
-    /// </summary>
-    public List<IInitialData> InitialDataCollection => _store.Options.InitialData;
 
     /// <summary>
     ///     Deletes all current document and event data, then (re)applies the configured
@@ -158,7 +170,8 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+                .ConfigureAwait(false)).Database;
 
         return await database.FetchEventStoreStatistics(token).ConfigureAwait(false);
     }
@@ -177,7 +190,8 @@ public class AdvancedOperations
     {
         var database = tenantId == null
             ? _store.Tenancy.Default.Database
-            : (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false)).Database;
+            : (await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+                .ConfigureAwait(false)).Database;
 
         return await database.AllProjectionProgress(token).ConfigureAwait(false);
     }
@@ -196,7 +210,8 @@ public class AdvancedOperations
     {
         var tenant = tenantId == null
             ? _store.Tenancy.Default
-            : await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false);
+            : await _store.Tenancy.GetTenantAsync(_store.Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+                .ConfigureAwait(false);
         var database = tenant.Database;
 
         return await database.ProjectionProgressFor(name, token).ConfigureAwait(false);
@@ -217,7 +232,7 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// Convenience method to retrieve all valid "ShardName" identities of asynchronous projections
+    ///     Convenience method to retrieve all valid "ShardName" identities of asynchronous projections
     /// </summary>
     /// <returns></returns>
     public IReadOnlyList<ShardName> AllAsyncProjectionShardNames()
@@ -233,9 +248,9 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// Convenience method to rebuild the projected document of type T for a single stream
-    /// identified by id
-    /// *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     Convenience method to rebuild the projected document of type T for a single stream
+    ///     identified by id
+    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     /// </summary>
     /// <param name="id"></param>
     /// <param name="token"></param>
@@ -244,15 +259,15 @@ public class AdvancedOperations
     public async Task RebuildSingleStreamAsync<T>(string id, CancellationToken token = default) where T : class
     {
         await using var session = _store.LightweightSession();
-        var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
+        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
         session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Convenience method to rebuild the projected document of type T for a single stream
-    /// identified by id
-    /// *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     Convenience method to rebuild the projected document of type T for a single stream
+    ///     identified by id
+    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
     /// </summary>
     /// <param name="id"></param>
     /// <param name="token"></param>
@@ -261,37 +276,35 @@ public class AdvancedOperations
     public async Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
     {
         await using var session = _store.LightweightSession();
-        var document = await session.Events.AggregateStreamAsync<T>(id, token:token).ConfigureAwait(false);
+        var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
         session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
-    /// tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
-    /// relationship between tenant ids and table partitions
+    ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    ///     tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
+    ///     relationship between tenant ids and table partitions
     /// </summary>
     /// <param name="token"></param>
     /// <param name="tenantIds"></param>
     public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, params string[] tenantIds)
     {
         var dict = new Dictionary<string, string>();
-        foreach (var tenantId in tenantIds)
-        {
-            dict[tenantId] = tenantId;
-        }
+        foreach (var tenantId in tenantIds) dict[tenantId] = tenantId;
 
         return AddMartenManagedTenantsAsync(token, dict);
     }
 
     /// <summary>
-    /// "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
-    /// tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
-    /// relationship between tenant ids and table partitions
+    ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    ///     tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
+    ///     relationship between tenant ids and table partitions
     /// </summary>
     /// <param name="token"></param>
     /// <param name="tenantIdToPartitionMapping">Dictionary of tenant id to partition names</param>
-    public async Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, Dictionary<string, string> tenantIdToPartitionMapping)
+    public async Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token,
+        Dictionary<string, string> tenantIdToPartitionMapping)
     {
         if (_store.Options.TenantPartitions == null)
         {
@@ -300,8 +313,11 @@ public class AdvancedOperations
         }
 
         if (_store.Tenancy is not DefaultTenancy)
+        {
             throw new InvalidOperationException(
                 "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+        }
+
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
 
 
@@ -314,9 +330,9 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// Drop a tenant partition from all tables that use the Marten managed tenant partitioning. NOTE: you have to supply
-    /// the partition suffix for the tenant, not necessarily the tenant id. In most cases we think this will probably
-    /// be the same value, but you may have to "sanitize" the suffix name
+    ///     Drop a tenant partition from all tables that use the Marten managed tenant partitioning. NOTE: you have to supply
+    ///     the partition suffix for the tenant, not necessarily the tenant id. In most cases we think this will probably
+    ///     be the same value, but you may have to "sanitize" the suffix name
     /// </summary>
     /// <param name="suffixes"></param>
     /// <param name="token"></param>
@@ -330,8 +346,11 @@ public class AdvancedOperations
         }
 
         if (_store.Tenancy is not DefaultTenancy)
+        {
             throw new InvalidOperationException(
                 "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+        }
+
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
 
 
@@ -341,8 +360,8 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// Delete all data for a given tenant id and drop any partitions for that tenant id if
-    /// using by tenant partitioning managed by Marten
+    ///     Delete all data for a given tenant id and drop any partitions for that tenant id if
+    ///     using by tenant partitioning managed by Marten
     /// </summary>
     /// <param name="tenantId"></param>
     /// <param name="token"></param>
@@ -354,8 +373,8 @@ public class AdvancedOperations
     }
 
     /// <summary>
-    /// Configure and execute a batch masking of protected data for a subset of the events
-    /// in the event store
+    ///     Configure and execute a batch masking of protected data for a subset of the events
+    ///     in the event store
     /// </summary>
     /// <returns></returns>
     public Task ApplyEventDataMasking(Action<IEventDataMasking> configure, CancellationToken token = default)
