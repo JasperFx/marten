@@ -104,6 +104,33 @@ public class HighWaterDetectorTests: DaemonContext
         statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
     }
 
+    [Fact]
+    public async Task look_for_safe_harbor_time_if_there_are_gaps_between_highest_assigned_event_and_the_sequence()
+    {
+        NumberOfStreams = 10;
+        await PublishSingleThreaded();
+
+        var statistics = await theDetector.Detect(CancellationToken.None);
+
+        await Task.Delay(5.Seconds());
+
+        await makeOldWhereSequenceIsLessThanOrEqualTo(NumberOfEvents + 10000);
+
+        // Should not move at all.
+        await advanceSequenceBy(20);
+
+        var statistics2 = await theDetector.DetectInSafeZone(CancellationToken.None);
+
+        statistics2.CurrentMark.ShouldBe(statistics.CurrentMark);
+
+        await advanceSequenceBy(20);
+
+        var statistics3 = await theDetector.DetectInSafeZone(CancellationToken.None);
+
+        // 20 + 20 - 32 = 8
+        statistics3.CurrentMark.ShouldBe(statistics.CurrentMark + 8);
+    }
+
 
 
     protected async Task deleteEvents(params long[] ids)
@@ -118,6 +145,23 @@ public class HighWaterDetectorTests: DaemonContext
 
 
     }
+
+    protected async Task advanceSequenceBy(int count)
+    {
+        var data = await theStore.Advanced.FetchEventStoreStatistics();
+
+        await using var conn = theStore.CreateConnection();
+        await conn.OpenAsync();
+
+        await conn.CreateCommand(
+            $"alter sequence {theStore.Events.DatabaseSchemaName}.mt_events_sequence RESTART WITH {data.EventSequenceNumber + count}")
+            .ExecuteNonQueryAsync();
+
+        await conn.CloseAsync();
+
+        await Task.Delay(250.Milliseconds());
+    }
+
 
     protected async Task makeOldWhereSequenceIsLessThanOrEqualTo(long seqId)
     {

@@ -82,8 +82,15 @@ internal class HighWaterDetector: IHighWaterDetector
             // the sequence
             if (time > _settings.StaleSequenceThreshold)
             {
-                statistics.SafeStartMark = statistics.HighestSequence;
-                statistics.CurrentMark = statistics.HighestSequence;
+                // This has to take into account the 32 problem. If the
+                // HighestSequence is less than 32 higher than the LastMark or CurrentMark, do NOT advance
+                // https://github.com/JasperFx/marten/issues/3865
+                var safeSequenceNumber = statistics.HighestSequence - 32;
+                if (safeSequenceNumber > statistics.LastMark)
+                {
+                    statistics.SafeStartMark = safeSequenceNumber;
+                    statistics.CurrentMark = safeSequenceNumber;
+                }
             }
         }
 
@@ -141,6 +148,20 @@ internal class HighWaterDetector: IHighWaterDetector
                 .With("seq", currentMark);
 
         await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+    }
+
+    public async Task TryCorrectProgressInDatabaseAsync(CancellationToken token)
+    {
+        var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
+        if (statistics.LastMark > statistics.HighestSequence)
+        {
+            await using var cmd =
+                new NpgsqlCommand(
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp()")
+                    .With("seq", statistics.HighestSequence);
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
     }
 
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)

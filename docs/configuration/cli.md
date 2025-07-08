@@ -5,9 +5,20 @@ The usage of JasperFx shown in this document is only valid for applications boot
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
-
 There is a shared NuGet package called _JasperFx_ that can be used to quickly add command-line tooling directly to
-your .Net Core application that uses Marten. _JasperFx_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
+your .Net Core application that uses Marten. _JasperFx_ is a transitive dependency of Marten, so there is no additional
+Nugets to install other than Marten itself.
+
+::: warning
+When writing integration tests, make sure to enable host auto-start in your test setup:
+
+```csharp
+JasperFxEnvironment.AutoStartHost = true;
+```
+
+Without this setting, creating the test server will fail. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
+:::
+
 is the actual command line parser in this case.
 
 To use the expanded command line options to a .NET application, add a reference to the _JasperFx_ NuGet and add this line of code to your `Program.cs`:
