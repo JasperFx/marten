@@ -5,6 +5,16 @@ The usage of Marten.CommandLine shown in this document is only valid for applica
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
 :::
 
+::: warning
+When writing integration tests, make sure to enable host auto-start in your test setup:
+
+```csharp
+JasperFxEnvironment.AutoStartHost = true;
+```
+
+Without this setting, creating the test server will fail. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
+:::
+
 There is a separate NuGet package called _Marten.CommandLine_ that can be used to quickly add command-line tooling directly to
 your .Net Core application that uses Marten. _Marten.CommandLine_ is an extension library to [Oakton](https://jasperfx.github.io/oakton) that
 is the actual command line parser in this case.
