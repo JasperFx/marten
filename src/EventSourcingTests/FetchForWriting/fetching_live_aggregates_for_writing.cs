@@ -55,6 +55,30 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     }
 
     [Fact]
+    public async Task fetch_new_stream_for_writing_Guid_identifier_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var documentQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var document = (await documentQuery).Aggregate;
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier()
     {
         var streamId = Guid.NewGuid();
@@ -76,6 +100,33 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         document.CCount.ShouldBe(2);
     }
 
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
     [Fact]
     public async Task fetch_new_stream_for_writing_string_identifier()
     {
@@ -84,6 +135,33 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         var streamId = Guid.NewGuid().ToString();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+
+    [Fact]
+    public async Task fetch_new_stream_for_writing_string_identifier_in_batch()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+
+        var streamId = Guid.NewGuid().ToString();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
@@ -133,6 +211,32 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+
+    [Fact]
+    public async Task fetch_existing_stream_exclusively_happy_path_for_writing_Guid_identifier_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForExclusiveWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -227,6 +331,28 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         await theSession.SaveChangesAsync();
     }
 
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        await batch.Execute();
+        var stream = await streamQuery;
+
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        stream.AppendOne(new EEvent());
+        await theSession.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_immediate_sad_path()
     {
@@ -242,6 +368,25 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
         });
     }
 
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_immediate_sad_path_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            var batch = theSession.CreateBatchQuery();
+            var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 5);
+            await batch.Execute();
+            var stream = await streamQuery;
+        });
+    }
+
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_sad_path_on_save_changes()
     {
@@ -253,6 +398,36 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
 
         // This should be fine
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        stream.AppendOne(new EEvent());
+
+        // Get in between and run other events in a different session
+        await using (var otherSession = theStore.LightweightSession())
+        {
+            otherSession.Events.Append(streamId, new EEvent());
+            await otherSession.SaveChangesAsync();
+        }
+
+        // The version is now off
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_sad_path_on_save_changes_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        // This should be fine
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session
@@ -320,6 +495,28 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     }
 
     [Fact]
+    public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version_in_batch()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        await batch.Execute();
+        var stream = await streamQuery;
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        stream.AppendOne(new EEvent());
+        await theSession.SaveChangesAsync();
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version_immediate_sad_path()
     {
         UseStreamIdentity(StreamIdentity.AsString);
@@ -336,6 +533,25 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
     }
 
     [Fact]
+    public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version_immediate_sad_path_in_batch()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            var batch = theSession.CreateBatchQuery();
+            var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 5);
+            await batch.Execute();
+            var stream = await streamQuery;
+        });
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version_sad_path_on_save_changes()
     {
         UseStreamIdentity(StreamIdentity.AsString);
@@ -347,6 +563,37 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
 
         // This should be fine
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        stream.AppendOne(new EEvent());
+
+        // Get in between and run other events in a different session
+        await using (var otherSession = theStore.LightweightSession())
+        {
+            otherSession.Events.Append(streamId, new EEvent());
+            await otherSession.SaveChangesAsync();
+        }
+
+        // The version is now off
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_string_identifier_with_expected_version_sad_path_on_save_changes_in_batch()
+    {
+        UseStreamIdentity(StreamIdentity.AsString);
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        // This should be fine
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.AppendOne(new EEvent());
 
         // Get in between and run other events in a different session

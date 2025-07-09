@@ -7,6 +7,7 @@ using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -59,6 +60,30 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new ListQueryHandler<IEvent>(statement, selector);
     }
 
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(Guid id, ISqlFragment? filter)
+    {
+        var selector = _store.Events.EnsureAsGuidStorage(_session);
+        var statement = new EventStatement(selector) { StreamId = id, TenantId = _tenant.TenantId };
+        if (filter != null)
+        {
+            statement.Filters = [filter];
+        }
+
+        return new ListQueryHandler<IEvent>(statement, selector);
+    }
+
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(string id, ISqlFragment? filter)
+    {
+        var selector = _store.Events.EnsureAsStringStorage(_session);
+        var statement = new EventStatement(selector) { StreamKey = id, TenantId = _tenant.TenantId };
+        if (filter != null)
+        {
+            statement.Filters = [filter];
+        }
+
+        return new ListQueryHandler<IEvent>(statement, selector);
+    }
+
     async Task<IEventStorage> IEventIdentityStrategy<string>.EnsureEventStorageExists<T>(
         DocumentSessionBase session, CancellationToken cancellation)
     {
@@ -100,58 +125,58 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
     public Task<IEventStream<T>> FetchForWriting<T>(Guid id, CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, Guid>();
+        var plan = FindFetchPlan<T, Guid>();
         return plan.FetchForWriting(_session, id, false, cancellation);
     }
 
     public Task<IEventStream<T>> FetchForWriting<T>(string key, CancellationToken cancellation = default)
         where T : class
     {
-        var plan = findFetchPlan<T, string>();
+        var plan = FindFetchPlan<T, string>();
         return plan.FetchForWriting(_session, key, false, cancellation);
     }
 
     public Task<IEventStream<T>> FetchForWriting<T>(Guid id, long initialVersion,
         CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, Guid>();
+        var plan = FindFetchPlan<T, Guid>();
         return plan.FetchForWriting(_session, id, initialVersion, cancellation);
     }
 
     public Task<IEventStream<T>> FetchForWriting<T>(string key, long initialVersion,
         CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, string>();
+        var plan = FindFetchPlan<T, string>();
         return plan.FetchForWriting(_session, key, initialVersion, cancellation);
     }
 
     public Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id,
         CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, Guid>();
+        var plan = FindFetchPlan<T, Guid>();
         return plan.FetchForWriting(_session, id, true, cancellation);
     }
 
     public Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key,
         CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, string>();
+        var plan = FindFetchPlan<T, string>();
         return plan.FetchForWriting(_session, key, true, cancellation);
     }
 
     public ValueTask<T?> FetchLatest<T>(Guid id, CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, Guid>();
+        var plan = FindFetchPlan<T, Guid>();
         return plan.FetchForReading(_session, id, cancellation);
     }
 
     public ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class
     {
-        var plan = findFetchPlan<T, string>();
+        var plan = FindFetchPlan<T, string>();
         return plan.FetchForReading(_session, id, cancellation);
     }
 
-    private IAggregateFetchPlan<TDoc, TId> findFetchPlan<TDoc, TId>() where TDoc : class where TId : notnull
+    internal IAggregateFetchPlan<TDoc, TId> FindFetchPlan<TDoc, TId>() where TDoc : class where TId : notnull
     {
         if (typeof(TId) == typeof(Guid))
         {
@@ -191,6 +216,8 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
 public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
 {
+    ProjectionLifecycle Lifecycle { get; }
+
     Task<IEventStream<TDoc>> FetchForWriting(DocumentSessionBase session, TId id, bool forUpdate,
         CancellationToken cancellation = default);
 
@@ -198,6 +225,14 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
         CancellationToken cancellation = default);
 
     ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
+
+    // These two methods are for batching
+    IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id,
+        long expectedStartingVersion);
+
+    IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id, bool forUpdate);
+
+    IQueryHandler<TDoc?> BuildQueryHandler(QuerySession session, TId id);
 }
 
 public interface IEventIdentityStrategy<in TId>
@@ -212,5 +247,8 @@ public interface IEventIdentityStrategy<in TId>
         CancellationToken cancellation) where TDoc : class;
 
     IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(TId id, IEventStorage eventStorage,
+        ISqlFragment? filter = null);
+
+    IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(TId id,
         ISqlFragment? filter = null);
 }

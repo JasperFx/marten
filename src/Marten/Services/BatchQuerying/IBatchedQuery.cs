@@ -55,6 +55,85 @@ public interface IBatchEvents
     /// <returns></returns>
     Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         long fromVersion = 0);
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id with built in optimistic concurrency checks
+    ///     starting at the point the aggregate was fetched.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForWriting<T>(Guid id) where T : class;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id with built in optimistic concurrency checks
+    ///     starting at the point the aggregate was fetched.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForWriting<T>(string key) where T : class;
+
+    /// <summary>
+    ///     Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
+    ///     with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="expectedVersion"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForWriting<T>(Guid id, long expectedVersion)
+        where T : class;
+
+    /// <summary>
+    ///     Fetch projected aggregate T by id and expected, current version of the aggregate. Will fail immediately
+    ///     with ConcurrencyInjection if the expectedVersion is stale. Builds in optimistic concurrency for later
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="expectedVersion"></param>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForWriting<T>(string key, long expectedVersion)
+        where T : class;
+
+    /// <summary>
+    ///     Fetch projected aggregate T by id for exclusive writing
+    /// </summary>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForExclusiveWriting<T>(Guid id)
+        where T : class;
+
+    /// <summary>
+    ///     Fetch projected aggregate T by id for exclusive writing
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventStream<T>> FetchForExclusiveWriting<T>(string key)
+        where T : class;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id. This API functions regardless of the projection lifecycle,
+    /// and should be thought of as a lightweight, read-only version of FetchForWriting
+    /// </summary>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T?> FetchLatest<T>(Guid id) where T : class;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id. This API functions regardless of the projection lifecycle,
+    /// and should be thought of as a lightweight, read-only version of FetchForWriting
+    /// </summary>
+    /// <param name="id"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<T?> FetchLatest<T>(string id) where T : class;
 }
 
 public interface IBatchedQuery
@@ -164,4 +243,5 @@ public interface IBatchedQuery
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<T> QueryByPlan<T>(IBatchQueryPlan<T> plan);
+
 }
