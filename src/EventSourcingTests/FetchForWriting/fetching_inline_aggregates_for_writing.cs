@@ -11,6 +11,7 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
@@ -266,6 +267,11 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     {
         StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
 
+        var target1 = Target.Random();
+        var target2 = Target.Random();
+        theSession.Store(target1, target2);
+        await theSession.SaveChangesAsync();
+
         var streamId = Guid.NewGuid();
 
         theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
@@ -273,13 +279,17 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await theSession.SaveChangesAsync();
 
         var batch = theSession.CreateBatchQuery();
+        var targetQuery1 = batch.Load<Target>(target1.Id);
         var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var targetQuery2 = batch.Load<Target>(target2.Id);
         await batch.Execute();
         var stream = await streamQuery;
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
+        (await targetQuery1).ShouldNotBeNull();
         var document = stream.Aggregate;
+        (await targetQuery2).ShouldNotBeNull();
 
         document.Id.ShouldBe(streamId);
 

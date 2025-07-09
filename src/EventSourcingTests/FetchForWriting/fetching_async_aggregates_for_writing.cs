@@ -10,6 +10,7 @@ using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -840,6 +841,11 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
 
+        var target1 = Target.Random();
+        var target2 = Target.Random();
+        theSession.Store(target1, target2);
+        await theSession.SaveChangesAsync();
+
         var streamId = Guid.NewGuid().ToString();
 
         theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
@@ -850,9 +856,15 @@ public class fetching_async_aggregates_for_writing : OneOffConfigurationsContext
         await daemon.RebuildProjectionAsync<SimpleAggregateAsString>(CancellationToken.None);
 
         var batch = theSession.CreateBatchQuery();
+        var targetQuery1 = batch.Load<Target>(target1.Id);
         var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId, 6);
+        var targetQuery2 = batch.Load<Target>(target2.Id);
+
         await batch.Execute();
+
+        (await targetQuery1).ShouldNotBeNull();
         var stream = await streamQuery;
+        (await targetQuery2).ShouldNotBeNull();
 
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);

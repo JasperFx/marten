@@ -4,6 +4,7 @@ using EventSourcingTests.Aggregation;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -195,6 +196,11 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
             opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
         });
 
+        var target1 = Target.Random();
+        var target2 = Target.Random();
+        theSession.Store(target1, target2);
+        await theSession.SaveChangesAsync();
+
         var streamId = Guid.NewGuid().ToString();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
@@ -203,10 +209,14 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var batch = theSession.CreateBatchQuery();
+        var targetQuery1 = batch.Load<Target>(target1.Id);
         var aggregateQuery = batch.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        var targetQuery2 = batch.Load<Target>(target2.Id);
         await batch.Execute();
 
+        (await targetQuery1).ShouldNotBeNull();
         var aggregate = await aggregateQuery;
+        (await targetQuery2).ShouldNotBeNull();
 
         aggregate.ACount.ShouldBe(1);
         aggregate.BCount.ShouldBe(2);
