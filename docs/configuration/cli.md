@@ -233,4 +233,3 @@ marten - Advanced Marten operations to 'heal' event store projection issues or r
   [-l, --log-level Trace|Debug|Information|Warning|Error|Critical|None]   Override the log level                                                                          
                                               [--config:<prop> <value>]   Overwrite individual configuration items   
 ```
-
