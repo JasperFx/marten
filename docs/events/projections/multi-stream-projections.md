@@ -14,7 +14,7 @@ We have replaced the earlier nomenclature of "ViewProjection" and renamed this c
 If you have Multi-Stream Projections registered as async and Async Daemon is not running, then projection won't be processed. Marten will issue a warning in logs during startup in case of such a mismatch.
 :::
 
-Multi stream projections are designed to handle multi-stream projections where a view is aggregated over events between streams. The `MultiStreamProjection<TDoc, TId>`
+Multi stream projections are designed to handle events from multiple streams, or apply them to multiple instances of an aggregate at the same time. The `MultiStreamProjection<TDoc, TId>`
 base class is a subclass of the simpler [Single Stream Projection](/events/projections/aggregate-projections) and supports all the same method conventions and inline event handling, but allows
 the user to specify how events apply to aggregated views in ways besides the simple aggregation by stream model.
 
