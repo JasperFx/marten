@@ -78,6 +78,37 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_IRevisioned_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+
+        var stream = await streamQuery;
+
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate>(streamId);
+        document.Version.ShouldBe(6);
+    }
+
+    [Fact]
     public async Task revision_is_updated_after_quick_appending_with_custom_mapped_version()
     {
         StoreOptions(opts =>
@@ -94,6 +125,41 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         var streamId = Guid.NewGuid();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate2>(streamId);
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.LoadAsync<SimpleAggregate2>(streamId);
+        document.Version.ShouldBe(6);
+    }
+
+
+    [Fact]
+    public async Task revision_is_updated_after_quick_appending_with_custom_mapped_version_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregate2>(SnapshotLifecycle.Inline).Metadata(m =>
+            {
+                m.Revision.MapTo(x => x.Version);
+            });
+
+            opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.UseIdentityMapForAggregates = true;
+        });
+
+        var streamId = Guid.NewGuid();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate2>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldBeNull();
         stream.CurrentVersion.ShouldBe(0);
 
@@ -137,6 +203,39 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         document.CCount.ShouldBe(2);
     }
 
+
+    [Fact]
+    public async Task fetch_new_stream_for_writing_Guid_identifier_exception_handling_in_batch()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var sameStream = theSession.Events.StartStream(streamId, new AEvent());
+        await Should.ThrowAsync<ExistingStreamIdCollisionException>(async () =>
+        {
+            await theSession.SaveChangesAsync();
+        });
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
     [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier()
     {
@@ -149,6 +248,34 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_in_batch()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -217,6 +344,36 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task fetch_new_stream_for_writing_string_identifier_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
+        stream.Aggregate.ShouldBeNull();
+        stream.CurrentVersion.ShouldBe(0);
+
+        stream.AppendOne(new AEvent());
+        stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
+        stream.AppendMany(new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        var document = await theSession.Events.AggregateStreamAsync<SimpleAggregateAsString>(streamId);
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_string_identifier()
     {
         StoreOptions(opts =>
@@ -233,6 +390,38 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        var document = stream.Aggregate;
+
+        document.Id.ShouldBe(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(3);
+        document.CCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_string_identifier_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+
+        var streamId = Guid.NewGuid().ToString();
+
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 
@@ -428,6 +617,32 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_using_identity_map_immediate_sad_path_in_batch()
+    {
+        StoreOptions(
+            opts =>
+            {
+                opts.Events.UseIdentityMapForAggregates = true;
+                opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            });
+
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        await Should.ThrowAsync<ConcurrencyException>(async () =>
+        {
+            var batch = theSession.CreateBatchQuery();
+            var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 5);
+            await batch.Execute();
+            await streamQuery;
+        });
+    }
+
+    [Fact]
     public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_using_identity_map_sad_path_on_save_changes()
     {
         StoreOptions(
@@ -475,6 +690,28 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         await theSession.SaveChangesAsync();
 
         var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        stream.Aggregate.ShouldNotBeNull();
+        stream.CurrentVersion.ShouldBe(6);
+
+        stream.AppendOne(new EEvent());
+        await theSession.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task fetch_existing_stream_for_writing_Guid_identifier_with_expected_version_in_batch()
+    {
+        StoreOptions(opts => opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline));
+
+        var streamId = Guid.NewGuid();
+
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new BEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var streamQuery = batch.Events.FetchForWriting<SimpleAggregate>(streamId, 6);
+        await batch.Execute();
+        var stream = await streamQuery;
         stream.Aggregate.ShouldNotBeNull();
         stream.CurrentVersion.ShouldBe(6);
 

@@ -18,7 +18,7 @@ using Marten.Util;
 
 namespace Marten.Services.BatchQuerying;
 
-internal class BatchedQuery: IBatchedQuery, IBatchEvents
+internal partial class BatchedQuery: IBatchedQuery
 {
     private readonly List<Type> _documentTypes = new();
     private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
@@ -116,69 +116,6 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         // Smelly downcast, but we'll allow it
         var source = Parent.DocumentStore.As<DocumentStore>().GetCompiledQuerySourceFor(query, Parent);
         var handler = (IQueryHandler<TResult>)source.Build(query, Parent);
-
-        return AddItem(handler);
-    }
-
-
-    public Task<IEvent> Load(Guid id)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = new SingleEventQueryHandler(id, Parent.EventStorage());
-        return AddItem(handler);
-    }
-
-    public Task<StreamState> FetchStreamState(Guid streamId)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = Parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamId, Parent.TenantId));
-
-        return AddItem(handler);
-    }
-
-    public Task<StreamState> FetchStreamState(string streamKey)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = Parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamKey, Parent.TenantId));
-
-        return AddItem(handler);
-    }
-
-    public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
-        long fromVersion = 0)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
-        {
-            StreamId = streamId,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = Parent.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
-
-        return AddItem(handler);
-    }
-
-    public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
-        {
-            StreamKey = streamKey,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = Parent.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
 
         return AddItem(handler);
     }

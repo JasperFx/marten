@@ -29,6 +29,26 @@ public class fetch_latest_live_aggregate: OneOffConfigurationsContext
         document.CCount.ShouldBe(3);
     }
 
+    [Fact]
+    public async Task from_no_current_activity_guid_centric_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.LightweightSession();
+        var batch = query.CreateBatchQuery();
+        var documentQuery = batch.Events.FetchLatest<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var document = await documentQuery;
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(2);
+        document.CCount.ShouldBe(3);
+    }
+
 
     [Fact]
     public async Task from_no_current_activity_string_centric()
@@ -53,6 +73,31 @@ public class fetch_latest_live_aggregate: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task from_no_current_activity_string_centric_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.LightweightSession();
+        var batch = query.CreateBatchQuery();
+        var documentQuery = batch.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var document = await documentQuery;
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(2);
+        document.CCount.ShouldBe(3);
+    }
+
+    [Fact]
     public async Task from_after_fetch_for_writing_guid_centric_brand_new_no_optimization()
     {
         var streamId = Guid.NewGuid();
@@ -63,6 +108,25 @@ public class fetch_latest_live_aggregate: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var aggregate = await theSession.Events.FetchLatest<SimpleAggregate>(streamId);
+        aggregate.ACount.ShouldBe(1);
+        aggregate.BCount.ShouldBe(2);
+        aggregate.CCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task from_after_fetch_for_writing_guid_centric_brand_new_no_optimization_in_batch()
+    {
+        var streamId = Guid.NewGuid();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.AppendMany(new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var aggregateQuery = batch.Events.FetchLatest<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var aggregate = await aggregateQuery;
         aggregate.ACount.ShouldBe(1);
         aggregate.BCount.ShouldBe(2);
         aggregate.CCount.ShouldBe(3);
