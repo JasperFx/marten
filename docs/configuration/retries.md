@@ -4,7 +4,7 @@
 Marten's previous, homegrown `IRetryPolicy` mechanism was completely replaced by [Polly](https://www.nuget.org/packages/polly) in Marten V7.
 :::
 
-Out of the box, Marten is using Polly for resiliency on most operations with this setup:
+Out of the box, Marten is using [Polly.Core](https://www.pollydocs.org/) for resiliency on most operations with this setup:
 
 <!-- snippet: sample_default_Polly_setup -->
 <a id='snippet-sample_default_polly_setup'></a>

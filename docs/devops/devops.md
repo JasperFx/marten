@@ -78,10 +78,11 @@ Of course, it is fully up to you how you want to configure grate or if you want 
 
 ## Application project set-up
 
-How you set-up your csproj is all up to you, but for this example you'll need to install the nuget package `Marten.CommandLine`, so we can export migrations to the migration project in a later step and pre generate code. Furthermore, the latest line in your `program.cs` needs to be:
+How you set-up your csproj is all up to you, but for this example you'll need to opt into the JasperFx command line execution that is bundled 
+with Marten so we can export migrations to the migration project in a later step and pre generate code. To that end, the latest line in your `program.cs` needs to be:
 
 ```cs
-return await app.RunOaktonCommands(args);
+return await app.RunJasperFxCommands(args);
 ```
 
 The dockerfile will include a step that writes the generated code by executing `dotnet run -- codegen write`. 

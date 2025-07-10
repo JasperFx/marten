@@ -28,4 +28,5 @@ Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.co
 
 ## Postgres Version Compatibility
 
-Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 13 and onwards.
+Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 13 and onwards, but our continuous integration
+builds target PostgreSQL 15 & 16. We recommend at least version 15, and Marten might require more recent JSONB features in V9.

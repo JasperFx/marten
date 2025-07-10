@@ -5,22 +5,36 @@ Welcome to the Marten documentation! Join our friendly [Discord channel](https:/
 ## What is Marten?
 
 **Marten is a .NET library for building applications using
-a [document-based approach](https://en.wikipedia.org/wiki/Document-oriented_database)
+a [document-oriented database approach](https://en.wikipedia.org/wiki/Document-oriented_database)
 and [Event Sourcing](https://martinfowler.com/eaaDev/EventSourcing.html).**
-We're committed to removing boilerplate work and letting you focus on delivering business value.
 
-Under the hood, we're using [Postgresql](https://www.postgresql.org/), changing it into:
+::: tip
+Marten can be used completely independently of Wolverine within other .NET application frameworks like ASP.Net MVC Core
+or alternative messaging frameworks. Just know that Wolverine has a lot of "special sauce" for its Marten integration
+that will not necessarily be available in other application frameworks.
+:::
+
+We're committed to removing boilerplate work and letting you focus on delivering business value. When combined with
+the related [Wolverine](https://wolverinefx.net) into the full "Critter Stack," you can achieve very low ceremony, robust,
+and highly testable [Event Driven Architecture](https://wolverinefx.net/) systems.
+
+Under the hood, Marten is built on top of [PostgreSQL](https://www.postgresql.org/), allowing .NET development teams to use
+PostgreSQL as:
 
 - a [document database](/documents/),
 - an [event store](/events/).
 
-The basis for our work is the unique [Postgresql support for JSON storage](https://www.postgresql.org/docs/current/datatype-json.html).
+While still being able to use PostgreSQL as a relational database and all its other myriad functionality all in one system
+on a database engine that is very widely supported across all common cloud providers or on premise self-hosting. Marten
+was made possible by the unique [PostgreSQL support for JSON storage](https://www.postgresql.org/docs/current/datatype-json.html).
 
-**Thanks to that and other Postgresql capabilities, Marten brings strong consistency into those approaches.**
+**Thanks to that and other Postgresql capabilities, Marten brings strong data consistency into both of those approaches.**
 
 Marten is feature-rich and focused on accessibility, and we do that without compromising performance.
 
 Whether you're working on a new greenfield project or a bigger enterprise one, Marten will help you to quickly iterate and evolve your system with a focus on business value.
+
+Here's an [introduction to Marten from Citus Con 2023](https://www.youtube.com/watch?v=rrWweRReLZM).
 
 ## Main features
 
@@ -45,4 +59,10 @@ _Marten_ came from a quick Google search one day for "what are the natural preda
 
 ![A Marten](/images/marten.jpeg)
 
-The Marten project was publicly announced in late 2015 and quickly gained a solid community of interested developers. An event sourcing feature set was added, which proved popular with our users. Marten first went into a production system in 2016 and has been going strong ever since. The v4 release in 2021 marks a massive overhaul of Marten's internals and introduces new functionality requested by our users to better position Marten for the future.
+The Marten project was publicly announced in late 2015 and quickly gained a solid community of interested developers. 
+An event sourcing feature set was added, which proved popular with our users. Marten first went into a production system in 2016 
+and has been going strong ever since. 
+
+At this point, we believe that Marten is the most robust and capable Event Sourcing solution in the .NET ecosystem, and the 
+accompanying Document Database feature set is relatively complete. Likewise, the greater PostgreSQL community has grown since
+we started Marten. 

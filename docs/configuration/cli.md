@@ -12,7 +12,13 @@ When writing integration tests, make sure to enable host auto-start in your test
 JasperFxEnvironment.AutoStartHost = true;
 ```
 
-Without this setting, creating the test server will fail. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
+or in Marten V7 or earlier:
+
+```csharp
+OaktonEnvironment.AutoStartHost = true;
+```
+
+Without this setting, creating the test server will fail to bootstrap. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
 :::
 
 Through dependencies on the _JasperFx_ and _Weasel_ libraries, Marten has support for command line tools to apply or generate
@@ -34,7 +40,7 @@ builder.Host.ApplyJasperFxExtensions();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And finally, use Oakton as the command line parser and executor by replacing `App.Run()` as the last line of code in your
+And finally, use JasperFx as the command line parser and executor by replacing `App.Run()` as the last line of code in your
 `Program.cs` file:
 
 <!-- snippet: sample_using_WebApplication_2 -->

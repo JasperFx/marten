@@ -50,7 +50,7 @@ Before getting started you will need the following in your environment:
 
 Available [here](https://dotnet.microsoft.com/download)
 
-### 2. PostgreSQL 12 or above database
+### 2. PostgreSQL 13 or above database
 
 The fastest possible way to develop with Marten is to run PostgreSQL in a Docker container. Assuming that you have Docker running on your local box, type:
 `docker-compose up`
