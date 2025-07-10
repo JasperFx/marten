@@ -21,16 +21,19 @@ builder.Services.AddMarten(options =>
     // Establish the connection string to your Marten database
     options.Connection(builder.Configuration.GetConnectionString("Marten")!);
 
-    // Specify that we want to use STJ as our serializer
-    options.UseSystemTextJsonForSerialization();
+    // If you want the Marten controlled PostgreSQL objects
+    // in a different schema other than "public"
+    options.DatabaseSchemaName = "other";
 
-    // If we're running in development mode, let Marten just take care
-    // of all necessary schema building and patching behind the scenes
-    if (builder.Environment.IsDevelopment())
-    {
-        options.AutoCreateSchemaObjects = AutoCreate.All;
-    }
-});
+    // There are of course, plenty of other options...
+})
+
+// This is recommended in new development projects
+.UseLightweightSessions()
+
+// If you're using Aspire, use this option *instead* of specifying a connection
+// string to Marten
+.UseNpgsqlDataSource();
 #endregion
 
 var app = builder.Build();
@@ -45,11 +48,11 @@ app.MapControllers();
 #region sample_UserEndpoints
 // You can inject the IDocumentStore and open sessions yourself
 app.MapPost("/user",
-    async (CreateUserRequest create, [FromServices] IDocumentStore store) =>
-{
-    // Open a session for querying, loading, and updating documents
-    await using var session = store.LightweightSession();
+    async (CreateUserRequest create,
 
+    // Inject a session for querying, loading, and updating documents
+    [FromServices] IDocumentSession session) =>
+{
     var user = new User {
         FirstName = create.FirstName,
         LastName = create.LastName,
@@ -57,21 +60,20 @@ app.MapPost("/user",
     };
     session.Store(user);
 
+    // Commit all outstanding changes in one
+    // database transaction
     await session.SaveChangesAsync();
 });
 
 app.MapGet("/users",
-    async (bool internalOnly, [FromServices] IDocumentStore store, CancellationToken ct) =>
+    async (bool internalOnly, [FromServices] IDocumentSession session, CancellationToken ct) =>
 {
-    // Open a session for querying documents only
-    await using var session = store.QuerySession();
-
     return await session.Query<User>()
         .Where(x=> x.Internal == internalOnly)
         .ToListAsync(ct);
 });
 
-// OR Inject the session directly to skip the management of the session lifetime
+// OR use the lightweight IQuerySession if all you're doing is running queries
 app.MapGet("/user/{id:guid}",
     async (Guid id, [FromServices] IQuerySession session, CancellationToken ct) =>
 {

@@ -27,13 +27,16 @@ going to cause some changes to your Marten system when you upgrade:
 * JasperFx subsumed what had been "Oakton" for command line parsing. There are temporarily shims for all the public Oakton types and methods, but from
   this point forward, the core JasperFx library has all the command line parsing and you can pretty well change "Oakton" in your code to "JasperFx"
 
-* The previous "Marten.CommandLine" Nuget was combined into the core Marten library
+* The previous "Marten.CommandLine" Nuget was combined into the core Marten library. You will need to remove any explicit references to this Nuget.
 
 * The new projection support in JasperFx.Events no longer uses any code generation for any of the projections. The code generation
 for entity types, ancillary document stores, and some internals of the event store still exists unchanged.
 
 * The Open Telemetry span names inside the async daemon do not embed the database identifier in the case of multi-tenancy through separate databases. Instead,
   all projection and subscription activity has the same naming, but the database is a tag on the span if you want to disambiguate the work. 
+
+* If you create a custom implementation of `IProjection` in Marten 8, the projection name is the type name instead of the earlier full name. You may need to override
+  the projection name in this case to reflect your older usage.
 
 ### Event Sourcing
 
@@ -42,7 +45,7 @@ The projection base classes have minor changes in Marten 8:
 * The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document. This compromise was made to better support the increasing widespread usage of strong typed identifiers.
 
 v7: `InvoiceProjection : SingleStreamProjection<Invoice>`
-
+~~~~
 v8: `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>`
 
 * Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach

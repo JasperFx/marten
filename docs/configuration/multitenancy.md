@@ -1,11 +1,8 @@
 # Multi-Tenancy with Database per Tenant
 
-:::tip
-Marten V5.0 largely rewired the internals to be aware of multiple databases in features such as the database cleaning,
-the async projection daemon, and the database migrations.
-:::
-
-Marten V5.0 introduced (finally) built in support for multi-tenancy through separate databases per tenant or a group of tenants.
+Marten has support for two types of multi-tenanted storage and data retrieval, [conjoined multi-tenancy](/documents/multi-tenancy) where
+data for separate tenants is stored in the same tables, but separated by a `tenant_id` column. Marten can also efficiently
+separate tenant data by using separate databases for each tenant or for a group of logical tenants.
 
 First off, let's try to answer the obvious questions you probably have:
 

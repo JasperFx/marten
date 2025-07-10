@@ -12,18 +12,21 @@ builder.Services.AddMarten(options =>
     // Establish the connection string to your Marten database
     options.Connection(builder.Configuration.GetConnectionString("Marten")!);
 
-    // Specify that we want to use STJ as our serializer
-    options.UseSystemTextJsonForSerialization();
+    // If you want the Marten controlled PostgreSQL objects
+    // in a different schema other than "public"
+    options.DatabaseSchemaName = "other";
 
-    // If we're running in development mode, let Marten just take care
-    // of all necessary schema building and patching behind the scenes
-    if (builder.Environment.IsDevelopment())
-    {
-        options.AutoCreateSchemaObjects = AutoCreate.All;
-    }
-});
+    // There are of course, plenty of other options...
+})
+
+// This is recommended in new development projects
+.UseLightweightSessions()
+
+// If you're using Aspire, use this option *instead* of specifying a connection
+// string to Marten
+.UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `AddMarten()` method will add these service registrations to your application:
@@ -135,7 +138,7 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L329-L337' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L330-L338' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
@@ -151,7 +154,7 @@ services.AddMarten()
     .UseLightweightSessions()
     .UseNpgsqlDataSource(dataSourceKey);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L379-L389' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L380-L390' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasource_keyed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
@@ -173,7 +176,7 @@ services.AddMarten(x =>
     .UseLightweightSessions()
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L351-L363' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/bootstrapping_with_service_collection_extensions.cs#L352-L364' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_usenpgsqldatasourcemultihost' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning
@@ -250,7 +253,7 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L866-L877' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L877-L888' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're [working with multiple databases](#working-with-multiple-marten-databases)) class like so:
@@ -314,7 +317,7 @@ public interface IAsyncConfigureMarten
     ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L879-L891' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L890-L902' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:
@@ -600,41 +603,22 @@ This correlation tracking might be better with structural logging with something
 
 ## Eager Initialization of the DocumentStore
 
-Lastly, if desirable, you can force Marten to initialize the applications document store as part of bootstrapping instead of waiting for it to be initialized on the first usage with this syntax:
+Sorry, but as of Marten 7, it is no longer possible to force the `DocumentStore` to be initialized during `IHost` bootstrapping. 
+We had to make this change to avoid using any synchronous IO during bootstrapping.
 
-<!-- snippet: sample_AddMartenWithEagerInitialization -->
-<a id='snippet-sample_addmartenwitheagerinitialization'></a>
-```cs
-var connectionString = Configuration.GetConnectionString("postgres");
+## Ancillary Marten Stores <Badge type="tip" text="5.0" />
 
-// By only the connection string
-services.AddMarten(connectionString)
-    .InitializeWith();
-
-// In a "Production" environment, we're turning off the
-// automatic database migrations and dynamic code generation
-services.CritterStackDefaults(x =>
-{
-    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-    x.Production.ResourceAutoCreate = AutoCreate.None;
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/EagerInitialization/Startup.cs#L21-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwitheagerinitialization' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-## Working with Multiple Marten Databases
+For the increasingly common usage of Marten within modular monoliths or for scalability reasons, you can effectively
+use additional Marten stores in the same application. These stores could either address completely different
+databases, or use different schemas within the same database.
 
 :::tip
-This feature is **not** meant for multi-tenancy with separate databases. This is specifically meant for use
-cases where a single system needs to work with two or more semantically different Marten databases.
-:::
-
-:::tip
-The database management tools in Marten.CommandLine are able to work with the separately registered
+The database management tools that come bundled with Marten are able to work with the separately registered
 document stores along with the default store from `AddMarten()`.
 :::
 
-Marten V5.0 introduces a new feature to register additional Marten databases into a .Net system. `AddMarten()` continues to work as it has, but we can now register and resolve additional store services. To utilize the type system and your application's underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one below targeting a separate "invoicing" database:
+To utilize the type system and your application's underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one 
+below targeting a separate "invoicing" database:
 
 <!-- snippet: sample_IInvoicingStore -->
 <a id='snippet-sample_iinvoicingstore'></a>

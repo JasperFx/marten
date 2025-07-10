@@ -1,7 +1,9 @@
 # Getting Started
 
 Following the common .NET idiom, Marten supplies extension methods to quickly integrate Marten into any .NET application that uses the `IServiceCollection` abstractions to register IoC services. 
-For this reason, we recommend starting with a Worker Service template for console applications, or an ASP.NET Core template for web services.
+Most features of Marten will work without the IoC registrations or any kind of `IHostBuilder`, but all of the command line tooling and
+much of the "Async Daemon" or database setup activators leverage the basic .NET `IHost` model. See the section on using `DocumentStore` directly
+if you need to use Marten without a full .NET `IHost`.
 
 To add Marten to a .NET project, first go get the Marten library from Nuget:
 
@@ -21,7 +23,7 @@ dotnet paket add Marten
 
 :::
 
-In the startup of your ASP&#46;NET Core or Worker Service application, make a call to `AddMarten()` to register Marten services like so:
+In the startup of your .NET application, make a call to `AddMarten()` to register Marten services like so:
 
 <!-- snippet: sample_StartupConfigureServices -->
 <a id='snippet-sample_startupconfigureservices'></a>
@@ -33,18 +35,21 @@ builder.Services.AddMarten(options =>
     // Establish the connection string to your Marten database
     options.Connection(builder.Configuration.GetConnectionString("Marten")!);
 
-    // Specify that we want to use STJ as our serializer
-    options.UseSystemTextJsonForSerialization();
+    // If you want the Marten controlled PostgreSQL objects
+    // in a different schema other than "public"
+    options.DatabaseSchemaName = "other";
 
-    // If we're running in development mode, let Marten just take care
-    // of all necessary schema building and patching behind the scenes
-    if (builder.Environment.IsDevelopment())
-    {
-        options.AutoCreateSchemaObjects = AutoCreate.All;
-    }
-});
+    // There are of course, plenty of other options...
+})
+
+// This is recommended in new development projects
+.UseLightweightSessions()
+
+// If you're using Aspire, use this option *instead* of specifying a connection
+// string to Marten
+.UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
@@ -53,9 +58,9 @@ See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more inform
 Use of the `.AddMarten` integration is not mandatory, see [Creating a standalone store](#creating-a-standalone-store)
 :::
 
-## Postgres
+## PostgreSQL
 
-The next step is to get access to a PostgreSQL **13+** database schema. If you want to let Marten build database schema objects on the fly at development time,
+The next step is to get access to a PostgreSQL database schema. If you want to let Marten build database schema objects on the fly at development time,
 make sure that your user account has rights to execute `CREATE TABLE/FUNCTION` statements.
 
 Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL from .NET, so you'll likely want to read their [documentation on connection string syntax](http://www.npgsql.org/doc/connection-string-parameters.html).
@@ -81,6 +86,12 @@ public class User
 
 *For more information on document identity, see [identity](/documents/identity).*
 
+::: tip
+If you registered Marten with `AddMarten()`, the `IDocumentSession` and `IQuerySession` services are registered with a `Scoped`
+lifetime. You should just inject a session directly in most cases. `IDocumentStore` is registered with `Singleton` scope, but 
+you'll rarely need to interact with that service.
+:::
+
 From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
 
 <!-- snippet: sample_UserEndpoints -->
@@ -88,11 +99,11 @@ From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can b
 ```cs
 // You can inject the IDocumentStore and open sessions yourself
 app.MapPost("/user",
-    async (CreateUserRequest create, [FromServices] IDocumentStore store) =>
-{
-    // Open a session for querying, loading, and updating documents
-    await using var session = store.LightweightSession();
+    async (CreateUserRequest create,
 
+    // Inject a session for querying, loading, and updating documents
+    [FromServices] IDocumentSession session) =>
+{
     var user = new User {
         FirstName = create.FirstName,
         LastName = create.LastName,
@@ -100,28 +111,27 @@ app.MapPost("/user",
     };
     session.Store(user);
 
+    // Commit all outstanding changes in one
+    // database transaction
     await session.SaveChangesAsync();
 });
 
 app.MapGet("/users",
-    async (bool internalOnly, [FromServices] IDocumentStore store, CancellationToken ct) =>
+    async (bool internalOnly, [FromServices] IDocumentSession session, CancellationToken ct) =>
 {
-    // Open a session for querying documents only
-    await using var session = store.QuerySession();
-
     return await session.Query<User>()
         .Where(x=> x.Internal == internalOnly)
         .ToListAsync(ct);
 });
 
-// OR Inject the session directly to skip the management of the session lifetime
+// OR use the lightweight IQuerySession if all you're doing is running queries
 app.MapGet("/user/{id:guid}",
     async (Guid id, [FromServices] IQuerySession session, CancellationToken ct) =>
 {
     return await session.LoadAsync<User>(id, ct);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L45-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L48-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO

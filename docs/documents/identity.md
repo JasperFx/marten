@@ -328,7 +328,7 @@ public record struct TaskId(Guid Value);
 /// with a public static method that takes in the
 /// inner value
 /// </summary>
-public struct Task2Id
+public readonly struct Task2Id
 {
     private Task2Id(Guid value) => Value = value;
 
@@ -337,7 +337,7 @@ public struct Task2Id
     public static Task2Id From(Guid value) => new Task2Id(value);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L33-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In _all_ cases, the type name will have to be suffixed with "Id" (and it's case sensitive) to be considered by Marten to be
@@ -357,7 +357,7 @@ identifier:
 <a id='snippet-sample_invoice_with_vogen_id'></a>
 ```cs
 [ValueObject<Guid>]
-public partial struct InvoiceId;
+public readonly partial struct InvoiceId;
 
 public class Invoice
 {
@@ -416,7 +416,7 @@ For another example, here's a usage of an `int` wrapped identifier:
 <a id='snippet-sample_order2_with_strong_typed_identifier'></a>
 ```cs
 [StronglyTypedId(Template.Int)]
-public partial struct Order2Id;
+public readonly partial struct Order2Id;
 
 public class Order2
 {
@@ -545,10 +545,10 @@ expressions that use members that are value types like so:
 <a id='snippet-sample_limited_doc'></a>
 ```cs
 [ValueObject<int>]
-public partial struct UpperLimit;
+public readonly partial struct UpperLimit;
 
 [ValueObject<int>]
-public partial struct LowerLimit;
+public readonly partial struct LowerLimit;
 
 public class LimitedDoc
 {
@@ -561,16 +561,16 @@ public class LimitedDoc
 <a id='snippet-sample_limited_doc-1'></a>
 ```cs
 [ValueObject<long>]
-public partial struct UpperLimit;
+public readonly partial struct UpperLimit;
 
 [ValueObject<int>]
-public partial struct LowerLimit;
+public readonly partial struct LowerLimit;
 
 [ValueObject<string>]
-public partial struct Description;
+public readonly partial struct Description;
 
 [ValueObject<Guid>]
-public partial struct GuidId;
+public readonly partial struct GuidId;
 
 public class LimitedDoc
 {

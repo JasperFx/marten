@@ -5,11 +5,11 @@ JSON serialization extensible and configurable through the native mechanisms in 
 
 ## Serializer Choice
 
-Marten ships with implementations for both Newtonsoft.Json & System.Text.Json. Newtonsoft.Json is enabled by default in Marten for backwards compatibility
-with previous Marten versions and because it handles some unique edge-cases that System.Text.Json might not. 
+::: info
+Marten 8 uses System.Text.Json as the default JSON serializer. Previous to 8, Marten used Newtonsoft.Json as the default.
+:::
 
-That being said, if you're working on a new application
-we recommend enabling System.Text.Json for improved performance and serializer alignment with ASP.NET Core & Wolverine defaults.
+Marten ships with System.Text.Json as the default, but there is still built in support to opt into Newtonsoft.Json.
 
 Configuration for both serializers hang off the `DocumentStore` `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
 
@@ -224,6 +224,10 @@ var store = DocumentStore.For(_ =>
 <!-- endSnippet -->
 
 ## Integrating a Custom serializer
+
+::: warning
+Please talk to the Marten team before you undergo any significant effort to support a new JSON serializer
+:::
 
 Internally, Marten uses an adapter interface for JSON serialization:
 
