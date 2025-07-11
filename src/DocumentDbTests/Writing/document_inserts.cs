@@ -60,7 +60,7 @@ public class document_inserts: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<RecordDocument>().ToList().Count().ShouldBe(1);
+            query.Query<RecordDocument>().ToList().Count.ShouldBe(1);
         }
     }
 
