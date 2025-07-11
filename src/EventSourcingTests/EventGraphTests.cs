@@ -5,6 +5,7 @@ using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
+using Marten.Events.Operations;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -18,6 +19,13 @@ public class EventGraphTests
     public EventGraphTests()
     {
         theGraph = new StoreOptions().EventGraph;
+    }
+
+    [Fact]
+    public void get_backwards_compatible_name_for_archived()
+    {
+        theGraph.TypeForDotNetName("Marten.Events.Archived, Marten").ShouldBe(typeof(Archived));
+        theGraph.TypeForDotNetName("Marten.Events.Operations.Tombstone, Marten").ShouldBe(typeof(Tombstone));
     }
 
     [Fact]

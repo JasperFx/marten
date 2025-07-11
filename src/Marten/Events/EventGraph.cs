@@ -75,6 +75,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 
         AddEventType<Archived>();
+
     }
 
     internal NpgsqlDbType StreamIdDbType { get; private set; }
@@ -476,7 +477,19 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     {
         if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
         {
-            value = Type.GetType(assemblyQualifiedName);
+            if (assemblyQualifiedName.Contains(".Archived"))
+            {
+                value = typeof(Archived);
+            }
+            else if (assemblyQualifiedName.Contains(".Tombstone"))
+            {
+                value = typeof(Tombstone);
+            }
+            else
+            {
+                value = Type.GetType(assemblyQualifiedName);
+            }
+
             if (value == null)
             {
                 throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
