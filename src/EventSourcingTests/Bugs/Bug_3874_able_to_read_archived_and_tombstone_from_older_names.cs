@@ -6,7 +6,6 @@ using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
-using Npgsql;
 using Shouldly;
 using Xunit;
 
@@ -46,7 +45,6 @@ public class Bug_3874_able_to_read_archived_and_tombstone_from_older_names : Bug
         events.Single().Data.ShouldBeOfType<Tombstone>();
     }
 
-
     [Fact]
     public async Task reproduction()
     {
@@ -74,7 +72,6 @@ public class Bug_3874_able_to_read_archived_and_tombstone_from_older_names : Bug
 
         (await theSession.LoadAsync<ReproSimpleDetails>(id)).ShouldBeNull();
         (await theSession.LoadAsync<ReproArchivedDetails>(id)).ShouldNotBeNull().Status.ShouldBe("Archived");
-
     }
 }
 
