@@ -46,6 +46,7 @@ public class Bug_3874_able_to_read_archived_and_tombstone_from_older_names : Bug
         events.Single().Data.ShouldBeOfType<Tombstone>();
     }
 
+
     [Fact]
     public async Task reproduction()
     {
