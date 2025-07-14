@@ -219,7 +219,7 @@ public class storing_documents: IntegrationContext
 
         using var querySession = theStore.QuerySession();
         var users = await querySession.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
-        users.Count().ShouldBe(3);
+        users.Count.ShouldBe(3);
     }
 
     [Theory]
@@ -252,7 +252,7 @@ public class storing_documents: IntegrationContext
 
         await using var querySession = store.QuerySession();
         var users = await querySession.LoadManyAsync<User>(user2.Id, user3.Id, user4.Id);
-        users.Count().ShouldBe(3);
+        users.Count.ShouldBe(3);
 
         #endregion
     }

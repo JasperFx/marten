@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
@@ -128,7 +128,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var list = theSession.Query<IPapaSmurf>().ToList();
-        list.Count().ShouldBe(3);
+        list.Count.ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
@@ -144,7 +144,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var list = await theSession.Query<IPapaSmurf>().ToListAsync();
-        list.Count().ShouldBe(3);
+        list.Count.ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 

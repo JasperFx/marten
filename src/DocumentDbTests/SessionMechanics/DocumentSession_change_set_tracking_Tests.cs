@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Linq.SqlGeneration;
@@ -58,7 +58,7 @@ public class DocumentSession_change_set_tracking_Tests : IntegrationContext
         theSession.Store(new Target());
         await theSession.SaveChangesAsync();
 
-        logger.Commits.Count().ShouldBe(2);
+        logger.Commits.Count.ShouldBe(2);
         logger.LastCommit.Updated.Count().ShouldBe(1);
     }
 
