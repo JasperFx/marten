@@ -180,39 +180,6 @@ END; $$;
 ";
     }
 
-    private void DeleteSingleEventStream<T>(T streamId, string? tenantId = null)
-    {
-        if (typeof(T) != Options.EventGraph.GetStreamIdType())
-        {
-            throw new ArgumentException(
-                $"{nameof(streamId)} should  be of type {Options.EventGraph.GetStreamIdType()}", nameof(streamId));
-        }
-
-        using var conn = CreateConnection();
-        var streamsWhere = "id = :id";
-        var eventsWhere = "stream_id = :id";
-
-        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined)
-        {
-            var tenantPart = " AND tenant_id = :tenantId";
-            streamsWhere += tenantPart;
-            eventsWhere += tenantPart;
-        }
-
-        var cmd = conn.CreateCommand(
-            $"delete from {Options.Events.DatabaseSchemaName}.mt_events where {eventsWhere};delete from {Options.Events.DatabaseSchemaName}.mt_streams where {streamsWhere}");
-        cmd.AddNamedParameter("id", streamId);
-
-        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
-        {
-            cmd.AddNamedParameter("tenantId", tenantId);
-        }
-
-        conn.Open();
-
-        cmd.ExecuteNonQuery();
-    }
-
     private async Task DeleteSingleEventStreamAsync<T>(T streamId, string? tenantId = null,
         CancellationToken ct = default)
     {
@@ -226,7 +193,7 @@ END; $$;
         var streamsWhere = "id = :id";
         var eventsWhere = "stream_id = :id";
 
-        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined)
+        if (Options.Events.TenancyStyle == TenancyStyle.Conjoined && tenantId.IsNotEmpty())
         {
             var tenantPart = " AND tenant_id = :tenantId";
             streamsWhere += tenantPart;

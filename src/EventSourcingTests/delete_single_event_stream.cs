@@ -76,6 +76,39 @@ public class delete_single_event_stream: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task delete_stream_by_guid_id_conjoined_tenancy_with_no_tenant_id()
+    {
+        StoreOptions(opts => opts.Events.TenancyStyle = TenancyStyle.Conjoined);
+
+        var stream1 = Guid.NewGuid();
+        var stream2 = Guid.NewGuid();
+
+        using (var session = theStore.LightweightSession())
+        {
+            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed = new MembersDeparted { Members = new[] { "Thom" } };
+
+            session.Events.Append(stream1, joined, departed);
+
+            var joined2 = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
+            var departed2 = new MembersDeparted { Members = new[] { "Thom" } };
+
+            session.Events.Append(stream2, joined2, departed2);
+
+            await session.SaveChangesAsync();
+        }
+
+        await theStore.Advanced.Clean.DeleteSingleEventStreamAsync(stream1);
+
+        using (var session = theStore.LightweightSession())
+        {
+            var events = session.Events.QueryAllRawEvents().ToList();
+            events.All(x => x.StreamId == stream2)
+                .ShouldBeTrue();
+        }
+    }
+
+    [Fact]
     public async Task delete_stream_by_guid_id_async()
     {
 
