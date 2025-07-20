@@ -45,7 +45,7 @@ The projection base classes have minor changes in Marten 8:
 * The `SingleStreamProjection` now requires 2 generic type arguments for both the projected document type and the identity type of that document. This compromise was made to better support the increasing widespread usage of strong typed identifiers.
 
 v7: `InvoiceProjection : SingleStreamProjection<Invoice>`
-~~~~
+
 v8: `InvoiceProjection : SingleStreamProjection<Invoice, InvoiceId>`
 
 * Both `SingleStreamProjection` and `MultiStreamProjection` have improved options for writing explicit code for projections for more complex scenarios or if you just prefer that over the conventional `Apply` / `Create` method approach
