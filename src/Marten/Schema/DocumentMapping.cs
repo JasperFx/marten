@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -77,9 +78,9 @@ public interface IDocumentType
     Type TypeFor(string alias);
 }
 
-public class DocumentMapping: IDocumentMapping, IDocumentType
+public partial class DocumentMapping: IDocumentMapping, IDocumentType
 {
-    internal static bool IsValidIdentityType(Type identityType)
+    internal static bool IsValidIdentityType([NotNullWhen(true)]Type? identityType)
     {
         if (identityType == null)
             return false;
@@ -95,9 +96,11 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
                    out var fSharpDiscriminatedUnionIdGeneration);
     }
 
-    private static readonly Regex _aliasSanitizer = new("<|>", RegexOptions.Compiled);
-    internal static readonly Type[] ValidIdTypes = { typeof(int), typeof(Guid), typeof(long), typeof(string) };
-    private readonly List<DuplicatedField> _duplicates = new();
+    [GeneratedRegex("<|>")]
+    private static partial Regex AliasSanitizer();
+
+    internal static readonly Type[] ValidIdTypes = [typeof(int), typeof(Guid), typeof(long), typeof(string)];
+    private readonly List<DuplicatedField> _duplicates = [];
     private readonly Lazy<DocumentSchema> _schema;
 
     private string _alias;
@@ -662,13 +665,13 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         var nameToAlias = documentType.Name;
         if (documentType.GetTypeInfo().IsGenericType)
         {
-            nameToAlias = _aliasSanitizer.Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
+            nameToAlias = AliasSanitizer().Replace(documentType.GetPrettyName(), string.Empty).Replace(",", "_");
         }
 
         var parts = new List<string> { nameToAlias.ToLower() };
         if (documentType.IsNested)
         {
-            parts.Insert(0, documentType.DeclaringType.Name.ToLower());
+            parts.Insert(0, documentType.DeclaringType!.Name.ToLower());
         }
 
         return string.Join("_", parts);
@@ -704,7 +707,7 @@ public class DocumentMapping: IDocumentMapping, IDocumentType
         bool notNull = false)
     {
         var member = QueryMembers.FindMember(members[0]);
-        var parent = (IHasChildrenMembers)QueryMembers;
+        IHasChildrenMembers parent = QueryMembers;
         for (var i = 1; i < members.Length; i++)
         {
             parent = member.As<IHasChildrenMembers>();
@@ -827,7 +830,7 @@ public class DocumentMapping<T>: DocumentMapping
     public DocumentMapping(StoreOptions storeOptions) : base(typeof(T), storeOptions)
     {
         var configure = typeof(T).GetMethod("ConfigureMarten", BindingFlags.Static | BindingFlags.Public);
-        configure?.Invoke(null, new object[] { this });
+        configure?.Invoke(null, [this]);
     }
 
     /// <summary>
@@ -841,7 +844,7 @@ public class DocumentMapping<T>: DocumentMapping
     ///     field
     /// </param>
     /// <returns></returns>
-    public void Duplicate(Expression<Func<T, object>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
+    public void Duplicate(Expression<Func<T, object?>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
         Action<DocumentIndex>? configure = null, bool notNull = false)
     {
         var visitor = new FindMembers();
@@ -864,7 +867,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// </summary>
     /// <param name="expression"></param>
     /// <param name="configure"></param>
-    public void Index(Expression<Func<T, object>> expression, Action<ComputedIndex>? configure = null)
+    public void Index(Expression<Func<T, object?>> expression, Action<ComputedIndex>? configure = null)
     {
         if (expression.Body is NewExpression newExpression)
         {
@@ -878,7 +881,7 @@ public class DocumentMapping<T>: DocumentMapping
         }
 
 
-        Index(new[] { expression }, configure);
+        Index([expression], configure);
     }
 
     /// <summary>
@@ -886,7 +889,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// </summary>
     /// <param name="expressions"></param>
     /// <param name="configure"></param>
-    public void Index(IReadOnlyCollection<Expression<Func<T, object>>> expressions,
+    public void Index(IReadOnlyCollection<Expression<Func<T, object?>>> expressions,
         Action<ComputedIndex>? configure = null)
     {
         var members = expressions
@@ -897,14 +900,14 @@ public class DocumentMapping<T>: DocumentMapping
         Indexes.Add(index);
     }
 
-    public void UniqueIndex(UniqueIndexType indexType, string indexName,
-        params Expression<Func<T, object>>[] expressions)
+    public void UniqueIndex(UniqueIndexType indexType, string? indexName,
+        params Expression<Func<T, object?>>[] expressions)
     {
         UniqueIndex(indexType, indexName, TenancyScope.Global, expressions);
     }
 
-    public void UniqueIndex(UniqueIndexType indexType, string indexName,
-        TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object>>[] expressions)
+    public void UniqueIndex(UniqueIndexType indexType, string? indexName,
+        TenancyScope tenancyScope = TenancyScope.Global, params Expression<Func<T, object?>>[] expressions)
     {
         var members = expressions
             .Select(e =>
@@ -937,7 +940,7 @@ public class DocumentMapping<T>: DocumentMapping
     /// <remarks>
     ///     See: https://www.postgresql.org/docs/10/static/textsearch-controls.html#TEXTSEARCH-PARSING-DOCUMENTS
     /// </remarks>
-    public FullTextIndexDefinition FullTextIndex(string regConfig, params Expression<Func<T, object>>[] expressions)
+    public FullTextIndexDefinition FullTextIndex(string regConfig, params Expression<Func<T, object?>>[] expressions)
     {
         return AddFullTextIndex(
             expressions
@@ -950,7 +953,7 @@ public class DocumentMapping<T>: DocumentMapping
     ///     Adds an ngram index.
     /// </summary>
     /// <param name="expression">Document field that should be use by ngram index</param>
-    public NgramIndex NgramIndex(Expression<Func<T, object>> expression)
+    public NgramIndex NgramIndex(Expression<Func<T, object?>> expression)
     {
         var visitor = new FindMembers();
         visitor.Visit(expression);
@@ -962,7 +965,7 @@ public class DocumentMapping<T>: DocumentMapping
     ///     Adds a full text index with default region config set to 'english'
     /// </summary>
     /// <param name="expressions">Document fields that should be use by full text index</param>
-    public NgramIndex NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object>> expression)
+    public NgramIndex NgramIndex(Action<NgramIndex> configure, Expression<Func<T, object?>> expression)
     {
         var index = NgramIndex(expression);
         configure(index);

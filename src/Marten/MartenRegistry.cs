@@ -185,7 +185,7 @@ public class MartenRegistry
         /// </param>
         /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string? pgType = null,
+        public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object?>> expression, string? pgType = null,
             NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false)
         {
             _builder.Alter = mapping =>
@@ -201,7 +201,7 @@ public class MartenRegistry
         /// <param name="expression"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression,
+        public DocumentMappingExpression<T> Index(Expression<Func<T, object?>> expression,
             Action<ComputedIndex>? configure = null)
         {
             _builder.Alter = m => m.Index(expression, configure);
