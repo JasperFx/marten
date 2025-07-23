@@ -41,7 +41,8 @@
     "revisioned",
     "Revisioned",
     "Vogen",
-    "upserts"
+    "upserts",
+	"Citus"
   ],
   "ignoreWords": [
     "JSONB",
