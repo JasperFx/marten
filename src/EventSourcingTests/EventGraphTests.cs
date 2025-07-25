@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using EventSourcingTests.Aggregation;
 using EventSourcingTests.Projections;
 using JasperFx.Events;
 using Marten;
@@ -156,6 +157,15 @@ public class EventGraphTests
     public void archived_event_type_is_registered_by_default()
     {
         theGraph.AllEvents().ShouldContain(x => x.DocumentType == typeof(Archived));
+    }
+
+    [Fact]
+    public void add_event_directly()
+    {
+        var e = Event.For(new AEvent());
+        theGraph.BuildEvent(e).ShouldBeSameAs(e);
+
+        e.EventTypeName.ShouldNotBeNull();
     }
 
     public class HouseRemodeling

@@ -121,6 +121,12 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
+    protected void writeTimestamps(IGroupedParameterBuilder builder)
+    {
+        var param = builder.AppendParameter(Stream.Events.Select(x => x.Timestamp).ToArray());
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.TimestampTz;
+    }
+
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false))

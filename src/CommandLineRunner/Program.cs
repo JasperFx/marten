@@ -5,6 +5,7 @@ using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
 using JasperFx.CodeGeneration;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
@@ -52,6 +53,7 @@ public static class Program
 
                 services.AddMarten(opts =>
                 {
+                    opts.Events.AppendMode = EventAppendMode.Quick;
                     opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";

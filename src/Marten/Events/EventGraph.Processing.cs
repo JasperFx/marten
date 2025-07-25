@@ -20,10 +20,16 @@ public partial class EventGraph
 
     internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
 
+    private EventAppendMode _appendMode = EventAppendMode.Rich;
+
     public EventAppendMode AppendMode
     {
-        get => EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
-        set => EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
+        get => _appendMode;
+        set
+        {
+            _appendMode = value;
+            EventAppender = _appendMode == EventAppendMode.Rich ? new RichEventAppender() : new QuickEventAppender();
+        }
     }
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
