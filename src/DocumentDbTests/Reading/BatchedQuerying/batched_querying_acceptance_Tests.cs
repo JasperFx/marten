@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -369,7 +369,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         var list = await task;
 
-        list.Count().ShouldBe(2);
+        list.Count.ShouldBe(2);
         list.Any(x => x.Id == target1.Id).ShouldBeTrue();
         list.Any(x => x.Id == target3.Id).ShouldBeTrue();
     }
@@ -403,7 +403,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
 
         var list = await task;
 
-        list.Count().ShouldBe(2);
+        list.Count.ShouldBe(2);
         list.Any(x => x.Id == target1.Id).ShouldBeTrue();
         list.Any(x => x.Id == target3.Id).ShouldBeTrue();
     }

@@ -631,7 +631,7 @@ public class streaming_json_results : IntegrationContext
         var customers = theStore.Options.Serializer().FromJson<Customer[]>(stream);
         customers.Length.ShouldBe(2);
 
-        customerJson.Count().ShouldBe(148); // magic number that just happens to be the length of the JSON string returned
+        customerJson.Length.ShouldBe(148); // magic number that just happens to be the length of the JSON string returned
     }
 
 

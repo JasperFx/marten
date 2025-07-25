@@ -298,7 +298,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public object TryCreateUniqueTemplate(Type type)
     {
-        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Count());
+        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Length);
 
 
         if (constructor == null)

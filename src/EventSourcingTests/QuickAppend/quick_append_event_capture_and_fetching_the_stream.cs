@@ -58,7 +58,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -87,7 +87,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -117,7 +117,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             var streamEvents = await session.Events.QueryAllRawEvents()
                 .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -147,7 +147,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
             var streamEvents = session.Events.QueryAllRawEvents()
                 .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -280,7 +280,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -311,7 +311,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -351,7 +351,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(3);
+                streamEvents.Count.ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
@@ -384,7 +384,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -414,7 +414,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -447,7 +447,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -486,7 +486,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(3);
+                streamEvents.Count.ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
