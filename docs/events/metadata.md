@@ -135,3 +135,43 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
+
+## Overriding Metadata <Badge type="tip" text="8.4" />
+
+It's now possible to override some of the metadata on individual events at the point
+where you append new events. At this point you can override:
+
+1. `Timestamp` - the time at which the event was appended according to metadata. Many people have requested this over time for both 
+   testing scenarios and for importing data from external systems into Marten
+2. `Id` - a `Guid` value that isn't used by Marten itself, but might be helpful for being a reference to external commands or in imports
+   from non-Marten databases
+3. `CorrelationId` & `CausationId`. By default these values are taken from the `IDocumentSession` itself which in turn is trying
+   to pull them from any active Open Telemetry span.
+4. Header data, but any header value set on the session with the same key overwrites the individual header (for now)
+
+Do note that if you want to potentially overwrite the timestamp of events _and_ you want to use the "QuickAppend" option
+for faster appending, you'll need this configuration:
+
+snippet: sample_setting_quick_with_server_timestamps
+
+The setting above is important because the `QuickAppend` normally takes the timestamp from the
+database server time at the point of inserting database rows. The `QuickWithServerTimestamps` option changes Marten's
+event appending process to take the timestamp data from the application server's `TimeProvider` registered with Marten
+by default, or explicitly overridden data on `IEvent` wrappers.
+
+Now, on to event appending. The first way is
+to pull out the `IEvent` wrapper and directly setting metadata like this:
+
+snippet: sample_overriding_event_metadata_by_position
+
+The second option is to directly append the `IEvent` wrappers where you've already
+set metadata like this:
+
+snippet: sample_override_by_appending_the_event_wrapper
+
+::: tip
+You can also create event wrappers by calling either:
+
+1. `new Event<T>(T data){ Timestamp = *** }`
+2. `var wrapper = Event.For(data);`
+:::

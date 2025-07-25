@@ -161,8 +161,19 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     {
         ArgumentNullException.ThrowIfNull(eventData);
 
-        var mapping = EventMappingFor(eventData.GetType());
-        return mapping.Wrap(eventData);
+        if (eventData is IEvent e)
+        {
+            var mapping = EventMappingFor(e.EventType);
+            e.EventTypeName = mapping.EventTypeName;
+            return e;
+        }
+        else
+        {
+            var mapping = EventMappingFor(eventData.GetType());
+            return mapping.Wrap(eventData);
+        }
+
+
     }
 
     /// <summary>
