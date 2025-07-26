@@ -122,17 +122,17 @@ use completely different .NET types with the same type name like in this example
 ```csharp
 public class GroupEvents
 {
-	public record Created(string Name);
+    public record Created(string Name);
 }
 
 public class UserEvents
 {
-	public record Created(string Name);
+    public record Created(string Name);
 }
 ```
 
 In that case, the original naming scheme of "created" will not correctly disambiguate between the
-two different `Created` types above. While you *could* manually alias all of these event types
+two different `Created` types above. While you _could_ manually alias all of these event types
 yourself to disambiguate, it's too easy to forget to do that. Instead, you can just switch to different
 naming schemes like this:
 
@@ -140,7 +140,6 @@ snippet: sample_event_naming_style
 
 Note that you will have to switch out of the "classic" naming mode to disambiguate between event types
 with the same class name in different namespaces.
-
 
 ## Optional Indexes
 
