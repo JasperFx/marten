@@ -136,7 +136,29 @@ two different `Created` types above. While you _could_ manually alias all of the
 yourself to disambiguate, it's too easy to forget to do that. Instead, you can just switch to different
 naming schemes like this:
 
-snippet: sample_event_naming_style
+<!-- snippet: sample_event_naming_style -->
+<a id='snippet-sample_event_naming_style'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // This is the default behavior, but just showing you that
+    // this is an option
+    opts.Events.EventNamingStyle = EventNamingStyle.ClassicTypeName;
+
+    // This mode is "the classic style Marten has always used, except smart enough
+    // to disambiguate inner classes that have the same type name"
+    opts.Events.EventNamingStyle = EventNamingStyle.SmarterTypeName;
+
+    // Forget all the pretty naming aliases, just use the .NET full type name for
+    // the event type name
+    opts.Events.EventNamingStyle = EventNamingStyle.FullTypeName;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/NamingStyles.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_naming_style' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 Note that you will have to switch out of the "classic" naming mode to disambiguate between event types
 with the same class name in different namespaces.

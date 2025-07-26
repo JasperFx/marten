@@ -2,7 +2,8 @@
 
 ::: tip
 The Marten team recommends using the `IServiceCollection.AddMarten()` extension method
-for IoC integration out of the box.
+for IoC integration out of the box and honestly, the full `IHost` integration. At this point Marten
+depends on the `IHostedService` abstraction in .NET for start up actions and the async daemon.
 :::
 
 The Marten team has striven to make the library perfectly usable without the usage of an IoC container, but you may still want to

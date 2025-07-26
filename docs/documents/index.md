@@ -1,6 +1,18 @@
 # Marten as Document DB
 
-Marten's original focus was on enabling Postgresql as a document database for .Net developers that would allow developers to work very efficiently compared to the typical RDBMS + ORM approach while delivering solid performance. In Marten's case, persistent .Net _documents_ are just serialized to JSON and persisted to Postgresql using its unique JSONB capabilities. The advantage to developers of this approach is that there is much less configuration work necessary to map their persistent classes to a database structure. Developers are also far more able to evolve their application's model as there is so much less friction in changing the persistence layer with Marten compared to the RDBMS + ORM combination.
+Marten's original focus was on enabling Postgresql as a document database for .Net developers. In Marten's case, this means
+that instead of an ORM like EF Core where you have to map .NET types to flat relational database tables, Marten just utilizes
+JSON serialization to persist and load .NET objects ("documents"). In conjunction with PostgreSQL's JSONB data type and its ability
+to efficiently support rich querying and even indexing through JSON documents, Marten's approach has turned out to be highly
+effective to implement persistence in many .NET applications.
+
+When a document database is a good fit for a system (mostly when you have relatively self-contained entities and don't need to
+model complex relationships between document types), Marten can make teams much more productive over ORM or purely relational
+database usage by:
+
+* Eliminating explicit ORM mapping
+* Being able to accept changes as entities evolve without having to worry much about database migrations
+* Utilizing built in database initialization and migrations at runtime so you can "just work" 
 
 Here's an introduction to Marten Db as a document database from .Net Conf 2018:
 
