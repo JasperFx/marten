@@ -92,6 +92,11 @@ namespace Marten.Events
         public bool UseMandatoryStreamTypeDeclaration { get; set; }
 
         /// <summary>
+        /// Opt into different aliasing styles for .NET event types
+        /// </summary>
+        public EventNamingStyle EventNamingStyle { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

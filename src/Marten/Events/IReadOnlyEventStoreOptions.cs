@@ -86,4 +86,9 @@ public interface IReadOnlyEventStoreOptions
     /// but this will be true in 8.0
     /// </summary>
     bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    /// <summary>
+    /// Opt into different aliasing styles for .NET event types
+    /// </summary>
+    EventNamingStyle EventNamingStyle { get; set; }
 }

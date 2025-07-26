@@ -108,6 +108,40 @@ public Dictionary<string, object>? Headers { get; set; }
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.
 
+## Event Type Names <Badge type="tip" text="8.4" />
+
+If you look into the `mt_events` table in your system you'll see a column named `type` that will
+have an alias for the .NET type name that Marten keys off when reading events from the database 
+to "know" what .NET type to deserialize the JSON data to. 
+
+The original idea was that people should be able to easily move event types around in their
+solution without breaking the storage as full type names changed, so we purposely used _only_ the
+type name of the .NET type for the event alias. In real life usage though, sometimes people will
+use completely different .NET types with the same type name like in this example:
+
+```csharp
+public class GroupEvents
+{
+	public record Created(string Name);
+}
+
+public class UserEvents
+{
+	public record Created(string Name);
+}
+```
+
+In that case, the original naming scheme of "created" will not correctly disambiguate between the
+two different `Created` types above. While you *could* manually alias all of these event types
+yourself to disambiguate, it's too easy to forget to do that. Instead, you can just switch to different
+naming schemes like this:
+
+snippet: sample_event_naming_style
+
+Note that you will have to switch out of the "classic" naming mode to disambiguate between event types
+with the same class name in different namespaces.
+
+
 ## Optional Indexes
 
 As of Marten 7.0, Marten is omitting indexes that aren't universally necessary, but

@@ -23,6 +23,33 @@ public class EventGraphTests
     }
 
     [Fact]
+    public void default_naming_style_is_classic()
+    {
+        theGraph.EventNamingStyle.ShouldBe(EventNamingStyle.ClassicTypeName);
+    }
+
+    [Fact]
+    public void override_the_naming_style_1()
+    {
+        theGraph.EventNamingStyle = EventNamingStyle.ClassicTypeName;
+        theGraph.EventMappingFor<AEvent>().EventTypeName.ShouldBe("a_event");
+    }
+
+    [Fact]
+    public void override_the_naming_style_2()
+    {
+        theGraph.EventNamingStyle = EventNamingStyle.SmarterTypeName;
+        theGraph.EventMappingFor<UserEvents.Created>().EventTypeName.ShouldBe("user_events.created");
+    }
+
+    [Fact]
+    public void override_the_naming_style_3()
+    {
+        theGraph.EventNamingStyle = EventNamingStyle.FullTypeName;
+        theGraph.EventMappingFor<UserEvents.Created>().EventTypeName.ShouldBe("EventSourcingTests.UserEvents.Created");
+    }
+
+    [Fact]
     public void get_backwards_compatible_name_for_archived()
     {
         theGraph.TypeForDotNetName("Marten.Events.Archived, Marten").ShouldBe(typeof(Archived));
@@ -182,4 +209,14 @@ public class IssueAggregate
     {
         // Do stuff
     }
+}
+
+public class GroupEvents
+{
+    public record Created(string Name);
+}
+
+public class UserEvents
+{
+    public record Created(string Name);
 }
