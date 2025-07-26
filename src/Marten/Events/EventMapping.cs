@@ -42,6 +42,8 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     {
         TenancyStyle = parent.TenancyStyle;
 
+        EventTypeName = eventType.GetEventTypeName(parent.EventNamingStyle);
+
         _parent = parent;
         DocumentType = eventType;
 

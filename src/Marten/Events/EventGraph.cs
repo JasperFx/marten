@@ -78,6 +78,11 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     }
 
+    /// <summary>
+    /// Opt into different aliasing styles for .NET event types
+    /// </summary>
+    public EventNamingStyle EventNamingStyle { get; set; } = EventNamingStyle.ClassicTypeName;
+
     internal NpgsqlDbType StreamIdDbType { get; private set; }
 
     internal StoreOptions Options { get; }
