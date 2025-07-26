@@ -224,7 +224,20 @@ where you append new events. At this point you can override:
 Do note that if you want to potentially overwrite the timestamp of events _and_ you want to use the "QuickAppend" option
 for faster appending, you'll need this configuration:
 
-snippet: sample_setting_quick_with_server_timestamps
+<!-- snippet: sample_setting_quick_with_server_timestamps -->
+<a id='snippet-sample_setting_quick_with_server_timestamps'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // This is important!
+    opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MetadataExamples.cs#L79-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_quick_with_server_timestamps' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The setting above is important because the `QuickAppend` normally takes the timestamp from the
 database server time at the point of inserting database rows. The `QuickWithServerTimestamps` option changes Marten's
@@ -234,12 +247,74 @@ by default, or explicitly overridden data on `IEvent` wrappers.
 Now, on to event appending. The first way is
 to pull out the `IEvent` wrapper and directly setting metadata like this:
 
-snippet: sample_overriding_event_metadata_by_position
+<!-- snippet: sample_overriding_event_metadata_by_position -->
+<a id='snippet-sample_overriding_event_metadata_by_position'></a>
+```cs
+public static async Task override_metadata(IDocumentSession session)
+{
+    var started = new QuestStarted { Name = "Find the Orb" };
+
+    var joined = new MembersJoined
+    {
+        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+    };
+
+    var slayed1 = new MonsterSlayed { Name = "Troll" };
+    var slayed2 = new MonsterSlayed { Name = "Dragon" };
+
+    var joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+
+    var action = session.Events
+        .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2);
+
+    // I'm grabbing the IEvent wrapper for the first event in the action
+    var wrapper = action.Events[0];
+    wrapper.Timestamp = DateTimeOffset.UtcNow.Subtract(1.Hours());
+    wrapper.SetHeader("category", "important");
+    wrapper.Id = Guid.NewGuid(); // Just showing that you *can* override this value
+    wrapper.CausationId = wrapper.CorrelationId = Activity.Current?.Id;
+
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MetadataExamples.cs#L15-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_overriding_event_metadata_by_position' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 The second option is to directly append the `IEvent` wrappers where you've already
 set metadata like this:
 
-snippet: sample_override_by_appending_the_event_wrapper
+<!-- snippet: sample_override_by_appending_the_event_wrapper -->
+<a id='snippet-sample_override_by_appending_the_event_wrapper'></a>
+```cs
+public static async Task override_metadata2(IDocumentSession session)
+{
+    var started = new QuestStarted { Name = "Find the Orb" };
+
+    var joined = new MembersJoined
+    {
+        Day = 2, Location = "Faldor's Farm", Members = new string[] { "Garion", "Polgara", "Belgarath" }
+    };
+
+    var slayed1 = new MonsterSlayed { Name = "Troll" };
+    var slayed2 = new MonsterSlayed { Name = "Dragon" };
+
+    var joined2 = new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
+
+    // The result of this is an IEvent wrapper around the
+    // started data with an overridden timestamp
+    // and a value for the "color" header
+    var wrapper = started.AsEvent()
+        .AtTimestamp(DateTimeOffset.UtcNow.Subtract(1.Hours()))
+        .WithHeader("color", "blue");
+
+    session.Events
+        .StartStream<QuestParty>(wrapper, joined, slayed1, slayed2, joined2);
+
+    await session.SaveChangesAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/MetadataExamples.cs#L46-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_by_appending_the_event_wrapper' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ::: tip
 You can also create event wrappers by calling either:

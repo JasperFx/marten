@@ -158,7 +158,7 @@ public async Task can_do_simple_select_many_against_simple_array()
 
         var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
         names
-            .Count().ShouldBe(9);
+            .Count.ShouldBe(9);
     }
 }
 ```

@@ -333,7 +333,7 @@ but you do need to tell Marten about any non-default length limit like so:
 var store = DocumentStore.For(_ =>
 {
     // If you have overridden NAMEDATALEN in your
-    // PostgreSQL database to 100
+    // Postgresql database to 100
     _.NameDataLength = 100;
 });
 ```
