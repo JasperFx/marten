@@ -62,12 +62,12 @@ public static class AsyncDaemonHealthCheckExtensions
     /// </summary>
     /// <param name="MaxEventLag"></param>
     /// <returns></returns>
-    internal record AsyncDaemonHealthCheckSettings(int MaxEventLag, TimeSpan? MaxSameLagTime = null);
+    public record AsyncDaemonHealthCheckSettings(int MaxEventLag, TimeSpan? MaxSameLagTime = null);
 
     /// <summary>
     ///     Health check implementation
     /// </summary>
-    internal class AsyncDaemonHealthCheck: IHealthCheck
+    public class AsyncDaemonHealthCheck: IHealthCheck
     {
         private readonly ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)>
             _lastProjectionsChecks = new();
