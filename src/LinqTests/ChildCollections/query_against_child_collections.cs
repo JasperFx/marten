@@ -757,7 +757,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         targetithchildren.Children = new[] { new Target(), };
         var nochildrennullarray = new Target { Number = 2 };
         var nochildrenemptyarray = new Target { Number = 3 };
-        nochildrenemptyarray.Children = new Target[] { };
+        nochildrenemptyarray.Children = [];
         theSession.Store(nochildrennullarray);
         theSession.Store(nochildrenemptyarray);
         theSession.Store(targetithchildren);

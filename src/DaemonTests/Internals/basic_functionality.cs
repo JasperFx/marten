@@ -225,7 +225,7 @@ public class basic_functionality: DaemonContext
     public async Task event_fetcher_simple_case()
     {
         var fetcher =
-            new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(), new ISqlFragment[0]);
+            new EventLoader(theStore, (MartenDatabase)theStore.Tenancy.Default.Database, new AsyncOptions(), []);
 
         NumberOfStreams = 10;
         await PublishSingleThreaded();

@@ -225,7 +225,7 @@ public class TripStream
     {
         if (IsFinishedPublishing())
         {
-            events = new object[0];
+            events = [];
             return false;
         }
 
