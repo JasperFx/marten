@@ -48,7 +48,7 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
 
     public IMartenDatabase Database { get; protected set; }
 
-    public string TenantId { get; protected set; }
+
 #nullable enable
 
     internal QuerySession(

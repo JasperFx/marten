@@ -31,6 +31,7 @@ internal class EventsTable: Table
         AddIfActive(events.Metadata.CorrelationId);
         AddIfActive(events.Metadata.CausationId);
         AddIfActive(events.Metadata.Headers);
+        AddIfActive(events.Metadata.UserName);
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {

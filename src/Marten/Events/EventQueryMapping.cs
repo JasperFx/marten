@@ -52,6 +52,11 @@ public class EventQueryMapping: DocumentMapping
         {
             registerQueryableMember(x => x.CausationId, storeOptions.EventGraph.Metadata.CausationId.Name);
         }
+
+        if (storeOptions.EventGraph.Metadata.UserName.Enabled)
+        {
+            registerQueryableMember(x => x.UserName, storeOptions.EventGraph.Metadata.UserName.Name);
+        }
     }
 
     public override DbObjectName TableName { get; }

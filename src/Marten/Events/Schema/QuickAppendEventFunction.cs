@@ -58,6 +58,13 @@ namespace Marten.Events.Schema;
                 metadataValues += ", headers[index]";
             }
 
+            if (table.Columns.OfType<UserNameColumn>().Any())
+            {
+                metadataColumns += ", " + UserNameColumn.ColumnName;
+                metadataParameters += ", user_names varchar[]";
+                metadataValues += ", user_names[index]";
+            }
+
             var timestampValue = "(now() at time zone 'utc')";
             if (_events.AppendMode == EventAppendMode.QuickWithServerTimestamps)
             {

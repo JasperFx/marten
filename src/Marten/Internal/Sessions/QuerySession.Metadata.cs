@@ -12,14 +12,26 @@ public partial class QuerySession
 {
     public VersionTracker Versions { get; internal set; } = new();
 
+    #region sample_query_session_metadata_tracking
+
     public string? CausationId { get; set; }
     public string? CorrelationId { get; set; }
-    public string? LastModifiedBy { get; set; }
+
+    public string TenantId { get; protected set; }
+    public string CurrentUserName { get; set; }
+
+    public string? LastModifiedBy
+    {
+        get => CurrentUserName;
+        set => CurrentUserName = value;
+    }
 
     /// <summary>
     ///     This is meant to be lazy created, and can be null
     /// </summary>
     public Dictionary<string, object>? Headers { get; protected set; }
+
+    #endregion
 
     public Guid? VersionFor<TDoc>(TDoc entity) where TDoc : notnull
     {
@@ -48,4 +60,6 @@ public partial class QuerySession
     bool IMetadataContext.CorrelationIdEnabled => Options.EventGraph.Metadata.CorrelationId.Enabled;
 
     bool IMetadataContext.HeadersEnabled => Options.EventGraph.Metadata.Headers.Enabled;
+
+    bool IMetadataContext.UserNameEnabled => Options.EventGraph.Metadata.UserName.Enabled;
 }

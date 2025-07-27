@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using JasperFx.Events;
+using Marten;
 using Marten.Events.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -20,6 +22,7 @@ public class overriding_metadata : OneOffConfigurationsContext
             opts.Events.MetadataConfig.CorrelationIdEnabled = true;
             opts.Events.MetadataConfig.CausationIdEnabled = true;
             opts.Events.MetadataConfig.HeadersEnabled = true;
+            opts.Events.MetadataConfig.UserNameEnabled = true;
         });
     }
 
@@ -33,9 +36,42 @@ public class overriding_metadata : OneOffConfigurationsContext
                 opts.Events.MetadataConfig.CorrelationIdEnabled = true;
                 opts.Events.MetadataConfig.CausationIdEnabled = true;
                 opts.Events.MetadataConfig.HeadersEnabled = true;
+                opts.Events.MetadataConfig.UserNameEnabled = true;
             });
         }
     }
+
+    [Theory]
+    [InlineData(JasperFx.Events.EventAppendMode.Rich)]
+    [InlineData(JasperFx.Events.EventAppendMode.Quick)]
+    public async Task capture_user_name_information(EventAppendMode mode)
+    {
+        EventAppendMode = mode;
+        var streamId = Guid.NewGuid();
+
+        theSession.LastModifiedBy = "Larry Bird";
+
+        // Just need a time that will be easy to assert on that is in the past
+        var timestamp = (DateTimeOffset)DateTime.Today.Subtract(1.Hours()).ToUniversalTime();
+
+        var action = theSession.Events.StartStream(streamId, new AEvent(), new BEvent(), new CEvent());
+        action.Events[0].UserName = "Kevin McHale";
+
+        await theSession.SaveChangesAsync();
+
+        using var query = theStore.QuerySession();
+
+        var events = await query.Events.FetchStreamAsync(streamId);
+
+        events[0].UserName.ShouldBe("Kevin McHale");
+        events[1].UserName.ShouldBe("Larry Bird");
+        events[2].UserName.ShouldBe("Larry Bird");
+
+        // Should write another test, but I'm doing it here!
+        var celtics = await query.Events.QueryAllRawEvents().Where(x => x.UserName == "Larry Bird").ToListAsync();
+        celtics.Count.ShouldBeGreaterThanOrEqualTo(2);
+    }
+
 
     [Theory]
     [InlineData(JasperFx.Events.EventAppendMode.Rich)]

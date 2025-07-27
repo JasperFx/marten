@@ -4,7 +4,7 @@ See [Marten Metadata](/documents/metadata) for more information and examples
 about capturing metadata as part of `IDocumentSession` unit of work operations.
 
 The metadata tracking for events can be extended in Marten by opting into extra fields
-for causation, correlation, and key/value headers with this syntax as part of configuring
+for causation, correlation, user names, and key/value headers with this syntax as part of configuring
 Marten:
 
 <!-- snippet: sample_ConfigureEventMetadata -->
@@ -24,12 +24,31 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+By default, Marten runs "lean" by omitting the extra metadata storage on events shown above. Causation, correlation, user name (last modified by), and header fields must be individually enabled. 
+Event the database table columns for this data will not be created unless you opt in 
+
+When appending events, Marten will automatically tag events with the data from these properties
+on the `IDocumentSession` when capturing the new events:
+
+snippet: sample_query_session_metadata_tracking
+
+::: warning
+Open Telemetry `Activity` (spans) are only emitted if there is an active listener for your application.
+:::
+
+In the data elements above, the correlation id and causation id is taken automatically from any active Open Telemetry span,
+so these values should just flow from ASP.Net Core requests or typical message bus handlers (like Wolverine!) when Open Telemetry
+spans are enabled and being emitted.
+
+Values for `IDocumentSession.LastModifiedBy` and `IDocumentSession.Headers` will need to be set manually, but once they
+are, those values will flow through to new events captured by a session when `SaveChangesAsync()` is called.
+
 ::: tip
 The basic [IEvent](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/Event.cs#L34-L176) abstraction and quite a bit of other generic
 event sourcing code moved in Marten 8.0 to the shared JasperFx.Events library.
 :::
 
-The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by internal `Event<T>`):
+The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by `Event<T>`):
 
 ```cs
 public interface IEvent
@@ -82,12 +101,12 @@ public interface IEvent
     Type EventType { get; }
 
     /// <summary>
-    ///     Marten's type alias string for the Event type
+    ///     JasperFx.Event's type alias string for the Event type
     /// </summary>
     string EventTypeName { get; set; }
 
     /// <summary>
-    ///     Marten's string representation of the event type
+    ///     JasperFx.Events's string representation of the event type
     ///     in assembly qualified name
     /// </summary>
     string DotNetTypeName { get; set; }
@@ -114,7 +133,7 @@ public interface IEvent
     bool IsArchived { get; set; }
 
     /// <summary>
-    ///     Marten's name for the aggregate type that will be persisted
+    ///     JasperFx.Events's name for the aggregate type that will be persisted
     ///     to the streams table. This will only be available when running
     ///     within the Async Daemon
     /// </summary>
@@ -133,6 +152,59 @@ public interface IEvent
     /// <param name="key"></param>
     /// <returns></returns>
     object? GetHeader(string key);
+    
+    /// <summary>
+    /// Build a Func that can resolve an identity from the IEvent and even
+    /// handles the dastardly strong typed identifiers
+    /// </summary>
+    /// <typeparam name="TId"></typeparam>
+    /// <returns></returns>
+    /// <exception cref="NotSupportedException"></exception>
+    public static Func<IEvent, TId> CreateAggregateIdentitySource<TId>()
+        where TId : notnull
+    {
+        if (typeof(TId) == typeof(Guid)) return e => e.StreamId.As<TId>();
+        if (typeof(TId) == typeof(string)) return e => e.StreamKey!.As<TId>();
+        
+        var valueTypeInfo = ValueTypeInfo.ForType(typeof(TId));
+        
+        var e = Expression.Parameter(typeof(IEvent), "e");
+        var eMember = valueTypeInfo.SimpleType == typeof(Guid)
+            ? ReflectionHelper.GetProperty<IEvent>(x => x.StreamId)
+            : ReflectionHelper.GetProperty<IEvent>(x => x.StreamKey!);
+
+        var raw = Expression.Call(e, eMember.GetMethod!);
+        Expression? wrapped = null;
+        if (valueTypeInfo.Builder != null)
+        {
+            wrapped = Expression.Call(null, valueTypeInfo.Builder, raw);
+        }
+        else if (valueTypeInfo.Ctor != null)
+        {
+            wrapped = Expression.New(valueTypeInfo.Ctor, raw);
+        }
+        else
+        {
+            throw new NotSupportedException("Cannot build a type converter for strong typed id type " +
+                                            valueTypeInfo.OuterType.FullNameInCode());
+        }
+
+        var lambda = Expression.Lambda<Func<IEvent, TId>>(wrapped, e);
+
+        return lambda.CompileFast();
+    }
+    
+    /// <summary>
+    ///     Optional metadata describing the user name or
+    ///     process name for the unit of work that captured this event
+    /// </summary>
+    string? UserName { get; set; }
+    
+    /// <summary>
+    /// No, this is *not* idiomatic event sourcing, but this may be used as metadata to direct
+    /// projection replays or subscription rewinding as an event that should not be used
+    /// </summary>
+    bool IsSkipped { get; set; }
 }
 ```
 
