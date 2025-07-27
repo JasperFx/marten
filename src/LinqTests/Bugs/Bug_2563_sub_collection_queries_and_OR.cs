@@ -23,7 +23,7 @@ public class Bug_2563_sub_collection_queries_and_OR : BugIntegrationContext
             .Duplicate(x => x.UserIds);
 
         theSession.Store(new Bug2563Target {Id = 1, IsPublic = false, UserIds = new [] { 1, 2, 3, 4, 5, 6 }});
-        theSession.Store(new Bug2563Target {Id = 2, IsPublic = false, UserIds = new int[] { }});
+        theSession.Store(new Bug2563Target {Id = 2, IsPublic = false, UserIds = [] });
         theSession.Store(new Bug2563Target {Id = 3, IsPublic = true, UserIds = new [] { 1, 2, 3 }});
         theSession.Store(new Bug2563Target {Id = 4, IsPublic = true, UserIds = new [] { 1, 2, 6 }});
         theSession.Store(new Bug2563Target {Id = 5, IsPublic = false, UserIds = new [] { 4, 5, 6 }});

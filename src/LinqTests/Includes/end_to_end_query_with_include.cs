@@ -294,7 +294,7 @@ public class end_to_end_query_with_include: IntegrationContext
         var user = new User();
         var issue1 = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
         var issue2 = new Issue { AssigneeId = user.Id, Tags = new[] { "TAG" }, Title = "Garage Door is busted" };
-        var issue3 = new Issue { AssigneeId = user.Id, Tags = new string[] { }, Title = "Garage Door is busted" };
+        var issue3 = new Issue { AssigneeId = user.Id, Tags = [], Title = "Garage Door is busted" };
 
         var requestedTags = new[] { "DIY", "TAG" };
 
@@ -913,7 +913,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await theStore.BulkInsertAsync(new[] { user1, user2, user3 });
 
         var group1 = new Group { Name = "Users", Users = new[] { user1.Id, user2.Id, user3.Id } };
-        var group2 = new Group { Name = "Empty", Users = new Guid[0] };
+        var group2 = new Group { Name = "Empty", Users = [] };
 
         using (var session = theStore.LightweightSession())
         {
