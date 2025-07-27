@@ -121,6 +121,12 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
+    protected void writeUserNames(IGroupedParameterBuilder builder, IMartenSession session)
+    {
+        var param = builder.AppendParameter(Stream.Events.Select(x => x.UserName).ToArray());
+        param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+    }
+
     protected void writeTimestamps(IGroupedParameterBuilder builder)
     {
         var param = builder.AppendParameter(Stream.Events.Select(x => x.Timestamp).ToArray());

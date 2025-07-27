@@ -346,6 +346,11 @@ internal static class EventDocumentStorageGenerator
             configure.Frames.Code("writeHeaders(parameterBuilder, session);");
         }
 
+        if (table.Columns.OfType<UserNameColumn>().Any())
+        {
+            configure.Frames.Code("writeUserNames(parameterBuilder, session);");
+        }
+
         if (graph.AppendMode == EventAppendMode.QuickWithServerTimestamps)
         {
             configure.Frames.Code("writeTimestamps(parameterBuilder);");

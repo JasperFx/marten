@@ -60,6 +60,11 @@ internal class ReplaceEventOperation<T> : IStorageOperation where T : class
             builder.Append(", correlation_id = NULL");
         }
 
+        if (_graph.MetadataConfig.UserNameEnabled)
+        {
+            builder.Append(", user_name = NULL");
+        }
+
         builder.Append(" where seq_id = ");
         builder.AppendParameter(_sequence);
     }
