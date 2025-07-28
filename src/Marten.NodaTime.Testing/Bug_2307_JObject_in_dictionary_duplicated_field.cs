@@ -55,7 +55,7 @@ public class Bug_2307_JObject_in_dictionary_duplicated_field: BugIntegrationCont
                 .ToListAsync(default);
 
             instanceFilesTask.Count.ShouldBePositive();
-            instanceFilesTask.First().InstanceData["Data"].ShouldBe("Pew Pew");
+            instanceFilesTask[0].InstanceData["Data"].ShouldBe("Pew Pew");
         }
     }
 }

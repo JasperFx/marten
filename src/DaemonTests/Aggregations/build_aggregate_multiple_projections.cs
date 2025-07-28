@@ -217,7 +217,7 @@ public class build_aggregate_multiple_projections: DaemonContext
             var cars = await session.Query<CarView>().ToListAsync();
 
             waterMark.ShouldBe(maxSeqId);
-            cars.Last().Name.ShouldBe("car-name-999");
+            cars[cars.Count - 1].Name.ShouldBe("car-name-999");
         }
     }
 
@@ -283,7 +283,7 @@ public class build_aggregate_multiple_projections: DaemonContext
             var cars = await session.Query<CarView>().ToListAsync();
 
             waterMark.ShouldBe(maxSeqId);
-            cars.Last().Name.ShouldBe("car-name-999");
+            cars[cars.Count - 1].Name.ShouldBe("car-name-999");
         }
     }
 

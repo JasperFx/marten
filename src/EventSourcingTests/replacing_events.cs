@@ -22,21 +22,21 @@ public class replacing_events : OneOffConfigurationsContext
 
         var events = await theSession.Events.FetchStreamAsync(streamId);
 
-        var sequence = events.Last().Sequence;
+        var sequence = events[events.Count - 1].Sequence;
 
         var joined2 = new MembersJoined { Members = ["Moiraine", "Lan"] };
         theSession.Events.CompletelyReplaceEvent(sequence, joined2);
         await theSession.SaveChangesAsync();
 
         var events2 = await theSession.Events.FetchStreamAsync(streamId);
-        var final = events2.Last().ShouldBeOfType<Event<MembersJoined>>();
+        var final = events2[events2.Count - 1].ShouldBeOfType<Event<MembersJoined>>();
 
         // These should not change
-        final.Version.ShouldBe(events.Last().Version);
-        final.Sequence.ShouldBe(events.Last().Sequence);
+        final.Version.ShouldBe(events[events.Count - 1].Version);
+        final.Sequence.ShouldBe(events[events.Count - 1].Sequence);
 
         // Id gets changed
-        final.Id.ShouldNotBe(events.Last().Id);
+        final.Id.ShouldNotBe(events[events.Count - 1].Id);
 
         // These need to get changed
         final.Data.Members.ShouldBe(["Moiraine", "Lan"]);
@@ -64,22 +64,22 @@ public class replacing_events : OneOffConfigurationsContext
 
         var events = await theSession.Events.FetchStreamAsync(streamId);
 
-        var sequence = events.Last().Sequence;
+        var sequence = events[events.Count - 1].Sequence;
 
         var joined2 = new MembersJoined { Members = ["Moiraine", "Lan"] };
         theSession.Events.CompletelyReplaceEvent(sequence, joined2);
         await theSession.SaveChangesAsync();
 
         var events2 = await theSession.Events.FetchStreamAsync(streamId);
-        var final = events2.Last().ShouldBeOfType<Event<MembersJoined>>();
+        var final = events2[events2.Count - 1].ShouldBeOfType<Event<MembersJoined>>();
 
         // These should not change
-        final.Version.ShouldBe(events.Last().Version);
-        final.Sequence.ShouldBe(events.Last().Sequence);
+        final.Version.ShouldBe(events[events.Count - 1].Version);
+        final.Sequence.ShouldBe(events[events.Count - 1].Sequence);
 
         // Id gets changed
-        final.Id.ShouldNotBe(events.Last().Id);
-        final.Timestamp.ShouldNotBe(events.Last().Timestamp);
+        final.Id.ShouldNotBe(events[events.Count - 1].Id);
+        final.Timestamp.ShouldNotBe(events[events.Count - 1].Timestamp);
 
         // These need to get changed
         final.Data.Members.ShouldBe(["Moiraine", "Lan"]);
