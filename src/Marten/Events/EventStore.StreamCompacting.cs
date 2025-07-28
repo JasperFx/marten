@@ -112,8 +112,8 @@ public class StreamCompactingRequest<T>
 
         var sequences = events.Select(x => x.Sequence).Take(events.Count - 1).ToArray();
 
-        Version = events.Last().Version;
-        Sequence = events.Last().Sequence;
+        Version = events[events.Count - 1].Version;
+        Sequence = events[events.Count - 1].Sequence;
 
         // 3. Aggregate up to the new snapshot
         var aggregate = await aggregator.BuildAsync(events, session, default, CancellationToken).ConfigureAwait(false);

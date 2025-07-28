@@ -475,7 +475,7 @@ public class DocumentMappingTests
 
         var table = new DocumentTable(mapping);
 
-        var typeColumn = table.Columns.Last();
+        var typeColumn = table.Columns[table.Columns.Count - 1];
         typeColumn.Name.ShouldBe(SchemaConstants.DocumentTypeColumn);
         typeColumn.Type.ShouldBe("varchar");
     }

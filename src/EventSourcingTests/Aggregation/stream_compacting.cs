@@ -261,7 +261,7 @@ public class stream_compacting : OneOffConfigurationsContext
         var events = await theSession.Events.FetchStreamAsync(streamId);
         events.Count.ShouldBe(5);
 
-        var compacted = events.First().ShouldBeOfType < Event<Compacted<Letters>>>();
+        var compacted = events[0].ShouldBeOfType < Event<Compacted<Letters>>>();
         compacted.Version.ShouldBe(5);
         compacted.Data.Snapshot.ACount.ShouldBe(2);
         compacted.Data.Snapshot.BCount.ShouldBe(1);
@@ -332,7 +332,7 @@ public class stream_compacting : OneOffConfigurationsContext
         var events = await theSession.Events.FetchStreamAsync(streamId);
         events.Count.ShouldBe(5);
 
-        var compacted = events.First().ShouldBeOfType < Event<Compacted<LetterCountsByString>>>();
+        var compacted = events[0].ShouldBeOfType < Event<Compacted<LetterCountsByString>>>();
         compacted.Version.ShouldBe(5);
         compacted.Data.Snapshot.ACount.ShouldBe(2);
         compacted.Data.Snapshot.BCount.ShouldBe(1);

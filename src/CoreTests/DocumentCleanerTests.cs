@@ -239,7 +239,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
             var values = await session.QueryAsync<int>(@"select count(*) from information_schema.sequences s
 where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas);
 
-            return values.First();
+            return values[0];
         }
 
         (await GetSequenceCount(theStore)).ShouldBeGreaterThan(0);

@@ -170,7 +170,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -232,7 +232,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -290,7 +290,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         }
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -354,7 +354,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);

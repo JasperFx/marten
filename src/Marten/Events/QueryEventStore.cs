@@ -79,7 +79,7 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
-        if (version != 0 && version > events.Last().Version) return null;
+        if (version != 0 && version > events[events.Count - 1].Version) return null;
 
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
@@ -133,7 +133,7 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
-        if (version != 0 && version > events.Last().Version) return null;
+        if (version != 0 && version > events[events.Count - 1].Version) return null;
 
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
