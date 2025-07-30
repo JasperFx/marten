@@ -18,7 +18,7 @@ public class ClassWithChildCollections
     public Guid Id;
 
     public IList<User> Users = new List<User>();
-    public Company[] Companies = new Company[0];
+    public Company[] Companies = [];
 
     public string[] Names;
     public IList<string> NameList;

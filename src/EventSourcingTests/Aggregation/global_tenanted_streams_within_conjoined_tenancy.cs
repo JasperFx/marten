@@ -405,7 +405,9 @@ public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Gu
 
 #endregion
 
-#region
+
+
+#region sample_SpecialCounterProjection2
 
 public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
 {
@@ -450,6 +452,7 @@ public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, G
 }
 
 #endregion
+
 
 public class SpecialCounterAsString
 {
