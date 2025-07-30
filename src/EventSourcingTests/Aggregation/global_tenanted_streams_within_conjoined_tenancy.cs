@@ -4,12 +4,15 @@ using EventSourcingTests.FetchForWriting;
 using FastExpressionCompiler.ImTools;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
@@ -352,7 +355,26 @@ public class global_tenanted_streams_within_conjoined_tenancy : OneOffConfigurat
 
 
 
+    public static void boostrapping_sample()
+    {
+        #region sample_bootstrapping_with_global_projection
 
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddMarten(opts =>
+        {
+            opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+            // The event store has conjoined tenancy...
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+            // But we want any events appended to a stream that is related
+            // to a SpecialCounter to be single or global tenanted
+            // And this works with any ProjectionLifecycle
+            opts.Projections.AddGlobalProjection(new SpecialCounterProjection(), ProjectionLifecycle.Inline);
+        });
+
+        #endregion
+    }
 
 }
 
@@ -370,13 +392,33 @@ public class SpecialCounter
     public int DCount { get; set; }
 }
 
+#region sample_SpecialCounterProjection
+
 public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
 {
-    public SpecialCounterProjection()
+    public void Apply(SpecialCounter c, SpecialA _) => c.ACount++;
+    public void Apply(SpecialCounter c, SpecialB _) => c.BCount++;
+    public void Apply(SpecialCounter c, SpecialC _) => c.CCount++;
+    public void Apply(SpecialCounter c, SpecialD _) => c.DCount++;
+
+}
+
+#endregion
+
+#region
+
+public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
+{
+    public SpecialCounterProjection2()
     {
-        // This has to be globally or single tenanted within an
-        // otherwise multi-tenanted system
-        // GlobalTenancy();
+        // This is normally just an optimization for the async daemon,
+        // but as a "global" projection, this also helps Marten
+        // "know" that all events of these types should always be captured
+        // to the default tenant id
+        IncludeType<SpecialA>();
+        IncludeType<SpecialB>();
+        IncludeType<SpecialC>();
+        IncludeType<SpecialD>();
     }
 
     public void Apply(SpecialCounter c, SpecialA _) => c.ACount++;
@@ -384,7 +426,30 @@ public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Gu
     public void Apply(SpecialCounter c, SpecialC _) => c.CCount++;
     public void Apply(SpecialCounter c, SpecialD _) => c.DCount++;
 
+    public override SpecialCounter Evolve(SpecialCounter snapshot, Guid id, IEvent e)
+    {
+        snapshot ??= new SpecialCounter { Id = id };
+        switch (e.Data)
+        {
+            case SpecialA _:
+                snapshot.ACount++;
+                break;
+            case SpecialB _:
+                snapshot.BCount++;
+                break;
+            case SpecialC _:
+                snapshot.CCount++;
+                break;
+            case SpecialD _:
+                snapshot.DCount++;
+                break;
+        }
+
+        return snapshot;
+    }
 }
+
+#endregion
 
 public class SpecialCounterAsString
 {
