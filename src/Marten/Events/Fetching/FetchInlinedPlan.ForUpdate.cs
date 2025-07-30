@@ -40,7 +40,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         }
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
+        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
 
         builder.StartNewCommand();
 
@@ -139,7 +139,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
         public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
         {
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(builder, _id, _forUpdate);
+            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
             builder.StartNewCommand();
 

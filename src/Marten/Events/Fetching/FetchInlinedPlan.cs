@@ -24,9 +24,13 @@ internal partial class FetchInlinedPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TI
 
     internal FetchInlinedPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy)
     {
+        IsGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
+
         _events = events;
         _identityStrategy = identityStrategy;
     }
+
+    public bool IsGlobal { get; }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Inline;
 

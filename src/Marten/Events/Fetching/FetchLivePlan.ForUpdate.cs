@@ -28,11 +28,11 @@ internal partial class FetchLivePlan<TDoc, TId>
         }
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, forUpdate);
+        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, forUpdate);
 
         builder.StartNewCommand();
 
-        var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
+        var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
         try
@@ -124,12 +124,12 @@ internal partial class FetchLivePlan<TDoc, TId>
             _id = id;
             _forUpdate = forUpdate;
 
-            _handler = _parent._identityStrategy.BuildEventQueryHandler(_id);
+            _handler = _parent._identityStrategy.BuildEventQueryHandler(_parent.IsGlobal, _id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
         {
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(builder, _id, _forUpdate);
+            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
             builder.StartNewCommand();
 

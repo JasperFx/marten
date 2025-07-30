@@ -26,11 +26,11 @@ internal partial class FetchLivePlan<TDoc, TId>
             .ConfigureAwait(false);
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, false);
+        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
 
         builder.StartNewCommand();
 
-        var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
+        var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
         await using var reader =
@@ -107,12 +107,12 @@ internal partial class FetchLivePlan<TDoc, TId>
             _parent = parent;
             _id = id;
             _expectedStartingVersion = expectedStartingVersion;
-            _handler = _parent._identityStrategy.BuildEventQueryHandler(_id);
+            _handler = _parent._identityStrategy.BuildEventQueryHandler(parent.IsGlobal, _id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
         {
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(builder, _id, false);
+            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
 
             builder.StartNewCommand();
 

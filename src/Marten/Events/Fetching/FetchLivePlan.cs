@@ -23,6 +23,8 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> documentStorage)
     {
+        IsGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
+
         _identityStrategy = identityStrategy;
         _documentStorage = documentStorage;
 
@@ -31,6 +33,8 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
         _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
                       ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), _documentStorage.IdType, typeof(TId), typeof(IQuerySession));
     }
+
+    public bool IsGlobal { get; }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Live;
 }

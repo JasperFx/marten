@@ -185,4 +185,25 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
         registerSubscription(source);
     }
+
+    /// <summary>
+    /// Adds a single stream projection to this Marten application and marks the aggregate type
+    /// as being globally tenanted. Use this option *if* you have an otherwise multi-tenanted event store,
+    /// but a particular type of stream and aggregate should be stored globally (single tenanted).
+    ///
+    /// This will force Marten to append any events that it knows are related to this projection type
+    /// to the default tenant id regardless of how the session is opened or the current tenant id
+    /// </summary>
+    /// <param name="lifecycle"></param>
+    /// <param name="asyncConfiguration"></param>
+    /// <typeparam name="T"></typeparam>
+    public void AddGlobalProjection<TDoc, TId>(SingleStreamProjection<TDoc, TId> projection, ProjectionLifecycle lifecycle)
+    {
+        _options.EventGraph.GlobalAggregates.Add(typeof(TDoc));
+        Add(projection, lifecycle);
+        projection.IsGlobalWithinConjoinedTenancy = true;
+
+        // Override the tenancy here
+        _options.Schema.For<TDoc>().SingleTenanted();
+    }
 }

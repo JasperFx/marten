@@ -558,4 +558,5 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     string ICodeFileCollection.ChildNamespace => "EventStore";
 
     GenerationRules ICodeFileCollection.Rules => Options.CreateGenerationRules();
+    public List<Type> GlobalAggregates { get; } = new();
 }
