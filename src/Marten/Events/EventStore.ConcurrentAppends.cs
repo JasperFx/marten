@@ -12,7 +12,8 @@ namespace Marten.Events;
 
 internal partial class EventStore
 {
-    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, Guid streamId, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(bool isGlobal, ICommandBuilder builder, Guid streamId,
+        bool forUpdate)
     {
         builder.Append("select version from ");
         builder.Append(_store.Events.DatabaseSchemaName);
@@ -20,7 +21,7 @@ internal partial class EventStore
         builder.Append("mt_streams where id = ");
         builder.AppendParameter(streamId);
 
-        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined && !isGlobal)
         {
             builder.Append(" and tenant_id = ");
             builder.AppendParameter(builder.TenantId);
@@ -32,7 +33,8 @@ internal partial class EventStore
         }
     }
 
-    public void BuildCommandForReadingVersionForStream(ICommandBuilder builder, string streamKey, bool forUpdate)
+    public void BuildCommandForReadingVersionForStream(bool isGlobal, ICommandBuilder builder, string streamKey,
+        bool forUpdate)
     {
         builder.Append("select version from ");
         builder.Append(_store.Events.DatabaseSchemaName);
@@ -40,7 +42,7 @@ internal partial class EventStore
         builder.Append("mt_streams where id = ");
         builder.AppendParameter(streamKey);
 
-        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined && !isGlobal)
         {
             builder.Append(" and tenant_id = ");
             builder.AppendParameter(builder.TenantId);
@@ -154,7 +156,7 @@ internal partial class EventStore
     private async Task<long> readVersionFromExistingStream(Guid streamId, bool forUpdate, CancellationToken token)
     {
         var builder = new CommandBuilder{TenantId = _session.TenantId};
-        BuildCommandForReadingVersionForStream(builder, streamId, forUpdate);
+        BuildCommandForReadingVersionForStream(false, builder, streamId, forUpdate);
 
         long version = 0;
         try
@@ -187,7 +189,7 @@ internal partial class EventStore
         CancellationToken token)
     {
         var builder = new CommandBuilder { TenantId = _session.TenantId };
-        BuildCommandForReadingVersionForStream(builder, streamKey, forUpdate);
+        BuildCommandForReadingVersionForStream(false, builder, streamKey, forUpdate);
 
         long version = 0;
         try

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -48,10 +49,10 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
     }
 
-    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(Guid id,
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(bool isGlobal, Guid id,
         IEventStorage selector, ISqlFragment? filter = null)
     {
-        var statement = new EventStatement(selector) { StreamId = id, TenantId = _tenant.TenantId };
+        var statement = new EventStatement(selector) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -60,10 +61,11 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new ListQueryHandler<IEvent>(statement, selector);
     }
 
-    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(Guid id, ISqlFragment? filter)
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(bool isGlobal, Guid id,
+        ISqlFragment? filter)
     {
         var selector = _store.Events.EnsureAsGuidStorage(_session);
-        var statement = new EventStatement(selector) { StreamId = id, TenantId = _tenant.TenantId };
+        var statement = new EventStatement(selector) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -72,10 +74,11 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new ListQueryHandler<IEvent>(statement, selector);
     }
 
-    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(string id, ISqlFragment? filter)
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(bool isGlobal, string id,
+        ISqlFragment? filter)
     {
         var selector = _store.Events.EnsureAsStringStorage(_session);
-        var statement = new EventStatement(selector) { StreamKey = id, TenantId = _tenant.TenantId };
+        var statement = new EventStatement(selector) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -111,10 +114,10 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
     }
 
-    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(string id,
+    IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(bool isGlobal, string id,
         IEventStorage selector, ISqlFragment? filter = null)
     {
-        var statement = new EventStatement(selector) { StreamKey = id, TenantId = _tenant.TenantId };
+        var statement = new EventStatement(selector) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -238,7 +241,7 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
 public interface IEventIdentityStrategy<in TId>
 {
     Task<IEventStorage> EnsureEventStorageExists<T>(DocumentSessionBase session, CancellationToken cancellation);
-    void BuildCommandForReadingVersionForStream(ICommandBuilder builder, TId id, bool forUpdate);
+    void BuildCommandForReadingVersionForStream(bool isGlobal, ICommandBuilder builder, TId id, bool forUpdate);
 
     IEventStream<TDoc> StartStream<TDoc>(TDoc? document, DocumentSessionBase session, TId id,
         CancellationToken cancellation) where TDoc : class;
@@ -246,9 +249,9 @@ public interface IEventIdentityStrategy<in TId>
     IEventStream<TDoc> AppendToStream<TDoc>(TDoc? document, DocumentSessionBase session, TId id, long version,
         CancellationToken cancellation) where TDoc : class;
 
-    IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(TId id, IEventStorage eventStorage,
+    IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(bool isGlobal, TId id, IEventStorage eventStorage,
         ISqlFragment? filter = null);
 
-    IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(TId id,
+    IQueryHandler<IReadOnlyList<IEvent>> BuildEventQueryHandler(bool isGlobal, TId id,
         ISqlFragment? filter = null);
 }

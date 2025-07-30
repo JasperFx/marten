@@ -31,7 +31,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         // TODO -- use read only transaction????
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
-        _identityStrategy.BuildCommandForReadingVersionForStream(builder, id, false);
+        _identityStrategy.BuildCommandForReadingVersionForStream(IsGlobal, builder, id, false);
 
         builder.StartNewCommand();
 
@@ -141,7 +141,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
 
         public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
         {
-            _parent._identityStrategy.BuildCommandForReadingVersionForStream(builder, _id, false);
+            _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
 
             builder.StartNewCommand();
 

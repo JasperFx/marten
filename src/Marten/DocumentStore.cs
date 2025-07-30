@@ -11,6 +11,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;
@@ -22,6 +23,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.FSharp.Control;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
 
@@ -72,6 +74,15 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         warnIfAsyncDaemonIsDisabledWithAsyncProjections();
 
         options.ApplyMetricsIfAny();
+
+        // Check if we need to correct any events or streams for global tenancy
+        if (options.EventGraph.GlobalAggregates.Any())
+        {
+            var decorator = new GlobalEventAppenderDecorator(options.EventGraph.EventAppender);
+            options.EventGraph.EventAppender = decorator;
+
+            decorator.ReadEventTypes(options.EventGraph);
+        }
     }
 
     public ITenancy Tenancy => Options.Tenancy;
@@ -375,7 +386,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
             ? Tenancy.Default.Database
             : await Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
 
-        await database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+        await database.EnsureStorageExistsAsync(typeof(IEvent<,>)).ConfigureAwait(false);
 
         return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
     }

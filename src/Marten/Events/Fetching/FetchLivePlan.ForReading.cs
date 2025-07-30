@@ -33,11 +33,12 @@ internal partial class FetchLivePlan<TDoc, TId>
 
         var builder = new BatchBuilder{TenantId = session.TenantId};
 
-        var handler = _identityStrategy.BuildEventQueryHandler(id, selector);
+        var handler = _identityStrategy.BuildEventQueryHandler(IsGlobal, id, selector);
         handler.ConfigureCommand(builder, session);
 
+        var batch = builder.Compile();
         await using var reader =
-            await session.ExecuteReaderAsync(builder.Compile(), cancellation).ConfigureAwait(false);
+            await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
 
         var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
         return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
@@ -59,7 +60,7 @@ internal partial class FetchLivePlan<TDoc, TId>
             _parent = parent;
             _id = id;
 
-            _handler = parent._identityStrategy.BuildEventQueryHandler(id);
+            _handler = parent._identityStrategy.BuildEventQueryHandler(parent.IsGlobal, id);
         }
 
         public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)

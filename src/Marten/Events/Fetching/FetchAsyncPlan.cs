@@ -19,6 +19,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
     public FetchAsyncPlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
         IDocumentStorage<TDoc, TId> storage)
     {
+        IsGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
+
         _events = events;
         _identityStrategy = identityStrategy;
         _storage = storage;
@@ -30,7 +32,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
                           .CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _storage, typeof(TDoc),
                               _storage.IdType, typeof(TId), typeof(IQuerySession));
 
-        if (_events.TenancyStyle == TenancyStyle.Single)
+        if (_events.TenancyStyle == TenancyStyle.Single || _events.GlobalAggregates.Contains(typeof(TDoc)))
         {
             _versionSelectionSql =
                 $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
@@ -41,6 +43,8 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
                 $" left outer join {storage.TableName.QualifiedName} as a on d.stream_id = a.id and d.tenant_id = a.tenant_id where (a.mt_version is NULL or d.version > a.mt_version) and d.stream_id = ";
         }
     }
+
+    public bool IsGlobal { get; }
 
     public ProjectionLifecycle Lifecycle => ProjectionLifecycle.Async;
 
@@ -53,7 +57,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId>
 
         // You must do this for performance even if the stream ids were
         // magically unique across tenants
-        if (_events.TenancyStyle == TenancyStyle.Conjoined)
+        if (_events.TenancyStyle == TenancyStyle.Conjoined && !_events.GlobalAggregates.Contains(typeof(TDoc)))
         {
             builder.Append(" and d.tenant_id = ");
             builder.AppendParameter(builder.TenantId);
