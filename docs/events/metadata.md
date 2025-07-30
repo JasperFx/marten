@@ -19,9 +19,10 @@ var store = DocumentStore.For(opts =>
     opts.Events.MetadataConfig.HeadersEnabled = true;
     opts.Events.MetadataConfig.CausationIdEnabled = true;
     opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+    opts.Events.MetadataConfig.UserNameEnabled = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten runs "lean" by omitting the extra metadata storage on events shown above. Causation, correlation, user name (last modified by), and header fields must be individually enabled. 
@@ -30,7 +31,28 @@ Event the database table columns for this data will not be created unless you op
 When appending events, Marten will automatically tag events with the data from these properties
 on the `IDocumentSession` when capturing the new events:
 
-snippet: sample_query_session_metadata_tracking
+<!-- snippet: sample_query_session_metadata_tracking -->
+<a id='snippet-sample_query_session_metadata_tracking'></a>
+```cs
+public string? CausationId { get; set; }
+public string? CorrelationId { get; set; }
+
+public string TenantId { get; protected set; }
+public string CurrentUserName { get; set; }
+
+public string? LastModifiedBy
+{
+    get => CurrentUserName;
+    set => CurrentUserName = value;
+}
+
+/// <summary>
+///     This is meant to be lazy created, and can be null
+/// </summary>
+public Dictionary<string, object>? Headers { get; protected set; }
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Internal/Sessions/QuerySession.Metadata.cs#L15-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_session_metadata_tracking' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ::: warning
 Open Telemetry `Activity` (spans) are only emitted if there is an active listener for your application.

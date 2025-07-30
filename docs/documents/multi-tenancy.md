@@ -17,7 +17,7 @@ The following sample demonstrates scoping a document session to tenancy identifi
 using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
-    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
+    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
     await session.SaveChangesAsync();
 }
 ```
@@ -28,7 +28,7 @@ using (var session = theStore.LightweightSession("tenant1"))
 using (var session = theStore.LightweightSession("tenant1"))
 {
     session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
-    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = new string[0] });
+    session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
     await session.SaveChangesAsync();
 }
 ```

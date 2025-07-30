@@ -73,7 +73,7 @@ using (var session = theStore.LightweightSession())
             case MonsterSlayed monster:
             {
                 // Trolls we remove from our transformed stream
-                return monster.Name.Equals("Troll") ? new object[] { } : new[] { monster };
+                return monster.Name.Equals("Troll") ? [] : new[] { monster };
             }
             case MembersJoined members:
             {
