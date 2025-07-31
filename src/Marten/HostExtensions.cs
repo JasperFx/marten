@@ -1,7 +1,5 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events;
 using Marten.Events.Daemon.Coordination;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

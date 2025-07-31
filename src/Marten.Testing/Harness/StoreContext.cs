@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using Marten.Services;
-using Xunit;
 
 namespace Marten.Testing.Harness
 {

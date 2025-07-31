@@ -1,5 +1,4 @@
-﻿using System;
-using JasperFx.Core;
+using System;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Identity;

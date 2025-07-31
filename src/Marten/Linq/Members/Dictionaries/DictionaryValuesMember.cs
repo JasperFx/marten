@@ -2,12 +2,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using ImTools;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;

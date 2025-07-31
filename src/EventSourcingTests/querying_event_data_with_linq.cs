@@ -8,7 +8,6 @@ using Marten;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Testing.Harness;
-using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
 using Weasel.Core;
 using Xunit;

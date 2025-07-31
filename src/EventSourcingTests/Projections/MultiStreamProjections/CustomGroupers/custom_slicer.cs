@@ -1,15 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Events;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
-using Marten;
-using Marten.Events;
-using Marten.Events.Aggregation;
 using Marten.Events.Projections;
-using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

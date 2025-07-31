@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
-using Xunit;
 
 namespace DocumentDbTests.Bugs;
 

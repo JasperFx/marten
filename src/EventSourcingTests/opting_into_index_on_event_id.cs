@@ -2,7 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Npgsql;

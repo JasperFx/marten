@@ -1,4 +1,3 @@
-using Marten.Storage;
 using Marten.Storage.Metadata;
 
 namespace Marten.Schema;

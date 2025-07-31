@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Npgsql;
 using Weasel.Core;

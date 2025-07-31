@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace Marten.Testing.Harness
 {
     /// <summary>

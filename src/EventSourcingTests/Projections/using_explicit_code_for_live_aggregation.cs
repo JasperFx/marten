@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
@@ -7,9 +6,7 @@ using EventSourcingTests.FetchForWriting;
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.Tables;

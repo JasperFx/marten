@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
-using Marten.Events.Archiving;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing.Operators;
 using Marten.Schema;

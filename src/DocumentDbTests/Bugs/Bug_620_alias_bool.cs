@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 

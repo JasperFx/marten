@@ -8,7 +8,6 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.QueryHandlers;
-using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Parsing.Methods;

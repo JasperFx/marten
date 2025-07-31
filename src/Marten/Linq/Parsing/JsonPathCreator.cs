@@ -1,11 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Util;
 

@@ -1,6 +1,5 @@
 using System;
 using JasperFx.Events;
-using Marten.Events;
 
 namespace Marten.Exceptions;
 

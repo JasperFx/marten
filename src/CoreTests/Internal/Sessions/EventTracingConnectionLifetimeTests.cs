@@ -1,7 +1,5 @@
 #nullable enable
-using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
-using Marten.Testing.Harness;
 using Npgsql;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
@@ -15,7 +13,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Descriptors;
-using Marten.Services;
 using Weasel.Postgresql;
 using Xunit;
 

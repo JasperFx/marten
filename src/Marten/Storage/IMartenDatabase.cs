@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;

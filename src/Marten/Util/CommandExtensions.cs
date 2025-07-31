@@ -1,6 +1,5 @@
 #nullable enable
 using System.Collections.Generic;
-using System.Linq;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Npgsql;

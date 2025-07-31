@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,7 +9,6 @@ using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 

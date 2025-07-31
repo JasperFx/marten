@@ -1,5 +1,4 @@
 #nullable enable
-using JasperFx;
 using JasperFx.MultiTenancy;
 
 namespace Marten.Metadata;

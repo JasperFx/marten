@@ -6,7 +6,6 @@ using Marten.Testing.Harness;
 using Shouldly;
 using System.Threading.Tasks;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Events.Projections;
 using Xunit;
 

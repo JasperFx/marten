@@ -7,7 +7,6 @@ using Marten;
 using Marten.Patching;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace PatchingTests.Patching;

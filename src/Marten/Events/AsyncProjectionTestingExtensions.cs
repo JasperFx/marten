@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
-using Marten.Events.Daemon;
 using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 

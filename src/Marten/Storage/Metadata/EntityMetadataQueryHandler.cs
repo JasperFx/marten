@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
-using Marten.Schema;
 using Weasel.Postgresql;
 using StringExtensions = JasperFx.Core.StringExtensions;
 

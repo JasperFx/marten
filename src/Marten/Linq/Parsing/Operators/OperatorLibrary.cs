@@ -2,7 +2,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using ImTools;
-using JasperFx.Core;
 
 namespace Marten.Linq.Parsing.Operators;
 

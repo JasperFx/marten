@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

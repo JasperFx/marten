@@ -1,10 +1,7 @@
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
-using JasperFx.Events.Subscriptions;
-using Marten.Events.Daemon;
 
 namespace Marten.Subscriptions;
 

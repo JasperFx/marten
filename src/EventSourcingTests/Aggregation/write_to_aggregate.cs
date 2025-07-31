@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;

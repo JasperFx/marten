@@ -11,7 +11,6 @@ using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Patching;
 

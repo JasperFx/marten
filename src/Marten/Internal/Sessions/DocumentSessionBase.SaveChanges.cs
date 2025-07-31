@@ -11,7 +11,6 @@ using JasperFx.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Npgsql;
-using Weasel.Core;
 
 namespace Marten.Internal.Sessions;
 

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Events.Daemon.Internals;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
 using Marten.Schema;

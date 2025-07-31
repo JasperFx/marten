@@ -18,7 +18,6 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Core.MultiTenancy;
 using Xunit;

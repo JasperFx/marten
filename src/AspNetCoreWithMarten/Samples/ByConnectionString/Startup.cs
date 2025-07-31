@@ -1,6 +1,4 @@
 using Marten;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.ByConnectionString;
 

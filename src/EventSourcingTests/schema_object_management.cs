@@ -7,13 +7,11 @@ using JasperFx;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
 

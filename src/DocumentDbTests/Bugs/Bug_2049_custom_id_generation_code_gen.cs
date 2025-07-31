@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
-using Marten.Schema;
-using Marten.Schema.Identity;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Marten.Testing.OtherAssembly;

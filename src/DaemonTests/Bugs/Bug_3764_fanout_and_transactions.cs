@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.Aggregations;
 using DaemonTests.TestingSupport;
-using JasperFx.Core;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Testing.Harness;

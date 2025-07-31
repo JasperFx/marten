@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Operations;
-using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;

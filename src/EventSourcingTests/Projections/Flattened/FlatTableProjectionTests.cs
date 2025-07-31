@@ -1,15 +1,12 @@
 using System;
 using System.Linq;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
-using Marten.Exceptions;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;

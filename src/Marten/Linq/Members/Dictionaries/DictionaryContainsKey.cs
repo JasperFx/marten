@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members.Dictionaries;

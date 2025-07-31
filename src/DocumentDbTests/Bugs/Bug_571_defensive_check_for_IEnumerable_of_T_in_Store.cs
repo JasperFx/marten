@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;

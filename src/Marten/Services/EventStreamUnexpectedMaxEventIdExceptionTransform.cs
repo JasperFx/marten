@@ -4,7 +4,6 @@ using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Exceptions;
 using JasperFx.Events;
-using Marten.Exceptions;
 using Npgsql;
 
 namespace Marten.Services;

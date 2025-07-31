@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -10,7 +9,6 @@ using JasperFx.MultiTenancy;
 using Marten.Schema;
 using Npgsql;
 using Weasel.Core.Migrations;
-using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql.Connections;
 
 namespace Marten.Storage;

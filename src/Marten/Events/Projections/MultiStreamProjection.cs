@@ -3,17 +3,14 @@ using System;
 using System.Collections.Generic;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Events.Aggregation;
-using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 
 namespace Marten.Events.Projections;
 

@@ -5,7 +5,6 @@ using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten;
-using Marten.Events.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

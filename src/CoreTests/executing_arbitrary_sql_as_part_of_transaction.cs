@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;

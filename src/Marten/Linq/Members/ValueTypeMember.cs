@@ -7,7 +7,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Core;

@@ -1,17 +1,13 @@
 using System;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using StronglyTypedIds;
 using Xunit;

@@ -1,11 +1,5 @@
-using System;
-using System.Linq;
-using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
-using JasperFx.Core.Reflection;
-using JasperFx.Events;
-using Marten.Internal;
 using Weasel.Postgresql;
 
 namespace Marten.Events.CodeGeneration;

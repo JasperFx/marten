@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Security.Cryptography;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;

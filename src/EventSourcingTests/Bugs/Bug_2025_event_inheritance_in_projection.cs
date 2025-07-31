@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Marten;
-using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;

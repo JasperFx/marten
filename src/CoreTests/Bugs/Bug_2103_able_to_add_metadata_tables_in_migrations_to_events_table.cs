@@ -5,9 +5,7 @@ using JasperFx;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Testing.Harness;
-using Weasel.Core;
 using Xunit;
 
 namespace CoreTests.Bugs;

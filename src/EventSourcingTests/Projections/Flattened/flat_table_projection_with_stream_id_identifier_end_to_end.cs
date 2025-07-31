@@ -3,10 +3,8 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
-using Marten.Events.Projections;
 using Marten.Events.Projections.Flattened;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -16,7 +14,6 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
 using Xunit.Abstractions;
-using CommandExtensions = Weasel.Postgresql.CommandExtensions;
 
 namespace EventSourcingTests.Projections.Flattened;
 

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events.Operations;
-using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 
 namespace Marten.Events;

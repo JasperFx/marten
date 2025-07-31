@@ -1,5 +1,3 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
 //using Octokit;
 
 namespace Marten.Testing.Github;

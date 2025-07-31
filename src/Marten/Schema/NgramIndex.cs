@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
-using Marten.Linq;
 using Marten.Linq.Parsing;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;

@@ -1,12 +1,7 @@
-using System;
-using System.Threading.Tasks;
 using DaemonTests.MultiTenancy;
-using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events;
 using Marten.Events.Projections;
-using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Bug2135;
@@ -9,7 +9,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace CoreTests.Bugs

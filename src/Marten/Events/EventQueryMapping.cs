@@ -3,8 +3,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using Marten.Linq.Parsing;
-using Marten.Linq.SqlGeneration.Filters;
 using Marten.Schema;
 using Weasel.Core;
 using Weasel.Postgresql;

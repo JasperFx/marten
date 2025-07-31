@@ -5,7 +5,6 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten.Exceptions;
-using Marten.Schema.Identity;
 
 namespace Marten.Events;
 

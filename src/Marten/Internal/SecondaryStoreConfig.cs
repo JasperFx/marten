@@ -10,7 +10,6 @@ using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
 using Marten.Schema;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace Marten.Internal;
 

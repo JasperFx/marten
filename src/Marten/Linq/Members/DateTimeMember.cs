@@ -1,5 +1,4 @@
 #nullable enable
-using System;
 using System.Reflection;
 
 namespace Marten.Linq.Members;

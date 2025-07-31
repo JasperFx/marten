@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -8,12 +8,10 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace LinqTests.Acceptance;

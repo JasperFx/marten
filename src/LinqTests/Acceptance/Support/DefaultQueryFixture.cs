@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
-using Xunit.Abstractions;
 
 namespace LinqTests.Acceptance.Support;
 

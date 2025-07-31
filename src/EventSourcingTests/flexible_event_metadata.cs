@@ -2,9 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Projections;
 using Marten;
-using Marten.Services.Json;
 using Marten.Testing.Harness;
-using Npgsql;
 using Shouldly;
 using Xunit;
 

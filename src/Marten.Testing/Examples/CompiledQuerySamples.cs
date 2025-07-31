@@ -5,8 +5,6 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Marten.Testing.Examples;

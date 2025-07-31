@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Events.TestSupport;
 using Marten.Exceptions;

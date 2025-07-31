@@ -2,7 +2,6 @@ using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
-using Marten.Events;
 using Marten.Exceptions;
 using Marten.Services;
 using Marten.Testing.Harness;

@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Internal.Operations;

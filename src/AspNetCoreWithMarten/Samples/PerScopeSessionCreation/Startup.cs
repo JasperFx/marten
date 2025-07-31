@@ -1,16 +1,8 @@
-using System;
-using System.Data;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Services;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Npgsql;
-using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation;
 

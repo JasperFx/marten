@@ -1,10 +1,8 @@
 #nullable enable
-using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
-using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.Services.BatchQuerying;

@@ -13,7 +13,6 @@ using Marten.Schema;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
-using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 using Table = Weasel.Postgresql.Tables.Table;
 

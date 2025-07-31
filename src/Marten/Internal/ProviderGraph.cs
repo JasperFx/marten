@@ -1,8 +1,6 @@
 #nullable enable
 using System;
 using ImTools;
-using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.RuntimeCompiler;

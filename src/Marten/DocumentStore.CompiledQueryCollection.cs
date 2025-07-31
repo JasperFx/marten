@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
 using Marten.Exceptions;

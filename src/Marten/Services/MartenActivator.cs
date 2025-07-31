@@ -6,7 +6,6 @@ using Marten.Schema;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Postgresql;
 

@@ -1,7 +1,6 @@
 using System;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Testing.Documents;

@@ -7,10 +7,8 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Services.Json;
 using Marten.Util;
-using Npgsql;
 using Weasel.Core;
 
 namespace Marten.Services;

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten;
 using Microsoft.Extensions.Configuration;

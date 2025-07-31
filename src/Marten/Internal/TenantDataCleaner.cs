@@ -3,15 +3,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten.Events.Schema;
 using Marten.Schema;
-using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Internal;
 

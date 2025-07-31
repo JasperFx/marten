@@ -8,7 +8,6 @@ using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
-using Marten.Schema.Identity;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;

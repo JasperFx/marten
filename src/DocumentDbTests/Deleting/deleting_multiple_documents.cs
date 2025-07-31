@@ -1,4 +1,3 @@
-﻿using System;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;

@@ -1,5 +1,3 @@
-using Marten.Services.Json;
-using Marten.Testing;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

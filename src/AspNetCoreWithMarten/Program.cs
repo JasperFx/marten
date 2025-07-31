@@ -1,10 +1,7 @@
 using AspNetCoreWithMarten;
 using JasperFx;
 using Marten;
-using Marten.Services.Json;
 using Microsoft.AspNetCore.Mvc;
-using JasperFx;
-using Weasel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 

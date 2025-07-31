@@ -14,7 +14,6 @@ using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Metadata;
 using Marten.Testing.Harness;
-using NSubstitute;
 using Shouldly;
 using Xunit;
 

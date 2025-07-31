@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Marten;
-using JasperFx;
 using JasperFx.CommandLine;
 using Spectre.Console;
 

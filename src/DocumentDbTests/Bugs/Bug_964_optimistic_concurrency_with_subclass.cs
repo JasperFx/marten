@@ -2,12 +2,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
-using Marten.Exceptions;
-using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 

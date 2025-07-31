@@ -1,19 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx;
-using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
-using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
-using Marten.Linq.QueryHandlers;
-using Npgsql;
-using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
 

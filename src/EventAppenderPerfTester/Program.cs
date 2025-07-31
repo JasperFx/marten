@@ -1,6 +1,4 @@
-﻿using Marten;
-using Marten.Events;
-using Marten.Events.Projections;
+using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using JasperFx;

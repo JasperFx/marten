@@ -1,7 +1,6 @@
 using Marten.Testing.Harness;
 using Shouldly;
 using System;
-using System.Linq;
 using Marten.Exceptions;
 using Marten.Schema;
 using Xunit;

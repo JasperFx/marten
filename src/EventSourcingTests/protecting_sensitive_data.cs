@@ -1,9 +1,6 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
-using Marten.Events;
-using Marten.Events.Protected;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;

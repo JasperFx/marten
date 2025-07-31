@@ -12,7 +12,6 @@ using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;

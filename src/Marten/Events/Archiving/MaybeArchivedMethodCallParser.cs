@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using System.Reflection;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Weasel.Postgresql.SqlGeneration;

@@ -4,7 +4,6 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon.Progress;
-using Marten.Exceptions;
 using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;

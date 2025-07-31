@@ -1,10 +1,8 @@
 #nullable enable
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Members;
-using Marten.Linq.SqlGeneration.Filters;
 using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;

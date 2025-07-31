@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
-using Marten.Util;
 
 namespace Marten.Testing.Examples;
 

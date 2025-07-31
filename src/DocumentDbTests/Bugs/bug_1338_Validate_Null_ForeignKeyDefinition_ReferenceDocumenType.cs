@@ -1,9 +1,7 @@
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Npgsql;
-using NSubstitute.ClearExtensions;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;

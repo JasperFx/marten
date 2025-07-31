@@ -1,9 +1,4 @@
-using System.Data;
 using Marten;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.LightweightSessions;
 

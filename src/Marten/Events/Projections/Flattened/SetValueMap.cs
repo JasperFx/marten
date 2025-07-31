@@ -1,5 +1,3 @@
-using System;
-using JasperFx.CodeGeneration.Model;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Events.Projections.Flattened;

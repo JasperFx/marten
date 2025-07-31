@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Microsoft.Extensions.Hosting;
 
 namespace EventSourcingTests.QuickAppend;
