@@ -1,8 +1,6 @@
 using System;
 using System.Linq.Expressions;
-using JasperFx.Core;
 using Marten;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Parsing;

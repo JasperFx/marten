@@ -9,10 +9,8 @@ using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Events.CodeGeneration;
 using Marten.Linq.Parsing;
 using Marten.Schema;
-using Marten.Util;
 using Weasel.Postgresql;
 
 namespace Marten.Internal.CodeGeneration;

@@ -1,13 +1,11 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
-using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;

@@ -1,5 +1,4 @@
 using JasperFx.Events.Projections;
-using Marten.Events.Daemon;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 

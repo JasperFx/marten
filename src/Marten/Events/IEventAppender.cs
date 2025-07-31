@@ -7,9 +7,7 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
-using Marten.Events.Projections;
 using Marten.Internal.Sessions;
-using Marten.Services.BatchQuerying;
 
 namespace Marten.Events;
 

@@ -6,7 +6,6 @@ using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
 using Marten.Events.CodeGeneration;
-using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

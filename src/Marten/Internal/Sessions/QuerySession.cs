@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;

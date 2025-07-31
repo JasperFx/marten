@@ -17,7 +17,6 @@ using Npgsql;
 using NSubstitute;
 using Shouldly;
 using Weasel.Core;
-using Weasel.Postgresql.SqlGeneration;
 using Xunit;
 using Xunit.Abstractions;
 

@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Microsoft.Extensions.Logging;
 using Shouldly;
 using Xunit.Abstractions;
 

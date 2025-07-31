@@ -1,13 +1,9 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.CodeGeneration;
-using Marten.Events.Daemon;
 using Marten.Testing.Documents;
-using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 

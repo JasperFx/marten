@@ -6,7 +6,6 @@ using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Descriptors;
-using Marten.Internal.OpenTelemetry;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;

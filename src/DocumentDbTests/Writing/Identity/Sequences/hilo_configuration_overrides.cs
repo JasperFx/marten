@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Schema;

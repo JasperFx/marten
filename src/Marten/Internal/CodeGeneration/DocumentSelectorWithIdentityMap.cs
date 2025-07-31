@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Marten.Schema;
-using Microsoft.CodeAnalysis;
 
 namespace Marten.Internal.CodeGeneration;
 

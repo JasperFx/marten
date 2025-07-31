@@ -6,11 +6,6 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using Marten.Events;
-using Marten.Internal.CodeGeneration;
-using Microsoft.FSharp.Core;
-using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
 namespace Marten.Testing.Harness

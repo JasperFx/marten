@@ -5,7 +5,6 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Linq.Parsing;
-using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

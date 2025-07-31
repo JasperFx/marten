@@ -1,7 +1,6 @@
-﻿using JasperFx.Events.Projections;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 
 const string connectionString =
     "PORT = 5432; HOST = localhost; TIMEOUT = 15; POOLING = True; DATABASE = 'postgres'; PASSWORD = 'qwerty'; USER ID = 'postgres'";

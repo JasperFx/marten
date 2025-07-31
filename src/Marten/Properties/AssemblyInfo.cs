@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using JasperFx;
-using JasperFx.Core;
 using JasperFx.Core.TypeScanning;
 
 [assembly:IgnoreAssembly]

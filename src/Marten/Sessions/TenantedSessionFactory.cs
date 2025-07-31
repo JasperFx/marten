@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using JasperFx;
 using JasperFx.Events;
-using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Storage;

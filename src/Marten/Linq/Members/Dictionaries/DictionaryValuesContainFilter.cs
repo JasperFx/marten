@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
-using CommandBuilder = Weasel.Postgresql.CommandBuilder;
 using ConstantExpression = System.Linq.Expressions.ConstantExpression;
 using ISqlFragment = Weasel.Postgresql.SqlGeneration.ISqlFragment;
 

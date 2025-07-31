@@ -4,8 +4,6 @@ using EventSourcingTests.Projections;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
-using Marten.Schema.Identity;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

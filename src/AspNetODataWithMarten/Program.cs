@@ -1,7 +1,6 @@
 using Marten;
 using Microsoft.AspNetCore.OData;
 using Microsoft.OData.ModelBuilder;
-using System.ComponentModel.DataAnnotations;
 using Marten.Testing.Harness;
 
 var builder = WebApplication.CreateBuilder(args);

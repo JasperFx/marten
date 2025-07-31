@@ -1,11 +1,6 @@
 using System;
 using JasperFx.Core;
 using JasperFx.Events;
-using Marten.Events;
-using Marten.Events.Projections;
-using Marten.Schema;
-using Marten.Storage;
-using NSubstitute;
 
 namespace EventSourcingTests.Aggregation;
 

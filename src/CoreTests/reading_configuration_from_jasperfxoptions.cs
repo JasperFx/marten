@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core;
 using Lamar;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
@@ -10,7 +9,6 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace CoreTests;

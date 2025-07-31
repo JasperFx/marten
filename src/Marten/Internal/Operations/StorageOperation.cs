@@ -10,7 +10,6 @@ using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Marten.Internal.DirtyTracking;
 using Marten.Schema;
-using Marten.Schema.Identity;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;

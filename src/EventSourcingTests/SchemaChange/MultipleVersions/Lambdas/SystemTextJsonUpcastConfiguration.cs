@@ -2,7 +2,6 @@
 using System;
 using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
-using Marten.Services.Json;
 using static Marten.Services.Json.Transformations.SystemTextJson.JsonTransformations;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;

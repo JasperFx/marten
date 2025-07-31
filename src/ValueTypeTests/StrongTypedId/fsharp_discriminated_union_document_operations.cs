@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -8,7 +7,6 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
-using Marten.Internal.CodeGeneration;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;

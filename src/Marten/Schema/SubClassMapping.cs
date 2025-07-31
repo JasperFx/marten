@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Weasel.Core;
 

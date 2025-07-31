@@ -6,7 +6,6 @@ using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using StronglyTypedIds;
-using Vogen;
 
 namespace ValueTypeTests.StrongTypedId;
 

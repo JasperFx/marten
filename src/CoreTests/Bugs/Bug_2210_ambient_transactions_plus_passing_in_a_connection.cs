@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
-using Marten;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Testing.Documents;

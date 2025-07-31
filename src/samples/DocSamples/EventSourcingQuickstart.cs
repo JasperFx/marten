@@ -1,7 +1,6 @@
-﻿using JasperFx.Events.Projections;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 
 namespace DocSamples;

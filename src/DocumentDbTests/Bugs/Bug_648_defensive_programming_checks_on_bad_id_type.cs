@@ -1,7 +1,5 @@
-using System;
 using System.Threading.Tasks;
 using Marten.Exceptions;
-using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Schema;
 using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;

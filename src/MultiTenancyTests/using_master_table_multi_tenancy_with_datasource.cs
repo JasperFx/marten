@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Core.MultiTenancy;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;

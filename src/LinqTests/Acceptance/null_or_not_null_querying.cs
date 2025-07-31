@@ -1,7 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Linq;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Testing.Documents;

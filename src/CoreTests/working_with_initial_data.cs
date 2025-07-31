@@ -1,14 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.RuntimeCompiler;
 using Marten;
 using Marten.Schema;
-using Marten.Storage;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage.Metadata;

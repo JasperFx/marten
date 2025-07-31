@@ -1,6 +1,5 @@
 using System.Linq;
 using System.Threading.Tasks;
-using EventSourcingTests.Aggregation;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Projections;
 using Marten;

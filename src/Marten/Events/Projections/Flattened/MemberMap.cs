@@ -2,8 +2,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text;
-using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
 using Marten.Util;

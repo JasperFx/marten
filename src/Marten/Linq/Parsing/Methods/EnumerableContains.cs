@@ -1,13 +1,11 @@
 #nullable enable
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members;
-using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql.SqlGeneration;
 

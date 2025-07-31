@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,7 +8,6 @@ using JasperFx.Core;
 using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
-using Weasel.Core;
 
 namespace MemoryUsageChecker;
 

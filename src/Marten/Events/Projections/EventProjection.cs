@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
-using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Storage;

@@ -6,7 +6,6 @@ using JasperFx;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
 
 namespace LinqTests.Bugs;
 

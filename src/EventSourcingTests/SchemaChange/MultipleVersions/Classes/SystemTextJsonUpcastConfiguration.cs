@@ -3,7 +3,6 @@ using System;
 using System.Text.Json;
 using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
-using Marten.Services.Json;
 using Marten.Services.Json.Transformations.SystemTextJson;
 using static JasperFx.Events.EventTypeExtensions;
 

@@ -2,7 +2,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Weasel.Postgresql;
-using Xunit;
 
 namespace Marten.Testing.Examples;
 

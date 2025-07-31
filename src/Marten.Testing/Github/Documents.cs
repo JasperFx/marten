@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+using System;
 //using Octokit;
 
 namespace Marten.Testing.Github;

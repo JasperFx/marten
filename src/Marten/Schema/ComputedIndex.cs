@@ -1,10 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using JasperFx.Core.Reflection;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema.Indexing.Unique;

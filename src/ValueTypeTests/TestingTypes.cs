@@ -1,6 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
-using JasperFx.CodeGeneration.Frames;
 using Vogen;
 
 namespace ValueTypeTests;

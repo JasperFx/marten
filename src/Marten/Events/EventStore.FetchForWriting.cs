@@ -9,7 +9,6 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;

@@ -1,4 +1,3 @@
-using Marten.Exceptions;
 using Microsoft.Extensions.Logging;
 
 namespace Marten.Sessions;

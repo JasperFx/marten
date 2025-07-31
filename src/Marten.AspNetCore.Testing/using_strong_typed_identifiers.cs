@@ -1,10 +1,8 @@
 using System;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Alba;
 using IssueService.Controllers;
 using Shouldly;
-using StronglyTypedIds;
 using Xunit;
 
 namespace Marten.AspNetCore.Testing;

@@ -1,8 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
-using Marten.Testing.Documents;
-using Shouldly;
 
 namespace LinqTests.Acceptance;
 

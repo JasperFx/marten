@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten;
@@ -8,7 +8,6 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Npgsql;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 
 namespace StressTests;

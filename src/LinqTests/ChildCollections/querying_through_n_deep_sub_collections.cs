@@ -5,10 +5,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Npgsql;
 using Shouldly;
-using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit.Abstractions;
 
 namespace LinqTests.ChildCollections;

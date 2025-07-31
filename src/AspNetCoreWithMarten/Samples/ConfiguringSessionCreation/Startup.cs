@@ -2,11 +2,6 @@ using System.Data;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation;
 

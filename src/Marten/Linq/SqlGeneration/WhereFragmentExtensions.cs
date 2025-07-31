@@ -1,6 +1,5 @@
 #nullable enable
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;

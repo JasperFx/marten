@@ -1,6 +1,5 @@
 using System.Runtime.Serialization;
 using JasperFx;
-using Marten.Storage;
 
 namespace Marten.Exceptions;
 

@@ -4,8 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Storage;
 using Marten.Testing.Harness;
-using Shouldly;
-using Weasel.Postgresql.Tables;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;

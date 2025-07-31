@@ -1,4 +1,3 @@
-using System;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage;

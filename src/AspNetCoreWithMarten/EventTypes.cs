@@ -1,4 +1,3 @@
-using System;
 using Marten.Events.Aggregation;
 
 namespace AspNetCoreWithMarten;

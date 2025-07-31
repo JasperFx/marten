@@ -1,5 +1,4 @@
 using System;
-using Weasel.Postgresql.Connections;
 
 namespace Marten.Testing.Harness;
 

@@ -6,8 +6,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using ImTools;
-using JasperFx.Core;
-using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing.Operators;
 using Marten.Schema;
 using Marten.Storage;

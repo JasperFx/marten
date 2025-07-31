@@ -1,17 +1,13 @@
 using System;
 using System.Threading.Tasks;
-using Castle.Components.DictionaryAdapter;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
-using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Microsoft.Extensions.Hosting;
 using Shouldly;
-using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
 using IRevisioned = Marten.Metadata.IRevisioned;

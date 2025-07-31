@@ -4,7 +4,6 @@ using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Weasel.Core;
 
 namespace EventSourcingTests.Examples;
 

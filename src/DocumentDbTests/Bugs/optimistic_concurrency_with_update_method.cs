@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx;
-using Marten.Exceptions;
 using Marten.Metadata;
 using Marten.Services;
 using Marten.Testing.Harness;

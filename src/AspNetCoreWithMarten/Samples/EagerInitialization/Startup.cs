@@ -1,8 +1,6 @@
 using JasperFx;
 using JasperFx.CodeGeneration;
 using Marten;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace AspNetCoreWithMarten.Samples.EagerInitialization;
 

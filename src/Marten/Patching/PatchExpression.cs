@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text.Json;
 using JasperFx.Core;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;

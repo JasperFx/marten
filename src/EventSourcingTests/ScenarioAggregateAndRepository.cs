@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten;
-using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;

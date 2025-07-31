@@ -6,7 +6,6 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten.Events;
-using Marten.Events.Fetching;
 using Marten.Events.Querying;
 using Marten.Linq.QueryHandlers;
 

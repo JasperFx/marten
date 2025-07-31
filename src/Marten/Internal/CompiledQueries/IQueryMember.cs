@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using Npgsql;
 
 namespace Marten.Internal.CompiledQueries;

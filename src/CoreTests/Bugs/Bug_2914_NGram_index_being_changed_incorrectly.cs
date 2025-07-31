@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;

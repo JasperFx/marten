@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
-using Marten.Events;
 using Marten.Events.Aggregation;
-using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;

@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Services.BatchQuerying;

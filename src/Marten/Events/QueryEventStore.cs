@@ -8,7 +8,6 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events.Querying;
 using Marten.Internal.Sessions;
-using Marten.Internal.Storage;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 using Marten.Storage;

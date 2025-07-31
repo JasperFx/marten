@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using ImTools;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.Members.ValueCollections;

@@ -4,7 +4,6 @@ using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
-using Weasel.Core;
 using Xunit;
 
 namespace EventSourcingTests.Projections;

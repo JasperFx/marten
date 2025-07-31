@@ -6,7 +6,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Schema;
 using Marten.Services.BatchQuerying;

@@ -3,7 +3,6 @@ using JasperFx;
 using Marten.Patching;
 using Marten.Services;
 using Marten.Testing.Harness;
-using Weasel.Core;
 using Xunit;
 
 namespace PatchingTests.Patching;

@@ -7,7 +7,6 @@ using JasperFx.CodeGeneration.Model;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CodeGeneration;
-using Marten.Schema.Identity;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments;

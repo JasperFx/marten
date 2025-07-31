@@ -2,14 +2,12 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using StronglyTypedIds;
-using Vogen;
 
 namespace ValueTypeTests.StrongTypedId;
 

@@ -1,4 +1,3 @@
-using Marten;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Testing.Documents;

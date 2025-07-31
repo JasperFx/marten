@@ -1,8 +1,5 @@
-using System.Runtime.CompilerServices;
 using DaemonTests.TestingSupport;
-using JasperFx;
 using JasperFx.CommandLine;
-using Xunit.Abstractions;
 
 namespace EventAppenderPerfTester;
 

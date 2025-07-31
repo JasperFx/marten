@@ -1,6 +1,3 @@
-﻿using System;
-using JasperFx.Core;
-using Marten.Services;
 //using Octokit;
 
 namespace Marten.Testing.Github;

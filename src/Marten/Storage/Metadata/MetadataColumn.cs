@@ -13,7 +13,6 @@ using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Schema.Arguments;
-using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;

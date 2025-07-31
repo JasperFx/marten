@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Marten.Services;
-using Microsoft.Extensions.Hosting;
 
 namespace Marten.Testing.Examples;
 

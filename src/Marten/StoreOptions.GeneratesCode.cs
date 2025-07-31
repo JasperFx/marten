@@ -8,7 +8,6 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
-using Microsoft.Extensions.Hosting;
 
 namespace Marten;
 

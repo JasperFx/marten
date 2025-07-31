@@ -1,8 +1,7 @@
-﻿using JasperFx;
+using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 

@@ -4,10 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Hosting;
-using NSubstitute;
 
 namespace EventSourcingTests.Examples;
 

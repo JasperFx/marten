@@ -1,6 +1,5 @@
-﻿using Marten.Testing.Documents;
+using Marten.Testing.Documents;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
 
 namespace Marten.Testing.Examples;
 

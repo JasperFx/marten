@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Events;
-using Marten.Internal.Sessions;
 using Marten.Services;
 
 namespace Marten;

@@ -1,10 +1,7 @@
 using EventSourcingTests.Aggregation;
-using Marten.Events;
-using Marten.Events.Operations;
 using Marten.Testing.Harness;
 using Shouldly;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Xunit;

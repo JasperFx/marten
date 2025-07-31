@@ -4,9 +4,7 @@ using EventSourcingTests.Aggregation;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten;
-using Marten.Events;
 using Marten.Testing.Harness;
-using Xunit;
 
 namespace EventSourcingTests.QuickAppend;
 

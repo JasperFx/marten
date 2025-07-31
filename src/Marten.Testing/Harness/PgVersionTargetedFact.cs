@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Marten.Testing.Harness;
 using Npgsql;
-using NSubstitute;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;

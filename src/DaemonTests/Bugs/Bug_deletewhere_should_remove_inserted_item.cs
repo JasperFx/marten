@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
-using Marten.Metadata;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;

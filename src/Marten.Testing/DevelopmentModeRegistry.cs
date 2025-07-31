@@ -1,7 +1,5 @@
 using JasperFx;
 using Lamar;
-using Weasel.Core;
-using Weasel.Postgresql;
 
 namespace Marten.Testing;
 

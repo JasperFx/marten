@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using System.Threading.Tasks;
-using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
 

@@ -1,11 +1,9 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Core;
-using Weasel.Postgresql;
 using Xunit;
 
 namespace DocumentDbTests.Bugs;

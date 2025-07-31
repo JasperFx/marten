@@ -1,17 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Npgsql;
 using Weasel.Core;
-using Weasel.Core.Migrations;
-using Weasel.Postgresql;
-using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Schema;
