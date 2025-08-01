@@ -438,7 +438,7 @@ public class select_many : IntegrationContext
 
         foreach (var target in targets)
         {
-            if (target.Children.Any())
+            if (target.Children.Length != 0)
             {
                 target.Children[0].UserId = user1.Id;
             }
@@ -480,7 +480,7 @@ public class select_many : IntegrationContext
 
         foreach (var target in targets)
         {
-            if (target.Children.Any())
+            if (target.Children.Length != 0)
             {
                 target.Children[0].UserId = user1.Id;
             }

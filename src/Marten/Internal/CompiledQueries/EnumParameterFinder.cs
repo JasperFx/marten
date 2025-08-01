@@ -16,7 +16,7 @@ internal class EnumParameterFinder: IParameterFinder
         var groups = plan.QueryMembers.Where(x => x.Type.IsEnum)
             .GroupBy(x => x.Type).Where(x => x.Count() > 1).ToArray();
 
-        if (!groups.Any())
+        if (groups.Length == 0)
         {
             return true;
         }

@@ -17,7 +17,7 @@ internal class EventDeleter<T> : IEventHandler
 
     public EventDeleter(MemberInfo[] members, Table table)
     {
-        if (members.Any())
+        if (members.Length != 0)
         {
             _parameter = FlatTableProjection.BuildPrimaryKeySetter<T>(members);
         }

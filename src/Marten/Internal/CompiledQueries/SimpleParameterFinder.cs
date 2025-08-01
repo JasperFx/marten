@@ -29,7 +29,7 @@ internal class SimpleParameterFinder<T>: IParameterFinder
     {
         var members = findMembers(plan);
 
-        if (!members.Any())
+        if (members.Length == 0)
         {
             return true;
         }

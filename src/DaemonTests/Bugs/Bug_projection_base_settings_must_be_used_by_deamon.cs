@@ -60,7 +60,7 @@ public class Bug_projection_base_settings_must_be_used_by_deamon : BugIntegratio
         public FilterableProjection(bool includeArchivedEvents, Action feedback, params Type[] includedEventTypes)
         {
             IncludeArchivedEvents = includeArchivedEvents;
-            if (includedEventTypes.Any())
+            if (includedEventTypes.Length != 0)
             {
                 IncludedEventTypes.AddRange(includedEventTypes);
             }

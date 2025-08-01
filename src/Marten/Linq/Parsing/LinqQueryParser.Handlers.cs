@@ -48,7 +48,7 @@ internal partial class LinqQueryParser
 
         var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
 
-        if (includes.Any())
+        if (includes.Length != 0)
         {
             return new IncludeQueryHandler<TResult>(handler,
                 includes.Select(x => x.BuildReader(Session)).ToArray());
@@ -83,7 +83,7 @@ internal partial class LinqQueryParser
 
         var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
 
-        if (includes.Any())
+        if (includes.Length != 0)
         {
             return new IncludeQueryHandler<IReadOnlyList<T>>(handler,
                 includes.Select(x => x.BuildReader(Session)).ToArray());

@@ -223,7 +223,7 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
                 .Where(x => x.Count() > 1)
                 .ToArray();
 
-        if (duplicates.Any())
+        if (duplicates.Length != 0)
         {
             var message = duplicates
                     // We are making it legal to use the same document alias across different schemas

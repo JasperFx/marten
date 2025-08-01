@@ -28,7 +28,7 @@ public partial class FlatTableProjection: ISubscriptionFactory<IDocumentOperatio
     public override void AssembleAndAssertValidity()
     {
         var messages = quickValidations().ToArray();
-        if (messages.Any())
+        if (messages.Length != 0)
         {
             throw new InvalidProjectionException(messages);
         }
