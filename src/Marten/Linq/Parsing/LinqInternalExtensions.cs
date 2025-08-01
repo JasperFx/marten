@@ -88,7 +88,7 @@ public static class LinqInternalExtensions
         }
 
         var members = MemberFinder.Determine(expression);
-        if (!members.Any())
+        if (members.Length == 0)
         {
             throw new BadLinqExpressionException("Unable to find any queryable members in expression " + expression);
         }
@@ -136,7 +136,7 @@ public static class LinqInternalExtensions
         }
 
         var members = MemberFinder.Determine(expression, invalidExpression);
-        if (!members.Any())
+        if (members.Length == 0)
         {
             throw new BadLinqExpressionException("Unable to find any queryable members in expression " + expression);
         }

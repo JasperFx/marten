@@ -168,7 +168,7 @@ public static class AsyncDaemonHealthCheckExtensions
 
             if (_maxSameLagTime is null)
             {
-                return laggingProjections.Any()
+                return laggingProjections.Length != 0
                     ? HealthCheckResult.Unhealthy(
                         $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind for projection(s): {laggingProjections.Select(x => x.ShardName).Join(", ")}"
                     )
@@ -201,7 +201,7 @@ public static class AsyncDaemonHealthCheckExtensions
                 );
             }
 
-            return projectionsLaggingWithSamePositionForGivenTime.Any()
+            return projectionsLaggingWithSamePositionForGivenTime.Length != 0
                 ? HealthCheckResult.Unhealthy(
                     $"Unhealthy: Async projection sequence is more than {_maxEventLag} events behind with same sequence for more than {_maxSameLagTime} for projection(s): {projectionsLaggingWithSamePositionForGivenTime.Select(x => x.ShardName).Join(", ")}"
                 )

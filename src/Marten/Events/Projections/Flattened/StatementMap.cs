@@ -31,7 +31,7 @@ public class StatementMap<T>: IEventHandler
         _pkMembers = pkMembers;
 
         _streamIdentified = pkMembers.IsEmpty();
-        if (pkMembers.Any())
+        if (pkMembers.Length != 0)
         {
             _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(pkMembers));
             _hasBuiltPK = true;

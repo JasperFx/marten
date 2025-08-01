@@ -106,7 +106,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             .Select(x => x.Name)
             .ToArray();
 
-        if (!names.Any())
+        if (names.Length == 0)
         {
             throw new ArgumentOutOfRangeException(nameof(subscriptionName),
                 $"Unknown subscription name '{subscriptionName}'. Available options are {Options.Projections.AllShards().Select(x => x.Name.Name).Distinct().Join(", ")}");
