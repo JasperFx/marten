@@ -323,7 +323,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         public string Case { get; set; }
     }
 
-    private readonly Guid[] favAuthors = new Guid[] { Guid.NewGuid(), Guid.NewGuid() };
+    private readonly Guid[] favAuthors = [Guid.NewGuid(), Guid.NewGuid()];
 
     private async Task buildAuthorData()
     {
@@ -331,7 +331,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 1,
-            CategoryArray = new[] { "sports", "finance", "health" },
+            CategoryArray = ["sports", "finance", "health"],
             CategoryList = new List<string> { "sports", "finance", "health" },
             AuthorArray = favAuthors,
             Published = true,
@@ -339,13 +339,13 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         theSession.Store(new Article
         {
-            Long = 2, CategoryArray = new[] { "sports", "astrology" }, AuthorArray = favAuthors.Take(1).ToArray(),
+            Long = 2, CategoryArray = ["sports", "astrology"], AuthorArray = favAuthors.Take(1).ToArray(),
         });
 
         theSession.Store(new Article
         {
             Long = 3,
-            CategoryArray = new[] { "health", "finance" },
+            CategoryArray = ["health", "finance"],
             CategoryList = new List<string> { "sports", "health" },
             AuthorArray = favAuthors.Skip(1).ToArray(),
         });
@@ -353,7 +353,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 4,
-            CategoryArray = new[] { "health", "astrology" },
+            CategoryArray = ["health", "astrology"],
             AuthorList = new List<Guid> { Guid.NewGuid() },
             Published = true,
         });
@@ -361,15 +361,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
         theSession.Store(new Article
         {
             Long = 5,
-            CategoryArray = new[] { "sports", "nested" },
+            CategoryArray = ["sports", "nested"],
             AuthorList = new List<Guid> { Guid.NewGuid(), favAuthors[1] },
         });
 
         theSession.Store(new Article
         {
             Long = 6,
-            AuthorArray = new Guid[] { favAuthors[0], Guid.NewGuid() },
-            ReferencedArticle = new Article { CategoryArray = new[] { "nested" }, }
+            AuthorArray = [favAuthors[0], Guid.NewGuid()],
+            ReferencedArticle = new Article { CategoryArray = ["nested"], }
         });
         await theSession.SaveChangesAsync();
     }
@@ -488,9 +488,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public async Task query_against_number_array()
     {
-        var doc1 = new DocWithArrays { Numbers = new[] { 1, 2, 3 } };
-        var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
-        var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7 } };
+        var doc1 = new DocWithArrays { Numbers = [1, 2, 3] };
+        var doc2 = new DocWithArrays { Numbers = [3, 4, 5] };
+        var doc3 = new DocWithArrays { Numbers = [5, 6, 7] };
 
         theSession.Store(doc1, doc2, doc3);
 
@@ -503,9 +503,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public async Task query_against_number_array_count()
     {
-        var doc1 = new DocWithArrays { Numbers = new[] { 1, 2, 3 } };
-        var doc2 = new DocWithArrays { Numbers = new[] { 3, 4, 5 } };
-        var doc3 = new DocWithArrays { Numbers = new[] { 5, 6, 7, 8 } };
+        var doc1 = new DocWithArrays { Numbers = [1, 2, 3] };
+        var doc2 = new DocWithArrays { Numbers = [3, 4, 5] };
+        var doc3 = new DocWithArrays { Numbers = [5, 6, 7, 8] };
 
         theSession.Store(doc1, doc2, doc3);
 
@@ -521,9 +521,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
     public async Task query_against_string_array()
     {
-        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
+        var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
+        var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
+        var doc3 = new DocWithArrays { Strings = ["d", "e", "f"] };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -540,9 +540,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public async Task query_against_string_array_with_Any()
     {
-        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
+        var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
+        var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
+        var doc3 = new DocWithArrays { Strings = ["d", "e", "f"] };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -557,9 +557,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public async Task query_against_string_array_with_Length()
     {
-        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
+        var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
+        var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
+        var doc3 = new DocWithArrays { Strings = ["d", "e", "f", "g"] };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -576,9 +576,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
     [Fact]
     public async Task query_against_string_array_with_Count_method()
     {
-        var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
-        var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
-        var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f", "g" } };
+        var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
+        var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
+        var doc3 = new DocWithArrays { Strings = ["d", "e", "f", "g"] };
 
         theSession.Store(doc1);
         theSession.Store(doc2);
@@ -595,15 +595,15 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         var doc1 = new DocWithArrays
         {
-            Dates = new[] { DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2) }
+            Dates = [DateTime.Today, DateTime.Today.AddDays(1), DateTime.Today.AddDays(2)]
         };
         var doc2 = new DocWithArrays
         {
-            Dates = new[] { DateTime.Today.AddDays(2), DateTime.Today.AddDays(3), DateTime.Today.AddDays(4) }
+            Dates = [DateTime.Today.AddDays(2), DateTime.Today.AddDays(3), DateTime.Today.AddDays(4)]
         };
         var doc3 = new DocWithArrays
         {
-            Dates = new[] { DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6) }
+            Dates = [DateTime.Today.AddDays(4), DateTime.Today.AddDays(5), DateTime.Today.AddDays(6)]
         };
 
         theSession.Store(doc1);
@@ -754,7 +754,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     public async Task naked_any_hit_without_predicate()
     {
         var targetithchildren = new Target { Number = 1 };
-        targetithchildren.Children = new[] { new Target(), };
+        targetithchildren.Children = [new Target(),];
         var nochildrennullarray = new Target { Number = 2 };
         var nochildrenemptyarray = new Target { Number = 3 };
         nochildrenemptyarray.Children = [];
