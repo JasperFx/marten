@@ -134,6 +134,12 @@
         <Compile Remove="AssemblyInfo.cs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="System.Private.CoreLib">
+        <HintPath>..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.NETCore.App\9.0.8\System.Private.CoreLib.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
     <PropertyGroup>
         <NoWarn>xUnit1013</NoWarn>
     </PropertyGroup>

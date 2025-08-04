@@ -26,6 +26,25 @@ public partial class MartenDatabase : IEventDatabase
 {
     private string _storageIdentifier;
 
+    public async Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            await conn.CreateCommand(
+                    $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)")
+                .With("sequences", sequences)
+                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
     {
         var sql =

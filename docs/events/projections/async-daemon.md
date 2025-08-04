@@ -442,12 +442,14 @@ or subscription with the prefix: `marten.{Subscription or Projection Name}.{shar
 * `loading` -- traces the loading of a page of events for a projection or subscription. Same tags as above
 * `grouping` -- traces the grouping process for projections that happens prior to execution. This does not apply to subscriptions. Same tags as above
 
-In addition, there are two metrics built for every combination of projection or subscription shard on each
+In addition, there are three metrics built for every combination of projection or subscription shard on each
 Marten database (in the case of using separate databases for multi-tenancy), again using the same prefix as above
 with the addition of the Marten database identifier in the case of multi-tenancy through separate databases like `marten.{database name}.{projection or subscription name}.all.*:
 
 * `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
 * `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
+* `skipped` - added in Marten 8.6, a counter telling you how many events were skipped during asynchronous projection or subscription processing. Depending on how the application is 
+  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, _your_ code threw an exception)
 
 ::: tip
 The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap
@@ -480,6 +482,21 @@ using multi-tenancy through a database per tenant. On these spans will be these 
 
 There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
 that just emits and update every time that Marten has to "skip" stale events.
+
+## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
+
+::: info
+This setting will be required and utilized by the forthcoming "CritterWatch" tool.
+:::
+
+As part of some longer term planned improvements for Marten projection/subscription monitoring and potential
+administrative "healing" functions, you can opt into having Marten write out an additional table
+called `mt_high_water_skips` that tracks every time the high water detection has to "skip" over stale data. You can 
+use this information to "know" what streams and projections may be impacted by a skip.
+
+The flag for this is shown below:
+
+snippet: sample_enabling_advanced_tracking
 
 ## Querying for Non Stale Data
 

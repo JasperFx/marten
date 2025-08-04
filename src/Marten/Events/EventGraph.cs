@@ -195,6 +195,14 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// </summary>
     public bool UseMandatoryStreamTypeDeclaration { get; set; }
 
+    public bool EnableAdvancedAsyncTracking { get; set; }
+
+    /// <summary>
+    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+    /// </summary>
+    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+
     /// <summary>
     ///     Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
     ///     *if* you are also aggressively using event stream archiving

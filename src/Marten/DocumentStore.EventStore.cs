@@ -251,6 +251,11 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         {
             yield return IsNotArchivedFilter.Instance;
         }
+
+        if (Options.EventGraph.EnableEventSkippingInProjectionsOrSubscriptions)
+        {
+            yield return IsNotSkippedFilter.Instance;
+        }
     }
 
     IDocumentOperations IEventStore<IDocumentOperations, IQuerySession>.OpenSession(IEventDatabase database)

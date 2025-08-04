@@ -91,4 +91,16 @@ public interface IReadOnlyEventStoreOptions
     /// Opt into different aliasing styles for .NET event types
     /// </summary>
     EventNamingStyle EventNamingStyle { get; set; }
+
+    /// <summary>
+    /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
+    /// extra tables, functions, and columns to your Marten event store schema
+    /// </summary>
+    public bool EnableAdvancedAsyncTracking { get; set; }
+
+    /// <summary>
+    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+    /// </summary>
+    bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 }

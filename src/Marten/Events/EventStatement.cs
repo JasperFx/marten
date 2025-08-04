@@ -4,12 +4,8 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Events.Projections;
 using Marten.Events.Archiving;
-using Marten.Events.Daemon;
-using Marten.Events.Daemon.Internals;
-using Marten.Linq;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -20,9 +16,10 @@ internal class EventStatement: SelectorStatement
     private const string ALL_TENANTS = "~ALL~";
     private readonly IEventStorage _storage;
 
-    public EventStatement(IEventStorage storage)
+    public EventStatement(IEventStorage storage, EventGraph events)
     {
         _storage = storage;
+        IgnoreSkipped = events.EnableEventSkippingInProjectionsOrSubscriptions;
     }
 
     public ISqlFragment[] Filters { get; set; } = Array.Empty<ISqlFragment>();
@@ -40,6 +37,7 @@ internal class EventStatement: SelectorStatement
     public Guid StreamId { get; set; } = Guid.Empty;
 
     public long FromVersion { get; set; }
+    public bool IgnoreSkipped { get; }
 
     protected override void configure(ICommandBuilder builder)
     {
@@ -72,6 +70,11 @@ internal class EventStatement: SelectorStatement
     private IEnumerable<ISqlFragment> filters()
     {
         yield return IsNotArchivedFilter.Instance;
+
+        if (IgnoreSkipped)
+        {
+            yield return IsNotSkippedFilter.Instance;
+        }
 
         if (Range != null)
         {
@@ -112,6 +115,3 @@ internal class EventStatement: SelectorStatement
         foreach (var filter in Filters) yield return filter;
     }
 }
-
-
-

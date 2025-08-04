@@ -66,6 +66,12 @@ namespace Marten.Events
         public EventAppendMode AppendMode { get; set; }
 
         /// <summary>
+        /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
+        /// extra tables, functions, and columns to your Marten event store schema
+        /// </summary>
+        public bool EnableAdvancedAsyncTracking { get; set; }
+
+        /// <summary>
         /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
         /// *if* you are also aggressively using event stream archiving
         /// </summary>
@@ -95,6 +101,12 @@ namespace Marten.Events
         /// Opt into different aliasing styles for .NET event types
         /// </summary>
         public EventNamingStyle EventNamingStyle { get; set; }
+
+        /// <summary>
+        /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+        /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+        /// </summary>
+        public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,

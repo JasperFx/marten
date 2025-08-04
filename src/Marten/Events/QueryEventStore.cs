@@ -35,7 +35,7 @@ internal class QueryEventStore: IQueryEventStore
 
         await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, _store.Events)
         {
             StreamId = streamId,
             Version = version,
@@ -56,7 +56,7 @@ internal class QueryEventStore: IQueryEventStore
 
         await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, _store.Events)
         {
             StreamKey = streamKey,
             Version = version,
