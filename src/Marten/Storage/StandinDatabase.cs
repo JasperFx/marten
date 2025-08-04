@@ -206,6 +206,16 @@ internal class StandinDatabase: IMartenDatabase
         throw new NotImplementedException();
     }
 
+    public Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task MarkEventAsSkipped(CancellationToken token, params long[] sequences)
+    {
+        return Task.CompletedTask;
+    }
+
     public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)
     {
         throw new NotImplementedException();

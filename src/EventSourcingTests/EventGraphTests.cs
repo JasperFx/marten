@@ -195,6 +195,12 @@ public class EventGraphTests
         e.EventTypeName.ShouldNotBeNull();
     }
 
+    [Fact]
+    public void enable_event_skipping_should_be_disabled_by_default()
+    {
+        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
+    }
+
     public class HouseRemodeling
     {
         public Guid Id { get; set; }

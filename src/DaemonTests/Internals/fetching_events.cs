@@ -11,6 +11,7 @@ using Marten.Events;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using NSubstitute;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
 using Xunit;
@@ -25,7 +26,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
 
     public fetching_events()
     {
-        theRange = new EventRange(theShardName, 0, 100);
+        theRange = new EventRange(theShardName, 0, 100, Substitute.For<ISubscriptionAgent>());
     }
 
     public Task InitializeAsync()

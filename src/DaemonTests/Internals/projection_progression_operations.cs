@@ -8,6 +8,7 @@ using Marten.Exceptions;
 using Marten.Testing;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using NSubstitute;
 using Shouldly;
 using Xunit;
 
@@ -58,7 +59,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         await theSession.SaveChangesAsync();
 
         var updateProjectionProgress =
-            new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
+            new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50, Substitute.For<ISubscriptionAgent>()));
 
         theSession.QueueOperation(updateProjectionProgress);
         await theSession.SaveChangesAsync();
@@ -83,7 +84,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         await theSession.SaveChangesAsync();
 
         var updateProjectionProgress =
-            new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50));
+            new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("three"), 12, 50, Substitute.For<ISubscriptionAgent>()));
 
         theSession.QueueOperation(updateProjectionProgress);
         theSession.Delete(target);
@@ -102,7 +103,7 @@ public class projection_progression_operations : OneOffConfigurationsContext, IA
         theSession.QueueOperation(insertProjectionProgress);
         await theSession.SaveChangesAsync();
 
-        var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("four"), 5, 50));
+        var updateProjectionProgress = new UpdateProjectionProgress(theStore.Events, new EventRange(new ShardName("four"), 5, 50, Substitute.For<ISubscriptionAgent>()));
 
         var ex = await Should.ThrowAsync<ProgressionProgressOutOfOrderException>(async () =>
         {

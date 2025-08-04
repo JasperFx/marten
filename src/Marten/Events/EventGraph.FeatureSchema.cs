@@ -64,5 +64,12 @@ public partial class EventGraph: IFeatureSchema
             var objects = schemaSource.CreateSchemaObjects(this);
             foreach (var schemaObject in objects) yield return schemaObject;
         }
+
+        if (EnableAdvancedAsyncTracking)
+        {
+            yield return new EventProgressionSkippingTable(this);
+            yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
+                "varchar, bigint, bigint");
+        }
     }
 }

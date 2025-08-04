@@ -44,7 +44,7 @@ internal partial class BatchedQuery: IBatchEvents
     {
         _documentTypes.Add(typeof(IEvent));
         var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, Parent.Options.EventGraph)
         {
             StreamId = streamId,
             Version = version,
@@ -63,7 +63,7 @@ internal partial class BatchedQuery: IBatchEvents
     {
         _documentTypes.Add(typeof(IEvent));
         var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, Parent.Options.EventGraph)
         {
             StreamKey = streamKey,
             Version = version,

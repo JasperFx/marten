@@ -140,6 +140,8 @@ public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>
     /// <param name="token"></param>
     /// <returns></returns>
     Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default);
+
+    Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default);
 }
 
 public enum ConnectionUsage

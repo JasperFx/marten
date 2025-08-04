@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
@@ -19,12 +20,20 @@ namespace DaemonTests.Internals;
 
 public class HighWaterDetectorTests: DaemonContext
 {
-    private readonly HighWaterDetector theDetector;
+    private HighWaterDetector _detector;
 
     public HighWaterDetectorTests(ITestOutputHelper output) : base(output)
     {
         theStore.EnsureStorageExists(typeof(IEvent));
-        theDetector = new HighWaterDetector((MartenDatabase)theStore.Tenancy.Default.Database, theStore.Events, NullLogger.Instance);
+    }
+
+    internal HighWaterDetector theDetector
+    {
+        get
+        {
+            _detector ??= new HighWaterDetector((MartenDatabase)theStore.Tenancy.Default.Database, theStore.Events, NullLogger.Instance);
+            return _detector;
+        }
     }
 
     [Fact]
@@ -66,9 +75,14 @@ public class HighWaterDetectorTests: DaemonContext
         statistics.HighestSequence.ShouldBe(NumberOfEvents);
     }
 
-    [Fact]
-    public async Task second_run_detect_same_gap_when_stale()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task second_run_detect_same_gap_when_stale(bool useAdvancedTracking)
     {
+        StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
@@ -82,9 +96,14 @@ public class HighWaterDetectorTests: DaemonContext
         statistics.CurrentMark.ShouldBe(NumberOfEvents - 101);
     }
 
-    [Fact]
-    public async Task starting_from_first_detection_some_gaps_with_nonzero_buffer()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task starting_from_first_detection_some_gaps_with_nonzero_buffer(bool useAdvancedTracking)
     {
+        StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
@@ -104,9 +123,14 @@ public class HighWaterDetectorTests: DaemonContext
         statistics2.CurrentMark.ShouldBe(NumberOfEvents - 96);
     }
 
-    [Fact]
-    public async Task look_for_safe_harbor_time_if_there_are_gaps_between_highest_assigned_event_and_the_sequence()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task look_for_safe_harbor_time_if_there_are_gaps_between_highest_assigned_event_and_the_sequence(bool useAdvancedTracking)
     {
+        StoreOptions(opts => opts.Events.EnableAdvancedAsyncTracking = useAdvancedTracking);
+        await theStore.EnsureStorageExistsAsync(typeof(IEvent));
+
         NumberOfStreams = 10;
         await PublishSingleThreaded();
 
@@ -129,6 +153,12 @@ public class HighWaterDetectorTests: DaemonContext
 
         // 20 + 20 - 32 = 8
         statistics3.CurrentMark.ShouldBe(statistics.CurrentMark + 8);
+
+        if (useAdvancedTracking)
+        {
+            var skips = await theDetector.FetchLastProgressionSkipsAsync(100, CancellationToken.None);
+            skips.Any().ShouldBeTrue();
+        }
     }
 
 

@@ -52,7 +52,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(bool isGlobal, Guid id,
         IEventStorage selector, ISqlFragment? filter = null)
     {
-        var statement = new EventStatement(selector) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
+        var statement = new EventStatement(selector, _store.Options.EventGraph) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId};
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -65,7 +65,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         ISqlFragment? filter)
     {
         var selector = _store.Events.EnsureAsGuidStorage(_session);
-        var statement = new EventStatement(selector) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
+        var statement = new EventStatement(selector, _store.Options.EventGraph) { StreamId = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -78,7 +78,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         ISqlFragment? filter)
     {
         var selector = _store.Events.EnsureAsStringStorage(_session);
-        var statement = new EventStatement(selector) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
+        var statement = new EventStatement(selector, _store.Options.EventGraph) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
@@ -117,7 +117,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(bool isGlobal, string id,
         IEventStorage selector, ISqlFragment? filter = null)
     {
-        var statement = new EventStatement(selector) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
+        var statement = new EventStatement(selector, _store.Options.EventGraph) { StreamKey = id, TenantId = isGlobal ? StorageConstants.DefaultTenantId : _tenant.TenantId };
         if (filter != null)
         {
             statement.Filters = [filter];
