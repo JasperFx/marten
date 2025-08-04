@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -77,12 +77,12 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
 {
     private readonly ITestOutputHelper _output;
 
-    private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData = new TypeWithInnerCollectionsWithJsonConverterAttribute[]
-    {
+    private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData =
+    [
         TypeWithInnerCollectionsWithJsonConverterAttribute.Create("one", "two"),
         TypeWithInnerCollectionsWithJsonConverterAttribute.Create("two", "three"),
         TypeWithInnerCollectionsWithJsonConverterAttribute.Create("four", "five"),
-    };
+    ];
 
     private const string SearchPhrase = "two";
 

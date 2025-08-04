@@ -32,7 +32,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         // Write some User documents to tenant "tenant1"
         await using (var session = store.LightweightSession("tenant1"))
         {
-            session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
+            session.Store(new User { Id = "u1", UserName = "Bill", Roles = ["admin"] });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
             await session.SaveChangesAsync();
         }
@@ -41,7 +41,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         await using (var session = store.LightweightSession("tenant2"))
         {
             session.Store(new User { Id = "u1", UserName = "Frank", Roles = [] });
-            session.Store(new User { Id = "u2", UserName = "Jill", Roles = new[] { "admin", "user" } });
+            session.Store(new User { Id = "u2", UserName = "Jill", Roles = ["admin", "user"] });
             await session.SaveChangesAsync();
         }
 
@@ -67,7 +67,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         // Write some User documents to tenant "tenant1"
         using (var session = theStore.LightweightSession("tenant1"))
         {
-            session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
+            session.Store(new User { Id = "u1", UserName = "Bill", Roles = ["admin"] });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
             await session.SaveChangesAsync();
         }
@@ -78,7 +78,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         using (var session = theStore.LightweightSession("tenant2"))
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = [] });
-            session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
+            session.Store(new User { Id = "u4", UserName = "Jill", Roles = ["admin", "user"] });
             await session.SaveChangesAsync();
         }
 
@@ -114,7 +114,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         // Write some User documents to tenant "tenant1"
         using (var session = theStore.LightweightSession("tenant1"))
         {
-            session.Store(new User { Id = "u1", UserName = "Bill", Roles = new[] { "admin" } });
+            session.Store(new User { Id = "u1", UserName = "Bill", Roles = ["admin"] });
             session.Store(new User { Id = "u2", UserName = "Lindsey", Roles = [] });
             await session.SaveChangesAsync();
         }
@@ -125,7 +125,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         using (var session = theStore.LightweightSession("tenant2"))
         {
             session.Store(new User { Id = "u3", UserName = "Frank", Roles = [] });
-            session.Store(new User { Id = "u4", UserName = "Jill", Roles = new[] { "admin", "user" } });
+            session.Store(new User { Id = "u4", UserName = "Jill", Roles = ["admin", "user"] });
             await session.SaveChangesAsync();
         }
 

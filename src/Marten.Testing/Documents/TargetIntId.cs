@@ -10,16 +10,16 @@ public class TargetIntId
     private static readonly Random _random = new Random(67);
 
     private static readonly string[] _strings =
-    {
+    [
         "Red", "Orange", "Yellow", "Green", "Blue", "Purple", "Violet",
         "Pink", "Gray", "Black"
-    };
+    ];
 
     private static readonly string[] _otherStrings =
-    {
+    [
         "one", "two", "three", "four", "five", "six", "seven", "eight",
         "nine", "ten"
-    };
+    ];
 
     public static IEnumerable<TargetIntId> GenerateRandomData(int number)
     {
@@ -44,7 +44,7 @@ public class TargetIntId
 
         target.Float = float.Parse(_random.NextDouble().ToString());
 
-        target.NumberArray = new[] { _random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10) };
+        target.NumberArray = [_random.Next(0, 10), _random.Next(0, 10), _random.Next(0, 10)];
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
