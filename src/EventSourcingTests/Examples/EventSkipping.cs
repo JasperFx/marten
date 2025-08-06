@@ -1,4 +1,5 @@
 using System.Threading;
+using System.Threading.Tasks;
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;

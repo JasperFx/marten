@@ -1,9 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    </PropertyGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
@@ -132,12 +127,6 @@
             <Link>StubDocumentSessionListener.cs</Link>
         </Compile>
         <Compile Remove="AssemblyInfo.cs" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="System.Private.CoreLib">
-        <HintPath>..\..\..\..\..\..\usr\local\share\dotnet\shared\Microsoft.NETCore.App\9.0.8\System.Private.CoreLib.dll</HintPath>
-      </Reference>
     </ItemGroup>
 
     <PropertyGroup>
