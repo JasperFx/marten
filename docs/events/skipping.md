@@ -15,7 +15,7 @@ but will no longer be applied:
 4. `FetchLatest()` and `FetchForWriting()` usages, but again, you may have to rebuild a projection to take the skipped events out of the results
 
 ::: tip
-Definitely check out [Rebuilding a Single Stream]() for part of the recipe for "healing" a system from bad events.
+Definitely check out [Rebuilding a Single Stream](/events/projections/rebuilding.html#rebuilding-a-single-stream) for part of the recipe for "healing" a system from bad events.
 :::
 
 To get started, you will first have to enable potential event skipping like this:
@@ -30,4 +30,3 @@ flag alters Marten behavior by:
 
 To mark events as skipped, you can either use raw SQL against your `mt_events` table, or
 this helper API:
-
