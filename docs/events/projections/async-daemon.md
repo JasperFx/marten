@@ -449,7 +449,7 @@ with the addition of the Marten database identifier in the case of multi-tenancy
 * `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
 * `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
 * `skipped` - added in Marten 8.6, a counter telling you how many events were skipped during asynchronous projection or subscription processing. Depending on how the application is 
-  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, _your_ code threw an exception)
+  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, *your* code threw an exception)
 
 ::: tip
 The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap

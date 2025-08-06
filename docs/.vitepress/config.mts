@@ -206,6 +206,7 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Removing Protected Information',
               link: '/events/protection'
             },
+              {text: 'Marking Events as Skipped', link: '/events/skipping'},
             {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
