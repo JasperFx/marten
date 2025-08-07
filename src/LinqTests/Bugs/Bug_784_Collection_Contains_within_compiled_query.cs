@@ -22,12 +22,12 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
         if (DateTime.Today < new DateTime(2023, 9, 12)) return;
 
         var targets = Target.GenerateRandomData(100).ToArray();
-        targets[1].NumberArray = new[] {3, 4, 5};
+        targets[1].NumberArray = [3, 4, 5];
         targets[1].Flag = true;
 
-        targets[5].NumberArray = new[] {3, 4, 5};
+        targets[5].NumberArray = [3, 4, 5];
         targets[5].Flag = true;
-        targets[20].NumberArray = new[] {5, 6, 7};
+        targets[20].NumberArray = [5, 6, 7];
         targets[20].Flag = true;
 
 

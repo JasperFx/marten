@@ -23,7 +23,7 @@ public class Bug_3065_include_query_with_conjoined_tenancy : BugIntegrationConte
         StoreOptions(opts => opts.Policies.AllDocumentsAreMultiTenanted());
 
         var user = new User{Id = Guid.NewGuid()};
-        var issue = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+        var issue = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
         using (var session = theStore.LightweightSession("a"))
         {
@@ -34,7 +34,7 @@ public class Bug_3065_include_query_with_conjoined_tenancy : BugIntegrationConte
         using (var session2 = theStore.LightweightSession("b"))
         {
             var user2 = new User{Id = user.Id};
-            var issue2 = new Issue { AssigneeId = user.Id, Tags = new[] { "DIY" }, Title = "Garage Door is busted" };
+            var issue2 = new Issue { AssigneeId = user.Id, Tags = ["DIY"], Title = "Garage Door is busted" };
 
             session2.Store<object>(user2, issue2);
             await session2.SaveChangesAsync();

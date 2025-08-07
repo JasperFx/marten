@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
@@ -8,8 +8,8 @@ namespace LinqTests.Acceptance;
 
 public class custom_identity_members : OneOffConfigurationsContext
 {
-    private static readonly string[] listIds = {"qwe", "zxc"};
-    private static readonly string[] listSystemIds = {"123", "456"};
+    private static readonly string[] listIds = ["qwe", "zxc"];
+    private static readonly string[] listSystemIds = ["123", "456"];
 
     [Fact]
     public async Task get_by_id_member_property()

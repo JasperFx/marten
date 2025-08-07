@@ -47,10 +47,10 @@ public class select_clause_usage: IntegrationContext
     [Fact]
     public async Task use_select_in_query_for_first_in_collection()
     {
-        theSession.Store(new User { FirstName = "Hank", Roles = new []{"a", "b", "c"}});
-        theSession.Store(new User { FirstName = "Bill", Roles = new []{"d", "b", "c"} });
-        theSession.Store(new User { FirstName = "Sam", Roles = new []{"e", "b", "c"} });
-        theSession.Store(new User { FirstName = "Tom", Roles = new []{"f", "b", "c"} });
+        theSession.Store(new User { FirstName = "Hank", Roles = ["a", "b", "c"]});
+        theSession.Store(new User { FirstName = "Bill", Roles = ["d", "b", "c"] });
+        theSession.Store(new User { FirstName = "Sam", Roles = ["e", "b", "c"] });
+        theSession.Store(new User { FirstName = "Tom", Roles = ["f", "b", "c"] });
 
         await theSession.SaveChangesAsync();
 

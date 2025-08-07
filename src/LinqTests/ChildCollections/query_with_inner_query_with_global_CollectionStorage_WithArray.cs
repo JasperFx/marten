@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -97,12 +97,12 @@ public class TypeWithInnerCollections
 
 public class query_with_inner_query_with_global_CollectionStorage_WithArray: OneOffConfigurationsContext
 {
-    private static readonly TypeWithInnerCollections[] TestData = new TypeWithInnerCollections[]
-    {
+    private static readonly TypeWithInnerCollections[] TestData =
+    [
         TypeWithInnerCollections.Create(1, 2),
         TypeWithInnerCollections.Create(2, 3),
         TypeWithInnerCollections.Create(4, 5),
-    };
+    ];
 
     private const string SearchPhrase = "2";
     private const int IntSearchPhrase = 2;
