@@ -281,7 +281,7 @@ public class CompiledQueryPlan : ICommandBuilder
     {
         foreach (var parameter in QueryMembers) parameter.StoreValue(query);
 
-        if (!(query is IQueryPlanning) && areAllMemberValuesUnique(query))
+        if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
         {
             return query;
         }
