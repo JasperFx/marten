@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -361,6 +362,45 @@ public class projections_with_IoC_services
 
 
     }
+
+    [Fact]
+    public async Task use_multistream_projection_as_scoped_and_inline_on_martenStore()
+    {
+        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "ioc3";
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
+                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+
+
+
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await session.SaveChangesAsync();
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+
+        // Now rebuild
+        var daemon = await store.BuildProjectionDaemonAsync();
+        await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
+
+        // Test again
+        product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+    }
 }
 
 public interface IPriceLookup
@@ -395,6 +435,37 @@ public class ProductProjection: SingleStreamProjection<Product, Guid>
 
     // The lookup service would be injected by IoC
     public ProductProjection(IPriceLookup lookup)
+    {
+        _lookup = lookup;
+        Name = "Product";
+    }
+
+    public override Product Evolve(Product snapshot, Guid id, IEvent e)
+    {
+        snapshot ??= new Product { Id = id };
+
+        if (e.Data is ProductRegistered r)
+        {
+            snapshot.Price = _lookup.PriceFor(r.Category);
+            snapshot.Name = r.Name;
+            snapshot.Category = r.Category;
+        }
+
+        return snapshot;
+    }
+}
+
+#endregion
+
+
+#region sample_MultiStreamProjection
+
+public class ProductMultiStreamProjection: SingleStreamProjection<Product, Guid>
+{
+    private readonly IPriceLookup _lookup;
+
+    // The lookup service would be injected by IoC
+    public ProductMultiStreamProjection(IPriceLookup lookup)
     {
         _lookup = lookup;
         Name = "Product";
