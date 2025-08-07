@@ -62,7 +62,7 @@ public sealed class JsonPathCreator(ISerializer serializer) : ExpressionVisitor
     }
     protected override Expression VisitParameter(ParameterExpression node)
     {
-        _jsonPathBuilder.Append("@");
+        _jsonPathBuilder.Append('@');
         return node;
     }
     

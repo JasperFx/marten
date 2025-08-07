@@ -37,7 +37,7 @@ public class UpsertArgument
         {
             ArgumentNullException.ThrowIfNull(value);
 
-            _postgresType = value.Contains("(")
+            _postgresType = value.Contains('(')
                 ? value.Split('(')[0].Trim()
                 : value;
         }
