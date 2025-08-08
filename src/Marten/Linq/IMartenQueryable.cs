@@ -143,4 +143,6 @@ public interface IMartenQueryable<T>: IQueryable<T>
     /// <returns></returns>
     IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
         IDictionary<TKey, List<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
+
+    IMartenQueryable<T> WhereSub<TSub>(Expression<Func<TSub, bool>> predicate) where TSub : T;
 }
