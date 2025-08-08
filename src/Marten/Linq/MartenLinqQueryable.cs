@@ -9,6 +9,7 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -124,6 +125,11 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
     {
         return new MartenQueryableIncludeBuilder<T, TKey, TInclude>(this, dictionary);
     }
+
+    public IMartenQueryable<T> WhereSub<TSub>(Expression<Func<TSub, bool>> predicate) where TSub : T =>
+        (IMartenQueryable<T>)this.Where(
+            Expression.Lambda<Func<T, bool>>(predicate.Body, Expression.Parameter(typeof(T), "x"))
+        );
 
     public IEnumerator<T> GetEnumerator()
     {
