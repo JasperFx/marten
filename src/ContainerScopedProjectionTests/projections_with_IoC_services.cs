@@ -19,12 +19,20 @@ using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ContainerScopedProjectionTests;
 
 [Collection("ioc")]
 public class projections_with_IoC_services
 {
+    private readonly ITestOutputHelper _output;
+
+    public projections_with_IoC_services(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Fact]
     public async Task can_apply_database_changes_at_runtime_with_projection_with_services()
     {
@@ -366,7 +374,7 @@ public class projections_with_IoC_services
     [Fact]
     public async Task use_multistream_projection_as_scoped_and_inline_on_martenStore()
     {
-        using var host = await Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+        using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
                 services.AddSingleton<IPriceLookup, PriceLookup>();
@@ -393,7 +401,47 @@ public class projections_with_IoC_services
         product.Name.ShouldBe("Ankle Socks");
 
         // Now rebuild
-        var daemon = await store.BuildProjectionDaemonAsync();
+        var daemon = await store.BuildProjectionDaemonAsync(logger:new TestOutputMartenLogger(_output));
+        await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
+
+        // Test again
+        product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+    }
+
+
+    [Fact]
+    public async Task use_multistream_projection_as_singleton_and_inline_on_martenStore()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddSingleton<IPriceLookup, PriceLookup>();
+
+                services.AddMartenStore<ICustomStore>(opts =>
+                    {
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.DatabaseSchemaName = "ioc3";
+                        opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
+                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Singleton, "MyProjection")
+                    .ApplyAllDatabaseChangesOnStartup();
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<ICustomStore>();
+
+
+
+        await using var session = store.LightweightSession();
+        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await session.SaveChangesAsync();
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.Price.ShouldBeGreaterThan(0);
+        product.Name.ShouldBe("Ankle Socks");
+
+        // Now rebuild
+        var daemon = await store.BuildProjectionDaemonAsync(logger:new TestOutputMartenLogger(_output));
         await daemon.RebuildProjectionAsync<Product>(CancellationToken.None);
 
         // Test again

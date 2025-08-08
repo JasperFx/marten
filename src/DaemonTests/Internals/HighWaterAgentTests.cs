@@ -110,11 +110,11 @@ public class HighWaterAgentTests: DaemonContext
     [Fact]
     public async Task skips_multiple_gaps_and_keeps_advancing()
     {
-        NumberOfStreams = 10;
+        NumberOfStreams = 100;
         await PublishSingleThreaded();
 
         // Create multiple gaps in the event sequence
-        var gaps = new[] { NumberOfEvents - 9, NumberOfEvents - 6, NumberOfEvents - 5, NumberOfEvents - 3 };
+        var gaps = new[] { NumberOfEvents - 50,NumberOfEvents - 9, NumberOfEvents - 6, NumberOfEvents - 5, NumberOfEvents - 3 };
         await deleteEvents(gaps);
 
         // Make gap skipping kick in faster
@@ -127,6 +127,7 @@ public class HighWaterAgentTests: DaemonContext
         await agent.Tracker.WaitForHighWaterMark(gaps[1], 2.Seconds());
         await agent.Tracker.WaitForHighWaterMark(gaps[2], 2.Seconds());
         await agent.Tracker.WaitForHighWaterMark(gaps[3], 2.Seconds());
+        await agent.Tracker.WaitForHighWaterMark(gaps[4], 2.Seconds());
         // And eventually reach the head
         await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 2.Seconds());
 
