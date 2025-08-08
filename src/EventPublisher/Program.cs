@@ -150,17 +150,19 @@ internal class Publisher
         var random = Random.Shared;
         return Task.Run(async () =>
         {
-            while (true)
+            var total = 0;
+
+            while (total < 100000)
             {
                 var delay = random.Next(0, 250);
 
                 await Task.Delay(delay.Milliseconds());
-                await PublishEvents(counter);
+                total = await PublishEvents(counter);
             }
         });
     }
 
-    public async Task PublishEvents(Counter<long> counter)
+    public async Task<int> PublishEvents(Counter<long> counter)
     {
         var streams = TripStream.RandomStreams(5);
         while (streams.Any())
@@ -188,6 +190,10 @@ internal class Publisher
 
             await session.SaveChangesAsync();
             _board.Update(_name, count);
+
+            return count;
         }
+
+        return 0;
     }
 }

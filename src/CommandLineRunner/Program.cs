@@ -53,6 +53,8 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    opts.RegisterDocumentType<Target>();
+
 
                     // If you use compiled queries, you will need to register the
                     // compiled query types with Marten ahead of time
@@ -76,7 +78,7 @@ public static class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    //opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
