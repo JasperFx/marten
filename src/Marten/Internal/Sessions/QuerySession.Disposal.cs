@@ -38,9 +38,6 @@ public partial class QuerySession
 
     protected void assertNotDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException("This session has been disposed");
-        }
+        ObjectDisposedException.ThrowIf(_disposed, "This session has been disposed");
     }
 }
