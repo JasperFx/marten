@@ -83,7 +83,7 @@ public class event_projections_end_to_end_ihost : DaemonContext
                 travel.ShouldNotBeNull();
             }
 
-            Logger.LogDebug("Compared distance " + distance);
+            Logger.LogDebug("Compared distance {Distance}", distance);
         }
     }
 }

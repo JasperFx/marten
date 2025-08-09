@@ -24,7 +24,7 @@ public class HighWaterAgentTests: DaemonContext
     {
         NumberOfStreams = 10;
 
-        Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
+        Logger.LogDebug("The expected high water mark at the end is {NumberOfEvents}", NumberOfEvents);
 
         await PublishSingleThreaded();
 
@@ -63,9 +63,7 @@ public class HighWaterAgentTests: DaemonContext
     {
         NumberOfStreams = 10;
 
-        Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
-
-
+        Logger.LogDebug("The expected high water mark at the end is {NumberOfEvents}", NumberOfEvents);
 
         using var agent = await StartDaemon();
 

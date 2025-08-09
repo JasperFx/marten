@@ -26,7 +26,7 @@ public class HotCold_leadership_election: DaemonContext
     {
         NumberOfStreams = 10;
 
-        Logger.LogDebug($"The expected high water mark at the end is " + NumberOfEvents);
+        Logger.LogDebug("The expected high water mark at the end is {NumberOfEvents}", NumberOfEvents);
 
         await PublishSingleThreaded();
 
