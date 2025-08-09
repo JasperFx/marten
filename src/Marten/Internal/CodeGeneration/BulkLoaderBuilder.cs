@@ -71,7 +71,7 @@ public class BulkLoaderBuilder
 
     private static List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
     {
-        var arguments = upsertFunction.OrderedArguments().Where(x => !(x is CurrentVersionArgument)).ToList();
+        var arguments = upsertFunction.OrderedArguments().Where(x => x is not CurrentVersionArgument).ToList();
         // You need the document body to go last so that any metadata pushed into the document
         // is serialized into the JSON data
         var body = arguments.OfType<DocJsonBodyArgument>().Single();

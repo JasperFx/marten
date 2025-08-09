@@ -70,7 +70,7 @@ public class OperationPage
     {
         var first = _operations.First();
 
-        if (!(first is NoDataReturnedCall))
+        if (first is not NoDataReturnedCall)
         {
             first.Postprocess(reader, exceptions);
             try
@@ -119,7 +119,7 @@ public class OperationPage
     {
         var first = _operations.First();
 
-        if (!(first is NoDataReturnedCall))
+        if (first is not NoDataReturnedCall)
         {
             await first.PostprocessAsync(reader, exceptions, token).ConfigureAwait(false);
             try

@@ -278,7 +278,7 @@ internal static class EventDocumentStorageGenerator
         var columns = new EventsTable(graph).SelectColumns()
 
             // Hokey, use an explicit model for writeable vs readable columns some day
-            .Where(x => !(x is IsArchivedColumn)).ToList();
+            .Where(x => x is not IsArchivedColumn).ToList();
 
         // Hokey, but we need to move Sequence to the end
         var sequence = columns.OfType<SequenceColumn>().Single();
