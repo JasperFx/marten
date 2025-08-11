@@ -80,21 +80,24 @@ public class Smurf: ISmurf
 
 public interface IPapaSmurf: ISmurf
 {
+    bool IsVillageLeader { get; set; }
 }
 
 public class PapaSmurf: Smurf, IPapaSmurf
 {
+    public bool IsVillageLeader { get; set; }
+
+    public bool IsPapa { get; set; } = true;
 }
 
 public class PapySmurf: Smurf, IPapaSmurf
 {
+    public bool IsVillageLeader { get; set; }
 }
 
-public class BrainySmurf: PapaSmurf
-{
-}
+public class BrainySmurf: PapaSmurf;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L13-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L15-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_smurfs-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to query over one of hierarchy classes and be able to get all of its documents as well as its subclasses,
@@ -125,7 +128,7 @@ public query_with_inheritance(ITestOutputHelper output)
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L92-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L96-L121' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that if you wish to use aliases on certain subclasses, you could pass a `MappedType`, which contains the type to map
@@ -142,9 +145,10 @@ _.Schema.For<ISmurf>()
         typeof(PapySmurf),
         typeof(IPapaSmurf),
         typeof(BrainySmurf)
-    );
+    )
+    .Duplicate<IPapaSmurf>(x => x.IsVillageLeader); // Put a duplicated index on subclass property;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L54-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L56-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_add-subclass-hierarchy-with-aliases' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now you can query the "complex" hierarchy in the following ways:
@@ -239,6 +243,37 @@ public async Task get_all_subclasses_of_an_interface()
 
     theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
 }
+
+[Fact]
+public async Task search_on_property_of_subclass()
+{
+    var smurf = new Smurf {Ability = "Follow the herd"};
+    var papa = new PapaSmurf {Ability = "Lead", IsVillageLeader = true };
+    var papy = new PapySmurf {Ability = "Lead"};
+    var brainy = new BrainySmurf {Ability = "Invent"};
+    theSession.Store(smurf, papa, brainy, papy);
+
+    await theSession.SaveChangesAsync();
+
+    (await theSession.Query<Smurf>().WhereSub<PapaSmurf>(x => x.IsVillageLeader).CountAsync()).ShouldBe(1);
+}
+
+[Fact]
+public async Task search_on_property_of_subclass_and_parent()
+{
+    var smurf = new Smurf {Ability = "Follow the herd"};
+    var papa = new PapaSmurf {Ability = "Lead" };
+    var papy = new PapySmurf {Ability = "Lead"};
+    var brainy = new BrainySmurf {Ability = "Invent"};
+    theSession.Store(smurf, papa, brainy, papy);
+
+    await theSession.SaveChangesAsync();
+
+    (await theSession.Query<Smurf>()
+        .WhereSub<PapaSmurf>(x => x.IsPapa)
+        .Where(x => x.Ability == "Invent")
+        .CountAsync()).ShouldBe(1);
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L151-L243' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/query_with_inheritance.cs#L155-L278' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-subclass-hierarchy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

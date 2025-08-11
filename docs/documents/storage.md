@@ -47,7 +47,7 @@ var store = DocumentStore.For(opts =>
 Or by using an attribute on your document type:
 
 <!-- snippet: sample_using_DatabaseSchemaName_attribute -->
-<a id='snippet-sample_using_databaseschemaname_attribute'></a>
+<a id='snippet-sample_using_DatabaseSchemaName_attribute'></a>
 ```cs
 [DatabaseSchemaName("organization")]
 public class Customer
@@ -55,7 +55,7 @@ public class Customer
     [Identity] public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L920-L928' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L920-L928' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DatabaseSchemaName_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Type Aliases

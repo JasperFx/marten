@@ -196,6 +196,41 @@ public class MartenRegistry
         }
 
         /// <summary>
+        /// Marks a member on a subclass of <typeparamref name="T"/> to be duplicated
+        /// into its own column, enabling fast filtering, sorting and indexing.
+        /// </summary>
+        /// <typeparam name="TSub">
+        /// The subclass of <typeparamref name="T"/> that owns the member to duplicate.
+        /// </typeparam>
+        /// <param name="expression">
+        /// Member selector on <typeparamref name="TSub"/>, for example <c>x => x.Status</c>.
+        /// </param>
+        /// <param name="pgType">
+        /// Optional PostgreSQL column type override, for example <c>"varchar(100)"</c>.
+        /// </param>
+        /// <param name="dbType">
+        /// Optional Npgsql database type override used for parameters.
+        /// </param>
+        /// <param name="configure">
+        /// Optional callback to configure the created index on the duplicated column.
+        /// </param>
+        /// <param name="notNull">
+        /// When true, the duplicated column is created with <c>NOT NULL</c>.
+        /// </param>
+        /// <returns>
+        /// The current mapping expression for chaining.
+        /// </returns>
+        public DocumentMappingExpression<T> Duplicate<TSub>(Expression<Func<TSub, object?>> expression, string? pgType = null,
+            NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false) where TSub : T
+        {
+            _builder.Alter = mapping =>
+            {
+                mapping.Duplicate(expression, pgType, dbType, configure, notNull);
+            };
+            return this;
+        }
+
+        /// <summary>
         ///     Creates a computed index on this data member within the JSON data storage
         /// </summary>
         /// <param name="expression"></param>

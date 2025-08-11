@@ -14,7 +14,7 @@ Let's say you have a custom aggregation projection like this one below that need
 `IPriceLookup` at runtime:
 
 <!-- snippet: sample_ProductProjection -->
-<a id='snippet-sample_productprojection'></a>
+<a id='snippet-sample_ProductProjection'></a>
 ```cs
 public class ProductProjection: SingleStreamProjection<Product, Guid>
 {
@@ -42,7 +42,7 @@ public class ProductProjection: SingleStreamProjection<Product, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L390-L418' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L478-L506' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ProductProjection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -71,7 +71,7 @@ using var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L69-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L78-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projection_built_by_services' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that we're having to explicitly specify the projection lifecycle for the projection used within

@@ -4,7 +4,7 @@ An "inline" projection just means that Marten will process the projection agains
 to the event store at the time that `IDocumentSession.SaveChanges()` is called to commit a unit of work. Here's a small example projection:
 
 <!-- snippet: sample_MonsterDefeatedTransform -->
-<a id='snippet-sample_monsterdefeatedtransform'></a>
+<a id='snippet-sample_MonsterDefeatedTransform'></a>
 ```cs
 public class MonsterDefeatedTransform: EventProjection
 {
@@ -20,7 +20,7 @@ public class MonsterDefeated
     public string Monster { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_transformation_of_events.cs#L160-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monsterdefeatedtransform' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/inline_transformation_of_events.cs#L160-L176' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MonsterDefeatedTransform' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the inline projection is able to use the [event metadata](/events/metadata) at the time the inline projection is executed. That was previously a limitation of Marten that was fixed in Marten V4.

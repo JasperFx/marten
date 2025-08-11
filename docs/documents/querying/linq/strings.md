@@ -40,12 +40,12 @@ public void case_insensitive_string_fields(IDocumentSession session)
 A shorthand for case-insensitive string matching is provided through `EqualsIgnoreCase` (string extension method in *Baseline*):
 
 <!-- snippet: sample_sample-linq-EqualsIgnoreCase -->
-<a id='snippet-sample_sample-linq-equalsignorecase'></a>
+<a id='snippet-sample_sample-linq-EqualsIgnoreCase'></a>
 ```cs
 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/string_filtering.cs#L225-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-linq-equalsignorecase' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/string_filtering.cs#L225-L230' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-linq-EqualsIgnoreCase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type.

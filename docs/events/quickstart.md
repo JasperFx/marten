@@ -55,7 +55,7 @@ await session.SaveChangesAsync();
 At some point we would like to know what members are currently part of the quest party. To keep things simple, we're going to use Marten's _live_ stream aggregation feature to model a `QuestParty` that updates itself based on our events:
 
 <!-- snippet: sample_QuestParty -->
-<a id='snippet-sample_questparty'></a>
+<a id='snippet-sample_QuestParty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
 {
@@ -80,7 +80,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
         };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_QuestParty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Next, we'll use the live projection to aggregate the quest stream for a single quest party like this:
@@ -106,7 +106,7 @@ Simple, right? The above code will load the events from the database and run the
 What about the quest itself? On top of seeing our in-progress quest, we also want the ability to query our entire history of past quests. For this, we'll create an _inline_ `SingleStreamProjection` that persists our Quest state to the database as the events are being written:
 
 <!-- snippet: sample_Quest -->
-<a id='snippet-sample_quest'></a>
+<a id='snippet-sample_Quest'></a>
 ```cs
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 
@@ -136,7 +136,7 @@ public sealed class QuestProjection: SingleStreamProjection<Quest, Guid>
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L54-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_quest' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L54-L83' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_Quest' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO

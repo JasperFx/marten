@@ -308,7 +308,7 @@ See Andrew Lock's blog post [Avoiding flaky tests with TimeProvider and ITimer](
 In the example projection, I've been capturing the timestamp in the `Invoice` document from the Marten event metadata:
 
 <!-- snippet: sample_using_event_metadata_in_Invoice -->
-<a id='snippet-sample_using_event_metadata_in_invoice'></a>
+<a id='snippet-sample_using_event_metadata_in_Invoice'></a>
 ```cs
 public static Invoice Create(IEvent<InvoiceCreated> created)
 {
@@ -324,7 +324,7 @@ public static Invoice Create(IEvent<InvoiceCreated> created)
     };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L43-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L43-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_metadata_in_Invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 But of course, if that timestamp has some meaning later on and you have any kind of business rules that may need to key
