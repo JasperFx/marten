@@ -144,5 +144,23 @@ public interface IMartenQueryable<T>: IQueryable<T>
     IMartenQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
         IDictionary<TKey, List<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
 
+    /// <summary>
+    ///     Filters the query for documents of a given subclass type within a document hierarchy
+    ///     and applies the specified predicate to those subclass documents.
+    /// </summary>
+    /// <typeparam name="TSub">
+    ///     The subclass type to filter on. Must inherit from <typeparamref name="T"/>.
+    /// </typeparam>
+    /// <param name="predicate">
+    ///     A lambda expression representing the filter to apply to documents of type <typeparamref name="TSub"/>.
+    /// </param>
+    /// <returns>
+    ///     An <see cref="IMartenQueryable{T}"/> of the base type <typeparamref name="T"/> with the filter applied
+    ///     only to matching subclass documents.
+    /// </returns>
+    /// <remarks>
+    ///     This method is useful for querying on subclass-specific properties while still returning
+    ///     results as the base type, preserving the hierarchy in the query.
+    /// </remarks>
     IMartenQueryable<T> WhereSub<TSub>(Expression<Func<TSub, bool>> predicate) where TSub : T;
 }
