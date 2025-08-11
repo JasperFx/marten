@@ -58,7 +58,9 @@ public class UpsertArgument
 
                 if (_members.Length == 1)
                 {
-                    DotNetType = _members.Last().GetRawMemberType()!;
+                    var lastMember = _members.Last();
+                    DotNetType = lastMember.GetRawMemberType()!;
+                    DeclaringType = lastMember.DeclaringType;
                 }
                 else
                 {
@@ -79,6 +81,7 @@ public class UpsertArgument
     }
 
     public string ParameterValue { get; set; }
+    public Type? DeclaringType { get; set; }
 
     public Type DotNetType { get; private set; }
 
@@ -97,8 +100,7 @@ public class UpsertArgument
     }
 
     public virtual void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i,
-        Argument parameters,
-        DocumentMapping mapping, StoreOptions options)
+        Argument parameters, DocumentMapping mapping, StoreOptions options)
     {
         var memberPath = _members.Select(x => x.Name).Join("?.");
 
@@ -114,11 +116,18 @@ public class UpsertArgument
                 ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
                 : Constant.ForEnum(DbType).Usage;
 
+            var accessorString = AccessorString(type);
+            var requiresCast = DeclaringType is { } dt && dt != type.BaseType;
+
             if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
             {
+                var hasValueGuard = requiresCast
+                    ? $"(document is {DeclaringType!.FullNameInCode()} && {accessorString} != null)"
+                    : $"{accessorString} != null";
+
                 method.Frames.Code($@"
-BLOCK:if (document.{memberPath} != null)
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});
+BLOCK:if ({hasValueGuard})
+var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({accessorString});
 parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};
 END
 BLOCK:else
@@ -128,7 +137,14 @@ END
             }
             else
             {
-                method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder>());
+                // value type, veilige access als cast nodig is
+                var safeAccessor = requiresCast
+                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({rawMemberType.FullNameInCode()}))"
+                    : accessorString;
+
+                method.Frames.Code(
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({safeAccessor});",
+                    Use.Type<IGroupedParameterBuilder>());
             }
         }
     }
@@ -231,8 +247,15 @@ END
         }
         else
         {
-            load.Frames.CodeAsync($"await writer.WriteAsync(document.{ParameterValue}, {dbTypeString}, {{0}});",
+            var accessor = AccessorString(type);
+
+            load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {dbTypeString}, {{0}});",
                 Use.Type<CancellationToken>());
         }
     }
+
+    private string AccessorString(GeneratedType type) =>
+        DeclaringType is { } dt2 && dt2 != type.BaseType
+            ? $"(({DeclaringType.FullNameInCode()})document).{ParameterValue}"
+            : $"document.{ParameterValue}";
 }

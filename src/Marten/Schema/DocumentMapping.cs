@@ -846,6 +846,32 @@ public class DocumentMapping<T>: DocumentMapping
     /// <returns></returns>
     public void Duplicate(Expression<Func<T, object?>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
         Action<DocumentIndex>? configure = null, bool notNull = false)
+        => Duplicate<T>(expression, pgType, dbType, configure, notNull);
+
+    /// <summary>
+    /// Duplicates a member from a subclass of <typeparamref name="T"/> into a
+    /// dedicated table column, and optionally creates an index on that column.
+    /// </summary>
+    /// <typeparam name="TSub">
+    /// The subclass of <typeparamref name="T"/> that defines the selected member.
+    /// </typeparam>
+    /// <param name="expression">
+    /// Member selector on <typeparamref name="TSub"/>, for example <c>x => x.Code</c>.
+    /// </param>
+    /// <param name="pgType">
+    /// Optional PostgreSQL column type override, for example <c>"timestamp without time zone"</c>.
+    /// </param>
+    /// <param name="dbType">
+    /// Optional Npgsql database type override used for parameters.
+    /// </param>
+    /// <param name="configure">
+    /// Optional callback to configure the index created for the duplicated column.
+    /// </param>
+    /// <param name="notNull">
+    /// When true, the duplicated column is created with <c>NOT NULL</c>.
+    /// </param>
+    public void Duplicate<TSub>(Expression<Func<TSub, object?>> expression, string? pgType = null, NpgsqlDbType? dbType = null,
+        Action<DocumentIndex>? configure = null, bool notNull = false) where TSub : T
     {
         var visitor = new FindMembers();
         visitor.Visit(expression);
@@ -860,7 +886,6 @@ public class DocumentMapping<T>: DocumentMapping
         var indexDefinition = AddIndex(duplicateField.ColumnName);
         configure?.Invoke(indexDefinition);
     }
-
 
     /// <summary>
     ///     Adds a computed index

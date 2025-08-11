@@ -43,19 +43,14 @@ public class PapySmurf: Smurf, IPapaSmurf
     public bool IsVillageLeader { get; set; }
 }
 
-public class BrainySmurf: PapaSmurf
-{
-}
+public class BrainySmurf: PapaSmurf;
 
 #endregion
 
 public class sub_class_hierarchies: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public sub_class_hierarchies(ITestOutputHelper output)
+    public sub_class_hierarchies()
     {
-        _output = output;
         StoreOptions(_ =>
         {
             #region sample_add-subclass-hierarchy-with-aliases
@@ -67,14 +62,16 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
                     typeof(PapySmurf),
                     typeof(IPapaSmurf),
                     typeof(BrainySmurf)
-                );
+                )
+                .Duplicate<IPapaSmurf>(x => x.IsVillageLeader); // Put a duplicated index on subclass property;
 
             #endregion
 
             _.Connection(ConnectionSource.ConnectionString);
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Schema.For<ISmurf>().GinIndexJsonData();
+            _.Schema.For<ISmurf>()
+                .GinIndexJsonData();
         });
     }
 
@@ -96,7 +93,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
-    #region sample_add-subclass-hierarchy
+        #region sample_add-subclass-hierarchy
 
     public query_with_inheritance(ITestOutputHelper output)
     {

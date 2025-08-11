@@ -59,7 +59,7 @@ There's not yet any default archiver, but we're open to suggestions about what t
 an implementation of this interface:
 
 <!-- snippet: sample_IEventsArchiver -->
-<a id='snippet-sample_ieventsarchiver'></a>
+<a id='snippet-sample_IEventsArchiver'></a>
 ```cs
 /// <summary>
 /// Callback interface for executing event archiving
@@ -70,7 +70,7 @@ public interface IEventsArchiver
         CancellationToken cancellation);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L166-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L166-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IEventsArchiver' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten is *not* archiving events in this operation.

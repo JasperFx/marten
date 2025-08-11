@@ -26,7 +26,7 @@ as being revisioned
 In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:
 
 <!-- snippet: sample_UseOptimisticConcurrencyAttribute -->
-<a id='snippet-sample_useoptimisticconcurrencyattribute'></a>
+<a id='snippet-sample_UseOptimisticConcurrencyAttribute'></a>
 ```cs
 [UseOptimisticConcurrency]
 public class CoffeeShop: Shop
@@ -37,7 +37,7 @@ public class CoffeeShop: Shop
     public ICollection<Guid> Employees { get; set; } = new List<Guid>();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L827-L837' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_useoptimisticconcurrencyattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Concurrency/optimistic_concurrency.cs#L827-L837' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UseOptimisticConcurrencyAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using Marten's configuration API to do it programmatically:
@@ -112,7 +112,7 @@ Marten is throwing an `AggregateException` for the entire batch of changes.
 A new feature in Marten V4 is the `IVersioned` marker interface. If your document type implements this interface as shown below:
 
 <!-- snippet: sample_MyVersionedDoc -->
-<a id='snippet-sample_myversioneddoc'></a>
+<a id='snippet-sample_MyVersionedDoc'></a>
 ```cs
 public class MyVersionedDoc: IVersioned
 {
@@ -120,7 +120,7 @@ public class MyVersionedDoc: IVersioned
     public Guid Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MyVersionedDoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Your document type will have the optimistic concurrency checks applied to updates _when_ the current version is given to Marten. Moreover, the current version
@@ -143,7 +143,7 @@ You can opt into this behavior on a document by document basis by using the flue
 like this:
 
 <!-- snippet: sample_UseNumericRevisions_fluent_interface -->
-<a id='snippet-sample_usenumericrevisions_fluent_interface'></a>
+<a id='snippet-sample_UseNumericRevisions_fluent_interface'></a>
 ```cs
 using var store = DocumentStore.For(opts =>
 {
@@ -154,7 +154,7 @@ using var store = DocumentStore.For(opts =>
     opts.Schema.For<Incident>().UseNumericRevisions(true);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L13-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usenumericrevisions_fluent_interface' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L13-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UseNumericRevisions_fluent_interface' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or by implementing the `IRevisioned` interface in a document type:

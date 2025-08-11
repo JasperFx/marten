@@ -20,7 +20,22 @@ Definitely check out [Rebuilding a Single Stream](/events/projections/rebuilding
 
 To get started, you will first have to enable potential event skipping like this:
 
-snippet: sample_enabling_event_skipping
+<!-- snippet: sample_enabling_event_skipping -->
+<a id='snippet-sample_enabling_event_skipping'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // This is false by default for backwards compatibility,
+    // turning this on will add an extra column and filtering during
+    // various event store operations
+    opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L14-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_event_skipping' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 That flag just enables the ability to mark events as _skipped_. As you'd imagine, that 
 flag alters Marten behavior by:

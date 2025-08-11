@@ -15,7 +15,7 @@ said, here's a sample of configuring the exporting -- this case just exporting i
 a Project Aspire dashboard in the end:
 
 <!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
-<a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
+<a id='snippet-sample_enabling_open_telemetry_exporting_from_Marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little
 // different for other tools like Prometheus or SigNoz
@@ -34,7 +34,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_Marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note, you'll need a reference to the `OpenTelemetry.Extensions.Hosting` Nuget for that
