@@ -137,13 +137,8 @@ END
             }
             else
             {
-                // value type, veilige access als cast nodig is
-                var safeAccessor = requiresCast
-                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({rawMemberType.FullNameInCode()}))"
-                    : accessorString;
-
                 method.Frames.Code(
-                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({safeAccessor});",
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({accessorString});",
                     Use.Type<IGroupedParameterBuilder>());
             }
         }
