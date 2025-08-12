@@ -65,7 +65,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id.Value);
+            var parameter2 = parameterBuilder.AppendParameter<string>((document is ValueTypeTests.StrongTypedId.Team3 ? ((ValueTypeTests.StrongTypedId.Team3)document).Id.Value : default(string)));
             setVersionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -128,7 +128,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id.Value);
+            var parameter2 = parameterBuilder.AppendParameter<string>((document is ValueTypeTests.StrongTypedId.Team3 ? ((ValueTypeTests.StrongTypedId.Team3)document).Id.Value : default(string)));
             setVersionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -191,7 +191,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id.Value);
+            var parameter2 = parameterBuilder.AppendParameter<string>((document is ValueTypeTests.StrongTypedId.Team3 ? ((ValueTypeTests.StrongTypedId.Team3)document).Id.Value : default(string)));
             setVersionParameter(parameterBuilder);
             builder.Append(')');
         }

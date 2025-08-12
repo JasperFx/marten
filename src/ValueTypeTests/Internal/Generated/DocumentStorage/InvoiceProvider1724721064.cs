@@ -66,9 +66,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is ValueTypeTests.VogenIds.Invoice && ((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Value.Value);
+                var parameter2 = parameterBuilder.AppendParameter(((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
@@ -140,9 +140,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is ValueTypeTests.VogenIds.Invoice && ((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Value.Value);
+                var parameter2 = parameterBuilder.AppendParameter(((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
@@ -214,9 +214,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is ValueTypeTests.VogenIds.Invoice && ((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Value.Value);
+                var parameter2 = parameterBuilder.AppendParameter(((ValueTypeTests.VogenIds.Invoice)document).Id.Value.Value);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
