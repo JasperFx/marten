@@ -137,8 +137,12 @@ END
             }
             else
             {
+                var guarded = requiresCast
+                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({rawMemberType.FullNameInCode()}))"
+                    : accessorString;
+
                 method.Frames.Code(
-                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({accessorString});",
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<{rawMemberType.FullNameInCode()}>({guarded});",
                     Use.Type<IGroupedParameterBuilder>());
             }
         }
