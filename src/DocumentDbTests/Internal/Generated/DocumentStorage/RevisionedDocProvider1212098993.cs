@@ -73,7 +73,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id);
+            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -137,7 +137,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id);
+            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -207,7 +207,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id);
+            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -463,7 +463,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(document.Id);
+            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -1077,7 +1077,7 @@ namespace Marten.Generated.DocumentStorage
         public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, DocumentDbTests.Concurrency.RevisionedDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
-            await writer.WriteAsync(document.Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
