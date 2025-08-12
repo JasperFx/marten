@@ -65,9 +65,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is FSharpTypes.Order && ((FSharpTypes.Order)document).Id.Item != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Item);
+                var parameter2 = parameterBuilder.AppendParameter(((FSharpTypes.Order)document).Id.Item);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
@@ -139,9 +139,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is FSharpTypes.Order && ((FSharpTypes.Order)document).Id.Item != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Item);
+                var parameter2 = parameterBuilder.AppendParameter(((FSharpTypes.Order)document).Id.Item);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
@@ -213,9 +213,9 @@ namespace Marten.Generated.DocumentStorage
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
 
-            if (document.Id != null)
+            if ((document is FSharpTypes.Order && ((FSharpTypes.Order)document).Id.Item != null))
             {
-                var parameter2 = parameterBuilder.AppendParameter(document.Id.Item);
+                var parameter2 = parameterBuilder.AppendParameter(((FSharpTypes.Order)document).Id.Item);
                 parameter2.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Uuid;
             }
 
@@ -815,7 +815,7 @@ namespace Marten.Generated.DocumentStorage
         public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, FSharpTypes.Order document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
-            await writer.WriteAsync(document.Id.Item, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            await writer.WriteAsync(((FSharpTypes.Order)document).Id.Item, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             await writer.WriteAsync(JasperFx.Core.CombGuidIdGeneration.NewGuid(), NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }

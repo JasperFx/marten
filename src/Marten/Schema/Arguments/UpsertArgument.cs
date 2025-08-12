@@ -137,12 +137,17 @@ END
             }
             else
             {
+                var underlying = rawMemberType;
+                var valueProp = rawMemberType.GetProperty("Value");
+                if (valueProp != null)
+                    underlying = valueProp.PropertyType;
+
                 var guarded = requiresCast
-                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({rawMemberType.FullNameInCode()}))"
+                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({underlying.FullNameInCode()}))"
                     : accessorString;
 
                 method.Frames.Code(
-                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<{rawMemberType.FullNameInCode()}>({guarded});",
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<{underlying.FullNameInCode()}>({guarded});",
                     Use.Type<IGroupedParameterBuilder>());
             }
         }

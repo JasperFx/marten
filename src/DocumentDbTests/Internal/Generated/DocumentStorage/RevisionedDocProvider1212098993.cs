@@ -73,7 +73,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
+            var parameter2 = parameterBuilder.AppendParameter<System.Guid>((document is DocumentDbTests.Concurrency.RevisionedDoc ? ((DocumentDbTests.Concurrency.RevisionedDoc)document).Id : default(System.Guid)));
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -137,7 +137,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
+            var parameter2 = parameterBuilder.AppendParameter<System.Guid>((document is DocumentDbTests.Concurrency.RevisionedDoc ? ((DocumentDbTests.Concurrency.RevisionedDoc)document).Id : default(System.Guid)));
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -207,7 +207,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
+            var parameter2 = parameterBuilder.AppendParameter<System.Guid>((document is DocumentDbTests.Concurrency.RevisionedDoc ? ((DocumentDbTests.Concurrency.RevisionedDoc)document).Id : default(System.Guid)));
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
@@ -463,7 +463,7 @@ namespace Marten.Generated.DocumentStorage
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
-            var parameter2 = parameterBuilder.AppendParameter(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id);
+            var parameter2 = parameterBuilder.AppendParameter<System.Guid>((document is DocumentDbTests.Concurrency.RevisionedDoc ? ((DocumentDbTests.Concurrency.RevisionedDoc)document).Id : default(System.Guid)));
             setCurrentRevisionParameter(parameterBuilder);
             builder.Append(')');
         }
