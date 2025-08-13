@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -295,6 +296,15 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 foreach (var page in pages)
                 {
                     var batch = page.Compile();
+
+                    foreach (var batchCommand in batch.BatchCommands)
+                    {
+                        if (batchCommand.CommandText.IsEmpty())
+                        {
+                            Debug.WriteLine("what the hell?");
+                        }
+                    }
+
                     batch.Timeout = CommandTimeout;
                     batch.Connection = conn;
                     batch.Transaction = tx;
