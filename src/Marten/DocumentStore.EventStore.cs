@@ -206,11 +206,11 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         var projectionBatch = new ProjectionBatch(session, batch, mode);
         if (range.SequenceFloor == 0)
         {
-            batch.Queue.Post(new InsertProjectionProgress(session.Options.EventGraph, range));
+            await batch.Queue.PostAsync(new InsertProjectionProgress(session.Options.EventGraph, range)).ConfigureAwait(false);
         }
         else
         {
-            batch.Queue.Post(new UpdateProjectionProgress(session.Options.EventGraph, range));
+            await batch.Queue.PostAsync(new UpdateProjectionProgress(session.Options.EventGraph, range)).ConfigureAwait(false);
         }
 
         return projectionBatch;
@@ -285,7 +285,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         };;
 
         // Mark the progression
-        batch.Queue.Post(range.BuildProgressionOperation(Events));
+        await batch.Queue.PostAsync(range.BuildProgressionOperation(Events)).ConfigureAwait(false);
 
         await using var session = new ProjectionDocumentSession(this, batch,
             new SessionOptions
