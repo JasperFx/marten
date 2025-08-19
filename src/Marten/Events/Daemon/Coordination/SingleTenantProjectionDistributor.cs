@@ -86,7 +86,14 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
     {
         foreach (var @lock in _locks)
         {
-            await @lock.DisposeAsync().ConfigureAwait(false);
+            try
+            {
+                await @lock.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // We need to swallow any exceptions here
+            }
         }
 
         _locks.ClearAll();
