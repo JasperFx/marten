@@ -23,8 +23,6 @@ public interface IProjectionCoordinator : IHostedService
     /// </summary>
     /// <returns></returns>
     Task ResumeAsync();
-
-    DaemonMode Mode { get; }
 }
 
 public interface IProjectionCoordinator<T> : IProjectionCoordinator where T : IDocumentStore

@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Events.Daemon.Coordination;
@@ -40,8 +41,8 @@ public class setting_solo_mode_in_test_support
                 services.MartenDaemonModeIsSolo();
             }).StartAsync();
 
-        host.Services.GetRequiredService<IProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
-        host.Services.GetRequiredService<IProjectionCoordinator<IFirstStore>>().Mode.ShouldBe(DaemonMode.Solo);
-        host.Services.GetRequiredService<IProjectionCoordinator<ISecondStore>>().Mode.ShouldBe(DaemonMode.Solo);
+        host.Services.GetRequiredService<IProjectionCoordinator>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
+        host.Services.GetRequiredService<IProjectionCoordinator<IFirstStore>>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
+        host.Services.GetRequiredService<IProjectionCoordinator<ISecondStore>>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
     }
 }
