@@ -24,6 +24,14 @@ public class AppFixture: IAsyncLifetime
         {
             b.ConfigureServices((context, services) =>
             {
+                // Important! You can make your test harness work a little faster (important on its own)
+                // and probably be more reliable by overriding your Marten configuration to run all
+                // async daemons in "Solo" mode so they spin up faster and there's no issues from
+                // PostgreSQL having trouble with advisory locks when projections are rapidly started and stopped
+
+                // This was added in V8.8
+                services.MartenDaemonModeIsSolo();
+
                 services.Configure<MartenSettings>(s =>
                 {
                     s.SchemaName = SchemaName;
