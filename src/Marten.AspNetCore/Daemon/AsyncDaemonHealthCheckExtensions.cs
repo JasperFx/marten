@@ -67,7 +67,7 @@ public static class AsyncDaemonHealthCheckExtensions
     /// <summary>
     ///     Tracks projection state across multiple health check invocations
     /// </summary>
-    internal class ProjectionStateTracker
+    public class ProjectionStateTracker
     {
         public ConcurrentDictionary<string, (DateTime CheckedAt, long Sequence)> LastProjectionsChecks { get; } = new();
     }

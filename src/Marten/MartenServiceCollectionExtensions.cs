@@ -874,6 +874,8 @@ public static class MartenServiceCollectionExtensions
     }
 }
 
+public interface IGlobalConfigureMarten: IConfigureMarten;
+
 #region sample_IConfigureMarten
 
 /// <summary>

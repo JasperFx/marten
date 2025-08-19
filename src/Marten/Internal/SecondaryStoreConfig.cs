@@ -101,6 +101,12 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         var configures = provider.GetServices<IConfigureMarten<T>>();
         foreach (var configure in configures) configure.Configure(provider, options);
 
+        var globals = provider.GetServices<IConfigureMarten>().OfType<IGlobalConfigureMarten>();
+        foreach (var configureMarten in globals)
+        {
+            configureMarten.Configure(provider, options);
+        }
+
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());

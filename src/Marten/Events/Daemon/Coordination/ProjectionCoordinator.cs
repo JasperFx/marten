@@ -37,6 +37,8 @@ public class ProjectionCoordinator: IProjectionCoordinator
     {
         var store = (DocumentStore)documentStore;
 
+        Mode = store.Options.Projections.AsyncMode;
+
         if (store.Options.Projections.AsyncMode == DaemonMode.Solo)
         {
             Distributor = new SoloProjectionDistributor(store);
@@ -59,6 +61,8 @@ public class ProjectionCoordinator: IProjectionCoordinator
         _timeProvider = _options.Events.TimeProvider;
         Store = store;
     }
+
+    public DaemonMode Mode { get; }
 
     public DocumentStore Store { get; }
 
