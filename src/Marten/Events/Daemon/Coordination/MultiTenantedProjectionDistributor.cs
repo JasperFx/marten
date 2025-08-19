@@ -68,7 +68,15 @@ public class MultiTenantedProjectionDistributor: IProjectionDistributor
     {
         foreach (var @lock in _locks)
         {
-            await @lock.DisposeAsync().ConfigureAwait(false);
+            try
+            {
+                await @lock.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Need to swallow shutdown failures. It's from the advisory locks hanging
+                // in test harnesses
+            }
         }
 
         _locks.ClearAll();
