@@ -40,10 +40,18 @@ public static class Program
         return Host.CreateDefaultBuilder(args)
             .ConfigureServices((hostContext, services) =>
             {
+                services.AddMartenStore<IThingStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.RegisterDocumentType<Thing>();
+                    opts.RegisterDocumentType<Thing2>();
+                    opts.RegisterDocumentType<Thing3>();
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                });
+
                 services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.RegisterDocumentType<Target>();
                     opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     // If you use compiled queries, you will need to register the

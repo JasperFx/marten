@@ -59,7 +59,8 @@ public interface IConfigureMarten<T>: IConfigureMarten where T : IDocumentStore
 {
 }
 
-internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocumentStore
+
+internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
 {
     private readonly Func<IServiceProvider, StoreOptions> _configuration;
     private Type? _storeType;
