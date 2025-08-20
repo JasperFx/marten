@@ -324,6 +324,7 @@ public static class MartenServiceCollectionExtensions
         });
 
         services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s).EventGraph);
+        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s));
 
         return new MartenStoreExpression<T>(services);
     }
