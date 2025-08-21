@@ -74,7 +74,7 @@ public class EventDataMasking : IEventDataMasking
 
     public async Task ApplyAsync(CancellationToken token = default)
     {
-        if (!_sources.Any())
+        if (_sources.Count == 0)
             throw new InvalidOperationException(
                 "You need to specify at least one stream identity or event filter first as part of the Fluent Interface");
 

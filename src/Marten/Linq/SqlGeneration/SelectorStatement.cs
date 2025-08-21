@@ -35,7 +35,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
 
         SelectClause.Apply(sql);
 
-        if (Wheres.Any())
+        if (Wheres.Count != 0)
         {
             sql.Append(" where ");
             Wheres[0].Apply(sql);

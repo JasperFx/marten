@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -42,7 +42,7 @@ public partial class EventGraph
 
     internal async Task ProcessEventsAsync(DocumentSessionBase session, CancellationToken token)
     {
-        if (!session._workTracker.Streams.Any())
+        if (session._workTracker.Streams.Count == 0)
         {
             return;
         }
@@ -57,7 +57,7 @@ public partial class EventGraph
 
     internal bool TryCreateTombstoneBatch(DocumentSessionBase session, [NotNullWhen(true)]out UpdateBatch? batch)
     {
-        if (session.WorkTracker.Streams.Any())
+        if (session.WorkTracker.Streams.Count != 0)
         {
             var stream = StreamAction.ForTombstone(session);
 
