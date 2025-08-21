@@ -103,7 +103,12 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     {
         var descriptor = base.Describe();
         descriptor.SubjectUri = MartenSystemPart.MartenStoreUri;
-        descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
+        if (descriptor.SchemaOrNamespace.IsEmpty())
+        {
+            descriptor.SchemaOrNamespace = Options?.DatabaseSchemaName ?? "public";
+        }
+
+        descriptor.TenantIds.AddRange(TenantIds);
         return descriptor;
     }
 

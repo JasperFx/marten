@@ -35,7 +35,6 @@ namespace Marten;
 
 public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySession>, ISubscriptionRunner<ISubscription>
 {
-
     static DocumentStore()
     {
         ProjectionExceptions.RegisterTransientExceptionType<NpgsqlException>();
@@ -57,6 +56,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             return false;
         }
     }
+
+    public EventStoreIdentity Identity { get; }
 
     IEventRegistry IEventStore<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
 

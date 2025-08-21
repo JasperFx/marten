@@ -40,7 +40,7 @@ public partial class StoreOptions: ICodeFileCollection
     }
 
     // This would only be set for "additional" document stores
-    public string StoreName { get; set; } = "Marten";
+    public string StoreName { get; set; } = "Main";
 
     /// <summary>
     ///     Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath
@@ -72,7 +72,7 @@ public partial class StoreOptions: ICodeFileCollection
             SourceCodeWritingEnabled = SourceCodeWritingEnabled
         };
 
-        if (StoreName.IsNotEmpty() && StoreName != "Marten")
+        if (StoreName.IsNotEmpty() && StoreName != "Marten" && StoreName != "Main")
         {
             rules.GeneratedNamespace += "." + StoreName;
             rules.GeneratedCodeOutputPath = Path.Combine(rules.GeneratedCodeOutputPath, StoreName);

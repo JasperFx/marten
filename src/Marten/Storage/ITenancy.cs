@@ -58,6 +58,16 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
     ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier);
 
     /// <summary>
+    ///     Find or create the named database
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
+    {
+        throw new NotImplementedException("You will need to implement this interface method to use a Marten store with Wolverine projection/subscription distribution");
+    }
+
+    /// <summary>
     ///  Asserts that the requested tenant id is part of the current database
     /// </summary>
     /// <param name="database"></param>

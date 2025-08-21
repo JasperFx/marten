@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
+using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten.Schema;
@@ -83,6 +84,18 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
         foreach (var entry in _tenants.Enumerate()) entry.Value.Database.Dispose();
 
         _default?.Database?.Dispose();
+    }
+
+    public ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
+    {
+        // Not worried about this being optimized at all
+        var database = _tenants.Enumerate().Select(x => x.Value.Database).FirstOrDefault(x => x.Id == id);
+        if (database == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), $"Requested database {id.Identity} cannot be found");
+        }
+
+        return ValueTask.FromResult<IMartenDatabase>(database);
     }
 
     public Tenant GetTenant(string tenantId)

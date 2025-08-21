@@ -24,10 +24,14 @@ internal class StandinDatabase: IMartenDatabase
         Providers = new ProviderGraph(options);
     }
 
+    public DatabaseId Id { get; } = new DatabaseId("standin", "standin");
+
     public DatabaseDescriptor Describe()
     {
         throw new NotImplementedException();
     }
+
+    public List<string> TenantIds { get; } = new();
 
     public IFeatureSchema[] BuildFeatureSchemas()
     {

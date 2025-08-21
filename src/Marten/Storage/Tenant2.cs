@@ -1,5 +1,6 @@
 using System;
 using JasperFx;
+using JasperFx.Core;
 
 namespace Marten.Storage;
 
@@ -9,6 +10,11 @@ public class Tenant
     {
         Database = inner;
         TenantId = tenantId;
+
+        if (Database is MartenDatabase db)
+        {
+            db.TenantIds.Fill(tenantId);
+        }
     }
 
     public string TenantId { get; }
