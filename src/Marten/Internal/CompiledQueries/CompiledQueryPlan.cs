@@ -376,7 +376,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
             var parameters = $"parameters{number}";
 
-            if (command.Parameters.Any())
+            if (command.Parameters.Count != 0)
             {
                 method.Frames.Code($"var {parameters} = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}}, '{ParameterPlaceholder}');",
                     Use.Type<ICommandBuilder>(), command.CommandText);

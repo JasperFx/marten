@@ -36,7 +36,7 @@ internal partial class LinqQueryParser
 
     public IQueryHandler<TResult> BuildHandler<TResult>()
     {
-        if (!_collectionUsages.Any())
+        if (_collectionUsages.Count == 0)
         {
             var usage = new CollectionUsage(Session.Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);
@@ -69,7 +69,7 @@ internal partial class LinqQueryParser
 
     public IQueryHandler<IReadOnlyList<T>> BuildListHandler<T>()
     {
-        if (!_collectionUsages.Any())
+        if (_collectionUsages.Count == 0)
         {
             var usage = new CollectionUsage(Session.Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);

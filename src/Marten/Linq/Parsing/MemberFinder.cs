@@ -94,7 +94,7 @@ public class MemberFinder: ExpressionVisitor
             throw new BadLinqExpressionException($"{invalidMessage}: '{expression}'");
         }
 
-        if (visitor.InvalidNodeTypes.Any())
+        if (visitor.InvalidNodeTypes.Count != 0)
         {
             throw new BadLinqExpressionException($"{invalidMessage}: '{expression}'");
         }

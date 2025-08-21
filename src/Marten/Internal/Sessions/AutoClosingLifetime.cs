@@ -258,7 +258,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 ExceptionDispatchInfo.Throw(ex);
             }
 
-            if (exceptions.Any())
+            if (exceptions.Count != 0)
             {
                 try
                 {
@@ -347,7 +347,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 ExceptionDispatchInfo.Throw(ex);
             }
 
-            if (exceptions.Any())
+            if (exceptions.Count != 0)
             {
                 try
                 {

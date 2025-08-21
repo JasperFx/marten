@@ -153,7 +153,7 @@ public partial class StoreOptions
         }
 
         // Find any event types
-        if (_eventMatchers.Any())
+        if (_eventMatchers.Count != 0)
         {
             foreach (var eventType in publicTypes.Where(x => _eventMatchers.Any(filter => filter(x))))
             {

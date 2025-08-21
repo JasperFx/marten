@@ -76,7 +76,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         options.ApplyMetricsIfAny();
 
         // Check if we need to correct any events or streams for global tenancy
-        if (options.EventGraph.GlobalAggregates.Any())
+        if (options.EventGraph.GlobalAggregates.Count != 0)
         {
             var decorator = new GlobalEventAppenderDecorator(options.EventGraph.EventAppender);
             options.EventGraph.EventAppender = decorator;

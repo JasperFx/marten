@@ -200,7 +200,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         var session = (DocumentSessionBase)OpenSession(sessionOptions);
         var batch = new ProjectionUpdateBatch(Options.Projections, session, ShardExecutionMode.Rebuild, token)
         {
-            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
+            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Count != 0
         };
 
         var projectionBatch = new ProjectionBatch(session, batch, mode);
@@ -226,7 +226,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
     private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
     {
-        if (filterable.IncludedEventTypes.Any() && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
+        if (filterable.IncludedEventTypes.Count != 0 && !filterable.IncludedEventTypes.Any(x => x.IsAbstract || x.IsInterface))
         {
             // We want to explicitly add in the archived event
             var allTypes = filterable.IncludedEventTypes.Concat([typeof(Archived)]).ToArray();
@@ -281,7 +281,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await using var parent = (DocumentSessionBase)OpenSession(SessionOptions.ForDatabase(db));
 
         var batch = new ProjectionUpdateBatch(Options.Projections, parent, mode, token)            {
-            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
+            ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Count != 0
         };;
 
         // Mark the progression

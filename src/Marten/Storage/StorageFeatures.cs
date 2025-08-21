@@ -321,7 +321,7 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             .TopologicalSort(m => m.ReferencedTypes()
                 .Select(MappingFor));
 
-        if (ExtendedSchemaObjects.Any())
+        if (ExtendedSchemaObjects.Count != 0)
         {
             yield return this;
         }

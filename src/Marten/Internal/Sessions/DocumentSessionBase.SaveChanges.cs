@@ -143,7 +143,7 @@ public abstract partial class DocumentSessionBase
                 ExceptionDispatchInfo.Throw(ex);
             }
 
-            if (execution.Exceptions.Any())
+            if (execution.Exceptions.Count != 0)
             {
                 throw new AggregateException(execution.Exceptions);
             }

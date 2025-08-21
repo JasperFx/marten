@@ -38,7 +38,7 @@ public partial class CollectionUsage
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
 
         ParseIncludes(collection, session);
-        if (Includes.Any())
+        if (Includes.Count != 0)
         {
             var inner = statement.Top();
             var selectionStatement = inner.SelectorStatement();
@@ -144,7 +144,7 @@ public partial class CollectionUsage
         statement.ParseWhereClause(WhereExpressions, session, collection);
 
         ParseIncludes(collection, session);
-        if (Includes.Any())
+        if (Includes.Count != 0)
         {
             var inner = statement.Top();
             var selectionStatement = inner.SelectorStatement();

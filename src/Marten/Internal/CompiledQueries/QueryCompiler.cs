@@ -213,7 +213,7 @@ internal class QueryCompiler
 
     private static void assertValidityOfQueryType(CompiledQueryPlan plan, Type type, StoreOptions options)
     {
-        if (plan.InvalidMembers.Any())
+        if (plan.InvalidMembers.Count != 0)
         {
             // Remove any value types here!
             foreach (var member in plan.InvalidMembers.Where(x => !x.GetRawMemberType()!.IsNullable()).ToArray())
@@ -224,7 +224,7 @@ internal class QueryCompiler
                 }
             }
 
-            if (!plan.InvalidMembers.Any()) return;
+            if (plan.InvalidMembers.Count == 0) return;
 
             var members = plan.InvalidMembers.Select(x => $"{x.GetRawMemberType()!.NameInCode()} {x.Name}")
                 .Join(", ");
