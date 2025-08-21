@@ -2,7 +2,7 @@
 <Project>
     <PropertyGroup>
         <VersionPrefix>8.9.0</VersionPrefix>
-        <VersionSuffix>channels-alpha-1</VersionSuffix>
+        <VersionSuffix>channels-alpha-2</VersionSuffix>
         <LangVersion>12.0</LangVersion>
         <Authors>Jeremy D. Miller;Babu Annamalai;Jaedyn Tonee</Authors>
         <PackageIconUrl>https://martendb.io/logo.png</PackageIconUrl>
