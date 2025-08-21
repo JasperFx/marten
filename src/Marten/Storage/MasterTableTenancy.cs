@@ -99,8 +99,9 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
                 tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
 
                 // Be idempotent, don't duplicate
-                if (_databases.Contains(tenantId))
+                if (_databases.TryFind(tenantId, out var db))
                 {
+                    db.TenantIds.Fill(tenantId);
                     continue;
                 }
 
@@ -109,6 +110,9 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
                 var database = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionString),
                     tenantId);
+
+                database.TenantIds.Add(tenantId);
+
                 _databases = _databases.AddOrUpdate(tenantId, database);
             }
 
@@ -180,6 +184,25 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         if (database == null)
         {
             throw new UnknownTenantIdException(tenantIdOrDatabaseIdentifier);
+        }
+
+        return database;
+    }
+
+    public async ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
+    {
+        // Not worried about this being optimized at all
+        var database = _databases.Enumerate().Select(x => x.Value).FirstOrDefault(x => x.Id == id);
+        if (database != null) return database;
+
+        // Try to refresh once
+        await BuildDatabases().ConfigureAwait(false);
+
+        database = _databases.Enumerate().Select(x => x.Value).FirstOrDefault(x => x.Id == id);
+
+        if (database == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), $"Requested database {id.Identity} cannot be found");
         }
 
         return database;
@@ -276,10 +299,16 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
 
         connectionString = _configuration.CorrectConnectionString(connectionString);
 
-        return connectionString.IsNotEmpty()
-            ? new MartenDatabase(_options,
-                _options.NpgsqlDataSourceFactory.Create(connectionString), tenantId)
-            : null;
+        if (connectionString.IsNotEmpty())
+        {
+            var db = new MartenDatabase(_options,
+                _options.NpgsqlDataSourceFactory.Create(connectionString), tenantId);
+            db.TenantIds.Add(tenantId);
+
+            return db;
+        }
+
+        return null;
     }
 
     internal class TenantLookupDatabase: PostgresqlDatabase

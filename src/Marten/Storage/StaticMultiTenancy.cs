@@ -134,6 +134,18 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
         return new ValueTask<IReadOnlyList<IDatabase>>(databases);
     }
 
+    ValueTask<IMartenDatabase> ITenancy.FindDatabase(DatabaseId id)
+    {
+        // Not worried about this being optimized at all
+        var database = _databases.Enumerate().Select(x => x.Value).FirstOrDefault(x => x.Id == id);
+        if (database == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(id), $"Requested database {id.Identity} cannot be found");
+        }
+
+        return ValueTask.FromResult<IMartenDatabase>(database);
+    }
+
     public Tenant GetTenant(string tenantId)
     {
         if (_tenants.TryFind(tenantId, out var tenant))
@@ -188,6 +200,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
             foreach (var tenantId in tenantIds)
             {
                 var tenant = new Tenant(tenantId, _database);
+                _database.TenantIds.Add(tenantId);
                 _parent._tenants = _parent._tenants.AddOrUpdate(tenantId, tenant);
             }
 

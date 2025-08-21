@@ -83,6 +83,8 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
             decorator.ReadEventTypes(options.EventGraph);
         }
+
+        Identity = new(Options.StoreName.ToLowerInvariant(), "marten");
     }
 
     public ITenancy Tenancy => Options.Tenancy;
@@ -385,6 +387,17 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         var database = tenantIdOrDatabaseIdentifier.IsEmpty()
             ? Tenancy.Default.Database
             : await Tenancy.FindOrCreateDatabase(tenantIdOrDatabaseIdentifier).ConfigureAwait(false);
+
+        await database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
+
+        return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
+    }
+
+    public async ValueTask<IProjectionDaemon> BuildProjectionDaemonAsync(DatabaseId id)
+    {
+        var logger = Options.LogFactory?.CreateLogger<ProjectionDaemon>() ?? Options.DotNetLogger ?? NullLogger.Instance;
+
+        var database = await Tenancy.FindDatabase(id).ConfigureAwait(false);
 
         await database.EnsureStorageExistsAsync(typeof(IEvent)).ConfigureAwait(false);
 

@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.CommandLine.TextualDisplays;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
+using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 
@@ -85,6 +89,12 @@ public static class TestingExtensions
         // Number of active projection shards, plus the high water mark
         var projectionsCount = database.As<MartenDatabase>().Options.Projections.AllShards().Count + 1;
 
+        // Just get out of there if there are no projections
+        if (projectionsCount == 1)
+        {
+            return;
+        }
+
         using var cancellationSource = new CancellationTokenSource();
         cancellationSource.CancelAfter(timeout);
 
@@ -105,31 +115,60 @@ public static class TestingExtensions
             throw new TimeoutException("No event activity was detected within the timeout span");
         }
 
-        IReadOnlyList<ShardState> projections;
-        do
+        IReadOnlyList<ShardState> projections = [];
+        try
         {
-            projections = await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false);
-            if ((projections.Count >= projectionsCount &&
-                 projections.All(x => x.Sequence >= initial.EventSequenceNumber))
-                || cancellationSource.IsCancellationRequested)
+            do
             {
-                break;
-            }
+                projections = await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false);
+                if ((projections.Count >= projectionsCount &&
+                     projections.All(x => x.Sequence >= initial.EventSequenceNumber))
+                    || cancellationSource.IsCancellationRequested)
+                {
+                    break;
+                }
 
-            await Task.Delay(250.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
-        } while (true);
+                await Task.Delay(250.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
+            } while (true);
+        }
+        catch (TaskCanceledException)
+        {
+            // We just didn't finish
+        }
 
         if (projections.Count < projectionsCount)
         {
-            throw new TimeoutException(
-                $"The projection shards (in total of {projectionsCount}) haven't been completely started within the timeout span");
+            var writer = new StringWriter();
+            await writer.WriteLineAsync($"The projection shards (in total of {projectionsCount}) haven't been completely started within the timeout span").ConfigureAwait(false);
+            await writer.WriteLineAsync().ConfigureAwait(false);
+            await writer.WriteLineAsync(writeStatusMessage(projections)).ConfigureAwait(false);
+            await writer.WriteLineAsync().ConfigureAwait(false);
+
+            throw new TimeoutException(writer.ToString());
         }
 
         if (cancellationSource.IsCancellationRequested)
         {
-            throw new TimeoutException(
-                $"The projections timed out before reaching the initial sequence of {initial.EventSequenceNumber}");
+            var writer = new StringWriter();
+            await writer.WriteLineAsync($"The projections timed out before reaching the initial sequence of {initial.EventSequenceNumber}").ConfigureAwait(false);
+            await writer.WriteLineAsync().ConfigureAwait(false);
+            await writer.WriteLineAsync(writeStatusMessage(projections)).ConfigureAwait(false);
+            await writer.WriteLineAsync().ConfigureAwait(false);
+
+            throw new TimeoutException(writer.ToString());
         }
+    }
+
+    private static string writeStatusMessage(IReadOnlyList<ShardState> projections)
+    {
+
+        var grid = new Grid<ShardState>();
+        grid.AddColumn("Shard Name", x => x.ShardName);
+        grid.AddColumn("Sequence", x => x.Sequence.ToString(), true);
+
+        return grid.Write(projections);
+
+
     }
 
     private static bool isComplete(this Dictionary<string, long> tracking, long highWaterMark)

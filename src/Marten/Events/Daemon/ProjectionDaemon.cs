@@ -1,5 +1,9 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Daemon.HighWater;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
