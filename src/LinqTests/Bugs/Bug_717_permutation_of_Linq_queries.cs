@@ -31,12 +31,11 @@ public class Bug_717_permutation_of_Linq_queries: IntegrationContext
             session.Store(entityToStore);
 
             //now try to get the data back
-            QueryStatistics stats;
 
             /*------------------------------------------------------------------*/
             //getting an Exception while trying to execute this query
 
-            var entity1 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Any());
+            var entity1 = session.Query<MainEntity>().Stats(out var stats).FirstOrDefault(t => t.Entity1.StringValues.Any());
 
             //Marten.MartenCommandException: 'Marten Command Failure:
             //select d.data, d.id, d.mt_version, count(1) OVER() as total_rows from public.mt_doc_mainentity as d where JSONB_ARRAY_LENGTH(COALESCE(case when data->>'Entity1'->'StringValues' is not null then data->'Entity1'->'StringValues' else '[]' end)) > 0 LIMIT 1
