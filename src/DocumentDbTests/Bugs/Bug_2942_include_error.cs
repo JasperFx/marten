@@ -12,7 +12,7 @@ public class Bug_2942_include_error : BugIntegrationContext
     public record DocumentA(Guid Id, string DetailA);
     public record DocumentB(Guid Id, string DetailB);
 
-    private Guid THEID = Guid.NewGuid();
+    private readonly Guid THEID = Guid.NewGuid();
 
     [Fact]
     public async Task query_with_include()

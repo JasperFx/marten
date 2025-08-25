@@ -39,7 +39,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         theSession?.Dispose();
     }
 
-    private IDocumentSession theSession;
+    private readonly IDocumentSession theSession;
 
     public async ValueTask DisposeAsync()
     {
@@ -326,7 +326,7 @@ public class guid_id_document_operations_with_non_nullable_identifier : IDisposa
         theSession?.Dispose();
     }
 
-    private IDocumentSession theSession;
+    private readonly IDocumentSession theSession;
 
     public async ValueTask DisposeAsync()
     {
