@@ -11,6 +11,14 @@ namespace Marten.Events;
 public interface IEventStoreOperations: IEventOperations, IQueryEventStore
 {
     /// <summary>
+    /// Helper to create an event wrapper as part of appending events if you need
+    /// to express custom metadata
+    /// </summary>
+    /// <param name="data"></param>
+    /// <returns></returns>
+    IEvent BuildEvent(object data);
+
+    /// <summary>
     ///     Append one or more events in order to an existing stream and verify that maximum event id for the stream
     ///     matches supplied expected version or transaction is aborted.
     /// </summary>
