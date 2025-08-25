@@ -68,7 +68,7 @@ public class ValueTypeMember<TOuter, TInner>: SimpleCastMember, IValueTypeMember
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var value = constant.Value is TInner ? (TInner)constant.Value : _valueSource(constant.Value.As<TOuter>());
+        var value = constant.Value is TInner inner ? inner : _valueSource(constant.Value.As<TOuter>());
 
         var def = new CommandParameter(Expression.Constant(value));
         return new MemberComparisonFilter(this, def, op);
