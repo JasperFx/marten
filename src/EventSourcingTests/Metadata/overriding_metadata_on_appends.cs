@@ -248,6 +248,31 @@ public class overriding_metadata : OneOffConfigurationsContext
         events[2].Headers["color"].ShouldBe("green");
     }
 
+    [Theory]
+    [InlineData(JasperFx.Events.EventAppendMode.Rich)]
+    [InlineData(JasperFx.Events.EventAppendMode.QuickWithServerTimestamps)]
+    public async Task override_header_on_event_with_as_type_then_get_header_but_declared_as_object(EventAppendMode mode)
+    {
+        EventAppendMode = mode;
+        var streamId = Guid.NewGuid();
+
+        var action = theSession.Events.StartStream(streamId, new AEvent(), new BEvent(), new CEvent());
+        action.Events[0].SetHeader("color", "red");
+        action.Events[1].SetHeader("color", "blue");
+        action.Events[2].SetHeader("color", "green");
+
+        await theSession.SaveChangesAsync();
+
+        object data = new AEvent();
+        var withHeader = theSession.Events.BuildEvent(data).WithHeader("color", "orange");
+        withHeader.ShouldBeOfType<Event<AEvent>>();
+        theSession.Events.Append(streamId, withHeader);
+        await theSession.SaveChangesAsync();
+
+        var events = await theSession.Events.FetchStreamAsync(streamId);
+        events.Last().Headers["color"].ShouldBe("orange");
+    }
+
     /* TODO
      Do this w/ FetchForWriting where you pass in Event<T> on new and old, quick and rich
      Append by passing in Event<T>
