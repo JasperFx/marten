@@ -20,6 +20,12 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
         _store = store;
     }
 
+    public IEvent BuildEvent(object data)
+    {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        return _store.Events.BuildEvent(data);
+    }
+
     public void OverwriteEvent(IEvent e)
     {
         var op = new OverwriteEventOperation(_store.Events, e);
