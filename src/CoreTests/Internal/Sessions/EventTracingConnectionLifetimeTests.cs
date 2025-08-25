@@ -70,7 +70,7 @@ namespace CoreTests.Internal.Sessions
         public void Ctor_Should_Throw_Argument_Null_Exception_When_Inner_Connection_Lifetime_Is_Null()
         {
             _innerConnectionLifetime = null;
-            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new());
+            EventTracingConnectionLifetime act() => new EventTracingConnectionLifetime(_innerConnectionLifetime, DefaultTenant, new());
             Should.Throw<ArgumentNullException>(act);
         }
 
@@ -80,7 +80,7 @@ namespace CoreTests.Internal.Sessions
         [InlineData(null)]
         public void Ctor_Should_Throw_Argument_Exception_When_Tenant_Id_Is_Null(string tenantId)
         {
-            var act = () => new EventTracingConnectionLifetime(_innerConnectionLifetime, tenantId, new());
+            EventTracingConnectionLifetime act() => new EventTracingConnectionLifetime(_innerConnectionLifetime, tenantId, new());
             Should.Throw<ArgumentException>(act);
         }
 
