@@ -50,7 +50,7 @@ internal class TenantDataCleaner
         }
 
         bool foundTables = false;
-        Action<DbObjectName> deleteTenantedDataIfExists = tableName =>
+        void deleteTenantedDataIfExists(DbObjectName tableName)
         {
             if (tables.Contains(tableName))
             {
@@ -60,9 +60,9 @@ internal class TenantDataCleaner
                 builder.Append($"delete from {tableName.QualifiedName} where tenant_id = ");
                 builder.AppendParameter(_tenantId);
             }
-        };
+        }
 
-        Action<DbObjectName> deleteDataIfExists = tableName =>
+        void deleteDataIfExists(DbObjectName tableName)
         {
             if (tables.Contains(tableName))
             {
@@ -71,7 +71,7 @@ internal class TenantDataCleaner
                 builder.StartNewCommand();
                 builder.Append($"delete from {tableName.QualifiedName}");
             }
-        };
+        }
 
         if (_store.Options.Events.TenancyStyle == TenancyStyle.Conjoined)
         {
