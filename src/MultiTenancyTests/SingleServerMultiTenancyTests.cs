@@ -16,7 +16,7 @@ namespace MultiTenancyTests;
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
 public class SingleServerMultiTenancyTests: IAsyncLifetime
 {
-    private DefaultNpgsqlDataSourceFactory dataSourceFactory = new();
+    private readonly DefaultNpgsqlDataSourceFactory dataSourceFactory = new();
     private SingleServerMultiTenancy theTenancy;
 
     public async Task InitializeAsync()

@@ -6,7 +6,7 @@ namespace EventAppenderPerfTester;
 
 public static class TripStreamReaderWriter
 {
-    private static JsonSerializer _serializer = JsonSerializer.Create(new JsonSerializerSettings
+    private static readonly JsonSerializer _serializer = JsonSerializer.Create(new JsonSerializerSettings
     {
         Formatting = Formatting.Indented,
         TypeNameHandling = TypeNameHandling.Auto

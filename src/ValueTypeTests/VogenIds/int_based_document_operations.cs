@@ -35,7 +35,7 @@ public class int_based_document_operations : IAsyncLifetime
         theSession?.Dispose();
     }
 
-    private IDocumentSession theSession;
+    private readonly IDocumentSession theSession;
 
     [Fact]
     public void store_document_will_assign_the_identity()

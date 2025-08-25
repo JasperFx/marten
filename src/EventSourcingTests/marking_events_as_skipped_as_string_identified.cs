@@ -19,7 +19,7 @@ namespace EventSourcingTests;
 public class marking_events_as_skipped_as_string_identified : OneOffConfigurationsContext, IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private string theStreamId = Guid.NewGuid().ToString();
+    private readonly string theStreamId = Guid.NewGuid().ToString();
 
     public marking_events_as_skipped_as_string_identified(ITestOutputHelper output)
     {

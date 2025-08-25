@@ -16,7 +16,7 @@ public class include_usage : IAsyncDisposable
 {
     private readonly ITestOutputHelper _output;
     private readonly DocumentStore theStore;
-    private IDocumentSession theSession;
+    private readonly IDocumentSession theSession;
 
     public include_usage(ITestOutputHelper output)
     {

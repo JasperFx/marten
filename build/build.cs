@@ -352,14 +352,14 @@ class Build : NukeBuild
             }
         });
 
-    private Dictionary<string, string[]> ReferencedProjects = new()
+    private readonly Dictionary<string, string[]> ReferencedProjects = new()
     {
         { "jasperfx", ["JasperFx", "JasperFx.Events", "EventTests", "JasperFx.RuntimeCompiler"] },
         { "weasel", ["Weasel.Core", "Weasel.Postgresql"] },
         {"lamar", ["Lamar", "Lamar.Microsoft.DependencyInjection"]}
     };
 
-    string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
+    readonly string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
     
     Target Attach => _ => _.Executes(() =>
     {

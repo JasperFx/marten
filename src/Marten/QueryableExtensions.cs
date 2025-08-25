@@ -754,10 +754,10 @@ public static class QueryableExtensions
 
     #endregion
 
-    private static MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
+    private static readonly MethodInfo _orderBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderBySql),
         BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
 
-    private static MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
+    private static readonly MethodInfo _thenBySqlMethod = typeof(QueryableExtensions).GetMethod(nameof(ThenBySql),
         BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
 
     /// <summary>
