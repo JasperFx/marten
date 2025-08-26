@@ -1,8 +1,11 @@
 #nullable disable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
@@ -125,6 +128,11 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
+        if (!MethodBeCanTranslated(node.Method))
+        {
+            ThrowForUnsupportedMethod(node);
+        }
+
         if (node.Method.Name == nameof(QueryableExtensions.ExplicitSql))
         {
             var sql = (string)node.Arguments.Last().ReduceToConstant().Value;
@@ -159,27 +167,76 @@ internal class SelectParser: ExpressionVisitor
 
     protected override Expression VisitNew(NewExpression node)
     {
-        if (_hasStarted)
+        if (!_hasStarted)
         {
-            var child = new SelectParser(_serializer, _members, node);
-            NewObject.Members[_currentField] = child.NewObject;
+            if (node.Arguments.Count > 0 && !IsAllowedConstructor(node))
+            {
+                throw new BadLinqExpressionException(
+                    $"Marten cannot translate projecting into '{node.Type.Name}'. " +
+                    "Only anonymous types, parameterless constructors, or constructors marked with [JsonConstructor] are supported.");
+            }
 
-            return null;
+            _hasStarted = true;
+
+            var parameters = node.Constructor.GetParameters();
+
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                _currentField = parameters[i].Name;
+                Visit(node.Arguments[i]);
+            }
+
+            return node;
         }
 
-        _hasStarted = true;
-
-        var parameters = node.Constructor.GetParameters();
-
-        for (var i = 0; i < parameters.Length; i++)
+        if (node.Arguments.Count > 0 && !IsAllowedConstructor(node))
         {
-            _currentField = parameters[i].Name;
-            Visit(node.Arguments[i]);
+            throw new BadLinqExpressionException(
+                $"Marten cannot translate constructing '{node.Type.Name}' inside a Select().");
         }
 
-        return node;
+        var child = new SelectParser(_serializer, _members, node);
+        NewObject.Members[_currentField] = child.NewObject;
+        _currentField = null;
+        return null;
     }
 
+    private static bool IsAllowedConstructor(NewExpression node)
+    {
+        if (node.Arguments.Count == 0)
+            return true; // parameterless
+        if (IsAnonymousType(node.Type))
+            return true;
+
+        var ctor = node.Constructor;
+        return ctor.GetCustomAttributes(typeof(Newtonsoft.Json.JsonConstructorAttribute), true).Any()
+            || ctor.GetCustomAttributes(typeof(System.Text.Json.Serialization.JsonConstructorAttribute), true).Any();
+    }
+
+    private static bool IsAnonymousType(Type type)
+    {
+        return Attribute.IsDefined(type, typeof(CompilerGeneratedAttribute), false)
+               && type.Name.Contains("AnonymousType")
+               && type.IsGenericType;
+    }
+
+    private static bool MethodBeCanTranslated(MethodInfo method)
+    {
+        if (method.Name == nameof(QueryableExtensions.ExplicitSql))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public static void ThrowForUnsupportedMethod(MethodCallExpression node, Exception inner = null)
+    {
+        throw new BadLinqExpressionException(
+            $"Marten cannot translate the method call '{node.Method.DeclaringType?.Name}.{node.Method.Name}' " +
+            "in Select() projections to SQL. Consider using only Marten-supported operations or " +
+            "use CustomProjection() for raw SQL fragments.", inner);
+    }
 }
 
 
