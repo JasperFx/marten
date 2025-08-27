@@ -68,7 +68,7 @@ public class DuplicatedFieldTests
 
         var constant = Expression.Constant((int)Colors.Blue);
 
-        field.GetValueForCompiledQueryParameter(constant).ShouldBe(Colors.Blue.ToString());
+        field.GetValueForCompiledQueryParameter(constant).ShouldBe(nameof(Colors.Blue));
     }
 
 
