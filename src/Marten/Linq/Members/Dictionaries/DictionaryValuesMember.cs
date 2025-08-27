@@ -57,11 +57,6 @@ internal class DictionaryValuesMember : QueryableMember, ICollectionMember, IVal
 
     }
 
-    public override void PlaceValueInDictionaryForContainment(Dictionary<string, object> dict, ConstantExpression constant)
-    {
-        base.PlaceValueInDictionaryForContainment(dict, constant);
-    }
-
     public Type ElementType { get; }
 
     public SelectManyValueCollection SelectManyUsage { get;}

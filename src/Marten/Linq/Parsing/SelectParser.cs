@@ -29,11 +29,6 @@ internal class SelectParser: ExpressionVisitor
 
     public NewObject NewObject { get; private set; }
 
-    public override Expression Visit(Expression node)
-    {
-        return base.Visit(node);
-    }
-
     protected override Expression VisitBinary(BinaryExpression node)
     {
         if (node.TryToParseConstant(out var constant))

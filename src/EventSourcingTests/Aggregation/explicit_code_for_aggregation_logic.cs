@@ -288,10 +288,6 @@ public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, in
 
 public class MySingleStreamProjection: SingleStreamProjection<CustomAggregate, Guid>
 {
-    public override CustomAggregate Evolve(CustomAggregate snapshot, Guid id, IEvent e)
-    {
-        return base.Evolve(snapshot, id, e);
-    }
 }
 
 public record struct MyCustomStringId(string Value);

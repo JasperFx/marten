@@ -93,11 +93,6 @@ internal class SimpleExpression: ExpressionVisitor
         }
     }
 
-    public override Expression Visit(Expression node)
-    {
-        return base.Visit(node);
-    }
-
     // Pretend for right now that there's only one of all of these
     // obviously won't be true forever
     public ConstantExpression Constant { get; set; }
