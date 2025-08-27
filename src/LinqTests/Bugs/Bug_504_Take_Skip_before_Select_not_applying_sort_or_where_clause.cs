@@ -44,7 +44,7 @@ public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         var queryable = await theSession.Query<Target>()
-            .Stats(out QueryStatistics   stats)
+            .Stats(out QueryStatistics stats)
             .Where(_ => _.Color == Colors.Blue)
             .OrderBy(_ => _.Number)
             .Select(entity => entity.Id)
