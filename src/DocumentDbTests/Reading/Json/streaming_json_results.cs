@@ -30,12 +30,14 @@ public class SimpleUser
     {
         return $$"""
 {
-"Id": "{{Id}}", "Number": {{Number}}, "Address":
-{
-"Street": "{{Address.Street}}", "HouseNumber": "{{Address.HouseNumber}}"
-},
-"UserName": "{{UserName}}",
-"Birthdate": "{{Birthdate.ToString("s")}}"
+    "Id": "{{Id}}",
+    "Number": {{Number}}, "Address":
+    {
+        "Street": "{{Address.Street}}",
+        "HouseNumber": "{{Address.HouseNumber}}"
+    },
+    "UserName": "{{UserName}}",
+    "Birthdate": "{{Birthdate.ToString("s")}}"
 }
 """.Replace("\r\n", "").Replace("\n", "");
     }
