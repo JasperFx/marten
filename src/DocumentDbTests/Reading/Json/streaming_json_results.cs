@@ -31,7 +31,8 @@ public class SimpleUser
         return $$"""
 {
     "Id": "{{Id}}",
-    "Number": {{Number}}, "Address":
+    "Number": {{Number}},
+    "Address":
     {
         "Street": "{{Address.Street}}",
         "HouseNumber": "{{Address.HouseNumber}}"
