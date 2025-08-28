@@ -16,8 +16,8 @@ public class SimpleExpressionTests
 {
     private static readonly DocumentQueryableMemberCollection Members = new(DocumentMapping.For<Target>(), new StoreOptions());
 
-    private static readonly int Age = 49;
-    private readonly string Color = "blue";
+    private const int Age = 49;
+    private const string Color = "blue";
 
     private SimpleExpression parse(Expression<Func<bool>> expression)
     {
