@@ -18,18 +18,18 @@ public class SimpleUser
     public string ToJson()
     {
         return $$"""
-{
-    "Id": "{{Id}}",
-    "Number": {{Number}},
-    "Address":
-    {
-        "Street": "{{Address.Street}}",
-        "HouseNumber": "{{Address.HouseNumber}}"
-    },
-    "UserName": "{{UserName}}",
-    "Birthdate": "{{Birthdate.ToString("s")}}"
-}
-""".Replace("\r\n", "").Replace("\n", "");
+            {
+                "Id": "{{Id}}",
+                "Number": {{Number}},
+                "Address":
+                {
+                    "Street": "{{Address.Street}}",
+                    "HouseNumber": "{{Address.HouseNumber}}"
+                },
+                "UserName": "{{UserName}}",
+                "Birthdate": "{{Birthdate.ToString("s")}}"
+            }
+            """.Replace("\r\n", "").Replace("\n", "");
     }
 }
 
