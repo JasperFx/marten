@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -28,7 +28,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
         theSession.Events.Append(streamId, departed);
         await theSession.SaveChangesAsync();
 
-        var forceEventStreamUnexpectedMaxEventIdException = async () =>
+        async Task forceEventStreamUnexpectedMaxEventIdException()
         {
             await Parallel.ForEachAsync(Enumerable.Range(1, 10), async (_, token) =>
             {
@@ -36,7 +36,7 @@ public class EventStreamUnexpectedMaxEventIdExceptionTransformTest: IntegrationC
                 session.Events.Append(streamId, departed);
                 await session.SaveChangesAsync(token);
             });
-        };
+        }
 
         (await Should.ThrowAsync<EventStreamUnexpectedMaxEventIdException>(forceEventStreamUnexpectedMaxEventIdException))
             .Message.ShouldContain("pk_mt_events_stream_and_version");
