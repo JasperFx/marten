@@ -11,6 +11,7 @@ using Marten.Events.Protected;
 using Marten.Events.TestSupport;
 using Marten.Internal;
 using Marten.Schema;
+using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -275,7 +276,7 @@ public class AdvancedOperations
     /// <returns></returns>
     public async Task RebuildSingleStreamAsync<T>(Guid id, CancellationToken token = default) where T : class
     {
-        await using var session = _store.LightweightSession();
+        await using var session = _store.LightweightSession(new SessionOptions{ConcurrencyChecks = ConcurrencyChecks.Disabled});
         var document = await session.Events.AggregateStreamAsync<T>(id, token: token).ConfigureAwait(false);
         session.Store(document!);
         await session.SaveChangesAsync(token).ConfigureAwait(false);
