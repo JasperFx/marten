@@ -156,7 +156,7 @@ internal class UpsertFunction: Function
 
         if (Arguments.Any(x => x is RevisionArgument) && !_disableConcurrency)
         {
-            whereClauses.Add($"revision > {_tableName.QualifiedName}.{SchemaConstants.VersionColumn}");
+            whereClauses.Add($"revision >= {_tableName.QualifiedName}.{SchemaConstants.VersionColumn}");
         }
 
         if (Arguments.Any(x => x is CurrentVersionArgument) && !_disableConcurrency)
