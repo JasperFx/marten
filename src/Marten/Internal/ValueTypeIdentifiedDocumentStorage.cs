@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Aggregation;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
 using Marten.Linq;
@@ -19,6 +20,24 @@ using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal;
+
+internal class ValueTypeIdentifiedIdentitySetter<TDoc, TSimple, TValueType>: IIdentitySetter<TDoc, TSimple>
+{
+    private readonly Func<TSimple, TValueType> _converter;
+
+    public ValueTypeIdentifiedIdentitySetter(ValueTypeInfo valueTypeInfo, IDocumentStorage<TDoc, TValueType> inner)
+    {
+        Inner = inner;
+
+        _converter = valueTypeInfo.CreateWrapper<TValueType, TSimple>();
+    }
+
+    public void SetIdentity(TDoc document, TSimple identity)
+        => Inner.SetIdentity(document, _converter(identity));
+
+
+    public IIdentitySetter<TDoc, TValueType> Inner { get; }
+}
 
 internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {

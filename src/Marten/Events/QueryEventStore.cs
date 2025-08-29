@@ -89,8 +89,10 @@ internal class QueryEventStore: IQueryEventStore
             return null;
         }
 
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromGuid(aggregate, streamId);
+        if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+        {
+            storage.SetIdentityFromGuid(aggregate, streamId);
+        }
 
         return aggregate;
     }
@@ -116,8 +118,10 @@ internal class QueryEventStore: IQueryEventStore
 
         if (aggregate != null)
         {
-            var storage = _session.StorageFor<T>();
-            storage.SetIdentityFromGuid(aggregate, streamId);
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage!.SetIdentityFromGuid(aggregate, streamId);
+            }
         }
 
         return aggregate;
@@ -141,8 +145,10 @@ internal class QueryEventStore: IQueryEventStore
 
         if (aggregate != null)
         {
-            var storage = _session.StorageFor<T>();
-            storage.SetIdentityFromString(aggregate, streamKey);
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage.SetIdentityFromString(aggregate, streamKey);
+            }
         }
 
         return aggregate;
@@ -168,8 +174,10 @@ internal class QueryEventStore: IQueryEventStore
 
         if (aggregate != null)
         {
-            var storage = _session.StorageFor<T>();
-            storage.SetIdentityFromString(aggregate, streamKey);
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage!.SetIdentityFromString(aggregate, streamKey);
+            }
         }
 
         return aggregate;

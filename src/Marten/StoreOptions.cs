@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using ImTools;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
@@ -85,6 +86,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     {
         get => _tenantIdStyle.HasValue ? _tenantIdStyle.Value : TenantIdStyle.CaseSensitive;
         set => _tenantIdStyle = value;
+    }
+
+    internal ImList<Type> LiveAggregateTypesWithNoIdentity { get; private set; } = ImList<Type>.Empty;
+
+    internal void RegisterAggregateTypeWithNoIdentity(Type aggregateType)
+    {
+        LiveAggregateTypesWithNoIdentity = LiveAggregateTypesWithNoIdentity.Push(aggregateType);
     }
 
     /// <summary>
@@ -1158,4 +1166,6 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     /// Option to use NGram search using unaccent
     /// </summary>
     public bool UseNGramSearchWithUnaccent { get; set; }
+
+
 }

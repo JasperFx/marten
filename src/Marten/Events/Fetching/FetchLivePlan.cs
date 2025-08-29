@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Exceptions;
@@ -17,11 +18,11 @@ namespace Marten.Events.Fetching;
 internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> where TDoc : class where TId : notnull
 {
     private readonly IAggregator<TDoc, TId, IQuerySession> _aggregator;
-    private readonly IDocumentStorage<TDoc, TId> _documentStorage;
+    private readonly IIdentitySetter<TDoc, TId> _documentStorage;
     private readonly IEventIdentityStrategy<TId> _identityStrategy;
 
     public FetchLivePlan(EventGraph events, IEventIdentityStrategy<TId> identityStrategy,
-        IDocumentStorage<TDoc, TId> documentStorage)
+        IIdentitySetter<TDoc, TId> documentStorage)
     {
         IsGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
 
@@ -30,8 +31,20 @@ internal partial class FetchLivePlan<TDoc, TId>: IAggregateFetchPlan<TDoc, TId> 
 
         var raw = events.Options.Projections.AggregatorFor<TDoc>();
 
-        _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
-                      ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), _documentStorage.IdType, typeof(TId), typeof(IQuerySession));
+        // yeah, I know, this is kind of gross
+        if (documentStorage is NulloIdentitySetter<TDoc, TId>)
+        {
+            _aggregator = (IAggregator<TDoc, TId, IQuerySession>?)raw;
+        }
+        else
+        {
+            var simpleType = events.StreamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
+            var idType = documentStorage is IDocumentStorage<TDoc, TId> s ? s.IdType : typeof(TId);
+
+            // The goofy identity forwarding thing is to deal with custom value types. Of course.
+            _aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
+                          ?? typeof(IdentityForwardingAggregator<,,,>).CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, _documentStorage, typeof(TDoc), idType, simpleType, typeof(IQuerySession));
+        }
     }
 
     public bool IsGlobal { get; }

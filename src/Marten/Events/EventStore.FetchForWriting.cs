@@ -8,6 +8,7 @@ using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Sessions;
@@ -195,24 +196,24 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
             return (IAggregateFetchPlan<TDoc, TId>)stored;
         }
 
-        var storage = _store.Options.ResolveCorrectedDocumentStorage<TDoc, TId>(DocumentTracking.IdentityOnly);
-
-        var plan = determineFetchPlan(storage, _session.Options);
+        var plan = determineFetchPlan<TDoc, TId>(_session.Options);
 
         _fetchStrategies = _fetchStrategies.AddOrUpdate(typeof(TDoc), plan);
 
         return plan;
     }
 
-    private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(IDocumentStorage<TDoc, TId> storage,
-        StoreOptions options) where TDoc : class where TId : notnull
+    private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(StoreOptions options) where TDoc : class where TId : notnull
     {
         foreach (var planner in options.Projections.allPlanners())
         {
-            if (planner.TryMatch(storage, (IEventIdentityStrategy<TId>)this, options, out var plan)) return plan;
+            if (planner.TryMatch<TDoc, TId>((IEventIdentityStrategy<TId>)this, options, out var plan))
+            {
+                return plan;
+            }
         }
 
-        throw new ArgumentOutOfRangeException(nameof(storage),
+        throw new InvalidOperationException(
             $"Unable to determine a fetch plan for aggregate {typeof(TDoc).FullNameInCode()}. Is there a valid single stream aggregation projection for this type?");
     }
 }

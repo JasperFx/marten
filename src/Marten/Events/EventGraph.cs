@@ -94,6 +94,21 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public IAggregatorSource<IQuerySession>? Build<TDoc>()
     {
         var idType = Options.Storage.MappingFor(typeof(TDoc)).IdType;
+
+        // For the quite legitimate case of doing a live aggregation when
+        // there is no Id member
+        if (idType == null)
+        {
+            if (StreamIdentity == StreamIdentity.AsGuid)
+            {
+                idType = typeof(Guid);
+            }
+            else
+            {
+                idType = typeof(string);
+            }
+        }
+
         return typeof(SingleStreamProjection<,>)
             .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
     }
