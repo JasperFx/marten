@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Linq;
 using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -7,6 +8,7 @@ using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
+using Npgsql;
 
 namespace Marten.Internal.Sessions;
 
@@ -27,6 +29,28 @@ public partial class QuerySession
         _byType = _byType.AddOrUpdate(documentType, storage);
 
         return storage;
+    }
+
+
+    internal bool TryGetStorageForLiveAggregation<T>(out IDocumentStorage<T>? storage) where T : notnull
+    {
+        storage = default!;
+        if (Options.LiveAggregateTypesWithNoIdentity.Enumerate().Contains(typeof(T)))
+        {
+            return false;
+        }
+
+        try
+        {
+            storage = StorageFor<T>();
+            return true;
+        }
+        catch (InvalidDocumentException)
+        {
+            Options.RegisterAggregateTypeWithNoIdentity(typeof(T));
+        }
+
+        return false;
     }
 
     public IDocumentStorage<T> StorageFor<T>() where T : notnull

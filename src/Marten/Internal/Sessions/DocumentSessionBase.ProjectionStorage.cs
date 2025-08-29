@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ImTools;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using Marten.Events.Archiving;
 using Marten.Internal.Operations;
@@ -45,6 +46,8 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         _session = session;
         _storage = storage;
     }
+
+    public Type IdType => typeof(TId);
 
     public string TenantId => _session.TenantId;
     public void HardDelete(TDoc snapshot)

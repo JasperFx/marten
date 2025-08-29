@@ -5,6 +5,7 @@ using System.Reflection;
 using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Aggregation;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Storage;

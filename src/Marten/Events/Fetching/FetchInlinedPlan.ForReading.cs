@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 
@@ -23,7 +24,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var builder = new BatchBuilder { TenantId = session.TenantId };
         builder.Append(";");
 
-        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
         handler.ConfigureCommand(builder, session);
 
         await using var reader =

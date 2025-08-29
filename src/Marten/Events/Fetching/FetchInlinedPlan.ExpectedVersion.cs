@@ -7,6 +7,7 @@ using JasperFx;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Sessions;
+using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
 using Npgsql;
 using Weasel.Postgresql;
@@ -29,7 +30,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
 
         builder.StartNewCommand();
 
-        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
         handler.ConfigureCommand(builder, session);
 
         await using var reader =
@@ -91,7 +92,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
     {
         session.AssertIsDocumentSession();
         var storage = findDocumentStorage(session);
-        var handler = new LoadByIdHandler<TDoc, TId>(storage, id);
+        var handler = new LoadByIdHandler<TDoc, TId>((IDocumentStorage<TDoc, TId>)storage, id);
         return new WithStartingVersionHandler(this, id, handler, expectedStartingVersion);
     }
 
