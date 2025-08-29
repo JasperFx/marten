@@ -209,7 +209,7 @@ internal class UnitOfWork: ISessionWorkTracker
 
     public bool HasOutstandingWork()
     {
-        return _operations.Any() || Streams.Any(x => x.Events.Count > 0) || _eventOperations.Any();
+        return _operations.Count != 0 || Streams.Any(x => x.Events.Count > 0) || _eventOperations.Count != 0;
     }
 
     public void EjectAll()

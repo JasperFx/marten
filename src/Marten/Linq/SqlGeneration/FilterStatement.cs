@@ -66,7 +66,7 @@ internal class FilterStatement: SelectorStatement
         parent.InsertAfter(this);
 
         // This *should* enable n-deep child collection queries. Let's hope.
-        if (Wheres.Any())
+        if (Wheres.Count != 0)
         {
             compileAnySubQueries(session);
         }

@@ -276,7 +276,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             throw new AggregateException(exceptions);
         }
@@ -310,7 +310,7 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             throw new AggregateException(exceptions);
         }

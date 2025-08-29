@@ -268,7 +268,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
 
         // If there's one patch, then everything needs to be queued up for later
-        if (operation is PatchOperation || _patches.Any())
+        if (operation is PatchOperation || _patches.Count != 0)
         {
             _patches.Add(operation);
             return;

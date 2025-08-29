@@ -8,7 +8,7 @@ internal partial class LinqQueryParser
 {
     internal StatementQuery BuildStatements()
     {
-        if (!_collectionUsages.Any())
+        if (_collectionUsages.Count == 0)
         {
             var usage = new CollectionUsage(Session.Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);

@@ -12,7 +12,7 @@ public class OrderByFragment: ISqlFragment
 
     public void Apply(ICommandBuilder builder)
     {
-        if (!Expressions.Any())
+        if (Expressions.Count == 0)
         {
             return;
         }

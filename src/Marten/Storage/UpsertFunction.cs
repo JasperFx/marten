@@ -169,7 +169,7 @@ internal class UpsertFunction: Function
             whereClauses.Add(_tenantWhereClause);
         }
 
-        if (whereClauses.Any())
+        if (whereClauses.Count != 0)
         {
             updates += " where " + whereClauses.Join(" and ");
         }

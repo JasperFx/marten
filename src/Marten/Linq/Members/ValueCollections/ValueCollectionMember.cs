@@ -124,7 +124,7 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
         parentStatement.AddToEnd(statement);
 
         // If the collection has any Where() or OrderBy() usages, you'll need an extra statement
-        if (collectionUsage.OrderingExpressions.Any() || collectionUsage.WhereExpressions.Any())
+        if (collectionUsage.OrderingExpressions.Count != 0 || collectionUsage.WhereExpressions.Count != 0)
         {
             statement.ConvertToCommonTableExpression(session);
 
