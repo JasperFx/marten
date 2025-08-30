@@ -90,7 +90,7 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
 
     public ConcurrencyChecks Concurrency { get; protected set; } = ConcurrencyChecks.Enabled;
 
-    public NpgsqlConnection Connection
+    public virtual NpgsqlConnection Connection
     {
         get
         {
