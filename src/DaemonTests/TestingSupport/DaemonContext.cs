@@ -29,7 +29,7 @@ namespace DaemonTests.TestingSupport;
 
 public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private const int lockId = 10000;
+    private readonly int lockId = 10000;
 
     protected DaemonContext(ITestOutputHelper output)
     {
