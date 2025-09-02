@@ -936,24 +936,24 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
         // Start stream using session 1
         await using var session1 = theStore.LightweightSession();
-        var startStream = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
-        startStream.AppendOne(new AEvent());
+        var firstStreamSession1 = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
+        firstStreamSession1.AppendOne(new AEvent());
         await session1.SaveChangesAsync();
 
         // Add to stream using session 2
         await using var session2 = theStore.LightweightSession();
-        var stream = await session2.Events.FetchForWriting<SimpleAggregate>(streamId);
-        stream.AppendOne(new AEvent());
+        var secondStreamSession2 = await session2.Events.FetchForWriting<SimpleAggregate>(streamId);
+        secondStreamSession2.AppendOne(new AEvent());
         await session2.SaveChangesAsync();
 
         // Add to stream using session 1 again
-        var stream2 = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
-        stream2.AppendOne(new AEvent());
+        var thirdStreamSession1 = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
+        thirdStreamSession1.AppendOne(new AEvent());
         await session1.SaveChangesAsync();
 
         // Verify that all 3 events are projected
-        await using var thirdSession = theStore.LightweightSession();
-        var aggregate = await thirdSession.LoadAsync<SimpleAggregate>(streamId);
+        await using var session3 = theStore.LightweightSession();
+        var aggregate = await session3.LoadAsync<SimpleAggregate>(streamId);
         aggregate.ACount.ShouldBe(3);
     }
 
