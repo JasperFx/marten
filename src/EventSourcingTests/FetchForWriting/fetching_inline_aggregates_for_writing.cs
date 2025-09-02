@@ -919,6 +919,44 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         loadedFresh.ACount.ShouldBe(2);
     }
 
+
+    [Fact]
+    public async Task use_identity_map_across_sessions()
+    {
+        // Tests that all events are projected to inline aggregates when one session commits events both before and
+        // after another session also commits to the same stream.
+        StoreOptions(
+            opts =>
+            {
+                opts.Events.UseIdentityMapForAggregates = true;
+                opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+            });
+
+        var streamId = Guid.NewGuid();
+
+        // Start stream using session 1
+        await using var session1 = theStore.LightweightSession();
+        var startStream = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
+        startStream.AppendOne(new AEvent());
+        await session1.SaveChangesAsync();
+
+        // Add to stream using session 2
+        await using var session2 = theStore.LightweightSession();
+        var stream = await session2.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream.AppendOne(new AEvent());
+        await session2.SaveChangesAsync();
+
+        // Add to stream using session 1 again
+        var stream2 = await session1.Events.FetchForWriting<SimpleAggregate>(streamId);
+        stream2.AppendOne(new AEvent());
+        await session1.SaveChangesAsync();
+
+        // Verify that all 3 events are projected
+        await using var thirdSession = theStore.LightweightSession();
+        var aggregate = await thirdSession.LoadAsync<SimpleAggregate>(streamId);
+        aggregate.ACount.ShouldBe(3);
+    }
+
     [Fact]
     public async Task fetch_for_writing_cache()
     {
