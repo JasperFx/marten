@@ -146,7 +146,7 @@ public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationConte
 
             foreach (var table in SchemaObjects.OfType<Table>())
             {
-                Options.DeleteDataInTableOnTeardown(table.Identifier);
+                Options.DeleteDataInTableOnTeardown(table.Identifier.QualifiedName);
             }
         }
 

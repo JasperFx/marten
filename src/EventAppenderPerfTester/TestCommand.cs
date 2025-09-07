@@ -70,18 +70,12 @@ public class TestCommand: JasperFxAsyncCommand<TestInput>
 
     private ITestPlan buildPlan(TestType inputType)
     {
-        switch (inputType)
+        return inputType switch
         {
-            case TestType.SingleFileSimple:
-                return new SingleFileSimplePlan();
-
-            case TestType.SingleFileFetchForWriting:
-                return new SingleFileFetchForWritingPlan();
-
-            case TestType.Multiples:
-                return new MultiplesTestPlan();
-        }
-
-        throw new ArgumentOutOfRangeException(nameof(inputType));
+            TestType.SingleFileSimple => new SingleFileSimplePlan(),
+            TestType.SingleFileFetchForWriting => new SingleFileFetchForWritingPlan(),
+            TestType.Multiples => new MultiplesTestPlan(),
+            _ => throw new ArgumentOutOfRangeException(nameof(inputType)),
+        };
     }
 }

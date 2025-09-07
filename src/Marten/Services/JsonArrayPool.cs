@@ -18,12 +18,9 @@ internal class JsonArrayPool<T>: IArrayPool<T>
         return _inner.Rent(minimumLength);
     }
 
-    public void Return(T[] array)
+    public void Return(T[]? array)
     {
-        if (array == null)
-        {
-            throw new ArgumentNullException(nameof(array));
-        }
+        ArgumentNullException.ThrowIfNull(array);
 
         _inner.Return(array);
     }

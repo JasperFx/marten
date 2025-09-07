@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.Resiliency;
 using JasperFx.Core;
 using JasperFx.Events;
 using Marten;
@@ -42,17 +43,13 @@ public class TripStream
     public static Direction RandomDirection()
     {
         var index = Random.Shared.Next(0, 3);
-        switch (index)
+        return index switch
         {
-            case 0:
-                return Direction.East;
-            case 1:
-                return Direction.North;
-            case 2:
-                return Direction.South;
-            default:
-                return Direction.West;
-        }
+            0 => Direction.East,
+            1 => Direction.North,
+            2 => Direction.South,
+            _ => Direction.West,
+        };
     }
 
     public static TimeOnly RandomTime()
@@ -228,7 +225,7 @@ public class TripStream
     {
         if (IsFinishedPublishing())
         {
-            events = new object[0];
+            events = [];
             return false;
         }
 

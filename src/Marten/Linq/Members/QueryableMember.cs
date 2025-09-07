@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using ImTools;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -27,7 +28,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
     /// <param name="member"></param>
     protected QueryableMember(IQueryableMember parent, Casing casing, MemberInfo member)
     {
-        if (parent == null) throw new ArgumentNullException(nameof(parent));
+        ArgumentNullException.ThrowIfNull(parent);
 
         Member = member;
         MemberType = member is ElementMember m ? m.ReflectedType : member.GetMemberType()!;

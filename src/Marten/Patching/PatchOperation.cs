@@ -84,7 +84,6 @@ internal class PatchFragment: IOperationFragment
 
 internal class PatchOperation: StatementOperation, NoDataReturnedCall
 {
-    private readonly ISqlFragment _fragment;
     private readonly IDocumentStorage _storage;
     private readonly List<PatchData> _patchSet;
     private readonly ISerializer _serializer;

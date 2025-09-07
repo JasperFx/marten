@@ -3,40 +3,50 @@
 Projections can be completely rebuilt with the [async daemon](/events/projections/async-daemon) subsystem. Both inline
 and asynchronous projections can be rebuilt with the async daemon.
 
-<!-- snippet: sample_using_create_in_event_projection -->
-<a id='snippet-sample_using_create_in_event_projection'></a>
+Rebuilds can be performed via the [command line](/configuration/cli) or in code as below.
+
+For example, if we have this projection:
+
+<!-- snippet: sample_rebuild-shop_projection -->
+<a id='snippet-sample_rebuild-shop_projection'></a>
 ```cs
-public class DistanceProjection: EventProjection
+public class ShopProjection: SingleStreamProjection<Guid, Shop>
 {
-    public DistanceProjection()
+    public ShopProjection()
     {
-        ProjectionName = "Distance";
+        Name = "Shop";
     }
 
-    // Create a new Distance document based on a Travel event
-    public Distance Create(Travel travel, IEvent e)
+    // Create a new Shop document based on a CreateShop event
+    public Shop Create(ShopCreated @event)
     {
-        return new Distance {Id = e.Id, Day = travel.Day, Total = travel.TotalDistance()};
+        return new Shop(@event.Id, @event.Items);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L161-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_create_in_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RebuildRunner.cs#L12-L26' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-shop_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+We can rebuild it by calling `RebuildProjectionAsync` against an async daemon:
 
 <!-- snippet: sample_rebuild-single-projection -->
 <a id='snippet-sample_rebuild-single-projection'></a>
 ```cs
-StoreOptions(x => x.Projections.Add(new DistanceProjection(), ProjectionLifecycle.Async));
+private IDocumentStore _store;
 
-var agent = await StartDaemon();
+public RebuildRunner(IDocumentStore store)
+{
+    _store = store;
+}
 
-// setup test data
-await PublishSingleThreaded();
+public async Task RunRebuildAsync()
+{
+    using var daemon = await _store.BuildProjectionDaemonAsync();
 
-// rebuild projection `Distance`
-await agent.RebuildProjectionAsync("Distance", CancellationToken.None);
+    await daemon.RebuildProjectionAsync("Shop", CancellationToken.None);
+}
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L92-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RebuildRunner.cs#L30-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild-single-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
@@ -67,7 +77,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseOptimizedProjectionRebuilds = true; // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L60-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/Optimizations.cs#L61-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_turn_on_optimizations_for_rebuilding' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In this mode, Marten will rebuild single stream projection documents stream by stream in the reverse order that the 
@@ -86,5 +96,5 @@ on `IDocumentStore`:
 ```cs
 await theStore.Advanced.RebuildSingleStreamAsync<SimpleAggregate>(streamId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/rebuilding_a_single_stream_projection.cs#L31-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rebuild_single_stream' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

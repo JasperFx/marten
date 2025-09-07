@@ -50,32 +50,42 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         _batch.Queue.Post(op);
     }
 
-    public async Task PublishMessageAsync(object message)
+    public async Task PublishMessageAsync(object message, string tenantId)
     {
-        var batch = await _session.CurrentMessageBatch().ConfigureAwait(false);
-        await batch.PublishAsync(message).ConfigureAwait(false);
+        var batch = await _batch.CurrentMessageBatch(_session).ConfigureAwait(false);
+
+        // TODO -- need to pass through the tenant id
+        await batch.PublishAsync(message, tenantId).ConfigureAwait(false);
     }
 
     public IDocumentOperations SessionForTenant(string tenantId)
     {
         if (tenantId.IsEmpty() || tenantId == StorageConstants.DefaultTenantId)
         {
+            var sessionOptions = SessionOptions.ForDatabase(_session.Database);
+            sessionOptions.Tracking = _session.TrackingMode;
+
             return new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, _batch,
-                SessionOptions.ForDatabase(_session.Database), _mode);
+                sessionOptions, _mode);
         }
 
+        var forDatabase = SessionOptions.ForDatabase(tenantId, _session.Database);
+        forDatabase.Tracking = _session.TrackingMode;
+
         return new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, _batch,
-            SessionOptions.ForDatabase(tenantId, _session.Database), _mode);
+            forDatabase, _mode);
     }
 
-    public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>(string tenantId)
+    public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>(string tenantId) where TId : notnull where TDoc : notnull
     {
         var session = SessionForTenant(tenantId);
         var storage = _session.StorageFor<TDoc, TId>();
         return new ProjectionStorage<TDoc, TId>((DocumentSessionBase)session, storage);
     }
 
-    public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>()
+    //TODO fix in IProjectionBatch
+
+    public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>() where TDoc : notnull where TId : notnull
     {
         var storage = _session.StorageFor<TDoc, TId>();
         return new ProjectionStorage<TDoc, TId>(_session, storage);

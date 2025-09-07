@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
@@ -34,86 +34,6 @@ public class Target
         "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"
     };
 
-    [JsonInclude] // this is needed to make System.Text.Json happy
-    public float Float;
-
-    [JsonInclude] // this is needed to make System.Text.Json happy
-    public string StringField;
-
-    public Target()
-    {
-        Id = Guid.NewGuid();
-        StringDict = new Dictionary<string, string>();
-        StringList = new List<string>();
-        GuidDict = new Dictionary<Guid, Guid>();
-    }
-
-    public string PaddedString { get; set; }
-
-    public Guid Id { get; set; }
-
-    public int Number { get; set; }
-
-    public int AnotherNumber { get; set; }
-
-    public long Long { get; set; }
-    public string String { get; set; }
-
-    public FSharpOption<Guid> FSharpGuidOption { get; set; }
-    public FSharpOption<int> FSharpIntOption { get; set; }
-    public FSharpOption<bool> FSharpBoolOption { get; set; }
-    public FSharpOption<long> FSharpLongOption { get; set; }
-    public FSharpOption<decimal> FSharpDecimalOption { get; set; }
-    public FSharpOption<string> FSharpStringOption { get; set; }
-    public FSharpOption<DateTime> FSharpDateOption { get; set; }
-    public FSharpOption<DateTimeOffset> FSharpDateTimeOffsetOption { get; set; }
-
-    public string AnotherString { get; set; }
-
-    public string[] StringArray { get; set; }
-
-    public Guid OtherGuid { get; set; }
-
-    public Target Inner { get; set; }
-
-    public Colors Color { get; set; }
-
-    public Colors? NullableEnum { get; set; }
-
-    public bool Flag { get; set; }
-
-    public double Double { get; set; }
-    public decimal Decimal { get; set; }
-    public DateTime Date { get; set; }
-    public DateTimeOffset DateOffset { get; set; }
-    public DateTimeOffset? NullableDateOffset { get; set; }
-
-    public int[] NumberArray { get; set; }
-
-    public string[] TagsArray { get; set; }
-
-    public HashSet<string> TagsHashSet { get; set; }
-
-    public Target[] Children { get; set; }
-
-    public int? NullableNumber { get; set; }
-    public DateTime? NullableDateTime { get; set; }
-    public bool? NullableBoolean { get; set; }
-    public Colors? NullableColor { get; set; }
-
-    public string? NullableString { get; set; }
-
-    public IDictionary<string, string> StringDict { get; set; }
-    public Dictionary<Guid, Guid> GuidDict { get; set; }
-
-    public Guid UserId { get; set; }
-
-    public List<string> StringList { get; set; }
-
-    public Guid[] GuidArray { get; set; }
-
-    public TimeSpan HowLong { get; set; }
-
     public static IEnumerable<Target> GenerateRandomData(int number, bool includeFSharpUnionTypes = false)
     {
         var i = 0;
@@ -139,6 +59,8 @@ public class Target
             target.FSharpDecimalOption = new FSharpOption<decimal>(_random.Next(0, 10));
             target.FSharpLongOption = new FSharpOption<long>(_random.Next(0, 10));
             target.FSharpStringOption = new FSharpOption<string>(_strings[_random.Next(0, 10)]);
+            target.FSharpDateOnlyOption = new FSharpOption<DateOnly>(new DateOnly(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day));
+            target.FSharpTimeOnlyOption = new FSharpOption<TimeOnly>(new TimeOnly(DateTime.UtcNow.Hour, DateTime.UtcNow.Minute, DateTime.UtcNow.Second));
         }
 
         target.PaddedString = " " + target.String + " ";
@@ -146,7 +68,7 @@ public class Target
         target.Number = _random.Next();
         target.AnotherNumber = _random.Next();
         target.OtherGuid = Guid.NewGuid();
-       
+
         target.Flag = _random.Next(0, 10) > 5;
 
         target.Float = float.Parse(_random.NextDouble().ToString());
@@ -157,31 +79,19 @@ public class Target
 
         target.NumberArray = target.NumberArray.Distinct().ToArray();
 
-        switch (_random.Next(0, 2))
+        target.Color = _random.Next(0, 2) switch
         {
-            case 0:
-                target.Color = Colors.Blue;
-                break;
-
-            case 1:
-                target.Color = Colors.Green;
-                break;
-
-            default:
-                target.Color = Colors.Red;
-                break;
-        }
-
+            0 => Colors.Blue,
+            1 => Colors.Green,
+            _ => Colors.Red,
+        };
         var value = _random.Next(0, 100);
-        if (value > 10)
-        {
-            target.NullableNumber = value;
-        }
+        if (value > 10) target.NullableNumber = value;
 
         if (value > 20)
         {
             var list = new List<string>();
-            for (var i = 0; i < 5; i++)
+            for (int i = 0; i < 5; i++)
             {
                 list.Add(_strings[_random.Next(0, 10)]);
             }
@@ -222,10 +132,94 @@ public class Target
 
         return target;
     }
+
+    public string PaddedString { get; set; }
+
+    public Target()
+    {
+        Id = Guid.NewGuid();
+        StringDict = new Dictionary<string, string>();
+        StringList = new List<string>();
+        GuidDict = new Dictionary<Guid, Guid>();
+    }
+
+    public Guid Id { get; set; }
+
+    public int Number { get; set; }
+
+    public int AnotherNumber { get; set; }
+
+    public long Long { get; set; }
+    public string String { get; set; }
+
+    public FSharpOption<Guid> FSharpGuidOption { get; set; }
+    public FSharpOption<int> FSharpIntOption { get; set; }
+    public FSharpOption<bool> FSharpBoolOption { get; set; }
+    public FSharpOption<long> FSharpLongOption { get; set; }
+    public FSharpOption<decimal> FSharpDecimalOption { get; set; }
+    public FSharpOption<string> FSharpStringOption { get; set; }
+    public FSharpOption<DateTime> FSharpDateOption { get; set; }
+    public FSharpOption<DateTimeOffset> FSharpDateTimeOffsetOption { get; set; }
+    public FSharpOption<DateOnly> FSharpDateOnlyOption { get; set; }
+    public FSharpOption<TimeOnly> FSharpTimeOnlyOption { get; set; }
+
+
+    public string AnotherString { get; set; }
+
+    public string[] StringArray { get; set; }
+
+    public Guid OtherGuid { get; set; }
+
+    public Target Inner { get; set; }
+
+    public Colors Color { get; set; }
+
+    public Colors? NullableEnum { get; set; }
+
+    public bool Flag { get; set; }
+
+    [JsonInclude] // this is needed to make System.Text.Json happy
+    public string StringField;
+
+    public double Double { get; set; }
+    public decimal Decimal { get; set; }
+    public DateTime Date { get; set; }
+    public DateTimeOffset DateOffset { get; set; }
+    public DateTimeOffset? NullableDateOffset { get; set; }
+
+    [JsonInclude] // this is needed to make System.Text.Json happy
+    public float Float;
+
+    public int[] NumberArray { get; set; }
+
+    public string[] TagsArray { get; set; }
+
+    public HashSet<string> TagsHashSet { get; set; }
+
+    public Target[] Children { get; set; }
+
+    public int? NullableNumber { get; set; }
+    public DateTime? NullableDateTime { get; set; }
+    public bool? NullableBoolean { get; set; }
+    public Colors? NullableColor { get; set; }
+
+    public string? NullableString { get; set; }
+
+    public IDictionary<string, string> StringDict { get; set; }
+    public Dictionary<Guid, Guid> GuidDict { get; set; }
+
+    public Guid UserId { get; set; }
+
+    public List<string> StringList { get; set; }
+
+    public Guid[] GuidArray { get; set; }
+
+    public TimeSpan HowLong { get; set; }
 }
 
 public class FSharpTarget: Target
 {
+
 }
 
 public class Address

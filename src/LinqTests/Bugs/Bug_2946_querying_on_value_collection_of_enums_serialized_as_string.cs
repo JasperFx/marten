@@ -17,9 +17,9 @@ public class Bug_2946_querying_on_value_collection_of_enums_serialized_as_string
     {
         StoreOptions(opts => opts.UseSystemTextJsonForSerialization(EnumStorage.AsString));
 
-        var doc1 = new MyDoc("one", new Colors[] { Colors.Blue, Colors.Green });
-        var doc2 = new MyDoc("two", new Colors[] { Colors.Blue, Colors.Red });
-        var doc3 = new MyDoc("three", new Colors[] { Colors.Orange, Colors.Yellow });
+        var doc1 = new MyDoc("one", [Colors.Blue, Colors.Green]);
+        var doc2 = new MyDoc("two", [Colors.Blue, Colors.Red]);
+        var doc3 = new MyDoc("three", [Colors.Orange, Colors.Yellow]);
 
         theSession.Store(doc1, doc2, doc3);
         await theSession.SaveChangesAsync();
@@ -38,9 +38,9 @@ public class Bug_2946_querying_on_value_collection_of_enums_serialized_as_string
     {
         StoreOptions(opts => opts.UseSystemTextJsonForSerialization(EnumStorage.AsInteger));
 
-        var doc1 = new MyDoc("one", new Colors[] { Colors.Blue, Colors.Green });
-        var doc2 = new MyDoc("two", new Colors[] { Colors.Blue, Colors.Red });
-        var doc3 = new MyDoc("three", new Colors[] { Colors.Orange, Colors.Yellow });
+        var doc1 = new MyDoc("one", [Colors.Blue, Colors.Green]);
+        var doc2 = new MyDoc("two", [Colors.Blue, Colors.Red]);
+        var doc3 = new MyDoc("three", [Colors.Orange, Colors.Yellow]);
 
         theSession.Store(doc1, doc2, doc3);
         await theSession.SaveChangesAsync();

@@ -1,0 +1,8 @@
+::: info
+You can download the source code zip file [freight-shipping-tutorial.zip](/freight-shipping-tutorial.zip) from this link.
+
+1. Ensure you have [.NET 9.0](https://dotnet.microsoft.com/en-us/download/dotnet/9.0) installed in your machine.
+2. Unzip the downloaded zip file and run the project using `dotnet run`, it will show you the list of commands for each tutorial page.
+3. You can set up the Postgres database as outlined in the `docker-compose.yml` file. Or run your own Postgres instance and update the connection string accordingly in `appsettings.json` file
+4. As an example,  run `dotnet run -- getting-started` which executes the sample code in [Getting Started page](/tutorials/getting-started). Similarly the other list of commands will correspond to the respective tutorial pages accordingly.
+:::

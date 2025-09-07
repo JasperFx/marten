@@ -7,6 +7,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Fetching;
+using Marten.Internal.OpenTelemetry;
 using Marten.Schema;
 using Marten.Subscriptions;
 
@@ -27,9 +28,11 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public readonly List<IChangeListener> AsyncListeners = new();
 
-    internal ProjectionOptions(StoreOptions options): base(options.EventGraph)
+    internal ProjectionOptions(StoreOptions options): base(options.EventGraph, "marten")
     {
         _options = options;
+
+        ActivitySource = MartenTracing.ActivitySource;
     }
 
     /// <summary>
@@ -80,7 +83,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// <param name="asyncConfiguration">Use it to define behaviour during projection rebuilds</param>
     /// <returns>The extended storage configuration for entity T</returns>
     public MartenRegistry.DocumentMappingExpression<T> LiveStreamAggregation<T>(
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
@@ -103,7 +106,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// <returns>The extended storage configuration for document T</returns>
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         return singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
@@ -123,7 +126,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     public MartenRegistry.DocumentMappingExpression<T> Snapshot<T>(
         SnapshotLifecycle lifecycle,
         Action<ProjectionBase> configureProjection,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         return singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
@@ -131,8 +134,8 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
     private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
-        Action<ProjectionBase> configureProjection = null,
-        Action<AsyncOptions> asyncConfiguration = null
+        Action<ProjectionBase>? configureProjection = null,
+        Action<AsyncOptions>? asyncConfiguration = null
     )
     {
         if (typeof(T).CanBeCastTo<ProjectionBase>())
@@ -181,5 +184,26 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         }
 
         registerSubscription(source);
+    }
+
+    /// <summary>
+    /// Adds a single stream projection to this Marten application and marks the aggregate type
+    /// as being globally tenanted. Use this option *if* you have an otherwise multi-tenanted event store,
+    /// but a particular type of stream and aggregate should be stored globally (single tenanted).
+    ///
+    /// This will force Marten to append any events that it knows are related to this projection type
+    /// to the default tenant id regardless of how the session is opened or the current tenant id
+    /// </summary>
+    /// <param name="lifecycle"></param>
+    /// <param name="asyncConfiguration"></param>
+    /// <typeparam name="T"></typeparam>
+    public void AddGlobalProjection<TDoc, TId>(SingleStreamProjection<TDoc, TId> projection, ProjectionLifecycle lifecycle)
+    {
+        _options.EventGraph.GlobalAggregates.Add(typeof(TDoc));
+        Add(projection, lifecycle);
+        projection.IsGlobalWithinConjoinedTenancy = true;
+
+        // Override the tenancy here
+        _options.Schema.For<TDoc>().SingleTenanted();
     }
 }

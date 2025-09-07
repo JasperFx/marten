@@ -1,5 +1,10 @@
 # Optimized Development Workflow
 
+::: warning
+The original "optimized development workflow" option introduced in Marten 4/5 was completely eliminated
+in Marten 8.0 (and Wolverine 4.0) in favor of the "Critter Stack" common option shown here. 
+:::
+
 The original point of Marten was to have a persistence option that mostly got out of your way and
 let developers just get things done without having to spend a lot of time fiddling with database
 scripts or ORM configuration. To that end, the default configuration for Marten is optimized for
@@ -10,7 +15,7 @@ immediate developer productivity:
 ```cs
 var store = DocumentStore.For("connection string");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L121-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L188-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration above, as needed, behind the scenes Marten is:
@@ -39,49 +44,29 @@ options, use this option in Marten bootstrapping:
 using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
     {
-        services.AddMarten("connection string")
+        services.AddMarten("connection string");
 
-            // This feature opts into the new
-            // "Optimized artifact workflow" for Marten >= V5
-            .OptimizeArtifactWorkflow();
+        // In a "Production" environment, we're turning off the
+        // automatic database migrations and dynamic code generation
+        services.CritterStackDefaults(x =>
+        {
+            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+            x.Production.ResourceAutoCreate = AutoCreate.None;
+        });
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L41-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L77-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on a local developer box, Marten is using:
 
 * `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply database schema migrations as needed.
-* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Auto` to generate dynamic code if necessary, or use pre-built types when they exist. This optimizes the development workflow to avoid unnecessary code compilations when the Marten configuration isn't changed.
+* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Dynamic` to generate dynamic code if necessary, or use pre-built types when they exist. This optimizes the development workflow to avoid unnecessary code compilations when the Marten configuration isn't changed.
 
 At production time, that changes to:
 
 * `StoreOptions.AutoCreateSchemaObjects = AutoCreate.None` to short circuit any kind
   of automatic database change detection and migration at runtime. This is also a minor performance
   optimization that sidesteps potential locking issues.
-* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Auto` to generate dynamic code if necessary,
-  or use pre-built types when they exist. This ensures that the application can
-  function in production mode even if some dynamic types are not pre-built
-
-In production mode, Marten also disables any source code generated at runtime from
-being written to the file system.
-
-To be more strict, you can also turn the code generation to `Static` meaning that
-Marten will *not* attempt to generate any dynamic code. This assumes that all types are
-pre-built ahead of time:
-
-<!-- snippet: sample_using_optimized_artifact_workflow_static -->
-<a id='snippet-sample_using_optimized_artifact_workflow_static'></a>
-```cs
-using var host = await Host.CreateDefaultBuilder()
-    .ConfigureServices(services =>
-    {
-        services.AddMarten("connection string")
-
-            // This feature opts into the new
-            // "Optimized artifact workflow" for Marten >= V5
-            .OptimizeArtifactWorkflow(TypeLoadMode.Static);
-    }).StartAsync();
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/using_optimized_artifact_workflow.cs#L58-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow_static' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Static` to only try to load pre-built types from
+  what Marten thinks is the application assembly.

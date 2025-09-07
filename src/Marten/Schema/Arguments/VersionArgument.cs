@@ -18,7 +18,7 @@ internal class VersionArgument: UpsertArgument
 
     private static readonly MethodInfo _newGuid =
         typeof(Guid).GetMethod(nameof(Guid.NewGuid),
-            BindingFlags.Static | BindingFlags.Public);
+            BindingFlags.Static | BindingFlags.Public)!;
 
     public VersionArgument()
     {

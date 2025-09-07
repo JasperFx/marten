@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Marten.Linq.Includes;
 using Marten.Linq.Parsing;
@@ -27,7 +29,7 @@ internal interface IMartenLinqQueryable
     LinqQueryParser BuildLinqParser();
 }
 
-internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T>, IMartenLinqQueryable
+internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T>, IMartenLinqQueryable where T : notnull
 {
     public MartenLinqQueryable(QuerySession session, MartenLinqQueryProvider provider, Expression expression)
     {
@@ -124,6 +126,11 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return new MartenQueryableIncludeBuilder<T, TKey, TInclude>(this, dictionary);
     }
 
+    public IMartenQueryable<T> WhereSub<TSub>(Expression<Func<TSub, bool>> predicate) where TSub : T =>
+        (IMartenQueryable<T>)this.Where(
+            Expression.Lambda<Func<T, bool>>(predicate.Body, Expression.Parameter(typeof(T), "x"))
+        );
+
     public IEnumerator<T> GetEnumerator()
     {
         return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
@@ -174,37 +181,37 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return MartenProvider.ExecuteAsync<long>(Expression, token, SingleValueMode.LongCount);
     }
 
-    public Task<TResult> FirstAsync<TResult>(CancellationToken token)
+    public Task<TResult> FirstAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.First);
     }
 
-    public Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token)
+    public Task<TResult?> FirstOrDefaultAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.FirstOrDefault)!;
     }
 
-    public Task<TResult> SingleAsync<TResult>(CancellationToken token)
+    public Task<TResult> SingleAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Single);
     }
 
-    public Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token)
+    public Task<TResult?> SingleOrDefaultAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.SingleOrDefault)!;
     }
 
-    public Task<TResult> SumAsync<TResult>(CancellationToken token)
+    public Task<TResult> SumAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Sum);
     }
 
-    public Task<TResult> MinAsync<TResult>(CancellationToken token)
+    public Task<TResult> MinAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Min);
     }
 
-    public Task<TResult> MaxAsync<TResult>(CancellationToken token)
+    public Task<TResult> MaxAsync<TResult>(CancellationToken token) where TResult : notnull
     {
         return MartenProvider.ExecuteAsync<TResult>(Expression, token, SingleValueMode.Max);
     }
@@ -234,7 +241,7 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
         return this;
     }
 
-    internal IQueryHandler<TResult> BuildHandler<TResult>(SingleValueMode? mode = null)
+    internal IQueryHandler<TResult> BuildHandler<TResult>(SingleValueMode? mode = null) where TResult : notnull
     {
         var parser = new LinqQueryParser(MartenProvider, Session, Expression, mode);
         return parser.BuildHandler<TResult>();

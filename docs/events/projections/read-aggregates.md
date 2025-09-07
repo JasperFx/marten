@@ -50,7 +50,7 @@ public class Invoice
     public void Apply(InvoiceApproved _) => Status = InvoiceStatus.Approved;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L27-L74' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/testing_projections.cs#L28-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplistic_invoice_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If we were to register that `Invoice` aggregate as a `Live` snapshot like so:

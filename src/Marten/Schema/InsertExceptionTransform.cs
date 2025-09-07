@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Npgsql;
@@ -16,7 +17,7 @@ public sealed class InsertExceptionTransform<T>: IExceptionTransform
         this.tableName = tableName;
     }
 
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         transformed = null;
 

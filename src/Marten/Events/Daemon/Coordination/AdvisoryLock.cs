@@ -17,7 +17,7 @@ internal class AdvisoryLock : IAsyncDisposable
 {
     private readonly IMartenDatabase _database;
     private readonly ILogger _logger;
-    private NpgsqlConnection _conn;
+    private NpgsqlConnection? _conn;
     private readonly List<int> _locks = new();
 
     public AdvisoryLock(IMartenDatabase database, ILogger logger)

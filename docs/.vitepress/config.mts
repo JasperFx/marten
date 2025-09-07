@@ -1,6 +1,7 @@
 
 import type { DefaultTheme, UserConfig } from "vitepress"
 import { withMermaid } from "vitepress-plugin-mermaid"
+import llmstxt from 'vitepress-plugin-llms'
 
 const config: UserConfig<DefaultTheme.Config> = {
   base: '/',
@@ -30,8 +31,9 @@ const config: UserConfig<DefaultTheme.Config> = {
 
     nav: [
       {
-        text: 'latest (v7.x)',
+        text: 'latest (v8.x)',
         items: [
+          { text: 'v7.x', link: 'https://marten-docs-v7.netlify.app', target: "_blank" },
           { text: 'v6.x', link: 'https://marten-docs-v6.netlify.app', target: "_blank" },
           { text: 'v5.x', link: 'https://marten-docs-v5.netlify.app', target: "_blank" },
           { text: 'v4.x', link: 'https://marten-docs-v4.netlify.app', target: "_blank" },
@@ -41,6 +43,7 @@ const config: UserConfig<DefaultTheme.Config> = {
       { text: 'Intro', link: '/introduction' },
       { text: 'Document DB', link: '/documents/', activeMatch: '/documents/' },
       { text: 'Event Store', link: '/events/', activeMatch: '/events/' },
+      { text: 'Tutorials', link: '/tutorials/', activeMatch: '/tutorials/' },
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/' },
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
@@ -77,7 +80,8 @@ const config: UserConfig<DefaultTheme.Config> = {
           collapsed: true,
           items: [
             { text: 'What is Marten?', link: '/introduction' },
-            { text: 'Getting Started', link: '/getting-started' }
+            { text: 'Getting Started', link: '/getting-started' },
+            { text: 'Support Policy', link: '/support-policy' },
           ]
         },
         {
@@ -149,7 +153,6 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Full Text Searching', link: '/documents/full-text' },
             { text: 'Noda Time Support', link: '/documents/noda-time' },
             { text: 'Partial updates/patching', link: '/documents/partial-updates-patching' },
-            { text: 'PLv8 Support', link: '/documents/plv8' },
             { text: 'AspNetCore Support', link: '/documents/aspnetcore' },
           ]
         },
@@ -157,6 +160,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           text: 'Event Store',
           collapsed: true,
           items: [
+            { text: 'Understanding Event Sourcing', link: '/events/learning' },
             { text: 'Marten as Event Store', link: '/events/' },
             { text: 'Quick Start', link: '/events/quickstart' },
             { text: 'Storage', link: '/events/storage' },
@@ -165,7 +169,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
             { text: 'Optimizing Performance', link: '/events/optimizing' },
-              
+
             {
               text: 'Projections Overview', link: '/events/projections/', collapsed: true, items: [
                 {
@@ -173,7 +177,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
                     { text: 'Multi-Stream Projections', link: '/events/projections/multi-stream-projections' },
                     { text: 'Explicit Aggregations', link: '/events/projections/custom-aggregates' },
-                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates'}]
+                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates' }]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
@@ -194,18 +198,35 @@ const config: UserConfig<DefaultTheme.Config> = {
               link: '/events/versioning'
             },
             {
-              text: 'Multitenancy',
+              text: 'Multi-Tenancy',
               link: '/events/multitenancy'
-            }, 
-              {
-                  text: 'Removing Protected Information',
-                  link: '/events/protection'
-              },
+            },
+            { text: 'Stream Compacting', link: '/events/compacting' },
+            {
+              text: 'Removing Protected Information',
+              link: '/events/protection'
+            },
+              {text: 'Marking Events as Skipped', link: '/events/skipping'},
             {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
             },
-            { text: 'Understanding Event Sourcing', link: '/events/learning' },
+          ]
+        },
+        {
+          text: 'Tutorials',
+          collapsed: true,
+          items: [
+            { text: 'Building a Freight & Delivery System', link: '/tutorials/' },
+            { text: 'Getting Started', link: '/tutorials/getting-started' },
+            { text: 'Modeling documents', link: '/tutorials/modeling-documents' },
+            { text: 'Evolve to event sourcing', link: '/tutorials/evolve-to-event-sourcing' },
+            { text: 'Event-Sourced Aggregate', link: '/tutorials/event-sourced-aggregate' },
+            { text: 'Read model projections', link: '/tutorials/read-model-projections' },
+            { text: 'Cross-Aggregate Views', link: '/tutorials/cross-aggregate-views' },
+            { text: 'Distributed systems with Wolverine', link: '/tutorials/wolverine-integration' },
+            { text: 'Advanced Considerations', link: '/tutorials/advanced-considerations' },
+            { text: 'Conclusion', link: '/tutorials/conclusion' }
           ]
         },
         {
@@ -361,6 +382,9 @@ const config: UserConfig<DefaultTheme.Config> = {
         },
       ]
     }
+  },
+  vite: {
+    plugins: [llmstxt()]
   }
 }
 

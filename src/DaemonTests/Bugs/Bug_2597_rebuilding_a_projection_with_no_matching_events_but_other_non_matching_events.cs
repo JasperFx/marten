@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using DaemonTests.MultiTenancy;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;

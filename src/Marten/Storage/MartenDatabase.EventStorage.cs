@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -11,7 +12,9 @@ using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
@@ -22,6 +25,25 @@ namespace Marten.Storage;
 public partial class MartenDatabase : IEventDatabase
 {
     private string _storageIdentifier;
+
+    public async Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            await conn.CreateCommand(
+                    $"update {Options.EventGraph.DatabaseSchemaName}.mt_events set is_skipped = TRUE where seq_id = ANY(:sequences)")
+                .With("sequences", sequences)
+                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
 
     public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, CancellationToken token)
     {
@@ -55,11 +77,18 @@ public partial class MartenDatabase : IEventDatabase
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
-        var highest = (long)await conn
-            .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
-            .ExecuteScalarAsync(token).ConfigureAwait(false);
+        try
+        {
+            var highest = (long)await conn
+                .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
+                .ExecuteScalarAsync(token).ConfigureAwait(false)!;
 
-        return highest;
+            return highest;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
 
@@ -90,28 +119,35 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
 
         await conn.OpenAsync(token).ConfigureAwait(false);
 
-        await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
-
-        if (await reader.ReadAsync(token).ConfigureAwait(false))
+        try
         {
-            statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            await using var reader = await conn.CreateCommand(sql).ExecuteReaderAsync(token).ConfigureAwait(false);
+
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                statistics.EventCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            }
+
+            await reader.NextResultAsync(token).ConfigureAwait(false);
+
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            }
+
+            await reader.NextResultAsync(token).ConfigureAwait(false);
+
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            }
+
+            return statistics;
         }
-
-        await reader.NextResultAsync(token).ConfigureAwait(false);
-
-        if (await reader.ReadAsync(token).ConfigureAwait(false))
+        finally
         {
-            statistics.StreamCount = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            await conn.CloseAsync().ConfigureAwait(false);
         }
-
-        await reader.NextResultAsync(token).ConfigureAwait(false);
-
-        if (await reader.ReadAsync(token).ConfigureAwait(false))
-        {
-            statistics.EventSequenceNumber = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-        }
-
-        return statistics;
     }
 
 
@@ -134,13 +170,20 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
             new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();
-        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
 
-        var builder = new CommandBuilder();
-        handler.ConfigureCommand(builder, null);
+            var builder = new CommandBuilder();
+            handler.ConfigureCommand(builder, null);
 
-        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
-        return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+            await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
@@ -152,13 +195,20 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
             new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();
-        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
 
-        var builder = new CommandBuilder();
-        handler.ConfigureCommand(builder, null);
+            var builder = new CommandBuilder();
+            handler.ConfigureCommand(builder, null);
 
-        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
-        return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+            await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+            return await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     Task IEventDatabase.WaitForNonStaleProjectionDataAsync(TimeSpan timeout)
@@ -188,14 +238,23 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         await using var conn = CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
 
-        var builder = new CommandBuilder();
-        handler.ConfigureCommand(builder, null);
+        try
+        {
+            var builder = new CommandBuilder();
+            handler.ConfigureCommand(builder, null);
 
-        await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
-        var state = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
+            await using var reader = await conn.ExecuteReaderAsync(builder, token).ConfigureAwait(false);
+            var state = await handler.HandleAsync(reader, null, token).ConfigureAwait(false);
 
-        return state?.Sequence ?? 0;
+            return state?.Sequence ?? 0;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
+
+    public Uri DatabaseUri => Describe().DatabaseUri();
 
     /// <summary>
     ///     *If* a projection daemon has been started for this database, this
@@ -204,9 +263,19 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
     /// </summary>
     public ShardStateTracker Tracker { get; private set; }
 
-    Task IEventDatabase.StoreDeadLetterEventAsync(DeadLetterEvent deadLetterEvent, CancellationToken token)
+    async Task IEventDatabase.StoreDeadLetterEventAsync(object storage, DeadLetterEvent deadLetterEvent,
+        CancellationToken token)
     {
-        throw new NotImplementedException();
+        try
+        {
+            using var session = storage.As<DocumentStore>().LightweightSession(SessionOptions.ForDatabase(this));
+            session.Store(deadLetterEvent);
+            await session.SaveChangesAsync(token).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // TODO -- something to log this?
+        }
     }
 
     Task IEventDatabase.EnsureStorageExistsAsync(Type storageType, CancellationToken token)

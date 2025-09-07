@@ -1,13 +1,15 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
@@ -38,15 +40,31 @@ public static class Program
         return Host.CreateDefaultBuilder(args)
             .ConfigureServices((hostContext, services) =>
             {
+                services.AddMartenStore<IThingStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.RegisterDocumentType<Thing>();
+                    opts.RegisterDocumentType<Thing2>();
+                    opts.RegisterDocumentType<Thing3>();
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                });
+
                 services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
-                });
+
+
+                    // If you use compiled queries, you will need to register the
+                    // compiled query types with Marten ahead of time
+                    opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
+                }).AddAsyncDaemon(DaemonMode.Solo);
 
                 services.AddMarten(opts =>
                 {
+                    opts.Events.AppendMode = EventAppendMode.Quick;
+                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
                     opts.DisableNpgsqlLogging = true;
@@ -60,7 +78,7 @@ public static class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    //opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
@@ -123,11 +141,11 @@ public class Trip
     }
 }
 
-public class SimpleProjection: SingleStreamProjection<MyAggregate>
+public class SimpleProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public SimpleProjection()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     public MyAggregate Create(CreateEvent @event)

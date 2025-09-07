@@ -12,4 +12,7 @@ export default {
         dayjs: 'dayjs/',
       },
     },
+    build: {
+      chunkSizeWarningLimit: 3000
+    }
   }

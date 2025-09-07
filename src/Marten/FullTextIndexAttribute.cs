@@ -16,7 +16,7 @@ public class FullTextIndexAttribute: MartenAttribute
     /// <summary>
     ///     Specify the name of the index explicity
     /// </summary>
-    public string IndexName { get; set; } = null;
+    public string IndexName { get; set; } = null!;
 
     public override void Modify(DocumentMapping mapping)
     {
@@ -25,7 +25,7 @@ public class FullTextIndexAttribute: MartenAttribute
 
     public override void Modify(DocumentMapping mapping, MemberInfo member)
     {
-        var membersGroupedByIndexName = member.DeclaringType
+        var membersGroupedByIndexName = member.DeclaringType!
             .GetMembers()
             .Where(mi => mi.GetCustomAttributes<FullTextIndexAttribute>().Any())
             .Select(mi => new

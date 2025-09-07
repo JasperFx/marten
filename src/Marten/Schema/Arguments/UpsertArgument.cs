@@ -24,7 +24,7 @@ public class UpsertArgument
         typeof(NpgsqlBinaryImporter).GetMethods().FirstOrDefault(x =>
             x.Name == "Write" && x.GetParameters().Length == 2 &&
             x.GetParameters()[0].ParameterType.IsGenericParameter &&
-            x.GetParameters()[1].ParameterType == typeof(NpgsqlDbType));
+            x.GetParameters()[1].ParameterType == typeof(NpgsqlDbType))!;
 
     private MemberInfo[] _members;
     private string _postgresType;
@@ -35,12 +35,9 @@ public class UpsertArgument
         get => _postgresType;
         set
         {
-            if (value == null)
-            {
-                throw new ArgumentNullException();
-            }
+            ArgumentNullException.ThrowIfNull(value);
 
-            _postgresType = value.Contains("(")
+            _postgresType = value.Contains('(')
                 ? value.Split('(')[0].Trim()
                 : value;
         }
@@ -61,7 +58,9 @@ public class UpsertArgument
 
                 if (_members.Length == 1)
                 {
-                    DotNetType = _members.Last().GetRawMemberType();
+                    var lastMember = _members.Last();
+                    DotNetType = lastMember.GetRawMemberType()!;
+                    DeclaringType = lastMember.DeclaringType;
                 }
                 else
                 {
@@ -82,6 +81,7 @@ public class UpsertArgument
     }
 
     public string ParameterValue { get; set; }
+    public Type? DeclaringType { get; set; }
 
     public Type DotNetType { get; private set; }
 
@@ -100,8 +100,7 @@ public class UpsertArgument
     }
 
     public virtual void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i,
-        Argument parameters,
-        DocumentMapping mapping, StoreOptions options)
+        Argument parameters, DocumentMapping mapping, StoreOptions options)
     {
         var memberPath = _members.Select(x => x.Name).Join("?.");
 
@@ -113,15 +112,22 @@ public class UpsertArgument
         {
             var rawMemberType = _members.Last().GetRawMemberType();
 
-            var dbTypeString = rawMemberType.IsArray
-                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            var dbTypeString = rawMemberType!.IsArray
+                ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
                 : Constant.ForEnum(DbType).Usage;
+
+            var accessorString = AccessorString(type);
+            var requiresCast = DeclaringType is { } dt && dt != type.BaseType;
 
             if (rawMemberType.IsClass || rawMemberType.IsNullable() || _members.Length > 1)
             {
+                var hasValueGuard = requiresCast
+                    ? $"(document is {DeclaringType!.FullNameInCode()} && {accessorString} != null)"
+                    : $"{accessorString} != null";
+
                 method.Frames.Code($@"
-BLOCK:if (document.{memberPath} != null)
-var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});
+BLOCK:if ({hasValueGuard})
+var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({accessorString});
 parameter{i}.{nameof(NpgsqlParameter.NpgsqlDbType)} = {dbTypeString};
 END
 BLOCK:else
@@ -131,7 +137,18 @@ END
             }
             else
             {
-                method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}(document.{ParameterValue});",  Use.Type<IGroupedParameterBuilder>());
+                var underlying = rawMemberType;
+                var valueProp = rawMemberType.GetProperty("Value");
+                if (valueProp != null)
+                    underlying = valueProp.PropertyType;
+
+                var guarded = requiresCast
+                    ? $"(document is {DeclaringType!.FullNameInCode()} ? {accessorString} : default({underlying.FullNameInCode()}))"
+                    : accessorString;
+
+                method.Frames.Code(
+                    $"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<{underlying.FullNameInCode()}>({guarded});",
+                    Use.Type<IGroupedParameterBuilder>());
             }
         }
     }
@@ -174,11 +191,11 @@ END
     }
     public virtual void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
-        var rawMemberType = _members.Last().GetRawMemberType();
+        var rawMemberType = _members.Last().GetRawMemberType()!;
 
 
         var dbTypeString = rawMemberType.IsArray
-            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType())).Usage}"
+            ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
             : Constant.ForEnum(DbType).Usage;
 
 
@@ -192,9 +209,9 @@ END
         {
             var isDeep = _members.Length > 0;
             var memberType = _members.Last().GetMemberType();
-            var isNullable = memberType.IsNullable();
+            var isNullable = memberType!.IsNullable();
 
-            var enumType = isNullable ? memberType.GetGenericArguments()[0] : memberType;
+            var enumType = isNullable ? memberType!.GetGenericArguments()[0] : memberType;
             var accessor = memberPath;
 
             if (DbType == NpgsqlDbType.Integer)
@@ -213,7 +230,7 @@ END
                 if (isNullable || isDeep)
                 {
                     accessor =
-                        $"GetEnumStringValue<{enumType.FullNameInCode()}>(document.{memberPath})";
+                        $"GetEnumStringValue<{enumType!.FullNameInCode()}>(document.{memberPath})";
                 }
                 else
                 {
@@ -234,8 +251,15 @@ END
         }
         else
         {
-            load.Frames.CodeAsync($"await writer.WriteAsync(document.{ParameterValue}, {dbTypeString}, {{0}});",
+            var accessor = AccessorString(type);
+
+            load.Frames.CodeAsync($"await writer.WriteAsync({accessor}, {dbTypeString}, {{0}});",
                 Use.Type<CancellationToken>());
         }
     }
+
+    private string AccessorString(GeneratedType type) =>
+        DeclaringType is { } dt2 && dt2 != type.BaseType
+            ? $"(({DeclaringType.FullNameInCode()})document).{ParameterValue}"
+            : $"document.{ParameterValue}";
 }

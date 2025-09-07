@@ -8,9 +8,12 @@ using System.Transactions;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.HighWater;
@@ -20,6 +23,7 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.FSharp.Control;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
 
@@ -28,7 +32,7 @@ namespace Marten;
 /// <summary>
 ///     The main entry way to using Marten
 /// </summary>
-public partial class DocumentStore: IDocumentStore
+public partial class DocumentStore: IDocumentStore, IDescribeMyself
 {
     private readonly IMartenLogger _logger;
     private readonly INpgsqlDataSourceFactory dataSourceFactory;
@@ -70,6 +74,15 @@ public partial class DocumentStore: IDocumentStore
         warnIfAsyncDaemonIsDisabledWithAsyncProjections();
 
         options.ApplyMetricsIfAny();
+
+        // Check if we need to correct any events or streams for global tenancy
+        if (options.EventGraph.GlobalAggregates.Any())
+        {
+            var decorator = new GlobalEventAppenderDecorator(options.EventGraph.EventAppender);
+            options.EventGraph.EventAppender = decorator;
+
+            decorator.ReadEventTypes(options.EventGraph);
+        }
     }
 
     public ITenancy Tenancy => Options.Tenancy;
@@ -102,7 +115,7 @@ public partial class DocumentStore: IDocumentStore
     public Task BulkInsertEnlistTransactionAsync<T>(IReadOnlyCollection<T> documents,
         Transaction transaction,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default)
+        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertEnlistTransactionAsync(documents, transaction, mode, batchSize, cancellation);
@@ -110,16 +123,16 @@ public partial class DocumentStore: IDocumentStore
 
     public async Task BulkInsertAsync<T>(string tenantId, IReadOnlyCollection<T> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly, int batchSize = 1000,
-        CancellationToken cancellation = default)
+        CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion =
             new BulkInsertion(
-                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+                await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
     public Task BulkInsertAsync<T>(IReadOnlyCollection<T> documents, BulkInsertMode mode = BulkInsertMode.InsertsOnly,
-        int batchSize = 1000, CancellationToken cancellation = default)
+        int batchSize = 1000, CancellationToken cancellation = default) where T : notnull
     {
         var bulkInsertion = new BulkInsertion(Tenancy.Default, Options);
         return bulkInsertion.BulkInsertAsync(documents, mode, batchSize, cancellation);
@@ -139,7 +152,7 @@ public partial class DocumentStore: IDocumentStore
     {
         var bulkInsertion =
             new BulkInsertion(
-                await Tenancy.GetTenantAsync(Options.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
+                await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)).ConfigureAwait(false), Options);
         await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
@@ -162,7 +175,7 @@ public partial class DocumentStore: IDocumentStore
     {
         return IdentitySession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -190,7 +203,7 @@ public partial class DocumentStore: IDocumentStore
         return IdentitySerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             },
             cancellation
         );
@@ -218,7 +231,7 @@ public partial class DocumentStore: IDocumentStore
     {
         return DirtyTrackedSession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -244,7 +257,7 @@ public partial class DocumentStore: IDocumentStore
         return DirtyTrackedSerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             }, cancellation);
     }
 
@@ -270,7 +283,7 @@ public partial class DocumentStore: IDocumentStore
     {
         return LightweightSession(new SessionOptions
         {
-            IsolationLevel = isolationLevel, TenantId = Options.MaybeCorrectTenantId(tenantId)
+            IsolationLevel = isolationLevel, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
         });
     }
 
@@ -296,7 +309,7 @@ public partial class DocumentStore: IDocumentStore
         return LightweightSerializableSessionAsync(
             new SessionOptions
             {
-                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.MaybeCorrectTenantId(tenantId)
+                IsolationLevel = IsolationLevel.Serializable, TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId)
             }, cancellation);
     }
 
@@ -324,7 +337,7 @@ public partial class DocumentStore: IDocumentStore
 
     public IQuerySession QuerySession(string tenantId)
     {
-        return QuerySession(new SessionOptions { TenantId = Options.MaybeCorrectTenantId(tenantId) });
+        return QuerySession(new SessionOptions { TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId) });
     }
 
     public async Task<IQuerySession> QuerySerializableSessionAsync(
@@ -351,7 +364,7 @@ public partial class DocumentStore: IDocumentStore
         return QuerySerializableSessionAsync(
             new SessionOptions
             {
-                TenantId = Options.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable
+                TenantId = Options.TenantIdStyle.MaybeCorrectTenantId(tenantId), IsolationLevel = IsolationLevel.Serializable
             }, cancellation);
     }
 
@@ -362,7 +375,7 @@ public partial class DocumentStore: IDocumentStore
     {
         if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
         {
-            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+            tenantIdOrDatabaseIdentifier = Options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         }
 
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
@@ -422,7 +435,7 @@ public partial class DocumentStore: IDocumentStore
     {
         if (tenantIdOrDatabaseIdentifier.IsNotEmpty())
         {
-            tenantIdOrDatabaseIdentifier = Options.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
+            tenantIdOrDatabaseIdentifier = Options.TenantIdStyle.MaybeCorrectTenantId(tenantIdOrDatabaseIdentifier);
         }
 
         AssertTenantOrDatabaseIdentifierIsValid(tenantIdOrDatabaseIdentifier);
@@ -504,5 +517,10 @@ public partial class DocumentStore: IDocumentStore
         {
             throw new DefaultTenantUsageDisabledException();
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        return OptionsDescription.For(Options);
     }
 }

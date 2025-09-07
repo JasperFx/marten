@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Exceptions;
@@ -16,10 +17,7 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
     private const string StreamId = "streamid";
     private const string Version = "version";
 
-    private static readonly Regex EventStreamUniqueExceptionDetailsRegex =
-        new(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)");
-
-    public bool TryTransform(Exception original, out Exception transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)] out Exception? transformed)
     {
         if (!Matches(original))
         {
@@ -29,14 +27,14 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
 
         var postgresException = original as PostgresException;
 
-        object id = null;
-        Type aggregateType = null;
+        object? id = null;
+        Type? aggregateType = null;
         var expected = -1;
         var actual = -1;
 
         if (!string.IsNullOrEmpty(postgresException.Detail) && !postgresException.Detail.EqualsIgnoreCase(DetailsRedactedMessage))
         {
-            var details = EventStreamUniqueExceptionDetailsRegex.Match(postgresException.Detail);
+            var details = EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions.EventStreamUniqueExceptionDetailsRegex().Match(postgresException.Detail);
 
             if (details.Groups[StreamId].Success)
             {
@@ -70,4 +68,10 @@ internal class EventStreamUnexpectedMaxEventIdExceptionTransform: IExceptionTran
             && pe.SqlState == PostgresErrorCodes.UniqueViolation
             && (pe.ConstraintName == "pk_mt_events_stream_and_version" || pe.ConstraintName == "mt_events_default_stream_id_version_is_archived_idx");
     }
+}
+
+internal static partial class EventStreamUnexpectedMaxEventIdExceptionTransformRegexExpressions
+{
+    [GeneratedRegex(@"\(stream_id, version\)=\((?<streamid>.*?), (?<version>\w+)\)")]
+    internal static partial Regex EventStreamUniqueExceptionDetailsRegex();
 }

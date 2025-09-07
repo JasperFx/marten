@@ -78,7 +78,7 @@ public abstract partial class DocumentSessionBase
         void Delete<T>(object id) where T : notnull;
     }
 
-    private class ByIdDeleter<TId>: IByIdDeleter
+    private class ByIdDeleter<TId>: IByIdDeleter where TId : notnull
     {
         private readonly DocumentSessionBase _parent;
 

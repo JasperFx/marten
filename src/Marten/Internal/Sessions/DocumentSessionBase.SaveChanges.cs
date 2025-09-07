@@ -7,6 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Core.Exceptions;
+using JasperFx.Events;
+using Marten.Events.Aggregation;
 using Marten.Exceptions;
 using Npgsql;
 using Weasel.Core;
@@ -55,6 +57,15 @@ public abstract partial class DocumentSessionBase
 
         await ExecuteBatchAsync(batch, token).ConfigureAwait(false);
 
+        if (_messageBatch != null)
+        {
+            await _messageBatch.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
+            // This is important, we need to throw this away on every commit and start w/ a fresh
+            // one on new transactions
+            _messageBatch = null;
+        }
+
+
         resetDirtyChecking();
 
         EjectPatchedTypes(_workTracker);
@@ -67,6 +78,20 @@ public abstract partial class DocumentSessionBase
 
         // Need to clear the unit of work here
         _workTracker.Reset();
+    }
+
+    private IMessageBatch? _messageBatch;
+    internal virtual async ValueTask<IMessageBatch> StartMessageBatch()
+    {
+        _messageBatch ??= await Options.Events.MessageOutbox.CreateBatch(this).ConfigureAwait(false);
+        return _messageBatch;
+    }
+
+    bool IStorageOperations.EnableSideEffectsOnInlineProjections => Options.Events.EnableSideEffectsOnInlineProjections;
+
+    async ValueTask<IMessageSink> IStorageOperations.GetOrStartMessageSink()
+    {
+        return await StartMessageBatch().ConfigureAwait(false);
     }
 
     private IEnumerable<Type> operationDocumentTypes()

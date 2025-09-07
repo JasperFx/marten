@@ -94,7 +94,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
 
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
 
-        result.First().ShouldBe(true);
+        result[0].ShouldBe(true);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
         await using var sessionNext = theStore.QuerySession(tenantId);
         var result = await sessionNext.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
 
-        result.First().ShouldBe(true);
+        result[0].ShouldBe(true);
     }
 
     [Fact]
@@ -186,7 +186,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
 
         var session = theStore.QuerySession(tenantId);
         var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
-        result.First().ShouldBe(true);
+        result[0].ShouldBe(true);
     }
 
     [Fact]
@@ -221,8 +221,8 @@ $f$  language sql immutable;
         var match = await session.QueryAsync<string>("select iif(1 = 1, 'value matches'::text, 'no match'::text);");
         var noMatch = await session.QueryAsync<string>("select iif(1 = 2, 'value matches'::text, 'no match'::text);");
 
-        match.First().ShouldBe("value matches");
-        noMatch.First().ShouldBe("no match");
+        match[0].ShouldBe("value matches");
+        noMatch[0].ShouldBe("no match");
     }
 
     [Fact]
@@ -249,7 +249,7 @@ $f$  language sql immutable;
         var value = await session.QueryAsync<int>("select nextval('banana_seq')");
         var valueAgain = await session.QueryAsync<int>("select nextval('banana_seq')");
 
-        valueAgain.First().ShouldBe(value.First() + 1);
+        valueAgain[0].ShouldBe(value[0] + 1);
     }
 
     private async Task DropDatabaseIfExists(string databaseName)

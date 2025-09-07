@@ -83,4 +83,9 @@ public class DocumentMetadata
     ///     Optional, user defined headers
     /// </summary>
     public Dictionary<string, object> Headers { get; set; } = new();
+
+    /// <summary>
+    /// Only applies to events
+    /// </summary>
+    public bool IsSkipped { get; set; }
 }

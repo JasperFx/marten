@@ -28,7 +28,7 @@ public class Diagnostics: IDiagnostics
     /// <param name="query"></param>
     /// <returns></returns>
     public NpgsqlCommand PreviewCommand<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query,
-        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull
+        DocumentTracking trackingMode = DocumentTracking.QueryOnly) where TDoc : notnull where TReturn : notnull
     {
         using var session = OpenQuerySession(trackingMode);
         var source = _store.GetCompiledQuerySourceFor(query, session);
@@ -50,13 +50,20 @@ public class Diagnostics: IDiagnostics
     /// <typeparam name="TReturn"></typeparam>
     /// <param name="query"></param>
     /// <returns></returns>
-    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default) where TDoc : notnull
+    public async Task<QueryPlan?> ExplainPlanAsync<TDoc, TReturn>(ICompiledQuery<TDoc, TReturn> query, CancellationToken token = default) where TDoc : notnull where TReturn : notnull
     {
         var cmd = PreviewCommand(query);
 
-        using var conn = _store.Tenancy.Default.Database.CreateConnection();
+        await using var conn = _store.Tenancy.Default.Database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
-        return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
+        try
+        {
+            return await conn.ExplainQueryAsync(_store.Serializer, cmd, token: token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     /// <summary>
@@ -80,18 +87,13 @@ public class Diagnostics: IDiagnostics
 
     private QuerySession OpenQuerySession(DocumentTracking tracking)
     {
-        switch (tracking)
+        return tracking switch
         {
-            case DocumentTracking.None:
-                return (QuerySession)_store.LightweightSession();
-            case DocumentTracking.QueryOnly:
-                return (QuerySession)_store.QuerySession();
-            case DocumentTracking.IdentityOnly:
-                return (QuerySession)_store.IdentitySession();
-            case DocumentTracking.DirtyTracking:
-                return (QuerySession)_store.DirtyTrackedSession();
-        }
-
-        throw new ArgumentOutOfRangeException(nameof(tracking));
+            DocumentTracking.None => (QuerySession)_store.LightweightSession(),
+            DocumentTracking.QueryOnly => (QuerySession)_store.QuerySession(),
+            DocumentTracking.IdentityOnly => (QuerySession)_store.IdentitySession(),
+            DocumentTracking.DirtyTracking => (QuerySession)_store.DirtyTrackedSession(),
+            _ => throw new ArgumentOutOfRangeException(nameof(tracking)),
+        };
     }
 }

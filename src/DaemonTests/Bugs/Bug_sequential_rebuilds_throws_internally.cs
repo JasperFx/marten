@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
@@ -65,7 +66,7 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 
     public record RandomProjection(Guid Id, string Value)
     {
-        public class Projector: SingleStreamProjection<RandomProjection>
+        public class Projector: SingleStreamProjection<RandomProjection, Guid>
         {
             public static RandomProjection Create(CreatedEvent @event)
             {

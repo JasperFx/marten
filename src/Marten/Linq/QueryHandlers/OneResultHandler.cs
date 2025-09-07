@@ -15,7 +15,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.QueryHandlers;
 
-internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler where T : notnull
+internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
 {
     private const string NoElementsMessage = "Sequence contains no elements";
     private const string MoreThanOneElementMessage = "Sequence contains more than one element";

@@ -50,7 +50,7 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var progressions =
-            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), new ShardName(ShardState.HighWaterMark)]);
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All", 1), new ShardName(ShardState.HighWaterMark)]);
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
@@ -60,7 +60,7 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         all.Count.ShouldBe(3);
 
         progressions =
-            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All"), new ShardName(ShardState.HighWaterMark)]);
+            await theStore.Storage.Database.FetchProjectionProgressFor([new ShardName("SimpleAggregate", "All", 1), new ShardName(ShardState.HighWaterMark)]);
 
 
         progressions.Count.ShouldBe(2);

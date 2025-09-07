@@ -25,7 +25,7 @@ public class Tenant
         return TenantId == other.TenantId && Equals(Database, other.Database);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is null)
         {

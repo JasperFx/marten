@@ -1,4 +1,11 @@
 using System.Runtime.CompilerServices;
+using JasperFx;
+using JasperFx.Core;
+using JasperFx.Core.TypeScanning;
+
+[assembly:IgnoreAssembly]
+[assembly:JasperFxTool]
+[assembly:JasperFxAssembly]
 
 [assembly: InternalsVisibleTo("Marten.Testing")]
 [assembly: InternalsVisibleTo("Marten.CommandLine")]
@@ -15,3 +22,4 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Examples")]
 [assembly: InternalsVisibleTo("PatchingTests")]
 [assembly: InternalsVisibleTo("StressTests")]
+[assembly: InternalsVisibleTo("ContainerScopedProjectionTests")]

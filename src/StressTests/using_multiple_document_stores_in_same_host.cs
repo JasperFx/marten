@@ -6,6 +6,7 @@ using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events.Daemon;
 using Lamar;
 using Marten;
 using Marten.Events.Daemon.Coordination;
@@ -19,6 +20,7 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 using Xunit;
 
 namespace StressTests;
@@ -26,11 +28,6 @@ namespace StressTests;
 public class using_multiple_document_stores_in_same_host : IDisposable
 {
     private readonly Container theContainer;
-
-    // TODO -- need to register additional ICodeFileCollection for the new store
-    // TODO -- chained option to add an async daemon for each store
-    // TODO -- post-configure options
-    // TODO -- LATER, chain IInitialData
 
     public using_multiple_document_stores_in_same_host()
     {
@@ -58,6 +55,16 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 return opts;
             });
         });
+    }
+
+    [Fact]
+    public void all_stores_are_registered_as_master_table_tenancy()
+    {
+        var masterTableTenancyList = theContainer.GetAllInstances<IMasterTableMultiTenancy>();
+        masterTableTenancyList.Count.ShouldBe(3);
+        masterTableTenancyList.Any(x => x.GetType() == typeof(DocumentStore)).ShouldBeTrue();
+        masterTableTenancyList.OfType<IFirstStore>().Any().ShouldBeTrue();
+        masterTableTenancyList.OfType<ISecondStore>().Any().ShouldBeTrue();
     }
 
     [Fact]
@@ -185,14 +192,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
 
 
             })
@@ -218,14 +233,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow();
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(GetType().Assembly);
-                }).OptimizeArtifactWorkflow();
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
             })
             .UseEnvironment("Production")
             .Start();
@@ -283,14 +306,22 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 });
 
 
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                     opts.SetApplicationProject(typeof(IFirstStore).Assembly);
-                }).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
             })
             .Start();
@@ -314,7 +345,7 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         using var host = new HostBuilder()
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
@@ -326,6 +357,14 @@ public class additional_document_store_registration_and_optimized_artifact_workf
                 services.ConfigureMarten<IFirstStore>(opts =>
                 {
                     opts.AutoCreateSchemaObjects = AutoCreate.None;
+                });
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
                 });
             })
             .Start();
@@ -343,13 +382,21 @@ public class additional_document_store_registration_and_optimized_artifact_workf
 
             .ConfigureServices(services =>
             {
-                services.AddMarten(ConnectionSource.ConnectionString).OptimizeArtifactWorkflow(TypeLoadMode.Static);
+                services.AddMarten(ConnectionSource.ConnectionString);
 
                 services.AddMartenStore<IFirstStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "first_store";
                 }).AddAsyncDaemon(DaemonMode.HotCold);
+
+                // In a "Production" environment, we're turning off the
+                // automatic database migrations and dynamic code generation
+                services.CritterStackDefaults(x =>
+                {
+                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+                    x.Production.ResourceAutoCreate = AutoCreate.None;
+                });
 
 
             })
@@ -393,6 +440,41 @@ public class additional_document_store_registration_and_optimized_artifact_workf
         await container.GetAllInstances<IHostedService>().First().StartAsync(default);
 
         await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+    }
+
+    [Fact]
+    public async Task jasperfx_options_usage_with_ancillary_stores()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                    {
+                        opts.ApplyChangesLockId += 19;
+                        opts.Connection(ConnectionSource.ConnectionString);
+                        opts.RegisterDocumentType<User>();
+                        opts.DatabaseSchemaName = "first_store";
+                    })
+                    .ApplyAllDatabaseChangesOnStartup();
+
+                services.AddJasperFx(opts =>
+                {
+                    opts.Development.ResourceAutoCreate = AutoCreate.None;
+                    opts.GeneratedCodeOutputPath = "/";
+                    opts.Development.GeneratedCodeMode = TypeLoadMode.Auto;
+
+                    // Default is true
+                    opts.Development.SourceCodeWritingEnabled = false;
+                });
+            })
+            .UseEnvironment("Development").StartAsync();
+
+        var store = (DocumentStore)host.DocumentStore<IFirstStore>();
+        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
+        store.Options.SourceCodeWritingEnabled.ShouldBeFalse();
+        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
     }
 }
 

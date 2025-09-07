@@ -38,7 +38,23 @@ public class removing_protected_information : OneOffConfigurationsContext
         theEvents.TryMask(@event).ShouldBeTrue();
 
         started.Name.ShouldBe("****");
+    }
 
+    private record AccountChangedRecord(string FirstName, string LastName);
+
+    [Fact]
+    public void match_exactly_on_event_type_when_record()
+    {
+        theEvents.AddMaskingRuleForProtectedInformation<AccountChangedRecord>(x => x with { LastName = "****" });
+
+        var started = new AccountChangedRecord("John", "Doe");
+
+        var @event = new Event<AccountChangedRecord>(started);
+
+        theEvents.TryMask(@event).ShouldBeTrue();
+
+        @event.Data.FirstName.ShouldBe("John");
+        @event.Data.LastName.ShouldBe("****");
     }
 
     [Fact]
@@ -154,7 +170,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -216,7 +232,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -274,7 +290,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         }
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -338,7 +354,7 @@ public class removing_protected_information : OneOffConfigurationsContext
         joined.Headers["opid"].ShouldBe(1);
 
         // The last event does not get masked
-        events.Last().Headers["color"].ShouldBe("blue");
+        events[events.Count - 1].Headers["color"].ShouldBe("blue");
 
         // Should *not* apply here
         var events2 = await theSession.Events.FetchStreamAsync(streamId2);
@@ -441,8 +457,6 @@ public class removing_protected_information : OneOffConfigurationsContext
         brandybuck.Data.Members.All(x => x != "*****").ShouldBeTrue();
     }
 }
-
-
 
 public interface IAccountEvent
 {

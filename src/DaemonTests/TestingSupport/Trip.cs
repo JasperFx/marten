@@ -1,4 +1,5 @@
 using System;
+using Marten.Metadata;
 
 namespace DaemonTests.TestingSupport;
 
@@ -7,7 +8,7 @@ public class Activity
     public Guid Id { get; set; }
 }
 
-public class Trip : Activity
+public class Trip : Activity, IRevisioned
 {
     public int EndedOn { get; set; }
 
@@ -42,6 +43,8 @@ public class Trip : Activity
     {
         return $"{nameof(Id)}: {Id}, {nameof(EndedOn)}: {EndedOn}, {nameof(Traveled)}: {Traveled}, {nameof(State)}: {State}, {nameof(Active)}: {Active}, {nameof(StartedOn)}: {StartedOn}";
     }
+
+    public int Version { get; set; }
 }
 
 

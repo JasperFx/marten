@@ -18,7 +18,7 @@ public class DocumentProviderBuilder: ICodeFile
 {
     private readonly DocumentMapping _mapping;
     private readonly StoreOptions _options;
-    private Type _providerType;
+    private Type? _providerType;
 
     public DocumentProviderBuilder(DocumentMapping mapping, StoreOptions options)
     {
@@ -30,14 +30,14 @@ public class DocumentProviderBuilder: ICodeFile
 
     public string ProviderName { get; }
 
-    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _providerType = assembly.FindPreGeneratedType(containingNamespace, ProviderName);
         return Task.FromResult(_providerType != null);
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _providerType = assembly.FindPreGeneratedType(containingNamespace, ProviderName);
@@ -50,10 +50,10 @@ public class DocumentProviderBuilder: ICodeFile
     {
         var operations = new DocumentOperations(assembly, _mapping, _options);
 
-        assembly.UsingNamespaces.Add(typeof(CommandExtensions).Namespace);
-        assembly.UsingNamespaces.Add(typeof(TenantIdArgument).Namespace);
-        assembly.UsingNamespaces.Add(typeof(NpgsqlCommand).Namespace);
-        assembly.UsingNamespaces.Add(typeof(Weasel.Core.CommandExtensions).Namespace);
+        assembly.UsingNamespaces.Add(typeof(CommandExtensions).Namespace!);
+        assembly.UsingNamespaces.Add(typeof(TenantIdArgument).Namespace!);
+        assembly.UsingNamespaces.Add(typeof(NpgsqlCommand).Namespace!);
+        assembly.UsingNamespaces.Add(typeof(Weasel.Core.CommandExtensions).Namespace!);
 
 
         var queryOnly = new DocumentStorageBuilder(_mapping, StorageStyle.QueryOnly, x => x.QueryOnlySelector)
@@ -78,9 +78,9 @@ public class DocumentProviderBuilder: ICodeFile
         assembly.Rules.ReferenceTypes(types);
     }
 
-    public DocumentProvider<T> BuildProvider<T>()
+    public DocumentProvider<T> BuildProvider<T>() where T : notnull
     {
-        return (DocumentProvider<T>)Activator.CreateInstance(_providerType, _mapping);
+        return (DocumentProvider<T>)Activator.CreateInstance(_providerType!, _mapping)!;
     }
 
     private GeneratedType buildProviderType(GeneratedAssembly assembly, GeneratedType queryOnly,

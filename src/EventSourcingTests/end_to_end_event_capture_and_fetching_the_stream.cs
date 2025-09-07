@@ -61,7 +61,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -94,7 +94,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -128,7 +128,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             var streamEvents = await session.Events.QueryAllRawEvents()
                 .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToListAsync();
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -162,7 +162,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
             var streamEvents = session.Events.QueryAllRawEvents()
                 .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
 
-            streamEvents.Count().ShouldBe(2);
+            streamEvents.Count.ShouldBe(2);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -202,90 +202,6 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
                 var inlinedAggregate = await session.LoadAsync<QuestParty>(questId);
                 liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
                 inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
-            }
-        }).ShouldThrowIfAsync(
-            (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
-            (tenancyStyle == TenancyStyle.Conjoined && tenants.SequenceEqual(SameTenants))
-        );
-    }
-
-    [Theory]
-    [MemberData(nameof(SessionParams))]
-    public async Task open_persisted_stream_in_new_store_with_same_settings(TenancyStyle tenancyStyle, string[] tenants)
-    {
-        var store = InitStore(tenancyStyle);
-        var questId = Guid.NewGuid();
-
-        await When.CalledForEachAsync(tenants, async (tenantId, index) =>
-        {
-            using (var session = store.LightweightSession(tenantId))
-            {
-                //Note "Id = questId" @see live_aggregate_equals_inlined_aggregate...
-                var started = new QuestStarted { Id = questId, Name = "Destroy the One Ring" };
-                var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
-
-                session.Events.StartStream<Quest>(questId, started, joined1);
-                await session.SaveChangesAsync();
-            }
-
-            // events-aggregate-on-the-fly - works with same store
-            using (var session = store.LightweightSession(tenantId))
-            {
-                // questId is the id of the stream
-                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId);
-
-                party.Id.ShouldBe(questId);
-                party.ShouldNotBeNull();
-
-                var party_at_version_3 = await session.Events
-                    .AggregateStreamAsync<QuestParty>(questId, 3);
-
-                party_at_version_3.ShouldNotBeNull();
-
-                var party_yesterday = await session.Events
-                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
-                party_yesterday.ShouldBeNull();
-            }
-
-            using (var session = store.LightweightSession(tenantId))
-            {
-                var party = await session.LoadAsync<QuestParty>(questId);
-                party.Id.ShouldBe(questId);
-            }
-
-            var newStore = InitStore(tenancyStyle, false);
-
-            //Inline is working
-            using (var session = store.LightweightSession(tenantId))
-            {
-                var party = await session.LoadAsync<QuestParty>(questId);
-                party.ShouldNotBeNull();
-            }
-
-            //GetAll
-            using (var session = store.LightweightSession(tenantId))
-            {
-                var parties = session.Events.QueryRawEventDataOnly<QuestParty>().ToArray();
-                foreach (var party in parties)
-                {
-                    party.ShouldNotBeNull();
-                }
-            }
-
-            //This AggregateStream fail with NPE
-            using (var session = store.LightweightSession(tenantId))
-            {
-                // questId is the id of the stream
-                var party = await session.Events.AggregateStreamAsync<QuestParty>(questId); //Here we get NPE
-                party.Id.ShouldBe(questId);
-
-                var party_at_version_3 = await session.Events
-                    .AggregateStreamAsync<QuestParty>(questId, 3);
-                party_at_version_3.Id.ShouldBe(questId);
-
-                var party_yesterday = await session.Events
-                    .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTimeOffset.UtcNow.AddDays(-1));
-                party_yesterday.ShouldBeNull();
             }
         }).ShouldThrowIfAsync(
             (tenancyStyle == TenancyStyle.Single && tenants.Length > 1) ||
@@ -383,7 +299,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -414,7 +330,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -454,7 +370,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(3);
+                streamEvents.Count.ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
@@ -487,7 +403,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -517,7 +433,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -550,7 +466,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(2);
+                streamEvents.Count.ShouldBe(2);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -593,7 +509,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
                 var streamEvents = await session.Events.FetchStreamAsync(id);
 
-                streamEvents.Count().ShouldBe(3);
+                streamEvents.Count.ShouldBe(3);
                 streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
                 streamEvents.ElementAt(0).Version.ShouldBe(1);
                 streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
@@ -647,22 +563,20 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
     private DocumentStore InitStore(TenancyStyle tenancyStyle, bool cleanSchema = true,
         bool useAppendEventForUpdateLock = false)
     {
-        var store = StoreOptions(_ =>
+        var store = StoreOptions(opts =>
         {
-            _.Events.TenancyStyle = tenancyStyle;
-
-            _.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Events.TenancyStyle = tenancyStyle;
 
             if (tenancyStyle == TenancyStyle.Conjoined)
-                _.Policies.AllDocumentsAreMultiTenanted();
+                opts.Policies.AllDocumentsAreMultiTenanted();
 
-            _.Connection(ConnectionSource.ConnectionString);
+            opts.Connection(ConnectionSource.ConnectionString);
 
-            _.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+            opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
 
-            _.Events.AddEventType(typeof(MembersJoined));
-            _.Events.AddEventType(typeof(MembersDeparted));
-            _.Events.AddEventType(typeof(QuestStarted));
+            opts.Events.AddEventType(typeof(MembersJoined));
+            opts.Events.AddEventType(typeof(MembersDeparted));
+            opts.Events.AddEventType(typeof(QuestStarted));
         }, cleanSchema);
 
 

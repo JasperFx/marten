@@ -6,19 +6,22 @@ using Vogen;
 namespace ValueTypeTests;
 
 [ValueObject<Guid>]
-public partial struct GuidId;
+public readonly partial struct GuidId;
 
 [ValueObject<int>]
-public partial struct IntId;
+public readonly partial struct IntId;
+
+[ValueObject<int>]
+public readonly partial struct WeirdNamed;
 
 [ValueObject<long>]
-public partial struct LongId;
+public readonly partial struct LongId;
 
 [ValueObject<string>]
-public partial struct StringId;
+public readonly partial struct StringId;
 
 [ValueObject<DateOnly>]
-public partial struct DateId;
+public readonly partial struct DateId;
 
 public record struct NewGuidId(Guid Value);
 public record struct NewIntId(int Value);
@@ -39,7 +42,7 @@ public record struct TaskId(Guid Value);
 /// with a public static method that takes in the
 /// inner value
 /// </summary>
-public struct Task2Id
+public readonly struct Task2Id
 {
     private Task2Id(Guid value) => Value = value;
 

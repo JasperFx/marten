@@ -15,7 +15,7 @@ namespace Marten.Schema.Arguments;
 internal class DocTypeArgument: UpsertArgument
 {
     private static readonly MethodInfo _getAlias = ReflectionHelper.GetMethod<DocumentMapping>(x => x.AliasFor(null));
-    private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType");
+    private static readonly MethodInfo _getType = typeof(object).GetMethod("GetType")!;
 
     public DocTypeArgument()
     {

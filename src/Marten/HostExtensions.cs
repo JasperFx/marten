@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Events.Daemon.Coordination;
 using Microsoft.Extensions.DependencyInjection;
@@ -54,6 +55,30 @@ public static class HostExtensions
     {
         return host.Services.GetRequiredService<T>();
     }
+
+    /// <summary>
+    /// Override the main Marten DocumentStore and any registered "ancillary" stores that are using the
+    /// Async Daemon to run in "Solo" mode for faster and probably more reliable automated testing
+    /// </summary>
+    /// <param name="services"></param>
+    /// <returns></returns>
+    public static IServiceCollection MartenDaemonModeIsSolo(this IServiceCollection services)
+    {
+        services.AddSingleton<IConfigureMarten, OverrideDaemonModeToSolo>();
+        return services;
+    }
+
+    internal class OverrideDaemonModeToSolo: IGlobalConfigureMarten
+    {
+        public void Configure(IServiceProvider services, StoreOptions options)
+        {
+            if (options.Projections.AsyncMode == DaemonMode.HotCold)
+            {
+                options.Projections.AsyncMode = DaemonMode.Solo;
+            }
+        }
+    }
+
 
     /// <summary>
     /// Clean off all Marten data in the default DocumentStore for this host

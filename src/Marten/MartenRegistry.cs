@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
-using Marten.Linq.SoftDeletes;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
@@ -14,11 +13,9 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using NpgsqlTypes;
-using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Indexes;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -48,7 +45,8 @@ internal class DocumentMappingBuilder<T>: IDocumentMappingBuilder
     public DocumentMapping Build(StoreOptions options)
     {
         var mapping = new DocumentMapping<T>(options);
-        foreach (var alteration in _alterations) alteration(mapping);
+        foreach (var alteration in _alterations)
+            alteration(mapping);
 
         return mapping;
     }
@@ -73,7 +71,7 @@ public class MartenRegistry
         _storeOptions = storeOptions;
     }
 
-    protected MartenRegistry(): this(new StoreOptions())
+    protected MartenRegistry() : this(new StoreOptions())
     {
     }
 
@@ -187,8 +185,43 @@ public class MartenRegistry
         /// </param>
         /// <param name="dbType">Optional, overrides the Npgsql DbType for any parameter usage of this property</param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object>> expression, string? pgType = null,
+        public DocumentMappingExpression<T> Duplicate(Expression<Func<T, object?>> expression, string? pgType = null,
             NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false)
+        {
+            _builder.Alter = mapping =>
+            {
+                mapping.Duplicate(expression, pgType, dbType, configure, notNull);
+            };
+            return this;
+        }
+
+        /// <summary>
+        /// Marks a member on a subclass of <typeparamref name="T"/> to be duplicated
+        /// into its own column, enabling fast filtering, sorting and indexing.
+        /// </summary>
+        /// <typeparam name="TSub">
+        /// The subclass of <typeparamref name="T"/> that owns the member to duplicate.
+        /// </typeparam>
+        /// <param name="expression">
+        /// Member selector on <typeparamref name="TSub"/>, for example <c>x => x.Status</c>.
+        /// </param>
+        /// <param name="pgType">
+        /// Optional PostgreSQL column type override, for example <c>"varchar(100)"</c>.
+        /// </param>
+        /// <param name="dbType">
+        /// Optional Npgsql database type override used for parameters.
+        /// </param>
+        /// <param name="configure">
+        /// Optional callback to configure the created index on the duplicated column.
+        /// </param>
+        /// <param name="notNull">
+        /// When true, the duplicated column is created with <c>NOT NULL</c>.
+        /// </param>
+        /// <returns>
+        /// The current mapping expression for chaining.
+        /// </returns>
+        public DocumentMappingExpression<T> Duplicate<TSub>(Expression<Func<TSub, object?>> expression, string? pgType = null,
+            NpgsqlDbType? dbType = null, Action<DocumentIndex>? configure = null, bool notNull = false) where TSub : T
         {
             _builder.Alter = mapping =>
             {
@@ -203,7 +236,7 @@ public class MartenRegistry
         /// <param name="expression"></param>
         /// <param name="configure"></param>
         /// <returns></returns>
-        public DocumentMappingExpression<T> Index(Expression<Func<T, object>> expression,
+        public DocumentMappingExpression<T> Index(Expression<Func<T, object?>> expression,
             Action<ComputedIndex>? configure = null)
         {
             _builder.Alter = m => m.Index(expression, configure);
@@ -317,6 +350,18 @@ public class MartenRegistry
         public DocumentMappingExpression<T> IndexCreatedAt(Action<DocumentIndex>? configure = null)
         {
             _builder.Alter = m => m.AddCreatedAtIndex(configure);
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Creates an index on the tenantId
+        /// </summary>
+        /// <param name="configure"></param>
+        /// <returns></returns>
+        public DocumentMappingExpression<T> IndexTenantId(Action<DocumentIndex>? configure = null)
+        {
+            _builder.Alter = m => m.AddTenantIdIndex(configure);
 
             return this;
         }

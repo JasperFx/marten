@@ -15,7 +15,7 @@ namespace Marten;
 public partial class StoreOptions: ICodeFileCollection
 {
     internal const string PreferJasperFxMessage =
-        "Prefer using the IServiceCollection.AddJasperFx() API to override code generation and AutoCreate configuration across all JasperFx/Critter Stack tools. This API will be removed in Marten 9";
+        "Prefer using the IServiceCollection.CritterStackDefaults() API to override code generation and AutoCreate configuration across all JasperFx/Critter Stack tools. This API will be removed in Marten 9";
 
     /// <summary>
     ///     The main application assembly. By default this is the entry assembly for the application,
@@ -79,7 +79,7 @@ public partial class StoreOptions: ICodeFileCollection
         }
 
         rules.ReferenceAssembly(GetType().Assembly);
-        rules.ReferenceAssembly(Assembly.GetEntryAssembly());
+        rules.ReferenceAssembly(Assembly.GetEntryAssembly()!);
 
         return rules;
     }
@@ -88,10 +88,15 @@ public partial class StoreOptions: ICodeFileCollection
     {
         if (options == null) return;
 
+        if (!_tenantIdStyle.HasValue)
+        {
+            _tenantIdStyle = options.TenantIdStyle;
+        }
+
         ApplicationAssembly ??= options.ApplicationAssembly;
         GeneratedCodeOutputPath ??= options.GeneratedCodeOutputPath;
         _generatedCodeMode ??= options.ActiveProfile.GeneratedCodeMode;
-        _autoCreate ??= options.ActiveProfile.AutoCreate;
+        _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
         _sourceCodeWritingEnabled ??= options.ActiveProfile.SourceCodeWritingEnabled;
     }
 }

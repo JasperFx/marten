@@ -47,7 +47,7 @@ internal class CompiledQuerySourceBuilder
 
     public ICompiledQuerySource Build(Type sourceType)
     {
-        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, _plan.HandlerPrototype);
+        return (ICompiledQuerySource)Activator.CreateInstance(sourceType, _plan.HandlerPrototype)!;
     }
 
     private void buildSourceType(GeneratedAssembly assembly, CompiledSourceType handlerType,
@@ -176,19 +176,13 @@ internal class CompiledQuerySourceBuilder
 
     private Type determineBaseType(CompiledSourceType sourceType)
     {
-        switch (sourceType)
+        return sourceType switch
         {
-            case CompiledSourceType.Cloneable:
-                return typeof(ClonedCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
-
-            case CompiledSourceType.Complex:
-                return typeof(ComplexCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
-
-            case CompiledSourceType.Stateless:
-                return typeof(StatelessCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType);
-        }
-
-        throw new ArgumentOutOfRangeException();
+            CompiledSourceType.Cloneable => typeof(ClonedCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType),
+            CompiledSourceType.Complex => typeof(ComplexCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType),
+            CompiledSourceType.Stateless => typeof(StatelessCompiledQuery<,>).MakeGenericType(_plan.OutputType, _plan.QueryType),
+            _ => throw new ArgumentOutOfRangeException(),
+        };
     }
 
     private CompiledSourceType determineHandlerType()

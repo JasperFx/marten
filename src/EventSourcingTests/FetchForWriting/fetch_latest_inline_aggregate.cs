@@ -4,6 +4,7 @@ using EventSourcingTests.Aggregation;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Projections;
+using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -35,6 +36,34 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
         document.CCount.ShouldBe(3);
     }
 
+    [Fact]
+    public async Task from_no_current_activity_guid_centric_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseIdentityMapForAggregates = true;
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+        theSession.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.LightweightSession();
+
+        var batch = query.CreateBatchQuery();
+
+        var documentQuery = batch.Events.FetchLatest<SimpleAggregate>(streamId);
+        await batch.Execute();
+        var document = await documentQuery;
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(2);
+        document.CCount.ShouldBe(3);
+    }
+
 
     [Fact]
     public async Task from_no_current_activity_string_centric()
@@ -53,6 +82,32 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
 
         await using var query = theStore.LightweightSession();
         var document = await query.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(2);
+        document.CCount.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task from_no_current_activity_string_centric_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.LightweightSession();
+        var batch = query.CreateBatchQuery();
+        var documentQuery = batch.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var document = await documentQuery;
 
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(2);
@@ -133,6 +188,42 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task from_after_fetch_for_writing_string_centric_brand_new_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+        });
+
+        var target1 = Target.Random();
+        var target2 = Target.Random();
+        theSession.Store(target1, target2);
+        await theSession.SaveChangesAsync();
+
+        var streamId = Guid.NewGuid().ToString();
+
+        var stream = await theSession.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.AppendMany(new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+        await theSession.SaveChangesAsync();
+
+        var batch = theSession.CreateBatchQuery();
+        var targetQuery1 = batch.Load<Target>(target1.Id);
+        var aggregateQuery = batch.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        var targetQuery2 = batch.Load<Target>(target2.Id);
+        await batch.Execute();
+
+        (await targetQuery1).ShouldNotBeNull();
+        var aggregate = await aggregateQuery;
+        (await targetQuery2).ShouldNotBeNull();
+
+        aggregate.ACount.ShouldBe(1);
+        aggregate.BCount.ShouldBe(2);
+        aggregate.CCount.ShouldBe(3);
+    }
+
+    [Fact]
     public async Task from_after_fetch_for_writing_string_centric_existing()
     {
         StoreOptions(opts =>
@@ -155,6 +246,39 @@ public class fetch_latest_inline_aggregate: OneOffConfigurationsContext
 
         await using var query = theStore.LightweightSession();
         var document = await query.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+
+        document.ACount.ShouldBe(1);
+        document.BCount.ShouldBe(2);
+        document.CCount.ShouldBe(3);
+        document.DCount.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task from_after_fetch_for_writing_string_centric_existing_in_batch()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.UseIdentityMapForAggregates = true;
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Snapshot<SimpleAggregateAsString>(SnapshotLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid().ToString();
+        theSession.Events.StartStream<SimpleAggregateAsString>(streamId, new AEvent(), new BEvent(), new BEvent(), new CEvent(),
+            new CEvent(), new CEvent());
+
+        await theSession.SaveChangesAsync();
+
+        using var session = theStore.LightweightSession();
+        var stream = await session.Events.FetchForWriting<SimpleAggregateAsString>(streamId);
+        stream.AppendMany(new DEvent(), new DEvent());
+        await session.SaveChangesAsync();
+
+        await using var query = theStore.LightweightSession();
+        var batch = query.CreateBatchQuery();
+        var documentQuery = batch.Events.FetchLatest<SimpleAggregateAsString>(streamId);
+        await batch.Execute();
+        var document = await documentQuery;
 
         document.ACount.ShouldBe(1);
         document.BCount.ShouldBe(2);

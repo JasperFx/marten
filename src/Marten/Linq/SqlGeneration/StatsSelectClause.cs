@@ -15,7 +15,7 @@ internal interface IStatsSelectClause
     ISelectClause Inner { get; }
 }
 
-internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause
+internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStatsSelectClause where T : notnull
 {
     private QueryStatistics _statistics;
 
@@ -54,7 +54,7 @@ internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStat
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult: notnull
     {
         var selector = (ISelector<T>)Inner.BuildSelector(session);
 

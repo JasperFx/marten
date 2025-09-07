@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
+using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
@@ -23,12 +24,17 @@ public class end_to_end_with_flat_table_projections : DaemonContext
 
         await theSession.SaveChangesAsync();
 
-        var valuesAdded = new EventSourcingTests.Projections.Flattened.ValuesSubtracted
+        var valuesSubtracted = new EventSourcingTests.Projections.Flattened.ValuesSubtracted
         {
-            A = 3, B = 4, C = 5, D = 6
+            A = 3, B = 4, C = 5, D = 6, MaybeNumber = null
         };
 
-        theSession.Events.Append(streamId, valuesAdded);
+        var valuesSubtracted2 = new EventSourcingTests.Projections.Flattened.ValuesSubtracted
+        {
+            A = 0, B = 0, C = 0, D = 0, MaybeNumber = 10
+        };
+
+        theSession.Events.Append(streamId, valuesSubtracted, valuesSubtracted2);
 
         await theSession.SaveChangesAsync();
 

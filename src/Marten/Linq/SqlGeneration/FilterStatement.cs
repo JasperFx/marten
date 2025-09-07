@@ -37,7 +37,7 @@ internal class SelectCtidSelectClause: ISelectClause
     }
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where T: notnull
     {
         throw new NotSupportedException();
     }
@@ -55,10 +55,7 @@ internal class FilterStatement: SelectorStatement
 {
     public FilterStatement(IMartenSession session, Statement parent, ISqlFragment where)
     {
-        if (where == null)
-        {
-            throw new ArgumentNullException(nameof(where));
-        }
+        ArgumentNullException.ThrowIfNull(where);
 
         Wheres.Add(where);
 

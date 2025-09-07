@@ -205,7 +205,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    public void PurgeOperations<T, TId>(TId id) where T : notnull
+    public void PurgeOperations<T, TId>(TId id) where T : notnull where TId: notnull
     {
         // Do nothing here
     }
@@ -223,7 +223,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         }
 
         var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (!listeners.Any()) return;
+        if (listeners.Length == 0) return;
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
         foreach (var listener in listeners)
@@ -241,7 +241,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         }
 
         var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (!listeners.Any()) return;
+        if (listeners.Length == 0) return;
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
         foreach (var listener in listeners)

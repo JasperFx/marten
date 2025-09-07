@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,10 +20,16 @@ public partial class EventGraph
 
     internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
 
+    private EventAppendMode _appendMode = EventAppendMode.Rich;
+
     public EventAppendMode AppendMode
     {
-        get => EventAppender is RichEventAppender ? EventAppendMode.Rich : EventAppendMode.Quick;
-        set => EventAppender = value == EventAppendMode.Quick ? new QuickEventAppender() : new RichEventAppender();
+        get => _appendMode;
+        set
+        {
+            _appendMode = value;
+            EventAppender = _appendMode == EventAppendMode.Rich ? new RichEventAppender() : new QuickEventAppender();
+        }
     }
 
     private async Task executeTombstoneBlock(UpdateBatch batch, CancellationToken cancellationToken)
@@ -48,7 +55,7 @@ public partial class EventGraph
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
     }
 
-    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, out UpdateBatch batch)
+    internal bool TryCreateTombstoneBatch(DocumentSessionBase session, [NotNullWhen(true)]out UpdateBatch? batch)
     {
         if (session.WorkTracker.Streams.Any())
         {

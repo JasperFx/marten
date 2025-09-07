@@ -3,6 +3,7 @@ using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -31,6 +32,12 @@ internal class EventsTable: Table
         AddIfActive(events.Metadata.CorrelationId);
         AddIfActive(events.Metadata.CausationId);
         AddIfActive(events.Metadata.Headers);
+        AddIfActive(events.Metadata.UserName);
+
+        if (events.EnableEventSkippingInProjectionsOrSubscriptions)
+        {
+            AddColumn<bool>("is_skipped").DefaultValueByExpression("FALSE");
+        }
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {

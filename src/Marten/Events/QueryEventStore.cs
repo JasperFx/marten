@@ -35,7 +35,7 @@ internal class QueryEventStore: IQueryEventStore
 
         await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, _store.Events)
         {
             StreamId = streamId,
             Version = version,
@@ -56,7 +56,7 @@ internal class QueryEventStore: IQueryEventStore
 
         await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
-        var statement = new EventStatement(selector)
+        var statement = new EventStatement(selector, _store.Events)
         {
             StreamKey = streamKey,
             Version = version,
@@ -79,6 +79,8 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
+        if (version != 0 && version > events[events.Count - 1].Version) return null;
+
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
@@ -87,11 +89,44 @@ internal class QueryEventStore: IQueryEventStore
             return null;
         }
 
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromGuid(aggregate, streamId);
+        if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+        {
+            storage.SetIdentityFromGuid(aggregate, streamId);
+        }
 
         return aggregate;
     }
+
+    public async Task<T?> AggregateStreamToLastKnownAsync<T>(Guid streamId, long version = 0,
+        DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class
+    {
+        var events = await FetchStreamAsync(streamId, version, timestamp, 0, token).ConfigureAwait(false);
+        if (!events.Any())
+        {
+            return null;
+        }
+
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+
+        T? aggregate = null;
+        while (aggregate == null && events.Any())
+        {
+            aggregate = await aggregator.BuildAsync(events, _session, default, token).ConfigureAwait(false);
+            events = events.SkipLast(1).ToList();
+        }
+
+        if (aggregate != null)
+        {
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage!.SetIdentityFromGuid(aggregate, streamId);
+            }
+        }
+
+        return aggregate;
+    }
+
 
     public async Task<T?> AggregateStreamAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
         T? state = null, long fromVersion = 0, CancellationToken token = default) where T : class
@@ -102,19 +137,55 @@ internal class QueryEventStore: IQueryEventStore
             return state;
         }
 
+        if (version != 0 && version > events[events.Count - 1].Version) return null;
+
         var aggregator = _store.Options.Projections.AggregatorFor<T>();
 
         var aggregate = await aggregator.BuildAsync(events, _session, state, token).ConfigureAwait(false);
 
-        var storage = _session.StorageFor<T>();
-        storage.SetIdentityFromString(aggregate, streamKey);
+        if (aggregate != null)
+        {
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage.SetIdentityFromString(aggregate, streamKey);
+            }
+        }
 
         return aggregate;
     }
 
-    public IMartenQueryable<T> QueryRawEventDataOnly<T>()
+    public async Task<T?> AggregateStreamToLastKnownAsync<T>(string streamKey, long version = 0, DateTimeOffset? timestamp = null,
+        CancellationToken token = default) where T : class
     {
-        _store.Events.AddEventType(typeof(T));
+        var events = await FetchStreamAsync(streamKey, version, timestamp, 0, token).ConfigureAwait(false);
+        if (!events.Any())
+        {
+            return null;
+        }
+
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+
+        T? aggregate = null;
+        while (aggregate == null && events.Any())
+        {
+            aggregate = await aggregator.BuildAsync(events, _session, default, token).ConfigureAwait(false);
+            events = events.SkipLast(1).ToList();
+        }
+
+        if (aggregate != null)
+        {
+            if (_session.TryGetStorageForLiveAggregation<T>(out var storage))
+            {
+                storage!.SetIdentityFromString(aggregate, streamKey);
+            }
+        }
+
+        return aggregate;
+    }
+
+    public IMartenQueryable<T> QueryRawEventDataOnly<T>() where T : notnull
+    {
+        _store.Events.AddEventType<T>();
 
         return _session.Query<T>();
     }
@@ -128,9 +199,9 @@ internal class QueryEventStore: IQueryEventStore
     {
         await _tenant.Database.EnsureStorageExistsAsync(typeof(StreamAction), token).ConfigureAwait(false);
 
-        _store.Events.AddEventType(typeof(T));
+        _store.Events.AddEventType<T>();
 
-        return (await LoadAsync(id, token).ConfigureAwait(false)).As<Event<T>>();
+        return (await LoadAsync(id, token).ConfigureAwait(false))?.As<Event<T>>();
     }
 
     public async Task<IEvent?> LoadAsync(Guid id, CancellationToken token = default)

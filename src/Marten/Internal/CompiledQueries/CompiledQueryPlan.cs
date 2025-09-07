@@ -45,7 +45,7 @@ public class CompiledQueryPlan : ICommandBuilder
     private void sortMembers()
     {
         var members = findMembers().ToArray();
-        if (!members.Any())
+        if (members.Length == 0)
         {
             Debug.WriteLine(
                 "No public properties or fields found. Sorry, but Marten cannot use primary constructor values as compiled query parameters at this time, use a class with settable properties instead.");
@@ -179,7 +179,7 @@ public class CompiledQueryPlan : ICommandBuilder
         return usage.Parameter;
     }
 
-    NpgsqlParameter ICommandBuilder.AppendParameter(object value, NpgsqlDbType? dbType)
+    NpgsqlParameter ICommandBuilder.AppendParameter(object? value, NpgsqlDbType? dbType)
     {
         return appendParameter(value, dbType);
     }
@@ -255,33 +255,33 @@ public class CompiledQueryPlan : ICommandBuilder
             "No, just no. Marten does not support parameters via anonymous objects in compiled queries");
     }
 
-    public void AddParameters(IDictionary<string, object> parameters)
+    public void AddParameters(IDictionary<string, object?> parameters)
     {
         throw new NotImplementedException();
     }
 
     #endregion
 
-    public QueryStatistics GetStatisticsIfAny(object query)
+    public QueryStatistics? GetStatisticsIfAny(object query)
     {
         if (StatisticsMember is PropertyInfo p)
         {
-            return (QueryStatistics)p.GetValue(query) ?? new QueryStatistics();
+            return (QueryStatistics?)p.GetValue(query) ?? new QueryStatistics();
         }
 
         if (StatisticsMember is FieldInfo f)
         {
-            return (QueryStatistics)f.GetValue(query) ?? new QueryStatistics();
+            return (QueryStatistics?)f.GetValue(query) ?? new QueryStatistics();
         }
 
         return null;
     }
 
-    public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query)
+    public ICompiledQuery<TDoc, TOut> CreateQueryTemplate<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query) where TDoc : notnull
     {
         foreach (var parameter in QueryMembers) parameter.StoreValue(query);
 
-        if (!(query is IQueryPlanning) && areAllMemberValuesUnique(query))
+        if (query is not IQueryPlanning && areAllMemberValuesUnique(query))
         {
             return query;
         }
@@ -298,7 +298,7 @@ public class CompiledQueryPlan : ICommandBuilder
 
     public object TryCreateUniqueTemplate(Type type)
     {
-        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Count());
+        var constructor = type.GetConstructors().MaxBy(x => x.GetParameters().Length);
 
 
         if (constructor == null)

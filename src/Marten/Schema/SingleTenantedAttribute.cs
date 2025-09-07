@@ -15,7 +15,7 @@ public class SingleTenantedAttribute: MartenAttribute
 {
     public override void Modify(DocumentMapping mapping)
     {
-        mapping.TenancyStyle = TenancyStyle.Conjoined;
+        mapping.TenancyStyle = TenancyStyle.Single;
         if (mapping.Partitioning != null && mapping.Partitioning is ListPartitioning lp &&
             lp.PartitionManager is ManagedListPartitions)
         {

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Internals;
 using JasperFx.Events.Projections;
 using Marten;
@@ -81,23 +82,6 @@ public class aggregation_projection_validation_rules
     }
 
     [Fact]
-    public void if_events_are_multi_tenanted_and_global_projections_are_enabled()
-    {
-        shouldNotThrow(opts =>
-        {
-            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-
-            #region sample_enabling_global_projections_for_conjoined_tenancy
-
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
-
-            #endregion
-
-            opts.Projections.Snapshot<GuidIdentifiedAggregate>(SnapshotLifecycle.Async);
-        });
-    }
-
-    [Fact]
     public void if_the_aggregate_is_multi_tenanted_but_the_events_are_not()
     {
         errorMessageFor(opts =>
@@ -131,6 +115,15 @@ public class aggregation_projection_validation_rules
         }
     }
 
+    public class GuidIdentifiedAggregateProjection: MultiStreamProjection<GuidIdentifiedAggregate, Guid>
+    {
+        public GuidIdentifiedAggregateProjection()
+        {
+            TenancyGrouping = TenancyGrouping.AcrossTenants;
+            Identity<IEvent>(x => x.StreamId);
+        }
+    }
+
     public class StringIdentifiedAggregate
     {
         public string Id { get; set; }
@@ -158,8 +151,6 @@ public class aggregation_projection_validation_rules
         errors.Single().ShouldBe("SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection");
     }
 
-    // TODO -- move these tests to JasperFx's EventTests
-
     [Fact]
     public void find_bad_method_names_that_are_not_ignored()
     {
@@ -167,7 +158,7 @@ public class aggregation_projection_validation_rules
         var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
 
         ex.Message.ShouldContain(
-            "Unrecognized method name 'DoStuff'. Either mark with [MartenIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
+            "Unrecognized method name 'DoStuff'. Either mark with [JasperFxIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
     }
 
     [Fact]
@@ -237,7 +228,7 @@ public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
 
 public class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
 {
-    public void Apply(MyAggregate aggregate, IDocumentOperations operations)
+    public void Apply(MyAggregate aggregate, IQuerySession session)
     {
     }
 }
@@ -272,7 +263,7 @@ public class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {
-        ProjectionName = "AllGood";
+        Name = "AllGood";
     }
 
     [MartenIgnore]

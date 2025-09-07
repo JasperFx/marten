@@ -15,7 +15,7 @@ public abstract class SubscriptionBase: JasperFxSubscriptionBase<IDocumentOperat
 {
     protected SubscriptionBase()
     {
-        SubscriptionName = GetType().NameInCode();
+        Name = GetType().NameInCode();
     }
 
     /// <summary>

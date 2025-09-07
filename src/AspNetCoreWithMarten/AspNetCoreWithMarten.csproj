@@ -10,8 +10,4 @@
         <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="JasperFx.CodeGeneration.Commands" Version="3.7.1" />
-    </ItemGroup>
 </Project>

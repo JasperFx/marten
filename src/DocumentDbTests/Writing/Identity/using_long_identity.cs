@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -71,7 +71,7 @@ public class using_long_identity : IntegrationContext
         await theSession.SaveChangesAsync();
 
         using var session = theStore.QuerySession();
-        (await session.LoadManyAsync<LongDoc>(4, 5, 6)).Count().ShouldBe(3);
+        (await session.LoadManyAsync<LongDoc>(4, 5, 6)).Count.ShouldBe(3);
     }
 
     public using_long_identity(DefaultStoreFixture fixture) : base(fixture)

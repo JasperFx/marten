@@ -72,7 +72,7 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
     }
 
     public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where T: notnull
     {
         _topStatement = topStatement;
         return (IQueryHandler<T>)this;

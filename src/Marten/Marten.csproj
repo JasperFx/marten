@@ -9,6 +9,7 @@
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_grams_array.sql" />
@@ -18,6 +19,7 @@
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="Schema\SQL\*.*" />
+
         <EmbeddedResource Include="Schema\SchemaObjects.sql" />
     </ItemGroup>
 
@@ -31,15 +33,14 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx" Version="0.4.1" />
-        <PackageReference Include="JasperFx.Events" Version="0.4.0" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0-alpha-9" />
+        <PackageReference Include="JasperFx" Version="1.6.0" />
+        <PackageReference Include="JasperFx.Events" Version="1.8.0" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.0.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
-        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.0.0-beta-4" />
+        <PackageReference Include="Weasel.Postgresql" Version="8.1.1" />
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props" />

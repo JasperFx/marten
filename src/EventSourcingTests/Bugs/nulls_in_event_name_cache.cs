@@ -37,7 +37,7 @@ public class nulls_in_event_name_cache : BugIntegrationContext
         var daemon = await store.BuildProjectionDaemonAsync();
 
         // Populate EventGraph name cache with null event mappings by requesting a projection with no event restrictions
-        await daemon.RebuildProjectionAsync("EventSourcingTests.Bugs.CustomProjection", CancellationToken.None);
+        await daemon.RebuildProjectionAsync("CustomProjection", CancellationToken.None);
         // Request a rebuild from a projection that uses the event filter
         await daemon.RebuildProjectionAsync<MemberJoinedProjection>(CancellationToken.None);
     }

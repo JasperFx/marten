@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Marten;
@@ -8,14 +8,14 @@ namespace LinqTests.Operators;
 
 public class custom_marten_operators
 {
-    private static readonly int[] Ints = { 0, 1, 2, 3 };
+    private static readonly int[] Ints = [0, 1, 2, 3];
 
-    private static readonly Guid[] Guids = { Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid() };
+    private static readonly Guid[] Guids = [Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()];
 
     private static readonly string[] Strings =
-    {
+    [
         Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString(), Guid.NewGuid().ToString()
-    };
+    ];
 
 
 

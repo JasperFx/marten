@@ -41,7 +41,7 @@ public class when_registering_a_custom_projection_type: IDisposable
     [Fact]
     public void can_customize_the_projection_name()
     {
-        theProjection.ProjectionName.ShouldBe("NewProjection");
+        theProjection.Name.ShouldBe("NewProjection");
     }
 
     [Fact]

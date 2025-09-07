@@ -25,11 +25,19 @@ using Marten.Util;
 using NSubstitute;
 using Shouldly;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
-public class CustomProjectionTests
+public class using_explicit_code_for_aggregations
 {
+    private readonly ITestOutputHelper _output;
+
+    public using_explicit_code_for_aggregations(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     [Theory]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, true)]
@@ -48,69 +56,9 @@ public class CustomProjectionTests
     }
 
     [Fact]
-    public void caches_aggregate_caches_correctly()
-    {
-        var projection = new MyCustomProjection();
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        var cache1 = projection.CacheFor(tenant1.TenantId);
-        var cache2 = projection.CacheFor(tenant2.TenantId);
-        var cache3 = projection.CacheFor(tenant3.TenantId);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeSameAs(cache1);
-        projection.CacheFor(tenant2.TenantId).ShouldBeSameAs(cache2);
-        projection.CacheFor(tenant3.TenantId).ShouldBeSameAs(cache3);
-
-        cache1.ShouldNotBeSameAs(cache2);
-        cache1.ShouldNotBeSameAs(cache3);
-        cache2.ShouldNotBeSameAs(cache3);
-    }
-
-    [Fact]
-    public void build_nullo_cache_with_no_limit()
-    {
-        var projection = new MyCustomProjection { Options = { CacheLimitPerTenant = 0 } };
-
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<NulloAggregateCache<int, CustomAggregate>>();
-
-    }
-
-    [Fact]
-    public void build_real_cache_with_limit()
-    {
-        var projection = new MyCustomProjection
-        {
-            Options = { CacheLimitPerTenant = 1000 }
-        };
-
-        var db = Substitute.For<IMartenDatabase>();
-        db.Identifier.Returns("main");
-        var tenant1 = new Tenant("one", db);
-        var tenant2 = new Tenant("two", db);
-        var tenant3 = new Tenant("three", db);
-
-        projection.CacheFor(tenant1.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-        projection.CacheFor(tenant2.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-        projection.CacheFor(tenant3.TenantId).ShouldBeOfType<RecentlyUsedCache<int, CustomAggregate>>().Limit.ShouldBe(projection.Options.CacheLimitPerTenant);
-
-    }
-
-    [Fact]
     public void default_projection_name_is_type_name()
     {
-        new MyCustomProjection().ProjectionName.ShouldBe(nameof(MyCustomProjection));
+        new MyCustomProjection().Name.ShouldBe(nameof(MyCustomProjection));
     }
 
     [Fact]
@@ -148,6 +96,13 @@ public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
 
 public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
+    private readonly ITestOutputHelper _output;
+
+    public custom_projection_end_to_end(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
     private void appendCustomEvent(int number, char letter)
     {
         theSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
@@ -270,6 +225,8 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         {
             opts.Projections.Add(new MyCustomGuidProjection(), ProjectionLifecycle.Inline);
         });
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<MyCustomGuidAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());
@@ -655,14 +612,15 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
         IncludeType<Increment>();
     }
 
-    public override SnapshotAction<StartAndStopAggregate> DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
+    public override (StartAndStopAggregate?, ActionType) DetermineAction(StartAndStopAggregate? snapshot, Guid identity,
         IReadOnlyList<IEvent> events)
     {
         var actionType = ActionType.Store;
 
         if (snapshot == null && events.HasNoEventsOfType<Start>())
-            return new Nothing<StartAndStopAggregate>(snapshot);
-
+        {
+            return (snapshot, ActionType.Nothing);
+        }
 
         var eventData = events.ToQueueOfEventData();
         while (eventData.Any())
@@ -702,20 +660,12 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
             }
         }
 
-        switch (actionType)
-        {
-            case ActionType.Delete:
-                return new Delete<StartAndStopAggregate>(snapshot);
-            case ActionType.UnDeleteAndStore:
-                return new UnDeleteAndStore<StartAndStopAggregate>(snapshot);
-            case ActionType.StoreThenSoftDelete:
-                return new StoreTheSoftDelete<StartAndStopAggregate>(snapshot);
-            default:
-                return new Store<StartAndStopAggregate>(snapshot);
-
-        }
+        return (snapshot, actionType);
     }
 
 }
 
 #endregion
+
+
+

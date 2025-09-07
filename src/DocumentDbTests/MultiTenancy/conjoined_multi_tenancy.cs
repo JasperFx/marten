@@ -727,4 +727,21 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
         var blue = theStore.QuerySession("Red");
         (await blue.LoadAsync<StringDoc>(target.Id)).ShouldNotBeNull();
     }
+
+    [Fact]
+    public async Task store_document_marked_with_single_tenant_attribute()
+    {
+        var target = new SingleTenantedDocument { Id = Guid.NewGuid() };
+
+        await using (var session = theStore.LightweightSession("Red"))
+        {
+            session.Store(target);
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.QuerySession("Blue"))
+        {
+            (await session.LoadAsync<SingleTenantedDocument>(target.Id)).ShouldNotBeNull();
+        }
+    }
 }

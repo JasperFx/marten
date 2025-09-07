@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core.Descriptions;
+using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Internal;
 using Marten.Schema.Identity.Sequences;
 using Npgsql;
@@ -205,6 +204,16 @@ internal class StandinDatabase: IMartenDatabase
     public async Task<long> FetchHighestEventSequenceNumber(CancellationToken token = default)
     {
         throw new NotImplementedException();
+    }
+
+    public Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task MarkEventAsSkipped(CancellationToken token, params long[] sequences)
+    {
+        return Task.CompletedTask;
     }
 
     public NpgsqlConnection CreateConnection(ConnectionUsage connectionUsage = ConnectionUsage.ReadWrite)

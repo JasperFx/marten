@@ -18,7 +18,7 @@ using Marten.Util;
 
 namespace Marten.Services.BatchQuerying;
 
-internal class BatchedQuery: IBatchedQuery, IBatchEvents
+internal partial class BatchedQuery: IBatchedQuery
 {
     private readonly List<Type> _documentTypes = new();
     private readonly IList<IBatchQueryItem> _items = new List<IBatchQueryItem>();
@@ -120,69 +120,6 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         return AddItem(handler);
     }
 
-
-    public Task<IEvent> Load(Guid id)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = new SingleEventQueryHandler(id, Parent.EventStorage());
-        return AddItem(handler);
-    }
-
-    public Task<StreamState> FetchStreamState(Guid streamId)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = Parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamId, Parent.TenantId));
-
-        return AddItem(handler);
-    }
-
-    public Task<StreamState> FetchStreamState(string streamKey)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var handler = Parent.EventStorage()
-            .QueryForStream(StreamAction.ForReference(streamKey, Parent.TenantId));
-
-        return AddItem(handler);
-    }
-
-    public Task<IReadOnlyList<IEvent>> FetchStream(Guid streamId, long version = 0, DateTimeOffset? timestamp = null,
-        long fromVersion = 0)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
-        {
-            StreamId = streamId,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = Parent.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
-
-        return AddItem(handler);
-    }
-
-    public Task<IReadOnlyList<IEvent>> FetchStream(string streamKey, long version = 0, DateTimeOffset? timestamp = null, long fromVersion = 0)
-    {
-        _documentTypes.Add(typeof(IEvent));
-        var selector = Parent.EventStorage();
-        var statement = new EventStatement(selector)
-        {
-            StreamKey = streamKey,
-            Version = version,
-            Timestamp = timestamp,
-            TenantId = Parent.TenantId,
-            FromVersion = fromVersion
-        };
-
-        IQueryHandler<IReadOnlyList<IEvent>> handler = new ListQueryHandler<IEvent>(statement, selector);
-
-        return AddItem(handler);
-    }
-
     public Task<T> AddItem<T>(IQueryHandler<T> handler)
     {
         var item = new BatchQueryItem<T>(handler);
@@ -209,64 +146,64 @@ internal class BatchedQuery: IBatchedQuery, IBatchEvents
         throw new DocumentIdTypeMismatchException(storage, typeof(TId));
     }
 
-    private Task<TResult> addItem<TDoc, TResult>(IQueryable<TDoc> queryable, SingleValueMode? op)
+    private Task<TResult> addItem<TDoc, TResult>(IQueryable<TDoc> queryable, SingleValueMode? op) where TDoc : notnull
     {
         var handler = queryable.As<MartenLinqQueryable<TDoc>>().BuildHandler<TResult>(op);
         return AddItem(handler);
     }
 
-    public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable)
+    public Task<bool> Any<TDoc>(IMartenQueryable<TDoc> queryable) where TDoc : notnull
     {
         return addItem<TDoc, bool>(queryable, SingleValueMode.Any);
     }
 
-    public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable)
+    public Task<long> Count<TDoc>(IMartenQueryable<TDoc> queryable) where TDoc : notnull
     {
         return addItem<TDoc, long>(queryable, SingleValueMode.LongCount);
     }
 
-    internal Task<IReadOnlyList<T>> Query<T>(IMartenQueryable<T> queryable)
+    internal Task<IReadOnlyList<T>> Query<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         var handler = queryable.As<MartenLinqQueryable<T>>().BuildHandler<IReadOnlyList<T>>();
         return AddItem(handler);
     }
 
-    public Task<T> First<T>(IMartenQueryable<T> queryable)
+    public Task<T> First<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T>(queryable, SingleValueMode.First);
     }
 
-    public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable)
+    public Task<T?> FirstOrDefault<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T?>(queryable, SingleValueMode.FirstOrDefault);
     }
 
-    public Task<T> Single<T>(IMartenQueryable<T> queryable)
+    public Task<T> Single<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T>(queryable, SingleValueMode.Single);
     }
 
-    public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable)
+    public Task<T?> SingleOrDefault<T>(IMartenQueryable<T> queryable) where T : notnull
     {
         return addItem<T, T?>(queryable, SingleValueMode.SingleOrDefault);
     }
 
-    public Task<TResult> Min<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Min<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Min);
     }
 
-    public Task<TResult> Max<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Max<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Max);
     }
 
-    public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable)
+    public Task<TResult> Sum<TResult>(IQueryable<TResult> queryable) where TResult : notnull
     {
         return addItem<TResult, TResult>(queryable, SingleValueMode.Sum);
     }
 
-    public Task<double> Average<T>(IQueryable<T> queryable)
+    public Task<double> Average<T>(IQueryable<T> queryable) where T : notnull
     {
         return addItem<T, double>(queryable, SingleValueMode.Average);
     }

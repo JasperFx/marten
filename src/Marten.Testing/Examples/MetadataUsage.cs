@@ -126,6 +126,7 @@ public class MetadataUsage
             opts.Events.MetadataConfig.HeadersEnabled = true;
             opts.Events.MetadataConfig.CausationIdEnabled = true;
             opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+            opts.Events.MetadataConfig.UserNameEnabled = true;
         });
 
         #endregion

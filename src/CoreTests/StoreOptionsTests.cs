@@ -3,7 +3,8 @@ using System.Linq;
 using System.Text.Json;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptions;
+using JasperFx.Descriptors;
+using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Services;
 using Marten.Storage;
@@ -103,7 +104,7 @@ public class StoreOptionsTests
 
         store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
             .Select(x => x.DocumentType.Name)
-            .ShouldHaveTheSameElementsAs("Company", "Issue", "Target", "User");
+            .ShouldBe(["Company", "Issue", "Target", "User"]);
     }
 
     [Fact]
@@ -436,17 +437,6 @@ public class StoreOptionsTests
     public void default_tenant_id_style_is_case_sensitive()
     {
         new StoreOptions().TenantIdStyle.ShouldBe(TenantIdStyle.CaseSensitive);
-    }
-
-    [Theory]
-    [InlineData(TenantIdStyle.CaseSensitive, "What", "What")]
-    [InlineData(TenantIdStyle.ForceLowerCase, "What", "what")]
-    [InlineData(TenantIdStyle.ForceUpperCase, "What", "WHAT")]
-    public void maybe_correct_tenant_id(TenantIdStyle style, string tenantId, string corrected)
-    {
-        var options = new StoreOptions { TenantIdStyle = style };
-
-        options.MaybeCorrectTenantId(tenantId).ShouldBe(corrected);
     }
 
     [Fact]

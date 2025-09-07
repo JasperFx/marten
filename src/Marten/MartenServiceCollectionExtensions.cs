@@ -6,8 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.CodeGeneration;
-using JasperFx.Core.Descriptions;
+using JasperFx.CommandLine;
+using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
@@ -25,6 +27,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Weasel.Core.Migrations;
+using Weasel.Core.MultiTenancy;
 
 namespace Marten;
 
@@ -162,7 +165,8 @@ public static class MartenServiceCollectionExtensions
     )
     {
         services.AddJasperFx();
-        services.AddSingleton<IEventStoreCapability, EventStoreCapability>();
+        services.AddSingleton<ISystemPart, MartenSystemPart>();
+        services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
         {
@@ -177,9 +181,19 @@ public static class MartenServiceCollectionExtensions
             return options;
         });
 
+        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
+
         services.AddSingleton<IDocumentStore>(s =>
         {
             var options = s.GetRequiredService<StoreOptions>();
+
+            // for the purpose of not losing your sanity
+            // when running command line tools
+            if (JasperFxEnvironment.RunQuiet)
+            {
+                options.DisableNpgsqlLogging = true;
+            }
+
             if (options.Logger().GetType() != typeof(NulloMartenLogger))
             {
                 return new DocumentStore(options);
@@ -192,6 +206,8 @@ public static class MartenServiceCollectionExtensions
 
             return new DocumentStore(options);
         });
+
+        services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<IDocumentStore>());
 
         // This can be overridden by the expression following
         services.AddSingleton<ISessionFactory, DefaultSessionFactory>(sp =>
@@ -265,9 +281,12 @@ public static class MartenServiceCollectionExtensions
     {
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
-        services.AddSingleton<IEventStoreCapability, EventStoreCapability<T>>();
 
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
+
+        services.AddSingleton<ISystemPart, MartenSystemPart<T>>();
+
+        services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
 
         var stores = services
             .Where(x => !x.IsKeyedService)
@@ -292,10 +311,20 @@ public static class MartenServiceCollectionExtensions
         var config = new SecondaryStoreConfig<T>(configure);
         stores.Add(config);
 
-        services.AddSingleton(s => config.Build(s));
+        services.AddSingleton<T>(s => config.Build(s));
 
-        services.AddSingleton(s => (ICodeFileCollection)s.GetRequiredService<T>());
-        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<T>().As<DocumentStore>().Options);
+
+        services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<T>());
+
+
+        services.AddSingleton<ICodeFileCollection>(s =>
+        {
+            var options = config.BuildStoreOptions(s);
+            return new DocumentStore(options);
+        });
+
+        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s).EventGraph);
+        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s));
 
         return new MartenStoreExpression<T>(services);
     }
@@ -421,7 +450,7 @@ public static class MartenServiceCollectionExtensions
     }
 
 
-    public class MartenStoreExpression<T> where T : IDocumentStore
+    public class MartenStoreExpression<T> where T : class, IDocumentStore
     {
         public MartenStoreExpression(IServiceCollection services)
         {
@@ -429,54 +458,6 @@ public static class MartenServiceCollectionExtensions
         }
 
         public IServiceCollection Services { get; }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow()
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(string developmentEnvironment)
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
-        {
-            Services.AddSingleton<IConfigureMarten<T>>(new OptimizedArtifactsWorkflow<T>(typeLoadMode));
-            return this;
-        }
-
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to the store "T"
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        public MartenStoreExpression<T> OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode,
-            string developmentEnvironment)
-        {
-            Services.AddSingleton<IConfigureMarten<T>>(
-                new OptimizedArtifactsWorkflow<T>(typeLoadMode, developmentEnvironment));
-            return this;
-        }
 
         /// <summary>
         ///     Register the Async Daemon hosted service to continuously attempt to update asynchronous event projections
@@ -546,37 +527,14 @@ public static class MartenServiceCollectionExtensions
         ///     The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be
         ///     treated as Scoped
         /// </param>
+        /// <param name="configure">Optional confiuration of the projection name, version, event filtering, and async execution</param>
         /// ///
         /// <typeparam name="TProjection">The type of projection to add</typeparam>
         /// <returns></returns>
         public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime) where TProjection : class, IProjection
+            ServiceLifetime lifetime, Action<ProjectionBase>? configure = null) where TProjection : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<TProjection>();
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<TProjection, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(TProjection)
-                        };
-
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-            }
+            TProjection.Register<TProjection, T>(Services, lifecycle, lifetime, configure);
 
             return this;
         }
@@ -592,39 +550,11 @@ public static class MartenServiceCollectionExtensions
         /// </param>
         /// <typeparam name="TProjection">The type of projection to add</typeparam>
         /// <returns></returns>
+        [Obsolete("Favor the overload that uses Action<ProjectionBase>. This will be removed in Marten 9")]
         public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime, string projectionName) where TProjection : class, IProjection
+            ServiceLifetime lifetime, string projectionName) where TProjection : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<TProjection>();
-                        opts.Projections.Add(projection, lifecycle, projectionName);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<TProjection>();
-                    Services.ConfigureMarten<T>((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<TProjection, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle,
-                            ProjectionType = typeof(TProjection),
-                            ProjectionName = projectionName
-                        };
-
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
-            return this;
+            return AddProjectionWithServices<TProjection>(lifecycle, lifetime, x => x.Name = projectionName);
         }
 
 
@@ -821,61 +751,6 @@ public static class MartenServiceCollectionExtensions
             return this;
         }
 
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <returns></returns>
-        public MartenConfigurationExpression OptimizeArtifactWorkflow()
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto);
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode)
-        {
-            var configure = new OptimizedArtifactsWorkflow(typeLoadMode);
-            Services.AddSingleton<IConfigureMarten>(configure);
-
-            return this;
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(string developmentEnvironment)
-        {
-            return OptimizeArtifactWorkflow(TypeLoadMode.Auto, developmentEnvironment);
-        }
-
-        /// <summary>
-        ///     Adds the optimized artifact workflow to this store with ability to override the TypeLoadMode in "Production" mode.
-        ///     See https://martendb.io/configuration/optimized_artifact_workflow.html for more information.
-        /// </summary>
-        /// <param name="typeLoadMode"></param>
-        /// <param name="developmentEnvironment"></param>
-        /// <returns></returns>
-        [Obsolete(StoreOptions.PreferJasperFxMessage)]
-        public MartenConfigurationExpression OptimizeArtifactWorkflow(TypeLoadMode typeLoadMode,
-            string developmentEnvironment)
-        {
-            var configure = new OptimizedArtifactsWorkflow(typeLoadMode, developmentEnvironment);
-            Services.AddSingleton<IConfigureMarten>(configure);
-
-            return this;
-        }
-
         /// <summary>
         ///     Adds initial data sets to the Marten store and ensures that they will be
         ///     executed upon IHost initialization
@@ -902,7 +777,6 @@ public static class MartenServiceCollectionExtensions
             return this;
         }
 
-
         /// <summary>
         ///     Add a projection to this application that requires IoC services. The projection itself will
         ///     be created with the application's IoC container
@@ -913,37 +787,12 @@ public static class MartenServiceCollectionExtensions
         ///     treated as Scoped
         /// </param>
         /// <typeparam name="T"></typeparam>
+        /// <param name="configure">Optional configuration of the projection behavior including the name, version, event filtering, and async execution behavior</param>
         /// <returns></returns>
         public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime) where T : class, IProjection
+            ServiceLifetime lifetime, Action<ProjectionBase>? configure = null) where T : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<T>();
-                        opts.Projections.Add(projection, lifecycle);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<T, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(T)
-                        };
-
-                        opts.Projections.Register(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
+            T.Register<T>(Services, lifecycle, lifetime, configure);
             return this;
         }
 
@@ -959,36 +808,9 @@ public static class MartenServiceCollectionExtensions
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public MartenConfigurationExpression AddProjectionWithServices<T>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime, string projectionName) where T : class, IProjection
+            ServiceLifetime lifetime, string projectionName) where T : class, IMartenRegistrable
         {
-            switch (lifetime)
-            {
-                case ServiceLifetime.Singleton:
-                    Services.AddSingleton<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = s.GetRequiredService<T>();
-                        opts.Projections.Add(projection, lifecycle, projectionName);
-                    });
-                    break;
-
-                case ServiceLifetime.Transient:
-                case ServiceLifetime.Scoped:
-                    Services.AddScoped<T>();
-                    Services.ConfigureMarten((s, opts) =>
-                    {
-                        var projection = new ScopedProjectionWrapper<T, IDocumentOperations, IQuerySession>(s)
-                        {
-                            Lifecycle = lifecycle, ProjectionType = typeof(T), ProjectionName = projectionName
-                        };
-
-                        opts.Projections.Register(projection, lifecycle);
-                    });
-                    break;
-            }
-
-
-            return this;
+            return AddProjectionWithServices<T>(lifecycle, lifetime, x => x.Name = projectionName);
         }
 
 
@@ -1052,6 +874,8 @@ public static class MartenServiceCollectionExtensions
         }
     }
 }
+
+public interface IGlobalConfigureMarten: IConfigureMarten;
 
 #region sample_IConfigureMarten
 
@@ -1125,42 +949,6 @@ internal class LambdaConfigureMarten<T>: LambdaConfigureMarten, IConfigureMarten
     }
 }
 
-[Obsolete(StoreOptions.PreferJasperFxMessage)]
-internal class OptimizedArtifactsWorkflow: IConfigureMarten
-{
-    private readonly string _developmentEnvironment = "Development";
-    private readonly TypeLoadMode _productionMode;
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode)
-    {
-        _productionMode = productionMode;
-    }
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode, string developmentEnvironment): this(productionMode)
-    {
-        _developmentEnvironment = developmentEnvironment;
-    }
-
-    public void Configure(IServiceProvider services, StoreOptions options)
-    {
-        var environment = services.GetRequiredService<IHostEnvironment>();
-
-        if (environment.IsEnvironment(_developmentEnvironment))
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
-            options.GeneratedCodeMode = TypeLoadMode.Auto;
-        }
-        else
-        {
-            options.AutoCreateSchemaObjects = AutoCreate.None;
-            options.GeneratedCodeMode = _productionMode;
-
-
-            options.SourceCodeWritingEnabled = false;
-        }
-    }
-}
-
 internal interface IDocumentStoreSource
 {
     IDocumentStore Resolve(IServiceProvider serviceProvider);
@@ -1171,18 +959,5 @@ internal class DocumentStoreSource<T>: IDocumentStoreSource where T : IDocumentS
     public IDocumentStore Resolve(IServiceProvider services)
     {
         return services.GetRequiredService<T>();
-    }
-}
-
-internal class OptimizedArtifactsWorkflow<T>: OptimizedArtifactsWorkflow, IConfigureMarten<T>
-    where T : IDocumentStore
-{
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode): base(productionMode)
-    {
-    }
-
-    public OptimizedArtifactsWorkflow(TypeLoadMode productionMode, string developmentEnvironment): base(productionMode,
-        developmentEnvironment)
-    {
     }
 }

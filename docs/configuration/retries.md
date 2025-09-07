@@ -4,10 +4,10 @@
 Marten's previous, homegrown `IRetryPolicy` mechanism was completely replaced by [Polly](https://www.nuget.org/packages/polly) in Marten V7.
 :::
 
-Out of the box, Marten is using Polly for resiliency on most operations with this setup:
+Out of the box, Marten is using [Polly.Core](https://www.pollydocs.org/) for resiliency on most operations with this setup:
 
 <!-- snippet: sample_default_Polly_setup -->
-<a id='snippet-sample_default_polly_setup'></a>
+<a id='snippet-sample_default_Polly_setup'></a>
 ```cs
 // default Marten policies
 return builder
@@ -22,7 +22,7 @@ return builder
         BackoffType = DelayBackoffType.Exponential
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_polly_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Util/ResilientPipelineBuilderExtensions.cs#L14-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_default_Polly_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The general idea is to have _some_ level of retry with an exponential backoff on typical transient errors encountered

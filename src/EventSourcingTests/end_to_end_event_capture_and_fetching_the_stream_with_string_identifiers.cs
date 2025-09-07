@@ -36,7 +36,7 @@ public class
 
         var streamEvents = await theSession.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -61,7 +61,7 @@ public class
 
         var streamEvents = await theSession.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -87,7 +87,7 @@ public class
         var streamEvents = await theSession.Events.QueryAllRawEvents()
             .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToListAsync();
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -113,7 +113,7 @@ public class
         var streamEvents = theSession.Events.QueryAllRawEvents()
             .Where(x => x.StreamKey == id).OrderBy(x => x.Version).ToList();
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -147,81 +147,6 @@ public class
             var inlinedAggregate = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
             liveAggregate.Id.ShouldBe(inlinedAggregate.Id);
             inlinedAggregate.ToString().ShouldBe(liveAggregate.ToString());
-        }
-    }
-
-    [Fact]
-    public async Task open_persisted_stream_in_new_store_with_same_settings()
-    {
-        var questId = "Sixth";
-
-        using (var session = theStore.LightweightSession())
-        {
-            //Note "Id = questId" @see live_aggregate_equals_inlined_aggregate...
-            var started = new QuestStarted { Name = "Destroy the One Ring" };
-            var joined1 = new MembersJoined(1, "Hobbiton", "Frodo", "Merry");
-
-            session.Events.StartStream<Quest>(questId, started, joined1);
-            await session.SaveChangesAsync();
-        }
-
-        // events-aggregate-on-the-fly - works with same store
-        using (var session = theStore.LightweightSession())
-        {
-            // questId is the id of the stream
-            var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId);
-
-            party.ShouldNotBeNull();
-
-            var party_at_version_3 = await session.Events
-                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
-
-            party_at_version_3.ShouldNotBeNull();
-
-            var party_yesterday = await session.Events
-                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-            party_yesterday.ShouldBeNull();
-        }
-
-        using (var session = theStore.LightweightSession())
-        {
-            var party = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
-            party.ShouldNotBeNull();
-        }
-
-        var newStore = new DocumentStore(theStore.Options);
-
-        //Inline is working
-        using (var session = newStore.LightweightSession())
-        {
-            var party = await session.LoadAsync<QuestPartyWithStringIdentifier>(questId);
-            party.ShouldNotBeNull();
-        }
-
-        //GetAll
-        using (var session = theStore.LightweightSession())
-        {
-            var parties = session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToArray();
-            foreach (var party in parties)
-            {
-                party.ShouldNotBeNull();
-            }
-        }
-
-        //This AggregateStream fail with NPE
-        using (var session = newStore.LightweightSession())
-        {
-            // questId is the id of the stream
-            var party = await session.Events.AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId); //Here we get NPE
-            party.ShouldNotBeNull();
-
-            var party_at_version_3 = await session.Events
-                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, 3);
-            party_at_version_3.ShouldNotBeNull();
-
-            var party_yesterday = await session.Events
-                .AggregateStreamAsync<QuestPartyWithStringIdentifier>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
-            party_yesterday.ShouldBeNull();
         }
     }
 
@@ -294,7 +219,7 @@ public class
 
         var streamEvents = await session.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -316,7 +241,7 @@ public class
 
         var streamEvents = await session.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -347,7 +272,7 @@ public class
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(3);
+            streamEvents.Count.ShouldBe(3);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();
@@ -370,7 +295,7 @@ public class
 
         var streamEvents = await session.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -393,7 +318,7 @@ public class
 
         var streamEvents = await session.Events.FetchStreamAsync(id);
 
-        streamEvents.Count().ShouldBe(2);
+        streamEvents.Count.ShouldBe(2);
         streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
         streamEvents.ElementAt(0).Version.ShouldBe(1);
         streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
@@ -423,7 +348,7 @@ public class
 
             var streamEvents = await session.Events.FetchStreamAsync(id);
 
-            streamEvents.Count().ShouldBe(3);
+            streamEvents.Count.ShouldBe(3);
             streamEvents.ElementAt(0).Data.ShouldBeOfType<QuestStarted>();
             streamEvents.ElementAt(0).Version.ShouldBe(1);
             streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersJoined>();

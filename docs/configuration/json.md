@@ -5,11 +5,11 @@ JSON serialization extensible and configurable through the native mechanisms in 
 
 ## Serializer Choice
 
-Marten ships with implementations for both Newtonsoft.Json & System.Text.Json. Newtonsoft.Json is enabled by default in Marten for backwards compatibility
-with previous Marten versions and because it handles some unique edge-cases that System.Text.Json might not. 
+::: info
+Marten 8 uses System.Text.Json as the default JSON serializer. Previous to 8, Marten used Newtonsoft.Json as the default.
+:::
 
-That being said, if you're working on a new application
-we recommend enabling System.Text.Json for improved performance and serializer alignment with ASP.NET Core & Wolverine defaults.
+Marten ships with System.Text.Json as the default, but there is still built in support to opt into Newtonsoft.Json.
 
 Configuration for both serializers hang off the `DocumentStore` `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
 
@@ -27,7 +27,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(); // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L83-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L81-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Enum Storage
@@ -46,7 +46,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L124-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L122-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Field Names Casing
@@ -55,7 +55,7 @@ By default, Marten stores field names "as they are" (C# naming convention is Pas
 
 You can have them also automatically formatted to:
 
-- `CamelCase`,
+- `camelCase`,
 - `snake_case`
 
 by changing the relevant serializer settings:
@@ -72,7 +72,7 @@ var store = DocumentStore.For(_ =>
     _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L139-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L137-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Non Public Members Storage
@@ -90,7 +90,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L167-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L165-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use other options of `NonPublicMembersStorage`:
@@ -153,7 +153,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L154-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L152-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Configuration
@@ -181,7 +181,7 @@ var store = DocumentStore.For(_ =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L179-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L177-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning WARNING
@@ -220,15 +220,19 @@ var store = DocumentStore.For(_ =>
     _.Serializer(serializer);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L99-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L97-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Integrating a Custom serializer
 
+::: warning
+Please talk to the Marten team before you undergo any significant effort to support a new JSON serializer
+:::
+
 Internally, Marten uses an adapter interface for JSON serialization:
 
 <!-- snippet: sample_ISerializer -->
-<a id='snippet-sample_iserializer'></a>
+<a id='snippet-sample_ISerializer'></a>
 ```cs
 /// <summary>
 ///     When selecting data through Linq Select() transforms,
@@ -334,7 +338,7 @@ public interface ISerializer
     string ToJsonWithTypes(object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L11-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L11-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ISerializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it

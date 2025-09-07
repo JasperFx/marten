@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
@@ -15,18 +16,13 @@ using Microsoft.FSharp.Core;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
 
-#nullable enable
-
 namespace Marten;
 
 public partial class StoreOptions
 {
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent)
     {
-        if (member == null)
-        {
-            throw new ArgumentNullException(nameof(member));
-        }
+        ArgumentNullException.ThrowIfNull(member);
 
         var memberType = member.GetMemberType();
 
@@ -70,32 +66,32 @@ public partial class StoreOptions
                 : new EnumAsStringMember(parent, serializer.Casing, member);
         }
 
-        if (memberType == typeof(DateTime))
+        if (memberType == typeof(DateTime) || memberType == typeof(FSharpOption<DateTime>))
         {
             return new DateTimeMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateTimeOffset))
+        if (memberType == typeof(DateTimeOffset) || memberType == typeof(FSharpOption<DateTimeOffset>))
         {
             return new DateTimeOffsetMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateOnly))
+        if (memberType == typeof(DateOnly) || memberType == typeof(FSharpOption<DateOnly>))
         {
             return new DateOnlyMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(TimeOnly))
+        if (memberType == typeof(TimeOnly)  || memberType == typeof(FSharpOption<TimeOnly>) )
         {
             return new TimeOnlyMember(this, parent, casing, member);
         }
 
         if (isEnumerable(memberType))
         {
-            Type elementType = null;
+            Type? elementType = null;
             try
             {
-                elementType = memberType.DetermineElementType();
+                elementType = memberType.DetermineElementType()!;
             }
             catch (Exception e)
             {
@@ -146,13 +142,13 @@ public partial class StoreOptions
 internal class ValueTypeMemberSource: IMemberSource
 {
     public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,
-        out IQueryableMember? member)
+        [NotNullWhen(true)]out IQueryableMember? member)
     {
         var valueType = options.ValueTypes.FirstOrDefault(x => x.OuterType == memberType);
 
         if (valueType == null)
         {
-            member = default;
+            member = null;
             return false;
         }
 
@@ -170,7 +166,7 @@ internal class ValueTypeMemberSource: IMemberSource
             baseType = typeof(ValueTypeMember<,>).MakeGenericType(memberType, valueType.SimpleType);
         }
 
-        member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType);
+        member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType)!;
 
         return true;
     }

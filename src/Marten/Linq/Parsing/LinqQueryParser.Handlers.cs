@@ -34,7 +34,7 @@ internal partial class LinqQueryParser
                                         typeof(TResult).FullNameInCode());
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>() where TResult : notnull
+    public IQueryHandler<TResult> BuildHandler<TResult>()
     {
         if (!_collectionUsages.Any())
         {
@@ -48,7 +48,7 @@ internal partial class LinqQueryParser
 
         var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
 
-        if (includes.Any())
+        if (includes.Length != 0)
         {
             return new IncludeQueryHandler<TResult>(handler,
                 includes.Select(x => x.BuildReader(Session)).ToArray());
@@ -57,7 +57,7 @@ internal partial class LinqQueryParser
         return handler;
     }
 
-    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector) where TResult : notnull
+    private IQueryHandler<TResult> buildHandlerForCurrentStatement<TResult>(Statement top, SelectorStatement selector)
     {
         if (selector.SingleValue)
         {
@@ -83,7 +83,7 @@ internal partial class LinqQueryParser
 
         var includes = _collectionUsages.SelectMany(x => x.Includes).ToArray();
 
-        if (includes.Any())
+        if (includes.Length != 0)
         {
             return new IncludeQueryHandler<IReadOnlyList<T>>(handler,
                 includes.Select(x => x.BuildReader(Session)).ToArray());

@@ -1,12 +1,12 @@
-#nullable enable
 using System;
+using System.Diagnostics.CodeAnalysis;
 using JasperFx.Core.Exceptions;
 
 namespace Marten.Exceptions;
 
 internal class DateTimeUsageExceptionTransform: IExceptionTransform
 {
-    public bool TryTransform(Exception original, out Exception? transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if (original is InvalidCastException ice &&
             ice.Message.Contains(
@@ -41,7 +41,7 @@ public class InvalidUtcDateTimeUsageException: MartenException
 
 internal class UtcDateTimeUsageExceptionTransform: IExceptionTransform
 {
-    public bool TryTransform(Exception original, out Exception? transformed)
+    public bool TryTransform(Exception original, [NotNullWhen(true)]out Exception? transformed)
     {
         if ((original is InvalidCastException or ArgumentException) &&
             original.Message.Contains("Cannot write DateTime with Kind=UTC to PostgreSQL"))

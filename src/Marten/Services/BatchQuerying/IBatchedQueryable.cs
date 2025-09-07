@@ -126,11 +126,11 @@ public interface IBatchedQueryable<T>: IBatchedFetcher<T>
     IBatchedQueryableIncludeBuilder<T, TKey, TInclude> Include<TKey, TInclude>(
         IDictionary<TKey, List<TInclude>> dictionary) where TInclude : notnull where TKey : notnull;
 
-    Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression);
+    Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull;
 
-    Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression);
+    Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull;
 
-    Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression);
+    Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull;
 
     Task<double> Average(Expression<Func<T, object>> expression);
 }

@@ -185,6 +185,39 @@ public class computed_indexes: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task fsharp_date_related_options_indexes_are_created()
+    {
+        /* In this test, we ensure that the indexes can be created without error.
+          There was a bug such that the family of immutable functions  mt_immutable_timestamp & Cie weren't used which resulted in an exception when the
+          index definition was executed in postgresql.
+        */
+
+        StoreOptions(_ =>
+        {
+            var columns = new Expression<Func<Target, object>>[]
+            {
+                x => x.FSharpDateOption,
+                x => x.FSharpDateOnlyOption,
+                x => x.FSharpTimeOnlyOption,
+                x => x.FSharpDateTimeOffsetOption,
+            };
+            _.Schema.For<Target>().Index(columns, opt =>
+            {
+                opt.Name = "mt_doc_target_idx_fsharp_date_options";
+            });
+        });
+
+        var data = Target.GenerateRandomData(100).ToArray();
+        await theStore.BulkInsertAsync(data.ToArray());
+
+        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Target));
+        var index = table.IndexFor("mt_doc_target_idx_fsharp_date_options");
+
+        index.ToDDL(table).ShouldBe("CREATE INDEX mt_doc_target_idx_fsharp_date_options ON computed_indexes.mt_doc_target USING btree (computed_indexes.mt_immutable_timestamp((data ->> 'FSharpDateOption')), computed_indexes.mt_immutable_date((data ->> 'FSharpDateOnlyOption')), computed_indexes.mt_immutable_time((data ->> 'FSharpTimeOnlyOption')), computed_indexes.mt_immutable_timestamptz((data ->> 'FSharpDateTimeOffsetOption')));");
+
+    }
+
+    [Fact]
     public async Task create_multi_property_string_index_with_casing()
     {
         StoreOptions(_ =>

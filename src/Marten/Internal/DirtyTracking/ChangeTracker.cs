@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using Marten.Internal.Operations;
 using Newtonsoft.Json.Linq;
 
 namespace Marten.Internal.DirtyTracking;
 
-public class ChangeTracker<T>: IChangeTracker
+public class ChangeTracker<T>: IChangeTracker where T : notnull
 {
     private readonly T _document;
     private string _json;
@@ -16,7 +17,7 @@ public class ChangeTracker<T>: IChangeTracker
 
     public object Document => _document;
 
-    public bool DetectChanges(IMartenSession session, out IStorageOperation operation)
+    public bool DetectChanges(IMartenSession session, [NotNullWhen(true)]out IStorageOperation? operation)
     {
         var newJson = session.Serializer.ToCleanJson(_document);
         if (JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))

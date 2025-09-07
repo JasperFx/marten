@@ -65,7 +65,7 @@ public abstract class LinqTestContext<TSelf>
         testCases.Add(comparison);
     }
 
-    private static readonly string[] _methodNames = new string[] { "@where", nameof(ordered), nameof(unordered), nameof(selectInOrder), "select" };
+    private static readonly string[] _methodNames = ["@where", nameof(ordered), nameof(unordered), nameof(selectInOrder), "select"];
     private static readonly string[] _descriptions;
 
     protected static string[] readDescriptions()
@@ -105,7 +105,7 @@ public abstract class LinqTestContext<TSelf>
 
     protected async Task assertTestCaseWithDocuments(string description, IDocumentStore store, Target[] documents)
     {
-        var index = _descriptions.IndexOf(description);
+        var index = Array.IndexOf(_descriptions, description);
 
         var testCase = testCases[index];
         await using var session = store.QuerySession();

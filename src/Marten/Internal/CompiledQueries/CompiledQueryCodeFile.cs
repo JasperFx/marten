@@ -14,8 +14,8 @@ internal class CompiledQueryCodeFile: ICodeFile
     private readonly DocumentTracking _documentTracking;
     private readonly CompiledQueryPlan _plan;
     private readonly DocumentStore _store;
-    private CompiledQuerySourceBuilder _builder;
-    private Type _sourceType;
+    private CompiledQuerySourceBuilder? _builder;
+    private Type? _sourceType;
 
     public CompiledQueryCodeFile(Type compiledQueryType, DocumentStore store, CompiledQueryPlan plan,
         DocumentTracking documentTracking)
@@ -35,14 +35,14 @@ internal class CompiledQueryCodeFile: ICodeFile
 
     }
 
-    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _sourceType = assembly.ExportedTypes.FirstOrDefault(x => x.Name == FileName);
         return Task.FromResult(_sourceType != null);
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _sourceType = assembly.FindPreGeneratedType(containingNamespace, FileName);
@@ -58,6 +58,6 @@ internal class CompiledQueryCodeFile: ICodeFile
             AssembleTypes(new GeneratedAssembly(generationRules));
         }
 
-        return _builder.Build(_sourceType);
+        return _builder!.Build(_sourceType!);
     }
 }

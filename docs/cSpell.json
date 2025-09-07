@@ -40,7 +40,9 @@
     "Replayability",
     "revisioned",
     "Revisioned",
-    "Vogen"
+    "Vogen",
+    "upserts",
+	"Citus"
   ],
   "ignoreWords": [
     "JSONB",

@@ -16,7 +16,7 @@ internal class SystemFunction: Function
     }
 
     public SystemFunction(string schema, string functionName, string args, bool isRemoved = false)
-        : base(new PostgresqlObjectName(schema, functionName))
+        : base(new PostgresqlObjectName(schema, functionName), SchemaBuilder.GetSqlScript(schema, functionName), [$"drop function if exists {schema}.{functionName}({args});"])
     {
         IsRemoved = isRemoved;
         _args = args;
@@ -33,4 +33,6 @@ internal class SystemFunction: Function
         writer.WriteLine(body);
         writer.WriteLine("");
     }
+
+
 }

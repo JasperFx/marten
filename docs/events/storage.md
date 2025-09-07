@@ -17,7 +17,7 @@ var store = DocumentStore.For(_ =>
     _.Events.DatabaseSchemaName = "events";
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L202-L211' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L200-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_setting_event_schema' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Database Tables
@@ -54,8 +54,6 @@ the error handling policies in your application's Marten configuration.
 
 Hopefully, it's relatively clear how the fields in `mt_events` map to the `IEvent` interface in Marten:
 
-<!-- snippet: sample_event_metadata -->
-<a id='snippet-sample_event_metadata'></a>
 ```cs
 /// <summary>
 ///     A reference to the stream that contains
@@ -107,10 +105,63 @@ public string? CorrelationId { get; set; }
 /// </summary>
 public Dictionary<string, object>? Headers { get; set; }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L184-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_metadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 The full event data is available on `EventStream` and `IEvent` objects immediately after committing a transaction that involves event capture. See [diagnostics and instrumentation](/diagnostics) for more information on capturing event data in the instrumentation hooks.
+
+## Event Type Names <Badge type="tip" text="8.4" />
+
+If you look into the `mt_events` table in your system you'll see a column named `type` that will
+have an alias for the .NET type name that Marten keys off when reading events from the database 
+to "know" what .NET type to deserialize the JSON data to. 
+
+The original idea was that people should be able to easily move event types around in their
+solution without breaking the storage as full type names changed, so we purposely used _only_ the
+type name of the .NET type for the event alias. In real life usage though, sometimes people will
+use completely different .NET types with the same type name like in this example:
+
+```csharp
+public class GroupEvents
+{
+    public record Created(string Name);
+}
+
+public class UserEvents
+{
+    public record Created(string Name);
+}
+```
+
+In that case, the original naming scheme of "created" will not correctly disambiguate between the
+two different `Created` types above. While you _could_ manually alias all of these event types
+yourself to disambiguate, it's too easy to forget to do that. Instead, you can just switch to different
+naming schemes like this:
+
+<!-- snippet: sample_event_naming_style -->
+<a id='snippet-sample_event_naming_style'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // This is the default behavior, but just showing you that
+    // this is an option
+    opts.Events.EventNamingStyle = EventNamingStyle.ClassicTypeName;
+
+    // This mode is "the classic style Marten has always used, except smart enough
+    // to disambiguate inner classes that have the same type name"
+    opts.Events.EventNamingStyle = EventNamingStyle.SmarterTypeName;
+
+    // Forget all the pretty naming aliases, just use the .NET full type name for
+    // the event type name
+    opts.Events.EventNamingStyle = EventNamingStyle.FullTypeName;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/NamingStyles.cs#L13-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_naming_style' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Note that you will have to switch out of the "classic" naming mode to disambiguate between event types
+with the same class name in different namespaces.
 
 ## Optional Indexes
 
@@ -131,5 +182,5 @@ builder.Services.AddMarten(opts =>
     opts.Events.EnableUniqueIndexOnEventId = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/opting_into_index_on_event_id.cs#L19-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optional_event_store_indexes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/opting_into_index_on_event_id.cs#L20-L31' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optional_event_store_indexes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

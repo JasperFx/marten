@@ -64,7 +64,7 @@ Lastly, we want trolls (`MonsterSlayed`) removed from our stream. However, the s
 ```cs
 using (var session = theStore.LightweightSession())
 {
-    var events = session.Events.FetchStream(started.Name);
+    var events = await session.Events.FetchStreamAsync(started.Name);
 
     var transformedEvents = events.SelectMany(x =>
     {
@@ -73,7 +73,7 @@ using (var session = theStore.LightweightSession())
             case MonsterSlayed monster:
             {
                 // Trolls we remove from our transformed stream
-                return monster.Name.Equals("Troll") ? new object[] { } : new[] { monster };
+                return monster.Name.Equals("Troll") ? [] : new[] { monster };
             }
             case MembersJoined members:
             {

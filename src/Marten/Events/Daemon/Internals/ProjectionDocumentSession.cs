@@ -5,6 +5,7 @@ using JasperFx.Events.Daemon;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Services;
+using Npgsql;
 
 namespace Marten.Events.Daemon.Internals;
 
@@ -18,9 +19,18 @@ internal class ProjectionDocumentSession: DocumentSessionBase
 
     public ProjectionDocumentSession(DocumentStore store,
         ISessionWorkTracker workTracker,
-        SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, new TransactionalConnection(sessionOptions), workTracker)
+        SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, new AutoClosingLifetime(sessionOptions, store.Options), workTracker)
     {
         Mode = mode;
+    }
+
+    public override NpgsqlConnection Connection
+    {
+        get
+        {
+            throw new NotSupportedException(
+                "It is not supported to use \"sticky\" connections inside of projections or subscriptions");
+        }
     }
 
     internal override DocumentTracking TrackingMode => SessionOptions.Tracking;

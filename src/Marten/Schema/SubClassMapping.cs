@@ -17,7 +17,7 @@ namespace Marten.Schema;
 public class SubClassMapping: IDocumentMapping
 {
     public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
-        string alias = null)
+        string? alias = null)
     {
         DocumentType = documentType;
         Inner = new DocumentMapping(documentType, storeOptions);
@@ -29,7 +29,7 @@ public class SubClassMapping: IDocumentMapping
     }
 
     public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,
-        IEnumerable<MappedType> otherSubclassTypes, string alias = null)
+        IEnumerable<MappedType> otherSubclassTypes, string? alias = null)
         : this(documentType, parent, storeOptions, alias)
     {
         Aliases = otherSubclassTypes
@@ -82,7 +82,7 @@ public class SubClassMapping: IDocumentMapping
 
         return documentType.Alias ??
                (documentType.Type.IsNested
-                   ? $"{documentType.Type.DeclaringType.Name}.{typeName}"
+                   ? $"{documentType.Type.DeclaringType!.Name}.{typeName}"
                    : typeName)
                .Replace(".", "_")
                .SplitCamelCase()

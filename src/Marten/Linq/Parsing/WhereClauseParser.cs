@@ -36,7 +36,7 @@ public class WhereClauseParser: ExpressionVisitor
         _holder = holder;
     }
 
-    public override Expression Visit(Expression node)
+    public override Expression Visit(Expression? node)
     {
         try
         {

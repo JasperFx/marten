@@ -19,7 +19,7 @@ public class DocumentIndex: IndexDefinition
 
     public TenancyScope TenancyScope { get; set; } = TenancyScope.Global;
 
-    public override string[] Columns
+    public override string[]? Columns
     {
         get
         {
@@ -37,7 +37,7 @@ public class DocumentIndex: IndexDefinition
 
     public override string ToString()
     {
-        return $"DocumentIndex for {_parent.DocumentType} on columns {Columns.Join(", ")}";
+        return $"DocumentIndex for {_parent.DocumentType} on columns {Columns!.Join(", ")}";
     }
 
     protected override string deriveIndexName()

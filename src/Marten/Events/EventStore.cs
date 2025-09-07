@@ -9,7 +9,7 @@ using Marten.Storage;
 
 namespace Marten.Events;
 
-internal partial class EventStore: QueryEventStore, IEventStore
+internal partial class EventStore: QueryEventStore, IEventStoreOperations
 {
     private readonly DocumentSessionBase _session;
     private readonly DocumentStore _store;
@@ -20,9 +20,17 @@ internal partial class EventStore: QueryEventStore, IEventStore
         _store = store;
     }
 
+    public IEvent BuildEvent(object data)
+    {
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        return _store.Events.BuildEvent(data);
+    }
+
     public void OverwriteEvent(IEvent e)
     {
         var op = new OverwriteEventOperation(_store.Events, e);
         _session.QueueOperation(op);
     }
+
+
 }

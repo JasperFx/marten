@@ -1,9 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-    </PropertyGroup>
-
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
@@ -12,7 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="Jil" Version="3.0.0-alpha2" />
-        <PackageReference Include="Lamar" Version="15.0.0-alpha-1" />
         <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
         <PackageReference Include="StronglyTypedId" Version="1.0.0-beta08" />

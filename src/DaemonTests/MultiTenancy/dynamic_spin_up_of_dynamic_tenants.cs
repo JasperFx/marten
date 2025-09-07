@@ -1,10 +1,10 @@
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon.Coordination;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -14,7 +14,6 @@ using Npgsql;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Migrations;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DaemonTests.MultiTenancy;
 

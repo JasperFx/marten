@@ -367,7 +367,7 @@ internal class SimpleExpression: ExpressionVisitor
             return null;
         }
 
-        if (node.Object == null && !(node.Arguments.FirstOrDefault() is MemberExpression))
+        if (node.Object == null && node.Arguments.FirstOrDefault() is not MemberExpression)
         {
             // It's a method of a static, so this has to be a constant
             HasConstant = true;

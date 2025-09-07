@@ -1,10 +1,11 @@
-using Marten;
-using DaemonTests;
+using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
-using Marten.Events.Projections;
+using JasperFx;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using JasperFx;
 
 #region sample_using_WebApplication_1
 

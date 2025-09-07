@@ -23,7 +23,7 @@ public partial class ProjectionScenario
     /// <param name="id"></param>
     /// <param name="assertions">Optional lambda to make additional assertions about the document state</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldExist<T>(string id, Action<T> assertions = null)
+    public void DocumentShouldExist<T>(string id, Action<T>? assertions = null) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -43,7 +43,7 @@ public partial class ProjectionScenario
     /// <param name="id"></param>
     /// <param name="assertions">Optional lambda to make additional assertions about the document state</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldExist<T>(long id, Action<T> assertions = null)
+    public void DocumentShouldExist<T>(long id, Action<T>? assertions = null) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -63,7 +63,7 @@ public partial class ProjectionScenario
     /// <param name="id"></param>
     /// <param name="assertions">Optional lambda to make additional assertions about the document state</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldExist<T>(int id, Action<T> assertions = null)
+    public void DocumentShouldExist<T>(int id, Action<T>? assertions = null) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -83,7 +83,7 @@ public partial class ProjectionScenario
     /// <param name="id"></param>
     /// <param name="assertions">Optional lambda to make additional assertions about the document state</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldExist<T>(Guid id, Action<T> assertions = null)
+    public void DocumentShouldExist<T>(Guid id, Action<T>? assertions = null) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -102,7 +102,7 @@ public partial class ProjectionScenario
     /// </summary>
     /// <param name="id">The identity of the document</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldNotExist<T>(string id)
+    public void DocumentShouldNotExist<T>(string id) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -120,7 +120,7 @@ public partial class ProjectionScenario
     /// </summary>
     /// <param name="id">The identity of the document</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldNotExist<T>(long id)
+    public void DocumentShouldNotExist<T>(long id) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -138,7 +138,7 @@ public partial class ProjectionScenario
     /// </summary>
     /// <param name="id">The identity of the document</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldNotExist<T>(int id)
+    public void DocumentShouldNotExist<T>(int id) where T : notnull
     {
         assertion(async (session, ct) =>
         {
@@ -156,7 +156,7 @@ public partial class ProjectionScenario
     /// </summary>
     /// <param name="id">The identity of the document</param>
     /// <typeparam name="T">The document type</typeparam>
-    public void DocumentShouldNotExist<T>(Guid id)
+    public void DocumentShouldNotExist<T>(Guid id) where T : notnull
     {
         assertion(async (session, ct) =>
         {

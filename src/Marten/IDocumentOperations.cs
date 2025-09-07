@@ -13,7 +13,7 @@ namespace Marten;
 /// </summary>
 public interface IDocumentOperations: IQuerySession, IStorageOperations
 {
-    new IEventStore Events { get; }
+    new IEventStoreOperations Events { get; }
 
     /// <summary>
     ///     Mark this entity for deletion upon the next call to SaveChanges()
@@ -102,7 +102,7 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="revision"></param>
-    void UpdateRevision<T>(T entity, int revision);
+    void UpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     /// Explicitly marks a document as needing to be updated and supplies the
@@ -113,7 +113,7 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// <param name="entity"></param>
     /// <param name="revision"></param>
     /// <typeparam name="T"></typeparam>
-    void TryUpdateRevision<T>(T entity, int revision);
+    void TryUpdateRevision<T>(T entity, int revision) where T : notnull;
 
     /// <summary>
     ///     Store an enumerable of potentially mixed documents
@@ -248,5 +248,5 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// support
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public void UseIdentityMapFor<T>();
+    public void UseIdentityMapFor<T>() where T : notnull;
 }

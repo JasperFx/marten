@@ -52,25 +52,46 @@ public partial class QuerySession
     internal async Task<T?> LoadOneAsync<T>(NpgsqlCommand command, ISelector<T> selector, CancellationToken token)
     {
         await using var reader = await ExecuteReaderAsync(command, token).ConfigureAwait(false);
-        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        try
         {
-            return default;
-        }
+            if (!await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                return default;
+            }
 
-        return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+            return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     internal async Task<bool> StreamOne(NpgsqlCommand command, Stream stream, CancellationToken token)
     {
         await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
-        return await reader.StreamOne(stream, token).ConfigureAwait(false) == 1;
+        try
+        {
+            return await reader.StreamOne(stream, token).ConfigureAwait(false) == 1;
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     internal async Task<int> StreamMany(NpgsqlCommand command, Stream stream, CancellationToken token)
     {
         await using var reader = (NpgsqlDataReader)await ExecuteReaderAsync(command, token).ConfigureAwait(false);
 
-        return await reader.StreamMany(stream, token).ConfigureAwait(false);
+        try
+        {
+            return await reader.StreamMany(stream, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     public async Task<T> ExecuteHandlerAsync<T>(IQueryHandler<T> handler, CancellationToken token)
@@ -78,7 +99,14 @@ public partial class QuerySession
         var cmd = this.BuildCommand(handler);
 
         await using var reader = await ExecuteReaderAsync(cmd, token).ConfigureAwait(false);
-        return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
+        try
+        {
+            return await handler.HandleAsync(reader, this, token).ConfigureAwait(false);
+        }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     [Obsolete(QuerySession.SynchronousRemoval)]

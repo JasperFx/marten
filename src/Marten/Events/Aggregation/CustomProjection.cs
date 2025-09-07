@@ -1,21 +1,10 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core;
-using JasperFx.Core.Descriptions;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using JasperFx.Events.Aggregation;
-using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
 using Marten.Internal.Sessions;
-using Marten.Internal.Storage;
-using Marten.Services;
-using Marten.Sessions;
-using Marten.Storage;
 
 namespace Marten.Events.Aggregation;
 
@@ -25,11 +14,11 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
-public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId>
+public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId> where TDoc : notnull where TId : notnull
 {
     protected CustomProjection()
     {
-        ProjectionName = GetType().Name;
+        Name = GetType().Name;
     }
 
     /// <summary>

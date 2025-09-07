@@ -28,6 +28,14 @@ public class MartenRegistryExamples
             _.Schema.For<User>().IndexCreatedAt();
         });
         #endregion
+
+        #region sample_index-tenantId-via-fi
+        DocumentStore.For(_ =>
+        {
+            _.Schema.For<User>().MultiTenanted();
+            _.Schema.For<User>().IndexTenantId();
+        });
+        #endregion
     }
 }
 

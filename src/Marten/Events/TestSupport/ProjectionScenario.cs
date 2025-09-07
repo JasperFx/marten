@@ -22,7 +22,7 @@ public partial class ProjectionScenario: IEventOperations
 
     internal IProjectionDaemon Daemon { get; private set; }
 
-    internal ScenarioStep NextStep => _steps.Any() ? _steps.Peek() : null;
+    internal ScenarioStep? NextStep => _steps.Count != 0 ? _steps.Peek() : null;
 
     internal IDocumentSession Session { get; private set; }
 

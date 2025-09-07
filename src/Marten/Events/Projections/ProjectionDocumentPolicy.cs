@@ -14,9 +14,9 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
 
         if (mapping.StoreOptions.Projections.TryFindAggregate(mapping.DocumentType, out var projection))
         {
-            if (projection.ProjectionVersion > 1)
+            if (projection.Version > 1)
             {
-                mapping.Alias += "_" + projection.ProjectionVersion;
+                mapping.Alias += "_" + projection.Version;
             }
 
             mapping.UseOptimisticConcurrency = false;

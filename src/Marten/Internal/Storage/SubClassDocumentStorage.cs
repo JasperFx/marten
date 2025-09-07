@@ -26,9 +26,9 @@ using Weasel.Postgresql.SqlGeneration;
 namespace Marten.Internal.Storage;
 
 internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>, IHaveMetadataColumns
-    where T : TRoot
+    where T : notnull, TRoot where TId : notnull where TRoot : notnull
 {
-    private readonly ISqlFragment _defaultWhere;
+    private readonly ISqlFragment? _defaultWhere;
     private readonly string[] _fields;
     private readonly SubClassMapping _mapping;
     private readonly IDocumentStorage<TRoot, TId> _parent;
@@ -86,7 +86,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);
 
@@ -107,7 +107,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return query.CombineAnd(extras);
     }
 
-    public ISqlFragment DefaultWhereFragment()
+    public ISqlFragment? DefaultWhereFragment()
     {
         return _defaultWhere;
     }
@@ -182,7 +182,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.DeleteForId(id, tenant);
     }
 
-    public async Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public async Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
 
@@ -289,7 +289,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         }
     }
 
-    public ISqlFragment determineWhereFragment()
+    public ISqlFragment? determineWhereFragment()
     {
         var defaults = defaultFilters().ToArray();
         return defaults.Length switch

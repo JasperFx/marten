@@ -20,6 +20,11 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
+
+        // OR if you use the async daemon in your tests, use this
+        // instead to do the above, but also cleanly stop all projections,
+        // reset the data, then start all async projections and subscriptions up again
+        await Host.ResetAllMartenDataAsync();
     }
 
     // This is required because of the IAsyncLifetime

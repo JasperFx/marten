@@ -30,8 +30,8 @@ public class is_super_set_of_operator : IntegrationContext
 
     protected override Task fixtureSetup()
     {
-        _allTargets = new[]
-        {
+        _allTargets =
+        [
             CreateTarget("c#"),
             CreateTarget("c#", "json", "webapi"),
             CreateTarget("c#", "logging"),
@@ -39,7 +39,7 @@ public class is_super_set_of_operator : IntegrationContext
             CreateTarget("c#", "mssql", "aspnet"),
             CreateTarget("sql", "mssql"),
             CreateTarget(".net", "json", "mssql", "c#")
-        };
+        ];
         return theStore.BulkInsertAsync(_allTargets);
     }
 
@@ -62,7 +62,7 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(3);
+        found.Length.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
@@ -85,7 +85,7 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Count().ShouldBe(3);
+        found.Length.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 

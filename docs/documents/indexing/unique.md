@@ -225,13 +225,13 @@ var store = DocumentStore.For(_ =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L81-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L82-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customizing-calculated-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Same can be configured for Duplicated Field:
 
 <!-- snippet: sample_IndexExamples -->
-<a id='snippet-sample_indexexamples'></a>
+<a id='snippet-sample_IndexExamples'></a>
 ```cs
 var store = DocumentStore.For(options =>
 {
@@ -269,7 +269,7 @@ var store = DocumentStore.For(options =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L58-L94' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_indexexamples' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L66-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IndexExamples' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unique Index per Tenant

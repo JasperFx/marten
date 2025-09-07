@@ -6,14 +6,15 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using ImTools;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
-using JasperFx.Core.Descriptions;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
+using JasperFx.MultiTenancy;
 using Marten.Events;
-using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -37,32 +38,12 @@ using Weasel.Postgresql.Connections;
 
 namespace Marten;
 
-public enum TenantIdStyle
-{
-    /// <summary>
-    /// Use the tenant id as is wherever it is supplied
-    /// </summary>
-    CaseSensitive,
-
-    /// <summary>
-    /// Quietly convert all supplied tenant identifiers to all upper case to prevent
-    /// any possible issues with case sensitive tenant id mismatches
-    /// </summary>
-    ForceUpperCase,
-
-    /// <summary>
-    /// Quietly convert all supplied tenant identifiers to all lower case to prevent
-    /// any possible issues with case sensitive tenant id mismatches
-    /// </summary>
-    ForceLowerCase
-}
-
 /// <summary>
 ///     StoreOptions supplies all the necessary configuration
 ///     necessary to customize and bootstrap a working
 ///     DocumentStore
 /// </summary>
-public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver
+public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDocumentSchemaResolver, IDescribeMyself
 {
     public const int DefaultTimeout = 5;
     internal const string? NoConnectionMessage = "No tenancy is configured! Ensure that you provided connection string in `AddMarten` method or called `UseNpgsqlDataSource`";
@@ -101,7 +82,18 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     /// Configure tenant id behavior within this Marten DocumentStore
     /// </summary>
-    public TenantIdStyle TenantIdStyle { get; set; } = TenantIdStyle.CaseSensitive;
+    public TenantIdStyle TenantIdStyle
+    {
+        get => _tenantIdStyle.HasValue ? _tenantIdStyle.Value : TenantIdStyle.CaseSensitive;
+        set => _tenantIdStyle = value;
+    }
+
+    internal ImList<Type> LiveAggregateTypesWithNoIdentity { get; private set; } = ImList<Type>.Empty;
+
+    internal void RegisterAggregateTypeWithNoIdentity(Type aggregateType)
+    {
+        LiveAggregateTypesWithNoIdentity = LiveAggregateTypesWithNoIdentity.Push(aggregateType);
+    }
 
     /// <summary>
     ///     Add, remove, or reorder global session listeners
@@ -174,22 +166,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
             return builder;
         });
-    }
-
-    public string MaybeCorrectTenantId(string tenantId)
-    {
-        if (tenantId.IsEmpty()) return StorageConstants.DefaultTenantId;
-        if (tenantId == StorageConstants.DefaultTenantId) return tenantId;
-
-        switch (TenantIdStyle)
-        {
-            case TenantIdStyle.CaseSensitive:
-                return tenantId;
-            case TenantIdStyle.ForceLowerCase:
-                return tenantId.ToLowerInvariant();
-            default:
-                return tenantId.ToUpperInvariant();
-        }
     }
 
     /// <summary>
@@ -266,6 +242,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
+    [ChildDescription]
     public ProjectionOptions Projections => _projections;
 
     /// <summary>
@@ -281,7 +258,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
-    [IgnoreDescription]
+    [ChildDescription]
     public StorageFeatures Storage => _storage;
 
     internal Action<IDatabaseCreationExpressions>? CreateDatabases
@@ -444,6 +421,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private readonly EventGraph _eventGraph;
     private readonly LinqParsing _linq;
     private int _updateBatchSize = 500;
+    private TenantIdStyle? _tenantIdStyle;
 
     IReadOnlyEventStoreOptions IReadOnlyStoreOptions.Events => EventGraph;
 
@@ -812,6 +790,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             return ForAllDocuments(mapping =>
             {
                 if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+                if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
                 mapping.TenancyStyle = TenancyStyle.Conjoined;
             });
         }
@@ -1010,6 +989,52 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             Listeners.Add(metrics);
         }
     }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var options = new OptionsDescription(this);
+
+        // var set = options.AddChildSet("Document Types");
+        // foreach (var mapping in Storage.AllDocumentMappings)
+        // {
+        //     set.Rows.Add(new OptionsDescription(mapping));
+        // }
+
+        /*
+    │   ├── Alias: day
+           │   ├── Casing: Default
+           │   ├── CodeGen: Marten.Schema.DocumentCodeGen
+           │   ├── DatabaseSchemaName: cli
+           │   ├── DdlTemplate: None
+           │   ├── DeleteStyle: Remove
+           │   ├── DisablePartitioningIfAny: False
+           │   ├── DocumentType: DaemonTests.Aggregations.Day
+           │   ├── EnumStorage: AsInteger
+           │   ├── HiloSettings: None
+           │   ├── IdMember: Int32 Id
+           │   ├── IdStrategy: Marten.Schema.Identity.Sequences.HiloIdGeneration
+           │   ├── IdType: int
+           │   ├── IgnorePartitions: False
+           │   ├── InsertFunction: cli.mt_insert_day
+           │   ├── Metadata: Marten.Schema.DocumentMetadataCollection
+           │   ├── OverwriteFunction: cli.mt_overwrite_day
+           │   ├── Partitioning: None
+           │   ├── PrimaryKeyTenancyOrdering: TenantId_Then_Id
+           │   ├── PropertySearching: JSON_Locator_Only
+           │   ├── StructuralTyped: False
+           │   ├── SubClasses: Marten.Schema.SubClasses
+           │   ├── TableName: cli.mt_doc_day
+           │   ├── TenancyStyle: Single
+           │   ├── UpdateFunction: cli.mt_update_day
+           │   ├── UpsertFunction: cli.mt_upsert_day
+           │   ├── UseNumericRevisions: True
+           │   ├── UseOptimisticConcurrency: False
+           │   └── UseVersionFromMatchingStream: False
+
+         */
+
+        return options;
+    }
 }
 
 internal class LambdaDocumentPolicy: IDocumentPolicy
@@ -1098,6 +1123,7 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Global default parameters for Hilo sequences within the DocumentStore. Can be overridden per document
     ///     type as well
     /// </summary>
+    [ChildDescription]
     public HiloSettings HiloSequenceDefaults { get; } = new();
 
 
@@ -1105,11 +1131,13 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     ///     Allows you to modify how the DDL for document tables and upsert functions is
     ///     written
     /// </summary>
+    [IgnoreDescription]
     public PostgresqlMigrator Migrator { get; } = new();
 
     /// <summary>
     /// Configuration options when using a <see cref="NpgsqlMultiHostDataSource"/>
     /// </summary>
+    [ChildDescription]
     public MultiHostSettings MultiHostSettings { get; } = new();
 
     /// <summary>
@@ -1138,4 +1166,6 @@ public class AdvancedOptions: IReadOnlyAdvancedOptions
     /// Option to use NGram search using unaccent
     /// </summary>
     public bool UseNGramSearchWithUnaccent { get; set; }
+
+
 }

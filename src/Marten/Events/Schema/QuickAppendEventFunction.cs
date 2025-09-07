@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using JasperFx.Events;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -57,6 +58,20 @@ namespace Marten.Events.Schema;
                 metadataValues += ", headers[index]";
             }
 
+            if (table.Columns.OfType<UserNameColumn>().Any())
+            {
+                metadataColumns += ", " + UserNameColumn.ColumnName;
+                metadataParameters += ", user_names varchar[]";
+                metadataValues += ", user_names[index]";
+            }
+
+            var timestampValue = "(now() at time zone 'utc')";
+            if (_events.AppendMode == EventAppendMode.QuickWithServerTimestamps)
+            {
+                timestampValue = "timestamps[index]";
+                metadataParameters += ", timestamps timestamptz[]";
+            }
+
 
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}) RETURNS int[] AS $$
@@ -98,7 +113,7 @@ BEGIN
 		insert into {databaseSchema}.mt_events
 			(seq_id, id, stream_id, version, data, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
 		values
-			(seq, event_id, stream, event_version, body, event_type, tenantid, (now() at time zone 'utc'), dotnet_types[index], FALSE{metadataValues});
+			(seq, event_id, stream, event_version, body, event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues});
 
 		index := index + 1;
 	end loop;

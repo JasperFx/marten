@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
 using Marten.Events.Daemon;
 using Marten.Events.Projections;
@@ -39,6 +40,12 @@ public interface IReadOnlyEventStoreOptions
     IReadonlyMetadataConfig MetadataConfig { get; }
 
     /// <summary>
+    /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+    /// running in an Inline lifecycle. Default is false;
+    /// </summary>
+    bool EnableSideEffectsOnInlineProjections { get; }
+
+    /// <summary>
     /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
     /// be helpful if you need to create an external reference id to another system, or need to
     /// load events by their Id
@@ -50,7 +57,7 @@ public interface IReadOnlyEventStoreOptions
     /// <summary>
     ///     Configuration for all event store projections
     /// </summary>
-    IReadOnlyList<IReadOnlyProjectionData> Projections();
+    IReadOnlyList<ISubscriptionSource> Projections();
 
     IReadOnlyList<IEventType> AllKnownEventTypes();
 
@@ -79,4 +86,21 @@ public interface IReadOnlyEventStoreOptions
     /// but this will be true in 8.0
     /// </summary>
     bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    /// <summary>
+    /// Opt into different aliasing styles for .NET event types
+    /// </summary>
+    EventNamingStyle EventNamingStyle { get; set; }
+
+    /// <summary>
+    /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
+    /// extra tables, functions, and columns to your Marten event store schema
+    /// </summary>
+    public bool EnableAdvancedAsyncTracking { get; set; }
+
+    /// <summary>
+    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+    /// </summary>
+    bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 }

@@ -8,6 +8,7 @@ using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
@@ -34,7 +35,6 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
             opts.Schema.For<ResourcesGlobalSummary>().SingleTenanted();
 
@@ -109,7 +109,6 @@ public class ConjoinedTenancyProjectionsTests: IntegrationContext
         {
             opts.Policies.AllDocumentsAreMultiTenanted();
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 
             opts.Schema.For<CompanyLocation>().SoftDeleted();
             opts.Projections.Add(new CompanyLocationCustomProjection(), ProjectionLifecycle.Inline);
@@ -191,6 +190,7 @@ public class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGl
 {
     public ResourcesGlobalSummaryProjection()
     {
+        TenancyGrouping = TenancyGrouping.AcrossTenants;
         Identity<ResourceCreatedEvent>(e => e.OrganisationId);
         Identity<ResourceRemovedEvent>(e => e.OrganisationId);
     }
@@ -222,7 +222,7 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
         this.IncludeType<CompanyLocationDeleted>();
     }
 
-    public override ValueTask<SnapshotAction<CompanyLocation>> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
+    public override ValueTask<(CompanyLocation, ActionType)> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,
         IIdentitySetter<CompanyLocation, Guid> identitySetter, IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
         var location = snapshot;
@@ -248,11 +248,11 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
                     break;
 
                 case CompanyLocationDeleted d:
-                    return new ValueTask<SnapshotAction<CompanyLocation>>(new Delete<CompanyLocation>(location));
+                    return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Delete));
             }
         }
 
-        return new ValueTask<SnapshotAction<CompanyLocation>>(new Store<CompanyLocation>(location));
+        return new ValueTask<(CompanyLocation, ActionType)>((location, ActionType.Store));
     }
 
 }

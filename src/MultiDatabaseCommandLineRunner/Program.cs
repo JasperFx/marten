@@ -1,14 +1,14 @@
-﻿using JasperFx.CodeGeneration;
-using Marten;
-using DaemonTests;
+﻿using DaemonTests.Aggregations;
+using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
-using Marten.Events.Daemon.Resiliency;
-using Marten.Events.Projections;
+using JasperFx;
+using JasperFx.CodeGeneration;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
-using JasperFx;
-using Weasel.Core;
 
 public interface IOtherStore: IDocumentStore
 {

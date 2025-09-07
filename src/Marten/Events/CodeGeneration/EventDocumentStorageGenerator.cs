@@ -50,7 +50,7 @@ internal static class EventDocumentStorageGenerator
 
         Debug.WriteLine(builderType.SourceCode);
 
-        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType, options);
+        return (EventDocumentStorage)Activator.CreateInstance(builderType.CompiledType!, options)!;
     }
 
     public static GeneratedType AssembleTypes(StoreOptions options, GeneratedAssembly assembly)
@@ -278,7 +278,7 @@ internal static class EventDocumentStorageGenerator
         var columns = new EventsTable(graph).SelectColumns()
 
             // Hokey, use an explicit model for writeable vs readable columns some day
-            .Where(x => !(x is IsArchivedColumn)).ToList();
+            .Where(x => x is not IsArchivedColumn).ToList();
 
         // Hokey, but we need to move Sequence to the end
         var sequence = columns.OfType<SequenceColumn>().Single();
@@ -344,6 +344,16 @@ internal static class EventDocumentStorageGenerator
         if (table.Columns.OfType<HeadersColumn>().Any())
         {
             configure.Frames.Code("writeHeaders(parameterBuilder, session);");
+        }
+
+        if (table.Columns.OfType<UserNameColumn>().Any())
+        {
+            configure.Frames.Code("writeUserNames(parameterBuilder, session);");
+        }
+
+        if (graph.AppendMode == EventAppendMode.QuickWithServerTimestamps)
+        {
+            configure.Frames.Code("writeTimestamps(parameterBuilder);");
         }
 
         configure.Frames.AppendSql(')');

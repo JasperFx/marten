@@ -12,7 +12,7 @@ using Npgsql;
 
 namespace Marten.Internal.Storage;
 
-public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId>
+public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId> where T: notnull where TId: notnull
 {
     public IdentityMapDocumentStorage(DocumentMapping document): this(StorageStyle.IdentityMap, document)
     {
@@ -138,7 +138,8 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         var list = preselectLoadedDocuments(ids, session, out var command);
         var selector = (ISelector<T>)BuildSelector(session);
 
-        await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+        await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        try
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -146,11 +147,15 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
                 list.Add(document);
             }
         }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
 
         return list;
     }
 
-    public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         if (session.ItemMap.TryGetValue(typeof(T), out var items))
         {
@@ -158,7 +163,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
             {
                 if (d.TryGetValue(id, out var item))
                 {
-                    return Task.FromResult(item);
+                    return Task.FromResult<T?>(item);
                 }
             }
             else

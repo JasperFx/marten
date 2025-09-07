@@ -29,9 +29,10 @@ namespace Marten.Events
         TenancyStyle TenancyStyle { get; set; }
 
         /// <summary>
-        /// Enables global project projections (with single tenancy style) for events with conjoined tenancy
+        /// Opt into having Marten process "side effects" on aggregation projections (SingleStreamProjection/MultiStreamProjection) while
+        /// running in an Inline lifecycle. Default is false;
         /// </summary>
-        bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
+        bool EnableSideEffectsOnInlineProjections { get; set; }
 
         /// <summary>
         /// Opt into a performance optimization that directs Marten to always use the identity map for an
@@ -65,6 +66,12 @@ namespace Marten.Events
         public EventAppendMode AppendMode { get; set; }
 
         /// <summary>
+        /// Opt into more robust tracking of asynchronous projection behavior. Default is false. This will add
+        /// extra tables, functions, and columns to your Marten event store schema
+        /// </summary>
+        public bool EnableAdvancedAsyncTracking { get; set; }
+
+        /// <summary>
         /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
         /// *if* you are also aggressively using event stream archiving
         /// </summary>
@@ -89,6 +96,17 @@ namespace Marten.Events
         /// but this will be true in 8.0
         /// </summary>
         public bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+        /// <summary>
+        /// Opt into different aliasing styles for .NET event types
+        /// </summary>
+        public EventNamingStyle EventNamingStyle { get; set; }
+
+        /// <summary>
+        /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+        /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+        /// </summary>
+        public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
         /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
@@ -351,9 +369,18 @@ namespace Marten.Events
         /// for an event type "T" or series of event types that can be cast
         /// to "T"
         /// </summary>
-        /// <param name="action"></param>
+        /// <param name="action">Action to mask the current object</param>
         /// <typeparam name="T"></typeparam>
         void AddMaskingRuleForProtectedInformation<T>(Action<T> action);
+
+        /// <summary>
+        /// Register a policy for how to remove or mask protected information
+        /// for an event type "T" or series of event types that can be cast
+        /// to "T"
+        /// </summary>
+        /// <param name="func">Function to replace the event with a masked event</param>
+        /// <typeparam name="T"></typeparam>
+        void AddMaskingRuleForProtectedInformation<T>(Func<T, T> func);
     }
 }
 

@@ -32,7 +32,7 @@ public class PagedList<T>: IPagedList<T>
     /// <summary>
     ///     Return the number of records in the paged query result
     /// </summary>
-    public long Count => _items.Count();
+    public long Count => _items.Count;
 
     /// <summary>
     ///     Generic Enumerator

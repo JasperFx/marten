@@ -27,20 +27,20 @@ Fortunately, Marten supports the concept of a _Compiled Query_ that you can use 
 All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResult>` interface shown below:
 
 <!-- snippet: sample_ICompiledQuery -->
-<a id='snippet-sample_icompiledquery'></a>
+<a id='snippet-sample_ICompiledQuery'></a>
 ```cs
 public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
 {
     Expression<Func<IMartenQueryable<TDoc>, TOut>> QueryIs();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L30-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L29-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ICompiledQuery' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In its simplest usage, let's say that we want to find the first user document with a certain first name. That class would look like this:
 
 <!-- snippet: sample_FindByFirstName -->
-<a id='snippet-sample_findbyfirstname'></a>
+<a id='snippet-sample_FindByFirstName'></a>
 ```cs
 public class FindByFirstName: ICompiledQuery<User, User>
 {
@@ -52,7 +52,7 @@ public class FindByFirstName: ICompiledQuery<User, User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L100-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L100-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_FindByFirstName' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -69,11 +69,11 @@ To use the `FindByFirstName` query, just use the code below:
 <!-- snippet: sample_using-compiled-query -->
 <a id='snippet-sample_using-compiled-query'></a>
 ```cs
-var justin = session.Query(new FindByFirstName { FirstName = "Justin" });
+var justin = await session.QueryAsync(new FindByFirstName { FirstName = "Justin" });
 
 var tamba = await session.QueryAsync(new FindByFirstName { FirstName = "Tamba" });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L159-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L139-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-compiled-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or to use it as part of a batched query, this syntax:
@@ -173,19 +173,19 @@ To query for multiple results, you need to just return the raw `IQueryable<T>` a
 If you are selecting the whole document without any kind of `Select()` transform, you can use this interface:
 
 <!-- snippet: sample_ICompiledListQuery-with-no-select -->
-<a id='snippet-sample_icompiledlistquery-with-no-select'></a>
+<a id='snippet-sample_ICompiledListQuery-with-no-select'></a>
 ```cs
-public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc>
+public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where TDoc : notnull
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-no-select' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L44-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ICompiledListQuery-with-no-select' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
 
 <!-- snippet: sample_UsersByFirstName-Query -->
-<a id='snippet-sample_usersbyfirstname-query'></a>
+<a id='snippet-sample_UsersByFirstName-Query'></a>
 ```cs
 public class UsersByFirstName: ICompiledListQuery<User>
 {
@@ -198,25 +198,25 @@ public class UsersByFirstName: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L601-L614' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L592-L605' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UsersByFirstName-Query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you do want to use a `Select()` transform, use this interface:
 
 <!-- snippet: sample_ICompiledListQuery-with-select -->
-<a id='snippet-sample_icompiledlistquery-with-select'></a>
+<a id='snippet-sample_ICompiledListQuery-with-select'></a>
 ```cs
-public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>>
+public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>> where TDoc : notnull
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L59-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledlistquery-with-select' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L58-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ICompiledListQuery-with-select' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A sample usage of this type of query is shown below:
 
 <!-- snippet: sample_UserNamesForFirstName -->
-<a id='snippet-sample_usernamesforfirstname'></a>
+<a id='snippet-sample_UserNamesForFirstName'></a>
 ```cs
 public class UserNamesForFirstName: ICompiledListQuery<User, string>
 {
@@ -230,7 +230,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
     public string FirstName { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L626-L640' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L617-L631' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UserNamesForFirstName' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Related Documents with Include()
@@ -253,7 +253,7 @@ public async Task simple_compiled_include_for_a_single_document()
 
     using var query = theStore.QuerySession();
     var issueQuery = new IssueByTitleWithAssignee { Title = issue.Title };
-    var issue2 = query.Query(issueQuery);
+    var issue2 = await query.QueryAsync(issueQuery);
 
     issueQuery.Included.ShouldNotBeNull();
     issueQuery.Included.Single().Id.ShouldBe(user.Id);
@@ -324,7 +324,7 @@ public async Task compiled_include_to_list()
     var compiledQuery = new IssueWithUsers();
 
     querySession.Logger = new TestOutputMartenLogger(_output);
-    var issues = querySession.Query(compiledQuery).ToArray();
+    var issues = await querySession.QueryAsync(compiledQuery);
 
     compiledQuery.Users.Count.ShouldBe(2);
     issues.Count().ShouldBe(3);
@@ -373,7 +373,7 @@ public async Task compiled_include_to_dictionary()
     using var querySession = theStore.QuerySession();
     var compiledQuery = new IssueWithUsersById();
 
-    var issues = querySession.Query(compiledQuery).ToArray();
+    var issues = await querySession.QueryAsync(compiledQuery);
 
     issues.ShouldNotBeEmpty();
 
@@ -426,19 +426,19 @@ we handle Include queries.
 If you are querying for a single document with no transformation, you can use this interface as a convenience:
 
 <!-- snippet: sample_ICompiledQuery-for-single-doc -->
-<a id='snippet-sample_icompiledquery-for-single-doc'></a>
+<a id='snippet-sample_ICompiledQuery-for-single-doc'></a>
 ```cs
-public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc>
+public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc> where TDoc : notnull
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L72-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_icompiledquery-for-single-doc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Linq/ICompiledQuery.cs#L71-L77' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ICompiledQuery-for-single-doc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And an example:
 
 <!-- snippet: sample_FindUserByAllTheThings -->
-<a id='snippet-sample_finduserbyallthethings'></a>
+<a id='snippet-sample_FindUserByAllTheThings'></a>
 ```cs
 public class FindUserByAllTheThings: ICompiledQuery<User>
 {
@@ -455,7 +455,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L385-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L376-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_FindUserByAllTheThings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Multiple Results as JSON
@@ -463,7 +463,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
 
 <!-- snippet: sample_CompiledToJsonArray -->
-<a id='snippet-sample_compiledtojsonarray'></a>
+<a id='snippet-sample_CompiledToJsonArray'></a>
 ```cs
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 {
@@ -477,7 +477,7 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L419-L433' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L410-L424' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CompiledToJsonArray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
@@ -485,7 +485,7 @@ If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method
 A sample usage of this type of query is shown below:
 
 <!-- snippet: sample_CompiledToJsonArray -->
-<a id='snippet-sample_compiledtojsonarray'></a>
+<a id='snippet-sample_CompiledToJsonArray'></a>
 ```cs
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 {
@@ -499,7 +499,7 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L419-L433' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L410-L424' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CompiledToJsonArray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
@@ -509,7 +509,7 @@ Note that the result has the documents comma separated and wrapped in angle brac
 Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
 
 <!-- snippet: sample_CompiledAsJson -->
-<a id='snippet-sample_compiledasjson'></a>
+<a id='snippet-sample_CompiledAsJson'></a>
 ```cs
 public class FindJsonUserByUsername: ICompiledQuery<User>
 {
@@ -522,13 +522,13 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L404-L417' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L395-L408' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CompiledAsJson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And an example:
 
 <!-- snippet: sample_CompiledAsJson -->
-<a id='snippet-sample_compiledasjson'></a>
+<a id='snippet-sample_CompiledAsJson'></a>
 ```cs
 public class FindJsonUserByUsername: ICompiledQuery<User>
 {
@@ -541,7 +541,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L404-L417' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L395-L408' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CompiledAsJson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 (our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
@@ -554,7 +554,7 @@ object to collect the total number of rows in the database when the query is exe
 from the Marten tests:
 
 <!-- snippet: sample_TargetsInOrder -->
-<a id='snippet-sample_targetsinorder'></a>
+<a id='snippet-sample_TargetsInOrder'></a>
 ```cs
 public class TargetsInOrder: ICompiledListQuery<Target>
 {
@@ -572,13 +572,13 @@ public class TargetsInOrder: ICompiledListQuery<Target>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L537-L555' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L528-L546' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_TargetsInOrder' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And when used in the actual test:
 
 <!-- snippet: sample_using_QueryStatistics_with_compiled_query -->
-<a id='snippet-sample_using_querystatistics_with_compiled_query'></a>
+<a id='snippet-sample_using_QueryStatistics_with_compiled_query'></a>
 ```cs
 [Fact]
 public async Task use_compiled_query_with_statistics()
@@ -596,7 +596,7 @@ public async Task use_compiled_query_with_statistics()
     query.Statistics.TotalResults.ShouldBe(100);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_querystatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_QueryStatistics_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Query Plans <Badge type="tip" text="7.25" />
@@ -686,7 +686,7 @@ public static async Task use_query_plan(IQuerySession session, CancellationToken
 There is also a similar interface for usage with [batch querying](/documents/querying/batched-queries):
 
 <!-- snippet: sample_IBatchQueryPlan -->
-<a id='snippet-sample_ibatchqueryplan'></a>
+<a id='snippet-sample_IBatchQueryPlan'></a>
 ```cs
 /// <summary>
 /// Marten's concept of the "Specification" pattern for reusable
@@ -698,7 +698,7 @@ public interface IBatchQueryPlan<T>
     Task<T> Fetch(IBatchedQuery query);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQueryPlan.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ibatchqueryplan' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQueryPlan.cs#L21-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IBatchQueryPlan' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And because we expect this to be very common, there is convenience base class named `QueryListPlan<T>` for querying lists of `T` data that can be used for both querying directly against an `IQuerySession` and for batch querying. The usage within a batched query is shown below from the Marten tests:

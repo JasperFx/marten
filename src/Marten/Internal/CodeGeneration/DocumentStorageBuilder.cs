@@ -42,22 +42,14 @@ internal class DocumentStorageBuilder
 
     private Type determineOpenDocumentStorageType(StorageStyle style)
     {
-        switch (style)
+        return style switch
         {
-            case StorageStyle.Lightweight:
-                return typeof(LightweightDocumentStorage<,>);
-
-            case StorageStyle.QueryOnly:
-                return typeof(QueryOnlyDocumentStorage<,>);
-
-            case StorageStyle.IdentityMap:
-                return typeof(IdentityMapDocumentStorage<,>);
-
-            case StorageStyle.DirtyTracking:
-                return typeof(DirtyCheckedDocumentStorage<,>);
-        }
-
-        throw new NotSupportedException();
+            StorageStyle.Lightweight => typeof(LightweightDocumentStorage<,>),
+            StorageStyle.QueryOnly => typeof(QueryOnlyDocumentStorage<,>),
+            StorageStyle.IdentityMap => typeof(IdentityMapDocumentStorage<,>),
+            StorageStyle.DirtyTracking => typeof(DirtyCheckedDocumentStorage<,>),
+            _ => throw new NotSupportedException(),
+        };
     }
 
     public GeneratedType Build(GeneratedAssembly assembly, DocumentOperations operations)
@@ -223,7 +215,7 @@ internal class DocumentStorageBuilder
 
     private void buildOperationMethod(GeneratedType type, DocumentOperations operations, string methodName)
     {
-        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName).GetValue(operations);
+        var operationType = (GeneratedType)typeof(DocumentOperations).GetProperty(methodName)!.GetValue(operations)!;
         var method = type.MethodFor(methodName);
 
         writeReturnOfOperation(method, operationType, methodName);

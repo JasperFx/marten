@@ -32,9 +32,11 @@ internal class SecondaryDocumentStores: ICodeFileCollection
     {
         get
         {
-            var rules = _files.First().BuildStoreOptions(Services).CreateGenerationRules();
+            var parentRules = _files.First().BuildStoreOptions(Services).CreateGenerationRules();
+            var rules = new GenerationRules();
 
-            rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory().AppendPath("Stores");
+            rules.GeneratedNamespace = "Marten.Generated";
+            rules.GeneratedCodeOutputPath = parentRules.GeneratedCodeOutputPath.ParentDirectory();
 
             return rules;
         }
@@ -57,10 +59,11 @@ public interface IConfigureMarten<T>: IConfigureMarten where T : IDocumentStore
 {
 }
 
-internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocumentStore
+
+internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
 {
     private readonly Func<IServiceProvider, StoreOptions> _configuration;
-    private Type _storeType;
+    private Type? _storeType;
 
     public SecondaryStoreConfig(Func<IServiceProvider, StoreOptions> configuration)
     {
@@ -74,13 +77,13 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         type.Implements<T>();
     }
 
-    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public Task<bool> AttachTypes(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         return Task.FromResult(AttachTypesSynchronously(rules, assembly, services, containingNamespace));
     }
 
-    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider services,
+    public bool AttachTypesSynchronously(GenerationRules rules, Assembly assembly, IServiceProvider? services,
         string containingNamespace)
     {
         _storeType = assembly.FindPreGeneratedType(containingNamespace, FileName);
@@ -99,8 +102,15 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
         var configures = provider.GetServices<IConfigureMarten<T>>();
         foreach (var configure in configures) configure.Configure(provider, options);
 
+        var globals = provider.GetServices<IConfigureMarten>().OfType<IGlobalConfigureMarten>();
+        foreach (var configureMarten in globals)
+        {
+            configureMarten.Configure(provider, options);
+        }
+
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
+        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
 
         return options;
     }
@@ -108,13 +118,14 @@ internal class SecondaryStoreConfig<T>: ICodeFile, IStoreConfig where T : IDocum
     public T Build(IServiceProvider provider)
     {
         var options = BuildStoreOptions(provider);
-        options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
-
         var rules = options.CreateGenerationRules();
 
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
         this.InitializeSynchronously(rules, Parent, provider);
 
-        return (T)Activator.CreateInstance(_storeType, options);
+        var store = (T)Activator.CreateInstance(_storeType!, options)!;
+        store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());
+
+        return store;
     }
 }

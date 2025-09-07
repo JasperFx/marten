@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using ImTools;
 using JasperFx.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -59,7 +60,7 @@ namespace Marten.Services.Json
             if (c == null)
                 return a => method.Invoke(null, a)!;
 
-            if (!c.GetParameters().Any())
+            if (c.GetParameters().Length == 0)
                 return _ => c.Invoke(Array.Empty<object?>());
 
             return a => c.Invoke(a);

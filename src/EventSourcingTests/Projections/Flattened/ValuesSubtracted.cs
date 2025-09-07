@@ -7,4 +7,6 @@ public class ValuesSubtracted
     public int C { get; set; }
     public int D { get; set; }
     public string Name { get; set; }
+
+    public int? MaybeNumber { get; set; }
 }

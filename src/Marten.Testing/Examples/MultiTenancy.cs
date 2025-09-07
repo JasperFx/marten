@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using JasperFx.MultiTenancy;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;

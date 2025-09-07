@@ -66,7 +66,7 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
 
         // Access to the current state as of the projection
         // event page being processed *right* now
-        var currentTrip = slice.Aggregate;
+        var currentTrip = slice.Snapshot;
 
         if (currentTrip.TotalMiles > 1000)
         {

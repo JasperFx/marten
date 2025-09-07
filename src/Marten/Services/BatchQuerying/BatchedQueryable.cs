@@ -178,17 +178,17 @@ internal class BatchedQueryable<T>: IBatchedQueryable<T> where T : class
         return _parent.SingleOrDefault(Inner.Where(filter).As<IMartenQueryable<T>>());
     }
 
-    public Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression)
+    public Task<TResult> Min<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull
     {
         return _parent.Min(Inner.Select(expression));
     }
 
-    public Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression)
+    public Task<TResult> Max<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull
     {
         return _parent.Max(Inner.Select(expression));
     }
 
-    public Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression)
+    public Task<TResult> Sum<TResult>(Expression<Func<T, TResult>> expression) where TResult : notnull
     {
         return _parent.Sum(Inner.Select(expression));
     }

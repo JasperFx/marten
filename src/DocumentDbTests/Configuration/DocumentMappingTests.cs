@@ -1,12 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Exceptions;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
@@ -477,7 +475,7 @@ public class DocumentMappingTests
 
         var table = new DocumentTable(mapping);
 
-        var typeColumn = table.Columns.Last();
+        var typeColumn = table.Columns[table.Columns.Count - 1];
         typeColumn.Name.ShouldBe(SchemaConstants.DocumentTypeColumn);
         typeColumn.Type.ShouldBe("varchar");
     }
@@ -642,10 +640,54 @@ public class DocumentMappingTests
         options.Policies.AllDocumentsAreMultiTenanted();
 
         var mapping = new DocumentMapping(typeof(User), options);
-        mapping.TenancyStyle = TenancyStyle.Conjoined;
 
         var table = new DocumentTable(mapping);
         table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void try_add_the_tenant_id_index_manually_when_it_is_not_multi_tenancy()
+    {
+        var options = new StoreOptions();
+
+        var mapping = new DocumentMapping(typeof(User), options)
+        {
+            TenancyStyle = TenancyStyle.Single
+        };
+        mapping.AddTenantIdIndex(); // this should do nothing since it is not multi-tenancy
+
+        var table = new DocumentTable(mapping);
+        table.Indexes.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void add_the_tenant_id_index_manually_when_it_is_multi_tenancy()
+    {
+        var options = new StoreOptions();
+        options.Policies.AllDocumentsAreMultiTenanted();
+
+        var mapping = new DocumentMapping(typeof(User), options);
+        mapping.AddTenantIdIndex();
+
+        var table = new DocumentTable(mapping);
+        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void add_the_tenant_id_index_when_it_is_conjoined_tenancy_and_PrimaryKeyTenancyOrdering_id_then_tenant()
+    {
+        var options = new StoreOptions();
+        var mapping = new DocumentMapping(typeof(User), options)
+        {
+            TenancyStyle = TenancyStyle.Conjoined,
+            PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId
+        };
+
+        var table = new DocumentTable(mapping);
+        table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
+        table.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
     }
 
     [Fact]

@@ -43,7 +43,7 @@ var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L19-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_solo' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L17-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_solo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Likewise, we can configure the daemon to run in *HotCold* mode like this:
@@ -67,7 +67,7 @@ var host = await Host.CreateDefaultBuilder()
     })
     .StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L90-L108' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L88-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Solo vs. HotCold
@@ -204,7 +204,7 @@ You can see the usage below from one of the Marten tests where we use that metho
 daemon has caught up:
 
 <!-- snippet: sample_using_WaitForNonStaleProjectionDataAsync -->
-<a id='snippet-sample_using_waitfornonstaleprojectiondataasync'></a>
+<a id='snippet-sample_using_WaitForNonStaleProjectionDataAsync'></a>
 ```cs
 [Fact]
 public async Task run_simultaneously()
@@ -225,7 +225,7 @@ public async Task run_simultaneously()
     await CheckExpectedResults();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end.cs#L43-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_WaitForNonStaleProjectionDataAsync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic idea in your tests is to:
@@ -265,7 +265,7 @@ public async Task run_simultaneously()
     await CheckExpectedResults();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/event_projections_end_to_end_ihost.cs#L22-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_accessing_daemon_from_ihost' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end_ihost.cs#L23-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_accessing_daemon_from_ihost' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Diagnostics
@@ -273,17 +273,14 @@ public async Task run_simultaneously()
 The following code shows the diagnostics support for the async daemon as it is today:
 
 <!-- snippet: sample_DaemonDiagnostics -->
-<a id='snippet-sample_daemondiagnostics'></a>
+<a id='snippet-sample_DaemonDiagnostics'></a>
 ```cs
 public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 {
     // This will tell you the current progress of each known projection shard
     // according to the latest recorded mark in the database
     var allProgress = await store.Advanced.AllProjectionProgress();
-    foreach (var state in allProgress)
-    {
-        Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
-    }
+    foreach (var state in allProgress) Console.WriteLine($"{state.ShardName} is at {state.Sequence}");
 
     // This will allow you to retrieve some basic statistics about the event store
     var stats = await store.Advanced.FetchEventStoreStatistics();
@@ -295,7 +292,7 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L111-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DaemonDiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Command Line Support
@@ -401,7 +398,7 @@ public static async Task UseAsyncDaemon(IDocumentStore store, CancellationToken 
     await daemon.StopAllAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L135-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L130-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_async_daemon_alone' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Open Telemetry and Metrics <Badge type="tip" text="7.10" />
@@ -416,7 +413,7 @@ from systems using Marten.
 If your system is configured to export metrics and Open Telemetry data from Marten like this:
 
 <!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
-<a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
+<a id='snippet-sample_enabling_open_telemetry_exporting_from_Marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little
 // different for other tools like Prometheus or SigNoz
@@ -435,7 +432,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_Marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *And* you are running the async daemon in your system, you should see potentially activities for each running projection
@@ -445,12 +442,14 @@ or subscription with the prefix: `marten.{Subscription or Projection Name}.{shar
 * `loading` -- traces the loading of a page of events for a projection or subscription. Same tags as above
 * `grouping` -- traces the grouping process for projections that happens prior to execution. This does not apply to subscriptions. Same tags as above
 
-In addition, there are two metrics built for every combination of projection or subscription shard on each
+In addition, there are three metrics built for every combination of projection or subscription shard on each
 Marten database (in the case of using separate databases for multi-tenancy), again using the same prefix as above
 with the addition of the Marten database identifier in the case of multi-tenancy through separate databases like `marten.{database name}.{projection or subscription name}.all.*:
 
 * `processed` - a counter giving you an indication of how many events are being processed by the currently running subscription or projection shard
 * `gap` - a histogram telling you the "gap" between the high water mark of the system and the furthest progression of the running subscription or projection. 
+* `skipped` - added in Marten 8.6, a counter telling you how many events were skipped during asynchronous projection or subscription processing. Depending on how the application is 
+  configured, Marten may skip events because of serialization errors, unknown events, or application errors (basically, *your* code threw an exception)
 
 ::: tip
 The `gap` metrics are a good health check on the performance of any given projection or subscription. If this gap
@@ -483,6 +482,33 @@ using multi-tenancy through a database per tenant. On these spans will be these 
 
 There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
 that just emits and update every time that Marten has to "skip" stale events.
+
+## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
+
+::: info
+This setting will be required and utilized by the forthcoming "CritterWatch" tool.
+:::
+
+As part of some longer term planned improvements for Marten projection/subscription monitoring and potential
+administrative "healing" functions, you can opt into having Marten write out an additional table
+called `mt_high_water_skips` that tracks every time the high water detection has to "skip" over stale data. You can 
+use this information to "know" what streams and projections may be impacted by a skip.
+
+The flag for this is shown below:
+
+<!-- snippet: sample_enabling_advanced_tracking -->
+<a id='snippet-sample_enabling_advanced_tracking'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    opts.Events.EnableAdvancedAsyncTracking = true;
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Resiliency/when_skipping_events_in_daemon.cs#L187-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_advanced_tracking' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
 ## Querying for Non Stale Data
 
@@ -523,7 +549,7 @@ var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
     .Take(10)
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L133-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L134-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to
@@ -557,7 +583,7 @@ opts
         o.SubscribeAsInlineToAsync();
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/converting_projection_from_inline_to_async.cs#L31-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_subscribe_as_inline_to_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Aggregations/converting_projection_from_inline_to_async.cs#L30-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_subscribe_as_inline_to_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Just to be clear, when Marten's async daemon starts a projection with this starting option:

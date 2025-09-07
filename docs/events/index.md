@@ -47,7 +47,7 @@ var store2 = DocumentStore.For(_ =>
     _.Events.AddEventType(typeof(MonsterSlayed));
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/schema_object_management.cs#L41-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/schema_object_management.cs#L43-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering-event-types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Stream or Aggregate Types

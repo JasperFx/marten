@@ -68,7 +68,7 @@ But it **won't apply them** for multi-tenancy per database with **unknown
 Postgresql tables can be modeled with the `Table` class from `Weasel.Postgresql.Tables` as shown in this example below:
 
 <!-- snippet: sample_CustomSchemaTable -->
-<a id='snippet-sample_customschematable'></a>
+<a id='snippet-sample_CustomSchemaTable'></a>
 ```cs
 StoreOptions(opts =>
 {
@@ -82,7 +82,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L49-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschematable' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L49-L63' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CustomSchemaTable' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Function
@@ -90,7 +90,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 Postgresql functions can be managed by creating a function using `Weasel.Postgresql.Functions.Function` as below:
 
 <!-- snippet: sample_CustomSchemaFunction -->
-<a id='snippet-sample_customschemafunction'></a>
+<a id='snippet-sample_CustomSchemaFunction'></a>
 ```cs
 StoreOptions(opts =>
 {
@@ -112,7 +112,7 @@ $f$  language sql immutable;
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L195-L217' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemafunction' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L195-L217' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CustomSchemaFunction' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Sequence
@@ -120,7 +120,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 [Postgresql sequences](https://www.postgresql.org/docs/10/static/sql-createsequence.html) can be created using `Weasel.Postgresql.Sequence` as below:
 
 <!-- snippet: sample_CustomSchemaSequence -->
-<a id='snippet-sample_customschemasequence'></a>
+<a id='snippet-sample_CustomSchemaSequence'></a>
 ```cs
 StoreOptions(opts =>
 {
@@ -134,7 +134,7 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L231-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemasequence' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L231-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CustomSchemaSequence' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension
@@ -142,7 +142,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 Postgresql extensions can be enabled using `Weasel.Postgresql.Extension` as below:
 
 <!-- snippet: sample_CustomSchemaExtension -->
-<a id='snippet-sample_customschemaextension'></a>
+<a id='snippet-sample_CustomSchemaExtension'></a>
 ```cs
 StoreOptions(opts =>
 {
@@ -157,5 +157,5 @@ StoreOptions(opts =>
 
 await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L76-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customschemaextension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/adding_custom_schema_objects.cs#L76-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_CustomSchemaExtension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten;
+using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
@@ -26,29 +28,29 @@ public class Smurf: ISmurf
 
 public interface IPapaSmurf: ISmurf
 {
+    bool IsVillageLeader { get; set; }
 }
 
 public class PapaSmurf: Smurf, IPapaSmurf
 {
+    public bool IsVillageLeader { get; set; }
+
+    public bool IsPapa { get; set; } = true;
 }
 
 public class PapySmurf: Smurf, IPapaSmurf
 {
+    public bool IsVillageLeader { get; set; }
 }
 
-public class BrainySmurf: PapaSmurf
-{
-}
+public class BrainySmurf: PapaSmurf;
 
 #endregion
 
 public class sub_class_hierarchies: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public sub_class_hierarchies(ITestOutputHelper output)
+    public sub_class_hierarchies()
     {
-        _output = output;
         StoreOptions(_ =>
         {
             #region sample_add-subclass-hierarchy-with-aliases
@@ -60,14 +62,16 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
                     typeof(PapySmurf),
                     typeof(IPapaSmurf),
                     typeof(BrainySmurf)
-                );
+                )
+                .Duplicate<IPapaSmurf>(x => x.IsVillageLeader); // Put a duplicated index on subclass property;
 
             #endregion
 
             _.Connection(ConnectionSource.ConnectionString);
             _.AutoCreateSchemaObjects = AutoCreate.All;
 
-            _.Schema.For<ISmurf>().GinIndexJsonData();
+            _.Schema.For<ISmurf>()
+                .GinIndexJsonData();
         });
     }
 
@@ -89,7 +93,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 {
     private readonly ITestOutputHelper _output;
 
-    #region sample_add-subclass-hierarchy
+        #region sample_add-subclass-hierarchy
 
     public query_with_inheritance(ITestOutputHelper output)
     {
@@ -128,7 +132,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var list = theSession.Query<IPapaSmurf>().ToList();
-        list.Count().ShouldBe(3);
+        list.Count.ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
@@ -144,7 +148,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         var list = await theSession.Query<IPapaSmurf>().ToListAsync();
-        list.Count().ShouldBe(3);
+        list.Count.ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
 
@@ -238,6 +242,37 @@ public class query_with_inheritance: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task search_on_property_of_subclass()
+    {
+        var smurf = new Smurf {Ability = "Follow the herd"};
+        var papa = new PapaSmurf {Ability = "Lead", IsVillageLeader = true };
+        var papy = new PapySmurf {Ability = "Lead"};
+        var brainy = new BrainySmurf {Ability = "Invent"};
+        theSession.Store(smurf, papa, brainy, papy);
+
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Query<Smurf>().WhereSub<PapaSmurf>(x => x.IsVillageLeader).CountAsync()).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task search_on_property_of_subclass_and_parent()
+    {
+        var smurf = new Smurf {Ability = "Follow the herd"};
+        var papa = new PapaSmurf {Ability = "Lead" };
+        var papy = new PapySmurf {Ability = "Lead"};
+        var brainy = new BrainySmurf {Ability = "Invent"};
+        theSession.Store(smurf, papa, brainy, papy);
+
+        await theSession.SaveChangesAsync();
+
+        (await theSession.Query<Smurf>()
+            .WhereSub<PapaSmurf>(x => x.IsPapa)
+            .Where(x => x.Ability == "Invent")
+            .CountAsync()).ShouldBe(1);
     }
 
     #endregion

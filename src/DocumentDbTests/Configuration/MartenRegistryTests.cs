@@ -1,13 +1,12 @@
 using System;
 using System.Linq;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten;
-using Marten.Linq;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
 using Marten.Schema;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -16,7 +15,7 @@ using Xunit;
 
 namespace DocumentDbTests.Configuration;
 
-public class MartenRegistryTests : OneOffConfigurationsContext
+public class MartenRegistryTests: OneOffConfigurationsContext
 {
     private readonly StorageFeatures theStorage;
 
@@ -50,7 +49,7 @@ public class MartenRegistryTests : OneOffConfigurationsContext
     [Fact]
     public void picks_up_searchable_on_property()
     {
-        theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>()
+        theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>()
             .QueryMembers
             .MemberFor(nameof(Organization.Name)).ShouldBeOfType<DuplicatedField>();
     }
@@ -66,7 +65,7 @@ public class MartenRegistryTests : OneOffConfigurationsContext
     [Fact]
     public void searchable_field_is_also_indexed()
     {
-        var mapping = theStorage.MappingFor(typeof (Organization)).As<DocumentMapping>();
+        var mapping = theStorage.MappingFor(typeof(Organization)).As<DocumentMapping>();
 
         var index = mapping.IndexesFor("name").Single();
         index.Name.ShouldBe("mt_doc_martenregistrytests_organization_idx_name");
@@ -137,6 +136,19 @@ public class MartenRegistryTests : OneOffConfigurationsContext
         index.Method.ShouldBe(IndexMethod.brin);
     }
 
+    [Fact]
+    public void tenant_id_index_is_added()
+    {
+        var store = SeparateStore(_ =>
+        {
+            _.Policies.AllDocumentsAreMultiTenanted();
+            _.Schema.For<TenantIdIndexCustomer>();
+        });
+
+        var mapping = store.StorageFeatures.MappingFor(typeof(TenantIdIndexCustomer)).As<DocumentMapping>();
+
+        mapping.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
+    }
 
     public class Organization
     {
@@ -149,6 +161,14 @@ public class MartenRegistryTests : OneOffConfigurationsContext
         public string OtherProp;
         public string OtherField { get; set; }
     }
+
+    #region sample_index-tenant-id-via-attribute
+    [IndexedTenantId]
+    public class TenantIdIndexCustomer
+    {
+        public Guid Id { get; set; }
+    }
+    #endregion
 
     #region sample_OrganizationRegistry
 

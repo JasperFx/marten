@@ -259,7 +259,7 @@ public class long_based_document_operations : IAsyncLifetime
 }
 
 [ValueObject<long>]
-public partial struct IssueId;
+public readonly partial struct IssueId;
 
 public class Issue
 {

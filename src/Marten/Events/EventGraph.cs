@@ -1,21 +1,20 @@
-#nullable enable
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
 using JasperFx.Blocks;
+using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
 using Marten.Events.Aggregation;
-using Marten.Events.Daemon;
-using Marten.Events.Projections;
 using Marten.Events.Schema;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -23,7 +22,6 @@ using Marten.Schema;
 using Marten.Services.Json.Transformations;
 using Marten.Storage;
 using Marten.Subscriptions;
-using Marten.Util;
 using Microsoft.Extensions.Logging.Abstractions;
 using NpgsqlTypes;
 using Weasel.Core;
@@ -32,7 +30,8 @@ using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable, IEventRegistry, IAggregationSourceFactory<IQuerySession>
+public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable,
+    IEventRegistry, IAggregationSourceFactory<IQuerySession>, IDescribeMyself, ICodeFileCollection
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -40,6 +39,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     private readonly Cache<string, Type> _aggregateTypeByName;
 
     private readonly Cache<string, EventMapping?> _byEventName = new();
+    private readonly CancellationTokenSource _cancellation = new();
 
     private readonly Cache<Type, EventMapping> _events = new();
 
@@ -49,9 +49,10 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     private string? _databaseSchemaName;
 
+    private bool _isDisposed;
+
     private DocumentStore _store;
     private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
-    private readonly CancellationTokenSource _cancellation = new();
 
     internal EventGraph(StoreOptions options)
     {
@@ -67,32 +68,20 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
         _byEventName.OnMissing = name => AllEvents().FirstOrDefault(x => x.EventTypeName == name);
 
-        _inlineProjections = new Lazy<IInlineProjection<IDocumentOperations>[]>(() => options.Projections.BuildInlineProjections(_store));
+        _inlineProjections =
+            new Lazy<IInlineProjection<IDocumentOperations>[]>(() =>
+                options.Projections.BuildInlineProjections(_store));
 
         _aggregateTypeByName = new Cache<string, Type>(findAggregateType);
 
         AddEventType<Archived>();
+
     }
 
     /// <summary>
-    /// Opt into some performance optimizations for projection rebuilds for both single stream and
-    /// multi-stream projections. This will result in new table columns and a potential database
-    /// migration. This will be a default in Marten 8.
+    /// Opt into different aliasing styles for .NET event types
     /// </summary>
-    public bool UseOptimizedProjectionRebuilds { get; set; }
-
-    /// <summary>
-    /// Does Marten require a stream type for any new event streams? This will also
-    /// validate that an event stream already exists as part of appending events. Default in 7.0 is false,
-    /// but this will be true in 8.0
-    /// </summary>
-    public bool UseMandatoryStreamTypeDeclaration { get; set; }
-
-    /// <summary>
-    /// Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
-    /// *if* you are also aggressively using event stream archiving
-    /// </summary>
-    public bool UseArchivedStreamPartitioning { get; set; }
+    public EventNamingStyle EventNamingStyle { get; set; } = EventNamingStyle.ClassicTypeName;
 
     internal NpgsqlDbType StreamIdDbType { get; private set; }
 
@@ -102,24 +91,165 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     internal EventMetadataCollection Metadata { get; } = new();
 
+    public IAggregatorSource<IQuerySession>? Build<TDoc>()
+    {
+        var idType = Options.Storage.MappingFor(typeof(TDoc)).IdType;
+
+        // For the quite legitimate case of doing a live aggregation when
+        // there is no Id member
+        if (idType == null)
+        {
+            if (StreamIdentity == StreamIdentity.AsGuid)
+            {
+                idType = typeof(Guid);
+            }
+            else
+            {
+                idType = typeof(string);
+            }
+        }
+
+        return typeof(SingleStreamProjection<,>)
+            .CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_tombstones != null)
+            {
+                await _tombstones.DrainAsync().ConfigureAwait(false);
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Ignore this
+        }
+        catch (OperationCanceledException)
+        {
+            // Nothing, get out of here
+        }
+
+        Dispose();
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+
+        var set = description.AddChildSet("Events", _events);
+        set.SummaryColumns = [nameof(EventMapping.EventType), nameof(EventMapping.EventTypeName)];
+
+        return description;
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+
+        _cancellation.Cancel();
+        _cancellation.Dispose();
+        _tombstones?.SafeDispose();
+    }
+
+    IEventType IEventRegistry.EventMappingFor(Type eventType)
+    {
+        return EventMappingFor(eventType);
+    }
+
+    public Type AggregateTypeFor(string aggregateTypeName)
+    {
+        return _aggregateTypeByName[aggregateTypeName];
+    }
+
+    public string AggregateAliasFor(Type aggregateType)
+    {
+        var alias = _aggregateNameByType[aggregateType];
+
+        _aggregateTypeByName.Fill(alias, aggregateType);
+
+        return alias;
+    }
+
+    public IEvent BuildEvent(object eventData)
+    {
+        ArgumentNullException.ThrowIfNull(eventData);
+
+        if (eventData is IEvent e)
+        {
+            var mapping = EventMappingFor(e.EventType);
+            e.EventTypeName = mapping.EventTypeName;
+            return e;
+        }
+        else
+        {
+            var mapping = EventMappingFor(eventData.GetType());
+            return mapping.Wrap(eventData);
+        }
+
+
+    }
+
     /// <summary>
-    /// Optional extension point to receive published messages as a side effect from
-    /// aggregation projections
+    ///     Opt into some performance optimizations for projection rebuilds for both single stream and
+    ///     multi-stream projections. This will result in new table columns and a potential database
+    ///     migration. This will be a default in Marten 8.
+    /// </summary>
+    public bool UseOptimizedProjectionRebuilds { get; set; }
+
+    /// <summary>
+    ///     Does Marten require a stream type for any new event streams? This will also
+    ///     validate that an event stream already exists as part of appending events. Default in 7.0 is false,
+    ///     but this will be true in 8.0
+    /// </summary>
+    public bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    public bool EnableAdvancedAsyncTracking { get; set; }
+
+    /// <summary>
+    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
+    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
+    /// </summary>
+    public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+
+    /// <summary>
+    ///     Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
+    ///     *if* you are also aggressively using event stream archiving
+    /// </summary>
+    public bool UseArchivedStreamPartitioning { get; set; }
+
+    /// <summary>
+    ///     Optional extension point to receive published messages as a side effect from
+    ///     aggregation projections
     /// </summary>
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
     /// <summary>
-    /// TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
-    /// in testing
+    ///     TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
+    ///     in testing
     /// </summary>
+    [IgnoreDescription]
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
     /// <summary>
-    /// Opt into having Marten create a unique index on Event.Id. The default is false. This may
-    /// be helpful if you need to create an external reference id to another system, or need to
-    /// load events by their Id
+    ///     Opt into having Marten create a unique index on Event.Id. The default is false. This may
+    ///     be helpful if you need to create an external reference id to another system, or need to
+    ///     load events by their Id
     /// </summary>
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
+
+    /// <summary>
+    ///     Opt into having Marten process "side effects" on aggregation projections
+    ///     (SingleStreamProjection/MultiStreamProjection) while
+    ///     running in an Inline lifecycle. Default is false;
+    /// </summary>
+    public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
 
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
@@ -139,13 +269,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// </summary>
     public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
 
-    public bool EnableGlobalProjectionsForConjoinedTenancy { get; set; }
-
     public bool UseIdentityMapForAggregates { get; set; }
 
     /// <summary>
     ///     Configure the meta data required to be stored for events. By default meta data fields are disabled
     /// </summary>
+    [ChildDescription]
     public MetadataConfig MetadataConfig => new(Metadata);
 
     /// <summary>
@@ -172,11 +301,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _events.FillDefault(eventType);
     }
 
-    public Type IdentityTypeFor(Type aggregateType)
-    {
-        return new DocumentMapping(aggregateType, Options).IdType;
-    }
-
     /// <summary>
     ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
     ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
@@ -201,7 +325,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     public IEventStoreOptions Upcast<TEvent>(
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     ) where TEvent : class
     {
         return Upcast(typeof(TEvent), eventTypeName, jsonTransformation);
@@ -210,7 +334,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public IEventStoreOptions Upcast(
         Type eventType,
         string eventTypeName,
-        JsonTransformation jsonTransformation = null
+        JsonTransformation? jsonTransformation = null
     )
     {
         var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
@@ -289,11 +413,21 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         set => _databaseSchemaName = value.ToLowerInvariant();
     }
 
+    void IEventStoreOptions.Subscribe(ISubscription subscription)
+    {
+        Options.Projections.Subscribe(subscription);
+    }
+
+    void IEventStoreOptions.Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure)
+    {
+        Options.Projections.Subscribe(subscription, configure);
+    }
+
     IReadOnlyDaemonSettings IReadOnlyEventStoreOptions.Daemon => _store.Options.Projections;
 
-    IReadOnlyList<IReadOnlyProjectionData> IReadOnlyEventStoreOptions.Projections()
+    IReadOnlyList<ISubscriptionSource> IReadOnlyEventStoreOptions.Projections()
     {
-        return Options.Projections.All.OfType<IReadOnlyProjectionData>().ToList();
+        return Options.Projections.All.OfType<ISubscriptionSource>().ToList();
     }
 
     public IReadOnlyList<IEventType> AllKnownEventTypes()
@@ -303,14 +437,9 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     IReadonlyMetadataConfig IReadOnlyEventStoreOptions.MetadataConfig => MetadataConfig;
 
-    void IEventStoreOptions.Subscribe(ISubscription subscription)
+    public Type IdentityTypeFor(Type aggregateType)
     {
-        Options.Projections.Subscribe(subscription);
-    }
-
-    void IEventStoreOptions.Subscribe(ISubscription subscription, Action<ISubscriptionOptions>? configure)
-    {
-        Options.Projections.Subscribe(subscription, configure);
+        return new DocumentMapping(aggregateType, Options).IdType;
     }
 
     private Type findAggregateType(string name)
@@ -347,11 +476,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return _byEventName[eventType];
     }
 
-    IEventType IEventRegistry.EventMappingFor(Type eventType)
-    {
-        return EventMappingFor(eventType);
-    }
-
     // Fetch additional event aliases that map to these types
     internal IReadOnlySet<string> AliasesForEvents(IReadOnlyCollection<Type> types)
     {
@@ -360,7 +484,10 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         foreach (var mapping in _byEventName)
         {
             if (mapping is null)
+            {
                 continue;
+            }
+
             if (types.Contains(mapping.DocumentType))
             {
                 aliases.Add(mapping.Alias);
@@ -373,20 +500,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     internal bool IsActive(StoreOptions options)
     {
         return _events.Any(x => x.DocumentType != typeof(Archived)) || Options.Projections.IsActive();
-    }
-
-    public Type AggregateTypeFor(string aggregateTypeName)
-    {
-        return _aggregateTypeByName[aggregateTypeName];
-    }
-
-    public string AggregateAliasFor(Type aggregateType)
-    {
-        var alias = _aggregateNameByType[aggregateType];
-
-        _aggregateTypeByName.Fill(alias, aggregateType);
-
-        return alias;
     }
 
     internal string GetStreamIdDBType()
@@ -403,7 +516,19 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     {
         if (!_nameToType.Value.TryFind(assemblyQualifiedName, out var value))
         {
-            value = Type.GetType(assemblyQualifiedName);
+            if (assemblyQualifiedName.Contains(".Archived"))
+            {
+                value = typeof(Archived);
+            }
+            else if (assemblyQualifiedName.Contains(".Tombstone"))
+            {
+                value = typeof(Tombstone);
+            }
+            else
+            {
+                value = Type.GetType(assemblyQualifiedName);
+            }
+
             if (value == null)
             {
                 throw new UnknownEventTypeException($"Unable to load event type '{assemblyQualifiedName}'.");
@@ -437,17 +562,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return session.EventStorage();
     }
 
-    public IEvent BuildEvent(object eventData)
-    {
-        if (eventData == null)
-        {
-            throw new ArgumentNullException(nameof(eventData));
-        }
-
-        var mapping = EventMappingFor(eventData.GetType());
-        return mapping.Wrap(eventData);
-    }
-
     internal void Initialize(DocumentStore store)
     {
         _store = store;
@@ -456,49 +570,16 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
-        foreach (var mapping in _events)
-        {
-            mapping.JsonTransformation(null);
-        }
+        foreach (var mapping in _events) mapping.JsonTransformation(null);
     }
 
-    private bool _isDisposed;
-
-    public void Dispose()
+    IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
     {
-        if (_isDisposed) return;
-        _isDisposed = true;
-
-        _cancellation.Cancel();
-        _cancellation.Dispose();
-        _tombstones?.SafeDispose();
+        return [this];
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        try
-        {
-            if (_tombstones != null)
-            {
-                await _tombstones.DrainAsync().ConfigureAwait(false);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-            // Ignore this
-        }
-        catch (OperationCanceledException)
-        {
-            // Nothing, get out of here
-        }
+    string ICodeFileCollection.ChildNamespace => "EventStore";
 
-        Dispose();
-    }
-
-    public IAggregatorSource<IQuerySession>? Build<TDoc>()
-    {
-        var idType = new DocumentMapping(typeof(TDoc), Options).IdType;
-        return typeof(SingleStreamProjection<,>).CloseAndBuildAs<IAggregatorSource<IQuerySession>>(typeof(TDoc), idType);
-    }
-
+    GenerationRules ICodeFileCollection.Rules => Options.CreateGenerationRules();
+    public List<Type> GlobalAggregates { get; } = new();
 }

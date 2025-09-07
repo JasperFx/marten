@@ -1,4 +1,7 @@
 #nullable enable
+using JasperFx;
+using JasperFx.MultiTenancy;
+
 namespace Marten.Metadata;
 
 /// <summary>
@@ -6,7 +9,7 @@ namespace Marten.Metadata;
 ///     types to opt into conjoined tenancy and track the tenant id
 ///     on the document itself
 /// </summary>
-public interface ITenanted
+public interface ITenanted : IHasTenantId
 {
-    string TenantId { get; set; }
+
 }

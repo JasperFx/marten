@@ -54,7 +54,8 @@ class Build : NukeBuild
         .Executes(() => File.WriteAllText("src/Marten.Testing/connection.txt", ConnectionString));
 
     Target NpmInstall => _ => _
-        .Executes(() => NpmTasks.NpmInstall());
+        .Executes(() => NpmTasks.NpmInstall(c => c
+            .SetProcessArgumentConfigurator(args => args.Add("--loglevel=error"))));
    
     Target Compile => _ => _
         .DependsOn(Restore)
@@ -211,7 +212,8 @@ class Build : NukeBuild
         .ProceedAfterFailure()
         .Executes(() =>
         {
-            var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test" };
+            // It's actually important to do a codegen write a 2nd time to prevent a temporary bug
+            var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test", "codegen write" };
             foreach (var command in codegenCommands)
             {
                 DotNetRun(s => s
@@ -262,6 +264,24 @@ class Build : NukeBuild
         .DependsOn(NpmInstall, InstallMdSnippets)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("docs-build")));
 
+    Target CreateFreightShippingTutorialZip => _ => _
+        .DependsOn(DocsBuild)
+        .Executes(() =>
+        {
+            var sourceDir = "./docs/src/samples/FreightShipping";
+            var zipFile = "./docs/.vitepress/dist/freight-shipping-tutorial.zip";
+
+            if (Directory.Exists(sourceDir))
+            {
+                Log.Information($"Creating zip file {zipFile} from {sourceDir}");
+                System.IO.Compression.ZipFile.CreateFromDirectory(sourceDir, zipFile);
+            }
+            else
+            {
+                Log.Error($"Source directory {sourceDir} does not exist.");
+            }
+        });
+
     Target ClearInlineSamples => _ => _
         .Executes(() =>
         {
@@ -285,11 +305,11 @@ class Build : NukeBuild
     
     Target PublishDocsPreview => _ => _
         .DependsOn(NpmInstall, InstallMdSnippets)
-        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
-    
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy-preview")));
+
     Target PublishDocs => _ => _
-        .DependsOn(NpmInstall, InstallMdSnippets)
-        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy:prod")));
+        .DependsOn(NpmInstall, InstallMdSnippets, DocsBuild, CreateFreightShippingTutorialZip)
+        .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
     
     Target Benchmarks => _ => _
         .Executes(() =>
@@ -326,7 +346,7 @@ class Build : NukeBuild
             foreach (var project in projects)
             {
                 DotNetPack(s => s
-                    .SetProject(project)
+                    .SetProject(project) 
                     .SetOutputDirectory("./artifacts")
                     .SetConfiguration(Configuration.Release));
             }
@@ -336,23 +356,11 @@ class Build : NukeBuild
     {
         { "jasperfx", ["JasperFx", "JasperFx.Events", "EventTests", "JasperFx.RuntimeCompiler"] },
         { "weasel", ["Weasel.Core", "Weasel.Postgresql"] },
+        {"lamar", ["Lamar", "Lamar.Microsoft.DependencyInjection"]}
     };
 
     string[] Nugets = ["JasperFx", "JasperFx.Events", "JasperFx.RuntimeCompiler", "Weasel.Postgresql"];
-        
-    /*
-TODO in Attach
-1. Remove JasperFx package from Weasel.Core
-2. Add JasperFx project reference to Weasel.Core
-3. Add project reference to Weasel.POstgresql to Marten
-4. Add project reference to JasperFx, JasperFx.Events to Marten
-
-TODO in Detach
-       1. Remove JasperFx package from Weasel.Core
-       2. Add JasperFx project reference to Weasel.Core
-       3. Remove project reference from Marten to JasperFx, JasperFx.Events, JasperFx.RuntimeCompiler
- */
-
+    
     Target Attach => _ => _.Executes(() =>
     {
         foreach (var pair in ReferencedProjects)

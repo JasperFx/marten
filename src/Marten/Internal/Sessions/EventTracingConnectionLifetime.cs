@@ -6,6 +6,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using ImTools;
+using JasperFx;
+using JasperFx.Descriptors;
 using Marten.Events.Operations;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Operations;
@@ -15,22 +18,19 @@ using Npgsql;
 namespace Marten.Internal.Sessions;
 
 internal class EventTracingConnectionLifetime:
-    IConnectionLifetime
+    IConnectionLifetime, ITransactionStarter
 {
     private const string MartenCommandExecutionStarted = "marten.command.execution.started";
     private const string MartenBatchExecutionStarted = "marten.batch.execution.started";
     private const string MartenBatchPagesExecutionStarted = "marten.batch.pages.execution.started";
-    private readonly IConnectionLifetime _innerConnectionLifetime;
     private readonly OpenTelemetryOptions _telemetryOptions;
     private readonly Activity? _databaseActivity;
+    private readonly string _tenantId;
 
     public EventTracingConnectionLifetime(IConnectionLifetime innerConnectionLifetime, string tenantId,
         OpenTelemetryOptions telemetryOptions)
     {
-        if (innerConnectionLifetime == null)
-        {
-            throw new ArgumentNullException(nameof(innerConnectionLifetime));
-        }
+        ArgumentNullException.ThrowIfNull(innerConnectionLifetime);
 
         if (string.IsNullOrWhiteSpace(tenantId))
         {
@@ -39,24 +39,36 @@ internal class EventTracingConnectionLifetime:
 
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
-        _innerConnectionLifetime = innerConnectionLifetime;
+        InnerConnectionLifetime = innerConnectionLifetime;
         _telemetryOptions = telemetryOptions;
 
         var currentActivity = Activity.Current ?? null;
-        var tags = new ActivityTagsCollection(new[] { new KeyValuePair<string, object?>(MartenTracing.TenantId, tenantId) });
+        var tags = new ActivityTagsCollection([new KeyValuePair<string, object?>(OtelConstants.TenantId, tenantId)]);
         _databaseActivity = MartenTracing.StartConnectionActivity(currentActivity, tags);
+
+        _tenantId = tenantId;
     }
+
+    public EventTracingConnectionLifetime(OpenTelemetryOptions telemetryOptions, Activity? databaseActivity, IConnectionLifetime innerConnectionLifetime, IMartenSessionLogger logger)
+    {
+        _telemetryOptions = telemetryOptions;
+        _databaseActivity = databaseActivity;
+        InnerConnectionLifetime = innerConnectionLifetime;
+        Logger = logger;
+    }
+
+    public IConnectionLifetime InnerConnectionLifetime { get; }
 
     public ValueTask DisposeAsync()
     {
         _databaseActivity?.Stop();
-        return _innerConnectionLifetime.DisposeAsync();
+        return InnerConnectionLifetime.DisposeAsync();
     }
 
     public void Dispose()
     {
         _databaseActivity?.Stop();
-        _innerConnectionLifetime.Dispose();
+        InnerConnectionLifetime.Dispose();
     }
 
     public IMartenSessionLogger Logger { get; set; }
@@ -67,7 +79,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return _innerConnectionLifetime.Execute(cmd);
+            return InnerConnectionLifetime.Execute(cmd);
         }
         catch (Exception e)
         {
@@ -83,7 +95,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return await _innerConnectionLifetime.ExecuteAsync(command, token).ConfigureAwait(false);
+            return await InnerConnectionLifetime.ExecuteAsync(command, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -99,7 +111,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return _innerConnectionLifetime.ExecuteReader(command);
+            return InnerConnectionLifetime.ExecuteReader(command);
         }
         catch (Exception e)
         {
@@ -115,7 +127,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return await _innerConnectionLifetime.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+            return await InnerConnectionLifetime.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -131,7 +143,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return _innerConnectionLifetime.ExecuteReader(batch);
+            return InnerConnectionLifetime.ExecuteReader(batch);
         }
         catch (Exception e)
         {
@@ -147,7 +159,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            return await _innerConnectionLifetime.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
+            return await InnerConnectionLifetime.ExecuteReaderAsync(batch, token).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -163,7 +175,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            _innerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
+            InnerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
             writeVerboseEvents(pages);
         }
         catch (AggregateException e)
@@ -186,7 +198,7 @@ internal class EventTracingConnectionLifetime:
 
         try
         {
-            await _innerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
+            await InnerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
 
             writeVerboseEvents(pages);
         }
@@ -223,5 +235,21 @@ internal class EventTracingConnectionLifetime:
 
             }
         }
+    }
+
+    public IAlwaysConnectedLifetime Start()
+    {
+        if (InnerConnectionLifetime is ITransactionStarter starter) return starter.Start();
+
+        throw new InvalidOperationException(
+            $"The inner connection lifetime {InnerConnectionLifetime} does not implement {nameof(ITransactionStarter)}");
+    }
+
+    public Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
+    {
+        if (InnerConnectionLifetime is ITransactionStarter starter) return starter.StartAsync(token);
+
+        throw new InvalidOperationException(
+            $"The inner connection lifetime {InnerConnectionLifetime} does not implement {nameof(ITransactionStarter)}");
     }
 }

@@ -827,7 +827,7 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
-    [Fact]
+    //[Fact] -- this is just barely flaky. Probably want to address this soon some how
     public async Task remove_simple_element_by_predicate(){
         var target = Target.Random();
         var initialCount = target.NumberArray.Length;

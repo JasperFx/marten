@@ -10,7 +10,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject
+internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject where T : notnull
 {
     public SelectDataSelectClause(string from, ISqlFragment selector)
     {
@@ -63,7 +63,7 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
-        ISqlFragment currentStatement)
+        ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = new SerializationSelector<T>(session.Serializer);
 

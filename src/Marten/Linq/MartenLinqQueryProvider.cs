@@ -33,7 +33,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
     internal WaitForAggregate? Waiter { get; set; }
 
-    internal QueryStatistics Statistics { get; set; } = null!;
+    internal QueryStatistics? Statistics { get; set; }
 
     public IQueryable CreateQuery(Expression expression)
     {
@@ -84,7 +84,7 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
 
     public async Task<TResult?> ExecuteAsync<TResult>(Expression expression, CancellationToken token,
-        SingleValueMode valueMode)
+        SingleValueMode valueMode) where TResult : notnull
     {
         try
         {

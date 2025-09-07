@@ -14,9 +14,9 @@ implements the traditional [IQueryable](https://msdn.microsoft.com/en-us/library
 /// </summary>
 /// <typeparam name="T"></typeparam>
 /// <returns></returns>
-IMartenQueryable<T> Query<T>();
+IMartenQueryable<T> Query<T>() where T : notnull;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQuerySession.cs#L156-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/IQuerySession.cs#L120-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To query for all documents of a type - not that you would do this very often outside of testing - use the `Query<T>()` method like this:

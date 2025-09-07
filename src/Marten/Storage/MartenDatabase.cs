@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core.Descriptions;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
-using Marten.Events.Daemon;
 using Marten.Internal;
-using Marten.Internal.Sessions;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
 using Microsoft.Extensions.Logging;
@@ -48,13 +47,6 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     public ISequences Sequences => _sequences.Value;
 
     public IProviderGraph Providers { get; }
-
-    public override DatabaseDescriptor Describe()
-    {
-        var descriptor = base.Describe();
-        descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
-        return descriptor;
-    }
 
     /// <summary>
     ///     Set the minimum sequence number for a Hilo sequence for a specific document type
@@ -101,6 +93,20 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         return Options.Storage.AllActiveFeatures(this).ToArray();
     }
 
+    public void Dispose()
+    {
+        DataSource?.Dispose();
+        ((IDisposable)Tracker)?.Dispose();
+    }
+
+    public override DatabaseDescriptor Describe()
+    {
+        var descriptor = base.Describe();
+        descriptor.SubjectUri = MartenSystemPart.MartenStoreUri;
+        descriptor.SchemaOrNamespace = Options.DatabaseSchemaName;
+        return descriptor;
+    }
+
     public override void ResetSchemaExistenceChecks()
     {
         base.ResetSchemaExistenceChecks();
@@ -118,15 +124,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
         {
             var sequences = new SequenceFactory(Options, this);
 
-            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter().GetResult();
+            generateOrUpdateFeature(typeof(SequenceFactory), sequences, default, true).AsTask().GetAwaiter()
+                .GetResult();
 
             return sequences;
         });
-    }
-
-    public void Dispose()
-    {
-        DataSource?.Dispose();
-        ((IDisposable)Tracker)?.Dispose();
     }
 }

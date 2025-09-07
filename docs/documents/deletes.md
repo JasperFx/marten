@@ -50,13 +50,13 @@ public Task DeleteByDocument(IDocumentSession session, User user)
 Marten also provides the ability to delete any documents of a certain type meeting a Linq expression using the `IDocumentSession.DeleteWhere<T>()` method:
 
 <!-- snippet: sample_DeleteWhere -->
-<a id='snippet-sample_deletewhere'></a>
+<a id='snippet-sample_DeleteWhere'></a>
 ```cs
 theSession.DeleteWhere<Target>(x => x.Double == 578);
 
 await theSession.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/delete_many_documents_by_query.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deletewhere' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/delete_many_documents_by_query.cs#L30-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DeleteWhere' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple things to note:
@@ -70,7 +70,7 @@ A couple things to note:
 Documents of mixed or varying types can be deleted using `IDocumentSession.DeleteObjects(IEnumerable<object> documents)` method.
 
 <!-- snippet: sample_DeleteObjects -->
-<a id='snippet-sample_deleteobjects'></a>
+<a id='snippet-sample_DeleteObjects'></a>
 ```cs
 // Store a mix of different document types
 var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };
@@ -89,7 +89,7 @@ using (var documentSession = theStore.LightweightSession())
     await documentSession.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L60-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleteobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/deleting_multiple_documents.cs#L60-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DeleteObjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Soft Deletes
@@ -104,7 +104,7 @@ documents marked as _deleted_ unless you explicitly state otherwise in the Linq 
 You can direct Marten to make a document type soft deleted by either marking the class with an attribute:
 
 <!-- snippet: sample_SoftDeletedAttribute -->
-<a id='snippet-sample_softdeletedattribute'></a>
+<a id='snippet-sample_SoftDeletedAttribute'></a>
 ```cs
 [SoftDeleted]
 public class SoftDeletedDoc
@@ -112,7 +112,7 @@ public class SoftDeletedDoc
     public Guid Id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L21-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L21-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_SoftDeletedAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface off of `StoreOptions`:
@@ -132,7 +132,7 @@ With Marten v4.0, you can also opt into soft-deleted mechanics by having your do
 interface as shown below:
 
 <!-- snippet: sample_implementing_ISoftDeleted -->
-<a id='snippet-sample_implementing_isoftdeleted'></a>
+<a id='snippet-sample_implementing_ISoftDeleted'></a>
 ```cs
 public class MySoftDeletedDoc: ISoftDeleted
 {
@@ -146,7 +146,7 @@ public class MySoftDeletedDoc: ISoftDeleted
     public DateTimeOffset? DeletedAt { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L131-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L131-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_ISoftDeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 More on `ISoftDeleted` in a later section on exposing soft-deleted metadata directly
@@ -156,7 +156,7 @@ Also starting in Marten v4.0, you can also say globally that you want all docume
 to be soft-deleted unless explicitly configured otherwise like this:
 
 <!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
-<a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
+<a id='snippet-sample_AllDocumentTypesShouldBeSoftDeleted'></a>
 ```cs
 internal void AllDocumentTypesShouldBeSoftDeleted()
 {
@@ -167,7 +167,7 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AllDocumentTypesShouldBeSoftDeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Querying a "Soft Deleted" Document Type
@@ -203,7 +203,7 @@ public async Task query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L284-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L293-L319' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -231,7 +231,7 @@ public async Task query_soft_deleted_docs()
         .ToList().Single().UserName.ShouldBe("foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L974-L1000' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L983-L1009' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The SQL generated for the first call to `Query<User>()` above would be:
@@ -275,7 +275,7 @@ public async Task query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L312-L340' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L321-L349' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_maybe_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -305,7 +305,7 @@ public async Task query_maybe_soft_deleted_docs()
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1002-L1030' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1011-L1039' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_maybe_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Partitioning by Deleted Status <Badge type="tip" text="7.26" />
@@ -337,7 +337,7 @@ var store = DocumentStore.For(opts =>
     opts.Policies.AllDocumentsSoftDeletedWithPartitioning();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1407-L1423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1416-L1432' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deletes_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The attribute style of configuration also supports partitioning like so:
@@ -351,7 +351,7 @@ public class SoftDeletedAndPartitionedDocument
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1438-L1446' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1447-L1455' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_soft_deleted_attribute_with_partitioning' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Only Deleted Documents
@@ -389,7 +389,7 @@ public async Task query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L342-L370' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L351-L379' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_is_soft_deleted_docs-1'></a>
 ```cs
 [Fact]
@@ -419,7 +419,7 @@ public async Task query_is_soft_deleted_docs()
         .Single().ShouldBe("bar");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1032-L1060' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1041-L1069' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_is_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Fetching Documents Deleted Before or After a Specific Time
@@ -445,7 +445,7 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user3);
     await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
     await session.SaveChangesAsync();
 
@@ -453,7 +453,7 @@ public async Task query_is_soft_deleted_since_docs()
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L372-L396' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L381-L405' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_query_soft_deleted_since-1'></a>
 ```cs
 [Fact]
@@ -471,7 +471,7 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user3);
     await session.SaveChangesAsync();
 
-    var epoch = session.MetadataFor(user3).DeletedAt;
+    var epoch = (await session.MetadataForAsync(user3)).DeletedAt;
     session.Delete(user4);
     await session.SaveChangesAsync();
 
@@ -479,13 +479,13 @@ public async Task query_is_soft_deleted_since_docs()
         .ToList().ShouldHaveTheSameElementsAs("jack");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1062-L1086' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1071-L1095' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:
 
 <!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
-<a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
+<a id='snippet-sample_AllDocumentTypesShouldBeSoftDeleted'></a>
 ```cs
 internal void AllDocumentTypesShouldBeSoftDeleted()
 {
@@ -496,7 +496,7 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AllDocumentTypesShouldBeSoftDeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Undoing Soft-Deleted Documents
@@ -505,7 +505,7 @@ New in Marten v4.0 is a mechanism to mark any soft-deleted documents matching a 
 as not being deleted. The only usage so far is using a Linq expression as shown below:
 
 <!-- snippet: sample_UndoDeletion -->
-<a id='snippet-sample_undodeletion'></a>
+<a id='snippet-sample_UndoDeletion'></a>
 ```cs
 internal Task UndoDeletion(IDocumentSession session, Guid userId)
 {
@@ -516,7 +516,7 @@ internal Task UndoDeletion(IDocumentSession session, Guid userId)
     return session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_undodeletion' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L23-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UndoDeletion' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Explicit Hard Deletes
@@ -525,7 +525,7 @@ New in v4.0 is the ability to force Marten to perform hard deletes even on docum
 that are normally soft-deleted:
 
 <!-- snippet: sample_HardDeletes -->
-<a id='snippet-sample_harddeletes'></a>
+<a id='snippet-sample_HardDeletes'></a>
 ```cs
 internal void ExplicitlyHardDelete(IDocumentSession session, User document)
 {
@@ -542,7 +542,7 @@ internal void ExplicitlyHardDelete(IDocumentSession session, User document)
     // to actually perform the operations
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_harddeletes' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_HardDeletes' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Deletion Metadata on Documents
@@ -552,7 +552,7 @@ and when it was deleted is to implement the `ISoftDeleted` interface as shown
 in this sample document:
 
 <!-- snippet: sample_implementing_ISoftDeleted -->
-<a id='snippet-sample_implementing_isoftdeleted'></a>
+<a id='snippet-sample_implementing_ISoftDeleted'></a>
 ```cs
 public class MySoftDeletedDoc: ISoftDeleted
 {
@@ -566,7 +566,7 @@ public class MySoftDeletedDoc: ISoftDeleted
     public DateTimeOffset? DeletedAt { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L131-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_isoftdeleted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L131-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_implementing_ISoftDeleted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Implementing `ISoftDeleted` on your document means that:
@@ -583,7 +583,7 @@ Now, if you don't want to couple your document types to Marten by implementing t
 you're still in business. Let's say you have this document type:
 
 <!-- snippet: sample_ASoftDeletedDoc -->
-<a id='snippet-sample_asoftdeleteddoc'></a>
+<a id='snippet-sample_ASoftDeletedDoc'></a>
 ```cs
 public class ASoftDeletedDoc
 {
@@ -595,7 +595,7 @@ public class ASoftDeletedDoc
     public DateTimeOffset? DeletedWhen { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L147-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asoftdeleteddoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L147-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ASoftDeletedDoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can manually -- and independently -- map the `IsDeleted` and `DeletedWhen` properties

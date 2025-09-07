@@ -15,7 +15,7 @@ internal class FullTextWhereFragment: ISqlFragment
     private readonly FullTextSearchFunction _searchFunction;
     private readonly string _searchTerm;
 
-    public FullTextWhereFragment(DocumentMapping mapping, FullTextSearchFunction searchFunction, string searchTerm,
+    public FullTextWhereFragment(DocumentMapping? mapping, FullTextSearchFunction searchFunction, string searchTerm,
         string regConfig = FullTextIndexDefinition.DefaultRegConfig)
     {
         _regConfig = regConfig;

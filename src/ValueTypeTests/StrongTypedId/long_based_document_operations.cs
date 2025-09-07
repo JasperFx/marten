@@ -267,7 +267,7 @@ public class long_based_document_operations : IAsyncLifetime
 }
 
 [StronglyTypedId(Template.Long)]
-public partial struct Issue2Id;
+public readonly partial struct Issue2Id;
 
 public class Issue2
 {

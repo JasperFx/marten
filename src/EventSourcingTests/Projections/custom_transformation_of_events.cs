@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten.Events;
 using Marten.Events.Projections;
@@ -35,12 +36,12 @@ public class project_events_from_multiple_streams_into_view: OneOffConfiguration
     [Fact]
     public async Task updateonly_event_for_custom_view_projection_should_not_create_new_document()
     {
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.AutoCreateSchemaObjects = AutoCreate.All;
-            _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
-            _.Schema.For<NewsletterSubscription>().MultiTenanted();
-            _.Projections.Add(new NewsletterSubscriptionProjection(), ProjectionLifecycle.Inline);
+            opts.AutoCreateSchemaObjects = AutoCreate.All;
+            opts.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+            opts.Schema.For<NewsletterSubscription>().MultiTenanted();
+            opts.Projections.Add(new NewsletterSubscriptionProjection(), ProjectionLifecycle.Inline);
 
         });
 
@@ -194,6 +195,8 @@ public class NewsletterSubscriptionProjection : MultiStreamProjection<Newsletter
         Identity<SubscriptionEvent>(x => x.SubscriptionId);
 
         DeleteEvent<ReaderUnsubscribed>();
+
+        TenancyGrouping = TenancyGrouping.AcrossTenants;
     }
 
     public void Apply(NewsletterSubscription view, ReaderSubscribed @event)

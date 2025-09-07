@@ -18,7 +18,7 @@ internal class SubscriptionWrapper: SubscriptionBase
     public SubscriptionWrapper(ISubscription subscription)
     {
         _subscription = subscription;
-        SubscriptionName = _subscription.GetType().Name;
+        Name = _subscription.GetType().Name;
     }
 
     public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
@@ -35,7 +35,7 @@ internal class ScopedSubscriptionServiceWrapper<T>: SubscriptionBase where T : I
     public ScopedSubscriptionServiceWrapper(IServiceProvider provider)
     {
         _provider = provider;
-        SubscriptionName = typeof(T).Name;
+        Name = typeof(T).Name;
 
         var scope = _provider.CreateAsyncScope();
         var sp = scope.ServiceProvider;

@@ -10,7 +10,7 @@ namespace Marten.Events.Archiving;
 internal class MaybeArchivedMethodCallParser: IMethodCallParser
 {
     private static readonly MethodInfo _method =
-        typeof(ArchivedEventExtensions).GetMethod(nameof(ArchivedEventExtensions.MaybeArchived));
+        typeof(ArchivedEventExtensions).GetMethod(nameof(ArchivedEventExtensions.MaybeArchived))!;
 
     private static readonly ISqlFragment _whereFragment = new AllEventsFilter();
 

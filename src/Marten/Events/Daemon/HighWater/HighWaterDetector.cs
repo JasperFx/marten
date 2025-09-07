@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data.Common;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,6 +8,7 @@ using JasperFx.Core;
 using JasperFx.Events.Daemon.HighWater;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
+using Marten.Events.Schema;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -14,6 +17,12 @@ using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.HighWater;
+
+internal enum DetectionType
+{
+    Normal,
+    SafeZoneSkipping
+}
 
 internal class HighWaterDetector: IHighWaterDetector
 {
@@ -33,8 +42,11 @@ internal class HighWaterDetector: IHighWaterDetector
         _highWaterStatisticsDetector = new HighWaterStatisticsDetector(graph);
         _settings = graph.Options.Projections;
 
-        DatabaseName = runner.Identifier;
+        DatabaseIdentity = runner.Identifier;
+        DatabaseUri = runner.Describe().DatabaseUri();
     }
+
+    public Uri DatabaseUri { get; }
 
     /// <summary>
     /// Advance the high water mark to the latest detected sequence
@@ -43,10 +55,10 @@ internal class HighWaterDetector: IHighWaterDetector
     public async Task AdvanceHighWaterMarkToLatest(CancellationToken token)
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
-        await markHighWaterMarkInDatabaseAsync(token, statistics.HighestSequence).ConfigureAwait(false);
+        await MarkHighWaterMarkInDatabaseAsync(statistics.HighestSequence, token).ConfigureAwait(false);
     }
 
-    public string DatabaseName { get; }
+    public string DatabaseIdentity { get; }
 
     public async Task<HighWaterStatistics> DetectInSafeZone(CancellationToken token)
     {
@@ -56,9 +68,16 @@ internal class HighWaterDetector: IHighWaterDetector
         _gapDetector.Start = statistics.SafeStartMark + 1;
 
         var safeSequence = await _runner.Query(_gapDetector, token).ConfigureAwait(false);
-        _logger.LogInformation(
-            "Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
-            safeSequence);
+        if (safeSequence.HasValue)
+        {
+            _logger.LogInformation(
+                "Daemon projection high water detection skipping a gap in event sequence, determined that the 'safe harbor' sequence is at {SafeHarborSequence}",
+                safeSequence);
+        }
+        else
+        {
+            _logger.LogInformation("Daemon projection high water detection was not able to determine a safe harbor sequence, will try again soon");
+        }
 
         if (safeSequence.HasValue)
         {
@@ -72,12 +91,19 @@ internal class HighWaterDetector: IHighWaterDetector
             // the sequence
             if (time > _settings.StaleSequenceThreshold)
             {
-                statistics.SafeStartMark = statistics.HighestSequence;
-                statistics.CurrentMark = statistics.HighestSequence;
+                // This has to take into account the 32 problem. If the
+                // HighestSequence is less than 32 higher than the LastMark or CurrentMark, do NOT advance
+                // https://github.com/JasperFx/marten/issues/3865
+                var safeSequenceNumber = statistics.HighestSequence - 32;
+                if (safeSequenceNumber > statistics.LastMark)
+                {
+                    statistics.SafeStartMark = safeSequenceNumber;
+                    statistics.CurrentMark = safeSequenceNumber;
+                }
             }
         }
 
-        await calculateHighWaterMark(statistics, token).ConfigureAwait(false);
+        await calculateHighWaterMark(statistics, DetectionType.SafeZoneSkipping, token).ConfigureAwait(false);
 
         return statistics;
     }
@@ -87,12 +113,13 @@ internal class HighWaterDetector: IHighWaterDetector
     {
         var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
 
-        await calculateHighWaterMark(statistics, token).ConfigureAwait(false);
+        await calculateHighWaterMark(statistics, DetectionType.Normal, token).ConfigureAwait(false);
 
         return statistics;
     }
 
-    private async Task calculateHighWaterMark(HighWaterStatistics statistics, CancellationToken token)
+    private async Task calculateHighWaterMark(HighWaterStatistics statistics, DetectionType detectionType,
+        CancellationToken token)
     {
         // If the last high water mark is the same as the highest number
         // assigned from the sequence, then the high water mark cannot
@@ -113,7 +140,32 @@ internal class HighWaterDetector: IHighWaterDetector
         if (statistics.HasChanged)
         {
             var currentMark = statistics.CurrentMark;
-            await markHighWaterMarkInDatabaseAsync(token, currentMark).ConfigureAwait(false);
+
+            if (detectionType == DetectionType.SafeZoneSkipping)
+            {
+                if (_graph.EnableAdvancedAsyncTracking)
+                {
+                    var actual = await TryMarkHighWaterSkippingAsync(currentMark, statistics.LastMark, token).ConfigureAwait(false);
+                    if (actual == currentMark)
+                    {
+                        statistics.IncludesSkipping = true;
+                    }
+                    else
+                    {
+                        statistics.CurrentMark = actual;
+                        statistics.IncludesSkipping = false;
+                    }
+                }
+                else
+                {
+                    statistics.IncludesSkipping = true;
+                    await MarkHighWaterMarkInDatabaseAsync(currentMark, token).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await MarkHighWaterMarkInDatabaseAsync(currentMark, token).ConfigureAwait(false);
+            }
 
             if (!statistics.LastUpdated.HasValue)
             {
@@ -123,14 +175,91 @@ internal class HighWaterDetector: IHighWaterDetector
         }
     }
 
-    private async Task markHighWaterMarkInDatabaseAsync(CancellationToken token, long currentMark)
+    public Task MarkHighWaterMarkInDatabaseAsync(long currentMark, CancellationToken token)
     {
-        await using var cmd =
-            new NpgsqlCommand(
-                $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);")
-                .With("seq", currentMark);
+        return _runner.Query(new MarkHighWaterQueryHandler(_graph, currentMark), token);
+    }
 
-        await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+    public class MarkHighWaterQueryHandler: ISingleQueryHandler<bool>
+    {
+        private readonly EventGraph _graph;
+        private readonly long _currentMark;
+
+        public MarkHighWaterQueryHandler(EventGraph graph, long currentMark)
+        {
+            _graph = graph;
+            _currentMark = currentMark;
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            return new NpgsqlCommand(
+                    $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);")
+                .With("seq", _currentMark);
+        }
+
+        public Task<bool> HandleAsync(DbDataReader reader, CancellationToken token)
+        {
+            return Task.FromResult(true);
+        }
+    }
+
+    public Task<long> TryMarkHighWaterSkippingAsync(long endingMark, long currentMark, CancellationToken token)
+    {
+        if (endingMark <= currentMark)
+            throw new ArgumentOutOfRangeException(nameof(endingMark),
+                "Ending sequence should be greater than the current mark");
+
+        return _runner.Query(new TryMarkHighWaterSkippingHandler(_graph, endingMark, currentMark), token);
+    }
+
+    public class TryMarkHighWaterSkippingHandler: ISingleQueryHandler<long>
+    {
+        private readonly NpgsqlCommand _command;
+
+        public TryMarkHighWaterSkippingHandler(EventGraph graph, long endingMark, long currentMark)
+        {
+            _command = new NpgsqlCommand(
+                    $"select {graph.DatabaseSchemaName}.mt_mark_progression_with_skip('{ShardState.HighWaterMark}', :ending, :starting);")
+                .With("ending", endingMark)
+                .With("starting", currentMark)
+                ;
+
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            return _command;
+        }
+
+        public async Task<long> HandleAsync(DbDataReader reader, CancellationToken token)
+        {
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                return await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
+            }
+
+            return 0;
+        }
+    }
+
+    public async Task TryCorrectProgressInDatabaseAsync(CancellationToken token)
+    {
+        var statistics = await loadCurrentStatistics(token).ConfigureAwait(false);
+        if (statistics.LastMark > statistics.HighestSequence)
+        {
+            await using var cmd =
+                new NpgsqlCommand(
+                        $"update {_graph.DatabaseSchemaName}.mt_event_progression set last_seq_id = :seq, last_updated = transaction_timestamp()")
+                    .With("seq", statistics.HighestSequence);
+
+            await _runner.SingleCommit(cmd, token).ConfigureAwait(false);
+        }
+    }
+
+    public Task<IReadOnlyList<HighWaterDetectionSkip>> FetchLastProgressionSkipsAsync(int limit, CancellationToken cancellationToken)
+    {
+        return _runner.Query(new EventProgressionSkipsHandler(_graph, limit), cancellationToken);
     }
 
     private async Task<HighWaterStatistics> loadCurrentStatistics(CancellationToken token)
@@ -167,7 +296,7 @@ internal class HighWaterDetector: IHighWaterDetector
 
         // This happens when the agent is restarted with persisted
         // state, and has no previous current mark.
-        if (statistics.CurrentMark == 0 && statistics.LastMark > 0)
+        if (statistics is { CurrentMark: 0, LastMark: > 0 })
         {
             return statistics.LastMark;
         }

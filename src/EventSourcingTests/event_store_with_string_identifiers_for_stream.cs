@@ -35,7 +35,7 @@ public class event_store_with_string_identifiers_for_stream: OneOffConfiguration
 
         pk.Type.ShouldBe("varchar");
         pk.Name.ShouldBe("id");
-        table.Columns.First().Name.ShouldBe("id");
+        table.Columns[0].Name.ShouldBe("id");
     }
 
     [Fact]

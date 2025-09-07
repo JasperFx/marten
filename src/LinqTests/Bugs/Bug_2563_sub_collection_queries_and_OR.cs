@@ -22,12 +22,12 @@ public class Bug_2563_sub_collection_queries_and_OR : BugIntegrationContext
         theStore.Options.Schema.For<Bug2563Target>()
             .Duplicate(x => x.UserIds);
 
-        theSession.Store(new Bug2563Target {Id = 1, IsPublic = false, UserIds = new [] { 1, 2, 3, 4, 5, 6 }});
-        theSession.Store(new Bug2563Target {Id = 2, IsPublic = false, UserIds = new int[] { }});
-        theSession.Store(new Bug2563Target {Id = 3, IsPublic = true, UserIds = new [] { 1, 2, 3 }});
-        theSession.Store(new Bug2563Target {Id = 4, IsPublic = true, UserIds = new [] { 1, 2, 6 }});
-        theSession.Store(new Bug2563Target {Id = 5, IsPublic = false, UserIds = new [] { 4, 5, 6 }});
-        theSession.Store(new Bug2563Target {Id = 6, IsPublic = true, UserIds = new [] { 10 }});
+        theSession.Store(new Bug2563Target {Id = 1, IsPublic = false, UserIds = [1, 2, 3, 4, 5, 6]});
+        theSession.Store(new Bug2563Target {Id = 2, IsPublic = false, UserIds = [] });
+        theSession.Store(new Bug2563Target {Id = 3, IsPublic = true, UserIds = [1, 2, 3]});
+        theSession.Store(new Bug2563Target {Id = 4, IsPublic = true, UserIds = [1, 2, 6]});
+        theSession.Store(new Bug2563Target {Id = 5, IsPublic = false, UserIds = [4, 5, 6]});
+        theSession.Store(new Bug2563Target {Id = 6, IsPublic = true, UserIds = [10]});
 
         await theSession.SaveChangesAsync();
         theSession.Logger = new TestOutputMartenLogger(_output);

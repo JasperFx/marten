@@ -7,17 +7,17 @@ You can retrieve the events for a single stream at any time with the `IEventStor
 <!-- snippet: sample_using-fetch-stream -->
 <a id='snippet-sample_using-fetch-stream'></a>
 ```cs
-public void load_event_stream(IDocumentSession session, Guid streamId)
+public async Task load_event_stream(IDocumentSession session, Guid streamId)
 {
     // Fetch *all* of the events for this stream
-    var events1 = session.Events.FetchStream(streamId);
+    var events1 = await session.Events.FetchStreamAsync(streamId);
 
     // Fetch the events for this stream up to and including version 5
-    var events2 = session.Events.FetchStream(streamId, 5);
+    var events2 = await session.Events.FetchStreamAsync(streamId, 5);
 
     // Fetch the events for this stream at this time yesterday
-    var events3 = session.Events
-        .FetchStream(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
+    var events3 = await session.Events
+        .FetchStreamAsync(streamId, timestamp: DateTime.UtcNow.AddDays(-1));
 }
 
 public async Task load_event_stream_async(IDocumentSession session, Guid streamId)
@@ -38,8 +38,6 @@ public async Task load_event_stream_async(IDocumentSession session, Guid streamI
 
 The data returned is a list of `IEvent` objects, where each is a (internal) strongly-typed `Event<T>` object shown below:
 
-<!-- snippet: sample_IEvent -->
-<a id='snippet-sample_ievent'></a>
 ```cs
 public interface IEvent
 {
@@ -144,8 +142,6 @@ public interface IEvent
     object? GetHeader(string key);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Event.cs#L9-L114' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ievent' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 ## Stream State
 
@@ -173,9 +169,9 @@ public class fetching_stream_state: IntegrationContext
     }
 
     [Fact]
-    public void can_fetch_the_stream_version_and_aggregate_type()
+    public async Task can_fetch_the_stream_version_and_aggregate_type()
     {
-        var state = theSession.Events.FetchStreamState(theStreamId);
+        var state = await theSession.Events.FetchStreamStateAsync(theStreamId);
 
         state.ShouldNotBeNull();
         state.Id.ShouldBe(theStreamId);
@@ -230,7 +226,7 @@ public class fetching_stream_state: IntegrationContext
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L86-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetching_stream_state.cs#L88-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_fetching_stream_state' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Furthermore, `StreamState` contains metadata for when the stream was created, `StreamState.Created`, and when the stream was last updated, `StreamState.LastTimestamp`.
@@ -242,13 +238,13 @@ You can fetch the information for a single event by id, including its version nu
 <!-- snippet: sample_load-a-single-event -->
 <a id='snippet-sample_load-a-single-event'></a>
 ```cs
-public void load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
+public async Task load_a_single_event_synchronously(IDocumentSession session, Guid eventId)
 {
     // If you know what the event type is already
-    var event1 = session.Events.Load<MembersJoined>(eventId);
+    var event1 = await session.Events.LoadAsync<MembersJoined>(eventId);
 
     // If you do not know what the event type is
-    var event2 = session.Events.Load(eventId);
+    var event2 = await session.Events.LoadAsync(eventId);
 }
 
 public async Task load_a_single_event_asynchronously(IDocumentSession session, Guid eventId)
@@ -287,7 +283,7 @@ public async Task can_query_against_event_type()
         .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L27-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L39-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
@@ -305,7 +301,7 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
         .ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L153-L162' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L164-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This mechanism will allow you to query by any property of the `IEvent` interface shown above.
@@ -322,5 +318,5 @@ var raw = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.EventTypesAre(typeof(CEvent), typeof(DEvent)))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L248-L254' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L259-L265' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

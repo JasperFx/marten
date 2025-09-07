@@ -5,6 +5,13 @@ This is both much more powerful than [source generators](https://docs.microsoft.
 significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).
 Fear not though, Marten introduced a facility to “generate ahead” the code to greatly optimize the "cold start" and memory usage in production scenarios.
 
+The most popular workflow is to [bake the code generation into Docker files](/devops/devops.html#application-project-set-up). 
+
+::: tip
+The `Auto` mode still works as documented, but most users seem to have fallen into a pattern of using `Dynamic` for local 
+development, then pre-generating the code at deployment or Docker initialization time and running with `Static` in production.
+:::
+
 The code generation for document storage, event handling, event projections, and additional document stores can be done
 with one of three modes as shown below:
 
@@ -133,7 +140,7 @@ public static class Program
 {
     public static Task<int> Main(string[] args)
     {
-        return CreateHostBuilder(args).RunOaktonCommands(args);
+        return CreateHostBuilder(args).RunJasperFxCommands(args);
     }
 
     public static IHostBuilder CreateHostBuilder(string[] args)
@@ -145,11 +152,17 @@ public static class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
-                });
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+
+                    // If you use compiled queries, you will need to register the
+                    // compiled query types with Marten ahead of time
+                    opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
+                }).AddAsyncDaemon(DaemonMode.Solo);
 
                 services.AddMarten(opts =>
                 {
+                    opts.Events.AppendMode = EventAppendMode.Quick;
+                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
                     opts.DisableNpgsqlLogging = true;
@@ -163,7 +176,7 @@ public static class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
@@ -197,11 +210,12 @@ public static class Program
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L28-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L29-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming
-that you have [Oakton](https://jasperfx.github.io/oakton) wired up as your command line parser, you can preview all
+that you have the `RunJasperFxCommands(args)` wired up to make JasperFx (this is a direct dependency of Marten and will come automatically
+with the usage of Marten) your command line parser, you can preview all
 the code that Marten would generate for the known document types, compiled queries, and the event store support
 with this command:
 

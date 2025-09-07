@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using JasperFx.MultiTenancy;
 using Marten.Events;
 using Marten.Schema;
 using Marten.Storage;
@@ -89,5 +90,8 @@ public interface IReadOnlyStoreOptions
     /// </summary>
     IDocumentSchemaResolver Schema { get; }
 
-    string MaybeCorrectTenantId(string tenantId);
+    /// <summary>
+    /// Configure tenant id behavior within this Marten DocumentStore
+    /// </summary>
+    TenantIdStyle TenantIdStyle { get; set; }
 }

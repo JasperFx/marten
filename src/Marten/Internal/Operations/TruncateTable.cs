@@ -50,7 +50,7 @@ internal class TruncateTable: IStorageOperation
         return Equals(DocumentType, other.DocumentType);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
         {

@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using ImTools;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten.Events;
@@ -20,7 +22,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Storage;
 
-public class StorageFeatures: IFeatureSchema
+public class StorageFeatures: IFeatureSchema, IDescribeMyself
 {
     private readonly Ref<ImHashMap<Type, IDocumentMappingBuilder>> _builders =
         Ref.Of(ImHashMap<Type, IDocumentMappingBuilder>.Empty);
@@ -191,10 +193,7 @@ public class StorageFeatures: IFeatureSchema
 
     internal IDocumentMapping FindMapping(Type documentType)
     {
-        if (documentType == null)
-        {
-            throw new ArgumentNullException(nameof(documentType));
-        }
+        ArgumentNullException.ThrowIfNull(documentType);
 
         if (!_mappings.Value.TryFind(documentType, out var value))
         {
@@ -224,7 +223,7 @@ public class StorageFeatures: IFeatureSchema
                 .Where(x => x.Count() > 1)
                 .ToArray();
 
-        if (duplicates.Any())
+        if (duplicates.Length != 0)
         {
             var message = duplicates
                     // We are making it legal to use the same document alias across different schemas
@@ -409,5 +408,16 @@ public class StorageFeatures: IFeatureSchema
                 _builders.Swap(d => d.AddOrUpdate(builder.DocumentType, builder));
             }
         }
+    }
+
+    OptionsDescription IDescribeMyself.ToDescription()
+    {
+        var description = new OptionsDescription(this);
+        foreach (var mapping in AllDocumentMappings)
+        {
+            description.Children[mapping.DocumentType.FullNameInCode()] = new OptionsDescription(mapping);
+        }
+
+        return description;
     }
 }

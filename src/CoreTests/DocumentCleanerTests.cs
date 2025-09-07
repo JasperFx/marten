@@ -148,10 +148,10 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
         theSession.Logger = new TestOutputMartenLogger(_output);
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection1", "All"), 1000)));
+            new EventRange(new ShardName("Projection1", "All", 1), 1000)));
 
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
-            new EventRange(new ShardName("Projection2", "All"), 1000)));
+            new EventRange(new ShardName("Projection2", "All", 1), 1000)));
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<Quest>(streamId, new QuestStarted());
@@ -239,7 +239,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
             var values = await session.QueryAsync<int>(@"select count(*) from information_schema.sequences s
 where s.sequence_name like ? and s.sequence_schema = any(?);", "mt_%", allSchemas);
 
-            return values.First();
+            return values[0];
         }
 
         (await GetSequenceCount(theStore)).ShouldBeGreaterThan(0);

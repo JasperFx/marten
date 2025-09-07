@@ -18,6 +18,11 @@ public interface IReadonlyMetadataConfig
     ///     Optional, user defined headers for an event
     /// </summary>
     public bool HeadersEnabled { get; }
+
+    /// <summary>
+    ///     Setting to enable "last modified by" or user name tracking on individual events
+    /// </summary>
+    bool UserNameEnabled { get; set; }
 }
 
 public class MetadataConfig: IReadonlyMetadataConfig
@@ -54,6 +59,15 @@ public class MetadataConfig: IReadonlyMetadataConfig
     {
         get => _parent.Headers.Enabled;
         set => _parent.Headers.Enabled = value;
+    }
+
+    /// <summary>
+    ///     Setting to enable "last modified by" or user name tracking on individual events
+    /// </summary>
+    public bool UserNameEnabled
+    {
+        get => _parent.UserName.Enabled;
+        set => _parent.UserName.Enabled = value;
     }
 
     /// <summary>

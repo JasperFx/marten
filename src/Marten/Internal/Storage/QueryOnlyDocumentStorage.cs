@@ -14,7 +14,7 @@ internal interface IQueryOnlyDocumentStorage: IDocumentStorage
     ISelectClause SelectClauseForIncludes();
 }
 
-public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>, IQueryOnlyDocumentStorage
+public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>, IQueryOnlyDocumentStorage where TId : notnull where T : notnull
 {
     public QueryOnlyDocumentStorage(DocumentMapping document): base(StorageStyle.QueryOnly, document)
     {
@@ -49,7 +49,8 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
         var command = BuildLoadManyCommand(ids, session.TenantId);
         var selector = (ISelector<T>)BuildSelector(session);
 
-        await using (var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false))
+        await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
+        try
         {
             while (await reader.ReadAsync(token).ConfigureAwait(false))
             {
@@ -57,11 +58,15 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
                 list.Add(document);
             }
         }
+        finally
+        {
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
 
         return list;
     }
 
-    public sealed override Task<T> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
     {
         return loadAsync(id, session, token);
     }
