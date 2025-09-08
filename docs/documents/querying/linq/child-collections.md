@@ -98,9 +98,9 @@ As of now, Marten allows you to do "contains" searches within Arrays, Lists & IL
 ```cs
 public async Task query_against_string_array()
 {
-    var doc1 = new DocWithArrays { Strings = new[] { "a", "b", "c" } };
-    var doc2 = new DocWithArrays { Strings = new[] { "c", "d", "e" } };
-    var doc3 = new DocWithArrays { Strings = new[] { "d", "e", "f" } };
+    var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
+    var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
+    var doc3 = new DocWithArrays { Strings = ["d", "e", "f"] };
 
     theSession.Store(doc1);
     theSession.Store(doc2);

@@ -53,6 +53,14 @@ public class AppFixture: IAsyncLifetime
         {
             b.ConfigureServices((context, services) =>
             {
+                // Important! You can make your test harness work a little faster (important on its own)
+                // and probably be more reliable by overriding your Marten configuration to run all
+                // async daemons in "Solo" mode so they spin up faster and there's no issues from
+                // PostgreSQL having trouble with advisory locks when projections are rapidly started and stopped
+
+                // This was added in V8.8
+                services.MartenDaemonModeIsSolo();
+
                 services.Configure<MartenSettings>(s =>
                 {
                     s.SchemaName = SchemaName;
@@ -67,7 +75,7 @@ public class AppFixture: IAsyncLifetime
         }
     }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L10-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L10-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_appfixture' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent spinning up the entire host (and database setup) for every test (in parallel) you could create a collection fixture to share between your tests:
@@ -138,6 +146,11 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
     {
         // Using Marten, wipe out all data and reset the state
         await Store.Advanced.ResetAllData();
+
+        // OR if you use the async daemon in your tests, use this
+        // instead to do the above, but also cleanly stop all projections,
+        // reset the data, then start all async projections and subscriptions up again
+        await Host.ResetAllMartenDataAsync();
     }
 
     // This is required because of the IAsyncLifetime
@@ -149,7 +162,7 @@ public abstract class SimplifiedIntegrationContext : IAsyncLifetime
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/SimplifiedIntegrationContext.cs#L7-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplified_integration_context' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/Examples/SimplifiedIntegrationContext.cs#L7-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplified_integration_context' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you're working with [multiple Marten databases](/configuration/hostbuilder#working-with-multiple-marten-databases), you can use the `IDocumentStore` extension method to get the store by its interface type:
@@ -262,6 +275,14 @@ Host = await AlbaHost.For<Program>(b =>
 {
     b.ConfigureServices((context, services) =>
     {
+        // Important! You can make your test harness work a little faster (important on its own)
+        // and probably be more reliable by overriding your Marten configuration to run all
+        // async daemons in "Solo" mode so they spin up faster and there's no issues from
+        // PostgreSQL having trouble with advisory locks when projections are rapidly started and stopped
+
+        // This was added in V8.8
+        services.MartenDaemonModeIsSolo();
+
         services.Configure<MartenSettings>(s =>
         {
             s.SchemaName = SchemaName;
@@ -269,7 +290,7 @@ Host = await AlbaHost.For<Program>(b =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.AspNetCore.Testing/AppFixture.cs#L22-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_configure_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `MartenSettings` is a custom config class, you can customize any way you'd like:

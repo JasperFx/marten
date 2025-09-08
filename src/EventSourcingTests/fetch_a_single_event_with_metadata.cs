@@ -24,32 +24,6 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
     private readonly MembersJoined joined2 =
         new MembersJoined { Day = 5, Location = "Sendaria", Members = new string[] { "Silk", "Barak" } };
 
-    [Fact]
-    public async Task fetch_with_metadata_synchronously()
-    {
-        StoreOptions(x =>
-        {
-            x.Events.MetadataConfig.HeadersEnabled = true;
-            x.Events.MetadataConfig.CausationIdEnabled = true;
-            x.Events.MetadataConfig.CorrelationIdEnabled = true;
-        });
-
-        theSession.CorrelationId = "The Correlation";
-        theSession.CausationId = "The Cause";
-        theSession.LastModifiedBy = "Last Person";
-        theSession.SetHeader("HeaderKey", "HeaderValue");
-
-        var streamId = theSession.Events
-            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        await theSession.SaveChangesAsync();
-
-        var events = await theSession.Events.FetchStreamAsync(streamId);
-        events.Count.ShouldBe(5);
-        events.ShouldAllBe(e =>
-            e.Headers != null && e.Headers.ContainsKey("HeaderKey") && "HeaderValue".Equals(e.Headers["HeaderKey"]));
-        events.ShouldAllBe(e => e.CorrelationId == "The Correlation");
-        events.ShouldAllBe(e => e.CausationId == "The Cause");
-    }
 
     [Fact]
     public async Task fetch_with_metadata_asynchronously()
@@ -61,6 +35,8 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
             x.Events.MetadataConfig.CorrelationIdEnabled = true;
         });
 
+#region sample_query_event_metadata
+        // Apply metadata to the IDocumentSession
         theSession.CorrelationId = "The Correlation";
         theSession.CausationId = "The Cause";
         theSession.LastModifiedBy = "Last Person";
@@ -72,33 +48,14 @@ public class fetch_a_single_event_with_metadata: IntegrationContext
 
         var events = await theSession.Events.FetchStreamAsync(streamId);
         events.Count.ShouldBe(5);
+        // Inspect metadata
         events.ShouldAllBe(e =>
             e.Headers != null && e.Headers.ContainsKey("HeaderKey") && "HeaderValue".Equals(e.Headers["HeaderKey"]));
         events.ShouldAllBe(e => e.CorrelationId == "The Correlation");
         events.ShouldAllBe(e => e.CausationId == "The Cause");
+#endregion
     }
 
-    [Fact]
-    public async Task fetch_synchronously()
-    {
-        var streamId = theSession.Events
-            .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
-        await theSession.SaveChangesAsync();
-
-        var events = await theSession.Events.FetchStreamAsync(streamId);
-
-        (await theSession.Events.LoadAsync(Guid.NewGuid())).ShouldBeNull();
-
-        // Knowing the event type
-        var slayed1_2 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id));
-        slayed1_2.Version.ShouldBe(3);
-        slayed1_2.Data.Name.ShouldBe("Troll");
-
-        // Not knowing the event type
-        var slayed1_3 = (await theSession.Events.LoadAsync<MonsterSlayed>(events[2].Id)).ShouldBeOfType<Event<MonsterSlayed>>();
-        slayed1_3.Version.ShouldBe(3);
-        slayed1_3.Data.Name.ShouldBe("Troll");
-    }
 
     [Fact]
     public async Task fetch_asynchronously()
