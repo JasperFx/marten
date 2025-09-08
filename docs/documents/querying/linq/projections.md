@@ -140,9 +140,9 @@ Marten has the ability to use the `SelectMany()` operator to issue queries again
 [Fact]
 public async Task can_do_simple_select_many_against_simple_array()
 {
-    var product1 = new Product {Tags = new[] {"a", "b", "c"}};
-    var product2 = new Product {Tags = new[] {"b", "c", "d"}};
-    var product3 = new Product {Tags = new[] {"d", "e", "f"}};
+    var product1 = new Product {Tags = ["a", "b", "c"]};
+    var product2 = new Product {Tags = ["b", "c", "d"]};
+    var product3 = new Product {Tags = ["d", "e", "f"]};
 
     using (var session = theStore.LightweightSession())
     {

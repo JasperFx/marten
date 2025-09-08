@@ -26,7 +26,7 @@ var store = DocumentStore.For(opts =>
 <!-- endSnippet -->
 
 By default, Marten runs "lean" by omitting the extra metadata storage on events shown above. Causation, correlation, user name (last modified by), and header fields must be individually enabled. 
-Event the database table columns for this data will not be created unless you opt in 
+The database table columns for this data will not be created unless you opt-in.
 
 When appending events, Marten will automatically tag events with the data from these properties
 on the `IDocumentSession` when capturing the new events:
@@ -54,181 +54,42 @@ public Dictionary<string, object>? Headers { get; protected set; }
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Internal/Sessions/QuerySession.Metadata.cs#L15-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_session_metadata_tracking' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-::: warning
-Open Telemetry `Activity` (spans) are only emitted if there is an active listener for your application.
-:::
-
-In the data elements above, the correlation id and causation id is taken automatically from any active Open Telemetry span,
-so these values should just flow from ASP.Net Core requests or typical message bus handlers (like Wolverine!) when Open Telemetry
+The `CorrelationId` and `CausationId` is taken automatically from any active OpenTelemetry span,
+so these values should just flow from ASP.NET Core requests or typical message bus handlers (like Wolverine!) when OpenTelemetry
 spans are enabled and being emitted.
 
 Values for `IDocumentSession.LastModifiedBy` and `IDocumentSession.Headers` will need to be set manually, but once they
 are, those values will flow through to new events captured by a session when `SaveChangesAsync()` is called.
 
-::: tip
-The basic [IEvent](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/Event.cs#L34-L176) abstraction and quite a bit of other generic
-event sourcing code moved in Marten 8.0 to the shared JasperFx.Events library.
-:::
+The actual metadata is accessible from the [IEvent](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/Event.cs#L34-L176) interface wrapper as shown (which is implemented by `Event<T>`).
 
-The actual metadata is accessible from the `IEvent` interface event wrappers as shown below (which are implemented by `Event<T>`):
-
+<!-- snippet: sample_query_event_metadata -->
+<a id='snippet-sample_query_event_metadata'></a>
 ```cs
-public interface IEvent
-{
-    /// <summary>
-    ///     Unique identifier for the event. Uses a sequential Guid
-    /// </summary>
-    Guid Id { get; set; }
+// Apply metadata to the IDocumentSession
+theSession.CorrelationId = "The Correlation";
+theSession.CausationId = "The Cause";
+theSession.LastModifiedBy = "Last Person";
+theSession.SetHeader("HeaderKey", "HeaderValue");
 
-    /// <summary>
-    ///     The version of the stream this event reflects. The place in the stream.
-    /// </summary>
-    long Version { get; set; }
+var streamId = theSession.Events
+    .StartStream<QuestParty>(started, joined, slayed1, slayed2, joined2).Id;
+await theSession.SaveChangesAsync();
 
-    /// <summary>
-    ///     The sequential order of this event in the entire event store
-    /// </summary>
-    long Sequence { get; set; }
-
-    /// <summary>
-    ///     The actual event data body
-    /// </summary>
-    object Data { get; }
-
-    /// <summary>
-    ///     If using Guid's for the stream identity, this will
-    ///     refer to the Stream's Id, otherwise it will always be Guid.Empty
-    /// </summary>
-    Guid StreamId { get; set; }
-
-    /// <summary>
-    ///     If using strings as the stream identifier, this will refer
-    ///     to the containing Stream's Id
-    /// </summary>
-    string? StreamKey { get; set; }
-
-    /// <summary>
-    ///     The UTC time that this event was originally captured
-    /// </summary>
-    DateTimeOffset Timestamp { get; set; }
-
-    /// <summary>
-    ///     If using multi-tenancy by tenant id
-    /// </summary>
-    string TenantId { get; set; }
-
-    /// <summary>
-    ///     The .Net type of the event body
-    /// </summary>
-    Type EventType { get; }
-
-    /// <summary>
-    ///     JasperFx.Event's type alias string for the Event type
-    /// </summary>
-    string EventTypeName { get; set; }
-
-    /// <summary>
-    ///     JasperFx.Events's string representation of the event type
-    ///     in assembly qualified name
-    /// </summary>
-    string DotNetTypeName { get; set; }
-
-    /// <summary>
-    ///     Optional metadata describing the causation id
-    /// </summary>
-    string? CausationId { get; set; }
-
-    /// <summary>
-    ///     Optional metadata describing the correlation id
-    /// </summary>
-    string? CorrelationId { get; set; }
-
-    /// <summary>
-    ///     Optional user defined metadata values. This may be null.
-    /// </summary>
-    Dictionary<string, object>? Headers { get; set; }
-
-    /// <summary>
-    ///     Has this event been archived and no longer applicable
-    ///     to projected views
-    /// </summary>
-    bool IsArchived { get; set; }
-
-    /// <summary>
-    ///     JasperFx.Events's name for the aggregate type that will be persisted
-    ///     to the streams table. This will only be available when running
-    ///     within the Async Daemon
-    /// </summary>
-    public string? AggregateTypeName { get; set; }
-
-    /// <summary>
-    ///     Set an optional user defined metadata value by key
-    /// </summary>
-    /// <param name="key"></param>
-    /// <param name="value"></param>
-    void SetHeader(string key, object value);
-
-    /// <summary>
-    ///     Get an optional user defined metadata value by key
-    /// </summary>
-    /// <param name="key"></param>
-    /// <returns></returns>
-    object? GetHeader(string key);
-    
-    /// <summary>
-    /// Build a Func that can resolve an identity from the IEvent and even
-    /// handles the dastardly strong typed identifiers
-    /// </summary>
-    /// <typeparam name="TId"></typeparam>
-    /// <returns></returns>
-    /// <exception cref="NotSupportedException"></exception>
-    public static Func<IEvent, TId> CreateAggregateIdentitySource<TId>()
-        where TId : notnull
-    {
-        if (typeof(TId) == typeof(Guid)) return e => e.StreamId.As<TId>();
-        if (typeof(TId) == typeof(string)) return e => e.StreamKey!.As<TId>();
-        
-        var valueTypeInfo = ValueTypeInfo.ForType(typeof(TId));
-        
-        var e = Expression.Parameter(typeof(IEvent), "e");
-        var eMember = valueTypeInfo.SimpleType == typeof(Guid)
-            ? ReflectionHelper.GetProperty<IEvent>(x => x.StreamId)
-            : ReflectionHelper.GetProperty<IEvent>(x => x.StreamKey!);
-
-        var raw = Expression.Call(e, eMember.GetMethod!);
-        Expression? wrapped = null;
-        if (valueTypeInfo.Builder != null)
-        {
-            wrapped = Expression.Call(null, valueTypeInfo.Builder, raw);
-        }
-        else if (valueTypeInfo.Ctor != null)
-        {
-            wrapped = Expression.New(valueTypeInfo.Ctor, raw);
-        }
-        else
-        {
-            throw new NotSupportedException("Cannot build a type converter for strong typed id type " +
-                                            valueTypeInfo.OuterType.FullNameInCode());
-        }
-
-        var lambda = Expression.Lambda<Func<IEvent, TId>>(wrapped, e);
-
-        return lambda.CompileFast();
-    }
-    
-    /// <summary>
-    ///     Optional metadata describing the user name or
-    ///     process name for the unit of work that captured this event
-    /// </summary>
-    string? UserName { get; set; }
-    
-    /// <summary>
-    /// No, this is *not* idiomatic event sourcing, but this may be used as metadata to direct
-    /// projection replays or subscription rewinding as an event that should not be used
-    /// </summary>
-    bool IsSkipped { get; set; }
-}
+var events = await theSession.Events.FetchStreamAsync(streamId);
+events.Count.ShouldBe(5);
+// Inspect metadata
+events.ShouldAllBe(e =>
+    e.Headers != null && e.Headers.ContainsKey("HeaderKey") && "HeaderValue".Equals(e.Headers["HeaderKey"]));
+events.ShouldAllBe(e => e.CorrelationId == "The Correlation");
+events.ShouldAllBe(e => e.CausationId == "The Cause");
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/fetch_a_single_event_with_metadata.cs#L38-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_event_metadata' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: tip
+ To utilize metadata within Projections, see [Using Event Metadata in Aggregates](/events/projections/aggregate-projections#using-event-metadata-in-aggregates).
+:::
 
 ## Overriding Metadata <Badge type="tip" text="8.4" />
 

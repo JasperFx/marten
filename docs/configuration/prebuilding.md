@@ -148,11 +148,20 @@ public static class Program
         return Host.CreateDefaultBuilder(args)
             .ConfigureServices((hostContext, services) =>
             {
+                services.AddMartenStore<IThingStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.RegisterDocumentType<Thing>();
+                    opts.RegisterDocumentType<Thing2>();
+                    opts.RegisterDocumentType<Thing3>();
+                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                });
+
                 services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.RegisterDocumentType<Target>();
                     opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    opts.RegisterDocumentType<Target>();
 
                     // If you use compiled queries, you will need to register the
                     // compiled query types with Marten ahead of time
@@ -176,7 +185,7 @@ public static class Program
 
                     // This is important, setting this option tells Marten to
                     // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
+                    //opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 
@@ -210,7 +219,7 @@ public static class Program
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L29-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/Program.cs#L29-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_pre_build_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Okay, after all that, there should be a new command line option called `codegen` for your project. Assuming
