@@ -17,6 +17,7 @@ public class TargetWithDates: IEquatable<TargetWithDates>
     public LocalDateTime? NullableLocalDateTime { get; set; }
     public Instant InstantUTC { get; set; }
     public Instant? NullableInstantUTC { get; set; }
+    public Instant? NullInstantUTC { get; set; }
 
     internal static TargetWithDates Generate(DateTime? defaultDateTime = null)
     {
@@ -36,7 +37,8 @@ public class TargetWithDates: IEquatable<TargetWithDates>
             LocalDateTime = localDateTime,
             NullableLocalDateTime = localDateTime,
             InstantUTC = instant,
-            NullableInstantUTC = instant
+            NullableInstantUTC = instant,
+            NullInstantUTC = null
         };
     }
 
