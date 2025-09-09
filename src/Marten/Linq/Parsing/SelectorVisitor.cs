@@ -23,11 +23,6 @@ public class SelectorVisitor: ExpressionVisitor
         _serializer = serializer;
     }
 
-    public override Expression Visit(Expression node)
-    {
-        return base.Visit(node);
-    }
-
     protected override Expression VisitMethodCall(MethodCallExpression node)
     {
         if (node.Method.Name == nameof(QueryableExtensions.ExplicitSql))
