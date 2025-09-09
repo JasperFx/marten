@@ -357,7 +357,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             Rollback();
             throw new AggregateException(exceptions);
@@ -394,7 +394,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             await RollbackAsync(token).ConfigureAwait(false);
             throw new AggregateException(exceptions);

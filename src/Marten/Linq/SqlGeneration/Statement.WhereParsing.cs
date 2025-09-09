@@ -74,7 +74,7 @@ public abstract partial class Statement: IWhereFragmentHolder
             }
         }
 
-        if (Wheres.Any())
+        if (Wheres.Count != 0)
         {
             compileAnySubQueries(session);
         }

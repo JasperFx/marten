@@ -80,7 +80,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
 
     public IEnumerable<Type> DocumentTypes()
     {
-        if (_collectionUsages.Any())
+        if (_collectionUsages.Count != 0)
         {
             yield return _collectionUsages[0].ElementType;
 

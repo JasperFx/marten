@@ -85,7 +85,7 @@ internal class AdvisoryLock : IAsyncDisposable
         await _conn.ReleaseGlobalLock(lockId, cancellation: cancellation.Token).ConfigureAwait(false);
         _locks.Remove(lockId);
 
-        if (!_locks.Any())
+        if (_locks.Count == 0)
         {
             await _conn.CloseAsync().ConfigureAwait(false);
             await _conn.DisposeAsync().ConfigureAwait(false);

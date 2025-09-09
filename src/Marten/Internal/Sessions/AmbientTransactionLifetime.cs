@@ -280,7 +280,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             throw new AggregateException(exceptions);
         }
@@ -311,7 +311,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             ExceptionDispatchInfo.Throw(ex);
         }
 
-        if (exceptions.Any())
+        if (exceptions.Count != 0)
         {
             throw new AggregateException(exceptions);
         }
