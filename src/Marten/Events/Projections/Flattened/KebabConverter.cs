@@ -4,8 +4,6 @@ namespace Marten.Events.Projections.Flattened;
 
 internal static class KebabConverter
 {
-    // Shamelessly stolen from https://stackoverflow.com/questions/37301287/how-do-i-convert-pascalcase-to-kebab-case-with-c
-
 
     public static string ToKebabCase(this string str)
     {
