@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -68,6 +69,50 @@ public class nullable_types : IntegrationContext
 
         theSession.Query<Target>().Where(x => !x.NullableBoolean.HasValue).Count()
             .ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task query_against_nullable_bool_not_true()
+    {
+        var target1 = new Target { NullableBoolean = null };
+        theSession.Store(target1);
+
+        var target2 = new Target { NullableBoolean = true };
+        theSession.Store(target2);
+
+        var target3 = new Target { NullableBoolean = false };
+        theSession.Store(target3);
+
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var list = await theSession.Query<Target>().Where(x => x.NullableBoolean != true).ToListAsync();
+        list.Count.ShouldBe(2);
+        list.Any(x => x.Id == target1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == target3.Id).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task query_against_nullable_bool_not_false()
+    {
+        var target1 = new Target { NullableBoolean = null };
+        theSession.Store(target1);
+
+        var target2 = new Target { NullableBoolean = true };
+        theSession.Store(target2);
+
+        var target3 = new Target { NullableBoolean = false };
+        theSession.Store(target3);
+
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+
+        var list = await theSession.Query<Target>().Where(x => x.NullableBoolean != false).ToListAsync();
+        list.Count.ShouldBe(2);
+        list.Any(x => x.Id == target1.Id).ShouldBeTrue();
+        list.Any(x => x.Id == target2.Id).ShouldBeTrue();
     }
 
     [Fact]
