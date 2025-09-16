@@ -202,13 +202,25 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
                         // check if it's still running
                         await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
-                    }
-                    else if (await Distributor.TryAttainLockAsync(set, stoppingToken).ConfigureAwait(false))
-                    {
-                        var daemon = resolveDaemon(set);
 
-                        // check if it's still running
-                        await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
+                        continue;
+                    }
+
+                    try
+                    {
+                        if (await Distributor.TryAttainLockAsync(set, stoppingToken).ConfigureAwait(false))
+                        {
+                            var daemon = resolveDaemon(set);
+
+                            // check if it's still running
+                            await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogError(e, "Error trying to attain a lock for set {Name} and lock id {LockId}. Will retry later", set.Names.Select(x => x.Identity).Join(", "), set.LockId);
+                        await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken)
+                            .ConfigureAwait(false);
                     }
                 }
             }
