@@ -187,6 +187,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
         var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
 
+        // This can only cause problems, so shut this down!
+        sessionOptions.AllowAnyTenant = true;
+
         // Opt into identity mechanics for Event Projections that require that
         if (projectionOptions.EnableDocumentTrackingByIdentity)
         {
