@@ -227,9 +227,22 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [InlineData(SerializerType.Newtonsoft)]
     public async Task bug_1276_can_select_instant(SerializerType serializerType)
     {
-        return; // TODO -- FIX THIS
+        StoreOptions(opts =>
+        {
+            switch (serializerType)
+            {
+                case SerializerType.Newtonsoft:
+                    opts.UseNewtonsoftForSerialization();
+                    break;
+                case SerializerType.SystemTextJson:
+                    opts.UseSystemTextJsonForSerialization();
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(serializerType), serializerType, null);
+            }
 
-        StoreOptions(_ => _.UseNodaTime());
+            opts.UseNodaTime();
+        });
 
         var dateTime = DateTime.UtcNow;
         var instantUTC = Instant.FromDateTimeUtc(dateTime.ToUniversalTime());
@@ -243,18 +256,32 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var resulta = query.Query<TargetWithDates>()
+            var result = query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)
                 .Single();
 
-            var result = query.Query<TargetWithDates>()
+            var resultWithSelect = query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)
-                .Select(c => new { c.Id, c.InstantUTC })
+                .Select(c => new { c.Id, c.InstantUTC, c.NullableInstantUTC, c.NullInstantUTC })
                 .Single();
 
             result.ShouldNotBeNull();
             result.Id.ShouldBe(testDoc.Id);
+            result.InstantUTC.ShouldBe(instantUTC);
+            result.NullableInstantUTC.ShouldBe(instantUTC);
+            result.NullInstantUTC.ShouldBeNull();
+
             ShouldBeEqualWithDbPrecision(result.InstantUTC, instantUTC);
+            ShouldBeEqualWithDbPrecision(result.NullableInstantUTC.Value, instantUTC);
+
+            resultWithSelect.ShouldNotBeNull();
+            resultWithSelect.Id.ShouldBe(testDoc.Id);
+            resultWithSelect.InstantUTC.ShouldBe(instantUTC);
+            resultWithSelect.NullableInstantUTC.ShouldBe(instantUTC);
+            resultWithSelect.NullInstantUTC.ShouldBeNull();
+
+            ShouldBeEqualWithDbPrecision(resultWithSelect.InstantUTC, instantUTC);
+            ShouldBeEqualWithDbPrecision(resultWithSelect.NullableInstantUTC.Value, instantUTC);
         }
     }
 
