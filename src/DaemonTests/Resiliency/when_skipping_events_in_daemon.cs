@@ -135,13 +135,13 @@ public class when_skipping_events_in_daemon : DaemonContext
         theSession.Logger = new TestOutputMartenLogger(_output);
         var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
 
-        skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
-            .Select(x => x.EventSequence).OrderBy(x => x)
-            .ShouldHaveTheSameElementsAs(4, 5, 6, 7);
-
         skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
             .Select(x => x.EventSequence).OrderBy(x => x)
             .ShouldHaveTheSameElementsAs(4, 5, 6, 7, 11, 14);
+
+        skipped.Where(x => x.ProjectionName == "CollateNames" && x.ShardName == "All")
+            .Select(x => x.EventSequence).OrderBy(x => x)
+            .ShouldHaveTheSameElementsAs(4, 5, 6, 7);
 
     }
 }
