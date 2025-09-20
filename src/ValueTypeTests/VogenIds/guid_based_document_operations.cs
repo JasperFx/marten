@@ -37,7 +37,7 @@ public class guid_id_document_operations : IDisposable, IAsyncDisposable
         theSession?.Dispose();
     }
 
-    private IDocumentSession theSession;
+    private readonly IDocumentSession theSession;
 
     public async ValueTask DisposeAsync()
     {

@@ -18,7 +18,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
     private readonly MartenLinqQueryProvider _provider;
 
 
-    private bool _hasParsedIncludes;
+    private readonly bool _hasParsedIncludes;
 
     public LinqQueryParser(MartenLinqQueryProvider provider, IMartenSession session,
         Expression expression, SingleValueMode? valueMode = null)
