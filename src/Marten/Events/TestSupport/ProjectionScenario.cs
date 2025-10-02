@@ -89,7 +89,7 @@ public partial class ProjectionScenario: IEventOperations
             var number = 0;
             var descriptions = new List<string>();
 
-            while (_steps.Any())
+            while (_steps.Count != 0)
             {
                 number++;
                 var step = _steps.Dequeue();
@@ -107,7 +107,7 @@ public partial class ProjectionScenario: IEventOperations
                 }
             }
 
-            if (exceptions.Any())
+            if (exceptions.Count != 0)
             {
                 throw new ProjectionScenarioException(descriptions, exceptions);
             }

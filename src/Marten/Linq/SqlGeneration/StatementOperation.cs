@@ -63,7 +63,7 @@ internal class StatementOperation: Statement, IStorageOperation
 
     protected void writeWhereClause(ICommandBuilder sql)
     {
-        if (Wheres.Any())
+        if (Wheres.Count != 0)
         {
             sql.Append(" where ");
             Wheres[0].Apply(sql);

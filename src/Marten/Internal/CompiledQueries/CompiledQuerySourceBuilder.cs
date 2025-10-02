@@ -121,7 +121,7 @@ internal class CompiledQuerySourceBuilder
                 $"var cloned = _inner.{nameof(IMaybeStatefulHandler.CloneForSession)}(session, {statistics});");
         }
 
-        if (_plan.IncludeMembers.Any())
+        if (_plan.IncludeMembers.Count != 0)
         {
             var readers = _plan.IncludeMembers.Select(buildIncludeReader);
 
@@ -187,7 +187,7 @@ internal class CompiledQuerySourceBuilder
 
     private CompiledSourceType determineHandlerType()
     {
-        if (_plan.IncludeMembers.Any())
+        if (_plan.IncludeMembers.Count != 0)
         {
             return CompiledSourceType.Complex;
         }
