@@ -43,8 +43,7 @@ public partial class CollectionUsage
             var inner = statement.Top();
             var selectionStatement = inner.SelectorStatement();
 
-            ITenantFilter? tenantWhereFragment = null;
-            selectionStatement.TryFindTenantAwareFilter(out tenantWhereFragment);
+            selectionStatement.TryFindTenantAwareFilter(out ITenantFilter? tenantWhereFragment);
 
 
             if (inner is SelectorStatement { SelectClause: IDocumentStorage } select)

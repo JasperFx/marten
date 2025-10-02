@@ -408,10 +408,9 @@ public class select_many : IntegrationContext
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.LightweightSession();
-        QueryStatistics stats;
 
         var actual = query.Query<Target>()
-            .Stats(out stats)
+            .Stats(out QueryStatistics stats)
             .SelectMany(x => x.Children)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
@@ -532,8 +531,7 @@ public class select_many : IntegrationContext
     public void Bug_665()
     {
         using var session = theStore.QuerySession();
-        QueryStatistics stats = null;
-        var attributes = session.Query<Product>().Stats(out stats).SelectMany(x => x.Attributes)
+        var attributes = session.Query<Product>().Stats(out QueryStatistics stats).SelectMany(x => x.Attributes)
             .Select(x => x.Attribute.Name).Distinct();
     }
 
