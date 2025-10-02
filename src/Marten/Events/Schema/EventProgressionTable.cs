@@ -20,7 +20,7 @@ internal class EventProgressionTable: Table
 
         if (eventGraph.UseOptimizedProjectionRebuilds)
         {
-            AddColumn<string>("mode").DefaultValueByString(ShardMode.none.ToString());
+            AddColumn<string>("mode").DefaultValueByString(nameof(ShardMode.none));
             AddColumn<int>("rebuild_threshold").DefaultValueByExpression("0");
             AddColumn<int>("assigned_node").DefaultValueByExpression("0");
         }
