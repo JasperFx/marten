@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
+using JasperFx.Core;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten.Schema;
@@ -60,7 +61,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
 
         foreach (var pair in _tenants.Enumerate())
         {
-            dict[pair.Value.Database.Identifier].TenantIds.Add(pair.Key);
+            dict[pair.Value.Database.Identifier].TenantIds.Fill(pair.Key);
         }
 
         return new ValueTask<DatabaseUsage>(usage);
@@ -200,7 +201,7 @@ public class StaticMultiTenancy: Tenancy, ITenancy, IStaticMultiTenancy
             foreach (var tenantId in tenantIds)
             {
                 var tenant = new Tenant(tenantId, _database);
-                _database.TenantIds.Add(tenantId);
+                _database.TenantIds.Fill(tenantId);
                 _parent._tenants = _parent._tenants.AddOrUpdate(tenantId, tenant);
             }
 

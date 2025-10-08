@@ -111,7 +111,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
                 var database = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionString),
                     tenantId);
 
-                database.TenantIds.Add(tenantId);
+                database.TenantIds.Fill(tenantId);
 
                 _databases = _databases.AddOrUpdate(tenantId, database);
             }
@@ -303,7 +303,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         {
             var db = new MartenDatabase(_options,
                 _options.NpgsqlDataSourceFactory.Create(connectionString), tenantId);
-            db.TenantIds.Add(tenantId);
+            db.TenantIds.Fill(tenantId);
 
             return db;
         }
@@ -366,7 +366,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         var list = _databases.Enumerate().Select(pair =>
         {
             var descriptor = pair.Value.Describe();
-            descriptor.TenantIds.Add(pair.Key);
+            descriptor.TenantIds.Fill(pair.Key);
             return descriptor;
         }).ToList();
 
