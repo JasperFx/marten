@@ -10,11 +10,6 @@ public class Tenant
     {
         Database = inner;
         TenantId = tenantId;
-
-        if (Database is MartenDatabase db)
-        {
-            db.TenantIds.Fill(tenantId);
-        }
     }
 
     public string TenantId { get; }

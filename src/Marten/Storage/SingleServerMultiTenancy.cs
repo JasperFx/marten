@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
@@ -168,7 +169,9 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
     {
         // This just guarantees that all databases are built
         foreach (var tenantId in _tenantToDatabase.Values.Distinct())
+        {
             await FindOrCreateDatabase(tenantId).ConfigureAwait(false);
+        }
 
         return AllDatabases();
     }
@@ -195,7 +198,7 @@ internal class SingleServerMultiTenancy: SingleServerDatabaseCollection<MartenDa
             Cardinality = DatabaseCardinality.DynamicMultiple, Databases = dict.Values.ToList()
         };
 
-        foreach (var pair in _tenantToDatabase) dict[pair.Value].TenantIds.Add(pair.Key);
+        foreach (var pair in _tenantToDatabase) dict[pair.Value].TenantIds.Fill(pair.Key);
 
         return usage;
     }
