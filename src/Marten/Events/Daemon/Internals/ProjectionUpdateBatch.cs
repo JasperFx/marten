@@ -32,7 +32,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     private IMessageBatch? _batch;
     private OperationPage? _current;
-    private DocumentSessionBase? _session;
+    private DocumentSessionBase _session;
 
     internal ProjectionUpdateBatch(ProjectionOptions settings,
         DocumentSessionBase? session, ShardExecutionMode mode, CancellationToken token)
@@ -179,7 +179,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    List<StreamAction> ISessionWorkTracker.Streams => new();
+    private readonly List<StreamAction> _streams = new();
+
+    List<StreamAction> ISessionWorkTracker.Streams => _streams;
 
 
     IReadOnlyList<IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
@@ -196,12 +198,18 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     bool ISessionWorkTracker.TryFindStream(string streamKey, out StreamAction stream)
     {
-        throw new NotSupportedException();
+        stream = _streams
+            .FirstOrDefault(x => x.Key == streamKey);
+
+        return stream != null;
     }
 
     bool ISessionWorkTracker.TryFindStream(Guid streamId, out StreamAction stream)
     {
-        throw new NotSupportedException();
+        stream = _streams
+            .FirstOrDefault(x => x.Id == streamId);
+
+        return stream != null;
     }
 
     bool ISessionWorkTracker.HasOutstandingWork()
@@ -282,6 +290,16 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         await Queue.WaitForCompletionAsync().ConfigureAwait(false);
 
         foreach (var patch in _patches) applyOperation(patch);
+
+        if (_streams.Any())
+        {
+            var eventStorage = _session.EventStorage();
+            foreach (var stream in _streams)
+            {
+                var op = eventStorage.QuickAppendEvents(stream);
+                applyOperation(op);
+            }
+        }
     }
 
     private void startNewPage(IMartenSession session)

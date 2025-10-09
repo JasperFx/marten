@@ -23,6 +23,15 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     void Delete<T>(T entity) where T : notnull;
 
     /// <summary>
+    ///     Access data from another tenant and apply document or event updates to this
+    ///     IDocumentSession for a separate tenant
+    /// </summary>
+    /// <param name="tenantId"></param>
+    /// <returns></returns>
+    new ITenantOperations ForTenant(string tenantId);
+
+
+    /// <summary>
     ///     Mark an entity of type T with either a numeric or Guid id for deletion upon the next call to SaveChanges()
     /// </summary>
     /// <typeparam name="T"></typeparam>
