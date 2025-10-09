@@ -162,6 +162,10 @@ public static class TestingExtensions
     private static string writeStatusMessage(IReadOnlyList<ShardState> projections)
     {
 
+        if (!projections.Any())
+            return
+                "There is no recorded projection, subscription, or even high water mark activity detected. Is the daemon started correctly?";
+
         var grid = new Grid<ShardState>();
         grid.AddColumn("Shard Name", x => x.ShardName);
         grid.AddColumn("Sequence", x => x.Sequence.ToString(), true);
