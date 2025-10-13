@@ -373,6 +373,8 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return _batch;
         }
 
+        // The semaphore is being sensitive to race conditions, so let's try to alleviate that
+        await Task.Delay(Random.Shared.Next(25, 200).Milliseconds(), _token).ConfigureAwait(false);
         await _semaphore.WaitAsync(_token).ConfigureAwait(false);
 
         if (_batch != null)
@@ -391,5 +393,11 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         {
             _semaphore.Release();
         }
+    }
+
+    public async Task SpinUpMessageBatchAsync(DocumentSessionBase session)
+    {
+        _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
+        Listeners.Add(_batch);
     }
 }

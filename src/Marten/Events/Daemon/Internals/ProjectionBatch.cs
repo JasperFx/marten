@@ -83,8 +83,6 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         return new ProjectionStorage<TDoc, TId>((DocumentSessionBase)session, storage);
     }
 
-    //TODO fix in IProjectionBatch
-
     public IProjectionStorage<TDoc, TId> ProjectionStorageFor<TDoc, TId>() where TDoc : notnull where TId : notnull
     {
         var storage = _session.StorageFor<TDoc, TId>();

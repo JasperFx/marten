@@ -207,7 +207,13 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             ShouldApplyListeners = mode == ShardExecutionMode.Continuous && range.Events.Any()
         };
 
+        if (mode == ShardExecutionMode.Continuous)
+        {
+            await batch.SpinUpMessageBatchAsync(session).ConfigureAwait(false);
+        }
+
         var projectionBatch = new ProjectionBatch(session, batch, mode);
+
         if (range.SequenceFloor == 0)
         {
             await batch.Queue.PostAsync(new InsertProjectionProgress(session.Options.EventGraph, range)).ConfigureAwait(false);
