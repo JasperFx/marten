@@ -585,7 +585,7 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         // soft end state
         var restartState = await theSession.Query<StartAndStopAggregate>().FirstOrDefaultAsync(x => x.Id == streamId);
         Assert.NotNull(restartState);
-        Assert.False(softEndStateByLoadAsync.Deleted);
+        Assert.False(restartState.Deleted);
     }
 }
 
