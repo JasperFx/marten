@@ -35,7 +35,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var duration = _timestamp.HasValue ? Stopwatch.GetElapsedTime(_timestamp!.Value) : 0.Seconds();
+            var duration = GetDuration();
             var parameters = command.Parameters
                 .Select(p => $"  {p.ParameterName}: {p.Value}")
                 .Join(Environment.NewLine);
@@ -47,7 +47,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var duration = Stopwatch.GetElapsedTime(_timestamp!.Value);
+            var duration = GetDuration();
             foreach (var command in batch.BatchCommands)
             {
                 var parameters = command.Parameters.OfType<NpgsqlParameter>()
@@ -88,7 +88,7 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
     {
         if (Inner.IsEnabled(LogLevel.Debug))
         {
-            var duration = _timestamp.HasValue ? Stopwatch.GetElapsedTime(_timestamp!.Value) : 0.Seconds();
+            var duration = GetDuration();
             _loggerOutput.RecordSavedChanges(commit.Updated.Count(),
                 duration.TotalMilliseconds,
                 commit.Inserted.Count(),
@@ -110,6 +110,16 @@ internal class DefaultMartenLogger: IMartenLogger, IMartenSessionLogger
         {
             _timestamp = Stopwatch.GetTimestamp();
         }
+    }
+
+    private TimeSpan GetDuration()
+    {
+        if (_timestamp.HasValue)
+        {
+            return Stopwatch.GetElapsedTime(_timestamp.Value);
+        }
+
+        return 0.Seconds();
     }
 }
 
