@@ -31,14 +31,7 @@ Marten supports chaining other linq methods to allow more complex quries such as
 * `OrderBy()`
 * `OrderByDescending()`
 
-## Asynchronous Support
-
-Marten supports Include within an asynchronous context. The query will be run asynchronously when you append your query with the corresponding Async method, like:
-
-* `ToListAsync()`
-* `SingleAsync()`
-
-And so on...
+## Batched query Support
 
 Marten also supports running an Include query within <[linkto:documentation/documents/querying/batched_queries]>:
 
