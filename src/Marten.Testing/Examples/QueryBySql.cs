@@ -28,15 +28,4 @@ public class QueryBySql
 
         #endregion
     }
-
-    public async Task QueryAsynchronously(IQuerySession session)
-    {
-        #region sample_query_with_sql_async
-
-        var millers = await session
-            .QueryAsync<User>("where data ->> 'LastName' = ?", "Miller");
-
-        #endregion
-    }
-
 }

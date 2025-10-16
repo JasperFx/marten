@@ -33,17 +33,6 @@ var millers2 = await session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L20-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_and_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And finally asynchronously:
-
-<!-- snippet: sample_query_with_sql_async -->
-<a id='snippet-sample_query_with_sql_async'></a>
-```cs
-var millers = await session
-    .QueryAsync<User>("where data ->> 'LastName' = ?", "Miller");
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/QueryBySql.cs#L34-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_with_sql_async' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
 All of the samples so far are selecting the whole `User` document and merely supplying
 a SQL `WHERE` clause, but you can also invoke scalar functions or SQL transforms against
 a document body, but in that case you will need to supply the full SQL statement like this:
