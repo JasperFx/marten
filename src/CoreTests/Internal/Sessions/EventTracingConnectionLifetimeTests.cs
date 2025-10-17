@@ -30,15 +30,15 @@ namespace CoreTests.Internal.Sessions
     [Collection(nameof(EventTracingConnectionLifetimeCollection))]
     public class EventTracingConnectionLifetimeTests : IAsyncLifetime
     {
-        private NpgsqlCommand _npgsqlCommand = new("select 1");
+        private readonly NpgsqlCommand _npgsqlCommand = new("select 1");
         private IConnectionLifetime? _innerConnectionLifetime = Substitute.For<IConnectionLifetime>();
         private bool _startCalled;
         private bool _endCalled;
-        private List<OperationPage> _batchPages =new();
-        private List<Exception> _exceptions =new();
-        private BatchBuilder _batchBuilder =new();
+        private readonly List<OperationPage> _batchPages =new();
+        private readonly List<Exception> _exceptions =new();
+        private readonly BatchBuilder _batchBuilder =new();
         private NpgsqlBatch _batch;
-        private DataTable _dataTable =new();
+        private readonly DataTable _dataTable =new();
         private DbDataReader _dataReader;
 
         private const string MartenCommandExecutionStarted = "marten.command.execution.started";
