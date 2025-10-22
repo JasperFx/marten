@@ -397,7 +397,12 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
     public async Task SpinUpMessageBatchAsync(DocumentSessionBase session)
     {
-        _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
+        var sessionOptions = SessionOptions.ForDatabase(session.Database);
+        sessionOptions.Tracking = DocumentTracking.None;
+
+        var projectionSession = new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, this, sessionOptions,
+            ShardExecutionMode.Continuous);
+        _batch = await _session.Options.Events.MessageOutbox.CreateBatch(projectionSession).ConfigureAwait(false);
         Listeners.Add(_batch);
     }
 }
