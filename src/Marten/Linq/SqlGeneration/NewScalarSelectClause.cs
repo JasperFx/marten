@@ -121,7 +121,12 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
             {
                 return default;
             }
-
+            if (typeof(T).IsEnum)
+            {
+                // Read as int, then cast to enum
+                var i = reader.GetFieldValue<int>(0);
+                return (T)Enum.ToObject(typeof(T), i);
+            }
             return reader.GetFieldValue<T>(0);
         }
         catch (InvalidCastException e)
