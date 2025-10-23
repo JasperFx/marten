@@ -25,15 +25,15 @@ internal partial class LinqQueryParser
 
         var itemType = TryGetEnumerableElementType(typeof(TResult));
         var underlying = itemType != null ? Nullable.GetUnderlyingType(itemType) : null;
-        if (underlying != null && underlying == typeof(TDocument))
+        if (underlying == null || underlying != typeof(TDocument))
         {
-            var nullableSelector = new NullableSelector<TDocument>(selector);
-            var handlerType = typeof(ListQueryHandler<>).MakeGenericType(itemType!);
-            return (IQueryHandler<TResult>)Activator.CreateInstance(handlerType, statement, nullableSelector)!;
+            throw new NotSupportedException("Marten does not know how to use result type " +
+                                         typeof(TResult).FullNameInCode());
         }
 
-        throw new NotSupportedException("Marten does not know how to use result type " +
-                                        typeof(TResult).FullNameInCode());
+        var nullableSelector = Activator.CreateInstance(typeof(NullableSelector<>).MakeGenericType(typeof(TDocument)), selector);
+        var handlerType = typeof(ListQueryHandler<>).MakeGenericType(itemType!);
+        return (IQueryHandler<TResult>)Activator.CreateInstance(handlerType, statement, nullableSelector)!;
     }
 
     private static Type? TryGetEnumerableElementType(Type t)
