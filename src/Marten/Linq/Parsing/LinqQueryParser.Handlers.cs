@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,7 +14,8 @@ namespace Marten.Linq.Parsing;
 internal partial class LinqQueryParser
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static IQueryHandler<TResult> BuildHandler<TDocument, TResult>(ISelector<TDocument> selector,
+    public static IQueryHandler<TResult> BuildHandler<TDocument, TResult>(
+        ISelector<TDocument> selector,
         ISqlFragment statement) where TResult : notnull where TDocument : notnull
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TDocument>>())
@@ -23,15 +23,28 @@ internal partial class LinqQueryParser
             return (IQueryHandler<TResult>)new ListQueryHandler<TDocument>(statement, selector);
         }
 
-        var documentType = typeof(TDocument);
+        var itemType = TryGetEnumerableElementType(typeof(TResult));
+        var underlying = itemType != null ? Nullable.GetUnderlyingType(itemType) : null;
+        if (underlying == null || underlying != typeof(TDocument))
+        {
+            throw new NotSupportedException("Marten does not know how to use result type " +
+                                         typeof(TResult).FullNameInCode());
+        }
 
-        // if (typeof(TResult).CanBeCastTo<IEnumerable<Nullable<TDocument>>>())
-        // {
-        //     return (IQueryHandler<TResult>)new ListQueryHandler<Nullable<TDocument>>(statement, selector);
-        // }
+        var nullableSelector = Activator.CreateInstance(typeof(NullableSelector<>).MakeGenericType(typeof(TDocument)), selector);
+        var handlerType = typeof(ListQueryHandler<>).MakeGenericType(itemType!);
+        return (IQueryHandler<TResult>)Activator.CreateInstance(handlerType, statement, nullableSelector)!;
+    }
 
-        throw new NotSupportedException("Marten does not know how to use result type " +
-                                        typeof(TResult).FullNameInCode());
+    private static Type? TryGetEnumerableElementType(Type t)
+    {
+        if (t.IsArray) return t.GetElementType();
+        if (!t.IsGenericType) return null;
+        var def = t.GetGenericTypeDefinition();
+        if (def == typeof(IEnumerable<>) || def == typeof(IReadOnlyList<>) ||
+            def == typeof(IList<>) || def == typeof(List<>))
+            return t.GetGenericArguments()[0];
+        return null;
     }
 
     public IQueryHandler<TResult> BuildHandler<TResult>()

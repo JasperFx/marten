@@ -95,6 +95,44 @@ public class distinct_operator : IntegrationContext
         queryable.ToList().Count.ShouldBe(4);
     }
 
+    [Fact]
+    public async Task get_distinct_enums()
+    {
+        theSession.Store(new Target { Color = Colors.Green });
+        theSession.Store(new Target { Color = Colors.Blue });
+        theSession.Store(new Target { Color = Colors.Blue });
+        theSession.Store(new Target { Color = Colors.Red });
+        theSession.Store(new Target { Color = Colors.Blue });
+        theSession.Store(new Target { Color = Colors.Yellow });
+
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        var queryable = theSession.Query<Target>().Select(x => x.Color).Distinct();
+
+        queryable.ToList().Count.ShouldBe(4);
+    }
+
+    [Fact]
+    public async Task get_distinct_nullable_enums()
+    {
+        theSession.Store(new Target { NullableEnum = Colors.Green });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Red });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Yellow });
+        theSession.Store(new Target { NullableEnum = null });
+
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        var queryable = theSession.Query<Target>()
+            .Select(x => x.NullableEnum).Distinct();
+
+        queryable.ToList().Count.ShouldBe(5);
+    }
+
     public distinct_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
     {
         _output = output;
