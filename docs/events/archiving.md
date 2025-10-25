@@ -240,3 +240,16 @@ for the `Order` will be marked as archived.
 This was originally conceived as a way to improve the Wolverine aggregate handler workflow usability while also encouraging
 Marten users to take advantage of the event archiving feature. 
 :::
+
+::: info
+When an `Archived` event is appended to a stream (as described above), Marten will mark the entire event stream as archived once that event is processed.
+
+As a result, asynchronous multi-stream projections will no longer process any other events from that stream, even if those events appear earlier in the sequence or were added in a different session and have not yet been processed.
+
+If you rely on asynchronous multi-stream projections and need all events to be processed before archiving, you can work around this by either:
+
+- Writing the `Archived` event as a side effect within your asynchronous projection, after all other events have been processed, or
+- Delaying the archiving by publishing a scheduled or delayed message (for example, when using Marten together with Wolverine) that appends the `Archived` event after projection completion.
+
+This ensures all prior events are fully projected before the stream is marked as archived.
+:::
