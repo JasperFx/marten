@@ -248,8 +248,8 @@ As a result, asynchronous multi-stream projections will no longer process any ot
 
 If you rely on asynchronous multi-stream projections and need all events to be processed before archiving, you can work around this by either:
 
-- Writing the `Archived` event as a side effect within your asynchronous projection, after all other events have been processed, or
-- Delaying the archiving by publishing a scheduled or delayed message (for example, when using Marten together with Wolverine) that appends the `Archived` event after projection completion.
+* Writing the `Archived` event as a side effect within your asynchronous projection, after all other events have been processed, or
+* Delaying the archiving by publishing a scheduled or delayed message (for example, when using Marten together with Wolverine) that appends the `Archived` event after projection completion.
 
 This ensures all prior events are fully projected before the stream is marked as archived.
 :::
