@@ -29,6 +29,8 @@ public class Startup
         var options = new StoreOptions();
         options.Connection(connectionString);
 
+        services.AddMarten(options);
+
         // In a "Production" environment, we're turning off the
         // automatic database migrations and dynamic code generation
         services.CritterStackDefaults(x =>
