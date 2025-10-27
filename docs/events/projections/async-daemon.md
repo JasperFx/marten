@@ -1,5 +1,12 @@
 # Async Projections Daemon
 
+::: tip
+If you are experiencing any level of "stale high water" detection or getting log messages about "event skipping" with
+Marten, you want to at least consider switching to the [QuickAppend](https://martendb.io/events/appending.html#rich-vs-quick-appends) option. The `QuickAppend`
+mode is faster, and is substantially less likely to lead to gaps in the event sequence which in turn helps the async daemon
+run more smoothly.
+:::
+
 The *Async Daemon* is the nickname for Marten's built in asynchronous projection processing engine. The current async daemon from Marten V4 on requires no other infrastructure
 besides Postgresql and Marten itself. The daemon itself runs inside an [IHostedService](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-5.0&tabs=visual-studio) implementation in your application. The **daemon is disabled by default**.
 
@@ -105,6 +112,18 @@ contact [JasperFx Software](https://jasperfx.net) about their "Critter Stack Pro
 The daemon logs through the standard .Net `ILogger` interface service registered in your application's underlying DI container. In the case of the daemon having to skip
 "poison pill" events, you can see a record of this in the `DeadLetterEvent` storage in your database (the `mt_doc_deadletterevent` table) along with the exception. Use this to fix underlying issues
 and be able to replay events later after the fix.
+
+## PgBouncer
+
+::: tip
+If you are also using [Wolverine](https://wolverinefx.net), its ability to [distribute Marten projections and subscriptions](https://wolverinefx.net/guide/durability/marten/distribution.html) does not depend on advisory
+locks and also spreads work out more evenly through a cluster. 
+:::
+
+If you use Marten's async daemon feature *and* [PgBouncer](https://www.pgbouncer.org/), make sure you're aware of some 
+[Npgsql configuration settings](https://www.npgsql.org/doc/compatibility.html#pgbouncer) for best usage with Marten. Marten's
+async daemon uses [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/explicit-locking.html) to help distribute work across an application cluster, and PgBouncer can
+throw off that functionality without the connection settings in the Npgsql documentation linked above. 
 
 ## Error Handling
 
