@@ -446,8 +446,11 @@ public class CustomAggregate
 public class using_custom_aggregate_with_soft_deletes_and_update_only_events: OneOffConfigurationsContext,
     IAsyncLifetime
 {
-    public using_custom_aggregate_with_soft_deletes_and_update_only_events()
+    private readonly ITestOutputHelper _output;
+
+    public using_custom_aggregate_with_soft_deletes_and_update_only_events(ITestOutputHelper output)
     {
+        _output = output;
         StoreOptions(opts => opts.Projections.Add(new StartAndStopProjection(), ProjectionLifecycle.Inline));
     }
 
@@ -580,6 +583,7 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         var streamForRestart = await theSession.Events.FetchForWriting<StartAndStopAggregate>(streamId, CancellationToken.None);
         streamForRestart.AppendOne(new Restart());
 
+        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         // soft end state
