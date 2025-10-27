@@ -11,6 +11,9 @@ using JasperFx.Events.Daemon;
 using Marten.Events.Archiving;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
+using Marten.Linq.SqlGeneration;
+using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Internal.Sessions;
 
@@ -58,7 +61,10 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public void UnDelete(TDoc snapshot)
     {
-        throw new NotImplementedException();
+        var deletion = new StatementOperation(_storage, new UnSoftDelete(_storage));
+        var where = _storage.ByIdFilter(_storage.Identity(snapshot));
+        deletion.Wheres.Add(where);
+        _session.QueueOperation(deletion);
     }
 
     public void Store(TDoc snapshot)
@@ -81,7 +87,17 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public void UnDelete(TDoc snapshot, string tenantId)
     {
-        throw new System.NotImplementedException();
+        var deletion = new StatementOperation(_storage, new UnSoftDelete(_storage));
+        var where1 = _storage.ByIdFilter(_storage.Identity(snapshot));
+        deletion.Wheres.Add(where1);
+
+        if (_storage.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            var tenantFilter = new WhereFragment("d.tenant_id = ?", TenantId);
+            deletion.Wheres.Add(tenantFilter);
+        }
+
+        _session.QueueOperation(deletion);
     }
 
     public void Store(TDoc snapshot, TId id, string tenantId)
