@@ -129,6 +129,15 @@ public class querying_with_non_stale_data : OneOffConfigurationsContext
         await task;
     }
 
+    [Fact]
+    public async Task cleanly_query_with_no_data()
+    {
+        await theStore.Advanced.ResetAllData();
+
+        var items = await theSession.QueryForNonStaleData<SimpleAggregate>(3.Seconds()).ToListAsync();
+        items.Count.ShouldBe(0);
+    }
+
     public static async Task ExampleUsage()
     {
         #region sample_using_query_for_non_stale_data
