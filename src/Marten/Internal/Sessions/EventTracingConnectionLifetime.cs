@@ -37,9 +37,9 @@ internal class EventTracingConnectionLifetime:
             throw new ArgumentException("The tenant id cannot be null, an empty string or whitespace.", nameof(tenantId));
         }
 
+        InnerConnectionLifetime = innerConnectionLifetime;
         Logger = innerConnectionLifetime.Logger;
         CommandTimeout = innerConnectionLifetime.CommandTimeout;
-        InnerConnectionLifetime = innerConnectionLifetime;
         _telemetryOptions = telemetryOptions;
 
         var currentActivity = Activity.Current ?? null;
@@ -71,7 +71,7 @@ internal class EventTracingConnectionLifetime:
         InnerConnectionLifetime.Dispose();
     }
 
-    public IMartenSessionLogger Logger { get; set; }
+    public IMartenSessionLogger Logger { get => InnerConnectionLifetime.Logger; set => InnerConnectionLifetime.Logger = value; }
     public int CommandTimeout { get; }
     public int Execute(NpgsqlCommand cmd)
     {

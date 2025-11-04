@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Descriptors;
+using Marten;
 using Marten.Services;
 using Weasel.Postgresql;
 using Xunit;
@@ -714,6 +715,65 @@ namespace CoreTests.Internal.Sessions
                 .ExecuteBatchPagesAsync(_batchPages, _exceptions, CancellationToken.None);
         }
 
+        [Fact]
+        public async Task query_session_with_EventTracingConnectionLifetime_uses_storeOptions_logger()
+        {
+            var logger = new BatchSuccessRecordingLogger();
 
+            var store = DocumentStore.For(options =>
+            {
+                options.Connection(ConnectionSource.ConnectionString);
+                options.OpenTelemetry.TrackConnections = TrackLevel.Normal;
+
+                options.Logger(logger);
+            });
+
+            using var listener = new ActivityListener
+            {
+                ShouldListenTo = activitySource => activitySource.Name == "Marten",
+                Sample = (ref ActivityCreationOptions<ActivityContext> _) => ActivitySamplingResult.AllData,
+                ActivityStarted = _ => { },
+                ActivityStopped = _ => { }
+            };
+
+            ActivitySource.AddActivityListener(listener);
+
+            await using var session = store.QuerySession();
+
+            await session.Events.QueryAllRawEvents().FirstOrDefaultAsync();
+
+            logger.LastBatch.ShouldNotBeNull();
+        }
+
+        public class BatchSuccessRecordingLogger: IMartenLogger, IMartenSessionLogger
+        {
+            public NpgsqlBatch LastBatch;
+
+            public void LogFailure(Exception ex, string message) { }
+
+            public void RecordSavedChanges(IDocumentSession session, IChangeSet commit) { }
+
+            public void OnBeforeExecute(NpgsqlCommand command) { }
+
+            public void OnBeforeExecute(NpgsqlBatch batch) { }
+
+            public void LogSuccess(NpgsqlCommand command) { }
+
+            public void LogFailure(NpgsqlCommand command, Exception ex) { }
+
+            public void LogSuccess(NpgsqlBatch batch)
+            {
+                LastBatch = batch;
+            }
+
+            public void LogFailure(NpgsqlBatch batch, Exception ex) { }
+
+            public IMartenSessionLogger StartSession(IQuerySession session)
+            {
+                return this;
+            }
+
+            public void SchemaChange(string sql) { }
+        }
     }
 }
