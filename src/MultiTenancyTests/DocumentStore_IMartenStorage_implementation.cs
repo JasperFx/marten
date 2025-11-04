@@ -71,7 +71,7 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
                     opts.RegisterDocumentType<User>();
                     opts.RegisterDocumentType<Target>();
 
-                    opts.Events.AddEventType(typeof(AEvent));
+                    opts.Events.AddEventType(typeof(RandomEvent));
 
                 });
             }).StartAsync();
@@ -157,4 +157,4 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
     }
 }
 
-public record AEvent{}
+public record RandomEvent{}

@@ -666,8 +666,8 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
 
         wrapper.IncludeArchivedEvents.ShouldBeTrue();
         wrapper.IncludedEventTypes.Count.ShouldBe(2);
-        wrapper.IncludedEventTypes.ShouldContain(typeof(AEvent));
-        wrapper.IncludedEventTypes.ShouldContain(typeof(BEvent));
+        wrapper.IncludedEventTypes.ShouldContain(typeof(MTAEvent));
+        wrapper.IncludedEventTypes.ShouldContain(typeof(MTBEvent));
     }
 }
 
@@ -675,8 +675,8 @@ public class FilteredSubscription: SubscriptionBase, IDisposable
 {
     public FilteredSubscription()
     {
-        IncludeType<AEvent>();
-        IncludeType<BEvent>();
+        IncludeType<MTAEvent>();
+        IncludeType<MTBEvent>();
         StreamType = typeof(SimpleAggregate);
         IncludeArchivedEvents = true;
     }
@@ -707,8 +707,8 @@ public class FilteredSubscription2: SubscriptionBase, IAsyncDisposable
 {
     public FilteredSubscription2()
     {
-        IncludeType<AEvent>();
-        IncludeType<BEvent>();
+        IncludeType<MTAEvent>();
+        IncludeType<MTBEvent>();
         StreamType = typeof(SimpleAggregate);
         IncludeArchivedEvents = true;
     }

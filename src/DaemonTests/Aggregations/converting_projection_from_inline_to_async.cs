@@ -20,9 +20,9 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
             opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
         });
 
-        var id1 = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent()).Id;
-        var id2 = theSession.Events.StartStream<SimpleAggregate>(new BEvent(), new CEvent()).Id;
-        var id3 = theSession.Events.StartStream<SimpleAggregate>(new CEvent(), new DEvent()).Id;
+        var id1 = theSession.Events.StartStream<SimpleAggregate>(new MTAEvent(), new MTBEvent()).Id;
+        var id2 = theSession.Events.StartStream<SimpleAggregate>(new MTBEvent(), new MTCEvent()).Id;
+        var id3 = theSession.Events.StartStream<SimpleAggregate>(new MTCEvent(), new MTDEvent()).Id;
         await theSession.SaveChangesAsync();
 
         var store2 = SeparateStore(opts =>
@@ -46,9 +46,9 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
         await daemon.StartAllAsync();
 
         using var session = store2.LightweightSession();
-        session.Events.Append(id1, new EEvent(), new EEvent());
-        session.Events.Append(id2, new EEvent(), new EEvent());
-        session.Events.Append(id3, new EEvent(), new EEvent());
+        session.Events.Append(id1, new MTEEvent(), new MTEEvent());
+        session.Events.Append(id2, new MTEEvent(), new MTEEvent());
+        session.Events.Append(id3, new MTEEvent(), new MTEEvent());
         await session.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(10.Seconds());
@@ -91,27 +91,27 @@ public class SimpleAggregate : IRevisioned
     public int DCount { get; set; }
     public int ECount { get; set; }
 
-    public void Apply(AEvent _)
+    public void Apply(MTAEvent _)
     {
         ACount++;
     }
 
-    public void Apply(BEvent _)
+    public void Apply(MTBEvent _)
     {
         BCount++;
     }
 
-    public void Apply(CEvent _)
+    public void Apply(MTCEvent _)
     {
         CCount++;
     }
 
-    public void Apply(DEvent _)
+    public void Apply(MTDEvent _)
     {
         DCount++;
     }
 
-    public void Apply(EEvent _)
+    public void Apply(MTEEvent _)
     {
         ECount++;
     }

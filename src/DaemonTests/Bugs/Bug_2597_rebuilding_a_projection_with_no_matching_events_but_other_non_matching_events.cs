@@ -21,11 +21,11 @@ public class Bug_2597_rebuilding_a_projection_with_no_matching_events_but_other_
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
-            session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
-            session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
-            session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
-            session.Events.Append(Guid.NewGuid(), new BEvent(), new CEvent(), new DEvent());
+            session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            session.Events.Append(Guid.NewGuid(), new MTBEvent(), new MTCEvent(), new MTDEvent());
 
             await session.SaveChangesAsync();
         }
@@ -55,7 +55,7 @@ public class UsesAEventOnly
     public Guid Id { get; set; }
     public int Count { get; set; }
 
-    public void Apply(AEvent e) => Count++;
+    public void Apply(MTAEvent e) => Count++;
 }
 
 public class OtherAggregate
@@ -63,7 +63,7 @@ public class OtherAggregate
     public Guid Id { get; set; }
     public int Count { get; set; }
 
-    public void Apply(AEvent e) => Count++;
-    public void Apply(BEvent e) => Count++;
-    public void Apply(CEvent e) => Count++;
+    public void Apply(MTAEvent e) => Count++;
+    public void Apply(MTBEvent e) => Count++;
+    public void Apply(MTCEvent e) => Count++;
 }

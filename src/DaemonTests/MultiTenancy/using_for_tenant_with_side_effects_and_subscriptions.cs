@@ -38,7 +38,7 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
         });
 
         using var session = theStore.LightweightSession("green");
-        session.Events.StartStream([new AEvent(), new BEvent(), new CEvent()]);
+        session.Events.StartStream([new MTAEvent(), new MTBEvent(), new MTCEvent()]);
         await session.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
@@ -61,7 +61,7 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
         });
 
         using var session = theStore.LightweightSession("green");
-        session.Events.StartStream([new AEvent(), new BEvent(), new CEvent()]);
+        session.Events.StartStream([new MTAEvent(), new MTBEvent(), new MTCEvent()]);
         await session.SaveChangesAsync();
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();

@@ -1,16 +1,19 @@
-using System.Diagnostics.CodeAnalysis;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using Microsoft.Extensions.Hosting;
 
 namespace Marten.Events.Daemon.Coordination;
 
-// TODO -- move this up in the namespace?
 public interface IProjectionCoordinator : IHostedService
 {
     // TODO -- add some convenience methods to get at various shards
     IProjectionDaemon DaemonForMainDatabase();
     ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier);
+
+    ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync();
 
     /// <summary>
     /// Stops the projection coordinator's automatic restart logic and stops all running agents across all daemons. Does not release any held locks.

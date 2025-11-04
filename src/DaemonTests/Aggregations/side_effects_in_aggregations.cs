@@ -44,8 +44,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<SideEffects1>(streamId, new AEvent(),
-            new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
+            new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(30.Seconds());
@@ -54,7 +54,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         version1.A.ShouldBe(3);
         version1.B.ShouldBe(0);
 
-        theSession.Events.Append(streamId, new AEvent(), new AEvent());
+        theSession.Events.Append(streamId, new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
 
@@ -102,13 +102,13 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<SideEffects1>(streamId, new AEvent(),
-            new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
+            new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(30.Seconds());
 
-        theSession.Events.Append(streamId, new EEvent());
+        theSession.Events.Append(streamId, new MTEEvent());
         await theSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(30.Seconds());
@@ -141,8 +141,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamId = Guid.NewGuid();
-        theSession.Events.StartStream<SideEffects1>(streamId, new AEvent(),
-            new AEvent(), new AEvent(), new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects1>(streamId, new MTAEvent(),
+            new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         // Prove the BEevent side effect happened as expected
@@ -187,8 +187,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamKey = Guid.NewGuid().ToString();
-        theSession.Events.StartStream<SideEffects2>(streamKey, new AEvent(),
-            new AEvent(), new AEvent(), new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
+            new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         // Prove the BEevent side effect happened as expected
@@ -233,8 +233,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamKey = Guid.NewGuid().ToString();
-        theSession.Events.StartStream<SideEffects2>(streamKey, new AEvent(),
-            new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
+            new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(30.Seconds());
@@ -243,7 +243,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         version1.A.ShouldBe(3);
         version1.B.ShouldBe(0);
 
-        theSession.Events.Append(streamKey, new AEvent(), new AEvent());
+        theSession.Events.Append(streamKey, new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
 
@@ -290,8 +290,8 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         await daemon.StartAllAsync();
 
         var streamKey = Guid.NewGuid().ToString();
-        theSession.Events.StartStream<SideEffects2>(streamKey, new AEvent(),
-            new AEvent(), new AEvent(), new AEvent(), new AEvent());
+        theSession.Events.StartStream<SideEffects2>(streamKey, new MTAEvent(),
+            new MTAEvent(), new MTAEvent(), new MTAEvent(), new MTAEvent());
         await theSession.SaveChangesAsync();
 
         // Prove the BEevent side effect happened as expected
@@ -341,9 +341,9 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
         var stream2 = Guid.NewGuid();
         var stream3 = Guid.NewGuid();
 
-        theSession.Events.StartStream<SideEffects1>(stream1, new AEvent(), new AEvent());
-        theSession.Events.StartStream<SideEffects1>(stream2, new AEvent(), new AEvent());
-        theSession.Events.StartStream<SideEffects1>(stream3, new AEvent(), new AEvent(), new BEvent());
+        theSession.Events.StartStream<SideEffects1>(stream1, new MTAEvent(), new MTAEvent());
+        theSession.Events.StartStream<SideEffects1>(stream2, new MTAEvent(), new MTAEvent());
+        theSession.Events.StartStream<SideEffects1>(stream3, new MTAEvent(), new MTAEvent(), new MTBEvent());
         await theSession.SaveChangesAsync();
 
         await daemon.WaitForNonStaleData(120.Seconds());
@@ -363,15 +363,15 @@ public class Projection1: SingleStreamProjection<SideEffects1, Guid>
 {
     public Projection1()
     {
-        DeleteEvent<EEvent>();
+        DeleteEvent<MTEEvent>();
     }
 
-    public void Apply(SideEffects1 aggregate, AEvent _)
+    public void Apply(SideEffects1 aggregate, MTAEvent _)
     {
         aggregate.A++;
     }
 
-    public void Apply(SideEffects1 aggregate, BEvent _)
+    public void Apply(SideEffects1 aggregate, MTBEvent _)
     {
         aggregate.B++;
     }
@@ -380,10 +380,10 @@ public class Projection1: SingleStreamProjection<SideEffects1, Guid>
     {
         if (slice.Snapshot?.A % 5 == 0)
         {
-            slice.AppendEvent(new BEvent());
+            slice.AppendEvent(new MTBEvent());
         }
 
-        if (slice.Events().OfType<IEvent<EEvent>>().Any())
+        if (slice.Events().OfType<IEvent<MTEEvent>>().Any())
         {
             slice.PublishMessage(new WasDeleted(slice.Events().First().StreamId));
         }
@@ -407,12 +407,12 @@ public record WasDeleted(Guid Id);
 
 public class Projection2: SingleStreamProjection<SideEffects2, string>
 {
-    public void Apply(SideEffects2 aggregate, AEvent _)
+    public void Apply(SideEffects2 aggregate, MTAEvent _)
     {
         aggregate.A++;
     }
 
-    public void Apply(SideEffects2 aggregate, BEvent _)
+    public void Apply(SideEffects2 aggregate, MTBEvent _)
     {
         aggregate.B++;
     }
@@ -421,7 +421,7 @@ public class Projection2: SingleStreamProjection<SideEffects2, string>
     {
         if (slice.Snapshot.A >= 5 && slice.Snapshot.B == 0)
         {
-            slice.AppendEvent(new BEvent());
+            slice.AppendEvent(new MTBEvent());
         }
 
         return new ValueTask();
@@ -430,19 +430,19 @@ public class Projection2: SingleStreamProjection<SideEffects2, string>
 
 public class Projection3: SingleStreamProjection<SideEffects1, Guid>
 {
-    public void Apply(SideEffects1 aggregate, AEvent _)
+    public void Apply(SideEffects1 aggregate, MTAEvent _)
     {
         aggregate.A++;
     }
 
-    public void Apply(SideEffects1 aggregate, BEvent _)
+    public void Apply(SideEffects1 aggregate, MTBEvent _)
     {
 
     }
 
     public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<SideEffects1> slice)
     {
-        if (slice.Snapshot != null && slice.Events().OfType<IEvent<BEvent>>().Any())
+        if (slice.Snapshot != null && slice.Events().OfType<IEvent<MTBEvent>>().Any())
         {
             slice.PublishMessage(new GotB(slice.Snapshot.Id));
         }

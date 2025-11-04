@@ -42,13 +42,13 @@ public class build_aggregate_projection: DaemonContext
         await store.Advanced.Clean.DeleteAllEventDataAsync();
 
         using var session = store.LightweightSession();
-        session.ForTenant("blue").Events.StartStream<SimpleEntity>("one", new AEvent(), new BEvent());
-        session.ForTenant("blue").Events.StartStream<SimpleEntity>("two", new BEvent(), new BEvent());
-        session.ForTenant("blue").Events.StartStream<SimpleEntity>("three", new AEvent(), new AEvent());
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("one", new MTAEvent(), new MTBEvent());
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("two", new MTBEvent(), new MTBEvent());
+        session.ForTenant("blue").Events.StartStream<SimpleEntity>("three", new MTAEvent(), new MTAEvent());
 
-        session.ForTenant("red").Events.StartStream<SimpleEntity>("one", new AEvent(), new BEvent(), new AEvent());
-        session.ForTenant("red").Events.StartStream<SimpleEntity>("two", new BEvent(), new BEvent(), new BEvent());
-        session.ForTenant("red").Events.StartStream<SimpleEntity>("five", new BEvent(), new BEvent(), new BEvent());
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("one", new MTAEvent(), new MTBEvent(), new MTAEvent());
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("two", new MTBEvent(), new MTBEvent(), new MTBEvent());
+        session.ForTenant("red").Events.StartStream<SimpleEntity>("five", new MTBEvent(), new MTBEvent(), new MTBEvent());
 
         await session.SaveChangesAsync();
 
@@ -552,12 +552,12 @@ public class build_aggregate_projection: DaemonContext
 
         public string TenantId { get; set; }
 
-        public void Apply(AEvent _)
+        public void Apply(MTAEvent _)
         {
             A++;
         }
 
-        public void Apply(BEvent _)
+        public void Apply(MTBEvent _)
         {
             B++;
         }

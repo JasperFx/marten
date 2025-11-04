@@ -28,13 +28,13 @@ public class using_patches_in_async_mode : OneOffConfigurationsContext
         var id2 = Guid.NewGuid();
         var id3 = Guid.NewGuid();
 
-        theSession.Events.StartStream<SimpleAggregate>(id1, new StartAggregate(), new AEvent(), new AEvent(), new BEvent());
-        theSession.Events.StartStream<SimpleAggregate>(id2, new StartAggregate(), new AEvent(), new CEvent(), new CEvent());
-        theSession.Events.StartStream<SimpleAggregate>(id3, new StartAggregate(), new BEvent(), new BEvent(), new BEvent(), new CEvent());
+        theSession.Events.StartStream<SimpleAggregate>(id1, new StartAggregate(), new MTAEvent(), new MTAEvent(), new MTBEvent());
+        theSession.Events.StartStream<SimpleAggregate>(id2, new StartAggregate(), new MTAEvent(), new MTCEvent(), new MTCEvent());
+        theSession.Events.StartStream<SimpleAggregate>(id3, new StartAggregate(), new MTBEvent(), new MTBEvent(), new MTBEvent(), new MTCEvent());
 
         for (int i = 0; i < 100; i++)
         {
-            theSession.Events.StartStream<SimpleAggregate>(new StartAggregate(), new AEvent(), new AEvent(), new BEvent());
+            theSession.Events.StartStream<SimpleAggregate>(new StartAggregate(), new MTAEvent(), new MTAEvent(), new MTBEvent());
         }
 
         await theSession.SaveChangesAsync();
@@ -60,17 +60,17 @@ public class LetterPatcher: EventProjection
 {
     public SimpleAggregate Transform(IEvent<StartAggregate> e) => new SimpleAggregate { Id = e.StreamId };
 
-    public void Project(IEvent<AEvent> e, IDocumentOperations ops)
+    public void Project(IEvent<MTAEvent> e, IDocumentOperations ops)
     {
         ops.Patch<SimpleAggregate>(e.StreamId).Increment(x => x.ACount);
     }
 
-    public void Project(IEvent<BEvent> e, IDocumentOperations ops)
+    public void Project(IEvent<MTBEvent> e, IDocumentOperations ops)
     {
         ops.Patch<SimpleAggregate>(e.StreamId).Increment(x => x.BCount);
     }
 
-    public void Project(IEvent<CEvent> e, IDocumentOperations ops)
+    public void Project(IEvent<MTCEvent> e, IDocumentOperations ops)
     {
         ops.Patch<SimpleAggregate>(e.StreamId).Increment(x => x.CCount);
     }

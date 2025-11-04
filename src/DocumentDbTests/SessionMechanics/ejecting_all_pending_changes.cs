@@ -29,15 +29,15 @@ public class ejecting_all_pending_changes : IntegrationContext
         #endregion
     }
 
-    public class AEvent{}
-    public class BEvent{}
-    public class CEvent{}
+    public class DBAEvent{}
+    public class DBBEvent{}
+    public class DBCEvent{}
 
     [Fact]
     public void  will_clear_all_event_operations()
     {
-        theSession.Events.StartStream(Guid.NewGuid(), new AEvent(), new BEvent());
-        theSession.Events.Append(Guid.NewGuid(), new CEvent());
+        theSession.Events.StartStream(Guid.NewGuid(), new DBAEvent(), new DBBEvent());
+        theSession.Events.Append(Guid.NewGuid(), new DBCEvent());
 
         theSession.PendingChanges.Streams().Any().ShouldBeTrue();
 

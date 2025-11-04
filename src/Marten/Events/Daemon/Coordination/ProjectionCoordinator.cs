@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -80,6 +81,12 @@ public class ProjectionCoordinator: IProjectionCoordinator
         var database =
             (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
         return findDaemonForDatabase(database);
+    }
+
+    public async ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync()
+    {
+        var all = await Store.Storage.AllDatabases().ConfigureAwait(false);
+        return all.OfType<MartenDatabase>().Select(findDaemonForDatabase).ToList();
     }
 
     public Task StartAsync(CancellationToken cancellationToken)
