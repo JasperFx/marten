@@ -39,10 +39,10 @@ public class MismatchedIdentityProjection : MultiStreamProjection<Target, string
 {
     public MismatchedIdentityProjection()
     {
-        Identity<IEvent<AEvent>>(c => c.TenantId);
+        Identity<IEvent<MTAEvent>>(c => c.TenantId);
     }
 
-    public void Apply(Target state, IEvent<AEvent> e) => state.Number++;
+    public void Apply(Target state, IEvent<MTAEvent> e) => state.Number++;
 }
 
 

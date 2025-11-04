@@ -24,4 +24,9 @@ public partial class ProjectionDaemon: JasperFxAsyncDaemon<IDocumentOperations, 
         : base(store, database, logger, detector, store.Options.Projections)
     {
     }
+
+    public override string ToString()
+    {
+        return $"Daemon: {Database.DatabaseUri} ({Database.Identifier})";
+    }
 }

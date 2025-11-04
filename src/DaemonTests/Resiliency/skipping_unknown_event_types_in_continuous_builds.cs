@@ -35,7 +35,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "missing_events";
-                    opts.Events.MapEventType<AEvent>("TripleAAA");
+                    opts.Events.MapEventType<MTAEvent>("TripleAAA");
                 }).ApplyAllDatabaseChangesOnStartup();
 
             }).StartAsync();
@@ -59,8 +59,8 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
 
         using (var session = store.LightweightSession())
         {
-            session.Events.StartStream<MyAggregate>(streamId, new AEvent(), new AEvent(), new BEvent(), new BEvent(),
-                new CEvent(), new DEvent());
+            session.Events.StartStream<MyAggregate>(streamId, new MTAEvent(), new MTAEvent(), new MTBEvent(), new MTBEvent(),
+                new MTCEvent(), new MTDEvent());
             await session.SaveChangesAsync();
 
             // Rig up a bad, unknown event type
@@ -107,16 +107,16 @@ public class WeirdCustomAggregation: SingleStreamProjection<MyAggregate, Guid>
         snapshot ??= new MyAggregate(){ Id = id };
         switch (e.Data)
         {
-            case AEvent:
+            case MTAEvent:
                 snapshot.ACount++;
                 break;
-            case BEvent:
+            case MTBEvent:
                 snapshot.BCount++;
                 break;
-            case CEvent:
+            case MTCEvent:
                 snapshot.CCount++;
                 break;
-            case DEvent:
+            case MTDEvent:
                 snapshot.DCount++;
                 break;
         }

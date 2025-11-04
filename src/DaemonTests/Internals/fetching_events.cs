@@ -68,7 +68,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream = Guid.NewGuid();
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            e.Append(stream, new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
         });
 
         await theSession.SaveChangesAsync();
@@ -77,7 +77,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         var @event = theRange.Events[0];
         @event.StreamId.ShouldBe(stream);
         @event.Version.ShouldBe(1);
-        @event.Data.ShouldBeOfType<AEvent>();
+        @event.Data.ShouldBeOfType<MTAEvent>();
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         var stream = Guid.NewGuid().ToString();
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(stream, new AEvent(), new BEvent(), new CEvent(), new DEvent());
+            e.Append(stream, new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
         });
 
         await theSession.SaveChangesAsync();
@@ -97,7 +97,7 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
         var @event = theRange.Events[0];
         @event.StreamKey.ShouldBe(stream);
         @event.Version.ShouldBe(1);
-        @event.Data.ShouldBeOfType<AEvent>();
+        @event.Data.ShouldBeOfType<MTAEvent>();
     }
 
     [Fact]
@@ -105,9 +105,9 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
     {
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-            e.StartStream<Letters>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
-                new DEvent());
+            e.Append(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            e.StartStream<Letters>(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent(),
+                new MTDEvent());
         });
 
         for (var i = 0; i < 4; i++)
@@ -126,9 +126,9 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
     {
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-            e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
-                new DEvent());
+            e.Append(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            e.StartStream<Letters<Value>>(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent(),
+                new MTDEvent());
         });
 
         for (var i = 0; i < 4; i++)
@@ -150,9 +150,9 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
 
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-            e.StartStream<Letters>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
-                new DEvent());
+            e.Append(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            e.StartStream<Letters>(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent(),
+                new MTDEvent());
         });
 
         theRange.Events.Count.ShouldBe(5);
@@ -166,9 +166,9 @@ public class fetching_events: OneOffConfigurationsContext, IAsyncLifetime
 
         await executeAfterLoadingEvents(e =>
         {
-            e.Append(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent());
-            e.StartStream<Letters<Value>>(Guid.NewGuid(), new AEvent(), new BEvent(), new CEvent(), new DEvent(),
-                new DEvent());
+            e.Append(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent());
+            e.StartStream<Letters<Value>>(Guid.NewGuid(), new MTAEvent(), new MTBEvent(), new MTCEvent(), new MTDEvent(),
+                new MTDEvent());
         });
 
         theRange.Events.Count.ShouldBe(5);

@@ -175,7 +175,7 @@ public class marten_managed_tenant_id_partitioning: OneOffConfigurationsContext,
             opts.Projections.LiveStreamAggregation<SimpleAggregate>();
         }, true);
 
-        var streamId = theSession.Events.StartStream<SimpleAggregate>(new AEvent(), new BEvent()).Id;
+        var streamId = theSession.Events.StartStream<SimpleAggregate>(new RandomEvent(), new BEvent()).Id;
         await theSession.SaveChangesAsync();
 
         var aggregate = theSession.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
@@ -373,7 +373,7 @@ public class SimpleAggregate : IRevisioned
     public int DCount { get; set; }
     public int ECount { get; set; }
 
-    public void Apply(AEvent _)
+    public void Apply(RandomEvent _)
     {
         ACount++;
     }

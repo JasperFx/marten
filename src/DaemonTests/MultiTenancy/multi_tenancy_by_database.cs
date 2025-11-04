@@ -148,15 +148,15 @@ public class multi_tenancy_by_database: IAsyncLifetime
         var id = Guid.NewGuid();
 
         await using var session1 = theStore.LightweightSession("tenant1");
-        session1.Events.Append(id, new AEvent(), new BEvent(), new BEvent());
+        session1.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent());
         await session1.SaveChangesAsync();
 
         await using var session3 = theStore.LightweightSession("tenant3");
-        session3.Events.Append(id, new AEvent(), new AEvent(), new BEvent(), new BEvent());
+        session3.Events.Append(id, new MTAEvent(), new MTAEvent(), new MTBEvent(), new MTBEvent());
         await session3.SaveChangesAsync();
 
         await using var session4 = theStore.LightweightSession("tenant4");
-        session4.Events.Append(id, new AEvent(), new BEvent(), new BEvent(), new BEvent());
+        session4.Events.Append(id, new MTAEvent(), new MTBEvent(), new MTBEvent(), new MTBEvent());
         await session4.SaveChangesAsync();
 
         await (await theStore.Storage.FindOrCreateDatabase("tenant1")).Tracker.WaitForShardState("AllGood:All", 3);
@@ -181,12 +181,12 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
         return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
-    public void Apply(AEvent @event, MyAggregate aggregate)
+    public void Apply(MTAEvent @event, MyAggregate aggregate)
     {
         aggregate.ACount++;
     }
 
-    public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
+    public MyAggregate Apply(MTBEvent @event, MyAggregate aggregate)
     {
         return new MyAggregate
         {
@@ -198,12 +198,12 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
         };
     }
 
-    public void Apply(MyAggregate aggregate, CEvent @event)
+    public void Apply(MyAggregate aggregate, MTCEvent @event)
     {
         aggregate.CCount++;
     }
 
-    public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    public MyAggregate Apply(MyAggregate aggregate, MTDEvent @event)
     {
         return new MyAggregate
         {
@@ -233,12 +233,12 @@ public class AllGood: SingleStreamProjection<MyAggregate, Guid>
         return new MyAggregate { ACount = @event.A, BCount = @event.B, CCount = @event.C, DCount = @event.D };
     }
 
-    public void Apply(AEvent @event, MyAggregate aggregate)
+    public void Apply(MTAEvent @event, MyAggregate aggregate)
     {
         aggregate.ACount++;
     }
 
-    public MyAggregate Apply(BEvent @event, MyAggregate aggregate)
+    public MyAggregate Apply(MTBEvent @event, MyAggregate aggregate)
     {
         return new MyAggregate
         {
@@ -250,12 +250,12 @@ public class AllGood: SingleStreamProjection<MyAggregate, Guid>
         };
     }
 
-    public void Apply(MyAggregate aggregate, CEvent @event)
+    public void Apply(MyAggregate aggregate, MTCEvent @event)
     {
         aggregate.CCount++;
     }
 
-    public MyAggregate Apply(MyAggregate aggregate, DEvent @event)
+    public MyAggregate Apply(MyAggregate aggregate, MTDEvent @event)
     {
         return new MyAggregate
         {
@@ -325,7 +325,7 @@ public interface ITabulator
     void Apply(MyAggregate aggregate);
 }
 
-public class AEvent: ITabulator
+public class MTAEvent: ITabulator
 {
     // Necessary for a couple tests. Let it go.
     public Guid Id { get; set; }
@@ -338,7 +338,7 @@ public class AEvent: ITabulator
     public Guid Tracker { get; } = Guid.NewGuid();
 }
 
-public class BEvent: ITabulator
+public class MTBEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -346,7 +346,7 @@ public class BEvent: ITabulator
     }
 }
 
-public class CEvent: ITabulator
+public class MTCEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -354,7 +354,7 @@ public class CEvent: ITabulator
     }
 }
 
-public class DEvent: ITabulator
+public class MTDEvent: ITabulator
 {
     public void Apply(MyAggregate aggregate)
     {
@@ -362,7 +362,7 @@ public class DEvent: ITabulator
     }
 }
 
-public class EEvent
+public class MTEEvent
 {
 }
 

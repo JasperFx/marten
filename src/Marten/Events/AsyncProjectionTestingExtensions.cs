@@ -10,9 +10,13 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
+using Marten.Events.Daemon.Coordination;
 using Marten.Services;
 using Marten.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten.Events;
 
@@ -27,6 +31,17 @@ public static class TestingExtensions
     public static Task WaitForNonStaleProjectionDataAsync(this IHost host, TimeSpan timeout)
     {
         return host.DocumentStore().WaitForNonStaleProjectionDataAsync(timeout);
+    }
+
+    /// <summary>
+    ///     Use with caution! This will try to wait for all projections to "catch up" to the currently
+    ///     known farthest known sequence of the event store for the supplied "ancillary" store
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
+    public static Task WaitForNonStaleProjectionDataAsync<T>(this IHost host, TimeSpan timeout) where T : IDocumentStore
+    {
+        return host.DocumentStore<T>().WaitForNonStaleProjectionDataAsync(timeout);
     }
 
     /// <summary>
@@ -257,4 +272,131 @@ public static class TestingExtensions
                 $"The projections timed out before reaching the initial sequence of {highWaterMark}");
         }
     }
+
+    /// <summary>
+    /// Force any Marten async daemons to immediately advance to the latest changes. This is strictly
+    /// meant for test automation scenarios with small to medium sized databases
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="cancellation"></param>
+    /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
+    /// <returns></returns>
+    public static Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync(this IHost host, CancellationToken cancellation,
+        CatchUpMode mode = CatchUpMode.AndResumeNormally)
+    {
+        return host.Services.ForceAllMartenDaemonActivityToCatchUpAsync(cancellation, mode);
+    }
+
+    /// <summary>
+    /// Force any Marten async daemons to immediately advance to the latest changes. This is strictly
+    /// meant for test automation scenarios with small to medium sized databases
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="cancellation"></param>
+    /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
+    /// <returns></returns>
+    public static async Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync(this IServiceProvider services, CancellationToken cancellation,
+        CatchUpMode mode = CatchUpMode.AndResumeNormally)
+    {
+        var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
+        var coordinator = services.GetRequiredService<IProjectionCoordinator>();
+        var daemons = await coordinator.AllDaemonsAsync().ConfigureAwait(false);
+
+        var list = new List<Exception>();
+
+        foreach (var daemon in daemons)
+        {
+            try
+            {
+                await daemon.StopAllAsync().ConfigureAwait(false);
+                await daemon.CatchUpAsync(cancellation).ConfigureAwait(false);
+
+                if (mode == CatchUpMode.AndResumeNormally)
+                {
+                    await daemon.StartAllAsync().ConfigureAwait(false);
+                }
+
+                logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in the main Marten store", daemon);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error trying to execute a CatchUp on {Daemon} in the main Marten store", daemon);
+                list.Add(e);
+            }
+        }
+
+        return list;
+    }
+
+        /// <summary>
+    /// Force any Marten async daemons for an ancillary Marten store to immediately advance to the latest changes. This is strictly
+    /// meant for test automation scenarios with small to medium sized databases
+    /// </summary>
+    /// <param name="host"></param>
+    /// <param name="cancellation"></param>
+    /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
+    /// <returns></returns>
+    public static Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync<T>(this IHost host, CancellationToken cancellation,
+        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : IDocumentStore
+    {
+        return host.Services.ForceAllMartenDaemonActivityToCatchUpAsync<T>(cancellation, mode);
+    }
+
+    /// <summary>
+    /// Force any Marten async daemons for an ancillary Marten store to immediately advance to the latest changes. This is strictly
+    /// meant for test automation scenarios with small to medium sized databases
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="cancellation"></param>
+    /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
+    /// <returns></returns>
+    public static async Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync<T>(this IServiceProvider services, CancellationToken cancellation,
+        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : IDocumentStore
+    {
+        var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
+        var coordinator = services.GetRequiredService<IProjectionCoordinator<T>>();
+        var daemons = await coordinator.AllDaemonsAsync().ConfigureAwait(false);
+
+        var list = new List<Exception>();
+
+        foreach (var daemon in daemons)
+        {
+            try
+            {
+                await daemon.StopAllAsync().ConfigureAwait(false);
+                await daemon.CatchUpAsync(cancellation).ConfigureAwait(false);
+
+                if (mode == CatchUpMode.AndResumeNormally)
+                {
+                    await daemon.StartAllAsync().ConfigureAwait(false);
+                }
+
+                logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in Marten store {StoreType}", daemon, typeof(T).FullNameInCode());
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error trying to execute a CatchUp on {Daemon} in Marten store {StoreType}", daemon, typeof(T).FullNameInCode());
+                list.Add(e);
+            }
+        }
+
+        return list;
+    }
 }
+
+
+public enum CatchUpMode
+{
+    /// <summary>
+    /// Default setting, in this case the projections and subscriptions will be restarted in normal operation
+    /// after the CatchUp operation is complete
+    /// </summary>
+    AndResumeNormally,
+
+    /// <summary>
+    /// Do not resume the asynchronous projection or synchronous behavior after the CatchUp operation is complete
+    /// This may be useful for test automation
+    /// </summary>
+    AndDoNothing
+}
+
