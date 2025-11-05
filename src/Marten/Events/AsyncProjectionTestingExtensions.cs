@@ -194,7 +194,7 @@ public static class TestingExtensions
             var writer = new StringWriter();
             await writer.WriteLineAsync($"The projection shards (in total of {projectionsCount}) haven't been completely started within the timeout span").ConfigureAwait(false);
             await writer.WriteLineAsync().ConfigureAwait(false);
-            await writer.WriteLineAsync(writeStatusMessage(projections)).ConfigureAwait(false);
+            await writer.WriteLineAsync(writeStatusMessage(database, projections)).ConfigureAwait(false);
             await writer.WriteLineAsync().ConfigureAwait(false);
 
             throw new TimeoutException(writer.ToString());
@@ -205,19 +205,26 @@ public static class TestingExtensions
             var writer = new StringWriter();
             await writer.WriteLineAsync($"The projections timed out before reaching the initial sequence of {initial.EventSequenceNumber}").ConfigureAwait(false);
             await writer.WriteLineAsync().ConfigureAwait(false);
-            await writer.WriteLineAsync(writeStatusMessage(projections)).ConfigureAwait(false);
+            await writer.WriteLineAsync(writeStatusMessage(database, projections)).ConfigureAwait(false);
             await writer.WriteLineAsync().ConfigureAwait(false);
 
             throw new TimeoutException(writer.ToString());
         }
     }
 
-    private static string writeStatusMessage(IReadOnlyList<ShardState> projections)
+    private static string writeStatusMessage(IMartenDatabase database, IReadOnlyList<ShardState> projections)
     {
-
         if (!projections.Any())
             return
                 "There is no recorded projection, subscription, or even high water mark activity detected. Is the daemon started correctly?";
+
+        // All async names
+        var names = database.As<MartenDatabase>().Options.Projections.AllShards();
+        var missing = names
+            .Where(x => !projections.Any(p => p.ShardName == x.Name.Identity))
+            .Select(x => new ShardState(x.Name.Identity, 0));
+
+        projections = projections.Concat(missing).ToList();
 
         var grid = new Grid<ShardState>();
         grid.AddColumn("Shard Name", x => x.ShardName);
