@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Blocks;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten.Events.Aggregation;
@@ -296,7 +297,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             var eventStorage = _session.EventStorage();
             foreach (var stream in _streams)
             {
-                var op = eventStorage.QuickAppendEvents(stream);
+                stream.PrepareEvents(0, _session.Options.EventGraph, new Queue<long>(), _session);
+
+                var op = stream.ActionType == StreamActionType.Start ? eventStorage.InsertStream(stream) : eventStorage.QuickAppendEvents(stream);
                 applyOperation(op);
             }
         }

@@ -69,7 +69,7 @@ public partial class EventGraph
         return eventStream;
     }
 
-    internal StreamAction StartStream(DocumentSessionBase session, Guid id, params object[] events)
+    internal StreamAction StartStream(DocumentSessionBase session, Type? aggregateType, Guid id, params object[] events)
     {
         EnsureAsGuidStorage(session);
 
@@ -81,6 +81,7 @@ public partial class EventGraph
 
         var stream = StreamAction.Start(this, id, events);
         stream.TenantId = session.TenantId;
+        stream.AggregateType = aggregateType;
         session.WorkTracker.Streams.Add(stream);
 
         return stream;
@@ -119,7 +120,8 @@ public partial class EventGraph
         return stream;
     }
 
-    internal StreamAction StartStream(DocumentSessionBase session, string streamKey, params object[] events)
+    internal StreamAction StartStream(DocumentSessionBase session, string streamKey, Type? aggregateType,
+        params object[] events)
     {
         EnsureAsStringStorage(session);
 
@@ -130,6 +132,7 @@ public partial class EventGraph
 
 
         var stream = StreamAction.Start(this, streamKey, events);
+        stream.AggregateType = aggregateType;
         stream.TenantId = session.TenantId;
 
         session.WorkTracker.Streams.Add(stream);

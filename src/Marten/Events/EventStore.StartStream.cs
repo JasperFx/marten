@@ -28,7 +28,7 @@ internal partial class EventStore
 
     public StreamAction StartStream(Type aggregateType, Guid id, params object[] events)
     {
-        var stream = _store.Events.StartStream(_session, id, events);
+        var stream = _store.Events.StartStream(_session, aggregateType, id, events);
         stream.AggregateType = aggregateType;
 
         return stream;
@@ -52,7 +52,7 @@ internal partial class EventStore
 
     public StreamAction StartStream(Type aggregateType, string streamKey, params object[] events)
     {
-        var stream = _store.Events.StartStream(_session, streamKey, events);
+        var stream = _store.Events.StartStream(_session, streamKey, aggregateType, events);
         stream.AggregateType = aggregateType;
 
         return stream;
@@ -66,7 +66,7 @@ internal partial class EventStore
     public StreamAction StartStream(Guid id, params object[] events)
     {
         if (_store.Events.UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
-        return _store.Events.StartStream(_session, id, events);
+        return _store.Events.StartStream(_session, null, id, events);
     }
 
     public StreamAction StartStream(string streamKey, IEnumerable<object> events)
@@ -77,7 +77,7 @@ internal partial class EventStore
     public StreamAction StartStream(string streamKey, params object[] events)
     {
         if (_store.Events.UseMandatoryStreamTypeDeclaration) throw new StreamTypeMissingException();
-        return _store.Events.StartStream(_session, streamKey, events);
+        return _store.Events.StartStream(_session, streamKey, null, events);
     }
 
     public StreamAction StartStream<TAggregate>(IEnumerable<object> events) where TAggregate : class
