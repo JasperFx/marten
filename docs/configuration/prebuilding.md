@@ -258,3 +258,49 @@ To just prove out that the code generation is valid, use this command:
 ```bash
 dotnet run -- codegen test
 ```
+
+## Handling Code Generation with Marten when using Aspire or Microsoft.Extensions.ApiDescription.Server
+
+When integrating **Marten** with **Aspire**, or using `Microsoft.Extensions.ApiDescription.Server` to generate OpenAPI files at build time, you may encounter issues with code generation because connection strings are only provided by Aspire when the application is run.
+This limitation affects both Marten codegen and OpenAPI schema generation, because these processes require connection strings during their execution.
+
+To work around this, add a helper class that detects if we are just generating code (either by the Marten codegen command or during OpenAPI generation).
+You can then conditionally disable external Marten transports and message persistence to avoid configuration errors.
+
+```csharp
+public static class CodeGeneration
+{
+    public static bool IsRunningGeneration()
+    {
+        return Assembly.GetEntryAssembly()?.GetName().Name == "GetDocument.Insider" || Environment.GetCommandLineArgs().Contains("codegen");
+    }
+}
+```
+
+Example use
+```csharp
+if (CodeGeneration.IsRunningGeneration())
+{
+    builder.Services
+        .AddMarten(ConfigureMarten("Server=.;Database=Foo"))
+        .AddAsyncDaemon(DaemonMode.Disabled)
+        .UseLightweightSessions();
+}
+else
+{
+    builder.Services
+        .AddMarten(ConfigureMarten(builder.Configuration.GetConnectionString("postgres")))
+        .AddAsyncDaemon(DaemonMode.Solo)
+        .UseLightweightSessions();
+}
+
+private static Action<StoreOptions> ConfigureMarten(string? connectionString)
+{
+    return options =>
+    {
+        options.Connection(connectionString!);
+        // (...)
+    };
+}
+
+```
