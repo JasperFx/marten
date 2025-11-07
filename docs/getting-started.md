@@ -26,7 +26,7 @@ dotnet paket add Marten
 In the startup of your .NET application, make a call to `AddMarten()` to register Marten services like so:
 
 <!-- snippet: sample_StartupConfigureServices -->
-<a id='snippet-sample_StartupConfigureServices'></a>
+<a id='snippet-sample_startupconfigureservices'></a>
 ```cs
 // This is the absolute, simplest way to integrate Marten into your
 // .NET application with Marten's default configuration
@@ -49,7 +49,7 @@ builder.Services.AddMarten(options =>
 // string to Marten
 .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_StartupConfigureServices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L16-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startupconfigureservices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 See [Bootstrapping with HostBuilder](/configuration/hostbuilder) for more information and options about this integration.
@@ -70,7 +70,7 @@ Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL fro
 Now, for your first document type, we'll represent the users in our system:
 
 <!-- snippet: sample_GettingStartedUser -->
-<a id='snippet-sample_GettingStartedUser'></a>
+<a id='snippet-sample_gettingstarteduser'></a>
 ```cs
 public class User
 {
@@ -81,7 +81,7 @@ public class User
     public bool Internal { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/User.cs#L3-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_GettingStartedUser' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/User.cs#L3-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_gettingstarteduser' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *For more information on document identity, see [identity](/documents/identity).*
@@ -95,7 +95,7 @@ you'll rarely need to interact with that service.
 From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
 
 <!-- snippet: sample_UserEndpoints -->
-<a id='snippet-sample_UserEndpoints'></a>
+<a id='snippet-sample_userendpoints'></a>
 ```cs
 // You can inject the IDocumentStore and open sessions yourself
 app.MapPost("/user",
@@ -131,7 +131,7 @@ app.MapGet("/user/{id:guid}",
     return await session.LoadAsync<User>(id, ct);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L48-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UserEndpoints' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Program.cs#L48-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_userendpoints' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO

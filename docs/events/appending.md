@@ -159,7 +159,7 @@ is present in the database:
 To make the stream type markers mandatory, you can use this flag in the configuration:
 
 <!-- snippet: sample_UseMandatoryStreamTypeDeclaration -->
-<a id='snippet-sample_UseMandatoryStreamTypeDeclaration'></a>
+<a id='snippet-sample_usemandatorystreamtypedeclaration'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -171,7 +171,7 @@ builder.Services.AddMarten(opts =>
     opts.Events.UseMandatoryStreamTypeDeclaration = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L151-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_UseMandatoryStreamTypeDeclaration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/mandatory_stream_type_behavior.cs#L151-L163' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usemandatorystreamtypedeclaration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This causes a couple side effects that **force stricter usage of Marten**:
@@ -250,7 +250,7 @@ perfectly safe to delete tombstone events from your database:
   value from the `mt_event_progression` table or through this API call:
 
 <!-- snippet: sample_DaemonDiagnostics -->
-<a id='snippet-sample_DaemonDiagnostics'></a>
+<a id='snippet-sample_daemondiagnostics'></a>
 ```cs
 public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 {
@@ -269,5 +269,5 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DaemonDiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

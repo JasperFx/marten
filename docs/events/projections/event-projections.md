@@ -6,7 +6,7 @@ on individual events. In essence, the `EventProjection` recipe does pattern matc
 To show off what `EventProjection` does, here's a sample that uses most features that `EventProjection` supports:
 
 <!-- snippet: sample_SampleEventProjection -->
-<a id='snippet-sample_SampleEventProjection'></a>
+<a id='snippet-sample_sampleeventprojection'></a>
 ```cs
 public class SampleEventProjection : EventProjection
 {
@@ -62,7 +62,7 @@ public class SampleEventProjection : EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L72-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_SampleEventProjection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L72-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that at any point you can access event metadata by accepting `IEvent<T>` where `T` is the event type instead of just the event type. You can also take in an additional variable for `IEvent` to just

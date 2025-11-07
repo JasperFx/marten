@@ -223,7 +223,7 @@ You can see the usage below from one of the Marten tests where we use that metho
 daemon has caught up:
 
 <!-- snippet: sample_using_WaitForNonStaleProjectionDataAsync -->
-<a id='snippet-sample_using_WaitForNonStaleProjectionDataAsync'></a>
+<a id='snippet-sample_using_waitfornonstaleprojectiondataasync'></a>
 ```cs
 [Fact]
 public async Task run_simultaneously()
@@ -244,7 +244,7 @@ public async Task run_simultaneously()
     await CheckExpectedResults();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_WaitForNonStaleProjectionDataAsync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic idea in your tests is to:
@@ -292,7 +292,7 @@ public async Task run_simultaneously()
 The following code shows the diagnostics support for the async daemon as it is today:
 
 <!-- snippet: sample_DaemonDiagnostics -->
-<a id='snippet-sample_DaemonDiagnostics'></a>
+<a id='snippet-sample_daemondiagnostics'></a>
 ```cs
 public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 {
@@ -311,7 +311,7 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DaemonDiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Command Line Support
@@ -432,7 +432,7 @@ from systems using Marten.
 If your system is configured to export metrics and Open Telemetry data from Marten like this:
 
 <!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
-<a id='snippet-sample_enabling_open_telemetry_exporting_from_Marten'></a>
+<a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little
 // different for other tools like Prometheus or SigNoz
@@ -451,7 +451,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_Marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *And* you are running the async daemon in your system, you should see potentially activities for each running projection
@@ -568,7 +568,7 @@ var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
     .Take(10)
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L134-L158' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/querying_with_non_stale_data.cs#L143-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_query_for_non_stale_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to

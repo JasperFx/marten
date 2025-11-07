@@ -93,7 +93,7 @@ public async Task when_get_json_then_raw_json_should_be_returned_async()
 Marten has the ability to combine the `AsJson()` mechanics to the result of a `Select()` transform:
 
 <!-- snippet: sample_AsJson-plus-Select-1 -->
-<a id='snippet-sample_AsJson-plus-Select-1'></a>
+<a id='snippet-sample_asjson-plus-select-1'></a>
 ```cs
 var json = await theSession
     .Query<User>()
@@ -105,13 +105,13 @@ var json = await theSession
 
 json.ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1004-L1014' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AsJson-plus-Select-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1004-L1014' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And another example, but this time transforming to an anonymous type:
 
 <!-- snippet: sample_AsJson-plus-Select-2 -->
-<a id='snippet-sample_AsJson-plus-Select-2'></a>
+<a id='snippet-sample_asjson-plus-select-2'></a>
 ```cs
 (await theSession
         .Query<User>()
@@ -124,5 +124,5 @@ And another example, but this time transforming to an anonymous type:
         .ToJsonFirstOrDefault())
     .ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L977-L989' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AsJson-plus-Select-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L977-L989' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
