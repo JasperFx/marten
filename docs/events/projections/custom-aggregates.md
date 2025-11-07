@@ -33,13 +33,13 @@ public class Increment
 {
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L580-L598' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L616-L634' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a simple aggregate document type like this:
 
 <!-- snippet: sample_StartAndStopAggregate -->
-<a id='snippet-sample_StartAndStopAggregate'></a>
+<a id='snippet-sample_startandstopaggregate'></a>
 ```cs
 public class StartAndStopAggregate: ISoftDeleted
 {
@@ -57,7 +57,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L560-L578' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_StartAndStopAggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L596-L614' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
@@ -107,7 +107,8 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 
                 case Increment when snapshot is { Deleted: false }:
 
-                    if (actionType == ActionType.StoreThenSoftDelete) continue;
+                    if (actionType == ActionType.StoreThenSoftDelete)
+                        continue;
 
                     // Use explicit code to only apply this event
                     // if the snapshot already exists
@@ -134,7 +135,7 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L600-L668' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L636-L705' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Grouping

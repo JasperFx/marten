@@ -97,7 +97,7 @@ that allow you to use Linq queries without the runtime overhead of continuously 
 Back to the sample endpoint above where we write an array of all the open issues. We can express the same query in a simple compiled query like this:
 
 <!-- snippet: sample_OpenIssues -->
-<a id='snippet-sample_OpenIssues'></a>
+<a id='snippet-sample_openissues'></a>
 ```cs
 public class OpenIssues: ICompiledListQuery<Issue>
 {
@@ -107,7 +107,7 @@ public class OpenIssues: ICompiledListQuery<Issue>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L114-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_OpenIssues' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L114-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_openissues' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And use that in an MVC Controller method like this:
@@ -131,7 +131,7 @@ sample, here's an example compiled query that reads a single `Issue` document by
 id:
 
 <!-- snippet: sample_IssueById -->
-<a id='snippet-sample_IssueById'></a>
+<a id='snippet-sample_issuebyid'></a>
 ```cs
 public class IssueById: ICompiledQuery<Issue, Issue>
 {
@@ -143,7 +143,7 @@ public class IssueById: ICompiledQuery<Issue, Issue>
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L126-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IssueById' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L126-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issuebyid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the usage of that to write JSON directly to the `HttpContext` in a controller method:

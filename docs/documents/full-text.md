@@ -296,13 +296,13 @@ var posts = session.Query<BlogPost>()
 They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
 
 <!-- snippet: sample_text_search_with_non_default_regConfig_sample -->
-<a id='snippet-sample_text_search_with_non_default_regConfig_sample'></a>
+<a id='snippet-sample_text_search_with_non_default_regconfig_sample'></a>
 ```cs
 var posts = session.Query<BlogPost>()
     .Where(x => x.PhraseSearch("somefilter", "italian"))
     .ToList();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L396-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regConfig_sample' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L396-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Partial text search in a multi-word text (NGram search)

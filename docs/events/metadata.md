@@ -8,7 +8,7 @@ for causation, correlation, user names, and key/value headers with this syntax a
 Marten:
 
 <!-- snippet: sample_ConfigureEventMetadata -->
-<a id='snippet-sample_ConfigureEventMetadata'></a>
+<a id='snippet-sample_configureeventmetadata'></a>
 ```cs
 var store = DocumentStore.For(opts =>
 {
@@ -22,7 +22,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.MetadataConfig.UserNameEnabled = true;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ConfigureEventMetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L118-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configureeventmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten runs "lean" by omitting the extra metadata storage on events shown above. Causation, correlation, user name (last modified by), and header fields must be individually enabled. 

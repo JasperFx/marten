@@ -267,7 +267,7 @@ It is strongly recommended that you first refer to the existing Marten options f
 The multi-tenancy strategy is pluggable. Start by implementing the `Marten.Storage.ITenancy` interface:
 
 <!-- snippet: sample_ITenancy -->
-<a id='snippet-sample_ITenancy'></a>
+<a id='snippet-sample_itenancy'></a>
 ```cs
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database
@@ -307,6 +307,16 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
     ValueTask<IMartenDatabase> FindOrCreateDatabase(string tenantIdOrDatabaseIdentifier);
 
     /// <summary>
+    ///     Find or create the named database
+    /// </summary>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    ValueTask<IMartenDatabase> FindDatabase(DatabaseId id)
+    {
+        throw new NotImplementedException("You will need to implement this interface method to use a Marten store with Wolverine projection/subscription distribution");
+    }
+
+    /// <summary>
     ///  Asserts that the requested tenant id is part of the current database
     /// </summary>
     /// <param name="database"></param>
@@ -314,19 +324,19 @@ public interface ITenancy: IDatabaseSource, IDisposable, IDatabaseUser
     bool IsTenantStoredInCurrentDatabase(IMartenDatabase database, string tenantId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L21-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ITenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Storage/ITenancy.cs#L21-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_itenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Assuming that we have a custom `ITenancy` model:
 
 <!-- snippet: sample_MySpecialTenancy -->
-<a id='snippet-sample_MySpecialTenancy'></a>
+<a id='snippet-sample_myspecialtenancy'></a>
 ```cs
 // Make sure you implement the Dispose() method and
 // dispose all MartenDatabase objects
 public class MySpecialTenancy: ITenancy
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L29-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MySpecialTenancy' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/using_per_database_multitenancy.cs#L29-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myspecialtenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 We can utilize that by applying that model at configuration time:

@@ -58,7 +58,7 @@ for reading. The `IServiceCollection.AddMarten()` configuration will set up a DI
 `IQuerySession`, so you can inject that into classes like this sample MVC controller:
 
 <!-- snippet: sample_GetIssueController -->
-<a id='snippet-sample_GetIssueController'></a>
+<a id='snippet-sample_getissuecontroller'></a>
 ```cs
 public class GetIssueController: ControllerBase
 {
@@ -83,7 +83,7 @@ public class GetIssueController: ControllerBase
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/IssueController.cs#L55-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_GetIssueController' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/IssueController.cs#L55-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_getissuecontroller' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you have an `IDocumentStore` object though, you can open a query session like this:
@@ -316,7 +316,7 @@ By default, Marten just uses the underlying timeout configuration from the [Npgs
 You can though, opt to set a different command timeout per session with this syntax:
 
 <!-- snippet: sample_ConfigureCommandTimeout -->
-<a id='snippet-sample_ConfigureCommandTimeout'></a>
+<a id='snippet-sample_configurecommandtimeout'></a>
 ```cs
 public void ConfigureCommandTimeout(IDocumentStore store)
 {
@@ -327,7 +327,7 @@ public void ConfigureCommandTimeout(IDocumentStore store)
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ConfigureCommandTimeout' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/SessionOptionsTests.cs#L24-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configurecommandtimeout' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unit of Work Mechanics
