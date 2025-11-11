@@ -31,16 +31,20 @@
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
     </ItemGroup>
 
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    </ItemGroup>
+
     <ItemGroup>
         <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx" Version="1.9.0" />
-        <PackageReference Include="JasperFx.Events" Version="1.11.0" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.1.0" />
+        <PackageReference Include="JasperFx" Version="1.10.0" />
+        <PackageReference Include="JasperFx.Events" Version="1.12.0" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.2.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.2" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.2.0" />
+        <PackageReference Include="Weasel.Postgresql" Version="8.3.0" />
     </ItemGroup>
 
     <Import Project="../../Analysis.Build.props" />
