@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using Marten.Exceptions;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
+using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -68,6 +69,6 @@ public class SimpleElementMember: IQueryableMember, IComparableMember
 
     public virtual string SelectorForDuplication(string pgType)
     {
-        return $"CAST({RawLocator.Replace("d.", "")} as {pgType})";
+        return $"CAST({RawLocator.RemoveTableAlias("d")} as {pgType})";
     }
 }

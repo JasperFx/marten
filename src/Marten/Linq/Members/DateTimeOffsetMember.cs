@@ -3,6 +3,7 @@ using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Util;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.Members;
@@ -17,7 +18,7 @@ public class DateTimeOffsetMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        return TypedLocator.RemoveTableAlias("d");
     }
 
     public override ISqlFragment CreateComparison(string op, ConstantExpression constant)

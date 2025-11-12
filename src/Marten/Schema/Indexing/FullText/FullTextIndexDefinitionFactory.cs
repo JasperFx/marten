@@ -2,6 +2,7 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.Core;
 using Marten.Linq.Parsing;
+using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables.Indexes;
 
@@ -40,7 +41,7 @@ public static class FullTextIndexDefinitionFactory
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[][] members)
     {
         var dataConfig = members
-            .Select(m => $"({mapping.QueryMembers.MemberFor(m).RawLocator.Replace("d.", "")})")
+            .Select(m => $"({mapping.QueryMembers.MemberFor(m).RawLocator.RemoveTableAlias("d")})")
             .Join(" || ' ' || ");
 
         return $"({dataConfig})";
