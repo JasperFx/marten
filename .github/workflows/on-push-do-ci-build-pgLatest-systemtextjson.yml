@@ -79,14 +79,14 @@ jobs:
         with:
           node-version: ${{ env.node_version }}
 
-      - name: Optimize database for running tests faster
-        run: |
-          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/pgdata/postgresql.conf"
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/pgdata/postgresql.conf"
-          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/pgdata/postgresql.conf"
-          docker container restart $PG_CONTAINER_NAME
-        shell: bash
+      # - name: Optimize database for running tests faster
+      #   run: |
+      #     PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+      #     docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+      #     docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
+      #     docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
+      #     docker container restart $PG_CONTAINER_NAME
+      #   shell: bash
 
       - name: compile
         run: ./build.sh compile
