@@ -2,6 +2,7 @@
 using System.Reflection;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing.Operators;
+using Marten.Util;
 
 namespace Marten.Linq.Members;
 
@@ -67,6 +68,6 @@ public class StringMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return RawLocator.Replace("d.", "");
+        return RawLocator.RemoveTableAlias("d");
     }
 }

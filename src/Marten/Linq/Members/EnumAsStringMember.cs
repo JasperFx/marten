@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Marten.Exceptions;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -38,6 +39,6 @@ public class EnumAsStringMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return RawLocator.Replace("d.", "");
+        return RawLocator.RemoveTableAlias("d");
     }
 }

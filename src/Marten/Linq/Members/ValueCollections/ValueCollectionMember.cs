@@ -12,6 +12,7 @@ using Marten.Internal;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
+using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -164,10 +165,10 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
     {
         if (pgType.EqualsIgnoreCase("JSONB"))
         {
-            return JSONBLocator.Replace("d.", "");
+            return JSONBLocator.RemoveTableAlias("d");
         }
 
-        return $"CAST(ARRAY(SELECT jsonb_array_elements_text({RawLocator.Replace("d.", "")})) as {pgType})";
+        return $"CAST(ARRAY(SELECT jsonb_array_elements_text({RawLocator.RemoveTableAlias("d")})) as {pgType})";
     }
 
     public override IQueryableMember FindMember(MemberInfo member)

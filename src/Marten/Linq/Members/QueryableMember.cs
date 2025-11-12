@@ -138,7 +138,7 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 
     public virtual string SelectorForDuplication(string pgType)
     {
-        return $"CAST({RawLocator.Replace("d.", "")} as {pgType})";
+        return $"CAST({RawLocator.RemoveTableAlias("d")} as {pgType})";
     }
 
     public virtual ISqlFragment CreateComparison(string op, ConstantExpression constant)

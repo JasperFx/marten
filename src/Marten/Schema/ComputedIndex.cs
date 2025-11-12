@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using JasperFx.Core.Reflection;
 using Marten.Linq;
 using Marten.Linq.Members;
@@ -87,7 +88,7 @@ public class ComputedIndex: IndexDefinition
                 ? member is ChildCollectionMember ? member.TypedLocator : member.RawLocator
                 : member.TypedLocator;
 
-            sql = sql.Replace("d.", "");
+            sql = sql.RemoveTableAlias("d");
 
             switch (casing)
             {

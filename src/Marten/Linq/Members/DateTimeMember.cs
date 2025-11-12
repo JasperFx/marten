@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Reflection;
+using Marten.Util;
 
 namespace Marten.Linq.Members;
 
@@ -14,7 +15,7 @@ public class DateTimeMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        return TypedLocator.RemoveTableAlias("d");
     }
 }
 
@@ -27,7 +28,7 @@ public class DateOnlyMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        return TypedLocator.RemoveTableAlias("d");
     }
 
 }
@@ -41,7 +42,7 @@ public class TimeOnlyMember: QueryableMember, IComparableMember
 
     public override string SelectorForDuplication(string pgType)
     {
-        return TypedLocator.Replace("d.", "");
+        return TypedLocator.RemoveTableAlias("d");
     }
 
 }
