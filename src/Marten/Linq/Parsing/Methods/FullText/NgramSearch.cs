@@ -22,7 +22,7 @@ public class NgramSearch: IMethodCallParser
         var useUnaccent = options.Advanced.UseNGramSearchWithUnaccent.ToString().ToUpperInvariant();
 
         return new WhereFragment(
-            $"{options.DatabaseSchemaName}.mt_grams_vector({locator},{useUnaccent}) @@ {options.DatabaseSchemaName}.mt_grams_query(?,{useUnaccent})",
+            $"{options.DatabaseSchemaName}.mt_grams_vector({locator}::text,{useUnaccent}) @@ {options.DatabaseSchemaName}.mt_grams_query(?,{useUnaccent})",
             values);
     }
 }

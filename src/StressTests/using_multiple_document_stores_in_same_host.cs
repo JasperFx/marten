@@ -142,16 +142,15 @@ public class using_multiple_document_stores_in_same_host : IDisposable
             await session.SaveChangesAsync();
         }
 
-
         await using (var query = firstStore.QuerySession())
         {
-            var target = await query.Query<Target>().Where(x => x.NgramSearch("first")).ToListAsync();
-            target.ShouldHaveSingleItem().String.ShouldBe("I am the first target to find");
+            var target = await query.Query<Target>().Where(x => x.NgramSearch("first target")).ToListAsync();
+            target.ShouldAllBe(x => x.String == "I am the first target to find");
         }
         await using (var query = secondStore.QuerySession())
         {
-            var target = await query.Query<Target>().Where(x => x.NgramSearch("second")).ToListAsync();
-            target.ShouldHaveSingleItem().String.ShouldBe("I am the second target to find");
+            var target = await query.Query<Target>().Where(x => x.NgramSearch("second target")).ToListAsync();
+            target.ShouldAllBe(x => x.String == "I am the second target to find");
         }
     }
 
