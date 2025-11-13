@@ -133,7 +133,7 @@ public class using_multiple_document_stores_in_same_host : IDisposable
             await session.SaveChangesAsync();
         }
 
-        var secondStore = theContainer.GetInstance<IFirstStore>();
+        var secondStore = theContainer.GetInstance<ISecondStore>();
         await using (var session = secondStore.LightweightSession())
         {
             var target = Target.Random();
