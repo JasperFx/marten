@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Events.Daemon.Coordination;
@@ -121,6 +123,19 @@ public static class HostExtensions
     public static IServiceCollection MartenDaemonModeIsSolo(this IServiceCollection services)
     {
         services.AddSingleton<IConfigureMarten, OverrideDaemonModeToSolo>();
+        services.AddSingleton<IProjectionCoordinator, ExplicitProjectionCoordinator>();
+
+        foreach (var descriptor in services.ToArray())
+        {
+            if (!descriptor.IsKeyedService && descriptor.ServiceType.CanBeCastTo<IDocumentStore>() &&
+                descriptor.ServiceType != typeof(IDocumentStore))
+            {
+                var storeType = descriptor.ServiceType;
+                services.AddSingleton(typeof(IProjectionCoordinator<>).MakeGenericType(storeType),
+                    typeof(ExplicitProjectionCoordinator<>).MakeGenericType(storeType));
+            }
+        }
+
         return services;
     }
 
