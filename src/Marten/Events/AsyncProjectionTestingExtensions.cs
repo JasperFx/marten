@@ -307,6 +307,10 @@ public static class TestingExtensions
     {
         var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
         var coordinator = services.GetRequiredService<IProjectionCoordinator>();
+
+        // Has to be paused first
+        await coordinator.PauseAsync().ConfigureAwait(false);
+
         var daemons = await coordinator.AllDaemonsAsync().ConfigureAwait(false);
 
         var list = new List<Exception>();
@@ -318,10 +322,6 @@ public static class TestingExtensions
                 await daemon.StopAllAsync().ConfigureAwait(false);
                 await daemon.CatchUpAsync(cancellation).ConfigureAwait(false);
 
-                if (mode == CatchUpMode.AndResumeNormally)
-                {
-                    await daemon.StartAllAsync().ConfigureAwait(false);
-                }
 
                 logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in the main Marten store", daemon);
             }
@@ -330,6 +330,11 @@ public static class TestingExtensions
                 logger.LogError(e, "Error trying to execute a CatchUp on {Daemon} in the main Marten store", daemon);
                 list.Add(e);
             }
+        }
+
+        if (mode == CatchUpMode.AndResumeNormally)
+        {
+            await coordinator.StartAsync(cancellation).ConfigureAwait(false);
         }
 
         return list;

@@ -32,7 +32,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
     private CancellationTokenSource _cancellation;
 
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
-    private Task _runner;
+    private Task? _runner;
 
     public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
     {
@@ -108,6 +108,25 @@ public class ProjectionCoordinator: IProjectionCoordinator
         _cancellation.Cancel();
 #endif
 
+        await pauseDistributor().ConfigureAwait(false);
+
+        foreach (var pair in _daemons.Enumerate())
+        {
+            try
+            {
+                await pair.Value.StopAllAsync().ConfigureAwait(false);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
+            }
+        }
+    }
+
+    private async Task pauseDistributor()
+    {
+        if (_runner == null) return;
+
         try
         {
 #pragma warning disable VSTHRD003
@@ -125,18 +144,6 @@ public class ProjectionCoordinator: IProjectionCoordinator
         catch (Exception e)
         {
             _logger.LogError(e, "Error while trying to stop the ProjectionCoordinator");
-        }
-
-        foreach (var pair in _daemons.Enumerate())
-        {
-            try
-            {
-                await pair.Value.StopAllAsync().ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
-            }
         }
     }
 
