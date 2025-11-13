@@ -41,8 +41,10 @@ public class setting_solo_mode_in_test_support
                 services.MartenDaemonModeIsSolo();
             }).StartAsync();
 
-        host.Services.GetRequiredService<IProjectionCoordinator>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
-        host.Services.GetRequiredService<IProjectionCoordinator<IFirstStore>>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
-        host.Services.GetRequiredService<IProjectionCoordinator<ISecondStore>>().As<ProjectionCoordinator>().Mode.ShouldBe(DaemonMode.Solo);
+        host.Services.GetRequiredService<IProjectionCoordinator>().ShouldBeOfType<ExplicitProjectionCoordinator>();
+        host.Services.GetRequiredService<IProjectionCoordinator<IFirstStore>>()
+            .ShouldBeOfType<ExplicitProjectionCoordinator<IFirstStore>>();
+        host.Services.GetRequiredService<IProjectionCoordinator<ISecondStore>>()
+            .ShouldBeOfType<ExplicitProjectionCoordinator<ISecondStore>>();
     }
 }
