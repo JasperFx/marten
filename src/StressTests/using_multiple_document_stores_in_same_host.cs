@@ -18,7 +18,6 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
-using Weasel.Core;
 using Weasel.Core.Migrations;
 using Weasel.Core.MultiTenancy;
 using Xunit;
@@ -120,6 +119,40 @@ public class using_multiple_document_stores_in_same_host : IDisposable
         await using var query = store.QuerySession();
         var target2 = await query.LoadAsync<Target>(target.Id);
         target2.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task use_ngram_search_in_both_stores()
+    {
+        var firstStore = theContainer.GetInstance<IFirstStore>();
+        await using (var session = firstStore.LightweightSession())
+        {
+            var target = Target.Random();
+            target.String = "I am the first target to find";
+            session.Store(target);
+            await session.SaveChangesAsync();
+        }
+
+        var secondStore = theContainer.GetInstance<IFirstStore>();
+        await using (var session = secondStore.LightweightSession())
+        {
+            var target = Target.Random();
+            target.String = "I am the second target to find";
+            session.Store(target);
+            await session.SaveChangesAsync();
+        }
+
+
+        await using (var query = firstStore.QuerySession())
+        {
+            var target = await query.Query<Target>().Where(x => x.NgramSearch("first")).ToListAsync();
+            target.ShouldHaveSingleItem().String.ShouldBe("I am the first target to find");
+        }
+        await using (var query = secondStore.QuerySession())
+        {
+            var target = await query.Query<Target>().Where(x => x.NgramSearch("second")).ToListAsync();
+            target.ShouldHaveSingleItem().String.ShouldBe("I am the second target to find");
+        }
     }
 
     public void Dispose()
