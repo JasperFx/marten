@@ -34,7 +34,10 @@ public class using_multiple_document_stores_in_same_host : IDisposable
         theContainer = Container.For(services =>
         {
             // Mostly just to prove we can mix and match
-            services.AddMarten(ConnectionSource.ConnectionString);
+            services.AddMarten(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+            });
 
             services.AddMartenStore<IFirstStore>(opts =>
             {
@@ -51,6 +54,7 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 var opts = new StoreOptions();
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "second_store";
+                opts.Advanced.UseNGramSearchWithUnaccent = true;
 
                 return opts;
             });
@@ -120,6 +124,16 @@ public class using_multiple_document_stores_in_same_host : IDisposable
         await using var query = store.QuerySession();
         var target2 = await query.LoadAsync<Target>(target.Id);
         target2.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task use_unaccent_in_ancillary_store()
+    {
+        var store = theContainer.GetInstance<ISecondStore>();
+        await using var session = store.LightweightSession();
+
+        var result = await session.QueryAsync<bool>("select unaccent('Æ') = 'AE';");
+        result[0].ShouldBe(true);
     }
 
     public void Dispose()
