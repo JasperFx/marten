@@ -196,4 +196,79 @@ public class NgramSearchTests : Marten.Testing.Harness.OneOffConfigurationsConte
         result.ShouldContain(x => x.UserName == kierkegaard.UserName);
         result.ShouldContain(x => x.UserName == bjork.UserName);
     }
+
+    [Fact]
+    public async Task test_ngram_search_throws_exception_on_doc_target()
+    {
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "ngram_test";
+
+            // This creates an ngram index for efficient sub string based matching
+            _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());
+        });
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var session = store.LightweightSession();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var result = await session
+                .Query<User>()
+                .Where(x => x.NgramSearch("test"))
+                .ToListAsync();
+        });
+    }
+
+    [Fact]
+    public async Task test_ngram_search_throws_exception_on_computed_prop_value()
+    {
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "ngram_test";
+
+            // This creates an ngram index for efficient sub string based matching
+            _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());
+        });
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var session = store.LightweightSession();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var result = await session
+                .Query<User>()
+                .Where(x => x.UserName.ToLower().NgramSearch("test"))
+                .ToListAsync();
+        });
+    }
+
+    [Fact]
+    public async Task test_ngram_search_throws_exception_on_non_string_prop()
+    {
+        var store = DocumentStore.For(_ =>
+        {
+            _.Connection(Marten.Testing.Harness.ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "ngram_test";
+
+            // This creates an ngram index for efficient sub string based matching
+            _.Schema.For<User>().NgramIndex(x => x.UserName.ToLower());
+        });
+
+        await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var session = store.LightweightSession();
+
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            var result = await session
+                .Query<User>()
+                .Where(x => x.Id.NgramSearch("test"))
+                .ToListAsync();
+        });
+    }
 }
