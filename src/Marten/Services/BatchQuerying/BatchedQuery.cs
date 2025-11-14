@@ -1,14 +1,11 @@
-#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
-using JasperFx.Events;
-using Marten.Events;
-using Marten.Events.Querying;
 using Marten.Exceptions;
+using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq;
@@ -31,6 +28,12 @@ internal partial class BatchedQuery: IBatchedQuery
     public QuerySession Parent { get; }
 
     public IBatchEvents Events => this;
+
+    public Task<T?> Load<T>(object id) where T : class
+    {
+        var loader = typeof(Loader<>).CloseAndBuildAs<ILoader>(id.GetType());
+        return loader.Load<T>(id, this);
+    }
 
     public Task<T?> Load<T>(string id) where T : class
     {
@@ -208,8 +211,22 @@ internal partial class BatchedQuery: IBatchedQuery
         return addItem<T, double>(queryable, SingleValueMode.Average);
     }
 
+    private interface ILoader
+    {
+        Task<T?> Load<T>(object id, BatchedQuery parent) where T : class;
+    }
+
+    private class Loader<TId>: ILoader
+    {
+        public Task<T?> Load<T>(object id, BatchedQuery parent) where T : class
+        {
+            return parent.load<T, TId>((TId)id);
+        }
+    }
+
     internal class BatchLoadByKeys<TDoc>: IBatchLoadByKeys<TDoc> where TDoc : class
     {
+        private static readonly Type[] _identityTypes = [typeof(int), typeof(long), typeof(Guid), typeof(string)];
         private readonly BatchedQuery _parent;
 
         public BatchLoadByKeys(BatchedQuery parent)
@@ -219,6 +236,10 @@ internal partial class BatchedQuery: IBatchedQuery
 
         public Task<IReadOnlyList<TDoc>> ById<TKey>(params TKey[] keys)
         {
+            if (typeof(TKey).IsNullable())
+                throw new ArgumentOutOfRangeException(nameof(TKey),
+                    "Cannot use nullable types as the TKey, you may need to explicitly define the generic argument");
+
             return load(keys);
         }
 
@@ -229,8 +250,14 @@ internal partial class BatchedQuery: IBatchedQuery
 
         private Task<IReadOnlyList<TDoc>> load<TKey>(TKey[] keys)
         {
-            var storage = _parent.Parent.StorageFor<TDoc>();
-            return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(storage, keys));
+            var storage = _parent.Parent.StorageFor<TDoc, TKey>();
+            if (_identityTypes.Contains(typeof(TKey)))
+            {
+                return _parent.AddItem(new LoadByIdArrayHandler<TDoc, TKey>(storage, keys));
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(keys),
+                "Marten cannot (yet) handle this identity type for this operation");
         }
     }
 }

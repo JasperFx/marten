@@ -40,7 +40,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
         sql.Append(storage.FromObject);
         sql.Append(" as d where id = ");
 
-        sql.AppendParameter(_id);
+        sql.AppendParameter(storage.RawIdentityValue(_id));
 
         storage.AddTenancyFilter(sql, session.TenantId);
     }

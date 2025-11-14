@@ -39,7 +39,12 @@ internal class ValueTypeIdentifiedIdentitySetter<TDoc, TSimple, TValueType>: IId
     public IIdentitySetter<TDoc, TValueType> Inner { get; }
 }
 
-internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple> where TDoc : notnull where TSimple : notnull where TValueType : notnull
+internal interface IValueTypeStorage<TDoc, TValueType>
+{
+    IQueryHandler<IReadOnlyList<TDoc>> BuildLoadManyHandler(TValueType[] keys);
+}
+
+internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>,  IValueTypeStorage<TDoc, TValueType> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;
     private readonly Func<TValueType,TSimple> _unwrapper;
@@ -50,6 +55,12 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
         _converter = valueTypeInfo.CreateWrapper<TValueType, TSimple>();
         _unwrapper = valueTypeInfo.UnWrapper<TValueType, TSimple>();
+    }
+
+    public IQueryHandler<IReadOnlyList<TDoc>> BuildLoadManyHandler(TValueType[] keys)
+    {
+        var ids = keys.Select(x => _unwrapper(x)).ToArray();
+        return new LoadByIdArrayHandler<TDoc, TSimple>(Inner, ids);
     }
 
     public IDocumentStorage<TDoc, TValueType> Inner { get; }
