@@ -73,11 +73,11 @@ public class QueryPlan
 
     [JsonPropertyName("Actual Rows")]
     [JsonProperty(PropertyName = "Actual Rows")]
-    public int? ActualRows { get; set; }
+    public decimal? ActualRows { get; set; }
 
     [JsonPropertyName("Actual Loops")]
     [JsonProperty(PropertyName = "Actual Loops")]
-    public int? ActualLoops { get; set; }
+    public decimal? ActualLoops { get; set; }
 
     [JsonPropertyName("Output")]
     [JsonProperty(PropertyName = "Output")]
