@@ -36,9 +36,9 @@ public class diagnostic_methods: OneOffConfigurationsContext
 
         var plan = await theSession.Query<SimpleUser>().ExplainAsync();
         plan.ShouldNotBeNull();
-        plan.PlanWidth.ShouldBeGreaterThan(0);
-        plan.PlanRows.ShouldBeGreaterThan(0);
-        plan.TotalCost.ShouldBeGreaterThan(0m);
+        plan.PlanWidth.Value.ShouldBeGreaterThan(0);
+        plan.PlanRows.Value.ShouldBeGreaterThan(0);
+        plan.TotalCost.Value.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
@@ -63,9 +63,9 @@ public class diagnostic_methods: OneOffConfigurationsContext
 
         var plan = await theSession.Query<SimpleUser>().Where(u => u.Number > 5).ExplainAsync();
         plan.ShouldNotBeNull();
-        plan.PlanWidth.ShouldBeGreaterThan(0);
-        plan.PlanRows.ShouldBeGreaterThan(0);
-        plan.TotalCost.ShouldBeGreaterThan(0m);
+        plan.PlanWidth.Value.ShouldBeGreaterThan(0);
+        plan.PlanRows.Value.ShouldBeGreaterThan(0);
+        plan.TotalCost.Value.ShouldBeGreaterThan(0m);
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
                     .Verbose();
             });
         plan.ShouldNotBeNull();
-        plan.ActualTotalTime.ShouldBeGreaterThan(0m);
+        plan.ActualTotalTime.Value.ShouldBeGreaterThan(0m);
         plan.PlanningTime.ShouldBeGreaterThan(0m);
         plan.ExecutionTime.ShouldBeGreaterThan(0m);
         plan.SortKey.ShouldContain("(((d.data ->> 'Number'::text))::integer)");
