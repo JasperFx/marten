@@ -35,7 +35,7 @@ public class QueryPlan
     /// </summary>
     [JsonPropertyName("Startup Cost")]
     [JsonProperty(PropertyName = "Startup Cost")]
-    public decimal StartupCost { get; set; }
+    public decimal? StartupCost { get; set; }
 
     /// <summary>
     ///     The cost ofo performing the query.
@@ -43,21 +43,21 @@ public class QueryPlan
     /// </summary>
     [JsonPropertyName("Total Cost")]
     [JsonProperty(PropertyName = "Total Cost")]
-    public decimal TotalCost { get; set; }
+    public decimal? TotalCost { get; set; }
 
     /// <summary>
     ///     The estimated number of rows returned.
     /// </summary>
     [JsonPropertyName("Plan Rows")]
     [JsonProperty(PropertyName = "Plan Rows")]
-    public int PlanRows { get; set; }
+    public int? PlanRows { get; set; }
 
     /// <summary>
     ///     The storage size of the query returned fields.
     /// </summary>
     [JsonPropertyName("Plan Width")]
     [JsonProperty(PropertyName = "Plan Width")]
-    public int PlanWidth { get; set; }
+    public int? PlanWidth { get; set; }
 
     [JsonPropertyName("Parallel Aware")]
     [JsonProperty(PropertyName = "Parallel Aware")]
@@ -65,19 +65,19 @@ public class QueryPlan
 
     [JsonPropertyName("Actual Startup Time")]
     [JsonProperty(PropertyName = "Actual Startup Time")]
-    public decimal ActualStartupTime { get; set; }
+    public decimal? ActualStartupTime { get; set; }
 
     [JsonPropertyName("Actual Total Time")]
     [JsonProperty(PropertyName = "Actual Total Time")]
-    public decimal ActualTotalTime { get; set; }
+    public decimal? ActualTotalTime { get; set; }
 
     [JsonPropertyName("Actual Rows")]
     [JsonProperty(PropertyName = "Actual Rows")]
-    public int ActualRows { get; set; }
+    public int? ActualRows { get; set; }
 
     [JsonPropertyName("Actual Loops")]
     [JsonProperty(PropertyName = "Actual Loops")]
-    public int ActualLoops { get; set; }
+    public int? ActualLoops { get; set; }
 
     [JsonPropertyName("Output")]
     [JsonProperty(PropertyName = "Output")]
