@@ -296,13 +296,13 @@ var posts = session.Query<BlogPost>()
 They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
 
 <!-- snippet: sample_text_search_with_non_default_regConfig_sample -->
-<a id='snippet-sample_text_search_with_non_default_regconfig_sample'></a>
+<a id='snippet-sample_text_search_with_non_default_regConfig_sample'></a>
 ```cs
 var posts = session.Query<BlogPost>()
     .Where(x => x.PhraseSearch("somefilter", "italian"))
     .ToList();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L396-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L396-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regConfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Partial text search in a multi-word text (NGram search)
@@ -362,6 +362,18 @@ var result = await session
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L147-L152' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: info
+Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions for using it.
+:::
+
+::: warning
+When you call `NGramSearch`, ensure to call it on a string property/field of the document rather than on the document itself.
+
+- `await session.Query<User>().Where(x => x.Address.Line1.NgramSearch(term))` - accessing NGramSearch on any string property is the right usage. ✅
+-  `await session.Query<User>().Where(x => x.NgramSearch(term))` Don't target the NGramSeach on the document `User`, it won't work. ❌
+- `await session.Query<User>().Where(x => x.Name.ToLower().NgramSearch(term))` Don't target the NGramSearch on a computed property on the document `User` i.e. `x.Name.ToLower()`, it won't work. ❌
+:::
+
 ## NGram search on non-English text <Badge type="tip" text="7.39.5" />
 
 If you want to use NGram search on non-English text, Marten provides a mechanism via an opt-in `storeOptions.Advanced.UseNGramSearchWithUnaccent = true` which uses [Postgres unaccent extension](https://www.postgresql.org/docs/current/unaccent.html) for applying before creating ngrams and on search input for a better multilingual experience. Check the sample code below:
@@ -402,6 +414,10 @@ var result = await session
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/NgramSearchTests.cs#L161-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ngram_search_unaccent' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+::: info
+Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions as well the unaccent extension for use (when `UseNGramSearchWithUnaccent` is set to `true`).
+:::
 
 ## NGram Search Across Multiple Properties <Badge type="tip" text="7.39.5" />
 
