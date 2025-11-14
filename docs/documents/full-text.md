@@ -363,7 +363,7 @@ var result = await session
 <!-- endSnippet -->
 
 ::: info
-Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions for using it.
+Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions to database for using it.
 :::
 
 ::: warning
@@ -416,7 +416,7 @@ var result = await session
 <!-- endSnippet -->
 
 ::: info
-Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions as well the unaccent extension for use (when `UseNGramSearchWithUnaccent` is set to `true`).
+Especially when writing unit tests which uses `NGramSearch` ensure to call `await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();` which will add the required system functions as well the unaccent extension to database for use (when `UseNGramSearchWithUnaccent` is set to `true`).
 :::
 
 ## NGram Search Across Multiple Properties <Badge type="tip" text="7.39.5" />
