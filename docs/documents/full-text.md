@@ -369,9 +369,9 @@ Especially when writing unit tests which uses `NGramSearch` ensure to call `awai
 ::: warning
 When you call `NGramSearch`, ensure to call it on a string property/field of the document rather than on the document itself.
 
-- `await session.Query<User>().Where(x => x.Address.Line1.NgramSearch(term))` - accessing NGramSearch on any string property is the right usage. ✅
--  `await session.Query<User>().Where(x => x.NgramSearch(term))` Don't target the NGramSeach on the document `User`, it won't work. ❌
-- `await session.Query<User>().Where(x => x.Name.ToLower().NgramSearch(term))` Don't target the NGramSearch on a computed property on the document `User` i.e. `x.Name.ToLower()`, it won't work. ❌
+* `await session.Query<User>().Where(x => x.Address.Line1.NgramSearch(term))` - accessing NGramSearch on any string property is the right usage. ✅
+* `await session.Query<User>().Where(x => x.NgramSearch(term))` Don't target the NGramSeach on the document `User`, it won't work. ❌
+* `await session.Query<User>().Where(x => x.Name.ToLower().NgramSearch(term))` Don't target the NGramSearch on a computed property on the document `User` i.e. `x.Name.ToLower()`, it won't work. ❌
 :::
 
 ## NGram search on non-English text <Badge type="tip" text="7.39.5" />
