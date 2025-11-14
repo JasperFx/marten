@@ -178,6 +178,14 @@ public interface IBatchedQuery
     Task<T?> Load<T>(Guid id) where T : class;
 
     /// <summary>
+    ///     Load a single document of Type "T" by id
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<T?> Load<T>(object id) where T : class;
+
+    /// <summary>
     ///     Load a one or more documents of Type "T" by id's
     /// </summary>
     /// <typeparam name="T"></typeparam>
