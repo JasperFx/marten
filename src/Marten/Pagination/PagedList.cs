@@ -104,30 +104,45 @@ public class PagedList<T>: IPagedList<T>
 
     /// <summary>
     ///     Static method to create a new instance of the <see cref="PagedList{T}
-    /// 
+    ///
     /// </summary>
     /// <param name="queryable"></param>
     /// <param name="pageNumber"></param>
     /// <param name="pageSize"></param>
-    public static PagedList<T> Create(IQueryable<T> queryable, int pageNumber, int pageSize)
+    public static PagedList<T> Create(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery = false)
     {
         var pagedList = new PagedList<T>();
-        pagedList.Init(queryable, pageNumber, pageSize);
+        pagedList.Init(queryable, pageNumber, pageSize, useCountQuery);
         return pagedList;
     }
 
     /// <summary>
     ///     Async static method to create a new instance of the <see cref="PagedList{T}
-    /// 
+    ///
     /// </summary>
     /// <param name="queryable"></param>
     /// <param name="pageNumber"></param>
     /// <param name="pageSize"></param>
+    [Obsolete("This method is deprecated, use new method override with useCountQuery.", false)]
     public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
         CancellationToken token = default)
     {
+        return await CreateAsync(queryable, pageNumber, pageSize, false, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Async static method to create a new instance of the <see cref="PagedList{T}
+    ///
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="pageNumber"></param>
+    /// <param name="pageSize"></param>
+    /// <param name="useCountQuery">Use a separate count query rather than using Stats.</param>
+    public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
+        bool useCountQuery, CancellationToken token = default)
+    {
         var pagedList = new PagedList<T>();
-        await pagedList.InitAsync(queryable, pageNumber, pageSize, token).ConfigureAwait(false);
+        await pagedList.InitAsync(queryable, pageNumber, pageSize, useCountQuery, token).ConfigureAwait(false);
         return pagedList;
     }
 
@@ -137,12 +152,17 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="queryable">Query for which data has to be fetched</param>
     /// <param name="pageSize">Page size</param>
     /// <param name="totalItemCount">Total count of all records</param>
-    public void Init(IQueryable<T> queryable, int pageNumber, int pageSize)
+    /// <param name="useCountQuery">Use a separate count query rather than using Stats. Default is false and uses Stats</param>
+    public void Init(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery=false)
     {
-        var query = PrepareQuery(queryable, pageNumber, pageSize, out var statistics);
+        var query = PrepareQuery(queryable, pageNumber, pageSize, useCountQuery, out var statistics);
+
+        if (useCountQuery)
+        {
+            statistics.TotalResults = queryable.LongCount();
+        }
 
         var items = query.ToList();
-
         ProcessResults(pageSize, items, statistics);
     }
 
@@ -152,17 +172,35 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="queryable">Query for which data has to be fetched</param>
     /// <param name="pageSize">Page size</param>
     /// <param name="totalItemCount">Total count of all records</param>
+    [Obsolete("This method is deprecated, use new method override with useCountQuery.", false)]
     public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
         CancellationToken token = default)
     {
-        var query = PrepareQuery(queryable, pageNumber, pageSize, out var statistics);
+        await InitAsync(queryable, pageNumber, pageSize, false, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PagedList{T}" /> class with a override to use separate count query.
+    /// </summary>
+    /// <param name="queryable">Query for which data has to be fetched</param>
+    /// <param name="pageSize">Page size</param>
+    /// <param name="totalItemCount">Total count of all records</param>
+    /// <param name="useCountQuery">Use a separate count query rather than using Stats</param>
+    public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery,
+        CancellationToken token = default)
+    {
+        var query = PrepareQuery(queryable, pageNumber, pageSize, useCountQuery, out var statistics);
+
+        if (useCountQuery)
+        {
+            statistics.TotalResults = await queryable.LongCountAsync(token).ConfigureAwait(false);
+        }
 
         var items = await query.ToListAsync(token).ConfigureAwait(false);
-
         ProcessResults(pageSize, items, statistics);
     }
 
-    private IQueryable<T> PrepareQuery(IQueryable<T> queryable, int pageNumber, int pageSize,
+    private IQueryable<T> PrepareQuery(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery,
         out QueryStatistics statistics)
     {
         // throw an argument exception if page number is less than one
@@ -179,6 +217,15 @@ public class PagedList<T>: IPagedList<T>
 
         PageNumber = pageNumber;
         PageSize = pageSize;
+
+        if (useCountQuery)
+        {
+            statistics = new  QueryStatistics();
+            return pageNumber == 1
+                ? queryable.As<IMartenQueryable<T>>().Take(pageSize)
+                : queryable.As<IMartenQueryable<T>>().Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize);
+        }
 
         return pageNumber == 1
             ? queryable.As<IMartenQueryable<T>>().Stats(out statistics).Take(pageSize)
