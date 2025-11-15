@@ -34,7 +34,7 @@ var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pa
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L248-L253' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For total rows count query, by default it uses `Stats()` which is a window function using `count(*) OVER()`. This works well for small to medium datasets but won't perform well for large dataset with millions of records. To deal with large datasets, `ToPagedList` and `ToPagedListAsync` support a method override to pass boolean `useCountQuery` as `true` which will run a separate `count(*)` query for the total rows. See an example below:
+For total row count, by default it internally uses `Stats()` based query which is a window function using `count(*) OVER()`. This works well for small to medium datasets but won't perform well for large dataset with millions of records. To deal with large datasets, `ToPagedList` and `ToPagedListAsync` support a method override to pass boolean `useCountQuery` as `true` which will run a separate `count(*)` query for the total rows. See an example below:
 
 <!-- snippet: sample_to_paged_list_seperate_count_query -->
 <a id='snippet-sample_to_paged_list_seperate_count_query'></a>
