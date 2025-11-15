@@ -20,7 +20,7 @@ var hasPrevPage = pagedList.HasPreviousPage; // check if there is previous page
 var firstItemOnPage = pagedList.FirstItemOnPage; // one-based index of first item in current page
 var lastItemOnPage = pagedList.LastItemOnPage; // one-based index of last item in current page
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L216-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L224-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: sample_to_paged_list_async -->
@@ -31,10 +31,25 @@ var pageSize = 10;
 
 var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L240-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L248-L253' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If you want to create you own paged queries, just use the `Take()` and `Skip()` Linq operators in combination with `Stats()`
+For total rows count query, by default it uses `Stats()` which is a window function using `count(*) OVER()`. This works well for small to medium datasets but won't perform well for large dataset with millions of records. To deal with large datasets, `ToPagedList` and `ToPagedListAsync` support a method override to pass boolean `useCountQuery` as `true` which will run a separate `count(*)` query for the total rows. See an example below:
+
+<!-- snippet: sample_to_paged_list_seperate_count_query -->
+<a id='snippet-sample_to_paged_list_seperate_count_query'></a>
+```cs
+var pageNumber = 2;
+var pageSize = 10;
+var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize, true);
+
+// paged list also provides a list of helper properties to deal with pagination aspects
+var totalItems = pagedList.TotalItemCount; // get total number records
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L261-L268' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_to_paged_list_seperate_count_query' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+If you want to construct you own paged queries without using `ToPagedList`, just use the `Take()` and `Skip()` Linq operators in combination with `Stats()`
 
 <!-- snippet: sample_using-query-statistics -->
 <a id='snippet-sample_using-query-statistics'></a>
@@ -64,7 +79,7 @@ public async Task can_get_the_total_in_results()
     stats.TotalResults.ShouldBe(count);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L157-L183' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L165-L191' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-query-statistics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For the sake of completeness, the SQL generated in the operation above by Marten would be:
