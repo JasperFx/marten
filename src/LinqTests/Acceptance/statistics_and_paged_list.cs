@@ -20,18 +20,26 @@ public class PaginationTestDocument
     public string Id { get; set; }
 }
 
-public class ToPagedListData<T> : IEnumerable<object[]>
+public class ToPagedListData<T>: IEnumerable<object[]>
 {
     private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListAsync
         = (query, pageNumber, pageSize) => query.ToPagedListAsync(pageNumber, pageSize);
 
+    private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListWithCountQueryAsync
+        = (query, pageNumber, pageSize) => query.ToPagedListAsync(pageNumber, pageSize, true);
+
     private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListSync
         = (query, pageNumber, pageSize) => Task.FromResult(query.ToPagedList(pageNumber, pageSize));
 
+    private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListWithCountQuerySync
+        = (query, pageNumber, pageSize) => Task.FromResult(query.ToPagedList(pageNumber, pageSize, true));
+
     public IEnumerator<object[]> GetEnumerator()
     {
-        yield return new object []{ ToPagedListAsync };
-        yield return new object[] { ToPagedListSync };
+        yield return [ToPagedListAsync];
+        yield return [ToPagedListWithCountQueryAsync];
+        yield return [ToPagedListSync];
+        yield return [ToPagedListWithCountQuerySync];
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -246,6 +254,24 @@ public class statistics_and_paged_list: IntegrationContext
 
         pagedList.Count.ShouldBe(pageSize);
     }
+
+    [Fact]
+    public void can_return_paged_result_using_separate_count_query()
+    {
+        #region sample_to_paged_list_seperate_count_query
+        var pageNumber = 2;
+        var pageSize = 10;
+        var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize, true);
+
+        // paged list also provides a list of helper properties to deal with pagination aspects
+        var totalItems = pagedList.TotalItemCount; // get total number records
+        #endregion
+
+        pagedList.Count.ShouldBe(pageSize);
+
+    }
+
+
     [Theory]
     [ClassData(typeof(ToPagedListData<Target>))]
     public async Task invalid_pagenumber_should_throw_exception(Func<IQueryable<Target>, int, int, Task<IPagedList<Target>>> toPagedList)
