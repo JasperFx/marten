@@ -26,7 +26,7 @@ public static class WolverineIntegration
                     opts.Projections.Add<DailyShipmentsProjection>(ProjectionLifecycle.Async);
                     opts.Projections.Add<ShipmentViewProjection>(ProjectionLifecycle.Async);
                 })
-                //.AddAsyncDaemon(DaemonMode.HotCold) // Remove this line, Wolverine will take care of this 
+                //.AddAsyncDaemon(DaemonMode.HotCold) // Remove this line if UseWolverineManagedEventSubscriptionDistribution below is set to true
                 .IntegrateWithWolverine(cfg =>
                 {
                     cfg.UseWolverineManagedEventSubscriptionDistribution = true;
