@@ -126,8 +126,16 @@ public class MartenRegistry
             _builder.Alter = m =>
             {
                 var members = FindMembers.Determine(memberExpression);
-                var field = m.DuplicateField(members);
-                var columnName = field.ColumnName;
+
+                var identity = m.IdMember;
+
+                var columnName = "id";
+
+                if (!members.Contains(identity))
+                {
+                    var field = m.DuplicateField(members);
+                    columnName = field.ColumnName;
+                }
 
                 var expression = new PartitioningExpression(m, [columnName]);
                 partitioning(expression);
