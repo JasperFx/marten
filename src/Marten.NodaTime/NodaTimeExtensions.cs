@@ -8,6 +8,7 @@ using NodaTime.Serialization.SystemTextJson;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using NodaJsonSettings = NodaTime.Serialization.JsonNet.NodaJsonSettings;
 
 namespace Marten.NodaTimePlugin;
 
@@ -34,13 +35,19 @@ public static class NodaTimeExtensions
                 case JsonNetSerializer jsonNetSerializer:
                     jsonNetSerializer.Configure(s =>
                     {
-                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                        s.ConfigureForNodaTime(new NodaJsonSettings(DateTimeZoneProviders.Tzdb)
+                        {
+                            InstantConverter = InstantJsonConverter.Newtonsoft
+                        });
                     });
                     break;
                 case SystemTextJsonSerializer systemTextJsonSerializer:
                     systemTextJsonSerializer.Configure(s =>
                     {
-                        s.ConfigureForNodaTime(DateTimeZoneProviders.Tzdb);
+                        s.ConfigureForNodaTime(new NodaTime.Serialization.SystemTextJson.NodaJsonSettings(DateTimeZoneProviders.Tzdb)
+                        {
+                            InstantConverter = InstantJsonConverter.Stj
+                        });
                     });
                     break;
                 default:
