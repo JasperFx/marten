@@ -24,7 +24,7 @@ namespace Marten.Storage;
 
 public partial class MartenDatabase : IEventDatabase
 {
-    private string _storageIdentifier;
+    private readonly string _storageIdentifier;
 
     public async Task MarkEventsAsSkipped(long[] sequences, CancellationToken token = default)
     {

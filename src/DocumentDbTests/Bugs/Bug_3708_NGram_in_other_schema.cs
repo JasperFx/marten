@@ -10,7 +10,7 @@ namespace DocumentDbTests.Bugs;
 
 public class Bug_3708_NGram_in_other_schema : BugIntegrationContext
 {
-    private string AnotherSchema = "not_public";
+    private readonly string AnotherSchema = "not_public";
 
     [Fact]
     public async Task default_bug_context_schema()
