@@ -9,7 +9,7 @@ const { Layout } = DefaultTheme
     <template #aside-ads-before>
       <div class="info-box">
         <p>
-          Use this <a class="vp-external-link-icon" href="https://martendb.io/llms-full.txt" target="_blank" rel="noreferrer">LLM Friendly docs link</a> as an MCP server for the docs.
+          Use this <a class="vp-external-link-icon" href="https://martendb.io/llms-full.txt" target="_blank" rel="noreferrer">LLM Friendly Docs</a> as an MCP server for Marten.
         </p>
       </div>
       <div class="info-box">

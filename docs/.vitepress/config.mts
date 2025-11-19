@@ -48,7 +48,7 @@ const config: UserConfig<DefaultTheme.Config> = {
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/' },
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
-      { text: 'LLM friendly docs', link: 'https://martendb.io/llms-full.txt' },
+      { text: 'LLM Friendly Docs', link: 'https://martendb.io/llms-full.txt' },
     ],
 
     // algolia: {
