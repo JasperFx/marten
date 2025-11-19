@@ -48,6 +48,7 @@ const config: UserConfig<DefaultTheme.Config> = {
       { text: 'Migration', link: '/migration-guide' },
       { text: 'Support Plans', link: 'https://www.jasperfx.net/support-plans/' },
       { text: 'Join Chat', link: 'https://discord.gg/WMxrvegf8H' },
+      { text: 'LLM friendly docs', link: 'https://martendb.io/llms-full.txt' },
     ],
 
     // algolia: {
@@ -207,7 +208,7 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Removing Protected Information',
               link: '/events/protection'
             },
-              {text: 'Marking Events as Skipped', link: '/events/skipping'},
+            { text: 'Marking Events as Skipped', link: '/events/skipping' },
             {
               text: 'Aggregates, events and repositories',
               link: '/scenarios/aggregates-events-repositories'
