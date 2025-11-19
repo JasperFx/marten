@@ -52,6 +52,12 @@ public class using_multiple_document_stores_in_same_host : IDisposable
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.DatabaseSchemaName = "second_store";
 
+                opts.Policies.AllDocumentsAreMultiTenanted();
+                opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+
+                opts.Schema.For<SomeSingleTenantedDocument>()
+                    .DoNotPartition()
+                    .SingleTenanted();
                 return opts;
             });
         });
@@ -122,11 +128,28 @@ public class using_multiple_document_stores_in_same_host : IDisposable
         target2.ShouldNotBeNull();
     }
 
+    [Fact]
+    public async Task use_a_single_tenanted_document_in_multi_tenancy_ancillary_store()
+    {
+        var store = theContainer.GetInstance<ISecondStore>();
+        await using var session = store.LightweightSession();
+
+        var singleTenantedDocument = new SomeSingleTenantedDocument(Guid.NewGuid());
+        session.Store(singleTenantedDocument);
+
+        await session.SaveChangesAsync();
+
+        await using var query = store.QuerySession();
+        var target2 = await query.LoadAsync<SomeSingleTenantedDocument>(singleTenantedDocument.Id);
+        target2.ShouldNotBeNull();
+    }
+
     public void Dispose()
     {
         theContainer?.Dispose();
     }
 }
+public record SomeSingleTenantedDocument(Guid Id);
 
 public class additional_document_store_registration_and_optimized_artifact_workflow
 {
