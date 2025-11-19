@@ -1422,7 +1422,7 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
             // Opt into partitioning for one document type
             opts.Schema.For<User>().SoftDeletedWithPartitioning();
 
-            // Opt into partitioning and and index for one document type
+            // Opt into partitioning and an index on deletion timestamp for one document type
             opts.Schema.For<User>().SoftDeletedWithPartitioningAndIndex();
 
             // Opt into partitioning for all soft-deleted documents
