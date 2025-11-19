@@ -16,6 +16,17 @@ public class PartitioningExpression
     }
 
     /// <summary>
+    /// Direct Marten to use PostgreSQL HASH-based partitioning, but to allow the partitions to be managed
+    /// externally from Marten
+    /// </summary>
+    public void  ByExternallyManagedHashPartitions()
+    {
+        _mapping.IgnorePartitions = true;
+        var partitioning = new HashPartitioning { Columns = _columnNames };
+        _mapping.Partitioning = partitioning;
+    }
+
+    /// <summary>
     /// Direct Marten to apply equally sized PostgreSQL HASH-based partitioning with a partition for
     /// each named partition suffix
     /// </summary>
