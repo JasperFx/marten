@@ -5,15 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
-using Marten.Events.Daemon.Internals;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Progress;
 
-internal class InsertProjectionProgress: IStorageOperation
+internal class InsertProjectionProgress: IStorageOperation, AssertsOnCallback, NoDataReturnedCall
 {
     private readonly EventGraph _events;
     private readonly EventRange _progress;
