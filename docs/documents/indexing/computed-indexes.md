@@ -5,11 +5,6 @@ Calculated indexes are a great way to optimize the querying of a document type w
 potentially expensive schema changes and extra runtime insert costs.
 :::
 
-::: warning
-At this time, calculated indexes do not work against `DateTime` or `DateTimeOffset` fields. You will have
-to resort to a duplicated field for these types.
-:::
-
 If you want to optimize a document type for searches on a certain field within the JSON body without incurring the potential cost of the duplicated field, you can take advantage of Postgresql's [computed index feature](https://www.postgresql.org/docs/9.5/static/indexes-expressional.html) within Marten with this syntax:
 
 <!-- snippet: sample_using-a-simple-calculated-index -->
@@ -86,6 +81,21 @@ The configuration above creates an index like this:
 
 ```sql
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
+```
+#### Indexing (parts of) date values
+
+::: warning
+At this time, calculated indexes do not work against `DateTime` or `DateTimeOffset` fields. You will have
+to resort to a duplicated field for these types.
+:::
+
+When you need to query by a component of a `DateOnly` or `DateTime` value,  
+you can expose that component as a simple read only property and index it.
+
+```csharp
+public required DateOnly From { get; set; }
+
+public int FromYear => From.Year;
 ```
 
 ## Multi-Column Indexes <Badge type="tip" text="7.0" />
