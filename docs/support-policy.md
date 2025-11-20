@@ -4,14 +4,14 @@ Community support (via our Github & Discord) is offered for the current major ve
 
 Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) are granted priority for questions, feature requests and bug fixes. Support for previous versions of Marten is also available under these plans.
 
-| Marten Version | End-of-Life |     Status      |  Support Options   |
-| -------------- | :---------: | :-------------: | :----------------: |
-| 8              |   Current   |     Current     | Community/JasperFx |
+| Marten Version | End-of-Life |    Status     |  Support Options   |
+| -------------- | :---------: | :-----------: | :----------------: |
+| 8              |   Current   |    Current    | Community/JasperFx |
 | 7              |  Dec 2025   | P1 Fixes Only | Community/JasperFx |
-| 6              |  Sep 2024   |       EoL       |      JasperFx      |
-| 5              |  Nov 2023   |       EoL       |      JasperFx      |
-| 4              |  Sep 2022   |       EoL       |      JasperFx      |
-| 3              |  May 2021   |       EoL       |      JasperFx      |
+| 6              |  Sep 2024   |      EoL      |      JasperFx      |
+| 5              |  Nov 2023   |      EoL      |      JasperFx      |
+| 4              |  Sep 2022   |      EoL      |      JasperFx      |
+| 3              |  May 2021   |      EoL      |      JasperFx      |
 
 ## .NET Version Compatibility
 
