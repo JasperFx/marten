@@ -22,7 +22,7 @@ The available columns for document storage are:
 | `mt_deleted`       | Boolean flag noting whether the document is soft-deleted                                          | Only if the document type is configured as soft-deleted |
 | `mt_deleted_at`    | Timestamp marking when a document was soft-deleted                                                | Only if the document type is configured as soft-deleted |
 | `mt_created_at`    | Timestamp marking when a document was originally created. Value of IDocumentSession.CreatedBy     | No, opt in                                              |
-| `tenant_id`        | The identifier of the owning tenant if multitenancy is configured for this document.              | Yes, but only for multitenancy schemas                  |
+| `tenant_id`        | The identifier of the owning tenant if multi-tenancy is configured for this document.             | Yes, but only for multi-tenancy schemas                 |
 
 ## Correlation Id, Causation Id, and Headers
 
