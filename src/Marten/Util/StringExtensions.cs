@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using Marten.Schema;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -45,7 +46,7 @@ internal static class StringExtensionMethods
     }
 
     /// <summary>
-    /// Remove table alias from a SQL string. This is also a candidate to move to Weasel.
+    /// Remove table alias from a SQL string.
     /// </summary>
     /// <param name="sql"></param>
     /// <param name="tableAlias"></param>
@@ -55,9 +56,21 @@ internal static class StringExtensionMethods
         if (string.IsNullOrEmpty(sql) || string.IsNullOrEmpty(tableAlias))
             return sql;
 
-        // Remove 'd.' only when it's NOT followed by 'mt_' (anything followed bt mt_ will be schema name)
-        var regex = _removeTableAliasRegexCache.GetOrAdd(tableAlias, alias =>
-            new Regex(@$"\b{Regex.Escape(alias)}\.(?!mt_)", RegexOptions.Compiled));
+        // First pass: remove '<table_alias>.' for any the Marten defined metadata columns
+        string[] metadataColumns = [SchemaConstants.DocumentTypeColumn, SchemaConstants.LastModifiedColumn,
+            SchemaConstants.DotNetTypeColumn, SchemaConstants.VersionColumn, SchemaConstants.CreatedAtColumn,
+            SchemaConstants.DeletedColumn, SchemaConstants.DeletedAtColumn];
+        var metadataColumnRegex = _removeTableAliasRegexCache.GetOrAdd(@$"\b{Regex.Escape(tableAlias)}\.({string.Join("|", metadataColumns)})\b", pattern =>
+            new Regex(pattern, RegexOptions.Compiled));
+        sql = metadataColumnRegex.Replace(sql, "$1");
+
+        if (!sql.Contains($"{tableAlias}."))
+            return sql;
+
+        // Second pass: remove '<table_alias>.' only when it's NOT followed by 'mt_' (anything followed by mt_ could possibly be schema name for a Marten function)
+        var regex = _removeTableAliasRegexCache.GetOrAdd(@$"\b{Regex.Escape(tableAlias)}\.(?!mt_)", pattern =>
+            new Regex(pattern, RegexOptions.Compiled));
+
         return regex.Replace(sql, "");
     }
 }
