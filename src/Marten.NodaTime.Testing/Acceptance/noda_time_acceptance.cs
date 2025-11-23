@@ -227,6 +227,43 @@ public class noda_time_acceptance: OneOffConfigurationsContext
     [InlineData(SerializerType.Newtonsoft)]
     public async Task bug_1276_can_select_instant(SerializerType serializerType)
     {
+        // NOTE: the cast/rounding scenario described by this comment won't happen on MacOS
+        // since it doesn't provide nanosecond precision since High Sierra
+        // https://github.com/golang/go/issues/22037
+        //
+        //
+        // .NET date/time types have tick precision (100ns)
+        // Postgres date/time types have microsecond precision
+        //
+        //
+        // When an Instant is saved as a property in a document, it's converted to a string
+        // using NodaTime.Text.InstantPattern.ExtendedIso, and it contains the full tick precision
+        // e.g. "2025-11-23T20:36:25.9226214Z"
+        //
+        // When this document is queried, there are two scenarios:
+        // 1. The full document is queried directly using LINQ, the Instant property is deserialized using
+        //    the string value with the full tick precision.
+        //
+        // 2. The document is queried using LINQ and projected with Select with the Instant property being
+        //    selected - the property string from the database is cast to a 'timestamp with time zone' postgresql
+        //    type.
+        //    This is where the value is truncated to microseconds and round half up is used on the
+        //    tick remainder. It also results in a different string format so a fallback deserialization pattern
+        //    is used.
+        //
+        // Rounding example:
+        // SELECT
+        //   CAST ('2025-11-23T20:36:25.9226214Z' AS TIMESTAMP WITH TIME ZONE) no_round,
+        //   CAST ('2025-11-23T20:36:25.9226215Z' AS TIMESTAMP WITH TIME ZONE) round;
+        //
+        // will result in
+        // no_round = 2025-11-23 20:36:25.922621 +00:00
+        // round    = 2025-11-23 20:36:25.922622 +00:00
+        //
+        // This is why ShouldBeEqualWithDbPrecision assertion is used which does the following:
+        // 1. truncates both Instants to microseconds and compares them
+        // 2. allows for a 1 microsecond tolerance to account for the potential rounding of the remaining ticks
+
         StoreOptions(opts =>
         {
             switch (serializerType)
@@ -256,9 +293,9 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var result = query.Query<TargetWithDates>()
-                .Where(c => c.Id == testDoc.Id)
-                .Single();
+            var result = query
+                .Query<TargetWithDates>()
+                .Single(c => c.Id == testDoc.Id);
 
             var resultWithSelect = query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)
@@ -267,21 +304,15 @@ public class noda_time_acceptance: OneOffConfigurationsContext
 
             result.ShouldNotBeNull();
             result.Id.ShouldBe(testDoc.Id);
-            result.InstantUTC.ShouldBe(instantUTC);
-            result.NullableInstantUTC.ShouldBe(instantUTC);
             result.NullInstantUTC.ShouldBeNull();
-
-            ShouldBeEqualWithDbPrecision(result.InstantUTC, instantUTC);
-            ShouldBeEqualWithDbPrecision(result.NullableInstantUTC.Value, instantUTC);
+            result.InstantUTC.ShouldBeEqualWithDbPrecision(instantUTC);
+            result.NullableInstantUTC!.Value.ShouldBeEqualWithDbPrecision(instantUTC);
 
             resultWithSelect.ShouldNotBeNull();
             resultWithSelect.Id.ShouldBe(testDoc.Id);
-            resultWithSelect.InstantUTC.ShouldBe(instantUTC);
-            resultWithSelect.NullableInstantUTC.ShouldBe(instantUTC);
             resultWithSelect.NullInstantUTC.ShouldBeNull();
-
-            ShouldBeEqualWithDbPrecision(resultWithSelect.InstantUTC, instantUTC);
-            ShouldBeEqualWithDbPrecision(resultWithSelect.NullableInstantUTC.Value, instantUTC);
+            resultWithSelect.InstantUTC.ShouldBeEqualWithDbPrecision(instantUTC);
+            resultWithSelect.NullableInstantUTC!.Value.ShouldBeEqualWithDbPrecision(instantUTC);
         }
     }
 
@@ -351,12 +382,4 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             throw new NotSupportedException();
         }
     }
-
-    private static void ShouldBeEqualWithDbPrecision(Instant actual, Instant expected)
-    {
-        static Instant toDbPrecision(Instant date) => Instant.FromUnixTimeMilliseconds(date.ToUnixTimeMilliseconds() / 100 * 100);
-
-        toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
-    }
-
 }
