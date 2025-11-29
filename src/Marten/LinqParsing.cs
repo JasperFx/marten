@@ -49,6 +49,7 @@ public class LinqParsing: IReadOnlyLinqParsing
         new AnySubQueryParser(),
 
         // Keep this below the string methods!
+        new MemoryExtensionsContains(),
         new EnumerableContains(),
         new HashSetEnumerableContains(),
         new AllMethodParser(),
