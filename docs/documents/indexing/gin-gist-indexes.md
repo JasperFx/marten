@@ -6,7 +6,7 @@ To optimize a wider range of ad-hoc queries against the document JSONB, you can 
 the JSON field in the database:
 
 <!-- snippet: sample_IndexExamples -->
-<a id='snippet-sample_indexexamples'></a>
+<a id='snippet-sample_IndexExamples'></a>
 ```cs
 var store = DocumentStore.For(options =>
 {
@@ -44,7 +44,7 @@ var store = DocumentStore.For(options =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L66-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_indexexamples' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L66-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IndexExamples' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 **Marten may be changed to make the GIN index on the data field be automatic in the future.**

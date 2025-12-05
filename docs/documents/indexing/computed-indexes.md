@@ -82,12 +82,8 @@ The configuration above creates an index like this:
 ```sql
 CREATE INDEX mt_doc_user_idx_first_namelast_name ON public.mt_doc_user USING btree (((data ->> 'FirstName'::text)), ((data ->> 'LastName'::text)))
 ```
-#### Indexing (parts of) date values
 
-::: warning
-At this time, calculated indexes do not work against `DateTime` or `DateTimeOffset` fields. You will have
-to resort to a duplicated field for these types.
-:::
+## Indexing Date Values
 
 When you need to query by a component of a `DateOnly` or `DateTime` value,  
 you can expose that component as a simple read only property and index it.
@@ -97,6 +93,11 @@ public required DateOnly From { get; set; }
 
 public int FromYear => From.Year;
 ```
+
+::: warning
+At this time, calculated indexes do not work against `DateTime` or `DateTimeOffset` fields. You will have
+to resort to a duplicated field for these types.
+:::
 
 ## Multi-Column Indexes <Badge type="tip" text="7.0" />
 

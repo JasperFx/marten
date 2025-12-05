@@ -20,7 +20,7 @@ use the `AddMarten()` method directly with Lamar as well.
 Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
 
 <!-- snippet: sample_MartenServices -->
-<a id='snippet-sample_martenservices'></a>
+<a id='snippet-sample_MartenServices'></a>
 ```cs
 public class MartenServices : ServiceRegistry
 {
@@ -49,7 +49,7 @@ public class MartenServices : ServiceRegistry
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/DevelopmentModeRegistry.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_martenservices' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/DevelopmentModeRegistry.cs#L8-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MartenServices' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 There are really only two key points here:

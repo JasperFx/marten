@@ -55,7 +55,7 @@ the `[Identity]` attribute to force Marten to use a property or field as the ide
 the "id" or "Id" or "ID" convention:
 
 <!-- snippet: sample_IdentityAttribute -->
-<a id='snippet-sample_identityattribute'></a>
+<a id='snippet-sample_IdentityAttribute'></a>
 ```cs
 public class NonStandardDoc
 {
@@ -63,7 +63,7 @@ public class NonStandardDoc
     public string Name;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L74-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_identityattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/using_natural_identity_keys.cs#L74-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IdentityAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The identity property or field can also be configured through `StoreOptions` by using the `Schema` to obtain a document mapping:
@@ -183,7 +183,7 @@ var store = DocumentStore.For(_ =>
 Marten 1.2 adds a convenience method to reset the "floor" of the Hilo sequence for a single document type:
 
 <!-- snippet: sample_ResetHiloSequenceFloor -->
-<a id='snippet-sample_resethilosequencefloor'></a>
+<a id='snippet-sample_ResetHiloSequenceFloor'></a>
 ```cs
 var store = DocumentStore.For(opts =>
 {
@@ -195,7 +195,7 @@ var store = DocumentStore.For(opts =>
 // type to 2500
 await store.Tenancy.Default.Database.ResetHiloSequenceFloor<IntDoc>(2500);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L20-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_resethilosequencefloor' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/hilo_configuration_overrides.cs#L20-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ResetHiloSequenceFloor' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This functionality was added specifically to aid in importing data from an existing data source. Do note that this functionality simply guarantees
@@ -218,14 +218,14 @@ so you will not be able to use any kind of punctuation characters or spaces.
 Let's say you have a document type with a `string` for the identity member like this one:
 
 <!-- snippet: sample_DocumentWithStringId -->
-<a id='snippet-sample_documentwithstringid'></a>
+<a id='snippet-sample_DocumentWithStringId'></a>
 ```cs
 public class DocumentWithStringId
 {
     public string Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L31-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L31-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DocumentWithStringId' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a _HiLo_ sequence number.
@@ -233,7 +233,7 @@ You can use the "identity key" option for identity generation that would create 
 You can opt into the _identity key_ strategy for identity and even override the document alias name with this syntax:
 
 <!-- snippet: sample_using_IdentityKey -->
-<a id='snippet-sample_using_identitykey'></a>
+<a id='snippet-sample_using_IdentityKey'></a>
 ```cs
 var store = DocumentStore.For(opts =>
 {
@@ -243,7 +243,7 @@ var store = DocumentStore.For(opts =>
         .DocumentAlias("doc");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_IdentityKey' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Identity Strategies
@@ -413,7 +413,7 @@ As you might infer -- or not -- there's a couple rules and internal behavior:
 For another example, here's a usage of an `int` wrapped identifier:
 
 <!-- snippet: sample_order2_with_STRONG_TYPED_identifier -->
-<a id='snippet-sample_order2_with_strong_typed_identifier'></a>
+<a id='snippet-sample_order2_with_STRONG_TYPED_identifier'></a>
 ```cs
 [StronglyTypedId(Template.Int)]
 public readonly partial struct Order2Id;
@@ -424,7 +424,7 @@ public class Order2
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/int_based_document_operations.cs#L262-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order2_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/StrongTypedId/int_based_document_operations.cs#L262-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_order2_with_STRONG_TYPED_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

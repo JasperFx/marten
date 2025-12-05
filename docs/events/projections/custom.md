@@ -3,7 +3,7 @@
 To build your own Marten projection, you just need a class that implements the `Marten.Events.Projections.IProjection` interface shown below:
 
 <!-- snippet: sample_IProjection -->
-<a id='snippet-sample_iprojection'></a>
+<a id='snippet-sample_IProjection'></a>
 ```cs
 /// <summary>
 ///     Interface for all event projections
@@ -12,7 +12,7 @@ To build your own Marten projection, you just need a class that implements the `
 /// </summary>
 public interface IProjection: IJasperFxProjection<IDocumentOperations>, IMartenRegistrable
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/Projections/IProjection.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IProjection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `StreamAction` aggregates outstanding events by the event stream, which is how Marten tracks events inside of an `IDocumentSession` that has
@@ -20,7 +20,7 @@ yet to be committed. The `IDocumentOperations` interface will give you access to
 or deletions. Here's a sample custom projection from our tests:
 
 <!-- snippet: sample_QuestPatchTestProjection -->
-<a id='snippet-sample_questpatchtestprojection'></a>
+<a id='snippet-sample_QuestPatchTestProjection'></a>
 ```cs
 public class QuestPatchTestProjection: IProjection
 {
@@ -47,7 +47,7 @@ public class QuestPatchTestProjection: IProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1196-L1223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questpatchtestprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/PatchingTests/Patching/patching_api.cs#L1196-L1223' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_QuestPatchTestProjection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the custom projection can be registered in your Marten `DocumentStore` like this:

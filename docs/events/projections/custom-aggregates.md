@@ -39,7 +39,7 @@ public class Increment
 And a simple aggregate document type like this:
 
 <!-- snippet: sample_StartAndStopAggregate -->
-<a id='snippet-sample_startandstopaggregate'></a>
+<a id='snippet-sample_StartAndStopAggregate'></a>
 ```cs
 public class StartAndStopAggregate: ISoftDeleted
 {
@@ -57,7 +57,7 @@ public class StartAndStopAggregate: ISoftDeleted
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L596-L614' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_startandstopaggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L596-L614' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_StartAndStopAggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As you can see, `StartAndStopAggregate` as a `Guid` as its identity and is also [soft-deleted](/documents/deletes.html#soft-deletes) when stored by
