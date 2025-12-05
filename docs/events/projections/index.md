@@ -38,7 +38,7 @@ The out-of-the box convention is to expose `public Apply(<EventType>)` methods o
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
 <!-- snippet: sample_QuestParty -->
-<a id='snippet-sample_questparty'></a>
+<a id='snippet-sample_QuestParty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
 {
@@ -63,7 +63,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
         };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_QuestParty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation via .Net

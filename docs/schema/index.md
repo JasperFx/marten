@@ -8,7 +8,7 @@ As of Marten v0.8, you have much finer grained ability to control the automatic 
 `StoreOptions.AutoCreateSchemaObjects` like so:
 
 <!-- snippet: sample_AutoCreateSchemaObjects -->
-<a id='snippet-sample_autocreateschemaobjects'></a>
+<a id='snippet-sample_AutoCreateSchemaObjects'></a>
 ```cs
 var store = DocumentStore.For(opts =>
 {
@@ -32,7 +32,7 @@ var store = DocumentStore.For(opts =>
     opts.AutoCreateSchemaObjects = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L56-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_autocreateschemaobjects' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L56-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AutoCreateSchemaObjects' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To prevent unnecessary loss of data, even in development, on the first usage of a document type, Marten will:

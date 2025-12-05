@@ -12,7 +12,7 @@ a previously persisted document with the same identity. Here's that method in ac
 with a sample that shows storing both a brand new document and a modified document:
 
 <!-- snippet: sample_using_DocumentSession_Store -->
-<a id='snippet-sample_using_documentsession_store'></a>
+<a id='snippet-sample_using_DocumentSession_Store'></a>
 ```cs
 using var store = DocumentStore.For("some connection string");
 
@@ -35,7 +35,7 @@ session.Store(newUser, existingUser);
 
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L37-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_documentsession_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/StoringDocuments.cs#L37-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DocumentSession_Store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Store()` method can happily take a mixed bag of document types at one time, but you'll need to tell Marten to use `Store<object>()` instead of letting it infer the document type as shown below:
@@ -132,7 +132,7 @@ theSession.Query<Target>().Count().ShouldBe(data.Length);
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
 
 <!-- snippet: sample_BulkInsertMode_usages -->
-<a id='snippet-sample_bulkinsertmode_usages'></a>
+<a id='snippet-sample_BulkInsertMode_usages'></a>
 ```cs
 // Just say we have an array of documents we want to bulk insert
 var data = Target.GenerateRandomData(100).ToArray();
@@ -151,7 +151,7 @@ await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
 // being loaded
 await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L329-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L329-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_BulkInsertMode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert feature can also be used with multi-tenanted documents, but in that
@@ -159,7 +159,7 @@ case you are limited to only loading documents to a single tenant at a time as
 shown below:
 
 <!-- snippet: sample_MultiTenancyWithBulkInsert -->
-<a id='snippet-sample_multitenancywithbulkinsert'></a>
+<a id='snippet-sample_MultiTenancyWithBulkInsert'></a>
 ```cs
 // Just say we have an array of documents we want to bulk insert
 var data = Target.GenerateRandomData(100).ToArray();
@@ -173,5 +173,5 @@ using var store = DocumentStore.For(opts =>
 // If multi-tenanted
 await store.BulkInsertDocumentsAsync("a tenant id", data);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L353-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L353-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MultiTenancyWithBulkInsert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

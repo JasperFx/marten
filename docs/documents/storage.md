@@ -47,7 +47,7 @@ var store = DocumentStore.For(opts =>
 Or by using an attribute on your document type:
 
 <!-- snippet: sample_using_DatabaseSchemaName_attribute -->
-<a id='snippet-sample_using_databaseschemaname_attribute'></a>
+<a id='snippet-sample_using_DatabaseSchemaName_attribute'></a>
 ```cs
 [DatabaseSchemaName("organization")]
 public class Customer
@@ -55,7 +55,7 @@ public class Customer
     [Identity] public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L920-L928' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_databaseschemaname_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/DocumentMappingTests.cs#L920-L928' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DatabaseSchemaName_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Type Aliases
@@ -122,7 +122,7 @@ var store = DocumentStore.For(opts =>
 {
     opts.Connection("some connection string");
 
-    // Set up table partitioning for the User document type
+    // Set up table partitioning for the User document type using RANGE partitioning
     opts.Schema.For<User>()
         .PartitionOn(x => x.Age, x =>
         {
@@ -130,6 +130,24 @@ var store = DocumentStore.For(opts =>
                 .AddRange("young", 0, 20)
                 .AddRange("twenties", 21, 29)
                 .AddRange("thirties", 31, 39);
+        });
+
+    // Or use PostgreSQL HASH partitioning and split the users over multiple tables
+    opts.Schema.For<User>()
+        .PartitionOn(x => x.UserName, x =>
+        {
+            x.ByHash("one", "two", "three");
+        });
+
+    // Or use PostgreSQL LIST partitioning and split the users over multiple tables
+    opts.Schema.For<Issue>()
+        .PartitionOn(x => x.Status, x =>
+        {
+            // There is a default partition for anything that doesn't fall into
+            // these specific values
+            x.ByList()
+                .AddPartition("completed", "Completed")
+                .AddPartition("new", "New");
         });
 
     // Or use pg_partman to manage partitioning outside of Marten
@@ -141,26 +159,13 @@ var store = DocumentStore.For(opts =>
             // or instead with list
 
             x.ByExternallyManagedListPartitions();
-        });
 
-    // Or use PostgreSQL HASH partitioning and split the users over multiple tables
-    opts.Schema.For<User>()
-        .PartitionOn(x => x.UserName, x =>
-        {
-            x.ByHash("one", "two", "three");
-        });
+            // or instead with hash
 
-    opts.Schema.For<Issue>()
-        .PartitionOn(x => x.Status, x =>
-        {
-            // There is a default partition for anything that doesn't fall into
-            // these specific values
-            x.ByList()
-                .AddPartition("completed", "Completed")
-                .AddPartition("new", "New");
+            x.ByExternallyManagedHashPartitions();
         });
 
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partitioning_documents_on_duplicate_fields.cs#L35-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_partitioning_by_document_member' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partitioning_documents_on_duplicate_fields.cs#L35-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_partitioning_by_document_member' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

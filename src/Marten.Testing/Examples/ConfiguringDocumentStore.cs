@@ -83,11 +83,11 @@ public class ConfiguringDocumentStore
         {
             _.Connection("some connection string");
 
-            // Newtonsoft - Enabled by default
-            _.UseNewtonsoftForSerialization(); // [!code ++]
-
-            // System.Text.Json - Opt in
+            // System.Text.Json - Enabled by default
             _.UseSystemTextJsonForSerialization(); // [!code ++]
+
+            // Newtonsoft - Opt-in
+            _.UseNewtonsoftForSerialization(); // [!code ++]
         });
         #endregion
     }
@@ -123,11 +123,11 @@ public class ConfiguringDocumentStore
 
         var store = DocumentStore.For(_ =>
         {
-            // Newtonsoft // [!code focus:5]
-            _.UseNewtonsoftForSerialization(enumStorage: EnumStorage.AsString);
-
-            // STJ
+            // STJ // [!code focus:5]
             _.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
+
+            // Newtonsoft
+            _.UseNewtonsoftForSerialization(enumStorage: EnumStorage.AsString);
         });
         #endregion
     }
@@ -138,11 +138,11 @@ public class ConfiguringDocumentStore
 
         var store = DocumentStore.For(_ =>
         {
-            // Newtonsoft // [!code focus:5]
-            _.UseNewtonsoftForSerialization(casing: Casing.CamelCase);
-
-            // STJ
+            // STJ // [!code focus:5]
             _.UseSystemTextJsonForSerialization(casing: Casing.CamelCase);
+
+            // Newtonsoft
+            _.UseNewtonsoftForSerialization(casing: Casing.CamelCase);
         });
         #endregion
     }

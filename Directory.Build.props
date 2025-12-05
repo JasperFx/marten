@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
     <PropertyGroup>
-        <Version>8.16.1</Version>
-        <LangVersion>12.0</LangVersion>
+        <Version>8.16.2</Version>
+        <LangVersion>13.0</LangVersion>
         <Authors>Jeremy D. Miller;Babu Annamalai;Jaedyn Tonee</Authors>
         <PackageIconUrl>https://martendb.io/logo.png</PackageIconUrl>
         <PackageProjectUrl>https://martendb.io/</PackageProjectUrl>
@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.25" PrivateAssets="All" />
+        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.39" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

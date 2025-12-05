@@ -9,7 +9,7 @@ Using the (admittedly contrived) example from Marten's tests, say that you want 
 different queries for "IsBlue()." First, write the method you want to be recognized by Marten's Linq support:
 
 <!-- snippet: sample_IsBlue -->
-<a id='snippet-sample_isblue'></a>
+<a id='snippet-sample_IsBlue'></a>
 ```cs
 public class IsBlue: IMethodCallParser
 {
@@ -29,7 +29,7 @@ public class IsBlue: IMethodCallParser
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L82-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isblue' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/custom_linq_extensions.cs#L82-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IsBlue' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note a couple things here:

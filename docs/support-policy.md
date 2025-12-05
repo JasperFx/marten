@@ -1,6 +1,6 @@
 # Support Policy
 
-Community support (via our Github & Discord) is offered for the current major version of Marten. The previous major version is supported for high-priority bug and security patches for up to 6 months after a new major version is released. 
+Community support (via our Github & Discord) is offered for the current major version of Marten. The previous major version is supported for high-priority bug and security patches for up to 6 months after a new major version is released.
 
 Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) are granted priority for questions, feature requests and bug fixes. Support for previous versions of Marten is also available under these plans.
 
@@ -15,18 +15,17 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 
 ## .NET Version Compatibility
 
-Marten aligns with the [.NET Core Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten currently targets `net8.0`, `net9.0`.
+Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten currently targets `net8.0`, `net9.0`, `net10.0`.
 
-| Marten Version |   .NET Framework   |   .NET Core 3.1    |       .NET 5       |       .NET 6       |       .NET 7       |       .NET 8       |       .NET 9       |
-| -------------- | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: |
-| 8              |        :x:         |        :x:         |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: |
-| 7              |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |
-| 6              |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |
-| 5              |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |
-| 4              |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |
-| 3              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |        :x:         |
+| Marten Version |       .NET 5       |       .NET 6       |       .NET 7       |       .NET 8       |       .NET 9       |      .NET 10       |
+| -------------- | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: |
+| 8              |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| 7              |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |
+| 6              |        :x:         | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |
+| 5              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
+| 4              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
 
 ## Postgres Version Compatibility
 
 Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 13 and onwards, but our continuous integration
-builds target PostgreSQL 15 & 16. We recommend at least version 15, and Marten might require more recent JSONB features in V9.
+builds target PostgreSQL 15 & 16. We recommend at least version 15, as Marten might require more recent JSONB features in v9.
