@@ -25,7 +25,6 @@ Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/pla
 | 5              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
 | 4              | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |        :x:         |
 
-
 ## Postgres Version Compatibility
 
 Marten aligns with the [PostgreSQL Support Lifecycle](https://www.postgresql.org/support/versioning/) to determine platform support. Marten currently targets versions 13 and onwards, but our continuous integration
