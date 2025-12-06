@@ -1,4 +1,4 @@
-name: build_net8.0 pg15 Json.NET
+name: Build & Test - NET8 - PG15 - Newtonsoft
 
 on:
   push:
@@ -21,11 +21,11 @@ on:
 env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  node_version: 16.x
+  node_version: 24.x
   pg_db: marten_testing
   pg_user: postgres
   CONFIGURATION: Release
-  FRAMEWORK: net9.0
+  FRAMEWORK: net8.0
   DISABLE_TEST_PARALLELIZATION: true
   DEFAULT_SERIALIZER: "Newtonsoft"
   NUKE_TELEMETRY_OPTOUT: true
@@ -52,22 +52,15 @@ jobs:
           --user postgres
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install .NET 8.0.x
-        uses: actions/setup-dotnet@v3
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
-          
-      - name: Install .NET 9.0.x
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 9.0.x
-          
-      - name: Install .NET 10.0.x
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
       - name: Install .NET Aspire workload
         run: |
@@ -75,7 +68,7 @@ jobs:
           dotnet workload install aspire
 
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.node_version }}
 
