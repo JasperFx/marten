@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
+        <LangVersion>14</LangVersion>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
-        <LangVersion>13</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
