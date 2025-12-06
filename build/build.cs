@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -20,7 +21,7 @@ class Build : NukeBuild
     [Parameter("Configuration to build - Default is 'Debug' (local) or 'Release' (server)")]
     readonly Configuration Configuration = IsLocalBuild ? Configuration.Debug : Configuration.Release;
 
-    [Solution] readonly Solution Solution;
+    [Solution(GenerateProjects = true)] readonly Solution Solution;
     [Parameter] readonly bool DisableTestParallelization = true;
     [Parameter]readonly string Framework;
     [Parameter] readonly string Profile;
@@ -55,7 +56,7 @@ class Build : NukeBuild
 
     Target NpmInstall => _ => _
         .Executes(() => NpmTasks.NpmInstall(c => c
-            .SetProcessArgumentConfigurator(args => args.Add("--loglevel=error"))));
+            .AddProcessAdditionalArguments("--loglevel=error")));
    
     Target Compile => _ => _
         .DependsOn(Restore)
@@ -233,10 +234,10 @@ class Build : NukeBuild
         });
 
     Target InitDb => _ => _
-        .Executes(() =>
+        .Executes(async () =>
         {
             ProcessTasks.StartProcess("docker", "compose up -d");
-            WaitForDatabaseToBeReady();
+            await WaitForDatabaseToBeReady();
         });
     
     Target InstallMdSnippets => _ => _
@@ -371,7 +372,7 @@ class Build : NukeBuild
             }
         }
 
-        var marten = Solution.GetProject("Marten").Path;
+        var marten = Solution.Marten.Path;
         foreach (var nuget in Nugets)
         {
             DotNet($"remove {marten} package {nuget}");
@@ -388,7 +389,7 @@ class Build : NukeBuild
             }
         }
         
-        var marten = Solution.GetProject("Marten").Path;
+        var marten = Solution.Marten.Path;
         foreach (var nuget in Nugets)
         {
             DotNet($"add {marten} package {nuget} --prerelease");
@@ -403,7 +404,7 @@ class Build : NukeBuild
         
         if (Nugets.Contains(projectName))
         {
-            var marten = Solution.GetProject("Marten").Path;
+            var marten = Solution.Marten.Path;
             DotNet($"add {marten} reference {path}");
         }
     }
@@ -414,7 +415,7 @@ class Build : NukeBuild
 
         if (Nugets.Contains(projectName))
         {
-            var marten = Solution.GetProject("Marten").Path;
+            var marten = Solution.Marten.Path;
             DotNet($"remove {marten} reference {path}");
         }
         
@@ -424,23 +425,21 @@ class Build : NukeBuild
 
     }
 
-    private void WaitForDatabaseToBeReady()
+    private async Task WaitForDatabaseToBeReady()
     {
         var attempt = 0;
         while (attempt < 10)
             try
             {
-                using (var conn = new Npgsql.NpgsqlConnection(ConnectionString + ";Pooling=false"))
-                {
-                    conn.Open();
+                await using var conn = new Npgsql.NpgsqlConnection(ConnectionString + ";Pooling=false");
+                await conn.OpenAsync();
 
-                    var cmd = conn.CreateCommand();
-                    cmd.CommandText = "SELECT 1";
-                    cmd.ExecuteNonQuery();
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT 1";
+                await cmd.ExecuteNonQueryAsync();
 
-                    Log.Information("Postgresql is up and ready!");
-                    break;
-                }
+                Log.Information("Postgresql is up and ready!");
+                break;
             }
             catch (Exception ex)
             {
