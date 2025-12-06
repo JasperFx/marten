@@ -214,7 +214,7 @@ class Build : NukeBuild
         .Executes(() =>
         {
             // It's actually important to do a codegen write a 2nd time to prevent a temporary bug
-            var codegenCommands = new[] { "codegen delete", "codegen write", "codegen test", "codegen write" };
+            var codegenCommands = new string[][] { ["codegen", "delete"], ["codegen", "write"], ["codegen","test"], ["codegen","write"] };
             foreach (var command in codegenCommands)
             {
                 DotNetRun(s => s
