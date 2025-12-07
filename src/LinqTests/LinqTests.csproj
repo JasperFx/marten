@@ -2,7 +2,16 @@
     <PropertyGroup>
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <LangVersion>12</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
         <LangVersion>13</LangVersion>
+    </PropertyGroup>
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <LangVersion>14</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
