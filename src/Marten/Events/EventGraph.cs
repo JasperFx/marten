@@ -185,6 +185,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         {
             var mapping = EventMappingFor(e.EventType);
             e.EventTypeName = mapping.EventTypeName;
+            e.DotNetTypeName = mapping.DotNetTypeName;
             return e;
         }
         else
