@@ -147,11 +147,10 @@ public class statistics_and_paged_list: IntegrationContext
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
         count.ShouldBeGreaterThan(0);
 
-        QueryStatistics stats = null;
 
         var batch = theSession.CreateBatchQuery();
 
-        var list = batch.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+        var list = batch.Query<Target>().Stats(out QueryStatistics stats).Where(x => x.Number > 10).Take(5)
             .ToList();
 
         await batch.Execute();
@@ -173,11 +172,10 @@ public class statistics_and_paged_list: IntegrationContext
         // parameter to the call below, so we
         // have to declare the "stats" object
         // first
-        QueryStatistics stats = null;
 
         var list = await theSession
             .Query<Target>()
-            .Stats(out stats)
+            .Stats(out QueryStatistics stats)
             .Where(x => x.Number > 10).Take(5)
             .ToListAsync();
 
@@ -196,9 +194,7 @@ public class statistics_and_paged_list: IntegrationContext
         var count = await theSession.Query<Target>().Where(x => x.Number > 10).CountAsync();
         count.ShouldBeGreaterThan(0);
 
-        QueryStatistics stats = null;
-
-        var list = await theSession.Query<Target>().Stats(out stats).Where(x => x.Number > 10).Take(5)
+        var list = await theSession.Query<Target>().Stats(out QueryStatistics stats).Where(x => x.Number > 10).Take(5)
             .ToListAsync();
 
         list.Any().ShouldBeTrue();
