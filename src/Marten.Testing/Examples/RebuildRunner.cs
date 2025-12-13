@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,7 +28,7 @@ public class ShopProjection: SingleStreamProjection<Guid, Shop>
 public class RebuildRunner
 {
     #region sample_rebuild-single-projection
-    private IDocumentStore _store;
+    private readonly IDocumentStore _store;
 
     public RebuildRunner(IDocumentStore store)
     {
