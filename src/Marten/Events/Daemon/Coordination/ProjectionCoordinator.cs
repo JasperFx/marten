@@ -207,15 +207,6 @@ public class ProjectionCoordinator: IProjectionCoordinator
                     {
                         var daemon = resolveDaemon(set);
 
-                        // If any agents are known to be faulted, we need to just shut
-                        // down everything and release the lock, then let some other node pick that up
-                        if (anyAgentsAreFaulted(set, daemon))
-                        {
-                            _logger.LogWarning("A projection agent has encountered an unrecoverable exception. Shutting down projection agents and releasing lock.");
-                            await stopAndReleaseProjectionSet(set, daemon).ConfigureAwait(false);
-                            continue;
-                        }
-
                         // check if it's still running
                         await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
                         continue;
@@ -285,30 +276,6 @@ public class ProjectionCoordinator: IProjectionCoordinator
         }
     }
 
-    private async Task stopAndReleaseProjectionSet(IProjectionSet set, IProjectionDaemon daemon)
-    {
-        // No, shut them all down!!!!
-        foreach (var shardName in set.Names)
-        {
-            await daemon.StopAgentAsync(shardName.Identity).ConfigureAwait(false);
-        }
-
-        await Distributor.ReleaseLockAsync(set).ConfigureAwait(false);
-    }
-
-    private static bool anyAgentsAreFaulted(IProjectionSet set, IProjectionDaemon daemon)
-    {
-        foreach (var name in set.Names)
-        {
-            var status = daemon.StatusFor(name.Identity);
-            if (status == AgentStatus.Faulted)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     private async Task startAgentsIfNecessaryAsync(IProjectionSet set,
         IProjectionDaemon daemon, CancellationToken stoppingToken)
