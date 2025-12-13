@@ -207,16 +207,17 @@ public class ProjectionCoordinator: IProjectionCoordinator
                     {
                         var daemon = resolveDaemon(set);
 
-                        // If any agents are known to be stopped, we need to just shut
+                        // If any agents are known to be faulted, we need to just shut
                         // down everything and release the lock, then let some other node pick that up
-                        if (anyAgentsAreStoppped(set, daemon))
+                        if (anyAgentsAreFaulted(set, daemon))
                         {
+                            _logger.LogWarning("A projection agent has encountered an unrecoverable exception. Shutting down projection agents and releasing lock.");
                             await stopAndReleaseProjectionSet(set, daemon).ConfigureAwait(false);
+                            continue;
                         }
 
                         // check if it's still running
                         await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
-
                         continue;
                     }
 
@@ -228,6 +229,13 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
                             // check if it's still running
                             await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            // We don't hold the lock, so we might've lost it due to a postgres outage. We should make sure any agents are no longer running on this node.
+                            var daemon = resolveDaemon(set);
+
+                            await stopAgentsIfNecessaryAsync(set, daemon).ConfigureAwait(false);
                         }
                     }
                     catch (Exception e)
@@ -288,12 +296,12 @@ public class ProjectionCoordinator: IProjectionCoordinator
         await Distributor.ReleaseLockAsync(set).ConfigureAwait(false);
     }
 
-    private bool anyAgentsAreStoppped(IProjectionSet set, IProjectionDaemon daemon)
+    private static bool anyAgentsAreFaulted(IProjectionSet set, IProjectionDaemon daemon)
     {
         foreach (var name in set.Names)
         {
             var status = daemon.StatusFor(name.Identity);
-            if (status == AgentStatus.Stopped)
+            if (status == AgentStatus.Faulted)
             {
                 return true;
             }
@@ -318,6 +326,19 @@ public class ProjectionCoordinator: IProjectionCoordinator
             {
                 await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
             }
+        }
+    }
+
+    private async Task stopAgentsIfNecessaryAsync(IProjectionSet set, IProjectionDaemon daemon)
+    {
+        foreach (var shardName in set.Names)
+        {
+            var status = daemon.StatusFor(shardName.Identity);
+            if (status == AgentStatus.Running)
+            {
+                await daemon.StopAgentAsync(shardName.Identity).ConfigureAwait(false);
+            }
+
         }
     }
 
