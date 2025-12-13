@@ -102,11 +102,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
     public async Task PauseAsync()
     {
         _logger.LogInformation("Pausing ProjectionCoordinator");
-#if NET8_0_OR_GREATER
         await _cancellation.CancelAsync().ConfigureAwait(false);
-#else
-        _cancellation.Cancel();
-#endif
 
         await pauseDistributor().ConfigureAwait(false);
 
