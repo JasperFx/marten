@@ -1,4 +1,6 @@
-﻿using Marten;
+﻿using JasperFx;
+using JasperFx.Core.Reflection;
+using Marten;
 using Marten.Internal.CodeGeneration;
 using Marten.Testing.Harness;
 using Npgsql;

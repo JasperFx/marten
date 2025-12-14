@@ -1,30 +1,38 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten.Storage;
 using Medallion.Threading.Postgres;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon.Coordination;
 
-internal class AdvisoryLock : IAsyncDisposable
+internal class AdvisoryLock : IAdvisoryLock
 {
-    private readonly IMartenDatabase _database;
+    private readonly string _databaseName;
     private readonly ILogger _logger;
     private readonly Dictionary<int, PostgresDistributedLockHandle> _handles = new();
     private readonly LightweightCache<int, PostgresDistributedLock> _distributedLockProviders;
 
-    public AdvisoryLock(IMartenDatabase database, ILogger logger)
+    public AdvisoryLock(NpgsqlDataSource dataSource, ILogger logger, string databaseName)
     {
-        _database = database;
         _logger = logger;
 
         _distributedLockProviders = new LightweightCache<int, PostgresDistributedLock>(
             (lockId => new PostgresDistributedLock(new PostgresAdvisoryLockKey(lockId),
-                ((MartenDatabase)_database).DataSource)));
+                EnsurePrimaryWhenMultiHost(dataSource))));
+        _databaseName = databaseName;
+    }
+
+    private static NpgsqlDataSource EnsurePrimaryWhenMultiHost(NpgsqlDataSource source)
+    {
+        if (source is NpgsqlMultiHostDataSource multiHostDataSource)
+            return multiHostDataSource.WithTargetSession(TargetSessionAttributes.ReadWrite);
+
+        return source;
     }
 
     public bool HasLock(int lockId)
@@ -54,20 +62,23 @@ internal class AdvisoryLock : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        try
+        foreach (var i in _handles.Keys)
         {
-            foreach (var i in _handles.Keys)
+            if (_handles.Remove(i, out var handle))
             {
-                if (_handles.Remove(i, out var handle))
+                try
                 {
                     await handle.DisposeAsync().ConfigureAwait(false);
                 }
+                catch (InvalidOperationException)
+                {
+                    // Underlying connection is already closed and there's nothing to dispose
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError(e, "Error trying to dispose of advisory locks for database {Identifier}", _databaseName);
+                }
             }
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error trying to dispose of advisory locks for database {Identifier}",
-                _database.Identifier);
         }
     }
 }

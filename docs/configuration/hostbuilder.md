@@ -161,7 +161,11 @@ services.AddMarten()
 
 ## Using a Multi-Host Data Source <Badge type="tip" text="7.11" />
 
-Marten includes support for `NpgsqlMultiHostDataSource`, allowing you to spread queries over your read replicas, potentially improving throughput in read-heavy applications. To get started, your connection string should specify your primary host along a list of replicas, per [Npgsql documentation](https://www.npgsql.org/doc/failover-and-load-balancing.html).
+Marten includes support for `NpgsqlMultiHostDataSource`, allowing you to spread queries over your read replicas, potentially improving throughput in read-heavy applications. To get started, your connection string should specify your primary host along a list of replicas, per [Npgsql documentation](https://www.npgsql.org/doc/failover-and-load-balancing.html):
+
+```ps
+Host=my-db-host.com,my-db-host-readonly-1.com;Database=marten;...
+```
 
 Configuring `NpgsqlMultiHostDataSource` is very similar to a normal data source, simply swapping it for `AddMultiHostNpgsqlDataSource`. Marten will always use the primary node for queries with a `NpgsqlMultiHostDataSource` unless you explicitly opt to use the standby nodes. You can adjust what type of node Marten uses for querying via the `MultiHostSettings` store options:
 
