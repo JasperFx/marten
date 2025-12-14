@@ -7,6 +7,7 @@ using JasperFx.Core;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Coordination;
 
