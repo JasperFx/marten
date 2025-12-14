@@ -22,7 +22,7 @@ public class SingleTenantProjectionDistributor : IProjectionDistributor
         var logger = _store.Options.LogFactory?.CreateLogger<AdvisoryLock>() ??
                      _store.Options.DotNetLogger ?? NullLogger<AdvisoryLock>.Instance;
 
-        _locks = new(db => new AdvisoryLock(db, logger));
+        _locks = new(db => new AdvisoryLock(((MartenDatabase)db).DataSource, logger, db.Id.Identity));
     }
 
     public ValueTask<IReadOnlyList<IProjectionSet>> BuildDistributionAsync()

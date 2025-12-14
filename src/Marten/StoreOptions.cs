@@ -1080,14 +1080,14 @@ public interface IReadOnlyAdvancedOptions
 public sealed class MultiHostSettings
 {
     /// <summary>
-    /// Sets the target session attributes for read-only sessions. Defaults to <see cref="TargetSessionAttributes.Primary"/>
+    /// Sets the target session attributes for read-only sessions. Defaults to <see cref="TargetSessionAttributes.ReadWrite"/>
     /// </summary>
-    public TargetSessionAttributes ReadSessionPreference { get; set; } = TargetSessionAttributes.Primary;
+    public TargetSessionAttributes ReadSessionPreference { get; set; } = TargetSessionAttributes.ReadWrite;
 
     /// <summary>
-    /// Sets the target session attributes for write sessions. Defaults to <see cref="TargetSessionAttributes.Primary"/>
+    /// Sets the target session attributes for write sessions. Defaults to <see cref="TargetSessionAttributes.ReadWrite"/>
     /// </summary>
-    public TargetSessionAttributes WriteSessionPreference { get; set; } = TargetSessionAttributes.Primary;
+    public TargetSessionAttributes WriteSessionPreference { get; set; } = TargetSessionAttributes.ReadWrite;
 }
 
 public class AdvancedOptions: IReadOnlyAdvancedOptions

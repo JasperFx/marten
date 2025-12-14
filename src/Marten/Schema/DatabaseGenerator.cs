@@ -64,6 +64,8 @@ public sealed class DatabaseGenerator: IDatabaseCreationExpressions
             {
                 var cstringBuilder = new NpgsqlConnectionStringBuilder(t.ConnectionString);
                 cstringBuilder.Database = "postgres";
+                if(cstringBuilder.Host?.Contains(',') == true)
+                    cstringBuilder.TargetSessionAttributes = "Read-Write";
                 maintenanceDb = cstringBuilder.ToString();
             }
 
