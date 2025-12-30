@@ -24,17 +24,23 @@ namespace Marten.Internal;
 internal class ValueTypeIdentifiedIdentitySetter<TDoc, TSimple, TValueType>: IIdentitySetter<TDoc, TSimple>
 {
     private readonly Func<TSimple, TValueType> _converter;
+    private readonly Func<TValueType, TSimple> _unwrapper;
 
     public ValueTypeIdentifiedIdentitySetter(ValueTypeInfo valueTypeInfo, IDocumentStorage<TDoc, TValueType> inner)
     {
         Inner = inner;
 
         _converter = valueTypeInfo.CreateWrapper<TValueType, TSimple>();
+        _unwrapper = valueTypeInfo.UnWrapper<TValueType, TSimple>();
     }
 
     public void SetIdentity(TDoc document, TSimple identity)
         => Inner.SetIdentity(document, _converter(identity));
 
+    public TSimple Identity(TDoc document)
+    {
+        return _unwrapper(Inner.Identity(document));
+    }
 
     public IIdentitySetter<TDoc, TValueType> Inner { get; }
 }

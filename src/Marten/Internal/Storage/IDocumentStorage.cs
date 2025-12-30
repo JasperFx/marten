@@ -135,7 +135,6 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<
 
 
     TId AssignIdentity(T document, string tenantId, IMartenDatabase database);
-    TId Identity(T document);
     ISqlFragment ByIdFilter(TId id);
     IDeletion HardDeleteForId(TId id, string tenantId);
     NpgsqlCommand BuildLoadCommand(TId id, string tenantId);

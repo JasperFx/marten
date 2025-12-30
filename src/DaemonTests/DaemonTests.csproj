@@ -4,6 +4,7 @@
         <LangVersion>latest</LangVersion>
     </PropertyGroup>
     <ItemGroup>
+        <PackageReference Include="Bogus" Version="35.6.5" />
         <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0"/>

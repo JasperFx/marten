@@ -19,6 +19,7 @@ using Marten.Events.Archiving;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Events.Daemon.Progress;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
@@ -166,18 +167,41 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             throw new ArgumentOutOfRangeException(nameof(subscriptionName));
         }
 
+        if (source is CompositeProjection composite)
+        {
+            foreach (var leafSource in composite.AllProjections())
+            {
+                teardownProjectionStorage(leafSource, session);
+            }
+
+            // Have to do the parent projection too!
+            foreach (var agent in source.Shards())
+            {
+                session.QueueOperation(new DeleteProjectionProgress(Events, agent.Name.Identity));
+            }
+        }
+        else
+        {
+            teardownProjectionStorage(source, session);
+        }
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    private void teardownProjectionStorage(IProjectionSource<IDocumentOperations, IQuerySession> source, IDocumentSession session)
+    {
         if (source.Options.TeardownDataOnRebuild)
         {
             source.Options.Teardown(session);
         }
 
         foreach (var agent in source.Shards())
+        {
             session.QueueOperation(new DeleteProjectionProgress(Events, agent.Name.Identity));
+        }
 
         // Rewind previous DeadLetterEvents because you're going to replay them all anyway
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.Name);
-
-        await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
     public async ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> StartProjectionBatchAsync(
@@ -214,14 +238,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
         var projectionBatch = new ProjectionBatch(session, batch, mode);
 
-        if (range.SequenceFloor == 0)
-        {
-            await batch.Queue.PostAsync(new InsertProjectionProgress(session.Options.EventGraph, range)).ConfigureAwait(false);
-        }
-        else
-        {
-            await batch.Queue.PostAsync(new UpdateProjectionProgress(session.Options.EventGraph, range)).ConfigureAwait(false);
-        }
+        await projectionBatch.RecordProgress(range).ConfigureAwait(false);
 
         return projectionBatch;
     }

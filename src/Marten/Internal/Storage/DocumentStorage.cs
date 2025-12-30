@@ -170,7 +170,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public void SetIdentity(T document, TId identity)
     {
-        _setter(document, identity);
+        _setter?.Invoke(document, identity);
     }
 
     public void SetIdentityFromString(T document, string identityString)

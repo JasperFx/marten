@@ -19,7 +19,6 @@ namespace Marten.Internal.Sessions;
 
 public abstract partial class DocumentSessionBase
 {
-    // TODO fix in IStorageOperations
     public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(string tenantId,
         CancellationToken cancellationToken) where TDoc : notnull where TId : notnull
     {
@@ -29,13 +28,6 @@ public abstract partial class DocumentSessionBase
         var nested = ForTenant(tenantId);
 
         return new ProjectionStorage<TDoc, TId>((DocumentSessionBase)nested, StorageFor<TDoc, TId>());
-    }
-
-    public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(
-        CancellationToken cancellationToken) where TDoc : notnull where TId : notnull
-    {
-        await Database.EnsureStorageExistsAsync(typeof(TDoc), cancellationToken).ConfigureAwait(false);
-        return new ProjectionStorage<TDoc, TId>(this, StorageFor<TDoc, TId>());
     }
 }
 
@@ -51,6 +43,11 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     }
 
     public Type IdType => typeof(TId);
+
+    public TId Identity(TDoc document)
+    {
+        return _storage.Identity(document);
+    }
 
     public string TenantId => _session.TenantId;
     public void HardDelete(TDoc snapshot)
