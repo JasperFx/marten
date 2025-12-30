@@ -1,11 +1,13 @@
 #nullable enable
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Events.Daemon.Progress;
 using Marten.Internal.Sessions;
 using Marten.Services;
 
@@ -24,6 +26,18 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         _batch = batch;
         _mode = mode;
         _eventStorage = session.EventStorage();
+    }
+
+    public async ValueTask RecordProgress(EventRange range)
+    {
+        if (range.SequenceFloor == 0)
+        {
+            await _batch.Queue.PostAsync(new InsertProjectionProgress(_session.Options.EventGraph, range)).ConfigureAwait(false);
+        }
+        else
+        {
+            await _batch.Queue.PostAsync(new UpdateProjectionProgress(_session.Options.EventGraph, range)).ConfigureAwait(false);
+        }
     }
 
     public async Task ExecuteAsync(CancellationToken token)
@@ -89,9 +103,15 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         return new ProjectionStorage<TDoc, TId>(_session, storage);
     }
 
+    private bool _wasDisposed;
+
     public async ValueTask DisposeAsync()
     {
+        if (_wasDisposed) return;
+
         await _session.DisposeAsync().ConfigureAwait(false);
         await _batch.DisposeAsync().ConfigureAwait(false);
+
+        _wasDisposed = true;
     }
 }

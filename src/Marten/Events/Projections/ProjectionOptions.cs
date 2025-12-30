@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
@@ -86,7 +87,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         Action<AsyncOptions>? asyncConfiguration = null
     )
     {
-        var expression = singleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
+        var expression = SingleStreamProjection<T>(ProjectionLifecycle.Live, null, asyncConfiguration);
 
         // Hack to address https://github.com/JasperFx/marten/issues/2610
         _options.Storage.MappingFor(typeof(T)).SkipSchemaGeneration = true;
@@ -109,7 +110,7 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         Action<AsyncOptions>? asyncConfiguration = null
     )
     {
-        return singleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
+        return SingleStreamProjection<T>(lifecycle.Map(), null, asyncConfiguration);
     }
 
     /// <summary>
@@ -129,10 +130,10 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         Action<AsyncOptions>? asyncConfiguration = null
     )
     {
-        return singleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
+        return SingleStreamProjection<T>(lifecycle.Map(), configureProjection, asyncConfiguration);
     }
 
-    private MartenRegistry.DocumentMappingExpression<T> singleStreamProjection<T>(
+    internal MartenRegistry.DocumentMappingExpression<T> SingleStreamProjection<T>(
         ProjectionLifecycle lifecycle,
         Action<ProjectionBase>? configureProjection = null,
         Action<AsyncOptions>? asyncConfiguration = null
@@ -206,4 +207,36 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         // Override the tenancy here
         _options.Schema.For<TDoc>().SingleTenanted();
     }
+
+    /// <summary>
+    /// Find an existing CompositeProjection with the supplied name (case insensitive search!)
+    /// This method will create a new projection with this name if one does not already exist
+    /// </summary>
+    /// <param name="name"></param>
+    /// <param name="configure">Optionally configure the CompositeProjection</param>
+    /// <returns></returns>
+    public void CompositeProjectionFor(string name, Action<CompositeProjection>? configure = null)
+    {
+        var projection = All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+        if (projection != null && projection is not CompositeProjection)
+        {
+            throw new ArgumentOutOfRangeException(nameof(name),
+                "Conflicts with a registered projection of type " + projection.GetType().FullNameInCode());
+        }
+
+        var composite = projection as CompositeProjection;
+        if (composite == null)
+        {
+            composite = new CompositeProjection(name, _options, this);
+            Add(composite, ProjectionLifecycle.Async);
+        }
+
+        configure?.Invoke(composite);
+
+        foreach (var projectionSource in composite.AllProjections())
+        {
+            projectionSource.OverwriteVersion(composite.Version);
+        }
+    }
+
 }
