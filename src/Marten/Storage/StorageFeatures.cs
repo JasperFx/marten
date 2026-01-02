@@ -274,7 +274,8 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
         SystemFunctions.AddSystemFunction(_options, "mt_grams_vector", "text,boolean");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_query", "text,boolean");
         SystemFunctions.AddSystemFunction(_options, "mt_grams_array", "text,boolean");
-        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_append", "jsonb,text[],jsonb,boolean");
+        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_append", "jsonb,text[],jsonb,boolean,jsonb");
+        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_append_key_value", "jsonb,text[],jsonb,boolean");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_copy", "jsonb,text[],text[]");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_duplicate", "jsonb,text[],jsonb");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_fix_null_parent", "jsonb,text[]");
@@ -283,6 +284,7 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_move", "jsonb,text[],text");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_path_to_array", "text,char(1)");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_remove", "jsonb,text[],jsonb");
+        SystemFunctions.AddSystemFunction(_options, "mt_jsonb_remove_key", "jsonb,text[],text");
         SystemFunctions.AddSystemFunction(_options, "mt_jsonb_patch", "jsonb,jsonb");
         SystemFunctions.AddSystemFunction(_options, "mt_safe_unaccent", "boolean,text");
 

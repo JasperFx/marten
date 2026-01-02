@@ -148,11 +148,37 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return this;
     }
 
+    public IPatchExpression<T> Append<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key, TElement element)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append_key_value");
+        patch.Add("key_value", new Dictionary<string, TElement> { { key, element } });
+        patch.Add("path", toPath(expression));
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+
+        return this;
+    }
+
     public IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element)
     {
         var patch = new Dictionary<string, object>();
         patch.Add("type", "append_if_not_exists");
         patch.Add("value", element);
+        patch.Add("path", toPath(expression));
+
+        var possiblyPolymorphic = element!.GetType() != typeof(TElement);
+        _patchSet.Add(new PatchData(Items: patch, possiblyPolymorphic));
+
+        return this;
+    }
+
+    public IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key, TElement element)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "append_key_value_if_not_exists");
+        patch.Add("key_value", new Dictionary<string, TElement> { { key, element } });
         patch.Add("path", toPath(expression));
 
         var possiblyPolymorphic = element!.GetType() != typeof(TElement);
@@ -238,6 +264,18 @@ internal class PatchExpression<T>: IPatchExpression<T>
         return this;
     }
 
+    public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key)
+    {
+        var patch = new Dictionary<string, object>();
+        patch.Add("type", "remove_key");
+        patch.Add("key", key);
+        patch.Add("path", toPath(expression));
+
+        _patchSet.Add(new PatchData(Items: patch, PossiblyPolymorphic: false));
+
+        return this;
+    }
+
     public IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, Expression<Func<TElement, bool>> predicate, RemoveAction action = RemoveAction.RemoveFirst)
     {
         var patch = new Dictionary<string, object>();
@@ -306,7 +344,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
 
     private string toPath(Expression expression)
     {
-        var visitor = new MemberFinder();
+        var visitor = new PatchingMemberFinder();
         visitor.Visit(expression);
 
         // TODO -- don't like this. Smells like duplication in logic
