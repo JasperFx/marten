@@ -128,6 +128,8 @@ public class Target
             target.StringDict = Enumerable.Range(0, _random.Next(0, 10)).ToDictionary(i => $"key{i}", i => $"value{i}");
             target.String = _strings[_random.Next(0, 10)];
             target.OtherGuid = Guid.NewGuid();
+
+            target.ChildrenDictionary.Add("originKey", Random());
         }
 
         return target;
@@ -141,15 +143,25 @@ public class Target
         StringDict = new Dictionary<string, string>();
         StringList = new List<string>();
         GuidDict = new Dictionary<Guid, Guid>();
+        NumberByKey = new Dictionary<string, int>();
+        NumberByGuidKey = new Dictionary<Guid, int>();
+        LongByKey = new Dictionary<string, long>();
+        DoubleByKey = new Dictionary<string, double>();
+        DecimalByKey = new Dictionary<string, decimal>();
+        FloatByKey = new Dictionary<string, float>();
+        ChildrenDictionary = new Dictionary<string, Target>();
     }
 
     public Guid Id { get; set; }
 
     public int Number { get; set; }
+    public Dictionary<string, int> NumberByKey { get; set; }
+    public Dictionary<Guid, int> NumberByGuidKey { get; set; }
 
     public int AnotherNumber { get; set; }
 
     public long Long { get; set; }
+    public Dictionary<string, long> LongByKey { get; set; }
     public string String { get; set; }
 
     public FSharpOption<Guid> FSharpGuidOption { get; set; }
@@ -182,13 +194,16 @@ public class Target
     public string StringField;
 
     public double Double { get; set; }
+    public Dictionary<string, double> DoubleByKey { get; set; }
     public decimal Decimal { get; set; }
+    public Dictionary<string, decimal> DecimalByKey { get; set; }
     public DateTime Date { get; set; }
     public DateTimeOffset DateOffset { get; set; }
     public DateTimeOffset? NullableDateOffset { get; set; }
 
     [JsonInclude] // this is needed to make System.Text.Json happy
     public float Float;
+    public Dictionary<string, float> FloatByKey { get; set; }
 
     public int[] NumberArray { get; set; }
 
@@ -197,6 +212,7 @@ public class Target
     public HashSet<string> TagsHashSet { get; set; }
 
     public Target[] Children { get; set; }
+    public Dictionary<string, Target> ChildrenDictionary { get; set; }
 
     public int? NullableNumber { get; set; }
     public DateTime? NullableDateTime { get; set; }
