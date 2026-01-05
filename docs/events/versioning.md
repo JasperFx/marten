@@ -32,7 +32,7 @@ Depending on the particular business case, we may use a different technique for 
 Read also more in:
 
 - [Oskar Dudycz - How to (not) do the events versioning?](https://event-driven.io/en/how_to_do_event_versioning/),
-- [Oskar Dudycz - Simple patterns for events schema versioning](https://event-driven.io/en/how_to_do_event_versioning/),
+- [Oskar Dudycz - Simple patterns for events schema versioning](https://event-driven.io/en/simple_events_versioning_patterns/),
 - [Greg Young - Versioning in an Event Sourced System](https://leanpub.com/esversioning/read).
 
 ## Event type name mapping
