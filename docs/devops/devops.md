@@ -49,7 +49,7 @@ Note that this is just a shell project that does not contain any classes or code
 The dockerfile for the migration project does not build anything but uses [grate](https://grate-devs.github.io/grate/):
 
 ```dockerfile
-FROM erikbra/grate:1.5.4 as migrations
+FROM gratedevs/grate:1.5.4 as migrations
 
 # Env Vars we need set at image runtime in order to control grate
 ENV MIGRATIONS_CONNECTIONSTRING=""
