@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -191,7 +192,93 @@ public class patching_api: OneOffConfigurationsContext
 
     #endregion
 
+    [Theory]
+    [MemberData(nameof(DictionaryKeyTestCases))]
+    public async Task increment_for_int_from_dictionary(Func<string, Expression<Func<Target, int>>> expressionBuilder, string keyValue)
+    {
+        var target = Target.Random();
+        target.NumberByKey[keyValue] = 6;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(expressionBuilder(keyValue));
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        (await query.LoadAsync<Target>(target.Id)).NumberByKey[keyValue].ShouldBe(7);
+    }
+
+    public static TheoryData<Func<string, Expression<Func<Target, int>>>, string> DictionaryKeyTestCases()
+    {
+        const string key = "whatever";
+        var keyVariable = "whatever";
+        var guid = Guid.NewGuid();
+        var obj = new { Key = "whatever" };
+
+        return new TheoryData<Func<string, Expression<Func<Target, int>>>, string>
+        {
+            // Direct string constant
+            { _ => x => x.NumberByKey["whatever"], "whatever" },
+
+            // Local variable
+            { k => x => x.NumberByKey[k], keyVariable },
+
+            // Const field
+            { _ => x => x.NumberByKey[key], key },
+
+            // Guid.ToString() method call
+            { _ => x => x.NumberByKey[guid.ToString()], guid.ToString() },
+
+            // Object property access
+            { _ => x => x.NumberByKey[obj.Key], obj.Key },
+
+            // String interpolation
+            { _ => x => x.NumberByKey[$"what{"ever"}"], "whatever" },
+
+            // Substring method
+            { _ => x => x.NumberByKey["whatever_suffix".Substring(0, 8)], "whatever" }
+        };
+    }
+
+    [Fact]
+    public async Task increment_for_int_from_dictionary_with_guid_key()
+    {
+        var target = Target.Random();
+        var guidKey = Guid.NewGuid();
+        target.NumberByGuidKey[guidKey] = 6;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.NumberByGuidKey[guidKey]);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        (await query.LoadAsync<Target>(target.Id)).NumberByGuidKey[guidKey].ShouldBe(7);
+    }
+
     #region sample_patching_increment_for_int_with_explicit_increment
+    [Fact]
+    public async Task increment_for_int_with_explicit_increment_from_dictionary()
+    {
+        var target = Target.Random();
+        target.NumberByKey["whatever"] = 6;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.NumberByKey["whatever"], 3);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            (await query.LoadAsync<Target>(target.Id)).NumberByKey["whatever"].ShouldBe(9);
+        }
+    }
+
+    #endregion
+
     [Fact]
     public async Task increment_for_int_with_explicit_increment()
     {
@@ -210,8 +297,6 @@ public class patching_api: OneOffConfigurationsContext
         }
     }
 
-    #endregion
-
     [Fact]
     public async Task increment_for_long()
     {
@@ -227,6 +312,24 @@ public class patching_api: OneOffConfigurationsContext
         using (var query = theStore.QuerySession())
         {
             (await query.LoadAsync<Target>(target.Id)).Long.ShouldBe(14);
+        }
+    }
+
+    [Fact]
+    public async Task increment_for_long_from_dictionary()
+    {
+        var target = Target.Random();
+        target.LongByKey["whatever"] = 13;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.LongByKey["whatever"]);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            (await query.LoadAsync<Target>(target.Id)).LongByKey["whatever"].ShouldBe(14);
         }
     }
 
@@ -249,6 +352,24 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task increment_for_double_from_dictionary()
+    {
+        var target = Target.Random();
+        target.DoubleByKey["whatever"] = 11.2;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.DoubleByKey["whatever"], 2.4);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            (await query.LoadAsync<Target>(target.Id)).DoubleByKey["whatever"].ShouldBe(13.6);
+        }
+    }
+
+    [Fact]
     public async Task increment_for_float()
     {
         var target = Target.Random();
@@ -267,6 +388,24 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task increment_for_float_from_dictionary()
+    {
+        var target = Target.Random();
+        target.FloatByKey["whatever"] = 11.2F;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Increment(x => x.FloatByKey["whatever"], 2.4F);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            (await query.LoadAsync<Target>(target.Id)).FloatByKey["whatever"].ShouldBe(13.6F);
+        }
+    }
+
+    [Fact]
     public async Task increment_for_decimal()
     {
         var target = Target.Random();
@@ -280,6 +419,23 @@ public class patching_api: OneOffConfigurationsContext
         using (var query = theStore.QuerySession())
         {
             (await query.LoadAsync<Target>(target.Id)).Decimal.ShouldBe(13.6m);
+        }
+    }
+
+    [Fact]
+    public async Task increment_for_decimal_from_dictionary()
+    {
+        var target = Target.Random();
+        target.DecimalByKey["whatever"] = 11.2m;
+
+        theSession.Store(target);
+        theSession.Patch<Target>(target.Id).Increment(x => x.DecimalByKey["whatever"], 2.4m);
+        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            (await query.LoadAsync<Target>(target.Id)).DecimalByKey["whatever"].ShouldBe(13.6m);
         }
     }
 
@@ -357,6 +513,31 @@ public class patching_api: OneOffConfigurationsContext
     #endregion
 
     [Fact]
+    public async Task append_complex_element_key_value()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.ChildrenDictionary.Count;
+
+        var key = "whatever";
+        var child = Target.Random();
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Append(x => x.ChildrenDictionary, key, child);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = await query.LoadAsync<Target>(target.Id);
+            target2.ChildrenDictionary.Count.ShouldBe(initialCount + 1);
+
+            target2.ChildrenDictionary.ShouldContainKey(key);
+            target2.ChildrenDictionary[key].Id.ShouldBe(child.Id);
+        }
+    }
+
+    [Fact]
     public async Task append_if_not_exists_complex_element()
     {
         var target = Target.Random(true);
@@ -389,6 +570,42 @@ public class patching_api: OneOffConfigurationsContext
             target2.Children.Length.ShouldBe(initialCount + 2);
 
             target2.Children.Last().Id.ShouldBe(child2.Id);
+        }
+    }
+
+    [Fact]
+    public async Task append_if_not_exists_complex_element_key_value()
+    {
+        var target = Target.Random(true);
+        var initialCount = target.ChildrenDictionary.Count;
+
+        var child = Target.Random();
+        var child2 = Target.Random();
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+        theSession.Patch<Target>(target.Id).Append(x => x.ChildrenDictionary, "value1", child);
+        await theSession.SaveChangesAsync();
+        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.ChildrenDictionary, "value1", child);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = await query.LoadAsync<Target>(target.Id);
+            target2.ChildrenDictionary.Count.ShouldBe(initialCount + 1);
+
+            target2.ChildrenDictionary.ShouldContainKey("value1");
+        }
+
+        theSession.Patch<Target>(target.Id).AppendIfNotExists(x => x.ChildrenDictionary, "value2", child2);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = await query.LoadAsync<Target>(target.Id);
+            target2.ChildrenDictionary.Count.ShouldBe(initialCount + 2);
+
+            target2.ChildrenDictionary["value2"].Id.ShouldBe(child2.Id);
         }
     }
 
@@ -778,6 +995,30 @@ public class patching_api: OneOffConfigurationsContext
     }
 
     #endregion
+
+    [Fact]
+    public async Task remove_complex_element_key()
+    {
+        var target = Target.Random(true);
+
+        var removedKey = "whatever";
+        target.ChildrenDictionary.Add(removedKey, Target.Random());
+        var initialCount = target.ChildrenDictionary.Count;
+
+        theSession.Store(target);
+        await theSession.SaveChangesAsync();
+
+        theSession.Patch<Target>(target.Id).Remove(x => x.ChildrenDictionary, removedKey);
+        await theSession.SaveChangesAsync();
+
+        using (var query = theStore.QuerySession())
+        {
+            var target2 = await query.LoadAsync<Target>(target.Id);
+            target2.ChildrenDictionary.Count.ShouldBe(initialCount - 1);
+
+            target2.ChildrenDictionary.ShouldNotContainKey(removedKey);
+        }
+    }
 
     #region sample_patching_remove_complex_element_by_predicate
 

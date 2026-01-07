@@ -101,6 +101,16 @@ public interface IPatchExpression<T>
     IPatchExpression<T> Append<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
 
     /// <summary>
+    /// Append an element with the specified key to a child dictionary on the persisted document
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="key"></param>
+    /// <param name="element"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Append<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key, TElement element);
+
+    /// <summary>
     /// Append an element to the end of a child collection on the persisted
     /// document if the element does not already exist
     /// </summary>
@@ -109,6 +119,16 @@ public interface IPatchExpression<T>
     /// <param name="element"></param>
     /// <returns></returns>
     IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element);
+
+    /// <summary>
+    /// Append an element with the specified key to a child dictionary on the persisted document if the key does not already exist
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="key"></param>
+    /// <param name="element"></param>
+    /// <returns></returns>
+    IPatchExpression<T> AppendIfNotExists<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key, TElement element);
 
     /// <summary>
     /// Append an element to the end of a child collection on the persisted
@@ -163,6 +183,15 @@ public interface IPatchExpression<T>
     /// <param name="action"></param>
     /// <returns></returns>
     IPatchExpression<T> Remove<TElement>(Expression<Func<T, IEnumerable<TElement>>> expression, TElement element, RemoveAction action = RemoveAction.RemoveFirst);
+
+    /// <summary>
+    /// Remove an element with the specified key from a child dictionary on the persisted document
+    /// </summary>
+    /// <typeparam name="TElement"></typeparam>
+    /// <param name="expression"></param>
+    /// <param name="key"></param>
+    /// <returns></returns>
+    IPatchExpression<T> Remove<TElement>(Expression<Func<T, IDictionary<string, TElement>>> expression, string key);
 
     /// <summary>
     /// Remove element from a child collection by predicate on the persisted document

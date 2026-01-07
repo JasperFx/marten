@@ -28,12 +28,18 @@ BEGIN
                 retval = {databaseSchema}.mt_jsonb_append(retval, patch_path, (patch->'value')::jsonb, FALSE);
             WHEN 'append_if_not_exists' THEN
                 retval = {databaseSchema}.mt_jsonb_append(retval, patch_path, (patch->'value')::jsonb, TRUE, patch_expression);
+            WHEN 'append_key_value' THEN
+                retval = {databaseSchema}.mt_jsonb_append_key_value(retval, patch_path, (patch->'key_value')::jsonb, FALSE);
+            WHEN 'append_key_value_if_not_exists' THEN
+                retval = {databaseSchema}.mt_jsonb_append_key_value(retval, patch_path, (patch->'key_value')::jsonb, TRUE);
             WHEN 'insert' THEN
                 retval = {databaseSchema}.mt_jsonb_insert(retval, patch_path, (patch->'value')::jsonb, (patch->>'index')::integer, FALSE);
             WHEN 'insert_if_not_exists' THEN
                 retval = {databaseSchema}.mt_jsonb_insert(retval, patch_path, (patch->'value')::jsonb, (patch->>'index')::integer, TRUE, patch_expression);
             WHEN 'remove' THEN
                 retval = {databaseSchema}.mt_jsonb_remove(retval, patch_path, COALESCE(patch_expression, (patch->'value')::jsonb));
+            WHEN 'remove_key' THEN
+                retval = {databaseSchema}.mt_jsonb_remove_key(retval, patch_path, (patch->>'key'));
             WHEN 'duplicate' THEN
                 retval = {databaseSchema}.mt_jsonb_duplicate(retval, patch_path, (patch->'targets')::jsonb);
             WHEN 'rename' THEN
