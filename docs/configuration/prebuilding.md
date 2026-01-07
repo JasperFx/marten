@@ -82,6 +82,18 @@ to do every possible storage or loading of the `User` document type. Marten will
    will compile the generated code at runtime and use that dynamic assembly to build the actual object for the `User` document
    type.
 
+::: tip
+If you're using the `Auto` mode in combination with `dotnet watch` you need to disable the watching of
+the `Internal/Generated` folder to avoid application restarts each time codegen writes a new file.
+You can do this by adding the following to the `.csproj` file of your app project.
+
+```xml
+<ItemGroup>
+    <Compile Update="Internal\Generated\**\*.cs" Watch="false" />
+</ItemGroup>
+```
+:::
+
 The hope is that if a development team uses this approach during its internal testing and debugging, the generated code will just be checked into source control and compiled
 into the actually deployed binaries for the system in production deployments. Of course, if the Marten configuration changes,
 you will need to delete the generated code.
