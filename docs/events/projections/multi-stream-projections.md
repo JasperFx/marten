@@ -363,99 +363,353 @@ public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureTogg
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_grouper_with_document_session.cs#L18-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-grouper-with-querysession' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-### Resolving Missing Shared Identifiers with Custom Grouper and Flat Table Projection
+## Grouping events when the aggregate id is not on the event
 
-When follow-up events lack a shared identifier like `ProjectId`, you can combine a **custom `IAggregateGrouper`** with a **flat table projection** to handle grouping efficiently. The flat table projection manages the mapping between `UserId` and `ProjectId` in the database, enabling the custom grouper to resolve the `ProjectId` dynamically.
+It is very common that follow up events do not carry the id of the document you want to update. This can happen when:
 
-#### Step 1: Define the Flat Table Projection
+- the initial event in a single stream still contains enough information to determine the multi stream group key
+- later events in that same single stream no longer carry that information, even though they still need to update the same projected document
 
-Use a `FlatTableProjection` to store the mapping between `UserId` and `ProjectId`:
+Below are three practical patterns to group events into the right `MultiStreamProjection` document without falling back to a full custom `IProjection`.
+
+### Pattern 1, resolve the aggregate id through an inline lookup projection
+
+Use this when events have a stable single stream identifier, but do not carry the multi stream aggregate id.
+
+The idea is:
+
+1. An inline single stream projection maintains a lookup document, or a flat table, that maps from the single stream id to the aggregate id
+2. A custom `IAggregateGrouper` batches lookups for a range of events, then assigns those events to the right aggregate id
 
 ::: tip
-Note that you should register this projection as inline, such that you are sure it's available when projecting starts.
+Register the lookup projection as inline so the mapping is available when the async multi stream projection is grouping events.
 :::
 
+#### Example
+
+Events are produced per external account, and an admin can link that external account to a billing customer later.
+
+<!-- snippet: sample_external-account-link-events -->
+<a id='snippet-sample_external-account-link-events'></a>
 ```cs
-public class UserProjectFlatTableProjection : FlatTableProjection
+public interface IExternalAccountEvent
 {
-    public UserProjectFlatTableProjection() : base("user_project_mapping", SchemaNameSource.EventSchema)
+    string ExternalAccountId { get; }
+}
+
+public record CustomerRegistered(Guid CustomerId, string DisplayName);
+
+public record CustomerLinkedToExternalAccount(Guid CustomerId, string ExternalAccountId);
+
+public record ShippingLabelCreated(string ExternalAccountId): IExternalAccountEvent;
+
+public record TrackingItemSeen(string ExternalAccountId, string Mode): IExternalAccountEvent;
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L18-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Lookup document projected per external account:
+
+<!-- snippet: sample_external-account-link -->
+<a id='snippet-sample_external-account-link'></a>
+```cs
+public class ExternalAccountLink
+{
+    public required string Id { get; set; } // ExternalAccountId
+    public required Guid CustomerId { get; set; }
+}
+
+public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+{
+    public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
     {
-        Table.AddColumn<Guid>("user_id").AsPrimaryKey();
-        Table.AddColumn<Guid>("project_id").NotNull();
-
-        TeardownDataOnRebuild = true;
-
-        Project<UserJoinedProject>(map =>
-        {
-            map.Map(x => x.UserId);
-            map.Map(x => x.ProjectId);
-        });
+        link.Id = e.ExternalAccountId;
+        link.CustomerId = e.CustomerId;
     }
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L35-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-#### Step 2: Use the Mapping in a Custom Grouper
+Custom grouper that resolves `CustomerId` in bulk per event range:
 
-The custom grouper resolves the `ProjectId` dynamically based on the `UserId` stored in the flat table:
-
+<!-- snippet: sample_external-account-link-grouper -->
+<a id='snippet-sample_external-account-link-grouper'></a>
 ```cs
-public class ProjectEventGrouper : IAggregateGrouper<Guid>
+public class ExternalAccountToCustomerGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
     {
-        foreach (var @event in userEvents)
+        var usageEvents = events
+            .Where(e => e.Data is IExternalAccountEvent)
+            .ToList();
+
+        if (usageEvents.Count == 0) return;
+
+        var externalIds = usageEvents
+            .Select(e => ((IExternalAccountEvent)e.Data).ExternalAccountId)
+            .Distinct()
+            .ToList();
+
+        var links = await session.Query<ExternalAccountLink>()
+            .Where(x => externalIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.CustomerId })
+            .ToListAsync();
+
+        var map = links.ToDictionary(x => x.Id, x => x.CustomerId!);
+
+        foreach (var @event in usageEvents)
         {
-            if(@event.Data is TaskCompleted taskCompleted)
-            {
-                var mapping = await session.Query<UserJoinedProject>()
-                    .Where(mapping => mapping.UserId == @event.StreamId)
-                    .SingleAsync();
-                grouping.AddEvent(mapping.ProjectId, @event);
-            }
+            var externalId = ((IExternalAccountEvent)@event.Data).ExternalAccountId;
+
+            if (map.TryGetValue(externalId, out var customerId))
+                grouping.AddEvent(customerId, @event);
         }
     }
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L54-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-grouper' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
 
-## View Projection with Custom Slicer
+The multi stream projection stays focused on applying events:
 
-::: tip
-Note that if you use a custom slicer, you'll be responsible for organizing events and documents by tenant id if your
-document view type should be multi-tenanted.
-:::
-
-If `Identity()` or `Identities()` is too limiting for your event aggregation rules, you can drop down and implement your
-own `IEventSlicer` that can split and assign events to any number of aggregated document views. Below is an example:
-
-<!-- snippet: sample_view-projection-custom-slicer -->
-<a id='snippet-sample_view-projection-custom-slicer'></a>
+<!-- snippet: sample_external-account-link-multi-stream-projection -->
+<a id='snippet-sample_external-account-link-multi-stream-projection'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
+public class CustomerBillingMetrics
 {
-    public UserGroupsAssignmentProjection()
-    {
-        CustomGrouping((_, events, group) =>
-        {
-            group.AddEvents<UserRegistered>(@event => @event.UserId, events);
-            group.AddEvents<MultipleUsersAssignedToGroup>(@event => @event.UserIds, events);
+    public Guid Id { get; set; }
+    public int ShippingLabels { get; set; }
+    public int TrackingEvents { get; set; }
+    public HashSet<string> ModesSeen { get; set; } = [];
+}
 
-            return Task.CompletedTask;
-        });
+public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+{
+    public CustomerBillingProjection()
+    {
+        // notice you can mix custom grouping and Identity<T>(...)
+        Identity<CustomerRegistered>(e => e.CustomerId);
+        CustomGrouping(new ExternalAccountToCustomerGrouper());
     }
 
-    public void Apply(UserRegistered @event, UserGroupsAssignment view)
-    {
-        view.Id = @event.UserId;
-    }
+    public CustomerBillingMetrics Create(CustomerRegistered e)
+        => new() { Id = e.CustomerId };
 
-    public void Apply(MultipleUsersAssignedToGroup @event, UserGroupsAssignment view)
+    public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _)
+        => view.ShippingLabels++;
+
+    public void Apply(CustomerBillingMetrics view, TrackingItemSeen e)
     {
-        view.Groups.Add(@event.GroupId);
+        view.TrackingEvents++;
+        view.ModesSeen.Add(e.Mode);
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/custom_slicer.cs#L19-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-custom-slicer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L90-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+Registration:
+
+<!-- snippet: sample_external-account-link-lookup-registration -->
+<a id='snippet-sample_external-account-link-lookup-registration'></a>
+```cs
+opts.Projections.Add<ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
+opts.Projections.Add<CustomerBillingProjection>(ProjectionLifecycle.Async);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L128-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-lookup-registration' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Pattern 2, keep the linked single stream ids on the projected document, then query by containment
+
+Use this when the number of linked ids per aggregate stays small.
+
+The idea is:
+
+1. The projected document stores the list of linked external ids
+2. The custom grouper finds the owning document by querying that list, then assigns events to that document id
+
+::: warning
+Keep the linked id list bounded. If it can grow without limit, prefer Pattern 1 with a dedicated lookup document or table.
+:::
+
+#### Example
+
+<!-- snippet: sample_external-account-link-id-list-grouper -->
+<a id='snippet-sample_external-account-link-id-list-grouper'></a>
+```cs
+public class CustomerBillingMetrics
+{
+    public Guid Id { get; set; }
+    public List<string> LinkedExternalAccounts { get; set; } = new();
+
+    public int ShippingLabels { get; set; }
+}
+
+public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+{
+    public CustomerBillingProjection()
+    {
+        Identity<CustomerRegistered>(e => e.CustomerId);
+        Identity<CustomerLinkedToExternalAccount>(e => e.CustomerId);
+
+        CustomGrouping(async (session, events, grouping) =>
+        {
+            var labelEvents = events
+                .OfType<IEvent<ShippingLabelCreated>>()
+                .ToList();
+
+            if (labelEvents.Count == 0) return;
+
+            var externalIds = labelEvents
+                .Select(x => x.Data.ExternalAccountId)
+                .Distinct()
+                .ToList();
+
+            var owners = await session.Query<CustomerBillingMetrics>()
+                .Where(x => x.LinkedExternalAccounts.Any(id => externalIds.Contains(id)))
+                .Select(x => new { x.Id, x.LinkedExternalAccounts })
+                .ToListAsync();
+
+            var map = owners
+                .SelectMany(o => o.LinkedExternalAccounts.Select(id => new { ExternalId = id, CustomerId = o.Id }))
+                .ToDictionary(x => x.ExternalId, x => x.CustomerId);
+
+            foreach (var e in labelEvents)
+            {
+                if (map.TryGetValue(e.Data.ExternalAccountId, out var customerId))
+                    grouping.AddEvent(customerId, e);
+            }
+        });
+    }
+
+    public CustomerBillingMetrics Create(CustomerRegistered e)
+        => new() { Id = e.CustomerId };
+
+    public void Apply(CustomerBillingMetrics view, CustomerLinkedToExternalAccount e)
+    {
+        if (!view.LinkedExternalAccounts.Contains(e.ExternalAccountId))
+            view.LinkedExternalAccounts.Add(e.ExternalAccountId);
+    }
+
+    public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _)
+        => view.ShippingLabels++;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L140-L199' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-id-list-grouper' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Pattern 3, emit a derived event that contains the group key, using live aggregation plus the aggregate handler workflow
+
+Use this when you only know enough information near the end of a process, and earlier events should not affect the multi stream read model yet.
+
+The idea is:
+
+1. Let fine grained events flow into their natural single stream
+2. On a terminal command, load the current aggregate state, compute what you need
+3. Return one derived event that contains the aggregate id plus the computed metrics
+4. The multi stream projection becomes a simple `Identity` projection on that derived event
+
+#### Example
+
+Fine grained events:
+
+<!-- snippet: sample_shipment-events -->
+<a id='snippet-sample_shipment-events'></a>
+```cs
+public record ShipmentStarted(string ExternalAccountId, Guid CustomerId);
+
+public record ItemScanned(string ItemId);
+
+public record ShipmentCompleted;
+
+public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L204-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Live aggregate state:
+
+<!-- snippet: sample_shipment -->
+<a id='snippet-sample_shipment'></a>
+```cs
+public class Shipment
+{
+    public required string ExternalAccountId { get; set; }
+    public required Guid CustomerId { get; set; }
+    public HashSet<string> Items { get; set; } = [];
+
+    public Shipment Create(ShipmentStarted e) => new()
+    {
+        ExternalAccountId = e.ExternalAccountId, CustomerId = e.CustomerId
+    };
+
+    public void Apply(ItemScanned e) => Items.Add(e.ItemId);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L220-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Derived event that is projection friendly (includes `CustomerId` again):
+
+<!-- snippet: sample_shipment-events-billed -->
+<a id='snippet-sample_shipment-events-billed'></a>
+```cs
+public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L212-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-billed' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Command endpoint using the aggregate handler workflow, Wolverine loads the aggregate for you, you return the event, Wolverine appends it to the same stream:
+
+```cs
+public record CompleteShipment(int Version);
+
+public static class CompleteShipmentEndpoint
+{
+    [WolverinePost("/api/shipments/{shipmentId:guid}/complete")]
+    public static async Task<ShipmentBilled> Post(CompleteShipment command, [WriteAggregate] Shipment shipment)
+    {
+        return new ShipmentBilled(shipment.CustomerId, shipmentId, shipment.Items.Count);
+    }
+}
+```
+
+Now the multi stream projection is straightforward:
+
+<!-- snippet: sample_shipment-events-multi-stream-projection -->
+<a id='snippet-sample_shipment-events-multi-stream-projection'></a>
+```cs
+public class CustomerBillingMetrics
+{
+    public required Guid Id { get; set; } // CustomerId
+    public required int Shipments { get; set; }
+    public required int Items { get; set; }
+}
+
+public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+{
+    public CustomerBillingProjection()
+    {
+        Identity<ShipmentBilled>(e => e.CustomerId);
+    }
+
+    public CustomerBillingMetrics Create(ShipmentBilled e)
+        => new() { Id = e.CustomerId, Shipments = 1, Items = e.UniqueItems };
+
+    public void Apply(CustomerBillingMetrics view, ShipmentBilled e)
+    {
+        view.Shipments++;
+        view.Items += e.UniqueItems;
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L238-L264' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: tip
+This style matches the [Wolverine aggregate handler workflow](https://wolverinefx.net/tutorials/cqrs-with-marten.html#appending-events-to-an-existing-stream) section about appending events by returning them from your endpoint or handler.
+:::
 
 ## Rollup by Tenant Id <Badge type="tip" text="7.15.0" />
 
