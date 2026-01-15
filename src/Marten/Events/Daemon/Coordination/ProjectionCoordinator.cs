@@ -29,7 +29,7 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
     private readonly ResiliencePipeline _resilience;
     private readonly TimeProvider _timeProvider;
-    private CancellationTokenSource _cancellation;
+    private CancellationTokenSource? _cancellation;
 
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
     private Task? _runner;
@@ -102,7 +102,10 @@ public class ProjectionCoordinator: IProjectionCoordinator
     public async Task PauseAsync()
     {
         _logger.LogInformation("Pausing ProjectionCoordinator");
-        await _cancellation.CancelAsync().ConfigureAwait(false);
+        if (_cancellation != null)
+        {
+            await _cancellation.CancelAsync().ConfigureAwait(false);
+        }
 
         await pauseDistributor().ConfigureAwait(false);
 
