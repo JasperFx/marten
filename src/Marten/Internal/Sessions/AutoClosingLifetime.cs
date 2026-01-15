@@ -20,6 +20,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 {
     private readonly SessionOptions _options;
     private readonly IMartenDatabase _database;
+    private readonly ConnectionUsage _readerConnectionUsage;
 
     public AutoClosingLifetime(SessionOptions options, StoreOptions storeOptions)
     {
@@ -30,6 +31,10 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         _database = options.Tenant!.Database;
 
         CommandTimeout = _options.Timeout ?? storeOptions.CommandTimeout;
+        _readerConnectionUsage =
+            options.Mode == CommandRunnerMode.ReadOnly
+            ? ConnectionUsage.Read
+            : ConnectionUsage.ReadWrite;
     }
 
     public int CommandTimeout { get; }
@@ -43,7 +48,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     {
 
     }
-
 
     public int Execute(NpgsqlCommand cmd)
     {
@@ -102,7 +106,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(ConnectionUsage.Read);
+        var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
 
         try
@@ -126,7 +130,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(ConnectionUsage.Read);
+        var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         try
@@ -150,7 +154,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(ConnectionUsage.Read);
+        var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
 
         try
@@ -173,7 +177,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(batch);
 
         // Do NOT use a using block here because we're returning the reader
-        var conn = _database.CreateConnection(ConnectionUsage.Read);
+        var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         try
@@ -296,14 +300,6 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 foreach (var page in pages)
                 {
                     var batch = page.Compile();
-
-                    foreach (var batchCommand in batch.BatchCommands)
-                    {
-                        if (batchCommand.CommandText.IsEmpty())
-                        {
-                            Debug.WriteLine("what the hell?");
-                        }
-                    }
 
                     batch.Timeout = CommandTimeout;
                     batch.Connection = conn;

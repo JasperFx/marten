@@ -186,11 +186,9 @@ services.AddMarten(x =>
 <!-- endSnippet -->
 
 ::: warning
-Marten will only use your read node preference with user queries (using IQuerySession) that are using a Marten-managed lifetime. 
+Marten will only use your read node preference with queries run with `IQuerySession` that are using a Marten-managed connection lifetime. 
 
-Internal queries, including the async daemon, will always use your primary node for reliability.
-
-Ensure your replication delay is acceptable as you risk returning outdated queries.
+Queries executed via `IDocumentSession`, alongside internal queries (ie async daemon), will always use your primary node to ensure write-side consistency.
 :::
 
 ## Composite Configuration with ConfigureMarten()
