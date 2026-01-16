@@ -1,12 +1,112 @@
 # Projections
 
-Marten has a strong model for user-defined projections of the raw event data. Projections are used within Marten to create read-side views of the raw event data.
+::: tip
+The CQRS style of architecture does not require Event Sourcing, and Event Sourcing can technically be used without CQRS,
+but the two concepts go together very well and our documentation pretty well assumes you're going to use Marten within
+a CQRS architecture.
+:::
+
+So you've made the decision to use all the power of Event Sourcing to capture all the state changes in your system as first class events
+and that's now your system of record. Now you have all of these little blobs of JSON floating around your database that represent
+state changes, but wouldn't it be nice to actually know what the current state of the system really is? And have that information
+in regular old .NET objects that are easy to consume in your code, or maybe even in plain old flat database tables for easy
+reporting?
+
+That's where Marten's projection subsystem comes into play:
+
+![Marten Projections](/images/projections.png "Marten Projections")
+
+To explain projections, let's think about the *why*, *how*, and *when* of projections. 
+
+As implied by the diagram above, the **role** of a projection in your system fits into one of the buckets below:
+
+A "write model" is used by command handlers in your system to support decision making. Because this information absolutely needs
+to be strongly consistent with the current state of the captured events, you might well strip down the projected model to only
+the information your command handlers need. 
+
+A "read model" is information that is supplied to clients of your system like user interfaces or other systems. While there's
+actually no real mechanical difference between a "read model" and a "write model" (and it's perfectly fine to use the same .NET types
+for both roles in some cases), the "read model" is often more rich in the information it relays. For a common example, a "write model"
+may omit the names of people involved in an activity and only refer to raw identifiers while a "read model" for a user interface
+will include the related names and contact information for the people related to the system state.
+
+By "query model," I really just mean a read-only view of the current event state that is persisted in the database in such a way
+(denormalized?) where it is mechanically simple for your system to use LINQ or SQL queries against the system state for reporting
+or dashboard type screens.
+
+::: tip
+Arguably the single biggest advantage of Marten as an Event Sourcing solution over many other Event Stores is how seamless the integration is between
+Marten's "PostgreSQL as Document Database" features and the Event Sourcing storage. 
+:::
+
+As for "how" projections in Marten work, at a high level the built in projections are taking the raw event data and doing 
+one of:
+
+1. Query the raw event data into memory, and use those events to build up an in memory .NET object that aggregates the state of those events. This is what we'll refer to as [Live Aggregation](/events/projections/live-aggregates)
+   in the rest of the documentation
+2. Aggregate or translate the raw event data into .NET objects that are persisted as [Marten documents](./documents/) where they can be queried, loaded, or even deleted
+   with all of the normal Marten document database features. 
+3. Aggregate or translate the raw event data into flat tables in the underlying PostgreSQL database because hey, PostgreSQL is an outstanding relational database and there are plenty of use cases where that's probably your best approach. This is what we refer to as [Flat Table Projections](/events/projections/flat).
+
+Next, let's talk about *when* projections are calculated by discussing Marten's concept of `ProjectionLifecycle`. 
+
+Marten varies a little bit in that projections can be executed with three different lifecycles as shown in the code below:
+
+<!-- snippet: sample_registering_projections_with_different_lifecycles -->
+<a id='snippet-sample_registering_projections_with_different_lifecycles'></a>
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection(builder.Configuration.GetConnectionString("marten"));
+
+    // Just in case you need Marten to "know" about a projection that will
+    // only be calculated "Live", you can register it upfront
+    opts.Projections.Add<MySpecialProjection>(ProjectionLifecycle.Live);
+
+    // Or instead, we want strong consistency at all times
+    // so that the stored projection documents always exactly reflect
+    // the
+    opts.Projections.Add<MySpecialProjection>(ProjectionLifecycle.Inline);
+
+    // Or even differently, we can live with eventual consistency and
+    // let Marten use its "Async Daemon" to continuously update the stored
+    // documents being built out by our projection in the background
+    opts.Projections.Add<MySpecialProjection>(ProjectionLifecycle.Async);
+
+    // Just for the sake of completeness, "self-aggregating" types
+    // can be registered as projections in Marten with this syntax
+    // where "Snapshot" now means "a version of the projection from the events"
+    opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Inline);
+    opts.Projections.Snapshot<QuestParty>(SnapshotLifecycle.Async);
+
+    // This is the equivalent of ProjectionLifecycle.Live
+    opts.Projections.LiveStreamAggregation<QuestParty>();
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/RegisteringProjections.cs#L14-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_projections_with_different_lifecycles' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+For more information, see:
+
+1. [Inline Projections](/events/projections/inline) (`ProjectionLifecycle.Inline`) are executed at the time of event capture and in the same unit of work to persist the projected documents
+1. [Live Aggregations](/events/projections/live-aggregates) (`ProjectionLifecycle.Live`) are executed on demand by loading event data and creating the projected view in memory without persisting the projected documents
+1. [Asynchronous Projections](/events/projections/async-daemon) (`ProjectionLifecycle.Async`) are executed by a background process (eventual consistency)
+
+For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
+
+- [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
+- [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
+
+Now, let's move on to *how* you build projections in Marten with a discussion of...
 
 ## Choosing a Projection Type
 
 :::tip
 Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions. The aggregation conventions are best explained in the [Aggregate Projections](/events/projections/aggregate-projections) page.
 :::
+
+Marten supplies X main recipes for constructing projections.
 
 1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
 2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
@@ -16,18 +116,6 @@ Do note that all the various types of aggregated projections inherit from a comm
    if you only apply events to an aggregate if the aggregate document previously existed.
 5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
 
-## Projection Lifecycles
-
-Marten varies a little bit in that projections can be executed with three different lifecycles:
-
-1. [Inline Projections](/events/projections/inline) are executed at the time of event capture and in the same unit of work to persist the projected documents
-1. [Live Aggregations](/events/projections/live-aggregates) are executed on demand by loading event data and creating the projected view in memory without persisting the projected documents
-1. [Asynchronous Projections](/events/projections/async-daemon) are executed by a background process (eventual consistency)
-
-For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
-
-- [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
-- [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
 
 ## Aggregates
 
@@ -38,7 +126,7 @@ The out-of-the box convention is to expose `public Apply(<EventType>)` methods o
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
 <!-- snippet: sample_QuestParty -->
-<a id='snippet-sample_QuestParty'></a>
+<a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
 {
@@ -63,7 +151,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
         };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_QuestParty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation via .Net
@@ -83,7 +171,7 @@ var party_at_version_3 = await session2.Events
 var party_yesterday = await session2.Events
     .AggregateStreamAsync<QuestParty>(questId, timestamp: DateTime.UtcNow.AddDays(-1));
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L119-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L149-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_events-aggregate-on-the-fly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well. Additionally, you can do stream aggregations in batch queries with
@@ -131,3 +219,7 @@ If class does not have the default constructor then it creates an uninitialized 
 
 Because of that, no member initializers will be run so all of them need to be initialized in the event handler methods.
 :::
+
+## Projection Lifecycles
+
+See the opening section and the discussion of `ProjectionLifecycle`.

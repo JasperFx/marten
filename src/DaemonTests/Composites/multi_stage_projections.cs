@@ -178,6 +178,8 @@ public class multi_stage_projections: DaemonContext
     {
         StoreOptions(opts =>
         {
+            #region sample_defining_a_composite_projection
+
             opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
             {
                 projection.Add<ProviderShiftProjection>();
@@ -188,6 +190,8 @@ public class multi_stage_projections: DaemonContext
                 projection.Add<AppointmentDetailsProjection>(2);
                 projection.Add<BoardSummaryProjection>(2);
             });
+
+            #endregion
         });
 
         var usage = await theStore.As<IEventStore>().TryCreateUsage(CancellationToken.None);
@@ -227,7 +231,18 @@ public class multi_stage_projections: DaemonContext
             boardSummary.Board.ShouldNotBeNull();
         }
 
-        var summaries = await theSession.QueryForNonStaleData<BoardSummary>(10.Seconds()).ToListAsync();
+        #region sample_querying_for_non_stale_projection_data
+
+        // theSession is an IDocumentSession
+        var summaries = await theSession
+            // This makes Marten "wait" until the async daemon progress for whatever projection
+            // is building the BoardSummary document to catch up to the point at which the
+            // event store was at when you first tired to execute the LINQ query
+            .QueryForNonStaleData<BoardSummary>(10.Seconds())
+            .ToListAsync();
+
+        #endregion
+
         summaries.Count.ShouldBe(12);
 
         // assign some appointments to providers

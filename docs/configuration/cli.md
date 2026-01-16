@@ -29,7 +29,7 @@ scenarios.
 To use the expanded command line options to a .NET application, add this last line of code shown below to your `Program.cs`:
 
 <!-- snippet: sample_using_WebApplication_1 -->
-<a id='snippet-sample_using_WebApplication_1'></a>
+<a id='snippet-sample_using_webapplication_1'></a>
 ```cs
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,20 +37,20 @@ var builder = WebApplication.CreateBuilder(args);
 // Must be done before calling builder.Build() at least
 builder.Host.ApplyJasperFxExtensions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_WebApplication_1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L10-L18' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And finally, use JasperFx as the command line parser and executor by replacing `App.Run()` as the last line of code in your
 `Program.cs` file:
 
 <!-- snippet: sample_using_WebApplication_2 -->
-<a id='snippet-sample_using_WebApplication_2'></a>
+<a id='snippet-sample_using_webapplication_2'></a>
 ```cs
 // Instead of App.Run(), use the app.RunJasperFxCommands(args)
 // as the last line of your Program.cs file
 return await app.RunJasperFxCommands(args);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L56-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_WebApplication_2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/MinimalAPI/Program.cs#L56-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_webapplication_2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In your command line in the project directory, you can run:

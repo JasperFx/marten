@@ -232,7 +232,7 @@ Please talk to the Marten team before you undergo any significant effort to supp
 Internally, Marten uses an adapter interface for JSON serialization:
 
 <!-- snippet: sample_ISerializer -->
-<a id='snippet-sample_ISerializer'></a>
+<a id='snippet-sample_iserializer'></a>
 ```cs
 /// <summary>
 ///     When selecting data through Linq Select() transforms,
@@ -338,7 +338,7 @@ public interface ISerializer
     string ToJsonWithTypes(object document);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L11-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ISerializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L11-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it

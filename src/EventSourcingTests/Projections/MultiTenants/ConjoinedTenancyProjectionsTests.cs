@@ -217,9 +217,9 @@ public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLoc
 
     public CompanyLocationCustomProjection()
     {
-        this.IncludeType<CompanyLocationCreated>();
-        this.IncludeType<CompanyLocationUpdated>();
-        this.IncludeType<CompanyLocationDeleted>();
+        IncludeType<CompanyLocationCreated>();
+        IncludeType<CompanyLocationUpdated>();
+        IncludeType<CompanyLocationDeleted>();
     }
 
     public override ValueTask<(CompanyLocation, ActionType)> DetermineActionAsync(IQuerySession session, CompanyLocation snapshot, Guid identity,

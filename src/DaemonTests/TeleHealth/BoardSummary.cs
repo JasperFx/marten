@@ -27,6 +27,8 @@ public class BoardSummary
 
 public record AssignedAppointment(Appointment Appointment, Provider Provider);
 
+#region sample_BoardSummaryProjection
+
 public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
 {
     public BoardSummaryProjection()
@@ -81,4 +83,6 @@ public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
         return (snapshot, ActionType.Store);
     }
 }
+
+#endregion
 

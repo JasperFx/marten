@@ -1,10 +1,5 @@
 # Multi-Stream Projections
 
-::: tip
-We have replaced the earlier nomenclature of "ViewProjection" and renamed this concept as
-`MultiStreamProjection` to hopefully be more intention revealing.
-:::
-
 ::: warning
 **Multi-Stream Projections are registered by default as async.** We recommend it as safe default because under heavy load you can easily have contention between requests that effectively stomps over previous updates and leads to apparent "event skipping" and invalid results. Still, you can change that setting and register them synchronously if you're aware of that tradeoff.
 
@@ -287,7 +282,7 @@ public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAss
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/simple_multi_stream_projection_wih_one_to_many.cs#L14-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_view-projection-simple-with-one-to-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## View Projection with Custom Grouper
+## Custom Grouper
 
 ::: warning
 If your grouping logic requires you to access the aggregate view itself, `ViewProjection` **will not function correctly**
@@ -762,12 +757,12 @@ The `ViewProjection` also provides the ability to "fan out" child events from a 
 create an aggregated view. As an example, a `Travel` event we use in Marten testing contains a list of `Movement` objects:
 
 <!-- snippet: sample_Travel_Movements -->
-<a id='snippet-sample_Travel_Movements'></a>
+<a id='snippet-sample_travel_movements'></a>
 ```cs
 public IList<Movement> Movements { get; set; } = new List<Movement>();
 public List<Stop> Stops { get; set; } = new();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/Travel.cs#L40-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_Travel_Movements' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/Travel.cs#L40-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_travel_movements' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` members into separate events being processed through the projection:

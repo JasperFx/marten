@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -75,29 +76,28 @@ public class SampleEventProjection : EventProjection
 {
     public SampleEventProjection()
     {
-        throw new NotImplementedException();
-        // // Inline document operations
-        // Project<Event1>((e, ops) =>
-        // {
-        //     // I'm creating a single new document, but
-        //     // I can do as many operations as I want
-        //     ops.Store(new Document1
-        //     {
-        //         Id = e.Id
-        //     });
-        // });
-        //
-        // Project<StopEvent1>((e, ops) =>
-        // {
-        //     ops.Delete<Document1>(e.Id);
-        // });
-        //
-        // ProjectAsync<Event3>(async (e, ops) =>
-        // {
-        //     var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
-        //     // now use the lookup document and the event to carry
-        //     // out other document operations against the ops parameter
-        // });
+        // Inline document operations
+        Project<Event1>((e, ops) =>
+        {
+            // I'm creating a single new document, but
+            // I can do as many operations as I want
+            ops.Store(new Document1
+            {
+                Id = e.Id
+            });
+        });
+
+        Project<StopEvent1>((e, ops) =>
+        {
+            ops.Delete<Document1>(e.Id);
+        });
+
+        ProjectAsync<Event3>(async (e, ops, _) =>
+        {
+            var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
+            // now use the lookup document and the event to carry
+            // out other document operations against the ops parameter
+        });
     }
 
     // This is the conventional method equivalents to the inline calls above
@@ -122,6 +122,35 @@ public class SampleEventProjection : EventProjection
     public void Project(ISpecialEvent e, IDocumentOperations ops)
     {
 
+    }
+}
+
+#endregion
+
+#region sample_explicit_event_projection
+public class ExplicitSampleProjection: EventProjection
+{
+    public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
+    {
+        switch (e.Data)
+        {
+            case Event1 e1:
+                // I'm creating a single new document, but
+                // I can do as many operations as I want
+                operations.Store(new Document1
+                {
+                    Id = e.Id
+                });
+                break;
+
+            case StopEvent1 stop:
+                operations.Delete<Document1>(e.Id);
+                break;
+
+            // and so on...
+        }
+
+        return new ValueTask();
     }
 }
 

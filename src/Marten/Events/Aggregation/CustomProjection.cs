@@ -14,6 +14,7 @@ namespace Marten.Events.Aggregation;
 /// </summary>
 /// <typeparam name="TDoc"></typeparam>
 /// <typeparam name="TId"></typeparam>
+[Obsolete("Please use Multi/SingleStreamProjection as your base type and use their explicit code options instead")]
 public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, TId> where TDoc : notnull where TId : notnull
 {
     protected CustomProjection()
@@ -29,7 +30,7 @@ public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, T
     /// <param name="cancellation"></param>
     /// <param name="lifecycle"></param>
     /// <returns></returns>
-    [Obsolete("TODO -- different method, add something here")]
+    [Obsolete]
     public virtual async ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
         CancellationToken cancellation,
         ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
@@ -37,17 +38,4 @@ public abstract class CustomProjection<TDoc, TId>: MultiStreamProjection<TDoc, T
         throw new NotSupportedException("This is no longer supported");
     }
 
-
-    // public SubscriptionDescriptor Describe()
-    // {
-    //     var type = Slicer is ISingleStreamSlicer
-    //         ? SubscriptionType.SingleStreamProjection
-    //         : SubscriptionType.MultiStreamProjection;
-    //
-    //     var subscriptionDescriptor = new SubscriptionDescriptor(this, type);
-    //     subscriptionDescriptor.AddValue("DocumentType", typeof(TDoc));
-    //     subscriptionDescriptor.AddValue("IdentityType", typeof(TId).ShortNameInCode());
-    //
-    //     return subscriptionDescriptor;
-    // }
 }

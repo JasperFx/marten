@@ -1,19 +1,54 @@
 # Aggregate Projections
 
+_Aggregate Projections_ in Marten combine some sort of grouping of events and process them to create a single
+aggregated document representing the state of those events. These projections come in two flavors:
+
+**Single Stream Projections** create a rolled up view of all or a segment of the events within a single event stream.
+These projections are done either by using the `SingleStreamProjection<TDoc, TId>` base type or by creating a "self aggregating" `Snapshot`
+approach with conventional `Create/Apply/ShouldDelete` methods that mutate or evolve the snapshot based on new events.
+
+**Multi Stream Projections** create a rolled up view of a user-defined grouping of events across streams.
+These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>` class and is further described in [Multi-Stream Projections](/events/projections/multi-stream-projections).
+An example of a multi-stream projection might be a "query model" within an accounting system of some sort that rolls up
+the value of all unpaid invoices by active client. 
+
+You can *also* use a `MultiStreamProjection` to create views that are a segment of a single stream over time or version. 
+Imagine that you have a system that models the activity of a bank account with event sourcing. You could use a `MultiStreamProjection` to create a view 
+that summarizes the activity of a single bank account within a calendar month.
+
 ::: tip
-Definitely check out the content on [CQRS Command Handler Workflow for Capturing Events](/scenarios/command_handler_workflow)
-and [Reading Aggregates](/events/projections/read-aggregates) to get the best possible performance and
-development usability for aggregate projections with Marten. Also see the combination with [Wolverine](https://wolverinefx.net)
-in its [Aggregate Handler Workflow](https://wolverinefx.net/guide/durability/marten/event-sourcing.html) for literally the 
-lowest code ceremony possible to use Marten within a CQRS architecture.
+The ability to use explicit code to define projections was hugely improved in the Marten 8.0 release.
 :::
 
-_Aggregate Projections_ in Marten combine some sort of grouping of events and process them to create a single
-aggregated document representing the state of those events. To jump into a simple example, here's a simple aggregated
-view called `QuestParty` that creates an aggregated view of `MembersJoined`, `MembersDeparted`, and `QuestStarted` events related to a group of heroes traveling on a quest in your favorite fantasy novel:
+Within your aggregation projection, you can express the logic about how Marten combines events into a view
+through either [conventional methods](/events/projections/conventions) (original, old school Marten) or through [completely explicit code](/events/projections/explicit).
+
+Within an aggregation, you have advanced options to:
+
+* Use event metadata
+* Enrich event data with other Marten or external data
+* Append all new events or send messages in response to projection updates with [side effects](/events/projections/side-effects)
+
+## Simple Example
+
+The most common usage is to create a "write model" that projects the current state
+for a single stream, so on that note, let's jump into a simple example.
+
+::: info
+The original author of Marten is huge into epic fantasy book series, hence the silly original problem
+domain in the very oldest code samples. Hilariously to him, Marten has fielded and accepted pull requests that
+corrected our modeling of the timeline of the Lord of the Rings in sample code.
+:::
+
+![Martens on a Quest](/images/martens-on-quest.png "Martens on a Quest")
+
+Let's say that we're building a system to track the progress of a traveling party on a quest within an epic
+fantasy series like "The Lord of the Rings" or the "Wheel of Time" and we're using event sourcing to capture
+state changes when the "quest party" adds or subtracts members. We might very well need a "write model" for 
+the current state of the quest for our command handlers like this one:
 
 <!-- snippet: sample_QuestParty -->
-<a id='snippet-sample_QuestParty'></a>
+<a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
 {
@@ -38,116 +73,115 @@ public sealed record QuestParty(Guid Id, List<string> Members)
         };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_QuestParty' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L27-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_questparty' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Once again, here's the class diagram of the key projection types inside of Marten, but please note the `SingleStreamProjection<T>`:
+For a little more context, the `QuestParty` above might be consumed in a command handler like this:
 
-```mermaid
-classDiagram
-
-CustomProjection~TDoc, TId~ --|> ProjectionBase
-ProjectionWrapper ..|> IProjectionSource
-ProjectionWrapper --> IProjection
-GeneratedProjection --|> ProjectionBase
-GeneratedProjection ..|> IProjectionSource
-EventProjection --|> GeneratedProjection
-
-GeneratedAggregateProjectionBase~T~ --|> GeneratedProjection
-SingleStreamProjection~T~ --|> GeneratedAggregateProjectionBase~T~
-MultiStreamProjection~TDoc, TId~ --|> GeneratedAggregateProjectionBase~T~
-MultiStreamProjection~TDoc, TId~ --|> IEventSlicer~TDoc, TId~
-```
-
-Marten supports a few different types of aggregated projections:
-
-- **Single Stream Projections** -- creating a rolled up view of all or a segment of the events within an event stream. This is done through either a live stream aggregation, or `SingleStreamProjection<T>` as a base class for your projection or by doing _snapshots_.
-- **Multi Stream Projections** -- creating a rolled up view of a user-defined grouping of events across streams. These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>` class and is further described in [Multi-Stream Projections](/events/projections/multi-stream-projections).
-
-Please note that all aggregated projections share the same set of method conventions described in this page.
-
-## Aggregate by Stream
-
-::: tip
-Projection types and the associated aggregate types need to be scoped as public because of Marten's internal code generation techniques. Some methods
-discovered by the method conventions can be internal or private, but the holding type must be public.
-:::
-
-The easiest type of aggregate to create is a document that rolls up the state of a single event stream. You can do that by either creating a public aggregate
-document that directly mutates itself through method conventions or by sub-classing the `SingleStreamProjection<T>` class like this sample for a fictional `Trip` aggregate document:
-
-<!-- snippet: sample_TripProjection_aggregate -->
-<a id='snippet-sample_TripProjection_aggregate'></a>
+<!-- snippet: sample_AddMembers_command_handler -->
+<a id='snippet-sample_addmembers_command_handler'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public record AddMembers(Guid Id, int Day, string Location, string[] Members);
+
+public static class AddMembersHandler
 {
-    public TripProjection()
+    public static async Task HandleAsync(AddMembers command, IDocumentSession session)
     {
-        DeleteEvent<TripAborted>();
+        // Fetch the current state of the quest
+        var quest = await session.Events.FetchForWriting<QuestParty>(command.Id);
+        if (quest.Aggregate == null)
+        {
+            // Bad quest id, do nothing in this sample case
+        }
 
-        DeleteEvent<Breakdown>(x => x.IsCritical);
+        var newMembers = command.Members.Where(x => !quest.Aggregate.Members.Contains(x)).ToArray();
 
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
+        if (!newMembers.Any())
+        {
+            return;
+        }
 
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
-    public void Apply(Arrival e, Trip trip) => trip.State = e.State;
-
-    public void Apply(Travel e, Trip trip)
-    {
-        Debug.WriteLine($"Trip {trip.Id} Traveled " + e.TotalDistance());
-        trip.Traveled += e.TotalDistance();
-        Debug.WriteLine("New total distance is " + e.TotalDistance());
-    }
-
-    public void Apply(TripEnded e, Trip trip)
-    {
-        trip.Active = false;
-        trip.EndedOn = e.Day;
-    }
-
-    public Trip Create(IEvent<TripStarted> started)
-    {
-        return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
+        quest.AppendOne(new MembersJoined(command.Id, command.Day, command.Location, newMembers));
+        await session.SaveChangesAsync();
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_TripProjection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/DocSamples/EventSourcingQuickstart.cs#L54-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmembers_command_handler' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-And register that projection like this:
+## How Aggregation Works
 
 ::: tip
-Remember to start the Async Daemon when using async projections, see [Asynchronous Projections Daemon](/events/projections/async-daemon.html)
+It's possible to build your own aggregation projections from scratch with the lower level `IProjection` abstraction --
+and we've worked with plenty of folks who did over the years -- but just know that the Marten community has invested a lot
+of effort over the years into optimizing the internals of the aggregation projections for performance and capability.
 :::
 
-<!-- snippet: sample_registering_an_aggregate_projection -->
-<a id='snippet-sample_registering_an_aggregate_projection'></a>
-```cs
-var store = DocumentStore.For(opts =>
-{
-    opts.Connection("some connection string");
+::: info
+When running with an `Inline` projection lifecycle, the workflow is mostly the same, but Marten can skip the "slicing"
+step for single stream projections. By and large, the Marten team recommends almost always running multi-stream projections
+asynchronously and probably running single stream projections that utilize enrichment asynchronously as well.
+:::
 
-    // Register as inline
-    opts.Projections.Add<TripProjection>(ProjectionLifecycle.Inline);
+Just to understand a little bit more about the capabilities of Marten's aggregation projections, let's look at the diagram
+below that tries to visualize the runtime workflow of aggregation projections inside of the [Async Daemon](/events/projections/async-daemon) background
+process:
 
-    // Or instead, register to run asynchronously
-    opts.Projections.Add<TripProjection>(ProjectionLifecycle.Async);
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L20-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_an_aggregate_projection' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+![How Aggregation Works](/images/aggregation-projection-flow.png "How Aggregation Projections Work")
 
-Any projection based on `SingleStreamProjection<T>` will allow you to define steps by event type to either create, delete, or mutate an aggregate
-document through a mix of inline Lambda expressions in the constructor function of the projection class or by using specially named methods on the
-projection class. It's completely up to your preference to decide which to use.
+1. The Daemon is constantly pushing a range of events at a time to an aggregation projection. For example, `Events 1,000 to 2,000 by sequence number`
+2. The aggregation "slices" the incoming range of events into a group of `EventSlice` objects that establishes a relationship between the identity
+   of an aggregated document and the events that should be applied during this batch of updates for that identity. To be more concrete, a single stream
+   projection for `QuestParty` would be creating an `EventSlice` for each quest id it sees in the current range of events. Multi-stream projections
+   will have some kind of custom "slicing" or grouping. For example, maybe in our `Quest` tracking system we have a multi-stream projection that
+   tries to track how many monsters of each type are defeated. That projection might "slice" by looking for all `MonsterDefeated` events 
+   across all streams and group or slice incoming events by the type of monster. The "slicing" logic is automatic for [single stream projections](/events/projections/single-stream-projections), but will require
+   explicit configuration or explicitly written logic for [multi stream projections](/events/projections/multi-stream-projections).
+3. Once the projection has a known list of all the aggregate documents that will be updated by the current range of events, the projection will
+   fetch each persisted document, first from any active aggregate cache in memory, then by making a single batched request to the 
+   Marten document storage for any missing documents and adding these to any active cache (see [Optimizing Performance](/events/optimizing) for more information about the potential caching). 
+4. The projection will execute any [event enrichment](/events/projections/enrichment) against the now known group of `EventSlice`. This process gives you a hook to 
+   efficiently "enrich" the raw event data with extra data lookups from Marten document storage or even other sources.
+5. Most of the work as a developer is in the application or "Evolve" step of the diagram above. After the "slicing", the aggregation has turned the range of raw event data into
+   `EventSlice` objects that contain the current snapshot of a projected document by its identity (if one exists), the identity itself, and the events from within that original range
+   that should be applied on top of the current snapshot to "evolve" it to reflect those events. This can be coded either with the conventional [Apply/Create/ShouldDelete methods](/events/projections/conventions) or using [explicit code](/events/projections/explicit) --
+   which is almost inevitably means a `switch` statement. Using the `QuestParty` example again, the aggregation projection would get an `EventSlice` that contains the identity of
+   an active quest, the snapshot of the current `QuestParty` document that is persisted by Marten, and the new `MembersJoined` et al events that should be applied to the existing
+   `QuestParty` object to derive the new version of `QuestParty`. 
+6. *Just* before Marten persists all the changes from the application / evolve step, you have the [`RaiseSideEffects()` hook](/events/projections/side-effects) to potentially raise "side effects" like
+   appending additional events based on the now updated state of the projected aggregates or publishing the new state of an aggregate through messaging ([Wolverine](https://wolverinefx.net/guide/durability/marten/) has first class support for Marten projection side effects through its Marten integration into the full "Critter Stack")
+7. For the current event range and event slices, Marten will send all aggregate document updates or deletions, new event appending operations, and even outboxed, outgoing messages sent via side effects
+   (if you're using the Wolverine integration) in batches to the underlying PostgreSQL database. I'm calling this out because we've constantly found in
+   Marten development that command batching to PostgreSQL is a huge factor in system performance and the async daemon has been designed to try to minimize the number 
+   of network round trips between your application and PostgreSQL at every turn.
+8. Assuming the transaction succeeds for the current event range and the operation batch in the previous step, Marten will call "after commit" observers. This notification for example will
+   release any messages raised as a side effect and actually send those messages via whatever is doing the actual publishing (probably Wolverine).
 
-Alternatively, if your aggregate will never be deleted you can use a stream aggregation as explained in the last section of this page.
 
-To create aggregate projections that include events in multiple streams, see [Multi-Stream Projections](/events/projections/multi-stream-projections).
+::: tip
+Marten happily supports immutable data types for the aggregate documents produced by projections, but also happily supports
+mutable types as well. The usage of the application code is a little different though.
+:::
+
+::: info
+Starting with Marten 8.0, we've tried somewhat to conform to the terminology used by the [Functional Event Sourcing Decider](https://thinkbeforecoding.com/post/2021/12/17/functional-event-sourcing-decider)
+paper by Jeremie Chassaing. To that end, the API now refers to a "snapshot" that really just means *a* version of the projection and
+"evolve" as the step of applying new events to an existing "snapshot" to calculate a new "snapshot."
+:::
+
+## Aggregate Caching
+
+See the content on aggregate caching in [Optimizing Performance](/events/optimizing).
 
 ## Strong Typed Identifiers <Badge type="tip" text="7.29" />
+
+::: info
+The rise of Strong Typed Identifiers has not been the most pleasant experience for the Marten and
+Wolverine teams as these types are "neither fish, nor fowl" in the way the internals have to constantly
+wrap or unwrap these things. As the technical leader of Marten is of the Gen X cohort, Jeremy believes
+[this movie scene](https://www.youtube.com/watch?v=350kq0anjq0) exactly encapsulates his feelings about the work we've had to do to support Strong Typed
+Identifiers throughout the "Critter Stack."
+:::
 
 Marten supports using strong-typed identifiers as the document identity for aggregated documents. Here's an example:
 
@@ -204,760 +238,20 @@ private async Task use_fetch_for_writing_with_strong_typed_identifier(PaymentId 
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_guid_based_strong_typed_id_for_aggregate_identity.cs#L94-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_fetch_for_writing_with_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Aggregate Creation
+## Aggregate by Stream
 
-::: tip
-As of Marten 7, if your aggregation projection has both a `Create()` function or constructor for an event type, and
-an `Apply()` method for the same event type, Marten will only call one or the other method depending on whether the
-aggregate already exists **but never both** for one single event.
-:::
-
-Aggregates can initially be created behind the scenes by Marten if there's a no-arg constructor function on the aggregate
-document type -- which doesn't have to be public by the way.
-
-You can also use a constructor that takes an event type as shown in this sample of a `Trip` stream aggregation:
-
-<!-- snippet: sample_Trip_stream_aggregation -->
-<a id='snippet-sample_Trip_stream_aggregation'></a>
-```cs
-public class Trip
-{
-    // Probably safest to have an empty, default
-    // constructor unless you can guarantee that
-    // a certain event type will always be first in
-    // the event stream
-    public Trip()
-    {
-    }
-
-    // Create a new aggregate based on the initial
-    // event type
-    internal Trip(TripStarted started)
-    {
-        StartedOn = started.Day;
-        Active = true;
-    }
-
-    public Guid Id { get; set; }
-    public int EndedOn { get; set; }
-
-    public double Traveled { get; set; }
-
-    public string State { get; set; }
-
-    public bool Active { get; set; }
-
-    public int StartedOn { get; set; }
-    public Guid? RepairShopId { get; set; }
-
-    // The Apply() methods would mutate the aggregate state
-    internal void Apply(Arrival e) => State = e.State;
-    internal void Apply(Travel e) => Traveled += e.TotalDistance();
-
-    internal void Apply(TripEnded e)
-    {
-        Active = false;
-        EndedOn = e.Day;
-    }
-
-    // We think stream aggregation is mostly useful for live aggregations,
-    // but hey, if you want to use a aggregation as an asynchronous projection,
-    // you can also specify when the aggregate document should be deleted
-    internal bool ShouldDelete(TripAborted e) => true;
-    internal bool ShouldDelete(Breakdown e) => e.IsCritical;
-    internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L123-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_Trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
-
-<!-- snippet: sample_TripProjection_aggregate -->
-<a id='snippet-sample_TripProjection_aggregate'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        DeleteEvent<TripAborted>();
-
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
-
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
-    public void Apply(Arrival e, Trip trip) => trip.State = e.State;
-
-    public void Apply(Travel e, Trip trip)
-    {
-        Debug.WriteLine($"Trip {trip.Id} Traveled " + e.TotalDistance());
-        trip.Traveled += e.TotalDistance();
-        Debug.WriteLine("New total distance is " + e.TotalDistance());
-    }
-
-    public void Apply(TripEnded e, Trip trip)
-    {
-        trip.Active = false;
-        trip.EndedOn = e.Day;
-    }
-
-    public Trip Create(IEvent<TripStarted> started)
-    {
-        return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_TripProjection_aggregate' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `IEvent<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
-
-## Applying Changes to the Aggregate Document
-
-::: tip
-`Apply()` methods or `ProjectEvent<T>()` method calls can also use interfaces or abstract types that are implemented by specific event types, and
-Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
-:::
-
-To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the overloads of `ProjectEvent()`:
-
-<!-- snippet: sample_using_ProjectEvent_in_aggregate_projection -->
-<a id='snippet-sample_using_ProjectEvent_in_aggregate_projection'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        ProjectEvent<Arrival>((trip, e) => trip.State = e.State);
-        ProjectEvent<Travel>((trip, e) => trip.Traveled += e.TotalDistance());
-        ProjectEvent<TripEnded>((trip, e) =>
-        {
-            trip.Active = false;
-            trip.EndedOn = e.Day;
-        });
-
-        ProjectEventAsync<Breakdown>(async (session, trip, e) =>
-        {
-            var repairShop = await session.Query<RepairShop>()
-                .Where(x => x.State == trip.State)
-                .FirstOrDefaultAsync();
-
-            trip.RepairShopId = repairShop?.Id;
-        });
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L179-L204' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ProjectEvent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
-
-<!-- snippet: sample_TripProjection_aggregate -->
-<a id='snippet-sample_TripProjection_aggregate'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        DeleteEvent<TripAborted>();
-
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
-
-    // These methods can be either public, internal, or private but there's
-    // a small performance gain to making them public
-    public void Apply(Arrival e, Trip trip) => trip.State = e.State;
-
-    public void Apply(Travel e, Trip trip)
-    {
-        Debug.WriteLine($"Trip {trip.Id} Traveled " + e.TotalDistance());
-        trip.Traveled += e.TotalDistance();
-        Debug.WriteLine("New total distance is " + e.TotalDistance());
-    }
-
-    public void Apply(TripEnded e, Trip trip)
-    {
-        trip.Active = false;
-        trip.EndedOn = e.Day;
-    }
-
-    public Trip Create(IEvent<TripStarted> started)
-    {
-        return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_TripProjection_aggregate' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-The `Apply()` methods can accept any combination of these arguments:
-
-1. The actual event type
-1. `IEvent<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
-1. `IEvent` access the event metadata. It's perfectly valid to accept both `IEvent` for the metadata and the specific event type just out of convenience.
-1. `IQuerySession` if you need to do additional data lookups
-1. The aggregate type
-
-The valid return types are:
-
-1. `void` if you are mutating the aggregate document
-1. The aggregate type itself, and this allows you to use immutable aggregate types
-1. `Task` if you are mutating the aggregate document with the use of external data read through `IQuerySession`
-1. `Task<T>` where `T` is the aggregate type. This allows you to use immutable aggregate types while also using external data read through `IQuerySession`
-
-## Deleting the Aggregate Document
-
-In asynchronous or inline projections, receiving a certain event may signal that the projected document is now obsolete and should be deleted from
-document storage. If a certain event type always signals a deletion to the aggregated view, you can use this mechanism inside of the constructor function of your
-aggregate projection type:
-
-<!-- snippet: sample_deleting_aggregate_by_event_type -->
-<a id='snippet-sample_deleting_aggregate_by_event_type'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        // The current Trip aggregate would be deleted if
-        // the projection encountered a TripAborted event
-        DeleteEvent<TripAborted>();
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L16-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-If the deletion of the aggregate document needs to be done by testing some combination of the current aggregate state, the event,
-and maybe even other document state in your Marten database, you can use more overloads of `DeleteEvent()` as shown below:
-
-<!-- snippet: sample_deleting_aggregate_by_event_type_and_func -->
-<a id='snippet-sample_deleting_aggregate_by_event_type_and_func'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        // The current Trip aggregate would be deleted if
-        // the Breakdown event is "critical"
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        // Alternatively, delete the aggregate if the trip
-        // is currently in New Mexico and the breakdown is critical
-        DeleteEvent<Breakdown>((trip, e) => e.IsCritical && trip.State == "New Mexico");
-
-        DeleteEventAsync<Breakdown>(async (session, trip, e) =>
-        {
-            var anyRepairShopsInState = await session.Query<RepairShop>()
-                .Where(x => x.State == trip.State)
-                .AnyAsync();
-
-            // Delete the trip if there are no repair shops in
-            // the current state
-            return !anyRepairShopsInState;
-        });
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L40-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type_and_func' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Another option is to use a method convention with a method named `ShouldDelete()`, with this equivalent using the `ShouldDelete() : bool` method convention:
-
-<!-- snippet: sample_deleting_aggregate_by_event_type_and_func_with_convention -->
-<a id='snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    // The current Trip aggregate would be deleted if
-    // the Breakdown event is "critical"
-    public bool ShouldDelete(Breakdown breakdown) => breakdown.IsCritical;
-
-    // Alternatively, delete the aggregate if the trip
-    // is currently in New Mexico and the breakdown is critical
-    public bool ShouldDelete(Trip trip, Breakdown breakdown)
-        => breakdown.IsCritical && trip.State == "New Mexico";
-
-    public async Task<bool> ShouldDelete(IQuerySession session, Trip trip, Breakdown breakdown)
-    {
-        var anyRepairShopsInState = await session.Query<RepairShop>()
-            .Where(x => x.State == trip.State)
-            .AnyAsync();
-
-        // Delete the trip if there are no repair shops in
-        // the current state
-        return !anyRepairShopsInState;
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L81-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-The `ShouldDelete()` method can take any combination of these arguments:
-
-1. The actual event type
-1. `IEvent<T>` where the `T` is the actual event type. Use this if you want access to the [event metadata](/events/metadata) like versions or timestamps.
-1. `IQuerySession` if you need to do additional data lookups
-1. The aggregate type
-
-Additionally, `ShouldDelete()` methods should return either a `Boolean` or `Task<Boolean>` if doing data lookups with `IQuerySession` -- and we'very strongly recommend using strictly asynchronous APIs if running the projection asynchronously or using `SaveChangesAsync()` when executing projections inline.
+See [Single Stream Projections and Snapshots](./single-stream-projections).
 
 ## Stream Aggregations
 
-You can use the `SingleStreamProjection<T>` method conventions for stream aggregations, which we just mean to be an aggregate document type that implements its own `Apply()` or `ShouldDelete()` methods to mutate itself. Using that concept, let's take the `TripProjection` we have been using and apply that instead to a `Trip` type:
+See [Single Stream Projections and Snapshots](./single-stream-projections).
 
-<!-- snippet: sample_Trip_stream_aggregation -->
-<a id='snippet-sample_Trip_stream_aggregation'></a>
-```cs
-public class Trip
-{
-    // Probably safest to have an empty, default
-    // constructor unless you can guarantee that
-    // a certain event type will always be first in
-    // the event stream
-    public Trip()
-    {
-    }
+## Using Event Metadata
 
-    // Create a new aggregate based on the initial
-    // event type
-    internal Trip(TripStarted started)
-    {
-        StartedOn = started.Day;
-        Active = true;
-    }
+You can incorporate the event metadata that Marten collects within the aggregation projection.
 
-    public Guid Id { get; set; }
-    public int EndedOn { get; set; }
-
-    public double Traveled { get; set; }
-
-    public string State { get; set; }
-
-    public bool Active { get; set; }
-
-    public int StartedOn { get; set; }
-    public Guid? RepairShopId { get; set; }
-
-    // The Apply() methods would mutate the aggregate state
-    internal void Apply(Arrival e) => State = e.State;
-    internal void Apply(Travel e) => Traveled += e.TotalDistance();
-
-    internal void Apply(TripEnded e)
-    {
-        Active = false;
-        EndedOn = e.Day;
-    }
-
-    // We think stream aggregation is mostly useful for live aggregations,
-    // but hey, if you want to use a aggregation as an asynchronous projection,
-    // you can also specify when the aggregate document should be deleted
-    internal bool ShouldDelete(TripAborted e) => true;
-    internal bool ShouldDelete(Breakdown e) => e.IsCritical;
-    internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L123-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_Trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Here's an example of using the various ways of doing `Trip` stream aggregation:
-
-<!-- snippet: sample_using_stream_aggregation -->
-<a id='snippet-sample_using_stream_aggregation'></a>
-```cs
-internal async Task use_a_stream_aggregation()
-{
-    var store = DocumentStore.For(opts =>
-    {
-        opts.Connection("some connection string");
-
-        // Run the Trip as an inline projection
-        opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Inline);
-
-        // Or run it as an asynchronous projection
-        opts.Projections.Snapshot<Trip>(SnapshotLifecycle.Async);
-    });
-
-    // Or more likely, use it as a live aggregation:
-
-    // Just pretend you already have the id of an existing
-    // trip event stream id here...
-    var tripId = Guid.NewGuid();
-
-    // We'll open a read only query session...
-    await using var session = store.QuerySession();
-
-    // And do a live aggregation of the Trip stream
-    var trip = await session.Events.AggregateStreamAsync<Trip>(tripId);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L91-L119' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_aggregation' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-## Aggregate Versioning
-
-It's frequently valuable to know the version of the underlying event stream that a single stream aggregate represents. Marten 5.4 added a
-new, built in convention to automatically set the aggregate version on the aggregate document itself. The immediate usage is probably to help
-Marten users opt into Marten's [optimistic concurrency for appending events](/events/appending.html#appending-events-1) by making it easier to get the current aggregate (stream) version that you need
-in order to opt into the optimistic concurrency check.
-
-To start with, let's say we have an `OrderAggregate` defined like this:
-
-<!-- snippet: sample_OrderAggregate_with_version -->
-<a id='snippet-sample_OrderAggregate_with_version'></a>
-```cs
-public class OrderAggregate
-{
-    // This is most likely the stream id
-    public Guid Id { get; set; }
-
-    // This would be set automatically by Marten if
-    // used as the target of a SingleStreamAggregation
-    public int Version { get; set; }
-
-    public void Apply(OrderShipped shipped) => HasShipped = true;
-    public bool HasShipped { get; private set; }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/OrderAggregate.cs#L6-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_OrderAggregate_with_version' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Notice the `Version` property of that document above. Using a naming convention (we'll talk about how to go around the convention in just a second),
-Marten "knows" that that property should reflect the latest versioned event within the individual stream encountered by this projection. So if
-there have been 5 events captured for a particular stream and all five events have been processed through the projection, the value of the `Version`
-property will be 5.
-
-There are of course some restrictions:
-
-- The version member can be either a field or a property
-- The getter can be internal or private (but the mechanics are a tiny bit smoother with a public setter)
-- The version member can be either an `int` (Int32) or `long` (Int64)
-
-Marten determines whether a member is the version of the aggregate by first finding all public members
-of either type `int` or `long`, then running down these rules:
-
-1. A member marked with the `[Version]` attribute will override the naming convention
-2. Look for an member named "version" (it's not case sensitive)
-3. **But**, ignore any member marked with `[MartenIgnore]` in case "Version" has a different meaning on your aggregate document
-
-## Using Event Metadata in Aggregates
-
-All the previous examples showed `Apply` / `Create` / `ShouldDelete` methods that accepted
-the specific event type as the first argument. If there is a need for accessing the
-event metadata (timestamps, causation/correlation information, custom event headers),
-you can alternatively accept an argument of type `IEvent<T>` where `T` is the actual event type (do this in
-place of the event body) or by accepting an additional argument of type `IEvent`
-just to access the event metadata.
-
-Below is a small example of accessing event metadata during aggregation:
-
-<!-- snippet: sample_aggregation_using_event_metadata -->
-<a id='snippet-sample_aggregation_using_event_metadata'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    // Access event metadata through IEvent<T>
-    public Trip Create(IEvent<TripStarted> @event)
-    {
-        var trip = new Trip
-        {
-            Id = @event.StreamId, // Marten does this for you anyway
-            Started = @event.Timestamp,
-            CorrelationId = @event.Timestamp, // Open telemetry type tracing
-            Description = @event.Data.Description // Still access to the event body
-        };
-
-        // Use a custom header
-        if (@event.Headers.TryGetValue("customer", out var customerId))
-        {
-            trip.CustomerId = (string)customerId;
-        }
-
-        return trip;
-    }
-
-    public void Apply(TripEnded ended, Trip trip, IEvent @event)
-    {
-        trip.Ended = @event.Timestamp;
-    }
-
-    // Other Apply/ShouldDelete methods
-
-    public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<Trip> slice)
-    {
-        // Emit other events or messages during asynchronous projection
-        // processing
-
-        // Access to the current state as of the projection
-        // event page being processed *right* now
-        var currentTrip = slice.Snapshot;
-
-        if (currentTrip.TotalMiles > 1000)
-        {
-            // Append a new event to this stream
-            slice.AppendEvent(new PassedThousandMiles());
-
-            // Append a new event to a different event stream by
-            // first specifying a different stream id
-            slice.AppendEvent(currentTrip.InsuranceCompanyId, new IncrementThousandMileTrips());
-
-            // "Publish" outgoing messages when the event page is successfully committed
-            slice.PublishMessage(new SendCongratulationsOnLongTrip(currentTrip.Id));
-
-            // And yep, you can make additional changes to Marten
-            operations.Store(new CompletelyDifferentDocument
-            {
-                Name = "New Trip Segment",
-                OriginalTripId = currentTrip.Id
-            });
-        }
-
-        // This usage has to be async in case you're
-        // doing any additional data access with the
-        // Marten operations
-        return new ValueTask();
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L31-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-## Working with Event Metadata <Badge type="tip" text="7.12" />
-
-::: info
-As of Marten 7.33, this mechanism executes for every single event in the current event slice in order.
-:::
-
-At any point in an `Apply()` or `Create()` or `ShouldDelete()` method, you can take in either the generic `IEvent` wrapper
-or the specific `IEvent<T>` wrapper type for the specific event. _Sometimes_ though, you may want to automatically tag your
-aggregated document with metadata from applied events. _If_ you are using
-either `SingleStreamProjection<T>` or `MultiStreamProjection<TDoc, TId>` as the base class for a projection, you can 
-override the `ApplyMetadata(T aggregate, IEvent lastEvent)` method in your projection to manually map event metadata to 
-your aggregate in any way you wish.
-
-Here's an example of using a custom header value of the events captured to update an aggregate based on the last event encountered:
-
-<!-- snippet: sample_using_ApplyMetadata -->
-<a id='snippet-sample_using_ApplyMetadata'></a>
-```cs
-public class Item
-{
-    public Guid Id { get; set; }
-    public string Description { get; set; }
-    public bool Started { get; set; }
-    public DateTimeOffset WorkedOn { get; set; }
-    public bool Completed { get; set; }
-    public string LastModifiedBy { get; set; }
-    public DateTimeOffset? LastModified { get; set; }
-
-    public int Version { get; set; }
-}
-
-public record ItemStarted(string Description);
-
-public record ItemWorked;
-
-public record ItemFinished;
-
-public class ItemProjection: SingleStreamProjection<Item, Guid>
-{
-    public void Apply(Item item, ItemStarted started)
-    {
-        item.Started = true;
-        item.Description = started.Description;
-    }
-
-    public void Apply(Item item, IEvent<ItemWorked> worked)
-    {
-        // Nothing, I know, this is weird
-    }
-
-    public void Apply(Item item, ItemFinished finished)
-    {
-        item.Completed = true;
-    }
-
-    public override Item ApplyMetadata(Item aggregate, IEvent lastEvent)
-    {
-        // Apply the last timestamp
-        aggregate.LastModified = lastEvent.Timestamp;
-
-        var person = lastEvent.GetHeader("last-modified-by");
-
-        aggregate.LastModifiedBy = person?.ToString() ?? "System";
-
-        return aggregate;
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L173-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ApplyMetadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-And the same projection in usage in a unit test to see how it's all put together:
-
-<!-- snippet: sample_apply_metadata -->
-<a id='snippet-sample_apply_metadata'></a>
-```cs
-[Fact]
-public async Task apply_metadata()
-{
-    StoreOptions(opts =>
-    {
-        opts.Projections.Add<ItemProjection>(ProjectionLifecycle.Inline);
-
-        // THIS IS NECESSARY FOR THIS SAMPLE!
-        opts.Events.MetadataConfig.HeadersEnabled = true;
-    });
-
-    // Setting a header value on the session, which will get tagged on each
-    // event captured by the current session
-    theSession.SetHeader("last-modified-by", "Glenn Frey");
-
-    var id = theSession.Events.StartStream<Item>(new ItemStarted("Blue item")).Id;
-    await theSession.SaveChangesAsync();
-
-    theSession.Events.Append(id, new ItemWorked(), new ItemWorked(), new ItemFinished());
-    await theSession.SaveChangesAsync();
-
-    var item = await theSession.LoadAsync<Item>(id);
-
-    // RIP Glenn Frey, take it easy!
-    item.LastModifiedBy.ShouldBe("Glenn Frey");
-    item.Version.ShouldBe(4);
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L18-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+Read more about that in [Using Metadata](./using-metadata).
 
 ## Raising Events, Messages, or other Operations in Aggregation Projections <Badge type="tip" text="7.27" />
 
-Man, that's a mouthful of a title. _Sometimes_, it can be valuable to emit new events during the processing of a projection
-when you first know the new state of the projected aggregate documents. Or maybe what you might want to do is to send
-a message for the new state of an updated projection. Here's a couple possible scenarios that might lead you here:
-
-- There's some kind of business logic that can be processed against an aggregate to "decide" what the system can do next
-- You need to send updates about the aggregated projection state to clients via web sockets
-- You need to replicate the Marten projection data in a completely different database
-- There are business processes that can be kicked off for updates to the aggregated state
-
-To do any of this, you can override the `RaiseSideEffects()` method in any aggregated projection that uses one of the 
-following base classes:
-
-1. `SingleStreamProjection`
-2. `MultiStreamProjection`
-3. `CustomStreamProjection`
-
-Here's an example of that method overridden in a projection:
-
-<!-- snippet: sample_aggregation_using_event_metadata -->
-<a id='snippet-sample_aggregation_using_event_metadata'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    // Access event metadata through IEvent<T>
-    public Trip Create(IEvent<TripStarted> @event)
-    {
-        var trip = new Trip
-        {
-            Id = @event.StreamId, // Marten does this for you anyway
-            Started = @event.Timestamp,
-            CorrelationId = @event.Timestamp, // Open telemetry type tracing
-            Description = @event.Data.Description // Still access to the event body
-        };
-
-        // Use a custom header
-        if (@event.Headers.TryGetValue("customer", out var customerId))
-        {
-            trip.CustomerId = (string)customerId;
-        }
-
-        return trip;
-    }
-
-    public void Apply(TripEnded ended, Trip trip, IEvent @event)
-    {
-        trip.Ended = @event.Timestamp;
-    }
-
-    // Other Apply/ShouldDelete methods
-
-    public override ValueTask RaiseSideEffects(IDocumentOperations operations, IEventSlice<Trip> slice)
-    {
-        // Emit other events or messages during asynchronous projection
-        // processing
-
-        // Access to the current state as of the projection
-        // event page being processed *right* now
-        var currentTrip = slice.Snapshot;
-
-        if (currentTrip.TotalMiles > 1000)
-        {
-            // Append a new event to this stream
-            slice.AppendEvent(new PassedThousandMiles());
-
-            // Append a new event to a different event stream by
-            // first specifying a different stream id
-            slice.AppendEvent(currentTrip.InsuranceCompanyId, new IncrementThousandMileTrips());
-
-            // "Publish" outgoing messages when the event page is successfully committed
-            slice.PublishMessage(new SendCongratulationsOnLongTrip(currentTrip.Id));
-
-            // And yep, you can make additional changes to Marten
-            operations.Store(new CompletelyDifferentDocument
-            {
-                Name = "New Trip Segment",
-                OriginalTripId = currentTrip.Id
-            });
-        }
-
-        // This usage has to be async in case you're
-        // doing any additional data access with the
-        // Marten operations
-        return new ValueTask();
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TripProjectionWithEventMetadata.cs#L31-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_using_event_metadata' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-A couple important facts about this new functionality:
-
-- The `RaiseSideEffects()` method is only called during _continuous_ asynchronous projection execution, and will not
-  be called during projection rebuilds or `Inline` projection usage **unless you explicitly enable this behavior as shown below**
-- Events emitted during the side effect method are _not_ immediately applied to the current projected document value by Marten
-- You _can_ alter the aggregate value or replace it yourself in this side effect method to reflect new events, but the onus
-  is on you the user to apply idempotent updates to the aggregate based on these new events in the actual handlers for
-  the new events when those events are handled by the daemon in a later batch
-- There is a [Wolverine](https://wolverinefx.net) integration (of course) to publish the messages through Wolverine if using the `AddMarten()IntegrateWithWolverine()` option
-
-This relatively new behavior that was built for a specific [JasperFx Software](https://jasperfx.net) client project, 
-but has been on the backlog for quite some time. If there are any difficulties with this approach, please feel free
-to join the [Marten Discord room](https://discord.gg/BGkCDx5d). 
-
-### Side Effects in Inline Projections <Badge type="tip" text="7.40" />
-
-By default, Marten will only process projection "side effects" during continuous asynchronous processing. However, if you
-wish to use projection side effects while running projections with an `Inline` lifecycle, you can do that with this setting:
-
-<!-- snippet: sample_using_EnableSideEffectsOnInlineProjections -->
-<a id='snippet-sample_using_EnableSideEffectsOnInlineProjections'></a>
-```cs
-var builder = Host.CreateApplicationBuilder();
-builder.Services.AddMarten(opts =>
-{
-    opts.Connection(builder.Configuration.GetConnectionString("marten"));
-
-    // This is your magic setting to tell Marten to process any projection
-    // side effects even when running Inline
-    opts.Events.EnableSideEffectsOnInlineProjections = true;
-});
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/UsingInlineSideEffects.cs#L12-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_EnableSideEffectsOnInlineProjections' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-This functionality was originally written as a way of sending external messages to a separate system carrying the new state of a single stream projection
-any time new events were captured on an event stream. 
+See [Side Effects](./side-effects) for more information.
