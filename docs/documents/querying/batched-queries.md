@@ -62,7 +62,7 @@ As of v0.8.10, Marten allows you to incorporate [compiled queries](/documents/qu
 Say you have a compiled query that finds the first user with a given first name:
 
 <!-- snippet: sample_FindByFirstName -->
-<a id='snippet-sample_FindByFirstName'></a>
+<a id='snippet-sample_findbyfirstname'></a>
 ```cs
 public class FindByFirstName: ICompiledQuery<User, User>
 {
@@ -74,7 +74,7 @@ public class FindByFirstName: ICompiledQuery<User, User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L100-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_FindByFirstName' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L100-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_findbyfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To use that compiled query class in a batch query, you simply use the `IBatchedQuery.Query(ICompiledQuery)` syntax shown below:

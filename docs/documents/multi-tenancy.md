@@ -484,7 +484,7 @@ To exempt document types from having partitioned tables, such as for tables you 
 even harm by partitioning, you can use either an attribute on the document type:
 
 <!-- snippet: sample_using_DoNotPartitionAttribute -->
-<a id='snippet-sample_using_DoNotPartitionAttribute'></a>
+<a id='snippet-sample_using_donotpartitionattribute'></a>
 ```cs
 [DoNotPartition]
 public class DocThatShouldBeExempted1
@@ -492,7 +492,7 @@ public class DocThatShouldBeExempted1
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L348-L356' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DoNotPartitionAttribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L348-L356' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or exempt a single document type through the fluent interface:

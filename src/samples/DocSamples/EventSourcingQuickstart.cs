@@ -51,6 +51,36 @@ public sealed record QuestParty(Guid Id, List<string> Members)
 
 #endregion
 
+#region sample_AddMembers_command_handler
+
+public record AddMembers(Guid Id, int Day, string Location, string[] Members);
+
+public static class AddMembersHandler
+{
+    public static async Task HandleAsync(AddMembers command, IDocumentSession session)
+    {
+        // Fetch the current state of the quest
+        var quest = await session.Events.FetchForWriting<QuestParty>(command.Id);
+        if (quest.Aggregate == null)
+        {
+            // Bad quest id, do nothing in this sample case
+        }
+
+        var newMembers = command.Members.Where(x => !quest.Aggregate.Members.Contains(x)).ToArray();
+
+        if (!newMembers.Any())
+        {
+            return;
+        }
+
+        quest.AppendOne(new MembersJoined(command.Id, command.Day, command.Location, newMembers));
+        await session.SaveChangesAsync();
+    }
+}
+
+#endregion
+
+
 #region sample_Quest
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 

@@ -104,7 +104,7 @@ type to a metadata value individually. Let's say that you have a document type l
 this where you want to track metadata:
 
 <!-- snippet: sample_DocWithMetadata -->
-<a id='snippet-sample_DocWithMetadata'></a>
+<a id='snippet-sample_docwithmetadata'></a>
 ```cs
 public class DocWithMetadata
 {
@@ -117,7 +117,7 @@ public class DocWithMetadata
     public bool IsDeleted { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L80-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DocWithMetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L80-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_docwithmetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To enable the Marten mapping to metadata values, use this syntax:
@@ -150,7 +150,7 @@ For correlation, causation, and last modified tracking, an easy way to do this i
 just implement the Marten `ITracked` interface as shown below:
 
 <!-- snippet: sample_MyTrackedDoc -->
-<a id='snippet-sample_MyTrackedDoc'></a>
+<a id='snippet-sample_mytrackeddoc'></a>
 ```cs
 public class MyTrackedDoc: ITracked
 {
@@ -160,7 +160,7 @@ public class MyTrackedDoc: ITracked
     public string LastModifiedBy { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L163-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MyTrackedDoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L163-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytrackeddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If your document type implements this interface, Marten will automatically enable the correlation and causation tracking, and set values for correlation, causation, and the last modified data on documents anytime they are loaded or persisted by Marten.
@@ -169,7 +169,7 @@ Likewise, version tracking directly on the document is probably easiest with the
 interface as shown below:
 
 <!-- snippet: sample_MyVersionedDoc -->
-<a id='snippet-sample_MyVersionedDoc'></a>
+<a id='snippet-sample_myversioneddoc'></a>
 ```cs
 public class MyVersionedDoc: IVersioned
 {
@@ -177,7 +177,7 @@ public class MyVersionedDoc: IVersioned
     public Guid Version { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MyVersionedDoc' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Metadata/metadata_marker_interfaces.cs#L121-L129' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_myversioneddoc' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Implementing `IVersioned` will automatically opt your document type into optimistic concurrency
@@ -188,7 +188,7 @@ checking with mapping of the current version to the `IVersioned.Version` propert
 If you want Marten to run lean, you can omit all metadata fields from Marten with this configuration:
 
 <!-- snippet: sample_DisableAllInformationalFields -->
-<a id='snippet-sample_DisableAllInformationalFields'></a>
+<a id='snippet-sample_disableallinformationalfields'></a>
 ```cs
 var store = DocumentStore.For(opts =>
 {
@@ -199,7 +199,7 @@ var store = DocumentStore.For(opts =>
     opts.Policies.DisableInformationalFields();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DisableAllInformationalFields' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MetadataUsage.cs#L10-L21' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disableallinformationalfields' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying by Last Modified

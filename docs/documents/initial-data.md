@@ -77,7 +77,7 @@ We think it's common that you'll use the `IInitialData` mechanism strictly for t
 a set of baseline data for testing that lives in your test project:
 
 <!-- snippet: sample_MyTestingData -->
-<a id='snippet-sample_MyTestingData'></a>
+<a id='snippet-sample_mytestingdata'></a>
 ```cs
 public class MyTestingData: IInitialData
 {
@@ -88,7 +88,7 @@ public class MyTestingData: IInitialData
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L57-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_MyTestingData' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L57-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mytestingdata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, you'd like to use your exact application Marten configuration, but only for testing, add the `MyTestingData` initial data
@@ -96,7 +96,7 @@ set to the application's Marten configuration. You can do that as of Marten v5.1
 methods as shown in a sample below for a testing project:
 
 <!-- snippet: sample_using_InitializeMartenWith -->
-<a id='snippet-sample_using_InitializeMartenWith'></a>
+<a id='snippet-sample_using_initializemartenwith'></a>
 ```cs
 // Use the configured host builder for your application
 // by calling the Program.CreateHostBuilder() method from
@@ -126,5 +126,5 @@ var store = host.Services.GetRequiredService<IDocumentStore>();
 // MyTestingData:
 await store.Advanced.ResetAllData();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L23-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_InitializeMartenWith' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/InitialDataSamples.cs#L23-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_initializemartenwith' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -82,6 +82,8 @@ public class UserAssigned
     public User? User { get; set; }
 }
 
+#region snippet_UserTaskProjection
+
 public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 {
     // This is where you have a hook to "enrich" event data *after* slicing,
@@ -141,5 +143,7 @@ public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
         return snapshot;
     }
 }
+
+#endregion
 
 

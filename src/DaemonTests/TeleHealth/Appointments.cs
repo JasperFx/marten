@@ -37,6 +37,8 @@ public class Appointment
     public DateTimeOffset? Completed { get; set; }
 }
 
+#region sample_AppointmentProjection
+
 public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 {
     public AppointmentProjection()
@@ -87,4 +89,6 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
         return snapshot;
     }
 }
+
+#endregion
 

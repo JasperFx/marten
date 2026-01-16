@@ -52,7 +52,7 @@ public class TenantIdIndexCustomer
 Or by using the fluent interface:
 
 <!-- snippet: sample_index-tenantId-via-fi -->
-<a id='snippet-sample_index-tenantId-via-fi'></a>
+<a id='snippet-sample_index-tenantid-via-fi'></a>
 ```cs
 DocumentStore.For(_ =>
 {
@@ -60,7 +60,7 @@ DocumentStore.For(_ =>
     _.Schema.For<User>().IndexTenantId();
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L32-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-tenantId-via-fi' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L32-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_index-tenantid-via-fi' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Soft Delete
@@ -69,7 +69,7 @@ If using the [soft deletes](/documents/deletes) functionality you can ask Marten
 to create a partial index on the deleted documents either using `SoftDeletedAttribute`:
 
 <!-- snippet: sample_SoftDeletedWithIndexAttribute -->
-<a id='snippet-sample_SoftDeletedWithIndexAttribute'></a>
+<a id='snippet-sample_softdeletedwithindexattribute'></a>
 ```cs
 [SoftDeleted(Indexed = true)]
 public class IndexedSoftDeletedDoc
@@ -77,7 +77,7 @@ public class IndexedSoftDeletedDoc
     public Guid Id;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_SoftDeletedWithIndexAttribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/configuring_mapping_deletion_style.cs#L45-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_softdeletedwithindexattribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or by using the fluent interface:

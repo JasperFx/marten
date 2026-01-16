@@ -231,7 +231,7 @@ var store = DocumentStore.For(_ =>
 Same can be configured for Duplicated Field:
 
 <!-- snippet: sample_IndexExamples -->
-<a id='snippet-sample_IndexExamples'></a>
+<a id='snippet-sample_indexexamples'></a>
 ```cs
 var store = DocumentStore.For(options =>
 {
@@ -269,7 +269,7 @@ var store = DocumentStore.For(options =>
     });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L66-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_IndexExamples' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/MartenRegistryExamples.cs#L66-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_indexexamples' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Unique Index per Tenant

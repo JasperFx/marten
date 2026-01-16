@@ -442,8 +442,11 @@ public class LetterCountsProjection1: SingleStreamProjection<LetterCounts, Guid>
 
 public class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
 {
+    #region sample_EvolveAsync
+
     public override ValueTask<LetterCounts> EvolveAsync(LetterCounts snapshot, Guid id, IQuerySession session, IEvent e, CancellationToken cancellation)
     {
+        // THIS projection isn't doing anything here, but you *could* use IQuerySession
         switch (e.Data)
         {
             case AEvent _:
@@ -465,6 +468,8 @@ public class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
 
         return new ValueTask<LetterCounts>(snapshot);
     }
+
+    #endregion
 }
 
 public class LetterCountsProjection3: SingleStreamProjection<LetterCounts, Guid>

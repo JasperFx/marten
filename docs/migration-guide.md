@@ -60,7 +60,7 @@ On the bright side, we believe that the "event slicing" usage in Marten 8 is sig
 The existing "Optimized Artifacts Workflow" was completely removed in V8. Instead though, there is a new option shown below:
 
 <!-- snippet: sample_AddMartenWithCustomSessionCreation -->
-<a id='snippet-sample_AddMartenWithCustomSessionCreation'></a>
+<a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
 
@@ -81,7 +81,7 @@ services.CritterStackDefaults(x =>
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AddMartenWithCustomSessionCreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs

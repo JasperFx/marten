@@ -22,11 +22,9 @@ public static class FetchLatest
         {
             opts.Connection(builder.Configuration.GetConnectionString("marten"));
 
-            // Just telling Marten upfront that we will use
-            // live aggregation for the Invoice aggregate
-            // This would be the default anyway if you didn't explicitly
-            // register Invoice this way, but doing so let's
-            // Marten "know" about Invoice for code generation
+            // This is NOT necessary as of Marten 8, but might become necessary
+            // in a later version when we try to optimize by using source
+            // generators
             opts.Projections.LiveStreamAggregation<Projections.Invoice>();
         });
 

@@ -11,6 +11,8 @@ namespace DaemonTests.TeleHealth;
 
 
 
+#region sample_AppointmentDetailsProjection
+
 public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDetails, Guid>
 {
     public AppointmentDetailsProjection()
@@ -39,6 +41,8 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
             .ForEntityId(x => x.Entity.PatientId)
             .AddReferences();
 
+        #region sample_using_forevent_addreferences
+
         // Look up and apply provider information
         await group
             .EnrichWith<Provider>()
@@ -46,13 +50,19 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
             .ForEntityId(x => x.ProviderId)
             .AddReferences();
 
+        // Look up and apply Board information that matches the events being
+        // projected
         await group
             .EnrichWith<Board>()
             .ForEvent<AppointmentRouted>()
             .ForEntityId(x => x.BoardId)
             .AddReferences();
 
+        #endregion
+
     }
+
+    #region sample_AppointmentDetails_Evolve
 
     public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, IEvent e)
     {
@@ -98,7 +108,11 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
 
         return snapshot;
     }
+
+    #endregion
 }
+
+#endregion
 
 public class AppointmentDetails
 {

@@ -26,7 +26,7 @@ events to the Marten event storage.**
 Subscriptions will always be an implementation of the `ISubscription` interface shown below:
 
 <!-- snippet: sample_ISubscription -->
-<a id='snippet-sample_ISubscription'></a>
+<a id='snippet-sample_isubscription'></a>
 ```cs
 /// <summary>
 /// Basic abstraction for custom subscriptions to Marten events through the async daemon. Use this in
@@ -47,7 +47,7 @@ public interface ISubscription
         CancellationToken cancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Subscriptions/ISubscription.cs#L11-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ISubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Subscriptions/ISubscription.cs#L11-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_isubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 So far, the subscription model gives you these abilities:
@@ -72,7 +72,7 @@ To make this concrete, here's the simplest possible subscription you can make to
 for every event:
 
 <!-- snippet: sample_ConsoleSubscription -->
-<a id='snippet-sample_ConsoleSubscription'></a>
+<a id='snippet-sample_consolesubscription'></a>
 ```cs
 public class ConsoleSubscription: ISubscription
 {
@@ -95,13 +95,13 @@ public class ConsoleSubscription: ISubscription
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L25-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ConsoleSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L25-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And to register that with our Marten store:
 
 <!-- snippet: sample_register_ConsoleSubscription -->
-<a id='snippet-sample_register_ConsoleSubscription'></a>
+<a id='snippet-sample_register_consolesubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -133,13 +133,13 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_ConsoleSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's a slightly more complicated sample that publishes events to a configured Kafka topic:
 
 <!-- snippet: sample_KafkaSubscription -->
-<a id='snippet-sample_KafkaSubscription'></a>
+<a id='snippet-sample_kafkasubscription'></a>
 ```cs
 public class KafkaSubscription: SubscriptionBase
 {
@@ -199,14 +199,14 @@ public class KafkaProducerConfig
     public string? Topic { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_KafkaSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This time, it's requiring IoC services injected through its constructor, so we're going to use this mechanism
 to add it to Marten:
 
 <!-- snippet: sample_registering_KafkaSubscription -->
-<a id='snippet-sample_registering_KafkaSubscription'></a>
+<a id='snippet-sample_registering_kafkasubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -230,7 +230,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_KafkaSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Registering Subscriptions
@@ -251,7 +251,7 @@ is a great tool for this.
 Stateless subscriptions can simply be registered like this:
 
 <!-- snippet: sample_register_ConsoleSubscription -->
-<a id='snippet-sample_register_ConsoleSubscription'></a>
+<a id='snippet-sample_register_consolesubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -283,14 +283,14 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_ConsoleSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 But, if you need to utilize services from your IoC container within your subscription -- and you very likely do --
 you can utilize the `AddSubscriptionWithServices()` mechanisms:
 
 <!-- snippet: sample_registering_KafkaSubscription -->
-<a id='snippet-sample_registering_KafkaSubscription'></a>
+<a id='snippet-sample_registering_kafkasubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
@@ -314,7 +314,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_KafkaSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Starting Position of Subscriptions
@@ -412,7 +412,7 @@ the various configuration options for that subscription right into the subscript
 base class is shown below:
 
 <!-- snippet: sample_KafkaSubscription -->
-<a id='snippet-sample_KafkaSubscription'></a>
+<a id='snippet-sample_kafkasubscription'></a>
 ```cs
 public class KafkaSubscription: SubscriptionBase
 {
@@ -472,7 +472,7 @@ public class KafkaProducerConfig
     public string? Topic { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_KafkaSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Rewinding or Replaying Subscriptions
@@ -526,7 +526,7 @@ that the controller is told.
 The following is an example of using these facilities for error handling:
 
 <!-- snippet: sample_ErrorHandlingSubscription -->
-<a id='snippet-sample_ErrorHandlingSubscription'></a>
+<a id='snippet-sample_errorhandlingsubscription'></a>
 ```cs
 public class ErrorHandlingSubscription: SubscriptionBase
 {
@@ -602,5 +602,5 @@ public class ReallyBadException: Exception
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L50-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ErrorHandlingSubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L50-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_errorhandlingsubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

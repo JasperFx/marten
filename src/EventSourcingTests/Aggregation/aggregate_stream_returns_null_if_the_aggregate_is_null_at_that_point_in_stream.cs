@@ -140,6 +140,8 @@ public class HardDeletedStartAndStopAggregate
     }
 }
 
+#region sample_HardDeletedStartAndStopProjection
+
 public class HardDeletedStartAndStopProjection: SingleStreamProjection<HardDeletedStartAndStopAggregate, Guid>
 {
     public HardDeletedStartAndStopProjection()
@@ -200,6 +202,8 @@ public class HardDeletedStartAndStopProjection: SingleStreamProjection<HardDelet
     }
 
 }
+
+#endregion
 
 public class HardDeletedStartAndStopAggregate2
 {

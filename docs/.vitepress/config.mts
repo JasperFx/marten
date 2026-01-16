@@ -176,15 +176,22 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Projections Overview', link: '/events/projections/', collapsed: true, items: [
                 {
                   text: 'Aggregate Projections', link: '/events/projections/aggregate-projections', items: [
+                    { text: 'Using Conventional Methods', link: '/events/projections/conventions'},
+                    { text: 'Using Explicit Code', link: '/events/projections/explicit' },
                     { text: 'Live Aggregations', link: '/events/projections/live-aggregates' },
-                    { text: 'Multi-Stream Projections', link: '/events/projections/multi-stream-projections' },
-                    { text: 'Explicit Aggregations', link: '/events/projections/custom-aggregates' },
-                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates' }]
+                    { text: 'Single Stream Projections and Snapshots', link: '/events/projections/single-stream-projections' },
+                    { text: 'Multi Stream Projections', link: '/events/projections/multi-stream-projections' },
+                    { text: 'Reading Aggregates', link: '/events/projections/read-aggregates' },
+                    { text: 'Using Event Metadata', link: '/events/projections/using-metadata' },
+                    { text: 'Side Effects', link: '/events/projections/side-effects'},
+                    { text: 'Enriching Events', link: '/events/projections/enrichment' }
+                    ]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
                 { text: 'Inline Projections', link: '/events/projections/inline' },
                 { text: 'Flat Table Projections', link: '/events/projections/flat' },
+                { text: 'Composite or Chained Projections', link: '/events/projections/composite' },
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Testing Projections', link: '/events/projections/testing' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
