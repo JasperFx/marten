@@ -88,6 +88,15 @@ public interface IReadOnlyEventStoreOptions
     bool UseMandatoryStreamTypeDeclaration { get; set; }
 
     /// <summary>
+    /// Enables a background monitor to detect if the advisory lock is lost due to database restart or fail-over. Prevents situations where concurrent running of async daemons may occur on system recovery.
+    /// Only relevant when using the async daemon in HotCold mode. Enabled by default.
+    /// </summary>
+    /// <remarks>
+    /// This will show up as a SELECT SLEEP query with a 60-second sleep interval. This does not add any additional load to your database, regardless of what your monitoring tools might say.
+    /// </remarks>
+    public bool UseMonitoredAdvisoryLock { get; set; }
+
+    /// <summary>
     /// Opt into different aliasing styles for .NET event types
     /// </summary>
     EventNamingStyle EventNamingStyle { get; set; }

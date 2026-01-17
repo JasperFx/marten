@@ -19,7 +19,7 @@ public class AdvisoryLocksTest
         await using var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
 
-        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier);
+        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier, new AdvisoryLockOptions());
 
         locks.HasLock(50).ShouldBeFalse();
 
@@ -33,8 +33,8 @@ public class AdvisoryLocksTest
     {
         await using var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
-        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier);
-        await using var locks2 = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier);
+        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier, new AdvisoryLockOptions());
+        await using var locks2 = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier, new AdvisoryLockOptions());
 
         (await locks.TryAttainLockAsync(50, CancellationToken.None)).ShouldBeTrue();
         (await locks2.TryAttainLockAsync(50, CancellationToken.None)).ShouldBeFalse();
@@ -51,7 +51,7 @@ public class AdvisoryLocksTest
     {
         await using var store = DocumentStore.For(ConnectionSource.ConnectionString);
 
-        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier);
+        await using var locks = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier, new AdvisoryLockOptions());
 
         (await locks.TryAttainLockAsync(50, CancellationToken.None)).ShouldBeTrue();
         (await locks.TryAttainLockAsync(51, CancellationToken.None)).ShouldBeTrue();
@@ -61,7 +61,7 @@ public class AdvisoryLocksTest
         locks.HasLock(51).ShouldBeTrue();
         locks.HasLock(52).ShouldBeTrue();
 
-        await using var locks2 = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier);
+        await using var locks2 = new AdvisoryLock(((MartenDatabase)store.Storage.Database).DataSource, NullLogger.Instance, store.Storage.Database.Identifier, new AdvisoryLockOptions());
         (await locks2.TryAttainLockAsync(50, CancellationToken.None)).ShouldBeFalse();
         (await locks2.TryAttainLockAsync(51, CancellationToken.None)).ShouldBeFalse();
         (await locks2.TryAttainLockAsync(52, CancellationToken.None)).ShouldBeFalse();
