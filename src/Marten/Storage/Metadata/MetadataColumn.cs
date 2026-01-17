@@ -122,7 +122,7 @@ internal abstract class MetadataColumn<T>: MetadataColumn
                 if (value.GetRawMemberType() != typeof(T))
                 {
                     throw new ArgumentOutOfRangeException(nameof(value),
-                        $"The {_memberName} member has to be of type {typeof(T).NameInCode()}");
+                        $"The {_memberName} member of {_member.DeclaringType?.NameInCode() ?? "null"} has to be of type {typeof(T).NameInCode()}");
                 }
 
                 _member = value;
