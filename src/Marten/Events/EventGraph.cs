@@ -197,59 +197,20 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
     }
 
-    /// <summary>
-    ///     Opt into some performance optimizations for projection rebuilds for both single stream and
-    ///     multi-stream projections. This will result in new table columns and a potential database
-    ///     migration. This will be a default in Marten 8.
-    /// </summary>
     public bool UseOptimizedProjectionRebuilds { get; set; }
-
-    /// <summary>
-    ///     Does Marten require a stream type for any new event streams? This will also
-    ///     validate that an event stream already exists as part of appending events. Default in 7.0 is false,
-    ///     but this will be true in 8.0
-    /// </summary>
     public bool UseMandatoryStreamTypeDeclaration { get; set; }
-
+    public bool UseMonitoredAdvisoryLock { get; set; } = true;
     public bool EnableAdvancedAsyncTracking { get; set; }
-
-    /// <summary>
-    /// This is an "opt in" feature to add the capability to mark some events as "skipped" in the database
-    /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
-    /// </summary>
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
-
-    /// <summary>
-    ///     Opt into using PostgreSQL list partitioning. This can have significant performance and scalability benefits
-    ///     *if* you are also aggressively using event stream archiving
-    /// </summary>
     public bool UseArchivedStreamPartitioning { get; set; }
-
-    /// <summary>
-    ///     Optional extension point to receive published messages as a side effect from
-    ///     aggregation projections
-    /// </summary>
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
-    /// <summary>
-    ///     TimeProvider used for event timestamping metadata. Replace for controlling the timestamps
-    ///     in testing
-    /// </summary>
+
     [IgnoreDescription]
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
 
-    /// <summary>
-    ///     Opt into having Marten create a unique index on Event.Id. The default is false. This may
-    ///     be helpful if you need to create an external reference id to another system, or need to
-    ///     load events by their Id
-    /// </summary>
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
-    /// <summary>
-    ///     Opt into having Marten process "side effects" on aggregation projections
-    ///     (SingleStreamProjection/MultiStreamProjection) while
-    ///     running in an Inline lifecycle. Default is false;
-    /// </summary>
     public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
 
     /// <summary>

@@ -43,7 +43,7 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" Version="9.0.4" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.4.2" />
+        <PackageReference Include="Weasel.Postgresql" Version="8.4.3" />
     </ItemGroup>
 
 
