@@ -347,7 +347,7 @@ await group
 <!-- endSnippet -->
 
 What this does is data lookup for all the unique `Provider` and `Board` documents that match
-any of the events in the current event range, and adds a `References<T>` event to each event slic
+any of the events in the current event range, and adds a `References<T>` event to each event slice
 for matching `Provider` or `Board` documents.
 
 In the `Evolve()` method for the projection, we can look for those "synthetic events" like this:

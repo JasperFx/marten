@@ -42,7 +42,10 @@
     "Revisioned",
     "Vogen",
     "upserts",
-	"Citus"
+	  "Citus",
+    "Telehealth",
+    "Tele",
+    "revisioning"
   ],
   "ignoreWords": [
     "JSONB",
@@ -99,7 +102,9 @@
     "unaccent",
     "ngram",
     "ngrams",
-    "pgcrypto"
+    "pgcrypto",
+    "Jeremie",
+    "Chassaing"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links
