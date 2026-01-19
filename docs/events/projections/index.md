@@ -43,7 +43,7 @@ As for "how" projections in Marten work, at a high level the built in projection
 
 1. Query the raw event data into memory, and use those events to build up an in memory .NET object that aggregates the state of those events. This is what we'll refer to as [Live Aggregation](/events/projections/live-aggregates)
    in the rest of the documentation
-2. Aggregate or translate the raw event data into .NET objects that are persisted as [Marten documents](./documents/) where they can be queried, loaded, or even deleted
+2. Aggregate or translate the raw event data into .NET objects that are persisted as [Marten documents](/documents/) where they can be queried, loaded, or even deleted
    with all of the normal Marten document database features. 
 3. Aggregate or translate the raw event data into flat tables in the underlying PostgreSQL database because hey, PostgreSQL is an outstanding relational database and there are plenty of use cases where that's probably your best approach. This is what we refer to as [Flat Table Projections](/events/projections/flat).
 
