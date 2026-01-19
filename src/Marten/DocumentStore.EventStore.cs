@@ -153,8 +153,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    async Task IEventStore<IDocumentOperations, IQuerySession>.TeardownExistingProjectionProgressAsync(
-        IEventDatabase database, string subscriptionName, CancellationToken token)
+    async Task IEventStore<IDocumentOperations, IQuerySession>.TeardownExistingProjectionStateAsync(IEventDatabase database, string subscriptionName, CancellationToken token)
     {
         var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
         sessionOptions.AllowAnyTenant = true;
@@ -186,6 +185,33 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         }
 
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    async Task IEventStore<IDocumentOperations, IQuerySession>.DeleteProjectionProgressAsync(IEventDatabase database, string subscriptionName, CancellationToken token)
+    {
+        var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
+        sessionOptions.AllowAnyTenant = true;
+        await using var session = LightweightSession(sessionOptions);
+
+        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(subscriptionName));
+
+        if (source == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(subscriptionName));
+        }
+
+        foreach (var agent in source.Shards())
+        {
+            session.QueueOperation(new DeleteProjectionProgress(Events, agent.Name.Identity));
+        }
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    Task IEventStore<IDocumentOperations, IQuerySession>.TeardownExistingProjectionProgressAsync(
+        IEventDatabase database, string subscriptionName, CancellationToken token)
+    {
+        throw new NotSupportedException();
     }
 
     private void teardownProjectionStorage(IProjectionSource<IDocumentOperations, IQuerySession> source, IDocumentSession session)
