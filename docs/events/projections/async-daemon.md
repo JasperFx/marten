@@ -1,12 +1,5 @@
 # Async Projections Daemon
 
-::: tip
-If you are experiencing any level of "stale high water" detection or getting log messages about "event skipping" with
-Marten, you want to at least consider switching to the [QuickAppend](https://martendb.io/events/appending.html#rich-vs-quick-appends) option. The `QuickAppend`
-mode is faster, and is substantially less likely to lead to gaps in the event sequence which in turn helps the async daemon
-run more smoothly.
-:::
-
 The *Async Daemon* is the nickname for Marten's built in asynchronous projection processing engine. The current async daemon from Marten V4 on requires no other infrastructure
 besides Postgresql and Marten itself. The daemon itself runs inside an [IHostedService](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services?view=aspnetcore-5.0&tabs=visual-studio) implementation in your application. The **daemon is disabled by default**.
 
@@ -23,12 +16,6 @@ There are only two basic things to configure the *Async Daemon*:
 
 1. Register the projections that should run asynchronously
 2. Set the `StoreOptions.AsyncMode` to either `Solo` or `HotCold` (more on what these options mean later in this page)
-
-:::warning
-The asynchronous daemon service registration is **opt in** starting with V5 and requires the chained call
-to `AddAsyncDaemon()` shown below. This was done to alleviate user issues with Marten inside of Azure Functions
-where the runtime was not compatible with the hosted service for the daemon.
-:::
 
 As an example, this configures the daemon to run in the current node with a single active projection:
 
@@ -77,6 +64,13 @@ var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L88-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrap_daemon_hotcold' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+If you are experiencing any level of "stale high water" detection or getting log messages about "event skipping" with
+Marten, you want to at least consider switching to the [QuickAppend](https://martendb.io/events/appending.html#rich-vs-quick-appends) option. The `QuickAppend`
+mode is faster, and is substantially less likely to lead to gaps in the event sequence which in turn helps the async daemon
+run more smoothly.
+:::
+
 ## How the Daemon Works
 
 ![How Aggregation Works](/images/aggregation-projection-flow.png "How Aggregation Projections Work")
@@ -90,15 +84,6 @@ the current progression point, the daemon
 
 ## Solo vs. HotCold
 
-::: tip
-Marten's leader election is done with Postgresql advisory locks, so there is no additional software infrastructure necessary other than
-Postgresql and Marten itself.
-:::
-
-::: tip
-The "HotCold" mode was substantially changed for Marten 7.0 and will potentially run projections across different nodes
-:::
-
 As of right now, the daemon can run as one of two modes:
 
 1. *Solo* -- the daemon will be automatically started when the application is bootstrapped and all projections and projection shards will be started on that node. The assumption with Solo
@@ -106,9 +91,17 @@ As of right now, the daemon can run as one of two modes:
 1. *HotCold* -- the daemon will use a built in [leader election](https://en.wikipedia.org/wiki/Leader_election) function individually for each
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
 
-Regardless of how things are configured, the daemon is designed to detect when multiple running processes are updating the same projection shard and will shut down the process if concurrency issues persist.
+::: tip
+When running in `HotCold` mode, Marten will monitor the Postgres advisory lock by running a `SELECT pg_catalog.pg_sleep(60)` query to detect if the database restarts or fails-over.
+Without this monitoring, Marten will not be aware of the lock loss and multiple async daemons can start running concurrently across multiple nodes, causing application failure.
 
-If your Marten store is only using a single database, Marten will distribute projection by projection. If your store is using
+Some monitoring tools erroneously report this query as "load", however this query simply sleeps for 60 seconds and **does not** consume any database resources. 
+If this monitoring is undesirable for your scenario, you can opt-out by setting `options.Events.UseMonitoredAdvisoryLock` to false when configuring Marten.
+:::
+
+## Projection Distribution
+
+If your Marten store is only using a single database, Marten will distribute projections by projection type. If your store is using
 [separate databases for multi-tenancy](/configuration/multitenancy), the async daemon will group all projections for a single
 database on the same executing node as a purposeful strategy to reduce the total number of connections to the databases.
 
@@ -126,24 +119,17 @@ and be able to replay events later after the fix.
 
 ## PgBouncer
 
-::: tip
-If you are also using [Wolverine](https://wolverinefx.net), its ability to [distribute Marten projections and subscriptions](https://wolverinefx.net/guide/durability/marten/distribution.html) does not depend on advisory
-locks and also spreads work out more evenly through a cluster. 
-:::
-
 If you use Marten's async daemon feature *and* [PgBouncer](https://www.pgbouncer.org/), make sure you're aware of some 
 [Npgsql configuration settings](https://www.npgsql.org/doc/compatibility.html#pgbouncer) for best usage with Marten. Marten's
 async daemon uses [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/explicit-locking.html) to help distribute work across an application cluster, and PgBouncer can
 throw off that functionality without the connection settings in the Npgsql documentation linked above. 
 
-## Error Handling
-
-::: warning
-The async daemon error handling was rewritten for Marten 7.0. The new model uses
-[Polly](https://www.thepollyproject.org/) for typical transient errors like network hiccups or a database being too
-busy. Marten does have some configuration to alternatively skip certain errors in normal background operation or while
-doing rebuilds.
+::: tip
+If you are also using [Wolverine](https://wolverinefx.net), its ability to [distribute Marten projections and subscriptions](https://wolverinefx.net/guide/durability/marten/distribution.html) does not depend on advisory
+locks and also spreads work out more evenly through a cluster. 
 :::
+
+## Error Handling
 
 **In all examples, `opts` is a `StoreOptions` object. Besides the basic [Polly error handling](/configuration/retries#resiliency-policies),
 you have these three options to configure error handling within your system's usage of asynchronous projections:
@@ -193,7 +179,7 @@ See the section on error handling. Poison event detection is a little more autom
 
 ## Accessing the Executing Async Daemon
 
-New in Marten 7.0 is the ability to readily access the executing instance of the daemon for each database in your system.
+Marten supports access to the executing instance of the daemon for each database in your system.
 You can use this approach to track progress or start or stop individual projections like so:
 
 <!-- snippet: sample_using_projection_coordinator -->
@@ -234,7 +220,7 @@ You can see the usage below from one of the Marten tests where we use that metho
 daemon has caught up:
 
 <!-- snippet: sample_using_WaitForNonStaleProjectionDataAsync -->
-<a id='snippet-sample_using_waitfornonstaleprojectiondataasync'></a>
+<a id='snippet-sample_using_WaitForNonStaleProjectionDataAsync'></a>
 ```cs
 [Fact]
 public async Task run_simultaneously()
@@ -255,7 +241,7 @@ public async Task run_simultaneously()
     await CheckExpectedResults();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_waitfornonstaleprojectiondataasync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/EventProjections/event_projections_end_to_end.cs#L28-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_WaitForNonStaleProjectionDataAsync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The basic idea in your tests is to:
@@ -303,7 +289,7 @@ public async Task run_simultaneously()
 The following code shows the diagnostics support for the async daemon as it is today:
 
 <!-- snippet: sample_DaemonDiagnostics -->
-<a id='snippet-sample_daemondiagnostics'></a>
+<a id='snippet-sample_DaemonDiagnostics'></a>
 ```cs
 public static async Task ShowDaemonDiagnostics(IDocumentStore store)
 {
@@ -322,7 +308,7 @@ public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     Console.WriteLine($"The daemon high water sequence mark is {daemonHighWaterMark}");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_daemondiagnostics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CommandLineRunner/AsyncDaemonBootstrappingSamples.cs#L109-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_DaemonDiagnostics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Command Line Support
@@ -443,7 +429,7 @@ from systems using Marten.
 If your system is configured to export metrics and Open Telemetry data from Marten like this:
 
 <!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
-<a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
+<a id='snippet-sample_enabling_open_telemetry_exporting_from_Marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little
 // different for other tools like Prometheus or SigNoz
@@ -462,7 +448,7 @@ builder.Services.AddOpenTelemetry()
         metrics.AddMeter("Marten");
     });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_marten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/samples/AspireHeadlessTripService/Program.cs#L21-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enabling_open_telemetry_exporting_from_Marten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 *And* you are running the async daemon in your system, you should see potentially activities for each running projection
