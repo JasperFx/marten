@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
@@ -17,6 +18,7 @@ using Marten.Testing.Harness;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Shouldly;
+using Xunit.Abstractions;
 
 namespace EventSourcingTests.SchemaChange
 {
@@ -780,7 +782,7 @@ namespace EventSourcingTests.SchemaChange
         }
     }
 
-    public class UpcastersTests: OneOffConfigurationsContext
+    public class UpcastersTests(ITestOutputHelper Output): OneOffConfigurationsContext
     {
         [Theory]
         [MemberData(nameof(UpcastersConfiguration))]
@@ -800,11 +802,11 @@ namespace EventSourcingTests.SchemaChange
                 await session.SaveChangesAsync();
             }
 
-            using var store = SeparateStore(_ =>
+            await using var store = SeparateStore(opts =>
             {
-                _.Projections.Add<New.ShoppingCartProjection>(ProjectionLifecycle.Inline);
-
-                configureUpcasters(_);
+                opts.Projections.Add<New.ShoppingCartProjection>(ProjectionLifecycle.Inline);
+                opts.Logger(new TestOutputMartenLogger(Output));
+                configureUpcasters(opts);
             });
             {
                 await using var session = store.LightweightSession();
@@ -818,6 +820,8 @@ namespace EventSourcingTests.SchemaChange
                 using var daemon = await store.BuildProjectionDaemonAsync();
 
                 await daemon.RebuildProjectionAsync<New.ShoppingCartProjection>(CancellationToken.None);
+
+                await Task.Delay(15.Seconds());
 
                 var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCartDetails>(shoppingCartId);
 
