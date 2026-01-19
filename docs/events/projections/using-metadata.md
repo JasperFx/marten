@@ -1,6 +1,6 @@
 # Using Event Metadata
 
-Marten automatically collects [metadata about the events](/events/metadata~~~~) you capture as well as allowing
+Marten automatically collects [metadata about the events](/events/metadata) you capture as well as allowing
 you to customize the metadata at will. All of that information (versions, timestamps, headers)
 is available to be used within aggregation projections.
 
