@@ -253,6 +253,11 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L14-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetailsprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+::: tip
+The new `Updated<T>` synthetic event that we're using to communicate updates between projections can also be used within
+`Apply()`, `Create`, or `ShouldDelete` methods as well.
+:::
+
 And also the definition for the downstream `BoardSummary` view:
 
 <!-- snippet: sample_BoardSummaryProjection -->
