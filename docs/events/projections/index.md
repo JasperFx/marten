@@ -92,7 +92,7 @@ For more information, see:
 1. [Live Aggregations](/events/projections/live-aggregates) (`ProjectionLifecycle.Live`) are executed on demand by loading event data and creating the projected view in memory without persisting the projected documents
 1. [Asynchronous Projections](/events/projections/async-daemon) (`ProjectionLifecycle.Async`) are executed by a background process (eventual consistency)
 
-For other descriptions of the _Projections_ pattern inside of Event Sourcing architectures, see:
+For other descriptions of the *Projections* pattern inside of Event Sourcing architectures, see:
 
 - [Projections in Event Sourcing](https://zimarev.com/blog/event-sourcing/projections/)
 - [Projections in Event Sourcing: Build ANY model you want!](https://codeopinion.com/projections-in-event-sourcing-build-any-model-you-want/)
@@ -179,7 +179,7 @@ There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well
 
 *First off, be aware that some event metadata (`IEvent.Version` and `IEvent.Sequence`) is not available during the execution of inline projections when using the ["Quick" append mode](/events/appending). If you need to use this metadata in your projections, please use asynchronous or live projections, or use the "Rich" append mode.*
 
-If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
+If you would prefer that the projected aggregate document be updated *inline* with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
 <!-- snippet: sample_registering-quest-party -->
 <a id='snippet-sample_registering-quest-party'></a>
