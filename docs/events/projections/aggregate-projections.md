@@ -12,9 +12,8 @@ These projections are done by sub-classing the `MultiStreamProjection<TDoc, TId>
 An example of a multi-stream projection might be a "query model" within an accounting system of some sort that rolls up
 the value of all unpaid invoices by active client. 
 
-You can *also* use a `MultiStreamProjection` to create views that are a segment of a single stream over time or version. 
-Imagine that you have a system that models the activity of a bank account with event sourcing. You could use a `MultiStreamProjection` to create a view 
-that summarizes the activity of a single bank account within a calendar month.
+You can _also_ use a `MultiStreamProjection` to create views that are a segment of a single stream over time or version. 
+Imagine that you have a system that models the activity of a bank account with event sourcing. You could use a `MultiStreamProjection` to create a view that summarizes the activity of a single bank account within a calendar month.
 
 ::: tip
 The ability to use explicit code to define projections was hugely improved in the Marten 8.0 release.
@@ -148,15 +147,13 @@ process:
    which is almost inevitably means a `switch` statement. Using the `QuestParty` example again, the aggregation projection would get an `EventSlice` that contains the identity of
    an active quest, the snapshot of the current `QuestParty` document that is persisted by Marten, and the new `MembersJoined` et al events that should be applied to the existing
    `QuestParty` object to derive the new version of `QuestParty`. 
-6. *Just* before Marten persists all the changes from the application / evolve step, you have the [`RaiseSideEffects()` hook](/events/projections/side-effects) to potentially raise "side effects" like
+6. _Just_ before Marten persists all the changes from the application / evolve step, you have the [`RaiseSideEffects()` hook](/events/projections/side-effects) to potentially raise "side effects" like
    appending additional events based on the now updated state of the projected aggregates or publishing the new state of an aggregate through messaging ([Wolverine](https://wolverinefx.net/guide/durability/marten/) has first class support for Marten projection side effects through its Marten integration into the full "Critter Stack")
 7. For the current event range and event slices, Marten will send all aggregate document updates or deletions, new event appending operations, and even outboxed, outgoing messages sent via side effects
    (if you're using the Wolverine integration) in batches to the underlying PostgreSQL database. I'm calling this out because we've constantly found in
-   Marten development that command batching to PostgreSQL is a huge factor in system performance and the async daemon has been designed to try to minimize the number 
-   of network round trips between your application and PostgreSQL at every turn.
+   Marten development that command batching to PostgreSQL is a huge factor in system performance and the async daemon has been designed to try to minimize the number of network round trips between your application and PostgreSQL at every turn.
 8. Assuming the transaction succeeds for the current event range and the operation batch in the previous step, Marten will call "after commit" observers. This notification for example will
    release any messages raised as a side effect and actually send those messages via whatever is doing the actual publishing (probably Wolverine).
-
 
 ::: tip
 Marten happily supports immutable data types for the aggregate documents produced by projections, but also happily supports
@@ -164,9 +161,7 @@ mutable types as well. The usage of the application code is a little different t
 :::
 
 ::: info
-Starting with Marten 8.0, we've tried somewhat to conform to the terminology used by the [Functional Event Sourcing Decider](https://thinkbeforecoding.com/post/2021/12/17/functional-event-sourcing-decider)
-paper by Jeremie Chassaing. To that end, the API now refers to a "snapshot" that really just means *a* version of the projection and
-"evolve" as the step of applying new events to an existing "snapshot" to calculate a new "snapshot."
+Starting with Marten 8.0, we've tried somewhat to conform to the terminology used by the [Functional Event Sourcing Decider](https://thinkbeforecoding.com/post/2021/12/17/functional-event-sourcing-decider) paper by Jeremie Chassaing. To that end, the API now refers to a "snapshot" that really just means _a_ version of the projection and "evolve" as the step of applying new events to an existing "snapshot" to calculate a new "snapshot."
 :::
 
 ## Aggregate Caching

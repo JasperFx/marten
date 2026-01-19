@@ -14,8 +14,7 @@ So here’s a common scenario when building a system using Event Sourcing with M
 2. You have workflows modeled with event sourcing and you want some of the projections from those 
    events to also include information from the reference data documents
 
-As an example, let’s say that your application has some reference information about system users saved in this document type 
-(from the Marten testing suite):
+As an example, let’s say that your application has some reference information about system users saved in this document type (from the Marten testing suite):
 
 ```csharp
 public class User
@@ -36,8 +35,7 @@ public class User
 }
 ```
 
-And you also have events for some kind of `UserTask` aggregate that manages the workflow 
-of some kind of work tracking. You might have some events like this:
+And you also have events for some kind of `UserTask` aggregate that manages the workflow of some kind of work tracking. You might have some events like this:
 
 ```csharp
 public record TaskLogged(string Name);
@@ -71,9 +69,7 @@ public class UserTask
 }
 ```
 
-In the projection for `UserTask`, you can always reach out to Marten in an adhoc way 
-to grab the right User documents like this possible code in the projection definition 
-for `UserTask`:
+In the projection for `UserTask`, you can always reach out to Marten in an adhoc way to grab the right User documents like this possible code in the projection definition for `UserTask`:
 
 ```csharp
 // We're just gonna go look up the user we need right here and now!
@@ -93,8 +89,7 @@ The ability to just pull in `IQuerySession` and go look up whatever data you nee
 Instead of the *N+1 Query Problem* you could easily get from doing the `User` lookup one single event at a time, what if instead we were able to batch up the calls to lookup all the necessary `User` information for a batch of `UserTask` data being updated by the async daemon?
 
 That's where the `EnrichEventsAsync()` template method can come into play on your aggregation projections
-as a way of wringing more performance and scalability out of your Marten usage! Let’s build a single stream projection 
-for the `UserTask` aggregate type shown up above that batches the `User` lookup:
+as a way of wringing more performance and scalability out of your Marten usage! Let’s build a single stream projection for the `UserTask` aggregate type shown up above that batches the `User` lookup:
 
 <!-- snippet: snippet_UserTaskProjection -->
 <a id='snippet-snippet_usertaskprojection'></a>
@@ -162,31 +157,21 @@ public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/when_enriching_events_for_aggregation_projections.cs#L85-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-snippet_usertaskprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Focus please on the `EnrichEventsAsync()` method above. That’s lets you define a step in asynchronous projection 
-running to potentially do batched data lookups immediately after Marten has “sliced” 
-and grouped a batch of events by each aggregate identity that is about to be updated, 
-but before the actual updates are made to any of the `UserTask` snapshot documents.
+Focus please on the `EnrichEventsAsync()` method above. That’s lets you define a step in asynchronous projection running to potentially do batched data lookups immediately after Marten has “sliced” and grouped a batch of events by each aggregate identity that is about to be updated, but before the actual updates are made to any of the `UserTask` snapshot documents.
 
-In the code above, we’re looking for all the unique user ids that are referenced by any `UserAssigned` events in 
-this batch of events, and making one single call to Marten to fetch the matching User documents. 
-Lastly, we’re looping around on the `AgentAssigned` objects and actually “enriching” the 
-events by setting a User property on them with the data we just looked up.
+In the code above, we’re looking for all the unique user ids that are referenced by any `UserAssigned` events in this batch of events, and making one single call to Marten to fetch the matching User documents. Lastly, we’re looping around on the `AgentAssigned` objects and actually “enriching” the events by setting a User property on them with the data we just looked up.
 
 A couple other things:
 
-It might not be terribly obvious, but you could still use immutable types for your event data 
-and “just” quietly swap out single event objects within the `EventSlice` groupings as well.
+It might not be terribly obvious, but you could still use immutable types for your event data and “just” quietly swap out single event objects within the `EventSlice` groupings as well.
 
-You can also do “event enrichment” in any kind of custom grouping within `MultiStreamProjection` types without 
-this new hook method, but we needed this to have an easy recipe at least for 
-`SingleStreamProjection` classes. You might find this hook easier to use than doing database 
-lookups in custom grouping anyway.
+You can also do “event enrichment” in any kind of custom grouping within `MultiStreamProjection` types without this new hook method, but we needed this to have an easy recipe at least for `SingleStreamProjection` classes. You might find this hook easier to use than doing database lookups in custom grouping anyway.
 
 ## Declarative Enrichment <Badge type="tip" text="8.18" />
 
 As part of the work on [composite or chained projections](/events/projections/composite) in Marten 8.18,
 we were also able to add some new, hopefully easier to use recipes for more declarative event
-enrichment. 
+enrichment.
 
 First, for a little background. In the testing suite, we have a fake "TeleHealth" problem domain coded
 up that has the concept of a `ProviderShift` event stream that refers to the work of a single health
@@ -417,14 +402,3 @@ public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, 
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L65-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetails_evolve' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-
-
-
-
-
-
-
-
-
-

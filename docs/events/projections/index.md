@@ -22,7 +22,7 @@ As implied by the diagram above, the **role** of a projection in your system fit
 
 A "write model" is used by command handlers in your system to support decision making. Because this information absolutely needs
 to be strongly consistent with the current state of the captured events, you might well strip down the projected model to only
-the information your command handlers need. 
+the information your command handlers need.
 
 A "read model" is information that is supplied to clients of your system like user interfaces or other systems. While there's
 actually no real mechanical difference between a "read model" and a "write model" (and it's perfectly fine to use the same .NET types
@@ -36,11 +36,10 @@ or dashboard type screens.
 
 ::: tip
 Arguably the single biggest advantage of Marten as an Event Sourcing solution over many other Event Stores is how seamless the integration is between
-Marten's "PostgreSQL as Document Database" features and the Event Sourcing storage. 
+Marten's "PostgreSQL as Document Database" features and the Event Sourcing storage.
 :::
 
-As for "how" projections in Marten work, at a high level the built in projections are taking the raw event data and doing 
-one of:
+As for "how" projections in Marten work, at a high level the built in projections are taking the raw event data and doing one of:
 
 1. Query the raw event data into memory, and use those events to build up an in memory .NET object that aggregates the state of those events. This is what we'll refer to as [Live Aggregation](/events/projections/live-aggregates)
    in the rest of the documentation
@@ -116,7 +115,6 @@ Marten supplies X main recipes for constructing projections.
    if you only apply events to an aggregate if the aggregate document previously existed.
 5. If one of the built in projection recipes doesn't fit what you want to do, you can happily build your own [custom projection](/events/projections/custom)
 
-
 ## Aggregates
 
 Aggregates condense data described by a single stream. Marten only supports aggregation via .Net classes. Aggregates are calculated upon every request by running the event stream through them, as compared to inline projections, which are computed at event commit time and stored as documents.
@@ -179,7 +177,7 @@ There is also a matching asynchronous `AggregateStreamAsync()` mechanism as well
 
 ## Inline Projections
 
-_First off, be aware that some event metadata (`IEvent.Version` and `IEvent.Sequence`) is not available during the execution of inline projections when using the ["Quick" append mode](/events/appending). If you need to use this metadata in your projections, please use asynchronous or live projections, or use the "Rich" append mode._
+*First off, be aware that some event metadata (`IEvent.Version` and `IEvent.Sequence`) is not available during the execution of inline projections when using the ["Quick" append mode](/events/appending). If you need to use this metadata in your projections, please use asynchronous or live projections, or use the "Rich" append mode.*
 
 If you would prefer that the projected aggregate document be updated _inline_ with the events being appended, you simply need to register the aggregation type in the `StoreOptions` upfront when you build up your document store like this:
 
