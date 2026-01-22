@@ -1047,13 +1047,15 @@ namespace Marten.Generated.DocumentStorage
 
         public const string MAIN_LOADER_SQL = "COPY numeric_revisioning.mt_doc_revisioneddoc(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
-        public const string TEMP_LOADER_SQL = "COPY mt_doc_revisioneddoc_temp(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
+        public const string TEMP_LOADER_SQL = "COPY mt_doc_revisioneddoc_temp(\"mt_dotnet_type\", \"id\", \"mt_expected_version\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
         public const string COPY_NEW_DOCUMENTS_SQL = "insert into numeric_revisioning.mt_doc_revisioneddoc (\"id\", \"data\", \"mt_dotnet_type\", \"mt_version\", mt_last_modified) (select mt_doc_revisioneddoc_temp.\"id\", mt_doc_revisioneddoc_temp.\"data\", mt_doc_revisioneddoc_temp.\"mt_dotnet_type\", mt_doc_revisioneddoc_temp.\"mt_version\", transaction_timestamp() from mt_doc_revisioneddoc_temp left join numeric_revisioning.mt_doc_revisioneddoc on mt_doc_revisioneddoc_temp.id = numeric_revisioning.mt_doc_revisioneddoc.id where numeric_revisioning.mt_doc_revisioneddoc.id is null)";
 
         public const string OVERWRITE_SQL = "update numeric_revisioning.mt_doc_revisioneddoc target SET data = source.data, mt_dotnet_type = source.mt_dotnet_type, mt_version = source.mt_version, mt_last_modified = transaction_timestamp() FROM mt_doc_revisioneddoc_temp source WHERE source.id = target.id";
 
-        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_revisioneddoc_temp (like numeric_revisioning.mt_doc_revisioneddoc including defaults)";
+        public const string OVERWRITE_WITH_VERSION_SQL = "update numeric_revisioning.mt_doc_revisioneddoc target SET data = source.data, mt_dotnet_type = source.mt_dotnet_type, mt_version = source.mt_version, mt_last_modified = transaction_timestamp() FROM mt_doc_revisioneddoc_temp source WHERE source.id = target.id and target.mt_version = source.mt_expected_version";
+
+        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_revisioneddoc_temp (like numeric_revisioning.mt_doc_revisioneddoc including defaults, \"mt_expected_version\" integer)";
 
 
         public override string CreateTempTableForCopying()
@@ -1074,10 +1076,26 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
+        public override string OverwriteDuplicatesFromTempTableWithVersionCheck()
+        {
+            return OVERWRITE_WITH_VERSION_SQL;
+        }
+
+
         public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, DocumentDbTests.Concurrency.RevisionedDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
+            await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
+        }
+
+
+        public override async System.Threading.Tasks.Task LoadTempRowAsync(Npgsql.NpgsqlBinaryImporter writer, DocumentDbTests.Concurrency.RevisionedDoc document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        {
+            await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
+            await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            writer.Write(document.Version <= 0 ? (object)DBNull.Value : (object)document.Version, NpgsqlTypes.NpgsqlDbType.Integer);
             await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
