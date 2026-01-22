@@ -190,6 +190,14 @@ internal class BulkInsertion: IDisposable
             await conn.CreateCommand(overwrite + ";" + copy)
                 .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
         }
+        else if (mode == BulkInsertMode.OverwriteIfVersionMatches)
+        {
+            var overwrite = loader.OverwriteDuplicatesFromTempTableWithVersionCheck();
+            var copy = loader.CopyNewDocumentsFromTempTable();
+
+            await conn.CreateCommand(overwrite + ";" + copy)
+                .ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+        }
     }
 
     private async Task loadDocumentsAsync<T>(IReadOnlyCollection<T> documents, IBulkLoader<T> loader,
