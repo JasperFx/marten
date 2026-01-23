@@ -4,10 +4,13 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Projections.ContainerScoped;
 using Marten.Events.Projections;
+using Marten.Internal.Sessions;
 using Marten.Schema;
+using Marten.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Events.Aggregation;
@@ -34,6 +37,14 @@ public class SingleStreamProjection<TDoc, TId>:
     void IMartenAggregateProjection.ConfigureAggregateMapping(DocumentMapping mapping, StoreOptions storeOptions)
     {
         mapping.UseVersionFromMatchingStream = true;
+    }
+
+    public override IEventSlicer BuildSlicer(IQuerySession session)
+    {
+        // This will address https://github.com/JasperFx/wolverine/issues/2053
+        return session.As<QuerySession>().Options.EventGraph.TenancyStyle == TenancyStyle.Conjoined
+            ? new NulloEventSlicer()
+            : base.BuildSlicer(session);
     }
 
     public static void Register<TConcrete>(IServiceCollection services, ProjectionLifecycle lifecycle,
