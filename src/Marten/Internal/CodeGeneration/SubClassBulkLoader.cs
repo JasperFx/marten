@@ -44,4 +44,9 @@ public class SubClassBulkLoader<T, TRoot>: IBulkLoader<T> where T : TRoot
     {
         return _inner.OverwriteDuplicatesFromTempTable();
     }
+
+    public string OverwriteDuplicatesFromTempTableWithVersionCheck()
+    {
+        return _inner.OverwriteDuplicatesFromTempTableWithVersionCheck();
+    }
 }

@@ -46,7 +46,7 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
         foreach (var document in documents)
         {
             await writer.StartRowAsync(cancellation).ConfigureAwait(false);
-            await LoadRowAsync(writer, document, tenant, serializer, cancellation).ConfigureAwait(false);
+            await LoadTempRowAsync(writer, document, tenant, serializer, cancellation).ConfigureAwait(false);
         }
 
         await writer.CompleteAsync(cancellation).ConfigureAwait(false);
@@ -55,6 +55,11 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
     public abstract string CopyNewDocumentsFromTempTable();
 
     public abstract string OverwriteDuplicatesFromTempTable();
+
+    public virtual string OverwriteDuplicatesFromTempTableWithVersionCheck()
+    {
+        return OverwriteDuplicatesFromTempTable();
+    }
 
     public object GetNullable<TValue>(TValue? value) where TValue : struct
     {
@@ -83,6 +88,12 @@ public abstract class BulkLoader<T, TId>: IBulkLoader<T> where TId : notnull whe
 
     public abstract Task LoadRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant,
         ISerializer serializer, CancellationToken cancellation);
+
+    public virtual Task LoadTempRowAsync(NpgsqlBinaryImporter writer, T document, Tenant tenant,
+        ISerializer serializer, CancellationToken cancellation)
+    {
+        return LoadRowAsync(writer, document, tenant, serializer, cancellation);
+    }
 
 
     public abstract string MainLoaderSql();

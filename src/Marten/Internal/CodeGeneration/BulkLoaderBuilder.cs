@@ -7,6 +7,7 @@ using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Storage;
+using NpgsqlTypes;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -29,9 +30,11 @@ public class BulkLoaderBuilder
         var upsertFunction = _mapping.Schema.Upsert;
 
 
-        var arguments = orderArgumentsForBulkWriting(upsertFunction);
+        var mainArguments = orderArgumentsForBulkWriting(upsertFunction, includeExpectedVersion: false);
+        var tempArguments = orderArgumentsForBulkWriting(upsertFunction, includeExpectedVersion: true);
 
-        var columns = arguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
+        var mainColumns = mainArguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
+        var tempColumns = tempArguments.Select(x => $"\\\"{x.Column}\\\"").Join(", ");
 
         var type = assembly.AddType(TypeName,
             typeof(BulkLoader<,>).MakeGenericType(_mapping.DocumentType, _mapping.IdType));
@@ -44,10 +47,10 @@ public class BulkLoaderBuilder
         type.MethodFor("MainLoaderSql")
             .Frames
             .ReturnNewStringConstant("MAIN_LOADER_SQL",
-                $"COPY {_mapping.TableName.QualifiedName}({columns}) FROM STDIN BINARY");
+                $"COPY {_mapping.TableName.QualifiedName}({mainColumns}) FROM STDIN BINARY");
 
         type.MethodFor("TempLoaderSql").Frames
-            .ReturnNewStringConstant("TEMP_LOADER_SQL", $"COPY {_tempTable}({columns}) FROM STDIN BINARY");
+            .ReturnNewStringConstant("TEMP_LOADER_SQL", $"COPY {_tempTable}({tempColumns}) FROM STDIN BINARY");
 
         type.MethodFor(nameof(CopyNewDocumentsFromTempTable))
             .Frames.ReturnNewStringConstant("COPY_NEW_DOCUMENTS_SQL", CopyNewDocumentsFromTempTable());
@@ -55,27 +58,51 @@ public class BulkLoaderBuilder
         type.MethodFor(nameof(OverwriteDuplicatesFromTempTable))
             .Frames.ReturnNewStringConstant("OVERWRITE_SQL", OverwriteDuplicatesFromTempTable());
 
+        type.MethodFor(nameof(OverwriteDuplicatesFromTempTableWithVersionCheck))
+            .Frames.ReturnNewStringConstant("OVERWRITE_WITH_VERSION_SQL", OverwriteDuplicatesFromTempTableWithVersionCheck());
+
         type.MethodFor(nameof(CreateTempTableForCopying))
             .Frames.ReturnNewStringConstant("CREATE_TEMP_TABLE_FOR_COPYING_SQL",
                 CreateTempTableForCopying().Replace("\"", "\\\""));
 
         var loadAsync = type.MethodFor("LoadRowAsync");
 
-        foreach (var argument in arguments)
+        foreach (var argument in mainArguments)
         {
             argument.GenerateBulkWriterCodeAsync(type, loadAsync, _mapping);
+        }
+
+        var loadTempAsync = type.MethodFor("LoadTempRowAsync");
+
+        foreach (var argument in tempArguments)
+        {
+            argument.GenerateBulkWriterCodeAsync(type, loadTempAsync, _mapping);
         }
 
         return type;
     }
 
-    private static List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction)
+    private List<UpsertArgument> orderArgumentsForBulkWriting(UpsertFunction upsertFunction, bool includeExpectedVersion)
     {
         var arguments = upsertFunction.OrderedArguments().Where(x => x is not CurrentVersionArgument).ToList();
         // You need the document body to go last so that any metadata pushed into the document
         // is serialized into the JSON data
         var body = arguments.OfType<DocJsonBodyArgument>().Single();
         arguments.Remove(body);
+
+        if (includeExpectedVersion && needsExpectedVersion())
+        {
+            var dbType = _mapping.UseNumericRevisions ? NpgsqlDbType.Integer : NpgsqlDbType.Uuid;
+            var expectedArgument = new ExpectedVersionArgument(dbType);
+            var insertIndex = arguments.FindIndex(x => x is VersionArgument || x is RevisionArgument);
+            if (insertIndex < 0)
+            {
+                insertIndex = arguments.Count;
+            }
+
+            arguments.Insert(insertIndex, expectedArgument);
+        }
+
         arguments.Add(body);
         return arguments;
     }
@@ -119,8 +146,40 @@ public class BulkLoaderBuilder
             $"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE {joinExpression}";
     }
 
+    public string OverwriteDuplicatesFromTempTableWithVersionCheck()
+    {
+        if (!needsExpectedVersion())
+        {
+            return OverwriteDuplicatesFromTempTable();
+        }
+
+        var table = _mapping.Schema.Table;
+        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
+        var storageTable = table.Identifier.QualifiedName;
+
+        var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
+            .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
+
+        var joinExpression = isMultiTenanted
+            ? "source.id = target.id and source.tenant_id = target.tenant_id"
+            : "source.id = target.id";
+
+        return $"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE {joinExpression} and target.{SchemaConstants.VersionColumn} = source.{SchemaConstants.ExpectedVersionColumn}";
+    }
+
     public string CreateTempTableForCopying()
     {
-        return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults)";
+        if (!needsExpectedVersion())
+        {
+            return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults)";
+        }
+
+        var expectedType = _mapping.UseNumericRevisions ? "integer" : "uuid";
+        return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults, \"{SchemaConstants.ExpectedVersionColumn}\" {expectedType})";
+    }
+
+    private bool needsExpectedVersion()
+    {
+        return _mapping.Metadata.Version.Enabled || _mapping.Metadata.Revision.Enabled || _mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions;
     }
 }

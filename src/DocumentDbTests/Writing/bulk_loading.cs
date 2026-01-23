@@ -1,8 +1,10 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Transactions;
 using Marten;
 using Marten.Exceptions;
+using Marten.Metadata;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -345,6 +347,9 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         // being loaded
         await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
 
+        // Overwrite any existing documents when the expected version matches
+        await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteIfVersionMatches);
+
         #endregion
     }
 
@@ -614,6 +619,65 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         }
     }
 
+    [Fact]
+    public async Task overwrite_if_version_matches_respects_expected_version()
+    {
+        var initial1 = new VersionedBulkDoc { Id = Guid.NewGuid(), Name = "one" };
+        var initial2 = new VersionedBulkDoc { Id = Guid.NewGuid(), Name = "two" };
+
+        await theStore.BulkInsertAsync([initial1, initial2]);
+
+        await using var query = theStore.QuerySession();
+        var stored1 = await query.LoadAsync<VersionedBulkDoc>(initial1.Id);
+        var stored2 = await query.LoadAsync<VersionedBulkDoc>(initial2.Id);
+
+        stored1.Version.ShouldNotBe(Guid.Empty);
+        stored2.Version.ShouldNotBe(Guid.Empty);
+
+        var update1 = new VersionedBulkDoc { Id = stored1.Id, Name = "one-updated", Version = stored1.Version };
+        var update2 = new VersionedBulkDoc { Id = stored2.Id, Name = "two-updated", Version = Guid.NewGuid() };
+
+        await theStore.BulkInsertAsync([update1, update2], BulkInsertMode.OverwriteIfVersionMatches);
+
+        await using var verify = theStore.QuerySession();
+        var result1 = await verify.LoadAsync<VersionedBulkDoc>(stored1.Id);
+        var result2 = await verify.LoadAsync<VersionedBulkDoc>(stored2.Id);
+
+        result1.Name.ShouldBe("one-updated");
+        result1.Version.ShouldNotBe(stored1.Version);
+
+        result2.Name.ShouldBe("two");
+        result2.Version.ShouldBe(stored2.Version);
+    }
+
+    [Fact]
+    public async Task overwrite_if_version_matches_respects_expected_revision()
+    {
+        var initial1 = new RevisionedBulkDoc { Id = Guid.NewGuid(), Name = "one" };
+        var initial2 = new RevisionedBulkDoc { Id = Guid.NewGuid(), Name = "two" };
+
+        await theStore.BulkInsertAsync([initial1, initial2]);
+
+        await using var query = theStore.QuerySession();
+        var stored1 = await query.LoadAsync<RevisionedBulkDoc>(initial1.Id);
+        var stored2 = await query.LoadAsync<RevisionedBulkDoc>(initial2.Id);
+
+        stored1.Version.ShouldBeGreaterThan(0);
+        stored2.Version.ShouldBeGreaterThan(0);
+
+        var update1 = new RevisionedBulkDoc { Id = stored1.Id, Name = "one-updated", Version = stored1.Version };
+        var update2 = new RevisionedBulkDoc { Id = stored2.Id, Name = "two-updated", Version = stored2.Version + 1 };
+
+        await theStore.BulkInsertAsync([update1, update2], BulkInsertMode.OverwriteIfVersionMatches);
+
+        await using var verify = theStore.QuerySession();
+        var result1 = await verify.LoadAsync<RevisionedBulkDoc>(stored1.Id);
+        var result2 = await verify.LoadAsync<RevisionedBulkDoc>(stored2.Id);
+
+        result1.Name.ShouldBe("one-updated");
+        result2.Name.ShouldBe("two");
+    }
+
     public Task InitializeAsync()
     {
         return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
@@ -623,5 +687,20 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         Dispose();
         return Task.CompletedTask;
+    }
+
+    public class VersionedBulkDoc : IVersioned
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public Guid Version { get; set; }
+    }
+
+
+    public class RevisionedBulkDoc : IRevisioned
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int Version { get; set; }
     }
 }
