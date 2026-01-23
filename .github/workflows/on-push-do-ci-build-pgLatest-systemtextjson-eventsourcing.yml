@@ -1,4 +1,4 @@
-name: Build & Test - NET10 - PGLatest - System.Text.Json
+name: Build & Test - NET10 - PGLatest - System.Text.Json - Event Sourcing
 
 on:
   push:
@@ -85,57 +85,8 @@ jobs:
         run: ./build.sh compile
         shell: bash
 
-      - name: test-base-lib
+      - name: test-event-sourcing
         if: ${{ success() || failure() }}
-        run: ./build.sh test-base-lib
+        run: ./build.sh test-event-sourcing
         shell: bash
 
-      - name: test-core
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-core
-        shell: bash
-
-      - name: test-document-db
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-document-db
-        shell: bash
-
-      - name: test-cli
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-cli
-        shell: bash
-
-      - name: test-linq
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-linq
-        shell: bash
-
-      # - name: test-multi-tenancy
-      #   if: ${{ success() || failure() }}
-      #   run: ./build.sh test-multi-tenancy
-      #   shell: bash
-
-      - name: test-patching
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-patching
-        shell: bash
-
-      - name: test-value-types
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-value-types
-        shell: bash
-
-      - name: test-code-gen
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-code-gen
-        shell: bash
-
-      - name: test-noda-time
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-noda-time
-        shell: bash
-
-      - name: test-aspnet-core
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-aspnet-core
-        shell: bash
