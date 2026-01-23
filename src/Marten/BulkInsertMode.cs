@@ -15,5 +15,10 @@ public enum BulkInsertMode
     /// <summary>
     ///     Will overwrite the values of any duplicate documents (last update wins)
     /// </summary>
-    OverwriteExisting
+    OverwriteExisting,
+
+    /// <summary>
+    ///     Will overwrite only when the expected version matches the stored version
+    /// </summary>
+    OverwriteIfVersionMatches
 }

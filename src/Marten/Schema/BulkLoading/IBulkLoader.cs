@@ -23,4 +23,6 @@ public interface IBulkLoader<T>
     string CopyNewDocumentsFromTempTable();
 
     string OverwriteDuplicatesFromTempTable();
+
+    string OverwriteDuplicatesFromTempTableWithVersionCheck();
 }
