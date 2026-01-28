@@ -42,7 +42,7 @@ public class SingleStreamProjection<TDoc, TId>:
     public override IEventSlicer BuildSlicer(IQuerySession session)
     {
         // This will address https://github.com/JasperFx/wolverine/issues/2053
-        var isSingleTenanted = session.As<QuerySession>().Options.EventGraph.TenancyStyle == TenancyStyle.Conjoined;
+        var isSingleTenanted = session.As<QuerySession>().Options.EventGraph.TenancyStyle == TenancyStyle.Single;
         return new TenantedEventSlicer<TDoc, TId>(new ByStream<TDoc, TId>()){ForceSingleTenancy = isSingleTenanted};
     }
 
