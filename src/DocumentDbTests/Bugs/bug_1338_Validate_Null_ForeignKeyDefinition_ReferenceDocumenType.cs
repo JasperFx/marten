@@ -23,22 +23,25 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
 
     public async Task InitializeAsync()
     {
-        var table = new Table(new PostgresqlObjectName(SchemaName, "external_table"));
+        var table = new Table(new PostgresqlObjectName("other", "external_table"));
         table.AddColumn("id", "integer").AsPrimaryKey();
 
         await using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await dbConn.OpenAsync();
+
+        await dbConn.CreateSchemaAsync("other");
+
         await table.CreateAsync(dbConn);
 
-        await dbConn.CreateCommand("insert into bugs.external_table (id) values (1)").ExecuteNonQueryAsync();
+        await dbConn.CreateCommand("insert into other.external_table (id) values (1)").ExecuteNonQueryAsync();
 
         await dbConn.CloseAsync();
 
-        StoreOptions(_ =>
+        StoreOptions(opts =>
         {
-            _.Schema.For<ClassWithExternalForeignKey>()
-                .ForeignKey(x => x.ForeignId, _.DatabaseSchemaName, "external_table", "id");
-        }, false);
+            opts.Schema.For<ClassWithExternalForeignKey>()
+                .ForeignKey(x => x.ForeignId, "other", "external_table", "id");
+        }, true);
 
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(ClassWithExternalForeignKey));
     }
