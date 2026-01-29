@@ -101,7 +101,7 @@ await theStore.BulkInsertAsync(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L92-L102' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
@@ -126,7 +126,7 @@ await theStore.BulkInsertAsync(data, batchSize: 500);
 // And just checking that the data is actually there;)
 theSession.Query<Target>().Count().ShouldBe(data.Length);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L250-L260' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L252-L262' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
@@ -150,8 +150,11 @@ await store.BulkInsertDocumentsAsync(data, BulkInsertMode.InsertsOnly);
 // Overwrite any existing documents with the same identity as the documents
 // being loaded
 await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteExisting);
+
+// Overwrite any existing documents when the expected version matches
+await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteIfVersionMatches);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L329-L348' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L331-L353' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulkinsertmode_usages' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The bulk insert feature can also be used with multi-tenanted documents, but in that
@@ -173,5 +176,20 @@ using var store = DocumentStore.For(opts =>
 // If multi-tenanted
 await store.BulkInsertDocumentsAsync("a tenant id", data);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L353-L367' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L364-L378' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multitenancywithbulkinsert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### Bulk Loading with Expected Versions <Badge type="tip" text="8.19" />
+
+There is also a bulk insert mode that will only overwrite the documents _only if_ the version of the document being updated
+matches the version being supplied:
+
+<!-- snippet: sample_bulk_insert_with_version_matches -->
+<a id='snippet-sample_bulk_insert_with_version_matches'></a>
+```cs
+await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteIfVersionMatches);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L355-L359' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_insert_with_version_matches' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+See [the documentation on optimistic concurrency and document versioning](/documents/concurrency) for more information.
