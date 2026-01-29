@@ -273,7 +273,7 @@ The new `Updated<T>` synthetic event that we're using to communicate updates bet
 There is also a corresponding `ProjectionDeleted<TDoc, TId>` synthetic event that will communicate updates between projections
 and can also be used with `Apply()`, `Create`, or `ShouldDelete` methods.
 
-The `ProjectionDeleted<TDoc, TId>` also implements some simpler interfaces `ProjectionDeleted<TDoc>` and `, `DeletedIdentity<TId>` that are available
+The `ProjectionDeleted<TDoc,TId>` also implements some simpler interfaces `ProjectionDeleted<TDoc>` and `, `DeletedIdentity<TId>` that are available
 just as conveniences to avoid the proliferation of ugly generics in your code.
 :::
 
