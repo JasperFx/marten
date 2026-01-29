@@ -12,7 +12,7 @@ using Xunit;
 
 namespace DocumentDbTests.Bugs;
 
-public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: BugIntegrationContext, IAsyncLifetime
+public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: OneOffConfigurationsContext, IAsyncLifetime
 {
     [Fact]
     public void StorageFeatures_AllActiveFeatures_Should_Not_Throw_With_ExternalForeignKeyDefinitions()
@@ -29,10 +29,12 @@ public class Bug_1338_Validate_Null_ForeignKeyDefinition_ReferenceDocumenType: B
         await using var dbConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await dbConn.OpenAsync();
 
+        await dbConn.DropSchemaAsync("other");
         await dbConn.CreateSchemaAsync("other");
 
         await table.CreateAsync(dbConn);
 
+        await dbConn.CreateCommand("delete from other.external_table").ExecuteNonQueryAsync();
         await dbConn.CreateCommand("insert into other.external_table (id) values (1)").ExecuteNonQueryAsync();
 
         await dbConn.CloseAsync();
