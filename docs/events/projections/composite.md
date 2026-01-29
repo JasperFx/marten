@@ -71,7 +71,7 @@ opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
     projection.Add<BoardSummaryProjection>(2);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L181-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L182-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 First, let's just look at the simple `ProviderShiftProjection`:
@@ -167,6 +167,11 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
         Identity<Updated<Appointment>>(x => x.Entity.Id);
         Identity<IEvent<ProviderAssigned>>(x => x.StreamId);
         Identity<IEvent<AppointmentRouted>>(x => x.StreamId);
+
+        // This is a synthetic event published from upstream projections to identify
+        // which projected Appointment documents were deleted as part of the current event range
+        // so we can keep this richer model mirroring the simpler Appointment projection
+        Identity<ProjectionDeleted<Appointment, Guid>>(x => x.Identity);
     }
 
     public override async Task EnrichEventsAsync(SliceGroup<AppointmentDetails, Guid> group, IQuerySession querySession, CancellationToken cancellation)
@@ -243,6 +248,14 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
                 snapshot.BoardName = board.Entity.Name;
                 snapshot.BoardId = board.Entity.Id;
                 break;
+
+            // The matching projection for Appointment was deleted
+            // so we'll delete this enriched projection as well
+            // ProjectionDeleted<TDoc> is a synthetic event that Marten
+            // itself publishes from the upstream projections and available
+            // to downstream projections
+            case ProjectionDeleted<Appointment>:
+                return null;
         }
 
         return snapshot;
@@ -250,12 +263,18 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L14-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetailsprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L14-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetailsprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
 The new `Updated<T>` synthetic event that we're using to communicate updates between projections can also be used within
 `Apply()`, `Create`, or `ShouldDelete` methods as well.
+
+There is also a corresponding `ProjectionDeleted<TDoc, TId>` synthetic event that will communicate updates between projections
+and can also be used with `Apply()`, `Create`, or `ShouldDelete` methods.
+
+The `ProjectionDeleted<TDoc, TId>` also implements some simpler interfaces `ProjectionDeleted<TDoc>` and `, `DeletedIdentity<TId>` that are available
+just as conveniences to avoid the proliferation of ugly generics in your code.
 :::
 
 And also the definition for the downstream `BoardSummary` view:

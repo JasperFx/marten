@@ -64,13 +64,16 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
                 snapshot.Status = AppointmentStatus.Completed;
                 snapshot.Completed = e.Timestamp;
                 break;
+
+            case AppointmentCancelled:
+                return null;
         }
 
         return snapshot;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L40-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L42-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If your "evolve" step will require some data lookups or need to utilize any kind of asynchronous service, use

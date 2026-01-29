@@ -204,6 +204,48 @@ var store = DocumentStore.For(_ =>
 
 At this point, you would be able to query against `QuestParty` as just another document type.
 
+## Logging in Projections <Badge type="tip" text="8.19" />
+
+*If* you are running Marten within a .NET application that bootstraps an `IHost` and registering Marten through
+`AddMarten()`, all the projections registered in your Marten application will have an instance property for the
+`ILogger` like this:
+
+<!-- snippet: sample_using_Logger_in_projections -->
+<a id='snippet-sample_using_logger_in_projections'></a>
+```cs
+// If you have to be all special and want to group the logging
+// your own way, just override this method:
+public override void AttachLogger(ILoggerFactory loggerFactory)
+{
+    Logger = loggerFactory.CreateLogger<MyLoggingMarkerType>();
+}
+
+public void Project(
+    IEvent<AppointmentStarted> @event,
+    IDocumentOperations ops)
+{
+    // Outside of AddMarten() usage, this would be a NullLogger
+    // Inside of an app bootstrapped as an IHost with standard .NET
+    // logging registered and Marten bootstrapped through AddMarten(),
+    // Logger would be an ILogger<T> *by default* where T is the concrete
+    // type of the actual projection
+    Logger?.LogDebug("Hey, I'm inserting a row for appointment started");
+
+    var sql = "insert into appointment_duration "
+              + "(id, start) values (?, ?)";
+    ops.QueueSqlCommand(sql,
+        @event.Id,
+        @event.Timestamp);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDurationProjection.cs#L29-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_logger_in_projections' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: warning
+If you are registering a projection into your DI container, you are responsible for injecting and configuring 
+the correct `ILogger`.
+:::
+
 ## Rebuilding Projections
 
 Projections need to be rebuilt when the code that defines them changes in a way that requires events to be reapplied in order to maintain correct state. Using an `IDaemon` this is easy to execute on-demand:

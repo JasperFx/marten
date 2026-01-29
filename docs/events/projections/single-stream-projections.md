@@ -215,13 +215,16 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
                 snapshot.Status = AppointmentStatus.Completed;
                 snapshot.Completed = e.Timestamp;
                 break;
+
+            case AppointmentCancelled:
+                return null;
         }
 
         return snapshot;
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L40-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L42-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a more complicated sample from our tests that just shows how you can create a reentrant workflow that includes

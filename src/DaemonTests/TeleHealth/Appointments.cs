@@ -11,6 +11,8 @@ public record AppointmentStarted;
 public record AppointmentCompleted;
 public record AppointmentEstimated(DateTimeOffset Time);
 
+public record AppointmentCancelled;
+
 public enum AppointmentStatus
 {
     Requested,
@@ -84,6 +86,9 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
                 snapshot.Status = AppointmentStatus.Completed;
                 snapshot.Completed = e.Timestamp;
                 break;
+
+            case AppointmentCancelled:
+                return null;
         }
 
         return snapshot;

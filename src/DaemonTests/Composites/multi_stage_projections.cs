@@ -11,6 +11,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Descriptors;
 using Marten;
+using Marten.Events;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
@@ -252,6 +253,20 @@ public class multi_stage_projections: DaemonContext
         await daemon.StopAllAsync();
 
         await daemon.RebuildProjectionAsync("TeleHealth", CancellationToken.None);
+
+
+        await daemon.StartAllAsync();
+        // Now, let's cancel an appointment and see that AppointmentDetails is also deleted
+        var appointmentId = (await theSession.Query<Appointment>().FirstAsync()).Id;
+
+        theSession.Events.Append(appointmentId, new AppointmentCancelled());
+        await theSession.SaveChangesAsync();
+
+        await theStore.WaitForNonStaleProjectionDataAsync(5.Seconds());
+
+        (await theSession.LoadAsync<Appointment>(appointmentId)).ShouldBeNull();
+        (await theSession.LoadAsync<AppointmentDetails>(appointmentId)).ShouldBeNull();
+
 
 
     }

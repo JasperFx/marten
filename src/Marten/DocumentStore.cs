@@ -62,6 +62,11 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         Events.Initialize(this);
         Options.Projections.AssertValidity(Options);
 
+        if (Options.LogFactory != null)
+        {
+            Options.Projections.AttachLogging(Options.LogFactory);
+        }
+
         Advanced = new AdvancedOperations(this);
 
         Diagnostics = new Diagnostics(this);
