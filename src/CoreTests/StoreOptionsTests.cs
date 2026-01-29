@@ -214,7 +214,7 @@ public class StoreOptionsTests
     {
         var options = new StoreOptions();
 
-        options.Advanced.Migrator.TableCreation.ShouldBe(CreationStyle.DropThenCreate);
+        options.Advanced.Migrator.TableCreation.ShouldBe(CreationStyle.CreateIfNotExists);
         options.Advanced.Migrator.UpsertRights.ShouldBe(SecurityRights.Invoker);
     }
 
