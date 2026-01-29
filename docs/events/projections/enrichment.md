@@ -343,7 +343,7 @@ await group
     .ForEntityId(x => x.BoardId)
     .AddReferences();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L44-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_forevent_addreferences' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_forevent_addreferences' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 What this does is data lookup for all the unique `Provider` and `Board` documents that match
@@ -395,10 +395,18 @@ public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, 
             snapshot.BoardName = board.Entity.Name;
             snapshot.BoardId = board.Entity.Id;
             break;
+
+        // The matching projection for Appointment was deleted
+        // so we'll delete this enriched projection as well
+        // ProjectionDeleted<TDoc> is a synthetic event that Marten
+        // itself publishes from the upstream projections and available
+        // to downstream projections
+        case ProjectionDeleted<Appointment>:
+            return null;
     }
 
     return snapshot;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L65-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetails_evolve' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L70-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetails_evolve' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
