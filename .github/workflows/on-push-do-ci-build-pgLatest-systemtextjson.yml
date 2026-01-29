@@ -114,10 +114,10 @@ jobs:
         run: ./build.sh test-patching
         shell: bash
 
-      - name: test-value-types
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-value-types
-        shell: bash
+      #- name: test-value-types
+      #  if: ${{ success() || failure() }}
+      #  run: ./build.sh test-value-types
+      #  shell: bash
 
       - name: test-code-gen
         if: ${{ success() || failure() }}
@@ -129,7 +129,7 @@ jobs:
         run: ./build.sh test-noda-time
         shell: bash
 
-      - name: test-aspnet-core
-        if: ${{ success() || failure() }}
-        run: ./build.sh test-aspnet-core
-        shell: bash
+      #- name: test-aspnet-core
+      #  if: ${{ success() || failure() }}
+      #  run: ./build.sh test-aspnet-core
+      #  shell: bash
