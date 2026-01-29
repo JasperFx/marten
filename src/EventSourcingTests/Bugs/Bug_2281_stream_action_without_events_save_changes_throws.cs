@@ -19,15 +19,15 @@ namespace EventSourcingTests.Bugs
         [Fact]
         public async Task should_be_able_to_save_changes_when_stream_action_does_not_have_any_events()
         {
-            using var documentStore = SeparateStore(x =>
+            StoreOptions(x =>
             {
                 x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
-            });
+            }, true);
 
-            var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 0);
-            var entityTwoId = await CreateEntityForTest(documentStore, "Entity two", 2);
+            var entityOneId = await CreateEntityForTest(theStore, "Entity one", 0);
+            var entityTwoId = await CreateEntityForTest(theStore, "Entity two", 2);
 
-            await using (var session = documentStore.LightweightSession())
+            await using (var session = theStore.LightweightSession())
             {
                 var entityOneStream = await session.Events.FetchForWriting<TestEntity>(entityOneId);
                 var entityTwoStream = await session.Events.FetchForWriting<TestEntity>(entityTwoId);
@@ -38,7 +38,7 @@ namespace EventSourcingTests.Bugs
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.LightweightSession())
+            await using (var session = theStore.LightweightSession())
             {
                 var entityOne = await session.LoadAsync<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(1);
@@ -51,15 +51,15 @@ namespace EventSourcingTests.Bugs
         [Fact]
         public async Task should_be_able_to_save_changes_when_no_stream_action_has_any_events()
         {
-            using var documentStore = SeparateStore(x =>
+            StoreOptions(x =>
             {
                 x.Projections.Snapshot<TestEntity>(SnapshotLifecycle.Inline);
-            });
+            }, true);
 
-            var entityOneId = await CreateEntityForTest(documentStore, "Entity one", 2);
-            var entityTwoId = await CreateEntityForTest(documentStore, "Entity two", 2);
+            var entityOneId = await CreateEntityForTest(theStore, "Entity one", 2);
+            var entityTwoId = await CreateEntityForTest(theStore, "Entity two", 2);
 
-            await using (var session = documentStore.LightweightSession())
+            await using (var session = theStore.LightweightSession())
             {
                 var entityOneStream = await session.Events.FetchForWriting<TestEntity>(entityOneId);
                 var entityTwoStream = await session.Events.FetchForWriting<TestEntity>(entityTwoId);
@@ -70,7 +70,7 @@ namespace EventSourcingTests.Bugs
                 await session.SaveChangesAsync();
             }
 
-            await using (var session = documentStore.LightweightSession())
+            await using (var session = theStore.LightweightSession())
             {
                 var entityOne = await session.LoadAsync<TestEntity>(entityOneId);
                 entityOne.Status.ShouldBe(2);
