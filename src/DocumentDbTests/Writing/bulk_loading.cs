@@ -351,6 +351,12 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
         await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteIfVersionMatches);
 
         #endregion
+
+        #region sample_bulk_insert_with_version_matches
+
+        await store.BulkInsertDocumentsAsync(data, BulkInsertMode.OverwriteIfVersionMatches);
+
+        #endregion
     }
 
     internal async Task MultiTenancySample()
