@@ -22,6 +22,11 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
         Identity<Updated<Appointment>>(x => x.Entity.Id);
         Identity<IEvent<ProviderAssigned>>(x => x.StreamId);
         Identity<IEvent<AppointmentRouted>>(x => x.StreamId);
+
+        // This is a synthetic event published from upstream projections to identify
+        // which projected Appointment documents were deleted as part of the current event range
+        // so we can keep this richer model mirroring the simpler Appointment projection
+        Identity<ProjectionDeleted<Appointment, Guid>>(x => x.Identity);
     }
 
     public override async Task EnrichEventsAsync(SliceGroup<AppointmentDetails, Guid> group, IQuerySession querySession, CancellationToken cancellation)
@@ -104,6 +109,14 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
                 snapshot.BoardName = board.Entity.Name;
                 snapshot.BoardId = board.Entity.Id;
                 break;
+
+            // The matching projection for Appointment was deleted
+            // so we'll delete this enriched projection as well
+            // ProjectionDeleted<TDoc> is a synthetic event that Marten
+            // itself publishes from the upstream projections and available
+            // to downstream projections
+            case ProjectionDeleted<Appointment>:
+                return null;
         }
 
         return snapshot;

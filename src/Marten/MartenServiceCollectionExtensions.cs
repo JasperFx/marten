@@ -171,6 +171,7 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton(s =>
         {
             var options = optionSource(s);
+
             var configures = s.GetServices<IConfigureMarten>();
             foreach (var configure in configures) configure.Configure(s, options);
 

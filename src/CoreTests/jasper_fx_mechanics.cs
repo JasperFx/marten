@@ -85,6 +85,7 @@ public class jasper_fx_mechanics
         result.ShouldBe(0);
     }
 
+
     [Fact]
     public async Task build_system_parts_for_ancillary_document_stores_and_single_tenancy()
     {

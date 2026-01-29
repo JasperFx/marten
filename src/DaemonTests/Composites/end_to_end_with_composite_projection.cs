@@ -1,12 +1,15 @@
 using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.Aggregations;
+using DaemonTests.TeleHealth;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
 using Marten;
+using Marten.Events;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
+using Appointment = EventSourcingTests.Examples.TeleHealth.Appointment;
 
 namespace DaemonTests.Composites;
 
@@ -76,5 +79,6 @@ public class end_to_end_with_composite_projection : DaemonContext
 
         latest.ShouldBe(persisted);
         stream.Aggregate.ShouldBe(persisted);
+
     }
 }

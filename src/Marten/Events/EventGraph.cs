@@ -532,7 +532,10 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
 
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
-        foreach (var mapping in _events) mapping.JsonTransformation(null);
+        foreach (var mapping in _events)
+        {
+            mapping.JsonTransformation(null);
+        }
     }
 
     IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()

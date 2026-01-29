@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events.Aggregation;
@@ -11,6 +12,8 @@ using Marten.Events.Fetching;
 using Marten.Internal.OpenTelemetry;
 using Marten.Schema;
 using Marten.Subscriptions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Marten.Events.Projections;
 
@@ -239,4 +242,11 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         }
     }
 
+    internal void AttachLogging(ILoggerFactory loggerFactory)
+    {
+        foreach (var hasLogger in All.OfType<IHasLogger>())
+        {
+            hasLogger.AttachLogger(loggerFactory);
+        }
+    }
 }
