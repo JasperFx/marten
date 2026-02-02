@@ -74,6 +74,11 @@ public class ComputedIndex: IndexDefinition
 
     private IEnumerable<string> buildColumns()
     {
+        if (_mapping.StartIndexesByTenantId)
+        {
+            yield return TenantIdColumn.Name;
+        }
+
         foreach (var m in _members)
         {
             var member = _mapping.QueryMembers.MemberFor(m);

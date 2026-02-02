@@ -148,6 +148,8 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     public PrimaryKeyTenancyOrdering PrimaryKeyTenancyOrdering { get; set; } =
         PrimaryKeyTenancyOrdering.TenantId_Then_Id;
 
+    public bool StartIndexesByTenantId { get; set; }
+
     public bool DisablePartitioningIfAny { get; set; } = false;
 
     public IPartitionStrategy? Partitioning { get; set; }
