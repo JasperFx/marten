@@ -821,8 +821,6 @@ namespace EventSourcingTests.SchemaChange
 
                 await daemon.RebuildProjectionAsync<New.ShoppingCartProjection>(CancellationToken.None);
 
-                await Task.Delay(15.Seconds());
-
                 var shoppingCartRebuilt = await session.LoadAsync<New.ShoppingCartDetails>(shoppingCartId);
 
                 shoppingCartRebuilt!.Id.ShouldBe(shoppingCartId);
