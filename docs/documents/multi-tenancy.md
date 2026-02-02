@@ -417,6 +417,24 @@ storeOptions.Schema.For<Target>().SingleTenanted();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Configuration/document_policies.cs#L76-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-configure-override-with-single-tenancy' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Make all documents start their index by tenant_id
+
+When using conjoined multi tenancy it is often beneficial to have database indexes start with tenant_id. Even when a tenant is specified on the session and PostgreSQL can already restrict queries to the relevant table partition, this does not always fully isolate a single tenant. With hash partitioning, multiple tenants can end up in the same partition, so indexes that do not start with tenant_id may still scan entries belonging to other tenants. By consistently prefixing tenant_id on all indexes, either globally through policies or per document type, Marten allows PostgreSQL to efficiently filter within a partition as well, improving index selectivity and reducing unnecessary index scans in databases with many tenants.
+
+<!-- snippet: sample_tenancy-start_indexes_by_tenant_id -->
+<a id='snippet-sample_tenancy-start_indexes_by_tenant_id'></a>
+```cs
+_.Policies.ForAllDocuments(x =>
+{
+    x.StartIndexesByTenantId = true;
+});
+_.Schema.For<User>()
+    .StartIndexesByTenantId()
+    .Index(x => x.UserName);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_tenancy_indexes.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tenancy-start_indexes_by_tenant_id' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
 ## Marten-Managed Table Partitioning by Tenant <Badge type="tip" text="7.28" />
 
 Man, that's a mouthful! So here's the situation. You have a large number of tenants, use the "conjoined" tenancy model,
@@ -484,7 +502,7 @@ To exempt document types from having partitioned tables, such as for tables you 
 even harm by partitioning, you can use either an attribute on the document type:
 
 <!-- snippet: sample_using_DoNotPartitionAttribute -->
-<a id='snippet-sample_using_donotpartitionattribute'></a>
+<a id='snippet-sample_using_DoNotPartitionAttribute'></a>
 ```cs
 [DoNotPartition]
 public class DocThatShouldBeExempted1
@@ -492,7 +510,7 @@ public class DocThatShouldBeExempted1
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L348-L356' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L348-L356' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DoNotPartitionAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or exempt a single document type through the fluent interface:

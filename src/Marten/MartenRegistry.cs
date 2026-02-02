@@ -813,6 +813,15 @@ public class MartenRegistry
         }
 
         /// <summary>
+        ///     All indexes for this document should start by tenant_id />
+        /// </summary>
+        public DocumentMappingExpression<T> StartIndexesByTenantId()
+        {
+            _builder.Alter = m => m.StartIndexesByTenantId = true;
+            return this;
+        }
+
+        /// <summary>
         ///     Opt into the identity key generation strategy
         /// </summary>
         /// <returns></returns>
