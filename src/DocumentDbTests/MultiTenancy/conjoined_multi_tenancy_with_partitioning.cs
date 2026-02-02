@@ -38,7 +38,7 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
                 x.ByList()
                     .AddPartition("red", "Red")
                     .AddPartition("blue", "Blue");
-            });
+            }, PrimaryKeyTenancyOrdering.Id_Then_TenantId);
         });
     }
 

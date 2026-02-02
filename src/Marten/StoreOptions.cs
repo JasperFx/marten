@@ -802,20 +802,34 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         /// </summary>
         /// <param name="configure">Customize the table partitioning on the tenant id</param>
         /// <returns></returns>
-        public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure)
-        {
-            return ForAllDocuments(mapping =>
+        [Obsolete("Use overload in stead, default used to be id then tenant_id, so use that if you don't want to rebuild all your indexes")]
+        public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure) =>
+            AllDocumentsAreMultiTenantedWithPartitioning(configure, PrimaryKeyTenancyOrdering.Id_Then_TenantId);
+
+        /// <summary>
+        ///     Unless explicitly marked otherwise, all documents should
+        ///     use conjoined multi-tenancy and opt into using user defined
+        /// PostgreSQL table partitioning
+        /// </summary>
+        /// <param name="configure">Customize the table partitioning on the tenant id</param>
+        /// <param name="primaryKeyTenancyOrdering">
+        /// Id or tenant_id first in the primary key.
+        /// Default used to be <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/>, so use that if you don't want to rebuild all your indexes.
+        /// Given most query's include the tenant_id, the sane default is probably <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/>.
+        /// </param>
+        /// <returns></returns>
+        public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure, PrimaryKeyTenancyOrdering primaryKeyTenancyOrdering) =>
+            ForAllDocuments(mapping =>
             {
                 if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
                 if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
 
-                mapping.PrimaryKeyTenancyOrdering = PrimaryKeyTenancyOrdering.Id_Then_TenantId;
+                mapping.PrimaryKeyTenancyOrdering = primaryKeyTenancyOrdering;
 
                 mapping.TenancyStyle = TenancyStyle.Conjoined;
                 var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
                 configure(expression);
             });
-        }
 
         /// <summary>
         /// Add table partitioning to all document table storage that is configured as using conjoined

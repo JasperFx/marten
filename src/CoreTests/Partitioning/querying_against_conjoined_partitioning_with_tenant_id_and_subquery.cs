@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -31,7 +32,7 @@ public class querying_against_conjoined_partitioning_with_tenant_id_and_subquery
                 x.ByList()
                     .AddPartition("red", "red")
                     .AddPartition("blue", "blue");
-            });
+            }, PrimaryKeyTenancyOrdering.TenantId_Then_Id);
         });
 
         await theStore.BulkInsertAsync("red", reds);

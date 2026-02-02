@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.MultiTenancy;
+using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
@@ -140,7 +141,7 @@ public class MultiTenancy
                 // OR use RANGE partitioning with the actual partitions managed
                 // externally
                 x.ByExternallyManagedRangePartitions();
-            });
+            }, PrimaryKeyTenancyOrdering.TenantId_Then_Id);
 
             #endregion
         });
