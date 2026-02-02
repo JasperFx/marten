@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
@@ -139,7 +140,7 @@ public class partitioning_configuration : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x => x.ByExternallyManagedListPartitions());
+            opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x => x.ByExternallyManagedListPartitions(), PrimaryKeyTenancyOrdering.TenantId_Then_Id);
         });
 
         var table = tableFor<Target>();
