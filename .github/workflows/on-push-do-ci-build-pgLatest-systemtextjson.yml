@@ -75,61 +75,83 @@ jobs:
       #     docker container restart $PG_CONTAINER_NAME
       #   shell: bash
 
-      - name: compile
-        run: ./build.sh compile
-        shell: bash
+      # - name: compile
+      #   run: ./build.sh compile
+      #   shell: bash
 
       - name: test-base-lib
         if: ${{ success() || failure() }}
-        run: ./build.sh test-base-lib
+        run: |
+          ./build.sh compile-project --project src/Marten.Testing/Marten.Testing.csproj
+          ./build.sh test-base-lib
         shell: bash
 
       - name: test-core
         if: ${{ success() || failure() }}
-        run: ./build.sh test-core
+        run: |
+          ./build.sh compile-project --project src/CoreTests/CoreTests.csproj
+          ./build.sh test-core
         shell: bash
 
       - name: test-document-db
         if: ${{ success() || failure() }}
-        run: ./build.sh test-document-db
+        run: |
+          ./build.sh compile-project --project src/DocumentDbTests/DocumentDbTests.csproj
+          ./build.sh test-document-db
         shell: bash
 
       - name: test-cli
         if: ${{ success() || failure() }}
-        run: ./build.sh test-cli
+        run: |
+          ./build.sh compile-project --project src/Marten.CommandLine.Tests/Marten.CommandLine.Tests.csproj
+          ./build.sh test-cli
         shell: bash
 
       - name: test-linq
         if: ${{ success() || failure() }}
-        run: ./build.sh test-linq
+        run: |
+          ./build.sh compile-project --project src/LinqTests/LinqTests.csproj
+          ./build.sh test-linq
         shell: bash
 
       # - name: test-multi-tenancy
       #   if: ${{ success() || failure() }}
-      #   run: ./build.sh test-multi-tenancy
+      #   run: |
+      #     ./build.sh compile-project --project src/MultiTenancyTests/MultiTenancyTests.csproj
+      #     ./build.sh test-multi-tenancy
       #   shell: bash
 
       - name: test-patching
         if: ${{ success() || failure() }}
-        run: ./build.sh test-patching
+        run: |
+          ./build.sh compile-project --project src/PatchingTests/PatchingTests.csproj
+          ./build.sh test-patching
         shell: bash
 
-      #- name: test-value-types
+      # - name: test-value-types
       #  if: ${{ success() || failure() }}
-      #  run: ./build.sh test-value-types
+      #  run: |
+      #    ./build.sh compile-project --project src/ValueTypeTests/ValueTypeTests.csproj  
+      #    ./build.sh test-value-types
       #  shell: bash
 
       - name: test-code-gen
         if: ${{ success() || failure() }}
-        run: ./build.sh test-code-gen
+        run: |
+          ./build.sh compile-project --project src/CommandLineRunner/CommandLineRunner.csproj
+          ./build.sh test-code-gen
         shell: bash
 
       - name: test-noda-time
         if: ${{ success() || failure() }}
-        run: ./build.sh test-noda-time
+        run: |
+          ./build.sh compile-project --project src/Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj
+          ./build.sh test-noda-time
         shell: bash
 
       #- name: test-aspnet-core
       #  if: ${{ success() || failure() }}
-      #  run: ./build.sh test-aspnet-core
+      #  run: |
+      #    ./build.sh compile-project --project src/Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj
+      #    ./build.sh test-aspnet-core
       #  shell: bash
