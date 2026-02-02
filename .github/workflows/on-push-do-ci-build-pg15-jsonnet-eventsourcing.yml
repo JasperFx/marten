@@ -76,7 +76,7 @@ jobs:
         shell: bash
 
       - name: compile
-        run: ./build.sh compile
+        run: ./build.sh compile-project --project src/EventSourcingTests/EventSourcingTests.csproj
         shell: bash
 
       - name: test-event-sourcing

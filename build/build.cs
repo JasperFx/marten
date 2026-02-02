@@ -26,6 +26,7 @@ class Build : NukeBuild
     [Parameter]readonly string Framework;
     [Parameter] readonly string Profile;
     [Parameter] readonly string ConnectionString ="Host=localhost;Port=5432;Database=marten_testing;Username=postgres;password=postgres";
+    [Parameter] readonly string Project;
 
     Target Test => _ => _
         .DependsOn(TestBaseLib)
@@ -65,6 +66,7 @@ class Build : NukeBuild
             DotNetBuild(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
+                .SetFramework(Framework)
                 .EnableNoRestore());
         });
 
@@ -74,6 +76,28 @@ class Build : NukeBuild
         {
             DotNetRestore(s => s
                 .SetProjectFile(Solution));
+        });
+
+    Target CompileProject => _ => _
+        .DependsOn(Init)
+        .Executes(() =>
+        {
+            if (string.IsNullOrEmpty(Project))
+            {
+                Log.Error("Project parameter is required. Usage: --project <path-to-project>");
+                throw new ArgumentException("Project parameter must be specified");
+            }
+
+            Log.Information($"Restoring project: {Project}");
+            DotNetRestore(s => s
+                .SetProjectFile(Project));
+
+            Log.Information($"Compiling project: {Project}");
+            DotNetBuild(s => s
+                .SetProjectFile(Project)
+                .SetConfiguration(Configuration)
+                .SetFramework(Framework)
+                .EnableNoRestore());
         });
 
 
