@@ -56,7 +56,7 @@ return await app.RunJasperFxCommands(args);
 In your command line in the project directory, you can run:
 
 ```bash
-dotnet -- help
+dotnet run -- help
 ```
 
 And you will be given a list of commands.
@@ -85,7 +85,7 @@ The available commands are:
 For any of the listed commands, you can run:
 
 ```bash
-dotnet -- help [command]
+dotnet run -- help [command]
 ```
 
 To see more information about the use of that command.
