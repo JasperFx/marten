@@ -28,6 +28,7 @@
         "Benchmarks",
         "ClearInlineSamples",
         "Compile",
+        "CompileProject",
         "Connection",
         "CreateFreightShippingTutorialZip",
         "Detach",
@@ -148,6 +149,9 @@
           "type": "string"
         },
         "Profile": {
+          "type": "string"
+        },
+        "Project": {
           "type": "string"
         },
         "Solution": {
