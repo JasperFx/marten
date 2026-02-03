@@ -469,7 +469,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             var builder = new NpgsqlConnectionStringBuilder(connectionString);
 
-            if (builder.CommandTimeout > 0) CommandTimeout = builder.CommandTimeout;
+            if (builder.CommandTimeout > 0)
+                CommandTimeout = builder.CommandTimeout;
         }
         catch (Exception)
         {
@@ -619,12 +620,14 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName).SingleTenanted();
 
-        foreach (var mapping in Storage.AllDocumentMappings) mapping.CompileAndValidate();
+        foreach (var mapping in Storage.AllDocumentMappings)
+            mapping.CompileAndValidate();
     }
 
     internal void applyPolicies(DocumentMapping mapping)
     {
-        foreach (var policy in _policies) policy.Apply(mapping);
+        foreach (var policy in _policies)
+            policy.Apply(mapping);
     }
 
     internal void applyPostPolicies(DocumentMapping mapping)
@@ -789,20 +792,28 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             return ForAllDocuments(mapping =>
             {
-                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
-                if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>())
+                    return;
+                if (mapping.DocumentType == typeof(DeadLetterEvent))
+                    return;
                 mapping.TenancyStyle = TenancyStyle.Conjoined;
             });
         }
 
+        //TODO -- V9 change default PrimaryKeyTenancyOrdering to TenantId_Then_Id
         /// <summary>
         ///     Unless explicitly marked otherwise, all documents should
         ///     use conjoined multi-tenancy and opt into using user defined
-        /// PostgreSQL table partitioning
+        ///     PostgreSQL table partitioning.
         /// </summary>
         /// <param name="configure">Customize the table partitioning on the tenant id</param>
         /// <returns></returns>
-        [Obsolete("Use overload in stead, default used to be id then tenant_id, so use that if you don't want to rebuild all your indexes")]
+        /// <remarks>
+        ///     Uses <see cref="PrimaryKeyTenancyOrdering.Id_Then_TenantId"/> by default for V7-V8 compatibility.
+        ///     This default will change to <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/> in V9.
+        ///     If you want to opt-in to the V9 default behavior now, use the overload that takes a
+        ///     <see cref="PrimaryKeyTenancyOrdering"/> parameter.
+        /// </remarks>
         public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure) =>
             AllDocumentsAreMultiTenantedWithPartitioning(configure, PrimaryKeyTenancyOrdering.Id_Then_TenantId);
 
@@ -812,17 +823,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         /// PostgreSQL table partitioning
         /// </summary>
         /// <param name="configure">Customize the table partitioning on the tenant id</param>
-        /// <param name="primaryKeyTenancyOrdering">
-        /// Id or tenant_id first in the primary key.
-        /// Default used to be <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/>, so use that if you don't want to rebuild all your indexes.
-        /// Given most query's include the tenant_id, the sane default is probably <see cref="PrimaryKeyTenancyOrdering.TenantId_Then_Id"/>.
+        /// <param name="primaryKeyTenancyOrdering"> Customize the primary key tenancy ordering
         /// </param>
         /// <returns></returns>
         public PoliciesExpression AllDocumentsAreMultiTenantedWithPartitioning(Action<PartitioningExpression> configure, PrimaryKeyTenancyOrdering primaryKeyTenancyOrdering) =>
             ForAllDocuments(mapping =>
             {
-                if (mapping.DocumentType == typeof(DeadLetterEvent)) return;
-                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>()) return;
+                if (mapping.DocumentType == typeof(DeadLetterEvent))
+                    return;
+                if (mapping.DocumentType.HasAttribute<SingleTenantedAttribute>())
+                    return;
 
                 mapping.PrimaryKeyTenancyOrdering = primaryKeyTenancyOrdering;
 
@@ -841,7 +851,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             return PostConfiguration(mapping =>
             {
-                if (mapping.TenancyStyle == TenancyStyle.Single) return;
+                if (mapping.TenancyStyle == TenancyStyle.Single)
+                    return;
 
                 var expression = new PartitioningExpression(mapping, [TenantIdColumn.Name]);
                 configure(expression);
