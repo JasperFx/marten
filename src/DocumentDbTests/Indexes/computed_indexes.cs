@@ -194,6 +194,7 @@ public class computed_indexes: OneOffConfigurationsContext
 
         StoreOptions(_ =>
         {
+            _.RegisterFSharpOptionValueTypes();
             var columns = new Expression<Func<Target, object>>[]
             {
                 x => x.FSharpDateOption,
