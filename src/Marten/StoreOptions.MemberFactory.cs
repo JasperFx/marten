@@ -152,6 +152,14 @@ internal class ValueTypeMemberSource: IMemberSource
             return false;
         }
 
+        if (valueType.OuterType.IsGenericType
+            && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>)
+            && isSpecialFSharpOptionDateType(valueType.SimpleType))
+        {
+            member = null;
+            return false;
+        }
+
         Type baseType;
         if (valueType.OuterType.IsGenericType && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>))
         {
@@ -169,5 +177,13 @@ internal class ValueTypeMemberSource: IMemberSource
         member = (IQueryableMember)Activator.CreateInstance(baseType, parent, options.Serializer().Casing, memberInfo, valueType)!;
 
         return true;
+    }
+
+    private static bool isSpecialFSharpOptionDateType(Type simpleType)
+    {
+        return simpleType == typeof(DateTime)
+               || simpleType == typeof(DateTimeOffset)
+               || simpleType == typeof(DateOnly)
+               || simpleType == typeof(TimeOnly);
     }
 }
