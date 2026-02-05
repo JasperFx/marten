@@ -22,6 +22,9 @@ public class where_clauses_fsharp: LinqTestContext<where_clauses_fsharp>
         @where(x => x.FSharpIntOption == FSharpOption<int>.Some(300));
         @where(x => x.FSharpStringOption == FSharpOption<string>.Some("My String"));
         @where(x => x.FSharpLongOption == FSharpOption<long>.Some(5_000_000));
+        @where(x => x.FSharpTimeOnlyOption == FSharpOption<TimeOnly>.Some(new TimeOnly(5,10)));
+        @where(x => x.FSharpDateTimeOffsetOption == FSharpOption<DateTimeOffset>.Some(DateTimeOffset.UtcNow));
+        @where(x => x.FSharpDateOnlyOption == FSharpOption<DateOnly>.Some(new DateOnly(2008, 10, 10)));
 
         //Comparing options is not a valid syntax in C#, we therefore define these expressions in F#
         @where(FSharpTypes.greaterThanWithFsharpDateOption);
