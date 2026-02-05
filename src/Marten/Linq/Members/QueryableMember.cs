@@ -143,12 +143,13 @@ public abstract class QueryableMember: IQueryableMember, IHasChildrenMembers
 
     public virtual ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
-        if (constant.Value == null)
+        var unwrappedValue = constant.UnwrapValue();
+        if (unwrappedValue == null)
         {
             return op == "=" ? new IsNullFilter(this) : new IsNotNullFilter(this);
         }
 
-        var def = new CommandParameter(constant);
+        var def = new CommandParameter(Expression.Constant(unwrappedValue));
         return new MemberComparisonFilter(this, def, op);
     }
 }
