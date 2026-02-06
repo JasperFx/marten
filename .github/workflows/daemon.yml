@@ -1,0 +1,100 @@
+name: Daemon
+
+on:
+  push:
+    branches:
+      - master
+      - "7.0"
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+  pull_request:
+    branches:
+      - master
+      - "7.0"
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  pg_db: marten_testing
+  pg_user: postgres
+  CONFIGURATION: Release
+  FRAMEWORK: net10.0
+  DISABLE_TEST_PARALLELIZATION: true
+  DEFAULT_SERIALIZER: "SystemTextJson"
+  NUKE_TELEMETRY_OPTOUT: true
+  POSTGRES_IMAGE: postgres:latest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Install .NET Aspire workload
+        run: |
+          dotnet workload update
+          dotnet workload install aspire
+
+      - name: Start PostgreSQL via docker-compose
+        run: docker compose up -d
+        shell: bash
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T postgresql pg_isready -U postgres; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL failed to start"
+          exit 1
+        shell: bash
+
+      - name: Optimize database for running tests faster
+        run: |
+          docker compose exec -T postgresql bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker compose exec -T postgresql bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker compose exec -T postgresql bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker compose restart postgresql
+        shell: bash
+
+      - name: Wait for PostgreSQL to be ready after restart
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T postgresql pg_isready -U postgres; then
+              echo "PostgreSQL is ready"
+              exit 0
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+          echo "PostgreSQL failed to start"
+          exit 1
+        shell: bash
+
+      - name: compile
+        run: ./build.sh compile-project --project src/DaemonTests/DaemonTests.csproj
+        shell: bash
+
+      - name: test-daemon
+        run: dotnet test src/DaemonTests/DaemonTests.csproj --no-build --framework net10.0 --configuration Release --logger "console;verbosity=detailed"
+        shell: bash
