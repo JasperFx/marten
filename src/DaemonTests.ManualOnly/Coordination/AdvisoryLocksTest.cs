@@ -9,7 +9,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace DaemonTests.Coordination;
+namespace DaemonTests.ManualOnly.Coordination;
 
 public class AdvisoryLocksTest
 {

@@ -13,7 +13,7 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
 
-namespace DaemonTests.Coordination;
+namespace DaemonTests.ManualOnly.Coordination;
 
 [Collection("OneOffs")]
 public class blue_green_projection_deployments
