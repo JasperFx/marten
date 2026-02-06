@@ -69,14 +69,6 @@ jobs:
           exit 1
         shell: bash
 
-      - name: Optimize database for running tests faster
-        run: |
-          docker compose exec -T postgresql bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker compose exec -T postgresql bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker compose exec -T postgresql bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
-          docker compose restart postgresql
-        shell: bash
-
       - name: Wait for PostgreSQL to be ready after restart
         run: |
           for i in $(seq 1 30); do
