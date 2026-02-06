@@ -68,4 +68,12 @@ public class StubEventStream<T> : IEventStream<T> where T : notnull
     public string Key { get; set; } = Guid.NewGuid().ToString();
 
     public IReadOnlyList<IEvent> Events => EventsAppended.Select(x => EventGraph.BuildEvent(x)).ToList();
+
+    /// <summary>
+    /// No-op in the stub. This method is provided to satisfy the interface contract.
+    /// </summary>
+    public void TryFastForwardVersion()
+    {
+        // Intentionally does nothing in the stub
+    }
 }

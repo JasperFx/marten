@@ -39,7 +39,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         action.AggregateType = typeof(TDoc);
         action.ExpectedVersionOnServer = 0;
 
-        return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
+        return new EventStream<TDoc>(session, _store.Events, id, document, cancellation, action);
     }
 
     IEventStream<TDoc> IEventIdentityStrategy<Guid>.AppendToStream<TDoc>(TDoc? document, DocumentSessionBase session,
@@ -47,7 +47,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     {
         var action = session.Events.Append(id);
         action.ExpectedVersionOnServer = version;
-        return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
+        return new EventStream<TDoc>(session, _store.Events, id, document, cancellation, action);
     }
 
     IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<Guid>.BuildEventQueryHandler(bool isGlobal, Guid id,
@@ -104,7 +104,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         action.AggregateType = typeof(TDoc);
         action.ExpectedVersionOnServer = 0;
 
-        return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
+        return new EventStream<TDoc>(session, _store.Events, id, document, cancellation, action);
     }
 
     IEventStream<TDoc> IEventIdentityStrategy<string>.AppendToStream<TDoc>(TDoc? document,
@@ -112,7 +112,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     {
         var action = session.Events.Append(id);
         action.ExpectedVersionOnServer = version;
-        return new EventStream<TDoc>(_store.Events, id, document, cancellation, action);
+        return new EventStream<TDoc>(session, _store.Events, id, document, cancellation, action);
     }
 
     IQueryHandler<IReadOnlyList<IEvent>> IEventIdentityStrategy<string>.BuildEventQueryHandler(bool isGlobal, string id,
