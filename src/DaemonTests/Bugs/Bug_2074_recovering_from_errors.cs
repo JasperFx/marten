@@ -24,6 +24,7 @@ public class Bug_2074_recovering_from_errors
         services.AddMarten(options =>
         {
             options.Connection(ConnectionSource.ConnectionString);
+            options.DisableNpgsqlLogging = true;
             options.DatabaseSchemaName = "bug2074";
 
             options.Projections.Add<UserIssueCounterProjection>(ProjectionLifecycle.Async);

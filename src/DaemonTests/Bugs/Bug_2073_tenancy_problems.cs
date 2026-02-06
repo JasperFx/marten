@@ -37,6 +37,7 @@ public class Bug_2073_tenancy_problems
             services.AddMarten(options =>
             {
                 options.Connection(ConnectionSource.ConnectionString);
+                options.DisableNpgsqlLogging = true;
                 options.DatabaseSchemaName = "bug2073";
 
                 // Multi tenancy

@@ -381,6 +381,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
@@ -444,6 +445,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 services.AddMartenStore<ICustomStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Singleton,
@@ -516,6 +518,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
@@ -577,6 +580,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 services.AddMartenStore<ICustomStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,
@@ -602,6 +606,7 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
                 services.AddMartenStore<ICustomStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "ioc";
                 }).AddAsyncDaemon(DaemonMode.Solo).AddSubscriptionWithServices<SimpleSubscription>(
                     ServiceLifetime.Scoped,

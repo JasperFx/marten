@@ -75,6 +75,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "missing_events";
                     opts.Projections.Add(new WeirdCustomAggregation(), ProjectionLifecycle.Async);
                 }).AddAsyncDaemon(DaemonMode.Solo);
