@@ -13,7 +13,7 @@ using Xunit;
 using Xunit.Abstractions;
 using static Marten.Events.Daemon.AsyncDaemonHealthCheckExtensions;
 
-namespace DaemonTests.HealthChecks;
+namespace DaemonTests.ManualOnly.HealthChecks;
 
 
 public class AsyncDaemonHealthCheckExtensionsTests: DaemonContext

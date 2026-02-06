@@ -11,7 +11,7 @@ using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DaemonTests.Coordination;
+namespace DaemonTests.ManualOnly.Coordination;
 
 public class HotCold_leadership_election: DaemonContext
 {
