@@ -23,6 +23,7 @@ public class pausing_and_resuming_the_daemon
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "coordinator";
 
                     opts.Projections.Add<TestingSupport.TripProjection>(ProjectionLifecycle.Async);

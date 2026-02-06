@@ -60,6 +60,8 @@ public class dynamic_spin_up_of_dynamic_tenants : IAsyncLifetime
             {
                 services.AddMarten(opts =>
                     {
+                        opts.DisableNpgsqlLogging = true;
+
                         // This is a new strategy for configuring tenant databases with Marten
                         // In this usage, Marten is tracking the tenant databases in a single table in the "master"
                         // database by tenant

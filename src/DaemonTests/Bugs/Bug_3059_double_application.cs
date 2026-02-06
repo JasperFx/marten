@@ -36,6 +36,7 @@ public class Bug_3059_double_application
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "bug3059";
 
                     opts.Projections.LiveStreamAggregation<Incident>();

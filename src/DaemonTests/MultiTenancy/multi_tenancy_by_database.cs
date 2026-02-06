@@ -75,6 +75,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
 
                 services.AddMarten(opts =>
                 {
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = "multi_tenancy_daemon";
 
                     opts

@@ -75,6 +75,7 @@ public class Bug_3080_WaitForNonStaleData_should_work_dammit
             {
                 var marten = services.AddMarten(ops =>
                 {
+                    ops.DisableNpgsqlLogging = true;
                     ops.DatabaseSchemaName = "wait";
 
                     ops.MultiTenantedDatabasesWithMasterDatabaseTable(x =>

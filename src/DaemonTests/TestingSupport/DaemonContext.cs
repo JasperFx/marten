@@ -87,6 +87,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = _schemaName;
                     opts.Projections.LeadershipPollingTime = 100;
                     opts.Projections.DaemonLockId = lockId;
@@ -110,6 +111,7 @@ public abstract class DaemonContext: OneOffConfigurationsContext, IAsyncLifetime
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                     opts.DatabaseSchemaName = _schemaName;
                     opts.Projections.LeadershipPollingTime = 100;
 

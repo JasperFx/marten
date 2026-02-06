@@ -29,6 +29,7 @@ public class service_registrations
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                 });
             }).Build();
 
@@ -55,6 +56,7 @@ public class service_registrations
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                 }).AddAsyncDaemon(DaemonMode.Disabled);
             }).Build();
 
@@ -80,6 +82,7 @@ public class service_registrations
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                 }).AddAsyncDaemon(DaemonMode.Solo);
             }).Build();
 
@@ -104,6 +107,7 @@ public class service_registrations
                 services.AddMarten(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                 }).AddAsyncDaemon(DaemonMode.HotCold);
             }).Build();
 
@@ -128,6 +132,7 @@ public class service_registrations
                 services.AddMarten(opts =>
                 {
                     opts.MultiTenantedWithSingleServer(ConnectionSource.ConnectionString);
+                    opts.DisableNpgsqlLogging = true;
                 }).AddAsyncDaemon(DaemonMode.HotCold);
             }).Build();
 
