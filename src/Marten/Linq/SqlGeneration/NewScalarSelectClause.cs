@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Data.Common;
 using System.Threading;
@@ -93,19 +92,14 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
             return null;
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        return await ReadScalarAsync(reader, 0, token).ConfigureAwait(false);
     }
 
     T? ISelector<T?>.Resolve(DbDataReader reader)
     {
         try
         {
-            if (reader.IsDBNull(0))
-            {
-                return null;
-            }
-
-            return reader.GetFieldValue<T>(0);
+            return reader.IsDBNull(0) ? null : ReadScalar(reader, 0);
         }
         catch (InvalidCastException e)
         {
@@ -117,17 +111,7 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
     {
         try
         {
-            if (reader.IsDBNull(0))
-            {
-                return default;
-            }
-            if (typeof(T).IsEnum)
-            {
-                // Read as int, then cast to enum
-                var i = reader.GetFieldValue<int>(0);
-                return (T)Enum.ToObject(typeof(T), i);
-            }
-            return reader.GetFieldValue<T>(0);
+            return reader.IsDBNull(0) ? default : ReadScalar(reader, 0);
         }
         catch (InvalidCastException e)
         {
@@ -137,11 +121,41 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
 
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
-        if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false))
+        if (await reader.IsDBNullAsync(0, token).ConfigureAwait(false)) return default;
+        return await ReadScalarAsync(reader, 0, token).ConfigureAwait(false);
+    }
+
+    private static T ReadScalar(DbDataReader reader, int ordinal)
+    {
+        if (!typeof(T).IsEnum)
         {
-            return default;
+            return reader.GetFieldValue<T>(ordinal);
         }
 
-        return await reader.GetFieldValueAsync<T>(0, token).ConfigureAwait(false);
+        if (reader.GetFieldType(ordinal) == typeof(string))
+        {
+            var s = reader.GetFieldValue<string>(ordinal);
+            return Enum.Parse<T>(s, ignoreCase: true);
+        }
+
+        var i = reader.GetFieldValue<int>(0);
+        return (T)Enum.ToObject(typeof(T), i);
+    }
+
+    private static async Task<T> ReadScalarAsync(DbDataReader reader, int ordinal, CancellationToken token)
+    {
+        if (!typeof(T).IsEnum)
+        {
+            return await reader.GetFieldValueAsync<T>(ordinal, token).ConfigureAwait(false);
+        }
+
+        if (reader.GetFieldType(ordinal) == typeof(string))
+        {
+            var s = await reader.GetFieldValueAsync<string>(ordinal, token).ConfigureAwait(false);
+            return Enum.Parse<T>(s, ignoreCase: true);
+        }
+
+        var i = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
+        return (T)Enum.ToObject(typeof(T), i);
     }
 }

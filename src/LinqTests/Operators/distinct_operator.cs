@@ -4,6 +4,7 @@ using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Weasel.Core;
 using Xunit.Abstractions;
 
 namespace LinqTests.Operators;
@@ -116,6 +117,30 @@ public class distinct_operator : IntegrationContext
     [Fact]
     public async Task get_distinct_nullable_enums()
     {
+        theSession.Store(new Target { NullableEnum = Colors.Green });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Red });
+        theSession.Store(new Target { NullableEnum = Colors.Blue });
+        theSession.Store(new Target { NullableEnum = Colors.Yellow });
+        theSession.Store(new Target { NullableEnum = null });
+
+        await theSession.SaveChangesAsync();
+
+        theSession.Logger = new TestOutputMartenLogger(_output);
+        var queryable = theSession.Query<Target>()
+            .Select(x => x.NullableEnum).Distinct();
+
+        queryable.ToList().Count.ShouldBe(5);
+    }
+
+    [Fact]
+    public async Task get_distinct_nullable_string_enums()
+    {
+        StoreOptions(opts =>
+        {
+            opts.UseSystemTextJsonForSerialization(enumStorage: EnumStorage.AsString);
+        });
         theSession.Store(new Target { NullableEnum = Colors.Green });
         theSession.Store(new Target { NullableEnum = Colors.Blue });
         theSession.Store(new Target { NullableEnum = Colors.Blue });
