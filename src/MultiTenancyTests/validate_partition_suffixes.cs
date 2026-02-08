@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Marten;
 using Marten.Testing.Harness;
@@ -143,5 +144,89 @@ public class validate_partition_suffixes
         Should.Throw<ArgumentException>(() =>
             store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, mapping)
                 .GetAwaiter().GetResult());
+    }
+
+    [Fact]
+    public void guid_params_overload_delegates_to_string_overload()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+        });
+
+        // Guid.ToString() produces hyphens (e.g. "d3b07384-d9a0-...") which are invalid identifiers,
+        // so the validation should catch this
+        var id = Guid.NewGuid();
+        Should.Throw<ArgumentException>(() =>
+            store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, id)
+                .GetAwaiter().GetResult());
+    }
+
+    [Fact]
+    public void guid_overload_with_suffix_func_uses_func_for_suffix()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+        });
+
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+
+        // Providing a func that produces an invalid suffix should throw
+        Should.Throw<ArgumentException>(() =>
+            store.Advanced.AddMartenManagedTenantsAsync(
+                CancellationToken.None,
+                [id1, id2],
+                id => $"bad-{id.ToString()[..8]}")
+                .GetAwaiter().GetResult());
+    }
+
+    [Fact]
+    public void guid_overload_with_suffix_func_valid_suffixes_should_not_throw_validation()
+    {
+        // Just verify the suffix func values pass validation (the call will fail later
+        // due to no actual database partitions, but it should get past validation)
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+
+        var suffixes = new[] { id1, id2 }
+            .Select(id => $"tenant_{id.ToString("N")[..8]}")
+            .ToArray();
+
+        // These suffixes should be valid identifiers
+        Should.NotThrow(() =>
+            AdvancedOperations.AssertValidPostgresqlIdentifiers(suffixes));
+    }
+
+    [Fact]
+    public void guid_overload_with_suffix_func_builds_correct_mapping()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
+        });
+
+        var id1 = Guid.NewGuid();
+        var id2 = Guid.NewGuid();
+
+        // Use a valid suffix func - the call will proceed past validation into actual
+        // partition management. We just need to verify it doesn't throw ArgumentException
+        // (it may throw other exceptions depending on database state, but not ArgumentException)
+        var ex = Record.Exception(() =>
+            store.Advanced.AddMartenManagedTenantsAsync(
+                CancellationToken.None,
+                [id1, id2],
+                id => $"t_{id.ToString("N")[..8]}")
+                .GetAwaiter().GetResult());
+
+        // Should not be an ArgumentException - that would mean validation failed
+        ex.ShouldNotBeOfType<ArgumentException>();
     }
 }

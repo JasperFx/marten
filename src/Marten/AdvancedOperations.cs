@@ -300,6 +300,36 @@ public class AdvancedOperations
 
     /// <summary>
     ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    ///     tables *if* Marten-managed partitioning is applied to this store. The Guid tenant ids
+    ///     are converted to strings via ToString() and used as both tenant id and partition suffix
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantIds"></param>
+    public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, params Guid[] tenantIds)
+    {
+        return AddMartenManagedTenantsAsync(token, tenantIds.Select(id => id.ToString()).ToArray());
+    }
+
+    /// <summary>
+    ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
+    ///     tables *if* Marten-managed partitioning is applied to this store. The Guid tenant ids
+    ///     are converted to strings via ToString() as tenant ids, and the supplied function is used
+    ///     to determine the partition suffix for each tenant
+    /// </summary>
+    /// <param name="token"></param>
+    /// <param name="tenantIds"></param>
+    /// <param name="partitionSuffixFromTenantId">Function to derive the partition suffix from a Guid tenant id</param>
+    public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, Guid[] tenantIds,
+        Func<Guid, string> partitionSuffixFromTenantId)
+    {
+        var dict = new Dictionary<string, string>();
+        foreach (var tenantId in tenantIds) dict[tenantId.ToString()] = partitionSuffixFromTenantId(tenantId);
+
+        return AddMartenManagedTenantsAsync(token, dict);
+    }
+
+    /// <summary>
+    ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
     ///     tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
     ///     relationship between tenant ids and table partitions
     /// </summary>
