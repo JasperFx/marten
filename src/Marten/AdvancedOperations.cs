@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
@@ -319,6 +320,8 @@ public class AdvancedOperations
                 "This option is not (yet) supported in combination with database per tenant multi-tenancy");
         }
 
+        AssertValidPostgresqlIdentifiers(tenantIdToPartitionMapping.Values);
+
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
 
 
@@ -328,6 +331,18 @@ public class AdvancedOperations
             database,
             tenantIdToPartitionMapping,
             token).ConfigureAwait(false);
+    }
+
+    internal static readonly Regex ValidPostgresqlIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
+
+    internal static void AssertValidPostgresqlIdentifiers(IEnumerable<string> suffixes)
+    {
+        var invalidSuffixes = suffixes.Where(s => !ValidPostgresqlIdentifierRegex.IsMatch(s)).ToArray();
+        if (invalidSuffixes.Length > 0)
+        {
+            throw new ArgumentException(
+                $"The following partition suffix values contain illegal characters for PostgreSQL object identifiers: {string.Join(", ", invalidSuffixes.Select(s => $"'{s}'"))}. Suffixes must start with a letter or underscore and contain only letters, digits, and underscores.");
+        }
     }
 
     /// <summary>
