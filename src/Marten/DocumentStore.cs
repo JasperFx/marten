@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -523,6 +524,9 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
             DocumentTracking.DirtyTracking => new DirtyCheckingDocumentSession(this, options, connection),
             _ => throw new ArgumentOutOfRangeException(nameof(SessionOptions.Tracking))
         };
+
+        session.CorrelationId = Activity.Current?.RootId;
+        session.CausationId = Activity.Current?.ParentId;
 
         return session;
     }

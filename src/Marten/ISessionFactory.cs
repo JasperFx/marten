@@ -43,9 +43,6 @@ public abstract class SessionFactoryBase: ISessionFactory
     {
         var documentSession = _store.OpenSession(BuildOptions());
 
-        documentSession.CorrelationId = Activity.Current?.RootId;
-        documentSession.CausationId = Activity.Current?.ParentId;
-
         ApplyMetadata(documentSession);
         return documentSession;
     }
