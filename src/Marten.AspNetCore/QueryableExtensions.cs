@@ -25,7 +25,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     )
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await queryable.StreamJsonFirstOrDefault(stream, context.RequestAborted).ConfigureAwait(false);
 
         if (found)
@@ -82,7 +82,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     ) where T : class
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
@@ -117,7 +117,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     ) where T : class
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
@@ -152,7 +152,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     ) where T : class
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
@@ -187,7 +187,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     ) where T : class
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
@@ -222,7 +222,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
     ) where T : class
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await json.StreamById<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
@@ -259,7 +259,7 @@ public static class QueryableExtensions
         int onFoundStatus = 200
         ) where TDoc : notnull
     {
-        var stream = new MemoryStream();
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
         var found = await session.StreamJsonOne(query, stream, context.RequestAborted).ConfigureAwait(false);
         if (found)
         {
