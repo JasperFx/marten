@@ -32,7 +32,7 @@ public partial class QuerySession
     public async Task<string?> ToJsonOne<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
         CancellationToken token = default) where TDoc : notnull
     {
-        var stream = new MemoryStream();
+        var stream = SharedMemoryStreamManager.GetStream();
         var count = await StreamJsonOne(query, stream, token).ConfigureAwait(false);
         if (!count)
         {
@@ -46,7 +46,7 @@ public partial class QuerySession
     public async Task<string> ToJsonMany<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
         CancellationToken token = default) where TDoc : notnull
     {
-        var stream = new MemoryStream();
+        var stream = SharedMemoryStreamManager.GetStream();
         await StreamJsonOne(query, stream, token).ConfigureAwait(false);
         stream.Position = 0;
         return await stream.ReadAllTextAsync().ConfigureAwait(false);
