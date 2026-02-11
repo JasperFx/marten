@@ -12,9 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JasperFx" Version="1.11.2" />
-    <PackageReference Include="Npgsql" Version="9.0.4" />
-    <PackageReference Include="Nuke.Common" Version="10.1.0" />
+    <PackageReference Include="JasperFx" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Nuke.Common" />
   </ItemGroup>
 
 </Project>

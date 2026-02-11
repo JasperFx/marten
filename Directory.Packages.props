@@ -1,0 +1,83 @@
+<Project>
+    <PropertyGroup>
+        <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageVersion Include="Alba" Version="8.2.0" />
+        <PackageVersion Include="Aspire.Hosting.AppHost" Version="8.2.0" />
+        <PackageVersion Include="BenchmarkDotNet" Version="0.13.10" />
+        <PackageVersion Include="Bogus" Version="35.6.5" />
+        <PackageVersion Include="Confluent.Kafka" Version="2.3.0" />
+        <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+        <PackageVersion Include="DotNet.ReproducibleBuilds" Version="1.2.39" />
+        <PackageVersion Include="FluentAssertions" Version="6.12.0" />
+        <PackageVersion Include="FSharp.Core" Version="9.0.100" />
+        <PackageVersion Include="FSharp.SystemTextJson" Version="1.3.13" />
+        <PackageVersion Include="JasperFx" Version="1.17.2" />
+        <PackageVersion Include="JasperFx.Events" Version="1.19.1" />
+        <PackageVersion Include="JasperFx.RuntimeCompiler" Version="4.3.2" />
+        <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
+        <PackageVersion Include="Lamar" Version="7.1.1" />
+        <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
+        <PackageVersion Include="Marten" Version="8.2.1" />
+        <PackageVersion Include="Meziantou.Analyzer" Version="2.0.257" />
+        <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
+        <PackageVersion Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Configuration.FileExtensions" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.3.0" />
+        <PackageVersion Include="Microsoft.FeatureManagement" Version="3.2.0" />
+        <PackageVersion Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+        <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
+        <PackageVersion Include="Neovolve.Logging.Xunit" Version="6.3.0" />
+        <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageVersion Include="NodaTime.Serialization.JsonNet" Version="3.1.0" />
+        <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2" />
+        <PackageVersion Include="Npgsql" Version="9.0.4" />
+        <PackageVersion Include="Npgsql.DependencyInjection" Version="9.0.2" />
+        <PackageVersion Include="Npgsql.Json.NET" Version="9.0.4" />
+        <PackageVersion Include="Npgsql.NodaTime" Version="9.0.2" />
+        <PackageVersion Include="NSubstitute" Version="5.3.0" />
+        <PackageVersion Include="Nuke.Common" Version="10.1.0" />
+        <PackageVersion Include="Ogooreck" Version="0.8.0" />
+        <PackageVersion Include="OpenTelemetry" Version="1.8.1" />
+        <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.8.1" />
+        <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.0-rc.1" />
+        <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.8.1" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
+        <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.0" />
+        <PackageVersion Include="Shouldly" Version="4.3.0" />
+        <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />
+        <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+        <PackageVersion Include="Vogen" Version="7.0.0" />
+        <PackageVersion Include="Weasel.Postgresql" Version="8.6.0" />
+        <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
+        <PackageVersion Include="xunit" Version="2.9.3" />
+        <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    </ItemGroup>
+
+    <!-- Framework-specific package versions -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.2" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+        <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.0" />
+        <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    </ItemGroup>
+</Project>

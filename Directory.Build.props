@@ -13,7 +13,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DotNet.ReproducibleBuilds" Version="1.2.39" PrivateAssets="All" />
+        <PackageReference Include="DotNet.ReproducibleBuilds" PrivateAssets="All" />
     </ItemGroup>
 
 </Project>

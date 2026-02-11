@@ -14,9 +14,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.JsonNet" Version="3.1.0"/>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2"/>
-        <PackageReference Include="Npgsql.NodaTime" Version="9.0.2" />
+        <PackageReference Include="NodaTime.Serialization.JsonNet"/>
+        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
+        <PackageReference Include="Npgsql.NodaTime" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
