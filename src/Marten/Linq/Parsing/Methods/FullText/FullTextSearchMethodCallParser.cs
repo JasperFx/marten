@@ -54,6 +54,7 @@ internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
         }
 
         var searchTerm = (string)expression.Arguments[1].Value();
+        searchTerm = TransformSearchTerm(searchTerm);
 
         var regConfig = expression.Arguments.Count > 2
             ? (expression.Arguments[2].Value() as string)!
@@ -65,4 +66,6 @@ internal abstract class FullTextSearchMethodCallParser: IMethodCallParser
             searchTerm,
             regConfig);
     }
+
+    protected virtual string TransformSearchTerm(string searchTerm) => searchTerm;
 }

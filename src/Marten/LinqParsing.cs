@@ -95,7 +95,8 @@ public class LinqParsing: IReadOnlyLinqParsing
         new PhraseSearch(),
         new PlainTextSearch(),
         new WebStyleSearch(),
-        new NgramSearch()
+        new NgramSearch(),
+        new PrefixSearch()
     };
 
     private readonly StoreOptions _options;

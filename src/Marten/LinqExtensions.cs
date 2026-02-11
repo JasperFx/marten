@@ -301,6 +301,42 @@ public static class LinqExtensions
     }
 
     /// <summary>
+    ///     Performs a full text search against <typeparamref name="T" /> using prefix matching.
+    ///     Each word in the search term is treated as a prefix, so "Priced" will match "PricedIdeaScreening".
+    ///     This is useful for searching enum values stored as strings or other concatenated identifiers.
+    /// </summary>
+    /// <param name="searchTerm">The text to search for. Each word is treated as a prefix.</param>
+    /// <remarks>
+    ///     Uses PostgreSQL's to_tsquery with the :* prefix matching operator.
+    ///     See: https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+    /// </remarks>
+    public static bool PrefixSearch<T>(this T variable, string searchTerm)
+    {
+        throw new NotSupportedException(
+            $"{nameof(PrefixSearch)} extension method can only be used in Marten Linq queries.");
+    }
+
+    /// <summary>
+    ///     Performs a full text search against <typeparamref name="T" /> using prefix matching.
+    ///     Each word in the search term is treated as a prefix, so "Priced" will match "PricedIdeaScreening".
+    ///     This is useful for searching enum values stored as strings or other concatenated identifiers.
+    /// </summary>
+    /// <param name="searchTerm">The text to search for. Each word is treated as a prefix.</param>
+    /// <param name="regConfig">
+    ///     The dictionary config passed to the 'to_tsquery' function, must match the config parameter used
+    ///     by <seealso cref="DocumentMapping.AddFullTextIndex(string)" />
+    /// </param>
+    /// <remarks>
+    ///     Uses PostgreSQL's to_tsquery with the :* prefix matching operator.
+    ///     See: https://www.postgresql.org/docs/current/textsearch-controls.html#TEXTSEARCH-PARSING-QUERIES
+    /// </remarks>
+    public static bool PrefixSearch<T>(this T variable, string searchTerm, string regConfig)
+    {
+        throw new NotSupportedException(
+            $"{nameof(PrefixSearch)} extension method can only be used in Marten Linq queries.");
+    }
+
+    /// <summary>
     ///     Performs a ngram search against <typeparamref name="T" /> using a custom ngram search function
     /// </summary>
     /// <param name="searchTerm">The text to search for.</param>
