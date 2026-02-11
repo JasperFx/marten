@@ -261,6 +261,36 @@ public class query_by_sql: IntegrationContext
     }
 
     [Fact]
+    public async Task query_with_null_named_parameter_GH_3045()
+    {
+        using var session = theStore.LightweightSession();
+        session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
+        session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
+        session.Store(new User { FirstName = "Max", LastName = "Miller" });
+        session.Store(new User { FirstName = "Frank", LastName = "Zombo" });
+        await session.SaveChangesAsync();
+
+        // When :lastName is null, the "is null" check is true so all users are returned
+        var users =
+            (await session.QueryAsync<User>(
+                "where (:lastName is null or data ->> 'LastName' = :lastName)",
+                new { lastName = (string?)null }))
+            .OrderBy(x => x.FirstName).ToArray();
+
+        users.Length.ShouldBe(4);
+
+        // When :lastName has a value, only matching users are returned
+        var filtered =
+            (await session.QueryAsync<User>(
+                "where (:lastName is null or data ->> 'LastName' = :lastName)",
+                new { lastName = (string?)"Miller" }))
+            .OrderBy(x => x.FirstName).ToArray();
+
+        filtered.Length.ShouldBe(3);
+        filtered[0].FirstName.ShouldBe("Jeremy");
+    }
+
+    [Fact]
     public async Task query_for_multiple_documents()
     {
         using var session = theStore.LightweightSession();
