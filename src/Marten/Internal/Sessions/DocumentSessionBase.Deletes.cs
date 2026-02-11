@@ -8,6 +8,7 @@ using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
+using Marten.Metadata;
 
 namespace Marten.Internal.Sessions;
 
@@ -25,6 +26,12 @@ public abstract partial class DocumentSessionBase
 
         var deletion = documentStorage.DeleteForDocument(entity, TenantId);
         _workTracker.Add(deletion);
+
+        if (entity is ISoftDeleted softDeleted)
+        {
+            softDeleted.Deleted = true;
+            softDeleted.DeletedAt = DateTimeOffset.UtcNow;
+        }
 
         documentStorage.Eject(this, entity);
 
