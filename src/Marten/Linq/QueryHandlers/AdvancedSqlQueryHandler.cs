@@ -132,8 +132,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 
         if (Parameters.Length == 1 && firstParameter != null && firstParameter.IsAnonymousType())
         {
-            builder.Append(Sql);
-            builder.AddParameters(firstParameter);
+            NamedParameterHelper.AppendSqlWithNamedParameters(builder, Sql, firstParameter);
         }
         else
         {

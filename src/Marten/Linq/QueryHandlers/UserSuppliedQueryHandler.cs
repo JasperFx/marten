@@ -60,8 +60,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
         if (_parameters.Length == 1 && firstParameter != null && firstParameter.IsAnonymousType())
         {
-            builder.Append(_sql);
-            builder.AddParameters(firstParameter);
+            NamedParameterHelper.AppendSqlWithNamedParameters(builder, _sql, firstParameter);
         }
         else
         {
