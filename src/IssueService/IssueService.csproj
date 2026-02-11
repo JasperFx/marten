@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
     <ItemGroup>
-        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0"/>
-        <PackageReference Include="StronglyTypedId" Version="1.0.0-beta08" />
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
+        <PackageReference Include="StronglyTypedId" />
     </ItemGroup>
 
     <ItemGroup>

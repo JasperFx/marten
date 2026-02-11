@@ -24,27 +24,27 @@
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FSharp.Core" Version="9.0.100" />
-        <PackageReference Include="JasperFx" Version="1.17.2" />
-        <PackageReference Include="JasperFx.Events" Version="1.19.1" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" Version="4.3.2" />
-        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.1" />
-        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="FSharp.Core" />
+        <PackageReference Include="JasperFx" />
+        <PackageReference Include="JasperFx.Events" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" />
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
+        <PackageReference Include="Newtonsoft.Json" />
         <!-- This is forced by Npgsql peer dependency -->
-        <PackageReference Include="Npgsql.Json.NET" Version="9.0.4" />
-        <PackageReference Include="Weasel.Postgresql" Version="8.6.0" />
+        <PackageReference Include="Npgsql.Json.NET" />
+        <PackageReference Include="Weasel.Postgresql" />
     </ItemGroup>
 
 

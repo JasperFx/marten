@@ -11,7 +11,7 @@
         <ProjectReference Include="..\Marten\Marten.csproj"/>
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="BenchmarkDotNet" Version="0.13.10"/>
+        <PackageReference Include="BenchmarkDotNet"/>
     </ItemGroup>
     <ItemGroup>
         <Folder Include="Benchmarks"/>
