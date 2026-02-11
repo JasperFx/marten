@@ -26,6 +26,8 @@ public static class NodaTimeExtensions
         SetNodaTimeTypeMappings();
         NpgsqlConnection.GlobalTypeMapper.UseNodaTime();
 
+        storeOptions.Linq.MemberSources.Insert(0, new NodaTimeMemberSource());
+
         if (!shouldConfigureJsonSerializer) return;
 
         storeOptions.Advanced.ModifySerializer(serializer =>
