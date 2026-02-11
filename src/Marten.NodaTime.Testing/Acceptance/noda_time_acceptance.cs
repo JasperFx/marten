@@ -316,6 +316,33 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         }
     }
 
+    [Theory]
+    [InlineData(SerializerType.SystemTextJson)]
+    [InlineData(SerializerType.Newtonsoft)]
+    public async Task can_index_noda_time_types(SerializerType serializerType)
+    {
+        StoreOptions(opts =>
+        {
+            if (serializerType == SerializerType.Newtonsoft)
+            {
+                opts.UseNewtonsoftForSerialization();
+            }
+            opts.UseNodaTime();
+            opts.DatabaseSchemaName = "NodaTime";
+            opts.Schema.For<TargetWithDates>()
+                .Duplicate(x => x.LocalDate)
+                .Duplicate(x => x.LocalDateTime)
+                .Duplicate(x => x.InstantUTC);
+        }, true);
+
+        await theStore.Advanced.Clean.CompletelyRemoveAllAsync();
+
+        // This will apply schema changes, creating indexes on NodaTime fields.
+        // Previously this would fail with "functions in index expression must be marked IMMUTABLE"
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
+    }
+
     private class CustomJsonSerializer: ISerializer
     {
         public EnumStorage EnumStorage => throw new NotSupportedException();
