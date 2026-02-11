@@ -720,6 +720,24 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         partitioning.Partitions.Single().ShouldBe(new ListPartition("deleted", "true"));
 
     }
+
+    [Fact]
+    public async Task delete_sets_ISoftDeleted_properties_on_in_memory_document()
+    {
+        var doc1 = new SoftDeletedDocument { Id = "50" };
+        theSession.Store(doc1);
+        await theSession.SaveChangesAsync();
+
+        await using var session2 = theStore.IdentitySession();
+        var loadedDoc = await session2.LoadAsync<SoftDeletedDocument>(doc1.Id);
+        loadedDoc.ShouldNotBeNull();
+
+        session2.Delete(loadedDoc);
+        await session2.SaveChangesAsync();
+
+        loadedDoc.Deleted.ShouldBeTrue();
+        loadedDoc.DeletedAt.ShouldNotBeNull();
+    }
 }
 
 public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsyncLifetime
