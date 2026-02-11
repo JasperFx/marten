@@ -33,4 +33,10 @@ public partial class QuerySession
     {
         return Query<TDoc>().Where(d => d.WebStyleSearch(searchTerm, regConfig)).ToListAsync(token);
     }
+
+    public Task<IReadOnlyList<TDoc>> PrefixSearchAsync<TDoc>(string searchTerm,
+        string regConfig = FullTextIndexDefinition.DefaultRegConfig, CancellationToken token = default)
+    {
+        return Query<TDoc>().Where(d => d.PrefixSearch(searchTerm, regConfig)).ToListAsync(token);
+    }
 }

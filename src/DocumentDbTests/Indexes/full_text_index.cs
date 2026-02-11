@@ -923,6 +923,39 @@ public class full_text_index: OneOffConfigurationsContext
         });
         await Should.NotThrowAsync(async () => await store2.Storage.Database.AssertDatabaseMatchesConfigurationAsync());
     }
+
+    [Fact]
+    public async Task prefix_search_matches_partial_enum_value_GH_1327()
+    {
+        StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
+
+        var expectedId = Guid.NewGuid();
+
+        using (var session = theStore.LightweightSession())
+        {
+            session.Store(new BlogPost { Id = expectedId, EnglishText = "PricedIdeaScreening" });
+            session.Store(new BlogPost { Id = Guid.NewGuid(), EnglishText = "UnrelatedContent" });
+            await session.SaveChangesAsync();
+        }
+
+        using (var session = theStore.QuerySession())
+        {
+            // Standard Search does NOT match a partial prefix of a concatenated word
+            var noMatch = session.Query<BlogPost>()
+                .Where(x => x.Search("Priced"))
+                .ToList();
+
+            noMatch.ShouldBeEmpty();
+
+            // PrefixSearch DOES match because it uses the :* prefix operator
+            var results = session.Query<BlogPost>()
+                .Where(x => x.PrefixSearch("Priced"))
+                .ToList();
+
+            results.Count.ShouldBe(1);
+            results[0].Id.ShouldBe(expectedId);
+        }
+    }
 }
 
 public static class FullTextIndexTestsExtension
