@@ -6,6 +6,7 @@ namespace DaemonTests.TeleHealth;
 
 public record AppointmentRequested(Guid PatientId, string StateCode, string SpecialtyCode);
 public record AppointmentRouted(Guid BoardId);
+public record AppointmentExternalIdentifierAssigned(Guid AppointmentId, Guid ExternalId);
 public record ProviderAssigned( Guid ProviderId);
 public record AppointmentStarted;
 public record AppointmentCompleted;
