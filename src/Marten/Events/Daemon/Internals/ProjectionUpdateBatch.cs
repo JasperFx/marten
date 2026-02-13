@@ -240,14 +240,18 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
         }
 
-        var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (listeners.Length == 0)
+        if (_settings.AsyncListeners.Count == 0 && Listeners.Count == 0)
         {
             return;
         }
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
-        foreach (var listener in listeners)
+        foreach (var listener in _settings.AsyncListeners)
+        {
+            await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                .ConfigureAwait(false);
+        }
+        foreach (var listener in Listeners)
         {
             await listener.AfterCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
@@ -261,14 +265,18 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return;
         }
 
-        var listeners = _settings.AsyncListeners.Concat(Listeners).ToArray();
-        if (listeners.Length == 0)
+        if (_settings.AsyncListeners.Count == 0 && Listeners.Count == 0)
         {
             return;
         }
 
         var unitOfWorkData = new UnitOfWork(_pages.SelectMany(x => x.Operations));
-        foreach (var listener in listeners)
+        foreach (var listener in _settings.AsyncListeners)
+        {
+            await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
+                .ConfigureAwait(false);
+        }
+        foreach (var listener in Listeners)
         {
             await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
