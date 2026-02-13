@@ -72,7 +72,11 @@ internal class UnitOfWork: ISessionWorkTracker
     {
         if (shouldSort(options, out var comparer))
         {
-            _operations.Sort(comparer);
+            // Must use a stable sort to preserve insertion order for operations
+            // on the same document type (required for self-referencing foreign keys)
+            var sorted = _operations.OrderBy(f => f, comparer).ToList();
+            _operations.Clear();
+            _operations.AddRange(sorted);
         }
     }
 
