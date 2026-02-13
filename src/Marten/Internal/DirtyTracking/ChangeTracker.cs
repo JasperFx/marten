@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics.CodeAnalysis;
 using Marten.Internal.Operations;
 using Newtonsoft.Json.Linq;
@@ -20,6 +21,15 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
     public bool DetectChanges(IMartenSession session, [NotNullWhen(true)]out IStorageOperation? operation)
     {
         var newJson = session.Serializer.ToCleanJson(_document);
+
+        // Fast path: if the JSON strings are identical, skip expensive parsing
+        if (string.Equals(_json, newJson, StringComparison.Ordinal))
+        {
+            operation = null;
+            return false;
+        }
+
+        // Slow path: parse and deep-compare to handle semantically equivalent JSON
         if (JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))
         {
             operation = null;
@@ -31,6 +41,9 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
             .Providers.StorageFor<T>()
             .DirtyTracking
             .Upsert(_document, session, session.TenantId);
+
+        // Reuse the already-serialized JSON for the next comparison
+        _json = newJson;
 
         return true;
     }
