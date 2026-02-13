@@ -45,6 +45,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     private readonly string _selectClause;
     private readonly string[] _selectFields;
     private ISqlFragment? _defaultWhere;
+    private MetadataColumn[]? _metadataColumns;
     protected Action<T, TId> _setter;
     protected Action<T, string> _setFromString = (_, _) => throw new NotSupportedException();
     protected Action<T, Guid> _setFromGuid = (_, _) => throw new NotSupportedException();
@@ -147,7 +148,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     MetadataColumn[] IHaveMetadataColumns.MetadataColumns()
     {
-        return _mapping.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
+        return _metadataColumns ??= _mapping.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
     }
 
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;

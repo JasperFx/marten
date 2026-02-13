@@ -48,9 +48,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             var values = reader.GetFieldValue<long[]>(0);
 
             var finalVersion = values[0];
-            foreach (var e in Stream.Events.Reverse())
+            var events = Stream.Events;
+            for (int i = events.Count - 1; i >= 0; i--)
             {
-                e.Version = finalVersion;
+                events[i].Version = finalVersion;
                 finalVersion--;
             }
 
@@ -58,10 +59,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             for (int i = 1; i < values.Length; i++)
             {
                 // Only setting the sequence to aid in tombstone processing
-                Stream.Events[i - 1].Sequence = values[i];
+                events[i - 1].Sequence = values[i];
             }
 
-            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 1)
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
             {
                 throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
                     ? Stream.Id
@@ -90,46 +91,87 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         var param2 = builder.AppendParameter(Stream.TenantId);
         param2.NpgsqlDbType = NpgsqlDbType.Varchar;
 
-        var param3 = builder.AppendParameter(Stream.Events.Select(x => x.Id).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var ids = new Guid[count];
+        var typeNames = new string[count];
+        var dotNetTypeNames = new string[count];
+        var jsonBodies = new string[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            var e = events[i];
+            ids[i] = e.Id;
+            typeNames[i] = e.EventTypeName;
+            dotNetTypeNames[i] = e.DotNetTypeName;
+            jsonBodies[i] = session.Serializer.ToJson(e.Data);
+        }
+
+        var param3 = builder.AppendParameter(ids);
         param3.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Uuid;
 
-        var param4 = builder.AppendParameter(Stream.Events.Select(x => x.EventTypeName).ToArray());
+        var param4 = builder.AppendParameter(typeNames);
         param4.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
 
-        var param5 = builder.AppendParameter(Stream.Events.Select(x => x.DotNetTypeName).ToArray());
+        var param5 = builder.AppendParameter(dotNetTypeNames);
         param5.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
 
-        var param6 = builder.AppendParameter(Stream.Events.Select(e => session.Serializer.ToJson(e.Data)).ToArray());
+        var param6 = builder.AppendParameter(jsonBodies);
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
     protected void writeCausationIds(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.CausationId).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var causationIds = new string[count];
+        for (int i = 0; i < count; i++) causationIds[i] = events[i].CausationId;
+
+        var param = builder.AppendParameter(causationIds);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
     protected void writeCorrelationIds(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.CorrelationId).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var correlationIds = new string[count];
+        for (int i = 0; i < count; i++) correlationIds[i] = events[i].CorrelationId;
+
+        var param = builder.AppendParameter(correlationIds);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
     protected void writeHeaders(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => session.Serializer.ToJson(x.Headers)).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var headers = new string[count];
+        for (int i = 0; i < count; i++) headers[i] = session.Serializer.ToJson(events[i].Headers);
+
+        var param = builder.AppendParameter(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
     protected void writeUserNames(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.UserName).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var userNames = new string[count];
+        for (int i = 0; i < count; i++) userNames[i] = events[i].UserName;
+
+        var param = builder.AppendParameter(userNames);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
     protected void writeTimestamps(IGroupedParameterBuilder builder)
     {
-        var param = builder.AppendParameter(Stream.Events.Select(x => x.Timestamp).ToArray());
+        var events = Stream.Events;
+        var count = events.Count;
+        var timestamps = new DateTimeOffset[count];
+        for (int i = 0; i < count; i++) timestamps[i] = events[i].Timestamp;
+
+        var param = builder.AppendParameter(timestamps);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.TimestampTz;
     }
 
@@ -140,9 +182,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
 
             var finalVersion = values[0];
-            foreach (var e in Stream.Events.Reverse())
+            var events = Stream.Events;
+            for (int i = events.Count - 1; i >= 0; i--)
             {
-                e.Version = finalVersion;
+                events[i].Version = finalVersion;
                 finalVersion--;
             }
 
@@ -150,10 +193,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             for (int i = 1; i < values.Length; i++)
             {
                 // Only setting the sequence to aid in tombstone processing
-                Stream.Events[i - 1].Sequence = values[i];
+                events[i - 1].Sequence = values[i];
             }
 
-            if (Events is { UseMandatoryStreamTypeDeclaration: true } && Stream.Events[0].Version == 1)
+            if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
             {
                 throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
                     ? Stream.Id

@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Internal.Operations;
@@ -37,16 +38,18 @@ public class DirtyCheckingDocumentSession: DocumentSessionBase
     {
         foreach (var tracker in ChangeTrackers) tracker.Reset(this);
 
-        var knownDocuments = ChangeTrackers.Select(x => x.Document).ToArray();
+        var knownDocuments = new HashSet<object>(
+            ChangeTrackers.Select(x => x.Document),
+            ReferenceEqualityComparer.Instance);
 
-        var operations = _workTracker.AllOperations
-            .OfType<IDocumentStorageOperation>()
-            .Where(x => !knownDocuments.Contains(x.Document));
-
-        foreach (var operation in operations)
+        var operations = _workTracker.AllOperations;
+        for (int i = 0; i < operations.Count; i++)
         {
-            var tracker = operation.ToTracker(this);
-            ChangeTrackers.Add(tracker);
+            if (operations[i] is IDocumentStorageOperation op && !knownDocuments.Contains(op.Document))
+            {
+                var tracker = op.ToTracker(this);
+                ChangeTrackers.Add(tracker);
+            }
         }
     }
 

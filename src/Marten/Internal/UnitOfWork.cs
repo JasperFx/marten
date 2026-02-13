@@ -54,15 +54,25 @@ internal class UnitOfWork: ISessionWorkTracker
         }
     }
 
-    public IReadOnlyList<IStorageOperation> AllOperations => _eventOperations.Concat(_operations).ToList();
+    public IReadOnlyList<IStorageOperation> AllOperations
+    {
+        get
+        {
+            if (_eventOperations.Count == 0) return _operations;
+            if (_operations.Count == 0) return _eventOperations;
+
+            var combined = new List<IStorageOperation>(_eventOperations.Count + _operations.Count);
+            combined.AddRange(_eventOperations);
+            combined.AddRange(_operations);
+            return combined;
+        }
+    }
 
     public void Sort(StoreOptions options)
     {
         if (shouldSort(options, out var comparer))
         {
-            var sorted = _operations.OrderBy(f => f, comparer).ToList();
-            _operations.Clear();
-            _operations.AddRange(sorted);
+            _operations.Sort(comparer);
         }
     }
 

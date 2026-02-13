@@ -19,7 +19,7 @@ public class MemberFinder: ExpressionVisitor
 
     protected override Expression VisitMember(MemberExpression node)
     {
-        Members.Insert(0, node.Member);
+        Members.Add(node.Member);
 
         try
         {
@@ -49,7 +49,7 @@ public class MemberFinder: ExpressionVisitor
     {
         if (node.Method.Name == "Count" && node.Method.ReturnType == typeof(int))
         {
-            Members.Insert(0, LinqConstants.ArrayLength);
+            Members.Add(LinqConstants.ArrayLength);
         }
 
         // This is fugly!
@@ -58,7 +58,7 @@ public class MemberFinder: ExpressionVisitor
                 nameof(String.ToUpperInvariant)
             ]))
         {
-            Members.Insert(0, node.Method);
+            Members.Add(node.Method);
         }
 
         return base.VisitMethodCall(node);
@@ -68,7 +68,7 @@ public class MemberFinder: ExpressionVisitor
     {
         if (node.NodeType == ExpressionType.ArrayLength)
         {
-            Members.Insert(0, LinqConstants.ArrayLength);
+            Members.Add(LinqConstants.ArrayLength);
         }
 
         return base.VisitUnary(node);
@@ -80,7 +80,9 @@ public class MemberFinder: ExpressionVisitor
 
         visitor.Visit(expression);
 
-        return visitor.Members.ToArray();
+        var result = visitor.Members.ToArray();
+        Array.Reverse(result);
+        return result;
     }
 
     public static MemberInfo[] Determine(Expression expression, string invalidMessage)
@@ -99,6 +101,8 @@ public class MemberFinder: ExpressionVisitor
             throw new BadLinqExpressionException($"{invalidMessage}: '{expression}'");
         }
 
-        return visitor.Members.ToArray();
+        var result = visitor.Members.ToArray();
+        Array.Reverse(result);
+        return result;
     }
 }
