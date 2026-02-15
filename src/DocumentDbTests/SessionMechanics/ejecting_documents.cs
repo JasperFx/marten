@@ -83,7 +83,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_clears_it_from_the_unit_of_work_regular()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
 
@@ -106,7 +105,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_clears_it_from_the_unit_of_work_dirty()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
 
@@ -129,7 +127,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_clears_it_from_the_unit_of_work_lightweight()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
 
@@ -210,7 +207,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_type_clears_it_from_the_unit_of_work_regular()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
         var user1 = new User();
@@ -280,7 +276,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_type_clears_it_from_the_unit_of_work_dirty()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
         var user1 = new User();
@@ -347,7 +342,6 @@ public class ejecting_documents : IntegrationContext
     [Fact]
     public async Task eject_a_document_type_clears_it_from_the_unit_of_work_lightweight()
     {
-        await theStore.Advanced.ResetAllData();
         var target1 = Target.Random();
         var target2 = Target.Random();
         var user1 = new User();
@@ -416,5 +410,10 @@ public class ejecting_documents : IntegrationContext
 
     public ejecting_documents(DefaultStoreFixture fixture) : base(fixture)
     {
+    }
+
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
     }
 }
