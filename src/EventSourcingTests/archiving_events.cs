@@ -24,10 +24,14 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class archiving_events: OneOffConfigurationsContext
+public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
 {
+    public async Task InitializeAsync()
+    {
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
+    }
 
-
+    public Task DisposeAsync() => Task.CompletedTask;
 
     #region sample_archive_stream_usage
 
@@ -184,8 +188,6 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
-
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var stream3 = Guid.NewGuid();
@@ -211,8 +213,6 @@ public class archiving_events: OneOffConfigurationsContext
     public async Task query_by_events_and_explicitly_search_for_archived_events(bool usePartitioning)
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
-
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
@@ -249,8 +249,6 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
-
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var stream3 = Guid.NewGuid();
@@ -284,8 +282,6 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
-
         var stream1 = Guid.NewGuid();
         var stream2 = Guid.NewGuid();
         var stream3 = Guid.NewGuid();
@@ -315,8 +311,6 @@ public class archiving_events: OneOffConfigurationsContext
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
 
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
-
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new AEvent());
         await theSession.SaveChangesAsync();
@@ -339,8 +333,6 @@ public class archiving_events: OneOffConfigurationsContext
     public async Task prevent_append_operation_for_archived_stream_on_async_commit(bool usePartitioning)
     {
         StoreOptions(opts => opts.Events.UseArchivedStreamPartitioning = usePartitioning);
-
-        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var streamId = Guid.NewGuid();
         theSession.Events.Append(streamId, new AEvent());

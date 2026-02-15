@@ -18,6 +18,11 @@ public class query_by_sql: IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     [Fact]
     public async Task can_query_by_document_type()
     {
@@ -44,7 +49,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task stream_query_by_one_parameter()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -70,7 +74,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task stream_query_by_one_parameter_custom_placeholder()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -96,7 +99,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_one_parameter()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -117,7 +119,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_one_parameter_async()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -140,7 +141,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_one_parameter_async_custom_placeholder()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -163,7 +163,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_ignores_case_of_where_keyword()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -184,7 +183,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_one_named_parameter()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -206,7 +204,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_two_parameters()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -231,7 +228,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_by_two_named_parameters()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -251,7 +247,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_two_fields_by_one_named_parameter()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -269,7 +264,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_with_null_named_parameter_GH_3045()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -300,7 +294,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_for_multiple_documents()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -322,7 +315,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_for_multiple_documents_with_ordering()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         session.Store(new User { FirstName = "Jeremy", LastName = "Miller" });
         session.Store(new User { FirstName = "Lindsey", LastName = "Miller" });
@@ -346,7 +338,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_for_single_document()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         var u = new User { FirstName = "Jeremy", LastName = "Miller" };
         session.Store(u);
@@ -362,7 +353,6 @@ public class query_by_sql: IntegrationContext
     [Fact]
     public async Task query_for_single_document_where_clause_trimmed()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         var u = new User { FirstName = "Jeremy", LastName = "Miller" };
         session.Store(u);
@@ -394,7 +384,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task query_with_matches_sql_custom_placeholder()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         var u = new User { FirstName = "Eric", LastName = "Smith" };
         session.Store(u);
@@ -408,7 +397,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task query_with_select_in_query()
     {
-        await theStore.Advanced.ResetAllData();
         using var session = theStore.LightweightSession();
         var u = new User { FirstName = "Jeremy", LastName = "Miller" };
         session.Store(u);
@@ -429,7 +417,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task query_with_select_in_query_async()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         var time = DateTimeOffset.UtcNow;
         var u = new User { FirstName = "Jeremy", LastName = "Miller", ModifiedAt = time, Age = 28 };
@@ -475,7 +462,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task get_sum_of_integers_asynchronously()
     {
-        await theStore.Advanced.ResetAllData();
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
         theSession.Store(new Target { Color = Colors.Green, Number = 3 });
@@ -492,7 +478,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task get_count_asynchronously()
     {
-        await theStore.Advanced.ResetAllData();
         var session = theSession;
         theSession.Store(new Target { Color = Colors.Blue, Number = 1 });
         theSession.Store(new Target { Color = Colors.Red, Number = 2 });
@@ -515,7 +500,6 @@ where data ->> 'FirstName' = 'Jeremy'")).Single();
     [Fact]
     public async Task can_query_using_with_select()
     {
-        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         var time = DateTimeOffset.UtcNow;
         var u = new User { FirstName = "Jeremy", LastName = "Miller", ModifiedAt = time, Age = 28 };
