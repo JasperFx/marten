@@ -7,7 +7,7 @@ using Shouldly;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace DocumentDbTests.ForeignKeys;
+namespace CoreTests.ForeignKeys;
 
 public class foreign_keys: OneOffConfigurationsContext
 {
