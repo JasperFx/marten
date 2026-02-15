@@ -58,6 +58,19 @@ namespace Marten.Testing.Harness
 
         protected DocumentStore StoreOptions(Action<StoreOptions> configure, bool cleanAll = true)
         {
+            try
+            {
+                return storeOptions(configure, cleanAll);
+            }
+            catch (PostgresException e) when (e.SqlState == PostgresErrorCodes.DeadlockDetected)
+            {
+                System.Threading.Thread.Sleep(250);
+                return storeOptions(configure, cleanAll);
+            }
+        }
+
+        private DocumentStore storeOptions(Action<StoreOptions> configure, bool cleanAll)
+        {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
 
