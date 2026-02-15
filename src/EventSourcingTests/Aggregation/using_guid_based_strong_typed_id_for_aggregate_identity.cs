@@ -119,7 +119,7 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
 
         using var daemon = await theStore.BuildProjectionDaemonAsync(logger: testLogger);
         await daemon.StartAllAsync();
-        await daemon.WaitForNonStaleData(1.Minutes());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         var payment = await theSession.LoadAsync<Payment>(new PaymentId(id));
 
@@ -130,7 +130,7 @@ public class using_guid_based_strong_typed_id_for_aggregate_identity: OneOffConf
         theSession.Events.Append(id, new PaymentCanceled(DateTimeOffset.UtcNow));
         await theSession.SaveChangesAsync();
 
-        await daemon.WaitForNonStaleData(1.Minutes());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         payment = await theSession.LoadAsync<Payment>(new PaymentId(id));
 

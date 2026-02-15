@@ -44,7 +44,7 @@ public class rolling_up_by_tenant : OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        await daemon.WaitForNonStaleData(30.Seconds());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         (await theSession.LoadAsync<Rollup>("one")).ACount.ShouldBe(1);
         (await theSession.LoadAsync<Rollup>("two")).ACount.ShouldBe(3);
@@ -81,7 +81,7 @@ public class rolling_up_by_tenant : OneOffConfigurationsContext
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
 
-        await daemon.WaitForNonStaleData(30.Seconds());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         (await theSession.LoadAsync<Rollup2>( new TenantId("one"))).ACount.ShouldBe(1);
         (await theSession.LoadAsync<Rollup2>(new TenantId("two"))).ACount.ShouldBe(3);

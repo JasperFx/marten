@@ -30,7 +30,7 @@ public class single_property_async : BugIntegrationContext
 
         var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
-        await daemon.WaitForNonStaleData(20.Seconds());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         var aggregate = await theSession.LoadAsync<SingleProp>(stream.Key!);
 
