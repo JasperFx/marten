@@ -314,6 +314,13 @@ public static class MartenServiceCollectionExtensions
 
         services.AddSingleton<T>(s => config.Build(s));
 
+        // Default keyed session factory for the ancillary store
+        services.AddKeyedSingleton<ISessionFactory>(typeof(T), (sp, _) =>
+        {
+            var store = (IDocumentStore)sp.GetRequiredService<T>();
+            var logger = sp.GetService<ILogger<DefaultSessionFactory>>() ?? new NullLogger<DefaultSessionFactory>();
+            return new DefaultSessionFactory(store, logger);
+        });
 
         services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<T>());
 
@@ -601,6 +608,62 @@ public static class MartenServiceCollectionExtensions
             }
 
             return this;
+        }
+
+        /// <summary>
+        ///     Use an alternative strategy / configuration for opening IDocumentSession or IQuerySession
+        ///     objects for this ancillary store with a custom ISessionFactory type registered as a keyed singleton
+        /// </summary>
+        /// <param name="lifetime">
+        ///     IoC service lifetime for the session factory. Default is Singleton, but use Scoped if you need
+        ///     to reference per-scope services
+        /// </param>
+        /// <typeparam name="TFactory">The custom session factory type</typeparam>
+        /// <returns></returns>
+        public MartenStoreExpression<T> BuildSessionsWith<TFactory>(ServiceLifetime lifetime = ServiceLifetime.Singleton)
+            where TFactory : class, ISessionFactory
+        {
+            var descriptor = new ServiceDescriptor(
+                typeof(ISessionFactory),
+                typeof(T),
+                (sp, _) =>
+                {
+                    var store = sp.GetRequiredService<T>();
+                    return ActivatorUtilities.CreateInstance<TFactory>(sp, (IDocumentStore)store);
+                },
+                lifetime);
+            Services.Add(descriptor);
+            return this;
+        }
+
+        /// <summary>
+        ///     Use lightweight sessions by default for this ancillary store. Equivalent to
+        ///     IDocumentStore.LightweightSession();
+        /// </summary>
+        /// <returns></returns>
+        public MartenStoreExpression<T> UseLightweightSessions()
+        {
+            return BuildSessionsWith<LightweightSessionFactory>();
+        }
+
+        /// <summary>
+        ///     Use identity sessions by default for this ancillary store. Equivalent to
+        ///     IDocumentStore.IdentitySession();
+        /// </summary>
+        /// <returns></returns>
+        public MartenStoreExpression<T> UseIdentitySessions()
+        {
+            return BuildSessionsWith<IdentitySessionFactory>();
+        }
+
+        /// <summary>
+        ///     Use dirty-tracked sessions by default for this ancillary store. Equivalent to
+        ///     IDocumentStore.DirtyTrackedSession();
+        /// </summary>
+        /// <returns></returns>
+        public MartenStoreExpression<T> UseDirtyTrackedSessions()
+        {
+            return BuildSessionsWith<DirtyTrackedSessionFactory>();
         }
     }
 

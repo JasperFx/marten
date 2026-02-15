@@ -8,6 +8,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
+using CoreTests.Examples;
 using Marten;
 using Marten.Events;
 using Marten.Internal.Sessions;
@@ -480,6 +481,104 @@ public class bootstrapping_with_service_collection_extensions
 
         var exc = GetStore(serviceProvider).ShouldThrow<InvalidOperationException>();
         exc.Message.Contains("UseNpgsqlDataSource").ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ancillary_store_use_lightweight_sessions()
+    {
+        var services = new ServiceCollection();
+        services.AddMarten(ConnectionSource.ConnectionString);
+        services.AddMartenStore<IInvoicingStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "invoicing";
+        }).UseLightweightSessions();
+
+        var sp = services.BuildServiceProvider();
+        var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+        factory.ShouldBeOfType<LightweightSessionFactory>();
+
+        using var session = factory.OpenSession();
+        session.ShouldBeOfType<LightweightSession>();
+    }
+
+    [Fact]
+    public void ancillary_store_use_identity_sessions()
+    {
+        var services = new ServiceCollection();
+        services.AddMarten(ConnectionSource.ConnectionString);
+        services.AddMartenStore<IInvoicingStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "invoicing";
+        }).UseIdentitySessions();
+
+        var sp = services.BuildServiceProvider();
+        var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+        factory.ShouldBeOfType<IdentitySessionFactory>();
+
+        using var session = factory.OpenSession();
+        session.ShouldBeOfType<IdentityMapDocumentSession>();
+    }
+
+    [Fact]
+    public void ancillary_store_use_dirty_tracked_sessions()
+    {
+        var services = new ServiceCollection();
+        services.AddMarten(ConnectionSource.ConnectionString);
+        services.AddMartenStore<IInvoicingStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "invoicing";
+        }).UseDirtyTrackedSessions();
+
+        var sp = services.BuildServiceProvider();
+        var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+        factory.ShouldBeOfType<DirtyTrackedSessionFactory>();
+
+        using var session = factory.OpenSession();
+        session.ShouldBeOfType<DirtyCheckingDocumentSession>();
+    }
+
+    [Fact]
+    public void ancillary_store_build_sessions_with_custom_factory()
+    {
+        var services = new ServiceCollection();
+        services.AddMarten(ConnectionSource.ConnectionString);
+        services.AddMartenStore<IInvoicingStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "invoicing";
+        }).BuildSessionsWith<SpecialBuilder>();
+
+        var sp = services.BuildServiceProvider();
+        var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+        var builder = factory.ShouldBeOfType<SpecialBuilder>();
+
+        builder.BuiltQuery.ShouldBeFalse();
+        builder.BuiltSession.ShouldBeFalse();
+
+        using var session = factory.OpenSession();
+        builder.BuiltSession.ShouldBeTrue();
+
+        using var query = factory.QuerySession();
+        builder.BuiltQuery.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ancillary_store_default_session_factory()
+    {
+        var services = new ServiceCollection();
+        services.AddMarten(ConnectionSource.ConnectionString);
+        services.AddMartenStore<IInvoicingStore>(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "invoicing";
+        });
+
+        var sp = services.BuildServiceProvider();
+        var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+        factory.ShouldBeOfType<DefaultSessionFactory>();
     }
 
     public class SpecialBuilder: ISessionFactory

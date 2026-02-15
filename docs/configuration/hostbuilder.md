@@ -711,3 +711,45 @@ public class InvoicingService
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L73-L96' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoicingservice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### Session Configuration for Ancillary Stores <Badge type="tip" text="8.x" />
+
+Just like the main store configured with `AddMarten()`, ancillary stores support fluent session configuration
+to control the default `ISessionFactory` used for dependency-injected sessions. The session factory is registered
+as a [keyed service](https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection#keyed-services)
+keyed by the store marker interface type (e.g., `typeof(IInvoicingStore)`).
+
+<!-- snippet: sample_bootstrapping_separate_store_with_session_config -->
+<a id='snippet-sample_bootstrapping_separate_store_with_session_config'></a>
+```cs
+using var host = Host.CreateDefaultBuilder()
+    .ConfigureServices(services =>
+    {
+        services.AddMarten("some connection string");
+
+        services.AddMartenStore<IInvoicingStore>(opts =>
+            {
+                opts.Connection("different connection string");
+            })
+            // Use lightweight sessions for this ancillary store
+            .UseLightweightSessions();
+
+        // Or use identity map sessions
+        // .UseIdentitySessions();
+
+        // Or use dirty-tracked sessions
+        // .UseDirtyTrackedSessions();
+
+        // Or use a custom session factory
+        // .BuildSessionsWith<CustomSessionFactory>();
+    }).StartAsync();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Examples/MultipleDocumentStores.cs#L54-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bootstrapping_separate_store_with_session_config' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+You can resolve the keyed `ISessionFactory` for an ancillary store directly from the DI container if needed:
+
+```csharp
+var factory = serviceProvider.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
+using var session = factory.OpenSession();
+```
