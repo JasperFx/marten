@@ -142,6 +142,7 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
         var boards = await _compositeSession.Query<Board>().ToListAsync();
 
+        var i = 0;
         foreach (var patient in patients)
         {
             var requested = new AppointmentRequested(patient.Id, faker.PickRandom(states),
@@ -150,14 +151,20 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             var board = boards.FirstOrDefault(x =>
                 x.StateCodes.Contains(requested.StateCode) && x.SpecialtyCodes.Contains(requested.SpecialtyCode));
 
+            var appointmentId = Guid.NewGuid();
+            List<object> events = [requested];
+            if (i % 2 == 0)
+            {
+                events.Add(new AppointmentExternalIdentifierAssigned(appointmentId, Guid.NewGuid()));
+            }
             if (board != null)
             {
-                _compositeSession.Events.StartStream<Appointment>(requested, new AppointmentRouted(board.Id));
+                events.Add(new AppointmentRouted(board.Id));
             }
-            else
-            {
-                _compositeSession.Events.StartStream<Appointment>(requested);
-            }
+
+            _compositeSession.Events.StartStream<Appointment>(appointmentId, events);
+
+            i++;
         }
 
         await _compositeSession.SaveChangesAsync();
@@ -200,6 +207,7 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
                 // 2nd stage projections
                 projection.Add<AppointmentDetailsProjection>(2);
                 projection.Add<BoardSummaryProjection>(2);
+                projection.Add<AppointmentByExternalIdentifierProjection>(2);
             });
 
             #endregion
@@ -235,6 +243,7 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
         // Got details from the 2nd stage projection!
         (await _compositeSession.Query<AppointmentDetails>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync()).ShouldBeGreaterThan(0);
 
         // See the downstream BoardSummary too!
         (await _compositeSession.Query<BoardSummary>().CountAsync()).ShouldBeGreaterThan(0);
