@@ -42,9 +42,6 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
             .DirtyTracking
             .Upsert(_document, session, session.TenantId);
 
-        // Reuse the already-serialized JSON for the next comparison
-        _json = newJson;
-
         return true;
     }
 
