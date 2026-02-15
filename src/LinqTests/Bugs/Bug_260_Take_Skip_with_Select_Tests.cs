@@ -13,6 +13,7 @@ public class Bug_260_Take_Skip_with_Select_Tests: IntegrationContext
     [Fact]
     public async Task return_the_correct_number_of_results()
     {
+        await theStore.Advanced.ResetAllData();
         var targets = Target.GenerateRandomData(100);
         await theStore.BulkInsertAsync(targets.ToArray());
 

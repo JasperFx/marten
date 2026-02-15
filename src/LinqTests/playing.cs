@@ -15,6 +15,7 @@ public class playing : IntegrationContext
     [Fact]
     public async Task try_method_parsing()
     {
+        await theStore.Advanced.ResetAllData();
         var data = await theSession.Query<Target>().Where(x => x.String.ToLower().IsOneOf("red", "blue")).ToListAsync();
     }
 }

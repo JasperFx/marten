@@ -76,6 +76,11 @@ public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
         queryable.Count.ShouldBe(10);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause(DefaultStoreFixture fixture) : base(fixture)
     {
     }

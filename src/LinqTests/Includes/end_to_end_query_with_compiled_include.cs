@@ -136,6 +136,11 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
 
     #endregion
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture):
         base(fixture)
     {

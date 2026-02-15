@@ -15,6 +15,7 @@ public class compiled_query_problem_with_nested_properties: IntegrationContext
     [Fact]
     public async Task can_do_a_compiled_query_on_nested_property()
     {
+        await theStore.Advanced.ResetAllData();
         var targets = Target.GenerateRandomData(100).ToArray();
         await theStore.BulkInsertAsync(targets);
 

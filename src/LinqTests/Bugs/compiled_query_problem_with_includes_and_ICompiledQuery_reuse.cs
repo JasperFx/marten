@@ -17,6 +17,11 @@ public class compiled_query_problem_with_includes_and_ICompiledQuery_reuse: Inte
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public class IssueWithUsers: ICompiledListQuery<Issue>
     {
         public List<User> Users { get; } = new List<User>();

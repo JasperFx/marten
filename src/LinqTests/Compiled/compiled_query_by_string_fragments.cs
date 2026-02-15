@@ -18,6 +18,8 @@ public class compiled_query_by_string_fragments : IntegrationContext
     [Fact]
     public async Task can_use_starts_with()
     {
+        await theStore.Advanced.ResetAllData();
+
         var user1 = new User
         {
             UserName = "Sir Gawain"
@@ -116,6 +118,8 @@ public class compiled_query_by_string_fragments : IntegrationContext
     [Fact]
     public async Task can_use_string_contains_case_insensitive()
     {
+        await theStore.Advanced.ResetAllData();
+
         var user1 = new User
         {
             UserName = "Sir Gawain"

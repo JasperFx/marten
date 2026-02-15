@@ -48,6 +48,11 @@ public class negation_operator : IntegrationContext
         players.Count(x => new[] { player2.Id, player4.Id }.Contains(x.Id)).ShouldBe(2);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public negation_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

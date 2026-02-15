@@ -43,6 +43,11 @@ public class query_with_modulo_Tests : IntegrationContext
             .ShouldHaveTheSameElementsAs(2, 4);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public query_with_modulo_Tests(DefaultStoreFixture fixture) : base(fixture)
     {
     }

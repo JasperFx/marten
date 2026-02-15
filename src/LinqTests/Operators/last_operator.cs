@@ -40,6 +40,11 @@ public class last_operator: IntegrationContext
     }
 
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public last_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

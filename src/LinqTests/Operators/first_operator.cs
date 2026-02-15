@@ -200,6 +200,11 @@ public class first_operator: IntegrationContext
         });
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public first_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

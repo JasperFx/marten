@@ -138,6 +138,11 @@ public class any_operator: IntegrationContext
         result.ShouldBeTrue();
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public any_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

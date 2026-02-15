@@ -72,6 +72,11 @@ public class matches_sql_queries: IntegrationContext
             () => new object().MatchesSql(new WhereFragment("d.data ->> 'UserName' != ?", "baz")));
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public matches_sql_queries(DefaultStoreFixture fixture) : base(fixture)
     {
     }

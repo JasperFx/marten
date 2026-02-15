@@ -64,8 +64,9 @@ public class batched_querying_with_order_functions: IntegrationContext
         names.Select(x => x.LastName).ShouldHaveTheSameElementsAs("Brown", "Bean", "White", "Houston", "Somerset", "Smith");
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         theSession.Store(
             new User { FirstName = "Justin", LastName = "Houston" },
             new User { FirstName = "Justin", LastName = "White" },
@@ -75,7 +76,7 @@ public class batched_querying_with_order_functions: IntegrationContext
             new User { FirstName = "Harry", LastName = "Somerset" }
         );
 
-        return theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();
     }
 
     public batched_querying_with_order_functions(DefaultStoreFixture fixture) : base(fixture)

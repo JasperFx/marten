@@ -31,6 +31,11 @@ public class batched_querying_with_aggregate_functions: IntegrationContext
         (await average).ShouldBe(3.75);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public batched_querying_with_aggregate_functions(DefaultStoreFixture fixture): base(fixture)
     {
     }

@@ -39,6 +39,11 @@ public class to_list_operator : IntegrationContext
         users.ShouldBeEmpty();
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public to_list_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

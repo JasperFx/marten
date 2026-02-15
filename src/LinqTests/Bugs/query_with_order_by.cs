@@ -14,6 +14,11 @@ public class query_with_order_by: IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     [Fact]
     public async Task query_with_order_by_for_string_property_with_comparer()
     {

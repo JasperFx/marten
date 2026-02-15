@@ -13,6 +13,11 @@ public class all_operator: IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     [Fact]
     public async Task invoking_queryable_all_operation_test1()
     {

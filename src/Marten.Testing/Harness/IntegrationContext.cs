@@ -180,9 +180,6 @@ namespace Marten.Testing.Harness
 
         public async Task InitializeAsync()
         {
-            await _fixture.Store.Advanced.Clean.DeleteAllDocumentsAsync();
-            await _fixture.Store.Advanced.Clean.DeleteAllEventDataAsync();
-
             await fixtureSetup();
         }
 

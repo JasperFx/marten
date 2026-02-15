@@ -80,6 +80,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async Task can_query_documents_and_will_set_metadata_on_result_documents()
     {
+        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
         await session.SaveChangesAsync();
@@ -97,6 +98,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async Task can_query_multiple_documents_and_scalar()
     {
+        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_query_related_documents_and_scalar
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
@@ -141,6 +143,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async Task can_query_with_parameters()
     {
+        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });
         await session.SaveChangesAsync();
@@ -169,6 +172,7 @@ public class advanced_sql_query: IntegrationContext
     [Fact]
     public async Task can_async_stream_multiple_documents_and_scalar()
     {
+        await theStore.Advanced.ResetAllData();
         await using var session = theStore.LightweightSession();
         #region sample_advanced_sql_stream_related_documents_and_scalar
         session.Store(new DocWithMeta { Id = 1, Name = "Max" });

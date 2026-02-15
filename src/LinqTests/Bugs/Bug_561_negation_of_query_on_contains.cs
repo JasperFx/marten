@@ -14,8 +14,9 @@ public class Bug_561_negation_of_query_on_contains: IntegrationContext
 
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         var doc1 = new DocWithArrays { Strings = ["a", "b", "c"] };
         var doc2 = new DocWithArrays { Strings = ["c", "d", "e"] };
         var doc3 = new DocWithArrays { Strings = ["d", "e", "f"] };
@@ -23,7 +24,7 @@ public class Bug_561_negation_of_query_on_contains: IntegrationContext
 
         theSession.Store(doc1, doc2, doc3, doc4);
 
-        return theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();
     }
 
     [Fact]

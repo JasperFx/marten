@@ -185,6 +185,11 @@ public class count_operator: IntegrationContext
         result.ShouldBe(3);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public count_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

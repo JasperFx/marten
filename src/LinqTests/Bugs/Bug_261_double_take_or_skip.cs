@@ -38,6 +38,11 @@ public class Bug_261_double_take_or_skip: IntegrationContext
         result.Count.ShouldBe(4);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public Bug_261_double_take_or_skip(DefaultStoreFixture fixture) : base(fixture)
     {
     }

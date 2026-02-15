@@ -151,6 +151,11 @@ public class nullable_types : IntegrationContext
             .ShouldBe(2);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public nullable_types(DefaultStoreFixture fixture) : base(fixture)
     {
     }

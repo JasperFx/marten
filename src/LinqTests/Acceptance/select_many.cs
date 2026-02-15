@@ -710,6 +710,11 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
 
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public select_many(DefaultStoreFixture fixture) : base(fixture)
     {
     }

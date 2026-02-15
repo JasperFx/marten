@@ -22,6 +22,7 @@ public class includes_with_filtering_on_included_documents: IntegrationContext
 
     protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(TargetHolder));
 
