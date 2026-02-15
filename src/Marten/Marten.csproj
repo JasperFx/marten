@@ -37,14 +37,17 @@
 
     <ItemGroup>
         <PackageReference Include="FSharp.Core" />
-        <PackageReference Include="JasperFx" />
-        <PackageReference Include="JasperFx.Events" />
-        <PackageReference Include="JasperFx.RuntimeCompiler" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
         <PackageReference Include="Newtonsoft.Json" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" />
-        <PackageReference Include="Weasel.Postgresql" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx\JasperFx.csproj" />
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx.Events\JasperFx.Events.csproj" />
+      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx.RuntimeCompiler\JasperFx.RuntimeCompiler.csproj" />
+      <ProjectReference Include="..\..\..\weasel\src\Weasel.Postgresql\Weasel.Postgresql.csproj" />
     </ItemGroup>
 
 
