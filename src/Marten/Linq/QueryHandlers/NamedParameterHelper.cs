@@ -1,6 +1,8 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Reflection;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -14,6 +16,8 @@ namespace Marten.Linq.QueryHandlers;
 /// </summary>
 internal static class NamedParameterHelper
 {
+    private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();
+
     /// <summary>
     /// Appends the SQL to the builder, replacing :paramName references with positional
     /// parameters that have proper NpgsqlDbType set based on the property's declared type.
@@ -21,8 +25,9 @@ internal static class NamedParameterHelper
     /// </summary>
     public static void AppendSqlWithNamedParameters(ICommandBuilder builder, string sql, object parameters)
     {
-        var properties = parameters.GetType().GetProperties();
-        var propLookup = new Dictionary<string, (object? value, Type propertyType)>(StringComparer.OrdinalIgnoreCase);
+        var parameterType = parameters.GetType();
+        var properties = _propertyCache.GetOrAdd(parameterType, static t => t.GetProperties());
+        var propLookup = new Dictionary<string, (object? value, Type propertyType)>(properties.Length, StringComparer.OrdinalIgnoreCase);
         foreach (var property in properties)
         {
             propLookup[property.Name] = (property.GetValue(parameters), property.PropertyType);

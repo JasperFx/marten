@@ -53,18 +53,21 @@ public class UpdateBatch: IUpdateBatch
         else
         {
             var count = 0;
+            var batchSize = session.Options.UpdateBatchSize;
 
             while (count < _operations.Count)
             {
-                var operations = _operations
-                    .Skip(count)
-                    .Take(session.Options.UpdateBatchSize)
-                    .ToArray();
+                var remaining = Math.Min(batchSize, _operations.Count - count);
+                var operations = new IStorageOperation[remaining];
+                for (int i = 0; i < remaining; i++)
+                {
+                    operations[i] = _operations[count + i];
+                }
 
                 var page = new OperationPage(session, operations);
                 yield return page;
 
-                count += session.Options.UpdateBatchSize;
+                count += batchSize;
             }
         }
     }
