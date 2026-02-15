@@ -4,17 +4,24 @@ using System.Threading.Tasks;
 using JasperFx;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsContext
+public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsContext, IAsyncLifetime
 {
-    public Using_Global_DocumentSessionListener_Tests()
+    public async Task InitializeAsync()
     {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.CreateCommand($"drop schema if exists {SchemaName} cascade")
+            .ExecuteNonQueryAsync();
     }
+
+    public Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task call_listener_events_on_synchronous_session_saves()
@@ -33,8 +40,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                }))
             #endregion
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
-
             using (var session = store.LightweightSession())
             {
                 session.Store(new User(), new User());
@@ -65,8 +70,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
-
             await using (var session = store.LightweightSession())
             {
                 session.Store(new User(), new User());
@@ -97,8 +100,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
-
             using (var session = store.LightweightSession())
             {
                 var user1 = new User { Id = Guid.NewGuid() };
@@ -130,8 +131,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
-
             using (var session = store.LightweightSession())
             {
                 var user1 = new User { Id = Guid.NewGuid() };
@@ -163,7 +162,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -199,7 +197,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -238,7 +235,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession())
             {
@@ -271,7 +267,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession())
             {
@@ -304,7 +299,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -340,7 +334,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -379,7 +372,6 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
                    _.Listeners.Add(stub2);
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };

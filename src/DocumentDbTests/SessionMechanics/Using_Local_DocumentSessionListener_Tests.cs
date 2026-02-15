@@ -6,14 +6,24 @@ using Marten;
 using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
 
 namespace DocumentDbTests.SessionMechanics;
 
-public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsContext
+public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsContext, IAsyncLifetime
 {
+    public async Task InitializeAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await conn.CreateCommand($"drop schema if exists {SchemaName} cascade")
+            .ExecuteNonQueryAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
     [Fact]
     public async Task call_listener_events_on_synchronous_session_saves()
     {
@@ -31,7 +41,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
             #endregion
 
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -89,7 +98,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -119,7 +127,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -149,7 +156,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -182,7 +188,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -222,7 +227,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -252,7 +256,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
@@ -282,7 +285,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };
@@ -315,7 +317,6 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
                    _.AutoCreateSchemaObjects = AutoCreate.All;
                }))
         {
-            await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
             var user1 = new User { Id = Guid.NewGuid() };
             var user2 = new User { Id = Guid.NewGuid() };

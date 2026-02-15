@@ -42,7 +42,7 @@ public class Bug_3661_await_custom_projection_slicing : OneOffConfigurationsCont
 
         using var daemon = await theStore.BuildProjectionDaemonAsync();
         await daemon.StartAllAsync();
-        await daemon.WaitForNonStaleData(20.Seconds());
+        await daemon.WaitForNonStaleData(15.Seconds());
 
         var aggregate = await theSession.LoadAsync<StartAndStopAggregate2>(stream);
         aggregate.Count.ShouldBe(2);
