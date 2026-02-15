@@ -84,6 +84,7 @@ public class delete_many_documents_by_query : IntegrationContext
     [Fact]
     public async Task in_a_mix_with_other_commands()
     {
+        await theStore.Advanced.ResetAllData();
         var targets = Target.GenerateRandomData(50).ToArray();
         for (var i = 0; i < 15; i++)
         {

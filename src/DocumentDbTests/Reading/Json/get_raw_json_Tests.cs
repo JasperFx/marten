@@ -32,6 +32,7 @@ public class get_raw_json_Tests : IntegrationContext
     [Fact]
     public async Task when_get_json_then_raw_json_should_be_returned_async()
     {
+        await theStore.Advanced.ResetAllData();
         var issue = new Issue { Title = "Issue 1" };
 
         theSession.Store(issue);

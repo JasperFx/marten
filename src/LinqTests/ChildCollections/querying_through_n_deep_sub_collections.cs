@@ -79,9 +79,10 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     {
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
-        return theStore.BulkInsertAsync(new Top[]{blueBill, top2, top3, greenBill, top5, top6, topNoBottoms});
+        await theStore.Advanced.ResetAllData();
+        await theStore.BulkInsertAsync(new Top[]{blueBill, top2, top3, greenBill, top5, top6, topNoBottoms});
     }
 
     [Fact]

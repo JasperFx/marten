@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -11,8 +12,9 @@ public class Bug_1413_not_inside_of_where_against_child_collection : Integration
     }
 
     [Fact]
-    public void can_do_so()
+    public async Task can_do_so()
     {
+        await theStore.Advanced.ResetAllData();
         var results = theSession.Query<Target>().Where(x => x.Children.Any(c => c.String == "hello" && c.Color != Colors.Blue))
             .ToList();
 

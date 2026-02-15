@@ -10,6 +10,7 @@ public class Bug_503_query_on_null_complex_object: IntegrationContext
     [Fact]
     public async Task should_not_blow_up_when_querying_for_null_object()
     {
+        await theStore.Advanced.ResetAllData();
         using (var sessionOne = theStore.LightweightSession())
         {
             sessionOne.Store(new Target { String = "Something", Inner = new Target(), AnotherString = "first" });

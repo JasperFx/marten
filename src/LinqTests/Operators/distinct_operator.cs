@@ -154,6 +154,11 @@ public class distinct_operator : IntegrationContext
         queryable.ToList().Count.ShouldBe(5);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public distinct_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

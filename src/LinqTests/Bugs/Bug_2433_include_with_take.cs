@@ -21,6 +21,7 @@ public class Bug_2433_include_with_take: IntegrationContext
     [InlineData(true, 1, 2)]
     public async Task should_include_proper_related_documents(bool useOrderBy, int pageNumber, int pageSize)
     {
+        await theStore.Advanced.ResetAllData();
         // Arrange
         var countries = new[]
         {

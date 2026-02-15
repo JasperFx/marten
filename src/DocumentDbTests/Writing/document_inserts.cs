@@ -14,6 +14,7 @@ public class document_inserts: IntegrationContext
     [Fact]
     public async Task can_insert_all_new_documents()
     {
+        await theStore.Advanced.ResetAllData();
         using (var session = theStore.LightweightSession())
         {
             session.Insert(Target.GenerateRandomData(99).ToArray());
@@ -29,6 +30,7 @@ public class document_inserts: IntegrationContext
     [Fact]
     public async Task can_insert_a_mixed_bag_of_documents()
     {
+        await theStore.Advanced.ResetAllData();
         var docs = new object[]
         {
             Target.Random(), Target.Random(), Target.Random(), new User(), new User(), new User(), new User()

@@ -405,6 +405,11 @@ public class select_clause_usage: IntegrationContext
     }
 
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public select_clause_usage(DefaultStoreFixture fixture) : base(fixture)
     {
     }

@@ -84,6 +84,7 @@ public class last_modified_queries: IntegrationContext
     [Fact]
     public async Task query_modified_before_docs()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new User { UserName = "foo" };
         var user2 = new User { UserName = "bar" };
         var user3 = new User { UserName = "baz" };

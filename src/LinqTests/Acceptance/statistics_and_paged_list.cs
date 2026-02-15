@@ -55,9 +55,10 @@ public class statistics_and_paged_list: IntegrationContext
 
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
-        return theStore.BulkInsertAsync(Target.GenerateRandomData(100).ToArray());
+        await theStore.Advanced.ResetAllData();
+        await theStore.BulkInsertAsync(Target.GenerateRandomData(100).ToArray());
     }
 
     #region sample_compiled-query-statistics

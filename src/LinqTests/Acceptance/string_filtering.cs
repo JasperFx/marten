@@ -9,14 +9,15 @@ namespace LinqTests.Acceptance;
 
 public class string_filtering: IntegrationContext
 {
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         var entry = new User { FirstName = "Beeblebrox", Nickname = "" };
         var entry2 = new User { FirstName = "Bee", Nickname = "   " };
         var entry3 = new User { FirstName = "Zaphod", Nickname = "Zaph" };
         var entry4 = new User { FirstName = "Zap", Nickname = null };
 
-        return theStore.BulkInsertAsync(new[] { entry, entry2, entry3, entry4 });
+        await theStore.BulkInsertAsync(new[] { entry, entry2, entry3, entry4 });
     }
 
     [Theory]

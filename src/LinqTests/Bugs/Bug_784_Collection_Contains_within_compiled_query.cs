@@ -15,6 +15,7 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
     [Fact]
     public async Task do_not_blow_up_with_exceptions()
     {
+        await theStore.Advanced.ResetAllData();
         // Test failure bomb
         if (DateTime.Today < new DateTime(2023, 9, 12)) return;
 

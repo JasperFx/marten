@@ -12,6 +12,11 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     [Fact]
     public async Task string_equality_equals_operator_should_be_symmetric()
     {

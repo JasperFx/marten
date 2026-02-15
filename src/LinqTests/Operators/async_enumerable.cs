@@ -15,6 +15,11 @@ public class AsyncEnumerable : IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     #region sample_query_to_async_enumerable
 
     [Fact]

@@ -28,8 +28,9 @@ public class is_super_set_of_operator : IntegrationContext
 
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         _allTargets =
         [
             CreateTarget("c#"),
@@ -40,7 +41,7 @@ public class is_super_set_of_operator : IntegrationContext
             CreateTarget("sql", "mssql"),
             CreateTarget(".net", "json", "mssql", "c#")
         ];
-        return theStore.BulkInsertAsync(_allTargets);
+        await theStore.BulkInsertAsync(_allTargets);
     }
 
     [Fact]

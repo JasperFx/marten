@@ -168,8 +168,9 @@ public class using_dynamic_props: IntegrationContext
         func.ShouldThrow<ArgumentException>();
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         theSession.Store(
             new User { FirstName = "Justin", LastName = "Houston" },
             new User { FirstName = "Justin", LastName = "White" },
@@ -179,7 +180,7 @@ public class using_dynamic_props: IntegrationContext
             new User { FirstName = "Harry", LastName = "Somerset" }
         );
 
-        return theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();
     }
 
     public using_dynamic_props(DefaultStoreFixture fixture): base(fixture)

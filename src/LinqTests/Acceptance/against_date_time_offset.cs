@@ -16,6 +16,7 @@ public class against_date_time_offset : IntegrationContext
     [Fact]
     public async Task query_against_date_time_offset_that_is_not_universal_time()
     {
+        await theStore.Advanced.ResetAllData();
         await theStore.BulkInsertDocumentsAsync(Target.GenerateRandomData(1000).ToArray());
 
         var results = await theSession.Query<Target>().Where(x => x.DateOffset < DateTimeOffset.Now.AddDays(-1))

@@ -201,6 +201,11 @@ public class single_operator : IntegrationContext
         });
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public single_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

@@ -198,6 +198,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task to_list()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -230,6 +231,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task to_list_async()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -260,6 +262,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_returns_first()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -291,6 +294,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_returns_first_line()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -321,6 +325,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_throws_when_none_returned()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -344,6 +349,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_async_returns_first()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -374,6 +380,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_async_returns_first_line()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -405,6 +412,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_async_throws_when_none_returned()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -429,6 +437,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_returns_first()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -459,6 +468,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_returns_first_line()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -489,6 +499,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_returns_first_async()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -519,6 +530,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_returns_first_line_async()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -549,6 +561,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_returns_default()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -572,6 +585,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task first_or_default_async_returns_default()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -639,6 +653,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_returns_only_match()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -662,6 +677,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_returns_first_and_only()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -724,6 +740,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_async_returns_only_match()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -747,6 +764,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_async_returns_first_and_only()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -812,6 +830,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_or_default_returns_first()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -851,6 +870,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_or_default_returns_first_async()
     {
+        await theStore.Advanced.ResetAllData();
         var user0 = new SimpleUser
         {
             UserName = "Invisible man",
@@ -881,6 +901,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_or_default_returns_first_line_async()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -897,6 +918,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_or_default_returns_default_when_none_found()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -943,6 +965,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task single_or_default_async_returns_default_when_none_found()
     {
+        await theStore.Advanced.ResetAllData();
         var user1 = new SimpleUser
         {
             UserName = "Mr Fouine",
@@ -1028,6 +1051,7 @@ public class streaming_json_results : IntegrationContext
     [Fact]
     public async Task select_many_with_select_and_as_json()
     {
+        await theStore.Advanced.ResetAllData();
         var targets = Target.GenerateRandomData(100).ToArray();
         await theStore.BulkInsertAsync(targets);
 

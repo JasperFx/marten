@@ -35,6 +35,11 @@ public class is_empty_operator : IntegrationContext
         }
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public is_empty_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

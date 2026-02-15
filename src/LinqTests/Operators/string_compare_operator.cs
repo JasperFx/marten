@@ -36,6 +36,11 @@ public class string_compare_operator: IntegrationContext
         queryable.ToList().Count.ShouldBe(2);
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public string_compare_operator(DefaultStoreFixture fixture) : base(fixture)
     {
     }

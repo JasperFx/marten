@@ -18,6 +18,11 @@ public class identity_map_mechanics: IntegrationContext
     {
     }
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     private async Task<IDocumentSession> identitySessionWithData()
     {
         #region sample_using-store-with-multiple-docs

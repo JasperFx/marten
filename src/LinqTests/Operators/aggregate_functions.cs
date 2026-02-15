@@ -229,6 +229,11 @@ public class aggregate_functions : IntegrationContext
     }
 
 
+    protected override async Task fixtureSetup()
+    {
+        await theStore.Advanced.ResetAllData();
+    }
+
     public aggregate_functions(DefaultStoreFixture fixture) : base(fixture)
     {
     }

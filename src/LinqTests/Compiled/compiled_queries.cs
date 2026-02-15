@@ -23,15 +23,16 @@ public class compiled_queries: IntegrationContext
     {
     }
 
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
+        await theStore.Advanced.ResetAllData();
         _user1 = new User { FirstName = "Jeremy", UserName = "jdm", LastName = "Miller" };
         var user2 = new User { FirstName = "Jens" };
         var user3 = new User { FirstName = "Jeff" };
         var user4 = new User { FirstName = "Corey", UserName = "myusername", LastName = "Kaylor" };
         _user5 = new User { FirstName = "Jeremy", UserName = "shadetreedev", LastName = "Miller" };
 
-        return theStore.BulkInsertDocumentsAsync(new[] { _user1, user2, user3, user4, _user5 });
+        await theStore.BulkInsertDocumentsAsync(new[] { _user1, user2, user3, user4, _user5 });
     }
 
     #region sample_using_QueryStatistics_with_compiled_query

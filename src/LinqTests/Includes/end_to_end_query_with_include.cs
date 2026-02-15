@@ -16,9 +16,10 @@ namespace LinqTests.Includes;
 
 public class end_to_end_query_with_include: IntegrationContext
 {
-    protected override Task fixtureSetup()
+    protected override async Task fixtureSetup()
     {
-        return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
+        await theStore.Advanced.ResetAllData();
+        await theStore.Advanced.Clean.DeleteAllDocumentsAsync();
     }
 
     [Fact]
