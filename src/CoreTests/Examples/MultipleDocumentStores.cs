@@ -50,6 +50,35 @@ public class MultipleDocumentStores
 
         #endregion
     }
+
+    public static async Task bootstrap_with_session_config()
+    {
+        #region sample_bootstrapping_separate_store_with_session_config
+
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten("some connection string");
+
+                services.AddMartenStore<IInvoicingStore>(opts =>
+                    {
+                        opts.Connection("different connection string");
+                    })
+                    // Use lightweight sessions for this ancillary store
+                    .UseLightweightSessions();
+
+                // Or use identity map sessions
+                // .UseIdentitySessions();
+
+                // Or use dirty-tracked sessions
+                // .UseDirtyTrackedSessions();
+
+                // Or use a custom session factory
+                // .BuildSessionsWith<CustomSessionFactory>();
+            }).StartAsync();
+
+        #endregion
+    }
 }
 
 public class DefaultDataSet: IInitialData
