@@ -12,18 +12,15 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class marking_events_as_skipped_as_Guid_identified : OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
     private Guid theStreamId;
 
-    public marking_events_as_skipped_as_Guid_identified(ITestOutputHelper output)
+    public marking_events_as_skipped_as_Guid_identified()
     {
-        _output = output;
         StoreOptions(opts =>
         {
             opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;

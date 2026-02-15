@@ -3,18 +3,10 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_2563_sub_collection_queries_and_OR : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2563_sub_collection_queries_and_OR(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task get_distinct_number()
@@ -30,9 +22,6 @@ public class Bug_2563_sub_collection_queries_and_OR : BugIntegrationContext
         theSession.Store(new Bug2563Target {Id = 6, IsPublic = true, UserIds = [10]});
 
         await theSession.SaveChangesAsync();
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
-
         var result1 = await theSession.Query<Bug2563Target>()
             .Where(x => x.IsPublic == false || x.UserIds.Contains(10))
             .ToListAsync();

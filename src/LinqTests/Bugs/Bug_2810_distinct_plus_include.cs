@@ -4,19 +4,10 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Schema;
 using Marten.Testing.Harness;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_2810_distinct_plus_include : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2810_distinct_plus_include(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public async Task do_not_blow_up()
     {
@@ -24,8 +15,6 @@ public class Bug_2810_distinct_plus_include : BugIntegrationContext
         var includedTableDocuments = new List<IncludedTable>();
         var skip = 30;
         var take = 10;
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = await theSession.Query<MainTable>()
             .Include(x => x.IncludedTableId, includedTableDocuments)

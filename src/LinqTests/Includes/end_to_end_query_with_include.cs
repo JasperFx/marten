@@ -7,7 +7,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
 using Classroom = LinqTests.Includes.includes_with_custom_mapping.Classroom;
@@ -17,8 +16,6 @@ namespace LinqTests.Includes;
 
 public class end_to_end_query_with_include: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     protected override Task fixtureSetup()
     {
         return theStore.Advanced.Clean.DeleteAllDocumentsAsync();
@@ -95,7 +92,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         User included = null;
         var issue2 = query
@@ -530,7 +527,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var ids = query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
             .Where(x => x.Status == "Done")
@@ -615,7 +612,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await session.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
         User included = null;
         var issue2 = await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
@@ -646,7 +643,7 @@ public class end_to_end_query_with_include: IntegrationContext
         await using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        query.Logger = new TestOutputMartenLogger(_output);
+
         await query.Query<Issue>().Include(x => x.AssigneeId, list).ToListAsync();
 
         list.Count.ShouldBe(2);
@@ -756,7 +753,7 @@ public class end_to_end_query_with_include: IntegrationContext
         User assignee2 = null;
         User reporter2 = null;
 
-        query.Logger = new TestOutputMartenLogger(_output);
+
         query
             .Query<Issue>()
             .Include<User>(x => assignee2 = x).On(x => x.AssigneeId)
@@ -795,7 +792,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
+    
 
             var list = new List<User>();
 
@@ -851,7 +848,7 @@ public class end_to_end_query_with_include: IntegrationContext
     public async Task Bug_1715_simple_include_for_a_single_document_async()
     {
         await using var session = theStore.IdentitySession();
-        session.Logger = new TestOutputMartenLogger(_output);
+
 
         var user = new User();
         var bug = new Bug();
@@ -923,7 +920,7 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
+    
 
             var list = new List<User>();
 
@@ -1005,9 +1002,8 @@ public class end_to_end_query_with_include: IntegrationContext
     #endregion
     #nullable restore
 
-    public end_to_end_query_with_include(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
+    public end_to_end_query_with_include(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }
 

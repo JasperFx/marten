@@ -3,18 +3,11 @@ using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 
 public class Bug_1416_foreign_key_with_document_alias : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1416_foreign_key_with_document_alias(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task use_the_correct_naming()

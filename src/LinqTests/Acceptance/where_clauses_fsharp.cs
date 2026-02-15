@@ -2,15 +2,12 @@ using System;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
 using Microsoft.FSharp.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class where_clauses_fsharp: LinqTestContext<where_clauses_fsharp>
 {
-    public where_clauses_fsharp(DefaultQueryFixture fixture, ITestOutputHelper output) : base(fixture)
+    public where_clauses_fsharp(DefaultQueryFixture fixture) : base(fixture)
     {
-        TestOutput = output;
     }
 
     static where_clauses_fsharp()

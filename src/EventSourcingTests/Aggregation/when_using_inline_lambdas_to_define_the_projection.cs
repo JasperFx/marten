@@ -5,17 +5,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
 public class when_using_inline_lambdas_to_define_the_projection : AggregationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public when_using_inline_lambdas_to_define_the_projection(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public when_using_inline_lambdas_to_define_the_projection(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -228,9 +224,6 @@ public class when_using_inline_lambdas_to_define_the_projection : AggregationCon
 
         theSession.Store(state1, state2);
         await theSession.SaveChangesAsync();
-
-        _output.WriteLine("state1.Id is " + state1.Id);
-        _output.WriteLine("state2.Id is " + state2.Id);
 
         UsingDefinition(p =>
         {

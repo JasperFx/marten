@@ -4,15 +4,12 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
 using Marten.Testing.Documents;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class select_clauses : LinqTestContext<select_clauses>
 {
-    public select_clauses(DefaultQueryFixture fixture, ITestOutputHelper output) : base(fixture)
+    public select_clauses(DefaultQueryFixture fixture) : base(fixture)
     {
-        TestOutput = output;
     }
 
     private static void select<T>(Expression<Func<Target, T>> selector)

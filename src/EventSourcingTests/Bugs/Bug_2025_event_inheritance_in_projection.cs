@@ -7,17 +7,13 @@ using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_2025_event_inheritance_in_projection : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2025_event_inheritance_in_projection(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_2025_event_inheritance_in_projection(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -25,8 +21,6 @@ public class Bug_2025_event_inheritance_in_projection : IntegrationContext
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Identity));
         await theStore.Advanced.Clean.DeleteAllEventDataAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var @created = new UserCreated(Guid.NewGuid(), "google-some-name-identifier", "Nancy", "Drew");
         theSession.Events.StartStream(@created.Id, created);

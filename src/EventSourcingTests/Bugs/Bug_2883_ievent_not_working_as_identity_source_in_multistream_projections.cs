@@ -15,19 +15,11 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2883_ievent_not_working_as_identity_source(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public async Task CanUseIEventAsSourceForIdentity()
     {
@@ -40,7 +32,6 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
 
         {
             await using var session = theStore.LightweightSession();
-            session.Logger = new TestOutputMartenLogger(_output);
 
             for (var i = 0; i < customersToCreate; i++)
             {
@@ -59,7 +50,6 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         var customersToDelete = 5;
         {
             await using var session = theStore.LightweightSession();
-            session.Logger = new TestOutputMartenLogger(_output);
 
             for (var i = 0; i < customersToDelete; i++)
             {

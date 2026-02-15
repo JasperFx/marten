@@ -8,18 +8,10 @@ using Marten.Pagination;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task include_to_list_using_inner_join_and_paging()
@@ -37,7 +29,7 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         await theSession.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
         var list = new List<User>();
 
         var issues = await query.Query<Issue>()
@@ -67,7 +59,7 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         await theSession.SaveChangesAsync();
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
         var list = new List<User>();
 
         var issues = await query.Query<Issue>()
@@ -96,7 +88,6 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         theSession.Store(user1);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var tenants = new Dictionary<Guid, Tenant2>();
         var user = await theSession
@@ -123,7 +114,6 @@ public class Bug_2224_Include_needs_to_respect_Take_and_Skip_in_main_body: BugIn
         await theStore.BulkInsertAsync(targets);
         await theStore.BulkInsertAsync(users);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var dict = new Dictionary<Guid, Target>();
         var records = await theSession.Query<TargetUser>()

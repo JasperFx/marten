@@ -9,17 +9,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading;
 
 public class query_by_sql: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public query_by_sql(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public query_by_sql(DefaultStoreFixture fixture): base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

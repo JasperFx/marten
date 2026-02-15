@@ -5,14 +5,10 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class nullable_types : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task query_against_non_null()
     {
@@ -85,7 +81,6 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var list = await theSession.Query<Target>().Where(x => x.NullableBoolean != true).ToListAsync();
         list.Count.ShouldBe(2);
@@ -107,7 +102,6 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var list = await theSession.Query<Target>().Where(x => x.NullableBoolean != false).ToListAsync();
         list.Count.ShouldBe(2);
@@ -157,8 +151,7 @@ public class nullable_types : IntegrationContext
             .ShouldBe(2);
     }
 
-    public nullable_types(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public nullable_types(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

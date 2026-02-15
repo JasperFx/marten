@@ -13,7 +13,6 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.MultiTenancy;
 
@@ -28,7 +27,6 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
     #endregion
 
-    private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
 
     private readonly Target[] _reds = Target.GenerateRandomData(100).ToArray();
@@ -620,14 +618,12 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.ForTenant("Blue").Delete<Target>(target.Id);
             await session.SaveChangesAsync();
         }
 
         var blue = theStore.QuerySession("Blue");
-        blue.Logger = new TestOutputMartenLogger(_output);
-
         (await blue.LoadAsync<Target>(target.Id)).ShouldBeNull();
 
         var red = theStore.QuerySession("Red");
@@ -654,7 +650,7 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.ForTenant("Blue").Delete<IntDoc>(target.Id);
             await session.SaveChangesAsync();
         }
@@ -685,7 +681,7 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.ForTenant("Blue").Delete<LongDoc>(target.Id);
             await session.SaveChangesAsync();
         }
@@ -716,7 +712,7 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.ForTenant("Blue").Delete<StringDoc>(target.Id);
             await session.SaveChangesAsync();
         }

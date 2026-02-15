@@ -5,22 +5,13 @@ using System.Threading.Tasks;
 using Marten.Pagination;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_2553_Include_with_ToPagedList: BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     public record Foo(Guid Id);
 
     public record Bar(Guid Id, Guid FooId);
-
-    public Bug_2553_Include_with_ToPagedList(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task query_should_return_included_docs()
@@ -42,7 +33,6 @@ public class Bug_2553_Include_with_ToPagedList: BugIntegrationContext
 
         var includedFoos = new Dictionary<Guid, Foo>();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         var queriedBars = await theSession.Query<Bar>()
             .Include(bar => bar.FooId, dictionary: includedFoos)
             .ToPagedListAsync(pageNumber: 1, pageSize: 4);

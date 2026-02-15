@@ -7,18 +7,10 @@ using Marten;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3032_serialization_error_combined_Select_and_Include : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3032_serialization_error_combined_Select_and_Include(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     // Fails with error:
     // Cannot deserialize the current JSON object (e.g. {"name":"value"}) into type 'System.Collections.Generic.IReadOnlyList`1
@@ -52,7 +44,7 @@ public class Bug_3032_serialization_error_combined_Select_and_Include : BugInteg
         }
 
         await using var session = theStore.QuerySession();
-        session.Logger = new TestOutputMartenLogger(_output);
+
 
         var metadata = new List<EntityScope>();
         var result = await session
@@ -142,7 +134,7 @@ public class Bug_3032_serialization_error_combined_Select_and_Include : BugInteg
         }
 
         await using var session = theStore.QuerySession();
-        session.Logger = new TestOutputMartenLogger(_output);
+
         var result = await session
             .Query<EntityWithChild>()
             .Where(x => x.Id.IsOneOf(entity.Id))

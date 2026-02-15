@@ -4,17 +4,13 @@ using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
 public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public when_doing_inline_per_stream_aggregations_with_Guid_stream_identity(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public when_doing_inline_per_stream_aggregations_with_Guid_stream_identity(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

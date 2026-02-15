@@ -6,18 +6,10 @@ using Marten;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3151_using_duplicated_fields_in_linq_queries : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3151_using_duplicated_fields_in_linq_queries(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
 
     [Fact]
@@ -61,8 +53,6 @@ public class Bug_3151_using_duplicated_fields_in_linq_queries : BugIntegrationCo
                 .Include(x => x.ChildId!, children)
                 .ToListAsync();
         }
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         await DoQuery();
 

@@ -6,18 +6,10 @@ using Marten;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class child_parent_inclusion_bug : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public child_parent_inclusion_bug(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task WhereStatementIsRespectedWhenIncludingParent()
@@ -44,8 +36,6 @@ public class child_parent_inclusion_bug : BugIntegrationContext
         });
 
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var parents = new Dictionary<Guid, Parent>();
 

@@ -11,19 +11,11 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables.Partitioning;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace CoreTests.Partitioning;
 
 public class partitioning_configuration : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public partitioning_configuration(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     private DocumentTable tableFor<T>()
     {
         var mapping = theStore.Options.Storage.MappingFor(typeof(T));
@@ -76,7 +68,6 @@ public class partitioning_configuration : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Schema.For<Target>().SoftDeletedWithPartitioning();
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

@@ -27,19 +27,14 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 [Collection("v4events")]
 public class appending_events_workflow_specs
 {
-    private readonly ITestOutputHelper _output;
 
-    public appending_events_workflow_specs(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
 
     public class EventMetadataChecker : DocumentSessionListenerBase
     {
@@ -62,7 +57,7 @@ public class appending_events_workflow_specs
     public async Task can_fetch_stream_async(TestCase @case)
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await @case.StartNewStream(new TestOutputMartenLogger(_output));
+        await @case.StartNewStream();
         await using var query = @case.Store.QuerySession();
 
         var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
@@ -110,7 +105,7 @@ public class appending_events_workflow_specs
     public async Task can_update_the_version_of_an_existing_stream_happy_path(TestCase @case)
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
-        var stream = await @case.StartNewStream(new TestOutputMartenLogger(_output));
+        var stream = await @case.StartNewStream();
 
         stream.ExpectedVersionOnServer = 4;
         stream.Version = 10;
@@ -121,7 +116,6 @@ public class appending_events_workflow_specs
         await using var session = @case.Store.LightweightSession();
         session.QueueOperation(op);
 
-        session.Logger = new TestOutputMartenLogger(_output);
         await session.SaveChangesAsync();
 
         var handler = builder.QueryForStream(stream);
@@ -301,7 +295,7 @@ public class appending_events_workflow_specs
 
         internal DocumentStore Store => _store.Value;
 
-        public async Task<StreamAction> StartNewStream(IMartenSessionLogger logger = null)
+        public async Task<StreamAction> StartNewStream()
         {
             var events = new object[] {new AEvent(), new BEvent(), new CEvent(), new DEvent()};
             using var session = Store.Events.TenancyStyle == TenancyStyle.Conjoined
@@ -309,11 +303,6 @@ public class appending_events_workflow_specs
                 : Store.LightweightSession();
 
             session.Listeners.Add(new EventMetadataChecker());
-
-            if (logger != null)
-            {
-                session.Logger = logger;
-            }
 
             if (Store.Events.StreamIdentity == StreamIdentity.AsGuid)
             {

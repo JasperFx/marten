@@ -7,15 +7,10 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class first_operator: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-
     [Fact]
     public async Task first_hit_with_only_one_document()
     {
@@ -43,7 +38,7 @@ public class first_operator: IntegrationContext
     [Fact]
     public async Task first_or_default_miss()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
@@ -169,7 +164,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var target = await theSession.Query<Target>().Where(x => x.Number == 2).OrderByDescending(x => x.AnotherNumber).FirstOrDefaultAsync();
         target.String.ShouldBe("Correct");
@@ -184,7 +179,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var target = await theSession.Query<Target>().OrderByDescending(x => x.AnotherNumber).FirstOrDefaultAsync(x => x.Number == 2, CancellationToken.None);
         target.String.ShouldBe("Correct");
@@ -205,8 +200,7 @@ public class first_operator: IntegrationContext
         });
     }
 
-    public first_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public first_operator(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

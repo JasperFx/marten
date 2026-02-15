@@ -4,17 +4,12 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class using_explicit_sql_in_select_clauses : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public using_explicit_sql_in_select_clauses(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public using_explicit_sql_in_select_clauses(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -25,7 +20,6 @@ public class using_explicit_sql_in_select_clauses : IntegrationContext
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var firstNames = await theSession.Query<User>().Where(x => x.FirstName == "Hank")
             .Select(x => x.ExplicitSql<string>("d.data -> 'FirstName'"))
@@ -42,7 +36,6 @@ public class using_explicit_sql_in_select_clauses : IntegrationContext
         theSession.Store(new User { FirstName = "Sam", LastName = "Mitchell" });
         theSession.Store(new User { FirstName = "Tom", LastName = "Chambers" });
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var firstNames = await theSession.Query<User>().Where(x => x.FirstName == "Hank")
             .Select(x => new {Name = x.ExplicitSql<string>("d.data -> 'FirstName'")})

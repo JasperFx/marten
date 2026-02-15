@@ -10,18 +10,13 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_3995_start_stream_with_for_tenant_and_aggregate_type_mapper : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
 
-    public Bug_3995_start_stream_with_for_tenant_and_aggregate_type_mapper(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
 
     [Fact]
     public async Task should_have_the_aggregate_type()
@@ -45,7 +40,6 @@ public class Bug_3995_start_stream_with_for_tenant_and_aggregate_type_mapper : B
         StoreOptions(opts =>
         {
             opts.Events.TenancyStyle = TenancyStyle.Conjoined;
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         var batch = new ProjectionUpdateBatch(theStore.Options.Projections, (DocumentSessionBase)theSession, ShardExecutionMode.Continuous,

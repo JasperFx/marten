@@ -3,14 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
-using Xunit.Abstractions;
-
 namespace LinqTests.Internals;
 
 public class BoolNotVisitorTests : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
     public class TestClass
     {
         public TestClass()
@@ -63,8 +59,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         }
     }
 
-    public BoolNotVisitorTests(ITestOutputHelper output)
+    public BoolNotVisitorTests()
     {
-        _output = output;
     }
 }

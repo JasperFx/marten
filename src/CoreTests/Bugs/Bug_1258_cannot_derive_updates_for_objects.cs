@@ -9,18 +9,11 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace CoreTests.Bugs;
 
 public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1258_cannot_derive_updates_for_objects(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task can_properly_detect_changes_when_user_defined_type()
@@ -38,7 +31,6 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
             });
             opts.Schema.For<UserWithCustomType>().GinIndexJsonData();
 
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         var guyWithCustomType1 = new UserWithCustomType { Id = Guid.NewGuid(), Name = "test_guy", CustomType = "test_cust_type" };

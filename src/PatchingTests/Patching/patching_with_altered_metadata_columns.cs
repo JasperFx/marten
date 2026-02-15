@@ -5,19 +5,11 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace PatchingTests.Patching;
 
 public class patching_with_altered_metadata_columns : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public patching_with_altered_metadata_columns(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public async Task write_and_read_metadata_from_patch()
     {
@@ -49,7 +41,6 @@ public class patching_with_altered_metadata_columns : OneOffConfigurationsContex
         theSession.CausationId = "causation1";
         theSession.LastModifiedBy = "some guy";
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         theSession.Patch<Target>(target1.Id).Set(x => x.Number, 2);
 
         await theSession.SaveChangesAsync();

@@ -17,7 +17,6 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables.Partitioning;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Deleting;
 
@@ -52,12 +51,8 @@ public class SoftDeletedDocument: ISoftDeleted
 
 public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftDeletedFixture>, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
-
-    public soft_deletes(SoftDeletedFixture fixture, ITestOutputHelper output): base(fixture)
+    public soft_deletes(SoftDeletedFixture fixture): base(fixture)
     {
-        _output = output;
-
     }
 
     public async Task InitializeAsync()
@@ -84,8 +79,6 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await theSession.SaveChangesAsync();
 
         await using var session2 = theStore.LightweightSession();
-
-        session2.Logger = new TestOutputMartenLogger(_output);
 
         session2.Delete(doc1);
         session2.Delete(doc3);
@@ -270,8 +263,6 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         var user3 = new User { UserName = "baz" };
 
         using var session = theStore.LightweightSession();
-        session.Logger = new TestOutputMartenLogger(_output);
-
         session.Store(user1, user2, user3);
         await session.SaveChangesAsync();
 
@@ -742,8 +733,6 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
 public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
-
     public soft_deletes_with_partitioning()
     {
         StoreOptions(opts =>
@@ -792,8 +781,6 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await theSession.SaveChangesAsync();
 
         await using var session2 = theStore.LightweightSession();
-
-        session2.Logger = new TestOutputMartenLogger(_output);
 
         session2.Delete(doc1);
         session2.Delete(doc3);
@@ -978,8 +965,6 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         var user3 = new User { UserName = "baz" };
 
         using var session = theStore.LightweightSession();
-        session.Logger = new TestOutputMartenLogger(_output);
-
         session.Store(user1, user2, user3);
         await session.SaveChangesAsync();
 

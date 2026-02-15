@@ -5,14 +5,10 @@ using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class string_filtering: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     protected override Task fixtureSetup()
     {
         var entry = new User { FirstName = "Beeblebrox", Nickname = "" };
@@ -266,8 +262,6 @@ public class string_filtering: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
-
             query.Query<User>()
                 .Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id
                 .ShouldBe(user.Id);
@@ -275,8 +269,7 @@ public class string_filtering: IntegrationContext
     }
 
 
-    public string_filtering(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public string_filtering(DefaultStoreFixture fixture): base(fixture)
     {
-        _output = output;
     }
 }

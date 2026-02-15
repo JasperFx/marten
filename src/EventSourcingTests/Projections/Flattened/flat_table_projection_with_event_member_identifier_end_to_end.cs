@@ -15,18 +15,14 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
-using Xunit.Abstractions;
 using CommandExtensions = Weasel.Core.CommandExtensions;
 
 namespace EventSourcingTests.Projections.Flattened;
 
 public class flat_table_projection_with_event_member_identifier_end_to_end: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public flat_table_projection_with_event_member_identifier_end_to_end(ITestOutputHelper output)
+    public flat_table_projection_with_event_member_identifier_end_to_end()
     {
-        _output = output;
         StoreOptions(opts =>
         {
             opts.Projections.Add<WriteTableWithEventMemberIdentityProjection>(ProjectionLifecycle.Inline);
@@ -104,7 +100,6 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
         };
         theSession.Events.Append(streamId, valuesSet);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         var data = await findData("red");

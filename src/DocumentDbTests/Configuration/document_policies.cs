@@ -5,18 +5,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Configuration;
 
 public class document_policies: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public document_policies(ITestOutputHelper output)
+    public document_policies()
     {
-        _output = output;
-
         StoreOptions(_ =>
         {
             _.Schema.For<Target>();

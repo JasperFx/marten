@@ -5,14 +5,10 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class distinct_operator : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task get_distinct_number()
     {
@@ -25,7 +21,7 @@ public class distinct_operator : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var queryable = theSession.Query<Target>().Select(x => x.Number).Distinct();
 
         queryable.ToList().Count.ShouldBe(3);
@@ -86,7 +82,7 @@ public class distinct_operator : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var queryable = theSession.Query<Target>().Select(x => new
         {
             x.String,
@@ -108,7 +104,7 @@ public class distinct_operator : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var queryable = theSession.Query<Target>().Select(x => x.Color).Distinct();
 
         queryable.ToList().Count.ShouldBe(4);
@@ -127,7 +123,7 @@ public class distinct_operator : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var queryable = theSession.Query<Target>()
             .Select(x => x.NullableEnum).Distinct();
 
@@ -151,15 +147,14 @@ public class distinct_operator : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         var queryable = theSession.Query<Target>()
             .Select(x => x.NullableEnum).Distinct();
 
         queryable.ToList().Count.ShouldBe(5);
     }
 
-    public distinct_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public distinct_operator(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

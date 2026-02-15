@@ -1,15 +1,12 @@
 using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class order_by_clauses: LinqTestContext<order_by_clauses>
 {
-    public order_by_clauses(DefaultQueryFixture fixture, ITestOutputHelper output) : base(fixture)
+    public order_by_clauses(DefaultQueryFixture fixture) : base(fixture)
     {
-        TestOutput = output;
     }
 
     static order_by_clauses()

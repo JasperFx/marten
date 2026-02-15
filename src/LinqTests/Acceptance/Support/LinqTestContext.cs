@@ -7,8 +7,6 @@ using JasperFx.Core;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance.Support;
 
 [CollectionDefinition("linq")]
@@ -28,8 +26,6 @@ public abstract class LinqTestContext<TSelf>
     {
         _descriptions = readDescriptions();
     }
-
-    protected ITestOutputHelper? TestOutput { get; set; }
 
     protected LinqTestContext(DefaultQueryFixture fixture)
     {
@@ -110,7 +106,7 @@ public abstract class LinqTestContext<TSelf>
         var testCase = testCases[index];
         await using var session = store.QuerySession();
 
-        var logger = new TestOutputMartenLogger(TestOutput);
+        var logger = new TestOutputMartenLogger(null);
 
         session.Logger = logger;
 

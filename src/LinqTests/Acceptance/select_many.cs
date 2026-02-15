@@ -9,14 +9,10 @@ using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class select_many : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     #region sample_can_do_simple_select_many_against_simple_array
     [Fact]
     public async Task can_do_simple_select_many_against_simple_array()
@@ -59,7 +55,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
+
             query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
@@ -84,7 +80,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
+
             query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
@@ -110,7 +106,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
+
             var distinct = query.Query<ProductWithList>().SelectMany(x => x.Tags).Distinct().ToList();
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
@@ -300,7 +296,7 @@ public class select_many : IntegrationContext
             query.Query<Product>().SelectMany(x => x.Tags)
                 .Any().ShouldBeTrue();
 
-            query.Logger = new TestOutputMartenLogger(_output);
+
 
             query.Query<Target>().SelectMany(x => x.Children)
                 .Any().ShouldBeFalse();
@@ -454,7 +450,7 @@ public class select_many : IntegrationContext
         using var query = theStore.LightweightSession();
         var dict = new Dictionary<Guid, User>();
 
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var results = query.Query<Target>()
             .SelectMany(x => x.Children)
@@ -552,8 +548,6 @@ public class select_many : IntegrationContext
 
         command.ShouldNotBeNull();
 
-        _output.WriteLine(command.CommandText);
-
         query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)
             .SelectMany(x => x.Children)
@@ -596,7 +590,7 @@ public class select_many : IntegrationContext
         }
 
         using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
 
         var loaded = query.Query<TargetGroup>()
@@ -657,7 +651,7 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var count = await query.Query<Target>().SelectMany(x => x.StringArray).Distinct().CountAsync();
 
@@ -674,7 +668,7 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var actual = await query.Query<Target>().Where(x => x.NumberArray != null)
             .SelectMany(x => x.NumberArray)
@@ -699,7 +693,7 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
+
 
         var actual = await query.Query<Target>().Where(x => x.StringArray != null)
             .SelectMany(x => x.StringArray)
@@ -716,9 +710,8 @@ select jsonb_array_elements(CAST(d.data ->> 'Children' as jsonb)) as data from m
 
     }
 
-    public select_many(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public select_many(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }
 

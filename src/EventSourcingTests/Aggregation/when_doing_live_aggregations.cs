@@ -10,17 +10,13 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
 public class when_doing_live_aggregations : AggregationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public when_doing_live_aggregations(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public when_doing_live_aggregations(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

@@ -5,17 +5,12 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class is_subset_of_operator : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public is_subset_of_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public is_subset_of_operator(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     protected override Task fixtureSetup()
@@ -79,8 +74,6 @@ public class is_subset_of_operator : IntegrationContext
     {
         // given
         var tags = new[] {"c#", "mssql"};
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         /*
          * CURRENT:

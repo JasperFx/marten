@@ -9,14 +9,10 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.FSharp.Core;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class is_one_of_operator: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     public static TheoryData<Func<int[], Expression<Func<Target, bool>>>> SupportedIsOneOfWithIntArray =
         new()
         {
@@ -309,9 +305,8 @@ public class is_one_of_operator: IntegrationContext
 
 
 
-    public is_one_of_operator(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public is_one_of_operator(DefaultStoreFixture fixture): base(fixture)
     {
-        _output = output;
         StoreOptions(_ =>
         {
             //_.Logger(new ConsoleMartenLogger());

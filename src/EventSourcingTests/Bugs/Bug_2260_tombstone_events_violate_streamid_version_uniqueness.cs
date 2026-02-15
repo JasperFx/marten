@@ -8,18 +8,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Xunit;
-using Xunit.Abstractions;
 using static EventSourcingTests.appending_events_workflow_specs;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_2260_tombstone_events_violate_streamid_version_uniqueness : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2260_tombstone_events_violate_streamid_version_uniqueness(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
+    public Bug_2260_tombstone_events_violate_streamid_version_uniqueness(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Theory]
@@ -40,8 +36,6 @@ public class Bug_2260_tombstone_events_violate_streamid_version_uniqueness : Int
         }
 
         theSession.QueueOperation(new FailingOperation());
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         await Should.ThrowAsync<DivideByZeroException>(async () =>
         {

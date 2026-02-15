@@ -4,17 +4,13 @@ using EventSourcingTests.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_1723_inline_projections_get_cut_off : AggregationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1723_inline_projections_get_cut_off(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_1723_inline_projections_get_cut_off(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

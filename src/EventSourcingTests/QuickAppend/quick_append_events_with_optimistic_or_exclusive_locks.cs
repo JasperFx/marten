@@ -8,7 +8,6 @@ using Marten.Services;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.QuickAppend;
 
@@ -16,13 +15,8 @@ public class quick_append_events_with_optimistic_or_exclusive_locks
 {
     public class quick_append_events_optimistic_or_exclusive_with_guid_identity: OneOffConfigurationsContext, IAsyncLifetime
     {
-        private readonly ITestOutputHelper _output;
 
-        public quick_append_events_optimistic_or_exclusive_with_guid_identity(ITestOutputHelper output)
-        {
-            _output = output;
 
-        }
 
         public async Task InitializeAsync()
         {
@@ -102,8 +96,6 @@ public class quick_append_events_with_optimistic_or_exclusive_locks
         [Fact]
         public async Task append_exclusive_happy_path()
         {
-            theSession.Logger = new TestOutputMartenLogger(_output);
-
             var streamId = Guid.NewGuid();
             theSession.Events.StartStream(streamId, new AEvent(), new BEvent());
             await theSession.SaveChangesAsync();

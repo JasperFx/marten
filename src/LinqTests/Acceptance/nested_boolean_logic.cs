@@ -4,14 +4,10 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class nested_boolean_logic : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task TestModalOrQuery()
     {
@@ -31,8 +27,7 @@ public class nested_boolean_logic : IntegrationContext
 
     }
 
-    public nested_boolean_logic(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public nested_boolean_logic(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

@@ -3,18 +3,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 
 public class Bug_1975_bulk_insert_of_nested_guid : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1975_bulk_insert_of_nested_guid(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task can_bulk_insert()

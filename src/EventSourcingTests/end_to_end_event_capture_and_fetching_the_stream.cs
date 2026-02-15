@@ -13,21 +13,14 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
     private static readonly string[] SameTenants = { "tenant", "tenant" };
     private static readonly string[] DifferentTenants = { "tenant", "differentTenant" };
     private static readonly string[] DefaultTenant = { StorageConstants.DefaultTenantId };
-
-    public end_to_end_event_capture_and_fetching_the_stream(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     public static TheoryData<TenancyStyle, string[]> SessionParams = new TheoryData<TenancyStyle, string[]>
     {
@@ -47,7 +40,6 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         await When.CalledForEachAsync(tenants, async (tenantId, _) =>
         {
             using var session = store.LightweightSession(tenantId);
-            session.Logger = new TestOutputMartenLogger(_output);
 
             #region sample_start-stream-with-aggregate-type
 

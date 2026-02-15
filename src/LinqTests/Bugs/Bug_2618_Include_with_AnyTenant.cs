@@ -5,18 +5,10 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2618_Include_with_AnyTenant(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task tenant_filter_should_apply_to_both_parent_and_child_documents()
@@ -47,8 +39,6 @@ public class Bug_2618_Include_with_AnyTenant : BugIntegrationContext
             session.Store(issue2a);
             await session.SaveChangesAsync();
         }
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var users = new List<User>();
 

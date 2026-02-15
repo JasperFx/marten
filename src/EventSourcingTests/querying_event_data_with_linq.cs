@@ -12,13 +12,11 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
     private readonly MembersJoined joined1 = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
     private readonly MembersDeparted departed1 = new MembersDeparted { Members = new[] { "Thom" } };
 
@@ -276,7 +274,6 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         StoreOptions(opts =>
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
-            opts.Logger(new TestOutputMartenLogger(_output));
         }, true);
 
         await using (var session = theStore.LightweightSession())
@@ -321,10 +318,8 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
      * MORE!!!
      * Async everything
      */
-    public querying_event_data_with_linq(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
+
 }
 
 public record DummyEvent(string Id);

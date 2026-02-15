@@ -3,24 +3,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.Core;
 using Marten;
-using Marten.Linq;
 using Marten.Schema;
+using JasperFx.Core;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Includes;
 
 public class includes_with_custom_mapping : IntegrationContext
 {
-    private readonly ITestOutputHelper _testOutputHelper;
     private const string TenantId = "the_tenant_id";
 
-    public includes_with_custom_mapping(DefaultStoreFixture fixture, ITestOutputHelper testOutputHelper) : base(fixture)
+    public includes_with_custom_mapping(DefaultStoreFixture fixture) : base(fixture)
     {
-        _testOutputHelper = testOutputHelper;
     }
 
     protected override async Task fixtureSetup()
@@ -62,7 +57,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<SchoolUser>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId)
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classRoom = await query.SingleAsync();
 
@@ -83,7 +77,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<Classroom>(c => homeRoom = c).On(u => u.HomeRoom, c => c.RoomCode)
             .Where(u => u.Name == "Student-1002");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -103,7 +96,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom)
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -123,7 +115,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -144,7 +135,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -165,7 +155,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -185,7 +174,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -205,7 +193,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
-        LogCommand(query);
 
         var classRoom = await query.ToListAsync();
 
@@ -233,7 +220,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<SchoolUser>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId, u => u.Name == "Invalid")
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classRoom = await query.SingleAsync();
 
@@ -252,7 +238,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .On(u => u.HomeRoom, c => c.RoomCode, c => c.RoomCode == "Invalid")
             .Where(u => u.Name == "Student-1002");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -270,7 +255,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"))
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -290,7 +274,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -311,7 +294,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -332,7 +314,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -352,7 +333,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId, u => u.StaffId < 13);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -372,7 +352,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
-        LogCommand(query);
 
         var classRoom = await query.ToListAsync();
 
@@ -400,7 +379,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<SchoolUser2>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId)
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classRoom = await query.SingleAsync();
 
@@ -421,7 +399,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<Classroom2>(c => homeRoom = c).On(u => u.HomeRoom, c => c.RoomCode)
             .Where(u => u.Name == "Student-1002");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -441,7 +418,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom)
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -461,7 +437,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -482,7 +457,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -503,7 +477,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -523,7 +496,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -543,7 +515,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom);
 
-        LogCommand(query);
 
         var classRoom = await query.ToListAsync();
 
@@ -571,7 +542,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include<SchoolUser2>(u => teacher = u).On(r => r.TeacherId, u => u.StaffId, u => u.Name == "Invalid")
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classRoom = await query.SingleAsync();
 
@@ -590,7 +560,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .On(u => u.HomeRoom, c => c.RoomCode, c => c.RoomCode == "Invalid")
             .Where(u => u.Name == "Student-1002");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -608,7 +577,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"))
             .Where(r => r.RoomCode == "AA-1");
 
-        LogCommand(query, FetchType.FetchOne);
 
         var classroom = await query.SingleAsync();
 
@@ -628,7 +596,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -649,7 +616,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -670,7 +636,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Include(homeRooms).On(u => u.HomeRoom, r => r.RoomCode, r => r.TeacherId < 13)
             .Where(s => s.StaffId == null);
 
-        LogCommand(query);
 
         var students = await query.ToListAsync();
 
@@ -690,7 +655,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(teachers).On(r => r.TeacherId, u => u.StaffId, u => u.StaffId < 13);
 
-        LogCommand(query);
 
         var classrooms = await query.ToListAsync();
 
@@ -710,7 +674,6 @@ public class includes_with_custom_mapping : IntegrationContext
             .Query<Classroom2>()
             .Include(students).On(r => r.RoomCode, u => u.HomeRoom, u => u.Name.EndsWith("1"));
 
-        LogCommand(query);
 
         var classRoom = await query.ToListAsync();
 
@@ -768,19 +731,6 @@ public class includes_with_custom_mapping : IntegrationContext
         include3.SelectMany(kvp => kvp.Value).ShouldBeUnique();
         include3.SelectMany(kvp => kvp.Value).Count().ShouldBe(10);
         (await query3).ShouldNotBeNull().Count.ShouldBe(5);
-    }
-
-    /// <summary>
-    /// Easy preview of the sql query
-    /// </summary>
-    private void LogCommand<T>(IQueryable<T> queryable, FetchType fetchType = FetchType.FetchMany)
-    {
-        var command = queryable.ToCommand(fetchType);
-
-        _testOutputHelper.WriteLine(
-            "{0}\nParameters:\n{1}",
-            command.CommandText.Replace(";", "; \n"),
-            command.Parameters.Select(p => $"  {p.ParameterName}: {p.NpgsqlValue}").Join("\n"));
     }
 
     #region Test Models

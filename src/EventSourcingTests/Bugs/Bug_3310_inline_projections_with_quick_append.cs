@@ -12,14 +12,11 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_3310_inline_projections_with_quick_append : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
     // For load testing, I was using 20 iterations
     private const int Iterations = 3;
     // For load testing, I was using 1000 for NSize
@@ -27,9 +24,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
 
     private const string tenant = "tenant-1";
 
-    public Bug_3310_inline_projections_with_quick_append(ITestOutputHelper testOutputHelper)
+    public Bug_3310_inline_projections_with_quick_append()
     {
-        _testOutputHelper = testOutputHelper;
         StoreOptions(opts =>
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
@@ -49,15 +45,11 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
     {
         await using var session = theStore.LightweightSession(tenant);
 
-        session.Logger = new TestOutputMartenLogger(_testOutputHelper);
-
         var streamId = Guid.NewGuid().ToString();
 
         session.Events.StartStream<LoadTestInlineProjection>(streamId,new LoadTestEvent(Guid.NewGuid(), 1),
             new LoadTestEvent(Guid.NewGuid(), 2), new LoadTestEvent(Guid.NewGuid(), 3));
         await session.SaveChangesAsync();
-
-        _testOutputHelper.WriteLine("APPEND STARTS HERE");
 
         session.Events.Append(streamId, new LoadTestEvent(Guid.NewGuid(), 4), new LoadTestEvent(Guid.NewGuid(), 5));
         await session.SaveChangesAsync();
@@ -83,7 +75,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
 
             sw.Restart();
             await session.SaveChangesAsync();
-            _testOutputHelper.WriteLine($"{iteration:D3}: {sw.Elapsed:g}");
+
+
         }
     }
 
@@ -117,7 +110,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
 
             sw.Restart();
             await session.SaveChangesAsync();
-            _testOutputHelper.WriteLine($"{iteration:D3}: {sw.Elapsed:g}");
+
+
         }
 
 
@@ -147,7 +141,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
 
             sw.Restart();
             await session.SaveChangesAsync();
-            _testOutputHelper.WriteLine($"{iteration:D3}: {sw.Elapsed:g}");
+
+
         }
     }
 
@@ -185,7 +180,8 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
 
             sw.Restart();
             await session.SaveChangesAsync();
-            _testOutputHelper.WriteLine($"{iteration:D3}: {sw.Elapsed:g}");
+
+
         }
 
         // verify

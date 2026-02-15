@@ -4,17 +4,12 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_634_include_against_soft_deleted_docs(ITestOutputHelper output)
+    public Bug_634_include_against_soft_deleted_docs()
     {
-        _output = output;
         StoreOptions(_ =>
         {
             _.Schema.For<User>().SoftDeleted();
@@ -77,8 +72,6 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Logger = new TestOutputMartenLogger(_output);
-
             User expected = null;
 
             var issues = query.Query<Issue>()

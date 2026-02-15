@@ -6,21 +6,12 @@ using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3067_nested_array_in_dictionary : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     public record RootRecord(Guid Id, Dictionary<Guid, NestedRecord> Dict);
     public record NestedRecord(List<Guid> Entities);
-
-    public Bug_3067_nested_array_in_dictionary(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task filter_with_dict_list_nested()
@@ -32,8 +23,6 @@ public class Bug_3067_nested_array_in_dictionary : BugIntegrationContext
         theSession.Store(new RootRecord(Guid.NewGuid(), new Dictionary<Guid, NestedRecord>() { {Guid.NewGuid(), new NestedRecord([Guid.NewGuid()])}, {Guid.NewGuid(), new NestedRecord([Guid.NewGuid()])}}));
         theSession.Store(new RootRecord(Guid.NewGuid(), new Dictionary<Guid, NestedRecord>() { {Guid.NewGuid(), new NestedRecord([Guid.NewGuid()])}, {Guid.NewGuid(), new NestedRecord([Guid.NewGuid()])}}));
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var ex = await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {

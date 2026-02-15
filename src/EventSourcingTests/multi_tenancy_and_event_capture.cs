@@ -10,14 +10,11 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
     public static TheoryData<TenancyStyle> TenancyStyles = new TheoryData<TenancyStyle>
     {
         { TenancyStyle.Conjoined },
@@ -34,7 +31,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         }, true);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         theSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
         theSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
 
@@ -62,7 +59,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         }, true);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         theSession.ForTenant("one").Events.StartStream("s1", new AEvent(), new BEvent());
         theSession.ForTenant("two").Events.StartStream("s1", new CEvent(), new DEvent(), new QuestStarted());
 
@@ -90,7 +87,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         var streamId = Guid.NewGuid();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.ForTenant("one").Events.StartStream(streamId, new AEvent(), new BEvent());
         theSession.ForTenant("two").Events.StartStream(streamId, new CEvent(), new DEvent(), new QuestStarted());
@@ -210,14 +207,14 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
         Guid stream = Guid.NewGuid();
         using (var session = theStore.LightweightSession("Green"))
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
 
         using (var session = theStore.LightweightSession("Green"))
         {
-            session.Logger = new TestOutputMartenLogger(_output);
+
             session.Events.Append(stream, new MembersJoined(), new MembersJoined());
             await session.SaveChangesAsync();
         }
@@ -289,11 +286,6 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
             _.Events.StreamIdentity = streamIdentity;
             _.Policies.AllDocumentsAreMultiTenanted();
         }, true);
-    }
-
-    public multi_tenancy_and_event_capture(ITestOutputHelper output)
-    {
-        _output = output;
     }
 
     public static TheoryData<StreamIdentity, Func<DocumentStore, IDocumentSession>, Action<IDocumentSession>, Action<IDocumentSession>> WillParameterizeTenantId => new()

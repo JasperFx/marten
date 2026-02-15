@@ -5,17 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2289_tombstone_events_violate_seq_id_uniqueness(ITestOutputHelper output, DefaultStoreFixture fixture) : base(fixture)
+    public Bug_2289_tombstone_events_violate_seq_id_uniqueness(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

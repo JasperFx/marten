@@ -6,18 +6,11 @@ using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 
 public class Bug_1871_includes_with_snake_case_json : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1871_includes_with_snake_case_json(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     public class Role
     {
@@ -46,7 +39,6 @@ public class Bug_1871_includes_with_snake_case_json : BugIntegrationContext
         StoreOptions(opts =>
         {
             opts.UseSystemTextJsonForSerialization(casing: Casing.SnakeCase);
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         var admin = new Role {Name = "Admin"};

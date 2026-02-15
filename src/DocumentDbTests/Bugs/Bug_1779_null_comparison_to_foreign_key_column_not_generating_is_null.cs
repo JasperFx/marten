@@ -10,18 +10,11 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs
 {
     public class Bug_1779_null_comparison_to_foreign_key_column_not_generating_is_null : BugIntegrationContext
     {
-        private readonly ITestOutputHelper _output;
-
-        public Bug_1779_null_comparison_to_foreign_key_column_not_generating_is_null(ITestOutputHelper output)
-        {
-            _output = output;
-        }
 
         [Fact]
         public async Task should_be_able_to_filter_with_null_value()
@@ -41,7 +34,6 @@ namespace DocumentDbTests.Bugs
             await session.SaveChangesAsync();
 
             await using var querySession = documentStore.QuerySession();
-            querySession.Logger = new TestOutputMartenLogger(_output);
 
             var results = await querySession.Query<HierarchyEntity>()
                 .Where(x => x.Name == "Test" && x.ParentId == null)
@@ -70,7 +62,6 @@ namespace DocumentDbTests.Bugs
             await session.SaveChangesAsync();
 
             await using var querySession = documentStore.QuerySession();
-            querySession.Logger = new TestOutputMartenLogger(_output);
 
             var results = await querySession.Query<HierarchyEntity>()
                 .Where(x => x.Name == "Test" && x.ParentId != null)

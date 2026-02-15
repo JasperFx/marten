@@ -5,18 +5,10 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3035_crazy_nested_boolean_conditions : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3035_crazy_nested_boolean_conditions(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task behave_correctly_if_comparing_to_null_string()
@@ -71,8 +63,6 @@ public class Bug_3035_crazy_nested_boolean_conditions : BugIntegrationContext
         var list = await GetTrackWarrantsForTerritory(territoryId, "a");
         list.Any(x => x.Id == activeDetails.Id).ShouldBeTrue();
         list.Any(x => x.Id == inactiveDetails.Id).ShouldBeTrue();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var list2 = await GetTrackWarrantsForTerritory(territoryId, null);
         list2.Single().Id.ShouldBe(activeDetails.Id);

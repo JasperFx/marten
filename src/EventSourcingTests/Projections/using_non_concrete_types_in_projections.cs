@@ -4,17 +4,13 @@ using EventSourcingTests.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Projections;
 
 public class using_non_concrete_types_in_projections : AggregationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public using_non_concrete_types_in_projections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public using_non_concrete_types_in_projections(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
         UsingDefinition(p =>
         {
             p.ProjectEvent<ITabulator>((a, e) =>
