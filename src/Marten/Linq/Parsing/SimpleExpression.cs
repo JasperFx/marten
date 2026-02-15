@@ -346,8 +346,7 @@ internal class SimpleExpression: ExpressionVisitor
                 finder.Visit(node.Arguments[0]);
 
                 FoundParameterAtStart = finder.FoundParameterAtFront;
-                // MemberFinder.Members are collected in reverse order, so reverse before concatenating
-                Members = finder.Members.Reverse().Concat(Members).ToList();
+                Members = finder.Members.Concat(Members).ToList();
                 return null;
             }
 
