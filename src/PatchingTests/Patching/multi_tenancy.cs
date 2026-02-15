@@ -7,7 +7,6 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace PatchingTests.Patching;
 
@@ -23,7 +22,6 @@ public class MultiTenancyFixture: StoreFixture
 [Collection("multi_tenancy")]
 public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<MultiTenancyFixture>, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
     private readonly Target[] _greens = Target.GenerateRandomData(100).ToArray();
 
     private readonly Target[] _reds = Target.GenerateRandomData(100).ToArray();
@@ -33,10 +31,8 @@ public class multi_tenancy: StoreContext<MultiTenancyFixture>, IClassFixture<Mul
     private readonly Target targetRed1 = Target.Random();
     private readonly Target targetRed2 = Target.Random();
 
-    public multi_tenancy(MultiTenancyFixture fixture, ITestOutputHelper output): base(fixture)
+    public multi_tenancy(MultiTenancyFixture fixture): base(fixture)
     {
-        _output = output;
-
     }
 
     public async Task InitializeAsync()

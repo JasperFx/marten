@@ -4,18 +4,12 @@ using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
 
 namespace MultiTenancyTests;
 
 public class using_database_per_tenant: IAsyncLifetime
 {
-    private readonly ITestOutputHelper _testOutputHelper;
     private DocumentStore _theStore;
-
-    public using_database_per_tenant(
-        ITestOutputHelper testOutputHelper
-    ) => _testOutputHelper = testOutputHelper;
 
     public async Task InitializeAsync()
     {

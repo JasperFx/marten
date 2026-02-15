@@ -6,14 +6,10 @@ using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class diagnostic_methods: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task retrieves_query_plan()
     {
@@ -113,8 +109,6 @@ public class diagnostic_methods: OneOffConfigurationsContext
     {
         var cmd = theSession.Query<Target>().ToCommand(FetchType.FetchMany);
 
-        _output.WriteLine(cmd.CommandText);
-
         cmd.CommandText.ShouldBe($"select d.id, d.data from {SchemaName}.mt_doc_target as d;");
         cmd.Parameters.Any().ShouldBeFalse();
     }
@@ -124,8 +118,6 @@ public class diagnostic_methods: OneOffConfigurationsContext
     {
         var cmd = theSession.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag)
             .ToCommand(FetchType.FetchMany);
-
-        _output.WriteLine(cmd.CommandText);
     }
 
     [Fact]
@@ -165,8 +157,7 @@ public class diagnostic_methods: OneOffConfigurationsContext
     }
 
 
-    public diagnostic_methods(ITestOutputHelper output)
+    public diagnostic_methods()
     {
-        _output = output;
     }
 }

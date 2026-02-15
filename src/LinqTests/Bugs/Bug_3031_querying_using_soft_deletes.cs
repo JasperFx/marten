@@ -5,18 +5,10 @@ using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3031_querying_using_soft_deletes(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     public static IQueryable<T> AddWhere<T>(IQueryable<T> q)
     {
@@ -83,8 +75,6 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-
-        session.Logger = new TestOutputMartenLogger(_output);
 
         bool result = session
             .Query<Entity>()

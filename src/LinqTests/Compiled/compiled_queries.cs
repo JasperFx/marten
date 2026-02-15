@@ -10,7 +10,7 @@ using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
+
 
 namespace LinqTests.Compiled;
 
@@ -465,11 +465,8 @@ public class FindUserByUserName<TUser>: ICompiledQuery<TUser, TUser> where TUser
 
 public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public when_compiled_queries_are_used_in_multi_tenancy(ITestOutputHelper output)
+    public when_compiled_queries_are_used_in_multi_tenancy()
     {
-        _output = output;
     }
 
     [Fact]
@@ -499,7 +496,6 @@ public class when_compiled_queries_are_used_in_multi_tenancy: OneOffConfiguratio
         }
 
         await using var query = theStore.QuerySession("one");
-        query.Logger = new TestOutputMartenLogger(_output);
         var user = await query.QueryAsync(new UserByUsernameWithFields { UserName = "han" });
         user.Id.ShouldBe(hanOne.Id);
 

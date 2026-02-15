@@ -4,17 +4,12 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1703_Equality_Not_Symmetric(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_1703_Equality_Not_Symmetric(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -115,8 +110,6 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
-
             session.Query<Target>()
                 .Where(x => x.Number.Equals(theNumber))
                 .ToList()

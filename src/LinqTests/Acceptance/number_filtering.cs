@@ -5,17 +5,12 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class number_filtering : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public number_filtering(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public number_filtering(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -67,7 +62,6 @@ public class number_filtering : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Logger = new TestOutputMartenLogger(_output);
             var findSmallerThanMedium = await session.Query<BigIntegerObject>().SingleAsync(x => x.Value < MediumNumber);
 
             findSmallerThanMedium.Id.ShouldBe(1);

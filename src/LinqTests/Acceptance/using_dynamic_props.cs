@@ -5,14 +5,10 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class using_dynamic_props: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task order_by()
     {
@@ -146,8 +142,6 @@ public class using_dynamic_props: IntegrationContext
     [Fact]
     public async Task batch_order_by_descending_then_by()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
         var batch = theSession.CreateBatchQuery();
         var query = batch.Query<User>().OrderByDescending("FirstName").ThenBy("LastName").ToList();
 
@@ -188,8 +182,7 @@ public class using_dynamic_props: IntegrationContext
         return theSession.SaveChangesAsync();
     }
 
-    public using_dynamic_props(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public using_dynamic_props(DefaultStoreFixture fixture): base(fixture)
     {
-        _output = output;
     }
 }

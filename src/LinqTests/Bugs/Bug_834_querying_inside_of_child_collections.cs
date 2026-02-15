@@ -4,17 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_834_querying_inside_of_child_collections : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_834_querying_inside_of_child_collections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_834_querying_inside_of_child_collections(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     public class Contact {
@@ -31,7 +26,6 @@ public class Bug_834_querying_inside_of_child_collections : IntegrationContext
 
         await theStore.BulkInsertAsync(new Contact[]{c1, c2, c3});
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         theSession.Query<Contact>().Where(x => x.Tags.Any(t => t.StartsWith("A"))).Any()
             .ShouldBeTrue();
 

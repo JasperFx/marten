@@ -5,14 +5,10 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class single_operator : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     #region sample_single_and_single_or_default
     [Fact]
     public async Task single_hit_with_only_one_document()
@@ -69,8 +65,6 @@ public class single_operator : IntegrationContext
     [Fact]
     public async Task single_hit_with_more_than_one_match_and_take_one_should_not_throw()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
         theSession.Store(new Target { Number = 1 });
         theSession.Store(new Target { Number = 2 });
         theSession.Store(new Target { Number = 2 });
@@ -207,8 +201,7 @@ public class single_operator : IntegrationContext
         });
     }
 
-    public single_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public single_operator(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

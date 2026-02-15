@@ -7,14 +7,10 @@ using Marten;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.ChildCollections;
 
 public class count_for_child_collections : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task GivenTwoLevelsOfChildCollections_WhenCountCalled_ThenReturnsProperCount()
     {
@@ -22,7 +18,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
         await SetupTestData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var result = theSession
             .Query<Root>()
@@ -39,7 +35,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
         await SetupTestData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var result = await theSession
             .Query<Root>()
@@ -141,8 +137,7 @@ public class count_for_child_collections : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
     }
 
-    public count_for_child_collections(ITestOutputHelper output)
+    public count_for_child_collections()
     {
-        _output = output;
     }
 }

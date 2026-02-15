@@ -8,7 +8,7 @@ using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Newtonsoft.Json;
 using Shouldly;
-using Xunit.Abstractions;
+
 
 namespace LinqTests.ChildCollections;
 
@@ -75,8 +75,6 @@ public class TypeWithInnerCollectionsWithJsonConverterAttribute
 
 public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     private static readonly TypeWithInnerCollectionsWithJsonConverterAttribute[] TestData =
     [
         TypeWithInnerCollectionsWithJsonConverterAttribute.Create("one", "two"),
@@ -112,7 +110,6 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
         }
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
         var results = await query.Query<TypeWithInnerCollectionsWithJsonConverterAttribute>()
             .Where(predicate)
             .ToListAsync();
@@ -121,8 +118,7 @@ public class query_with_inner_query_with_CollectionToArrayJsonConverter_onProper
         results.All(e => e.Enumerable.Contains(SearchPhrase)).ShouldBeTrue();
     }
 
-    public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public query_with_inner_query_with_CollectionToArrayJsonConverter_onProperty(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

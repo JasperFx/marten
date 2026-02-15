@@ -7,17 +7,12 @@ using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Compiled;
 
 public class compiled_query_by_string_fragments : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public compiled_query_by_string_fragments(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public compiled_query_by_string_fragments(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -70,8 +65,6 @@ public class compiled_query_by_string_fragments : IntegrationContext
 
         theSession.Store(user1, user2, user3, user4, user5);
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var users = await theSession.QueryAsync(new UserNameEndsWith());
         users.Single().UserName.ShouldBe("Gary Clark Jr");

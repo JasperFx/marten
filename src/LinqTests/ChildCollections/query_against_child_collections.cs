@@ -11,17 +11,12 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.ChildCollections;
 
 public class query_against_child_collections: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public query_against_child_collections(ITestOutputHelper output)
+    public query_against_child_collections()
     {
-        _output = output;
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString));
     }
 
@@ -118,7 +113,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         #region sample_any-query-through-child-collections
 
@@ -139,7 +134,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var results = theSession.Query<Target>()
             .Where(x => x.Children.Any(c => !string.IsNullOrEmpty(c.NullableString)))
@@ -156,7 +151,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var results = theSession.Query<Target>()
             .Where(x => x.Children.Any(c => string.IsNullOrWhiteSpace(c.NullableString)))
@@ -173,7 +168,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         #region sample_any-query-through-child-collection-with-and
 
@@ -245,8 +240,6 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         using (var session2 = theStore.LightweightSession())
         {
-            session2.Logger = new TestOutputMartenLogger(_output);
-
             // This works
             var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
             o1.ShouldNotBeNull();
@@ -567,7 +560,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
@@ -647,7 +640,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
@@ -674,7 +667,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.Query<DocWithLists>()
             .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);

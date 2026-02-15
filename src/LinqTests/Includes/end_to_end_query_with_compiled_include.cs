@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
 using Issue = Marten.Testing.Documents.Issue;
 using User = Marten.Testing.Documents.User;
 
@@ -14,8 +13,6 @@ namespace LinqTests.Includes;
 
 public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     #region sample_compiled_include
 
     [Fact]
@@ -85,7 +82,6 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
         using var querySession = theStore.QuerySession();
         var compiledQuery = new IssueWithUsers();
 
-        querySession.Logger = new TestOutputMartenLogger(_output);
         var issues = await querySession.QueryAsync(compiledQuery);
 
         compiledQuery.Users.Count.ShouldBe(2);
@@ -140,9 +136,8 @@ public class end_to_end_query_with_compiled_include_Tests: IntegrationContext
 
     #endregion
 
-    public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture, ITestOutputHelper output):
+    public end_to_end_query_with_compiled_include_Tests(DefaultStoreFixture fixture):
         base(fixture)
     {
-        _output = output;
     }
 }

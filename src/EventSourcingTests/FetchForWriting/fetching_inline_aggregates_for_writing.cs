@@ -16,18 +16,13 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.FetchForWriting;
 
 public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
 
-    public fetching_inline_aggregates_for_writing(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
 
     [Fact]
     public async Task fetch_new_stream_for_writing_Guid_identifier()
@@ -133,7 +128,6 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
         stream.AppendMany(new CEvent(), new CEvent());
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         var document = await theSession.LoadAsync<SimpleAggregate2>(streamId);
@@ -168,7 +162,6 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
         stream.AppendMany(new BEvent(), new BEvent(), new BEvent());
         stream.AppendMany(new CEvent(), new CEvent());
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         var document = await theSession.LoadAsync<SimpleAggregate2>(streamId);

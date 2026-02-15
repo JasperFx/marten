@@ -13,19 +13,12 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace CoreTests;
 
 public class DocumentCleanerTests: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
     private IDocumentCleaner theCleaner => theStore.Advanced.Clean;
-
-    public DocumentCleanerTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task clean_table()
@@ -145,8 +138,6 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     [Fact]
     public async Task delete_all_event_data_async()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
         theSession.QueueOperation(new InsertProjectionProgress(theStore.Events,
             new EventRange(new ShardName("Projection1", "All", 1), 1000)));
 

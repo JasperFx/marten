@@ -13,19 +13,12 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using Xunit.Abstractions;
 using IRevisioned = Marten.Metadata.IRevisioned;
 
 namespace DocumentDbTests.Concurrency;
 
 public class numeric_revisioning: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public numeric_revisioning(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public void use_numeric_revisions_is_off_by_default()
@@ -156,7 +149,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
         theSession.Store(new RevisionedDoc{Id = doc1.Id, Name = "Brad"});
         await theSession.SaveChangesAsync();
 
@@ -183,7 +176,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.UpdateRevision(doc2, doc1.Version + 1);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
@@ -235,7 +228,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var doc2 = new RevisionedDoc { Id = doc1.Id, Name = "Wrong", Version = 0};
         theSession.UpdateRevision(doc2, doc1.Version + 1);
@@ -307,8 +300,6 @@ public class numeric_revisioning: OneOffConfigurationsContext
         doc2.Version = 0;
         session2.Store(doc2);
 
-        session2.Logger = new TestOutputMartenLogger(_output);
-
         await session2.SaveChangesAsync();
 
         var doc3 = await session2.LoadAsync<RevisionedDoc>(doc1.Id);
@@ -351,7 +342,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         doc2.Name = "Different";
         session.UpdateRevision(doc2, 2);
 
-        session.Logger = new TestOutputMartenLogger(_output);
+
         await session.SaveChangesAsync();
     }
 
@@ -416,7 +407,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.UpdateRevision(doc2, doc1.Version + 1);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {
@@ -445,7 +436,7 @@ public class numeric_revisioning: OneOffConfigurationsContext
         theSession.UpdateRevision(doc2, doc1.Version + 1);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         await Should.ThrowAsync<ConcurrencyException>(async () =>
         {

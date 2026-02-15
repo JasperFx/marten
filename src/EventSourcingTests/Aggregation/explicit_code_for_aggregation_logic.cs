@@ -16,19 +16,11 @@ using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Aggregation;
 
 public class using_explicit_code_for_aggregations
 {
-    private readonly ITestOutputHelper _output;
-
-    public using_explicit_code_for_aggregations(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Theory]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
     [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, true)]
@@ -87,13 +79,6 @@ public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
 
 public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public custom_projection_end_to_end(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     private void appendCustomEvent(int number, char letter)
     {
         theSession.Events.Append(Guid.NewGuid(), new CustomEvent(number, letter));
@@ -216,8 +201,6 @@ public class custom_projection_end_to_end: OneOffConfigurationsContext
         {
             opts.Projections.Add(new MyCustomGuidProjection(), ProjectionLifecycle.Inline);
         });
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var streamId = Guid.NewGuid();
         theSession.Events.StartStream<MyCustomGuidAggregate>(streamId, new AEvent(), new BEvent(), new BEvent());
@@ -446,11 +429,8 @@ public class CustomAggregate
 public class using_custom_aggregate_with_soft_deletes_and_update_only_events: OneOffConfigurationsContext,
     IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
-
-    public using_custom_aggregate_with_soft_deletes_and_update_only_events(ITestOutputHelper output)
+    public using_custom_aggregate_with_soft_deletes_and_update_only_events()
     {
-        _output = output;
         StoreOptions(opts => opts.Projections.Add(new StartAndStopProjection(), ProjectionLifecycle.Inline));
     }
 
@@ -583,7 +563,6 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         var streamForRestart = await theSession.Events.FetchForWriting<StartAndStopAggregate>(streamId, CancellationToken.None);
         streamForRestart.AppendOne(new Restart());
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
         await theSession.SaveChangesAsync();
 
         // soft end state

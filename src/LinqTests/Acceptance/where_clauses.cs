@@ -4,15 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using LinqTests.Acceptance.Support;
 using Marten;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class where_clauses: LinqTestContext<where_clauses>
 {
-    public where_clauses(DefaultQueryFixture fixture, ITestOutputHelper output) : base(fixture)
+    public where_clauses(DefaultQueryFixture fixture) : base(fixture)
     {
-        TestOutput = output;
     }
 
     static where_clauses()

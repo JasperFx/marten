@@ -18,7 +18,6 @@ using Marten.Testing.Harness;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Shouldly;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.SchemaChange
 {
@@ -782,7 +781,7 @@ namespace EventSourcingTests.SchemaChange
         }
     }
 
-    public class UpcastersTests(ITestOutputHelper Output): OneOffConfigurationsContext
+    public class UpcastersTests: OneOffConfigurationsContext
     {
         [Theory]
         [MemberData(nameof(UpcastersConfiguration))]
@@ -805,7 +804,6 @@ namespace EventSourcingTests.SchemaChange
             await using var store = SeparateStore(opts =>
             {
                 opts.Projections.Add<New.ShoppingCartProjection>(ProjectionLifecycle.Inline);
-                opts.Logger(new TestOutputMartenLogger(Output));
                 configureUpcasters(opts);
             });
             {

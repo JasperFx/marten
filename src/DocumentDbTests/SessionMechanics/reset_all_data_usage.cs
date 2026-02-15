@@ -7,18 +7,11 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.SessionMechanics;
 
 public class reset_all_data_usage : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public reset_all_data_usage(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     public class Users : IInitialData
     {
@@ -37,11 +30,6 @@ public class reset_all_data_usage : OneOffConfigurationsContext
     [Fact]
     public async Task reset_clears_and_sets_the_baseline()
     {
-        StoreOptions(opts =>
-        {
-            opts.Logger(new TestOutputMartenLogger(_output));
-        });
-
         #region sample_reset_all_data
         theStore.Advanced.InitialDataCollection.Add(new Users());
 

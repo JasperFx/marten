@@ -8,8 +8,6 @@ using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 #region sample_smurfs-hierarchy
@@ -91,13 +89,10 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
 
 public class query_with_inheritance: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
         #region sample_add-subclass-hierarchy
 
-    public query_with_inheritance(ITestOutputHelper output)
+    public query_with_inheritance()
     {
-        _output = output;
         StoreOptions(_ =>
         {
             _.Schema.For<ISmurf>()
@@ -176,8 +171,6 @@ public class query_with_inheritance: OneOffConfigurationsContext
         theSession.Store(smurf, papa, brainy);
 
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         theSession.Query<PapaSmurf>().Count().ShouldBe(2);
     }

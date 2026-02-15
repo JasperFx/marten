@@ -6,14 +6,11 @@ using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
     IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
 
     private IEnumerable<Target> Make(int count)
     {
@@ -41,8 +38,6 @@ public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
         await theSession.SaveChangesAsync();
 
         QueryStatistics stats;
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var queryable = await theSession.Query<Target>()
             .Stats(out stats)
@@ -81,8 +76,7 @@ public class Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause:
         queryable.Count.ShouldBe(10);
     }
 
-    public Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_504_Take_Skip_before_Select_not_applying_sort_or_where_clause(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

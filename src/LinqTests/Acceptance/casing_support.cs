@@ -7,14 +7,10 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class casing_support: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Theory]
     [InlineData(Casing.CamelCase)]
     [InlineData(Casing.SnakeCase)]
@@ -31,7 +27,7 @@ public class casing_support: OneOffConfigurationsContext
                 enumStorage: EnumStorage.AsString
             );
 
-            opts.Logger(new TestOutputMartenLogger(_output));
+
         });
 
         await using var session = store.LightweightSession();
@@ -68,7 +64,7 @@ public class casing_support: OneOffConfigurationsContext
         {
             opts.UseSystemTextJsonForSerialization(casing:casing, enumStorage:EnumStorage.AsString);
 
-            opts.Logger(new TestOutputMartenLogger(_output));
+
         });
 
         await using var session = store.LightweightSession();
@@ -92,8 +88,7 @@ public class casing_support: OneOffConfigurationsContext
         result[0].Color.ShouldBe(targets[0].Color);
     }
 
-    public casing_support(ITestOutputHelper output)
+    public casing_support()
     {
-        _output = output;
     }
 }

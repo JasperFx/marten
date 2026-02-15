@@ -8,20 +8,16 @@ using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
 using Vogen;
-using Xunit.Abstractions;
 
 namespace ValueTypeTests;
 
 public class include_usage : IAsyncDisposable
 {
-    private readonly ITestOutputHelper _output;
     private readonly DocumentStore theStore;
     private IDocumentSession theSession;
 
-    public include_usage(ITestOutputHelper output)
+    public include_usage()
     {
-        _output = output;
-
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
@@ -58,8 +54,6 @@ public class include_usage : IAsyncDisposable
         theSession.Store(c);
 
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var list = new List<Teacher>();
 

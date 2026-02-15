@@ -5,25 +5,16 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace PatchingTests.Patching;
 
 public class Bug_2170_patch_with_sub_collection_query : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_2170_patch_with_sub_collection_query(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
     [Fact]
     public async Task work_correctly()
     {
         StoreOptions(opts =>
         {
-            opts.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

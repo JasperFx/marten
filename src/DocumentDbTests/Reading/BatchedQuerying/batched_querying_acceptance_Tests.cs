@@ -10,13 +10,11 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Reading.BatchedQuerying;
 
 public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
     private readonly Target target1 = Target.Random();
     private readonly Target target2 = Target.Random();
     private readonly Target target3 = Target.Random();
@@ -43,10 +41,8 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         UserName = "B3", FirstName = "Sean", LastName = "Smith", Role = "Master"
     };
 
-    public batched_querying_acceptance_Tests(ITestOutputHelper output)
+    public batched_querying_acceptance_Tests()
     {
-        _output = output;
-
     }
 
     public async Task InitializeAsync()
@@ -361,7 +357,6 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
     public async Task can_find_multiple_docs_by_id()
     {
         await using var session = theStore.IdentitySession();
-        session.Logger = new TestOutputMartenLogger(_output);
         var batch1 = session.CreateBatchQuery();
         var task = batch1.LoadMany<Target>().ById(target1.Id, target3.Id);
 

@@ -8,27 +8,17 @@ using Marten.Events.Projections.Flattened;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Bugs;
 
 public class Bug_3643_using_struct_in_map_flattableprojection: BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3643_using_struct_in_map_flattableprojection(ITestOutputHelper output)
-    {
-        _output = output;
-    }
-
-
     [Fact]
     public async Task add_event_that_requires_mapping_a_struct_and_a_class()
     {
         StoreOptions(x =>
         {
             x.Projections.Add<MyTableProjection>(ProjectionLifecycle.Inline);
-            x.Logger(new TestOutputMartenLogger(_output));
         });
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();

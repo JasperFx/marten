@@ -13,18 +13,13 @@ using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests.Projections;
 
 public class hierarchy_projection : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
 
-    public hierarchy_projection(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
 
     [Fact]
     public async Task try_to_use_hierarchical_with_live()

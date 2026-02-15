@@ -5,15 +5,12 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Operators;
 
 public class all_operator: IntegrationContext
 {
-    public all_operator(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public all_operator(DefaultStoreFixture fixture) : base(fixture)
     {
-        theSession.Logger = new TestOutputMartenLogger(output);
     }
 
     [Fact]

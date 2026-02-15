@@ -9,14 +9,10 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Xunit.Abstractions;
-
 namespace LinqTests.ChildCollections;
 
 public class querying_through_n_deep_sub_collections : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     public class Top
     {
         public Guid Id { get; set; }
@@ -79,9 +75,8 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     private readonly Top top6 = new Top().WithMiddle(Colors.Green, "Jake");
     private readonly Top topNoBottoms = new Top().WithMiddle(Colors.Blue);
 
-    public querying_through_n_deep_sub_collections(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public querying_through_n_deep_sub_collections(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     protected override Task fixtureSetup()
@@ -92,7 +87,6 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     [Fact]
     public async Task can_query_by_any()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = await theSession.Query<Top>()
             // This is trying to filter on a child collection of a child collection
@@ -107,7 +101,6 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     [Fact]
     public void query_inside_of_child_collections_collection()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = theSession.Query<Top>().Where(x =>
             x.Middles.Any(m => m.Color == Colors.Green && m.Bottoms.Any(b => b.Name == "Bill")));

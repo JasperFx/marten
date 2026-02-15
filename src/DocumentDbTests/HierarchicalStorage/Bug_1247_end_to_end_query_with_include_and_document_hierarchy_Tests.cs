@@ -6,18 +6,11 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.HierarchicalStorage;
 
 public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_end_document_hierarchy_usage_Tests
 {
-    private new readonly ITestOutputHelper _output;
-
-    public Bug_1247_query_with_include_and_document_hierarchy_Tests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     // [Fact] flaky in CI
     public async Task include_to_list_using_outer_join()
@@ -36,8 +29,6 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
-
         var list = new List<User>();
 
         var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();

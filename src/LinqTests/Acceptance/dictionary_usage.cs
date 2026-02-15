@@ -10,17 +10,12 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class dictionary_usage: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public dictionary_usage(DefaultStoreFixture fixture, ITestOutputHelper output): base(fixture)
+    public dictionary_usage(DefaultStoreFixture fixture): base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -28,14 +23,10 @@ public class dictionary_usage: IntegrationContext
     {
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
 
         var targets = Target.GenerateRandomData(10).ToArray();
-        var number = targets.Select(x => x.StringDict).SelectMany(x => x.Values).Count();
-        _output.WriteLine(number.ToString());
-
-
         await theStore.BulkInsertAsync(targets);
         var data = await theSession.Query<Target>().Select(x => x.StringDict).ToListAsync();
 
@@ -54,7 +45,7 @@ public class dictionary_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var results = await theSession.Query<Target>().Where(x => x.GuidDict.ContainsKey(guid)).ToListAsync();
         results.All(r => r.GuidDict.ContainsKey(guid)).ShouldBeTrue();
@@ -99,7 +90,7 @@ public class dictionary_usage: IntegrationContext
     [Fact]
     public async Task select_many_against_the_Keys()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
 
         await theStore.BulkInsertAsync(Target.GenerateRandomData(1000).ToArray());
@@ -119,7 +110,7 @@ select data from mt_temp_id_list1CTE
 as d where d.data = 'value2' order by d.data;
          */
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
         var targets = Target.GenerateRandomData(10).ToArray();
@@ -133,7 +124,7 @@ as d where d.data = 'value2' order by d.data;
     [Fact]
     public async Task select_many_with_wheres_and_order_by_on_values()
     {
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
 
         await theStore.BulkInsertAsync(Target.GenerateRandomData(1000).ToArray());
@@ -164,12 +155,6 @@ as d where d.data = 'value2' order by d.data;
 
 public class dictionary_bugs : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public dictionary_bugs(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task query_by_contains_key_using_enum_as_key_with_enum_as_integer()
@@ -178,7 +163,7 @@ public class dictionary_bugs : OneOffConfigurationsContext
         await theStore.BulkInsertAsync(new[]
             { new EnumOrder("o1", new Dictionary<EnumA, string>() { [EnumA.Whatever] = "abc" }, EnumA.Whatever) });
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
 
         var count = await theSession.Query<EnumOrder>()

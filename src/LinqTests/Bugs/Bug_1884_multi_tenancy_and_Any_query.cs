@@ -2,8 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
@@ -15,12 +13,11 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         public string[] Roles { get; set; }
     }
 
-    public Bug_1884_multi_tenancy_and_Any_query(ITestOutputHelper output)
+    public Bug_1884_multi_tenancy_and_Any_query()
     {
         StoreOptions(x =>
         {
             x.Policies.AllDocumentsAreMultiTenanted();
-            x.Logger(new TestOutputMartenLogger(output));
         });
     }
 

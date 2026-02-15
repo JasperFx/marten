@@ -15,18 +15,14 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 using Xunit;
-using Xunit.Abstractions;
 using CommandExtensions = Weasel.Core.CommandExtensions;
 
 namespace EventSourcingTests.Projections.Flattened;
 
 public class flat_table_projection_with_stream_key_identifier_end_to_end: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public flat_table_projection_with_stream_key_identifier_end_to_end(ITestOutputHelper output)
+    public flat_table_projection_with_stream_key_identifier_end_to_end()
     {
-        _output = output;
         StoreOptions(opts =>
         {
             opts.Projections.Add<WriteTableWithStringIdentifierProjection>(ProjectionLifecycle.Inline);

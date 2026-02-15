@@ -21,18 +21,13 @@ using StronglyTypedIds;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class archiving_events: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
 
-    public archiving_events(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+
 
     #region sample_archive_stream_usage
 
@@ -56,7 +51,7 @@ public class archiving_events: OneOffConfigurationsContext
         theSession.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent());
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         var stream1 = await theSession.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
@@ -99,7 +94,7 @@ public class archiving_events: OneOffConfigurationsContext
         session.Events.StartStream(stream, new AEvent(), new BEvent(), new CEvent());
         await session.SaveChangesAsync();
 
-        session.Logger = new TestOutputMartenLogger(_output);
+
 
         var stream1 = await session.Events.FetchStreamStateAsync(stream);
         stream1.IsArchived.ShouldBeFalse();
@@ -229,7 +224,7 @@ public class archiving_events: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
+
 
         theSession.Events.ArchiveStream(stream2);
         await theSession.SaveChangesAsync();
@@ -306,14 +301,6 @@ public class archiving_events: OneOffConfigurationsContext
 
         theSession.Events.ArchiveStream(stream2);
         await theSession.SaveChangesAsync();
-
-        #region sample_replacing_logger_per_session
-
-        // We frequently use this special marten logger per
-        // session to pipe Marten logging to the xUnit.Net output
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
-        #endregion
 
         var events = await theSession.Events.QueryRawEventDataOnly<AEvent>().ToListAsync();
 

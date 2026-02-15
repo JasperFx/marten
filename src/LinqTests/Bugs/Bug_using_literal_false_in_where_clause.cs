@@ -5,18 +5,10 @@ using Marten;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_using_literal_false_in_where_clause : BugIntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_using_literal_false_in_where_clause(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task query_soft_deleted_and_false()
@@ -60,8 +52,6 @@ public class Bug_using_literal_false_in_where_clause : BugIntegrationContext
 
         theSession.Store(aggregate2);
         await theSession.SaveChangesAsync();
-
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         IQueryable<DeletableAggregate> query = this.theSession.Query<DeletableAggregate>();
         query = query.Where(x => !x.Deleted);

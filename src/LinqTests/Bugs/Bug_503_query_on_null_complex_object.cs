@@ -3,14 +3,10 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_503_query_on_null_complex_object: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task should_not_blow_up_when_querying_for_null_object()
     {
@@ -24,7 +20,6 @@ public class Bug_503_query_on_null_complex_object: IntegrationContext
 
         using (var querySession = theStore.QuerySession())
         {
-            querySession.Logger = new TestOutputMartenLogger(_output);
             var targets = querySession.Query<Target>()
                 .Where(x => x.String == "Something" && x.Inner != null)
                 .ToList();
@@ -34,8 +29,7 @@ public class Bug_503_query_on_null_complex_object: IntegrationContext
         }
     }
 
-    public Bug_503_query_on_null_complex_object(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_503_query_on_null_complex_object(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

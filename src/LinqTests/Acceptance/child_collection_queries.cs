@@ -7,15 +7,12 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class child_collection_queries: LinqTestContext<child_collection_queries>
 {
-    public child_collection_queries(DefaultQueryFixture fixture, ITestOutputHelper output) : base(fixture)
+    public child_collection_queries(DefaultQueryFixture fixture) : base(fixture)
     {
-        TestOutput = output;
     }
 
     static child_collection_queries()
@@ -99,12 +96,6 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
 
     public class child_collection_is_empty_or_any: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public child_collection_is_empty_or_any(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     protected async Task withData()
     {
@@ -143,7 +134,6 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     {
         await withData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = await theSession
             .Query<Target>()
@@ -160,7 +150,6 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     {
         await withData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = await theSession
             .Query<Target>()
@@ -176,7 +165,6 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
     {
         await withData();
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
 
         var results = await theSession
             .Query<Target>()

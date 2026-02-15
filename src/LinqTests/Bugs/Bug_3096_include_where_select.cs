@@ -6,17 +6,12 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_3096_include_where_select : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_3096_include_where_select(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_3096_include_where_select(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]
@@ -35,8 +30,6 @@ public class Bug_3096_include_where_select : IntegrationContext
         await session.SaveChangesAsync();
 
         using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
-
         var dict = new Dictionary<Guid, User>();
 
         var issues = query

@@ -6,17 +6,12 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
-using Xunit.Abstractions;
-
 namespace LinqTests.Acceptance;
 
 public class enum_usage: OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public enum_usage(ITestOutputHelper output)
+    public enum_usage()
     {
-        _output = output;
     }
 
     [Fact]

@@ -2,17 +2,12 @@ using System.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_1413_not_inside_of_where_against_child_collection : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1413_not_inside_of_where_against_child_collection(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_1413_not_inside_of_where_against_child_collection(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 
     [Fact]

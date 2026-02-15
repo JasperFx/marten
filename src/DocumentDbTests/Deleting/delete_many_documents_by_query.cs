@@ -6,14 +6,11 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Deleting;
 
 public class delete_many_documents_by_query : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task can_delete_by_query()
     {
@@ -43,8 +40,6 @@ public class delete_many_documents_by_query : IntegrationContext
     [Fact]
     public async Task delete_where_with_sub_collection_querying()
     {
-        StoreOptions(opts => opts.Logger(new TestOutputMartenLogger(_output)));
-
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(Target));
 
         var targets = Target.GenerateRandomData(50).ToArray();
@@ -134,8 +129,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
     }
 
-    public delete_many_documents_by_query(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public delete_many_documents_by_query(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

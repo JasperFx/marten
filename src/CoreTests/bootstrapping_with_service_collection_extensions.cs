@@ -91,13 +91,13 @@ public class bootstrapping_with_service_collection_extensions
             {
                 var options = new StoreOptions();
                 options.Connection(ConnectionSource.ConnectionString);
-                options.Logger(new TestOutputMartenLogger(null));
+                options.Logger(new ConsoleMartenLogger());
                 return options;
             });
         });
 
         var store = container.GetRequiredService<IDocumentStore>();
-        store.Options.Logger().ShouldBeOfType<TestOutputMartenLogger>();
+        store.Options.Logger().ShouldBeOfType<ConsoleMartenLogger>();
     }
 
     [Fact]

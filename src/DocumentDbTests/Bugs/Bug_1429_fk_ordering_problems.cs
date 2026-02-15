@@ -5,25 +5,17 @@ using Marten.Testing.Harness;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace DocumentDbTests.Bugs;
 
 public class Bug_1429_fk_ordering_problems : OneOffConfigurationsContext
 {
-    private readonly ITestOutputHelper _output;
-
-    public Bug_1429_fk_ordering_problems(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     [Fact]
     public async Task try_to_persist()
     {
         StoreOptions(_ =>
         {
-            _.Logger(new TestOutputMartenLogger(_output));
             _.AutoCreateSchemaObjects = AutoCreate.All;
             _.Schema.For<DocB>()
                 .AddSubClassHierarchy(typeof(DocB1), typeof(DocB2))

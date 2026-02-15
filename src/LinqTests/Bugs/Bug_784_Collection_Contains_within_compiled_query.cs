@@ -7,13 +7,10 @@ using Marten.Linq;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Xunit.Abstractions;
-
 namespace LinqTests.Bugs;
 
 public class Bug_784_Collection_Contains_within_compiled_query : IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
 
     [Fact]
     public async Task do_not_blow_up_with_exceptions()
@@ -34,8 +31,6 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        query.Logger = new TestOutputMartenLogger(_output);
-
         var expected = targets.Where(x => x.Flag && x.NumberArray.Contains(5)).ToArray();
         expected.Any(x => x.Id == targets[1].Id).ShouldBeTrue();
         expected.Any(x => x.Id == targets[5].Id).ShouldBeTrue();
@@ -62,8 +57,7 @@ public class Bug_784_Collection_Contains_within_compiled_query : IntegrationCont
         public int Number { get; set; }
     }
 
-    public Bug_784_Collection_Contains_within_compiled_query(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public Bug_784_Collection_Contains_within_compiled_query(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }

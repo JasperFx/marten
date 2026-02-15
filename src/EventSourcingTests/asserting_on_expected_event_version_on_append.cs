@@ -7,14 +7,11 @@ using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace EventSourcingTests;
 
 public class asserting_on_expected_event_version_on_append: IntegrationContext
 {
-    private readonly ITestOutputHelper _output;
-
     [Fact]
     public async Task should_check_max_event_id_on_append()
     {
@@ -129,8 +126,6 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
         // and be at 5 at the end of this
         theSession.Events.Append(stream, 5, joined);
 
-        theSession.Logger = new TestOutputMartenLogger(_output);
-
         await Assert.ThrowsAsync<EventStreamUnexpectedMaxEventIdException>(async () => await theSession.SaveChangesAsync());
     }
 
@@ -160,8 +155,7 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
 
     }
 
-    public asserting_on_expected_event_version_on_append(DefaultStoreFixture fixture, ITestOutputHelper output) : base(fixture)
+    public asserting_on_expected_event_version_on_append(DefaultStoreFixture fixture) : base(fixture)
     {
-        _output = output;
     }
 }
