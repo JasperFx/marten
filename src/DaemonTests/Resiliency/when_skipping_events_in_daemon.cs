@@ -132,7 +132,11 @@ public class when_skipping_events_in_daemon : DaemonContext
         // Drain the dead letter events queued up
         await daemon.StopAllAsync();
 
+        #region sample_replacing_logger_per_session
+        // We frequently use this special marten logger per
+        // session to pipe Marten logging to the xUnit.Net output
         theSession.Logger = new TestOutputMartenLogger(_output);
+        #endregion
         var skipped = await theSession.Query<DeadLetterEvent>().ToListAsync();
 
         skipped.Where(x => x.ProjectionName == "NamedDocuments" && x.ShardName == "All")
