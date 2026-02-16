@@ -71,6 +71,9 @@ namespace Marten.Testing.Harness
 
         private DocumentStore storeOptions(Action<StoreOptions> configure, bool cleanAll)
         {
+            // Reset any cached session from a previous store
+            _session = null;
+
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
@@ -10,7 +10,7 @@ using Xunit;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_catching_up: OneOffConfigurationsContext
+public class Bug_catching_up_apply_errors: OneOffConfigurationsContext
 {
     [Fact]
     public async Task should_catch_apply_event_exceptions()
@@ -38,7 +38,10 @@ public class Bug_catching_up: OneOffConfigurationsContext
 
         aggregated.InnerExceptions[0].ShouldBeOfType<JasperFx.Events.Daemon.ApplyEventException>();
     }
+}
 
+public class Bug_catching_up_command_errors: OneOffConfigurationsContext
+{
     [Fact]
     public async Task should_catch_marten_command_exceptions()
     {
