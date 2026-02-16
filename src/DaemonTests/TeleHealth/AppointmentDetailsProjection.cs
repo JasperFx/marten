@@ -89,9 +89,14 @@ public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDeta
                 }
 
                 // Try to resolve RoutingReason documents from the cache first
-                var missingCodes = reasonCodes.Where(code => !cache.TryFind(code, out _)).ToList();
+                // Note: cache may be null when there is no upstream aggregate cache for the entity type
+                var missingCodes = cache != null
+                    ? reasonCodes.Where(code => !cache.TryFind(code, out _)).ToList()
+                    : reasonCodes.ToList();
 
                 // Only query the database for codes that are not yet cached
+                // Use a local dictionary for lookups when cache is unavailable
+                var localLookup = new Dictionary<string, RoutingReason>();
                 if (missingCodes.Count > 0)
                 {
                     var reasonsFromDb = await querySession
@@ -100,10 +105,11 @@ public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDeta
                         .Where(r => r.IsActive)
                         .ToListAsync(ct);
 
-                    // Store fetched documents in the cache for reuse
+                    // Store fetched documents in the cache (if available) and local lookup for reuse
                     foreach (var reason in reasonsFromDb)
                     {
-                        cache.Store(reason.Code, reason);
+                        cache?.Store(reason.Code, reason);
+                        localLookup[reason.Code] = reason;
                     }
                 }
 
@@ -120,7 +126,8 @@ public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDeta
 
                     foreach (var code in codesInSlice)
                     {
-                        if (cache.TryFind(code, out var reason))
+                        if ((cache != null && cache.TryFind(code, out var reason)) ||
+                            localLookup.TryGetValue(code, out reason))
                         {
                             slice.Reference(reason);
                         }
