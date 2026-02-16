@@ -1,17 +1,57 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.Aggregations;
-using DaemonTests.TeleHealth;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
+using Marten.Events.Projections;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
-using Appointment = EventSourcingTests.Examples.TeleHealth.Appointment;
 
 namespace DaemonTests.Composites;
+
+public class TripMetrics
+{
+    public Guid Id { get; set; }
+    public int TotalStarted { get; set; }
+    public int TotalEnded { get; set; }
+}
+
+public class TripMetricsProjection: IProjection
+{
+    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
+    {
+        foreach (var e in events)
+        {
+            switch (e.Data)
+            {
+                case TripStarted:
+                    operations.Store(new TripMetrics
+                    {
+                        Id = e.StreamId,
+                        TotalStarted = 1
+                    });
+                    break;
+                case TripEnded:
+                    operations.Store(new TripMetrics
+                    {
+                        Id = e.StreamId,
+                        TotalEnded = 1
+                    });
+                    break;
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+}
 
 public class end_to_end_with_composite_projection : DaemonContext
 {
@@ -32,6 +72,7 @@ public class end_to_end_with_composite_projection : DaemonContext
             {
                 x.Add<TestingSupport.TripProjection>();
                 x.Add<DayProjection>();
+                x.Add(new TripMetricsProjection());
             });
         }, true);
 
@@ -64,6 +105,12 @@ public class end_to_end_with_composite_projection : DaemonContext
         {
             days.Any(x => x.Id == day).ShouldBeTrue();
         }
+
+        // Verify the custom IProjection was executed within the composite
+        var tripMetrics = await theSession.Query<TripMetrics>().ToListAsync();
+        tripMetrics.Count.ShouldBeGreaterThan(0);
+        tripMetrics.Any(m => m.TotalStarted > 0).ShouldBeTrue();
+
 
         // Persist all of the progressions of the constituent parts
         var progressions = await theStore.Advanced.AllProjectionProgress();
