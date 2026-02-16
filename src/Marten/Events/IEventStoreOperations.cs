@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -377,6 +378,30 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     Stream the raw JSON of the projected aggregate T by id directly to a destination stream.
+    /// This avoids any deserialization/serialization round-trip when the aggregate is stored inline or
+    /// the async projection is caught up. Returns true if found, false if not found.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="destination"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns>True if the aggregate was found and written to the destination stream</returns>
+    Task<bool> StreamLatestJson<T>(Guid id, Stream destination, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     Stream the raw JSON of the projected aggregate T by id directly to a destination stream.
+    /// This avoids any deserialization/serialization round-trip when the aggregate is stored inline or
+    /// the async projection is caught up. Returns true if found, false if not found.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="destination"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns>True if the aggregate was found and written to the destination stream</returns>
+    Task<bool> StreamLatestJson<T>(string id, Stream destination, CancellationToken cancellation = default) where T : class;
 
     /// <summary>
     /// Completely replace event data at a specified spot in the event store without changing

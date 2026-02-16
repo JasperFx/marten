@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Events;
 using Marten.Linq;
 using Microsoft.AspNetCore.Http;
 
@@ -323,6 +324,78 @@ public static class QueryableExtensions
         context.Response.ContentType = contentType;
 
         await session.StreamJson<int>(context.Response.Body, context.RequestAborted, sql, parameters).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Write the raw JSON of the latest projected aggregate T by Guid id directly to the HttpContext response,
+    /// avoiding deserialization/serialization round-trips when possible. Returns 404 if not found.
+    /// </summary>
+    /// <param name="events"></param>
+    /// <param name="id"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <typeparam name="T"></typeparam>
+    public static async Task WriteLatest<T>(
+        this IEventStoreOperations events,
+        Guid id,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    ) where T : class
+    {
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
+        var found = await events.StreamLatestJson<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
+        if (found)
+        {
+            context.Response.StatusCode = onFoundStatus;
+            context.Response.ContentLength = stream.Length;
+            context.Response.ContentType = contentType;
+
+            stream.Position = 0;
+            await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        }
+        else
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentLength = 0;
+        }
+    }
+
+    /// <summary>
+    /// Write the raw JSON of the latest projected aggregate T by string id directly to the HttpContext response,
+    /// avoiding deserialization/serialization round-trips when possible. Returns 404 if not found.
+    /// </summary>
+    /// <param name="events"></param>
+    /// <param name="id"></param>
+    /// <param name="context"></param>
+    /// <param name="contentType"></param>
+    /// <param name="onFoundStatus">Defaults to 200</param>
+    /// <typeparam name="T"></typeparam>
+    public static async Task WriteLatest<T>(
+        this IEventStoreOperations events,
+        string id,
+        HttpContext context,
+        string contentType = "application/json",
+        int onFoundStatus = 200
+    ) where T : class
+    {
+        var stream = Marten.Internal.SharedMemoryStreamManager.GetStream();
+        var found = await events.StreamLatestJson<T>(id, stream, context.RequestAborted).ConfigureAwait(false);
+        if (found)
+        {
+            context.Response.StatusCode = onFoundStatus;
+            context.Response.ContentLength = stream.Length;
+            context.Response.ContentType = contentType;
+
+            stream.Position = 0;
+            await stream.CopyToAsync(context.Response.Body, context.RequestAborted).ConfigureAwait(false);
+        }
+        else
+        {
+            context.Response.StatusCode = 404;
+            context.Response.ContentLength = 0;
+        }
     }
 
 }

@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal.Sessions;
@@ -32,6 +33,14 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
         return document;
+    }
+
+    public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)
+    {
+        var storage = findDocumentStorage(session);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+        var command = ((IDocumentStorage<TDoc, TId>)storage).BuildLoadCommand(id, session.TenantId);
+        return await session.StreamOne(command, destination, cancellation).ConfigureAwait(false);
     }
 
     public IQueryHandler<TDoc?> BuildQueryHandler(QuerySession session, TId id)

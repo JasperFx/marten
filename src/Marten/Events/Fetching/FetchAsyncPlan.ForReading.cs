@@ -2,6 +2,7 @@ using System;
 using System.Data.Common;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -9,6 +10,8 @@ using JasperFx.Events;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Util;
+using Npgsql;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Fetching;
@@ -54,6 +57,77 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
 
         return await readLatest(session, id, cancellation, loadHandler, reader, selector).ConfigureAwait(false);
+    }
+
+    public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)
+    {
+        await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
+        await session.Database.EnsureStorageExistsAsync(typeof(TDoc), cancellation).ConfigureAwait(false);
+
+        var selector = await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation)
+            .ConfigureAwait(false);
+
+        _initialSql ??=
+            $"select {selector.SelectFields().Select(x => "d." + x).Join(", ")} from {_events.DatabaseSchemaName}.mt_events as d";
+
+        var builder = new BatchBuilder { TenantId = session.TenantId };
+
+        var loadHandler = new LoadByIdHandler<TDoc, TId>(_storage, id);
+        loadHandler.ConfigureCommand(builder, session);
+
+        builder.StartNewCommand();
+
+        writeEventFetchStatement(id, builder);
+
+        var batch = builder.Compile();
+        await using var reader = await session.ExecuteReaderAsync(batch, cancellation).ConfigureAwait(false);
+
+        // First result set: buffer raw JSONB (don't deserialize yet)
+        bool hasDocument = await reader.ReadAsync(cancellation).ConfigureAwait(false);
+        MemoryStream? rawJsonBuffer = null;
+
+        if (hasDocument)
+        {
+            var ordinal = reader.GetOrdinal("data");
+            if (!await reader.IsDBNullAsync(ordinal, cancellation).ConfigureAwait(false))
+            {
+                rawJsonBuffer = SharedMemoryStreamManager.GetStream();
+                var source = await ((NpgsqlDataReader)reader).GetStreamAsync(ordinal, cancellation).ConfigureAwait(false);
+                await source.CopyStreamSkippingSOHAsync(rawJsonBuffer, cancellation).ConfigureAwait(false);
+            }
+        }
+
+        // Second result set: check for newer events
+        await reader.NextResultAsync(cancellation).ConfigureAwait(false);
+        var events = await new ListQueryHandler<IEvent>(null, selector)
+            .HandleAsync(reader, session, cancellation).ConfigureAwait(false);
+
+        if (!events.Any() && rawJsonBuffer != null)
+        {
+            // Caught up — stream raw JSONB directly (zero deserialization)
+            rawJsonBuffer.Position = 0;
+            await rawJsonBuffer.CopyToAsync(destination, cancellation).ConfigureAwait(false);
+            return true;
+        }
+
+        if (rawJsonBuffer == null && !events.Any())
+            return false;
+
+        // Not caught up — deserialize stored doc, rebuild with new events, serialize
+        TDoc? document = null;
+        if (rawJsonBuffer != null)
+        {
+            rawJsonBuffer.Position = 0;
+            document = session.Serializer.FromJson<TDoc>(rawJsonBuffer);
+        }
+
+        document = await _aggregator.BuildAsync(events, session, document, id, _storage, cancellation).ConfigureAwait(false);
+        if (document == null) return false;
+
+        _storage.SetIdentity(document, id);
+        var json = session.Serializer.ToJson(document);
+        await destination.WriteAsync(Encoding.UTF8.GetBytes(json), cancellation).ConfigureAwait(false);
+        return true;
     }
 
     private async Task<TDoc?> readLatest(DocumentSessionBase session, TId id, CancellationToken cancellation,
