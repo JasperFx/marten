@@ -6,7 +6,6 @@ using Shouldly;
 
 namespace EventSourcingTests.Utils;
 
-[Obsolete("Gotta be a better way to do this")]
 internal static class When
 {
 
