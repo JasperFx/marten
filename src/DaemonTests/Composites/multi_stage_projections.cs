@@ -13,6 +13,8 @@ using JasperFx.Events.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Events;
+using Marten.Events.Projections;
+using Marten.Schema;
 using Marten.Storage;
 using Shouldly;
 using Xunit;
@@ -203,6 +205,7 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
                 projection.Add<ProviderShiftProjection>();
                 projection.Add<AppointmentProjection>();
                 projection.Snapshot<Board>();
+                projection.Add(new AppointmentMetricsProjection());
 
                 // 2nd stage projections
                 projection.Add<AppointmentDetailsProjection>(2);
@@ -240,6 +243,11 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
         // Got appointments
         (await _compositeSession.Query<Appointment>().CountAsync()).ShouldBeGreaterThan(0);
+
+        // Verify the custom IProjection counted appointment requests by specialty
+        var appointmentMetrics = await _compositeSession.Query<AppointmentMetrics>().ToListAsync();
+        appointmentMetrics.Count.ShouldBeGreaterThan(0);
+        appointmentMetrics.ShouldAllBe(m => m.Count > 0);
 
         // Got details from the 2nd stage projection!
         (await _compositeSession.Query<AppointmentDetails>().CountAsync()).ShouldBeGreaterThan(0);
@@ -324,5 +332,32 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
         }
 
         await _compositeSession.SaveChangesAsync();
+    }
+}
+
+public class AppointmentMetrics
+{
+    [Identity]
+    public string SpecialtyCode { get; set; }
+    public int Count { get; set; }
+}
+
+public class AppointmentMetricsProjection: IProjection
+{
+    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
+    {
+        var groups = events
+            .Where(e => e.Data is AppointmentRequested)
+            .Select(e => (AppointmentRequested)e.Data)
+            .GroupBy(r => r.SpecialtyCode);
+
+        foreach (var group in groups)
+        {
+            var metrics = await operations.LoadAsync<AppointmentMetrics>(group.Key, cancellation)
+                          ?? new AppointmentMetrics { SpecialtyCode = group.Key };
+            metrics.Count += group.Count();
+            operations.Store(metrics);
+        }
     }
 }
