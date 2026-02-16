@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IssueService.Controllers;
+using JasperFx.Events;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -40,6 +43,16 @@ public class Startup
             {
                 options.Events.DatabaseSchemaName = martenSettings.SchemaName;
                 options.DatabaseSchemaName = martenSettings.SchemaName;
+            }
+
+            if (martenSettings.UseStringStreamIdentity)
+            {
+                options.Events.StreamIdentity = StreamIdentity.AsString;
+                options.Projections.Snapshot<NamedOrder>(SnapshotLifecycle.Inline);
+            }
+            else
+            {
+                options.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
             }
 
             return options;

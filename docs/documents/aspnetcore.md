@@ -163,3 +163,71 @@ public Task Get3(Guid issueId, [FromServices] IQuerySession session, [FromQuery]
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L69-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Writing Event Sourcing Aggregates
+
+If you are using Marten's [event sourcing](/events/) and [single stream projections](/events/projections/single-stream-projections),
+the `WriteLatest<T>()` extension method on `IEventStoreOperations` lets you stream the
+projected aggregate's JSON directly to an HTTP response. This is the event sourcing equivalent
+of `WriteById<T>()` for documents.
+
+The key advantage is performance: for `Inline` projections, the aggregate already exists as raw JSONB
+in PostgreSQL and is streamed directly to the HTTP response with **zero deserialization or serialization**.
+For `Async` projections that are caught up, the same optimization applies. Only when the async daemon
+is behind does Marten fall back to rebuilding the aggregate in memory.
+
+This is built on top of `FetchLatest<T>()` — see [Reading Aggregates](/events/projections/read-aggregates#fetchlatest)
+for details on how each projection lifecycle is handled.
+
+Usage with a `Guid`-identified stream:
+
+<!-- snippet: sample_write_latest_aggregate_to_httpresponse -->
+<a id='snippet-sample_write_latest_aggregate_to_httpresponse'></a>
+```cs
+[HttpGet("/order/{orderId:guid}")]
+public Task GetOrder(Guid orderId, [FromServices] IDocumentSession session)
+{
+    // Streams the raw JSON of the projected aggregate to the HTTP response
+    // without deserialization/serialization when the projection is stored inline
+    return session.Events.WriteLatest<Order>(orderId, HttpContext);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L50-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_to_httpresponse' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Usage with a `string`-identified stream:
+
+<!-- snippet: sample_write_latest_aggregate_by_string_to_httpresponse -->
+<a id='snippet-sample_write_latest_aggregate_by_string_to_httpresponse'></a>
+```cs
+[HttpGet("/named-order/{orderId}")]
+public Task GetNamedOrder(string orderId, [FromServices] IDocumentSession session)
+{
+    return session.Events.WriteLatest<NamedOrder>(orderId, HttpContext);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L61-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_by_string_to_httpresponse' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Like `WriteById<T>()`, `WriteLatest<T>()` returns a 200 status with the JSON body if the aggregate
+is found, or a 404 with no body if not found. You can customize the content type and success status code:
+
+```csharp
+// Use a custom status code and content type
+await session.Events.WriteLatest<Order>(orderId, HttpContext,
+    contentType: "application/json; charset=utf-8",
+    onFoundStatus: 201);
+```
+
+::: warning
+`WriteLatest<T>()` requires `IDocumentSession` (not `IQuerySession`) because
+`FetchLatest<T>()` is only available on `IDocumentSession`.
+:::
+
+There is also a lower-level `StreamLatestJson<T>()` method on `IEventStoreOperations` that
+writes the raw JSON to any `Stream`, which you can use to build your own response handling:
+
+```csharp
+var stream = new MemoryStream();
+bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
+```

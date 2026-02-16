@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
@@ -180,6 +181,18 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.FetchForReading(_session, id, cancellation);
     }
 
+    public Task<bool> StreamLatestJson<T>(Guid id, Stream destination, CancellationToken cancellation = default) where T : class
+    {
+        var plan = FindFetchPlan<T, Guid>();
+        return plan.StreamForReading(_session, id, destination, cancellation);
+    }
+
+    public Task<bool> StreamLatestJson<T>(string id, Stream destination, CancellationToken cancellation = default) where T : class
+    {
+        var plan = FindFetchPlan<T, string>();
+        return plan.StreamForReading(_session, id, destination, cancellation);
+    }
+
     internal IAggregateFetchPlan<TDoc, TId> FindFetchPlan<TDoc, TId>() where TDoc : class where TId : notnull
     {
         if (typeof(TId) == typeof(Guid))
@@ -229,6 +242,8 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
         CancellationToken cancellation = default);
 
     ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
+
+    Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation);
 
     // These two methods are for batching
     IQueryHandler<IEventStream<TDoc>> BuildQueryHandler(QuerySession session, TId id,

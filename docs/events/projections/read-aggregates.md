@@ -46,6 +46,9 @@ new events, we *strongly* recommend using the [`FetchForWriting`](/scenarios/com
 ::: tip
 `FetchLatest` is a little more lightweight in execution than `FetchForWriting` and
 should be used if all you care about is read only data without appending new events.
+
+If you are serving HTTP APIs, see [Writing Event Sourcing Aggregates](/documents/aspnetcore#writing-event-sourcing-aggregates)
+for how to stream the aggregate's JSON directly to the HTTP response with zero deserialization using `WriteLatest<T>()`.
 :::
 
 ::: warning

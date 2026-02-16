@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -42,6 +43,16 @@ internal partial class FetchLivePlan<TDoc, TId>
 
         var events = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
         return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
+    }
+
+    public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)
+    {
+        var aggregate = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
+        if (aggregate == null) return false;
+
+        var json = session.Serializer.ToJson(aggregate);
+        await destination.WriteAsync(Encoding.UTF8.GetBytes(json), cancellation).ConfigureAwait(false);
+        return true;
     }
 
     public IQueryHandler<TDoc?> BuildQueryHandler(QuerySession session, TId id)
