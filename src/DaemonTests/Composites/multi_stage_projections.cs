@@ -22,9 +22,10 @@ namespace DaemonTests.Composites;
 
 public class multi_stage_projections(ITestOutputHelper output): DaemonContext(output)
 {
-    private readonly List<Guid> theBoards = new();
-    private readonly List<Patient> thePatients = new();
-    private readonly List<Provider> theProviders = new();
+    private readonly List<Guid> theBoards = [];
+    private readonly List<Patient> thePatients = [];
+    private List<RoutingReason> theRoutingReasons = [];
+    private readonly List<Provider> theProviders = [];
     private IDocumentSession _compositeSession;
 
     private async Task buildSpecialties()
@@ -132,6 +133,50 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
         await theStore.BulkInsertAsync(tenantId, thePatients);
     }
 
+    private async Task BuildRoutingReasons(string tenantId)
+    {
+        theRoutingReasons =
+        [
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Code = "INCOMPLETE_RECORD",
+                Description = "Required data is missing from the record",
+                IsActive = true,
+                Severity = 2
+            },
+
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Code = "INVALID_REFERRAL",
+                Description = "The referral does not meet the required criteria",
+                IsActive = true,
+                Severity = 3
+            },
+
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Code = "TECHNICAL_ERROR",
+                Description = "A technical error occurred during processing",
+                IsActive = true,
+                Severity = 4
+            },
+
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Code = "DUPLICATE_REQUEST",
+                Description = "The request has already been received",
+                IsActive = true,
+                Severity = 1
+            }
+        ];
+
+        await theStore.BulkInsertAsync(tenantId, theRoutingReasons);
+    }
+
     private async Task startAppointments()
     {
         var patients = await _compositeSession.Query<Patient>().ToListAsync();
@@ -159,7 +204,13 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
             }
             if (board != null)
             {
-                events.Add(new AppointmentRouted(board.Id));
+                var random = new Random();
+                var routingReason = theRoutingReasons[random.Next(theRoutingReasons.Count)];
+                _compositeSession.Events.StartStream<Appointment>(requested, new AppointmentRouted(board.Id, routingReason.Code));
+            }
+            else
+            {
+                _compositeSession.Events.StartStream<Appointment>(requested);
             }
 
             _compositeSession.Events.StartStream<Appointment>(appointmentId, events);
@@ -175,6 +226,7 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
         await buildSpecialties();
         await startBoards();
         await buildPatients(tenantId);
+        await BuildRoutingReasons(tenantId);
         await buildProviders(tenantId);
 
         await startShifts();
@@ -244,6 +296,8 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
         // Got details from the 2nd stage projection!
         (await _compositeSession.Query<AppointmentDetails>().CountAsync()).ShouldBeGreaterThan(0);
         (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync()).ShouldBeGreaterThan(0);
+
+        (await _compositeSession.Query<AppointmentDetails>().Where(x => x.RoutingReasonDescription != null).AnyAsync()).ShouldBeTrue();
 
         // See the downstream BoardSummary too!
         (await _compositeSession.Query<BoardSummary>().CountAsync()).ShouldBeGreaterThan(0);
