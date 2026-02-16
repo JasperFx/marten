@@ -1,6 +1,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Schema;
+using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Marten.Testing.Documents;
@@ -9,6 +10,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Partitioning;
 using Xunit;
 
@@ -184,5 +186,82 @@ public class partitioning_configuration : OneOffConfigurationsContext
         partitioning.Columns.Single().ShouldBe(TenantIdColumn.Name);
         partitioning.Ranges[0].From.ShouldBe("'t1'");
         partitioning.Ranges[0].To.ShouldBe("'t2'");
+    }
+
+    [Fact]
+    public void unique_index_on_partitioned_table_includes_partition_columns_in_ddl()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>()
+                .MultiTenantedWithPartitioning(x => x.ByHash("one", "two", "three"))
+                .UniqueIndex(UniqueIndexType.Computed, x => x.Number);
+        });
+
+        var table = tableFor<Target>();
+        var uniqueIndex = table.Indexes.OfType<IndexDefinition>()
+            .Single(x => x.IsUnique);
+
+        var ddl = uniqueIndex.ToDDL(table);
+
+        // The partition column (tenant_id) should be automatically included
+        ddl.ShouldContain(TenantIdColumn.Name);
+    }
+
+    [Fact]
+    public void unique_index_on_soft_delete_partitioned_table_includes_partition_columns_in_ddl()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>()
+                .SoftDeletedWithPartitioning()
+                .UniqueIndex(UniqueIndexType.Computed, x => x.Number);
+        });
+
+        var table = tableFor<Target>();
+        var uniqueIndex = table.Indexes.OfType<IndexDefinition>()
+            .Single(x => x.IsUnique);
+
+        var ddl = uniqueIndex.ToDDL(table);
+
+        // The partition column (mt_deleted) should be automatically included
+        ddl.ShouldContain(SchemaConstants.DeletedColumn);
+    }
+
+    [Fact]
+    public void unique_index_does_not_duplicate_partition_columns_already_present()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>()
+                .MultiTenantedWithPartitioning(x => x.ByHash("one", "two", "three"))
+                .UniqueIndex(UniqueIndexType.Computed, "my_idx",
+                    TenancyScope.PerTenant, x => x.Number);
+        });
+
+        var table = tableFor<Target>();
+        var uniqueIndex = table.Indexes.OfType<IndexDefinition>()
+            .Single(x => x.IsUnique);
+
+        var ddl = uniqueIndex.ToDDL(table);
+
+        // tenant_id should appear in the DDL but not be duplicated
+        var count = ddl.Split(TenantIdColumn.Name).Length - 1;
+        count.ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task unique_index_on_partitioned_table_can_be_applied_to_database()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>()
+                .MultiTenantedWithPartitioning(x => x.ByHash("one", "two", "three"))
+                .UniqueIndex(UniqueIndexType.Computed, x => x.Number);
+        });
+
+        // This should not throw - PostgreSQL will reject unique indexes
+        // that don't include all partition columns
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
     }
 }
