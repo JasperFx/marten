@@ -92,7 +92,7 @@ That's where the `EnrichEventsAsync()` template method can come into play on you
 as a way of wringing more performance and scalability out of your Marten usage! Let’s build a single stream projection for the `UserTask` aggregate type shown up above that batches the `User` lookup:
 
 <!-- snippet: snippet_UserTaskProjection -->
-<a id='snippet-snippet_usertaskprojection'></a>
+<a id='snippet-snippet_UserTaskProjection'></a>
 ```cs
 public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 {
@@ -154,7 +154,7 @@ public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/when_enriching_events_for_aggregation_projections.cs#L85-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-snippet_usertaskprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/when_enriching_events_for_aggregation_projections.cs#L85-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-snippet_UserTaskProjection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Focus please on the `EnrichEventsAsync()` method above. That’s lets you define a step in asynchronous projection running to potentially do batched data lookups immediately after Marten has “sliced” and grouped a batch of events by each aggregate identity that is about to be updated, but before the actual updates are made to any of the `UserTask` snapshot documents.
@@ -181,18 +181,18 @@ to be relatively static, so that information is just stored as a Marten document
 The first event in a `ProviderShift` stream might be this immutable type:
 
 <!-- snippet: sample_ProviderJoined -->
-<a id='snippet-sample_providerjoined'></a>
+<a id='snippet-sample_ProviderJoined'></a>
 ```cs
 public record ProviderJoined(Guid BoardId, Guid ProviderId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L43-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_providerjoined' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L43-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ProviderJoined' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the projection for these streams to a `ProviderShift` document we'd really like to read some of the basic `Provider` information
 like this:
 
 <!-- snippet: sample_ProviderShift -->
-<a id='snippet-sample_providershift'></a>
+<a id='snippet-sample_ProviderShift'></a>
 ```cs
 public class ProviderShift(Guid boardId, Provider provider)
 {
@@ -210,7 +210,7 @@ public class ProviderShift(Guid boardId, Provider provider)
     public Provider Provider { get; set; } = provider;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L11-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_providershift' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L11-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ProviderShift' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: info
@@ -228,18 +228,18 @@ that the async daemon is processing, and try to swap out the `ProviderJoined` ev
 of this enhanced event type:
 
 <!-- snippet: sample_EnhancedProviderJoined -->
-<a id='snippet-sample_enhancedproviderjoined'></a>
+<a id='snippet-sample_EnhancedProviderJoined'></a>
 ```cs
 public record EnhancedProviderJoined(Guid BoardId, Provider Provider);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L49-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enhancedproviderjoined' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L49-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_EnhancedProviderJoined' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's the enrichment code that looks up a `Provider` for each `ProviderJoined` event, and swaps in a fatter
 `ProviderJoinedEnhanced` event:
 
 <!-- snippet: sample_ProviderShift_EnrichEventsAsync -->
-<a id='snippet-sample_providershift_enricheventsasync'></a>
+<a id='snippet-sample_ProviderShift_EnrichEventsAsync'></a>
 ```cs
 public override async Task EnrichEventsAsync(SliceGroup<ProviderShift, Guid> group, IQuerySession querySession, CancellationToken cancellation)
 {
@@ -268,13 +268,13 @@ public override async Task EnrichEventsAsync(SliceGroup<ProviderShift, Guid> gro
         });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L72-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_providershift_enricheventsasync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L72-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ProviderShift_EnrichEventsAsync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the projection itself, we work on the enhanced event type like this:
 
 <!-- snippet: sample_ProviderShift_Evolve -->
-<a id='snippet-sample_providershift_evolve'></a>
+<a id='snippet-sample_ProviderShift_Evolve'></a>
 ```cs
 public override ProviderShift Evolve(ProviderShift snapshot, Guid id, IEvent e)
 {
@@ -309,7 +309,7 @@ public override ProviderShift Evolve(ProviderShift snapshot, Guid id, IEvent e)
     return snapshot;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L103-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_providershift_evolve' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/ProviderShift.cs#L103-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ProviderShift_Evolve' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Moving on to another example from the "TeleHealth" problem domain, there's a pair of related concepts:
@@ -335,15 +335,14 @@ await group
     .ForEntityId(x => x.ProviderId)
     .AddReferences();
 
-// Look up and apply Board information that matches the events being
-// projected
+// Look up and apply Board information that matches the events being projected
 await group
     .EnrichWith<Board>()
     .ForEvent<AppointmentRouted>()
     .ForEntityId(x => x.BoardId)
     .AddReferences();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_forevent_addreferences' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L50-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_forevent_addreferences' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 What this does is data lookup for all the unique `Provider` and `Board` documents that match
@@ -353,7 +352,7 @@ for matching `Provider` or `Board` documents.
 In the `Evolve()` method for the projection, we can look for those "synthetic events" like this:
 
 <!-- snippet: sample_AppointmentDetails_Evolve -->
-<a id='snippet-sample_appointmentdetails_evolve'></a>
+<a id='snippet-sample_AppointmentDetails_Evolve'></a>
 ```cs
 public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, IEvent e)
 {
@@ -396,6 +395,12 @@ public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, 
             snapshot.BoardId = board.Entity.Id;
             break;
 
+        case References<RoutingReason> reason:
+            snapshot.RoutingReasonCode = reason.Entity.Code;
+            snapshot.RoutingReasonDescription = reason.Entity.Description;
+            snapshot.RoutingReasonSeverity = reason.Entity.Severity;
+            break;
+
         // The matching projection for Appointment was deleted
         // so we'll delete this enriched projection as well
         // ProjectionDeleted<TDoc> is a synthetic event that Marten
@@ -408,5 +413,92 @@ public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, 
     return snapshot;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L70-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetails_evolve' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L135-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_AppointmentDetails_Evolve' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Enriching by business keys with EnrichUsingEntityQuery <Badge type="tip" text="8.22" />
+
+The declarative enrichment APIs shown above work very well when events directly reference a document
+by its identifier. In real world domains this is not always the case. Events often carry a business
+key instead, for example a code, number, or external identifier, and that value must be resolved
+to a document at projection time.
+
+For these scenarios Marten provides `EnrichUsingEntityQuery`. This API gives you full control over
+how referenced documents are resolved, while still fitting into the declarative enrichment pipeline
+and avoiding N plus 1 query problems.
+
+Typical use cases include
+
+- resolving reference data by a code instead of a document id  
+- enriching events with data that is shared across many streams  
+- applying custom filtering logic, for example only active reference documents  
+
+The following example shows how routing information is enriched based on a `ReasonCode`
+carried by an event, instead of a `RoutingReason` document id.
+
+<!-- snippet: sample_using_enrich_using_entity_query -->
+<a id='snippet-sample_using_enrich_using_entity_query'></a>
+```cs
+// Enrich RoutingReason documents based on a business key (ReasonCode),
+// not on the document id. This example also demonstrates how to use
+// the provided cache to avoid repeated database queries.
+await group
+    .EnrichWith<RoutingReason>()
+    .ForEvent<AppointmentRouted>()
+    .EnrichUsingEntityQuery<string>(async (slices, events, cache, ct) =>
+    {
+        // Collect all distinct reason codes across the incoming events
+        var reasonCodes = events
+            .Select(e => e.Data.ReasonCode)
+            .Where(x => x.IsNotEmpty())
+            .Distinct()
+            .ToArray();
+
+        // Nothing to enrich if no reason codes are present
+        if (reasonCodes.Length == 0)
+        {
+            return;
+        }
+
+        // Try to resolve RoutingReason documents from the cache first
+        var missingCodes = reasonCodes.Where(code => !cache.TryFind(code, out _)).ToList();
+
+        // Only query the database for codes that are not yet cached
+        if (missingCodes.Count > 0)
+        {
+            var reasonsFromDb = await querySession
+                .Query<RoutingReason>()
+                .Where(r => r.Code.IsOneOf(missingCodes))
+                .Where(r => r.IsActive)
+                .ToListAsync(ct);
+
+            // Store fetched documents in the cache for reuse
+            foreach (var reason in reasonsFromDb)
+            {
+                cache.Store(reason.Code, reason);
+            }
+        }
+
+        // Apply the resolved RoutingReason references per slice
+        foreach (var slice in slices)
+        {
+            // Snapshot the events first, referencing modifies slice state
+            var codesInSlice = slice.Events()
+                .OfType<IEvent<AppointmentRouted>>()
+                .Select(x => x.Data.ReasonCode)
+                .Where(x => x.IsNotEmpty())
+                .Distinct()
+                .ToArray();
+
+            foreach (var code in codesInSlice)
+            {
+                if (cache.TryFind(code, out var reason))
+                {
+                    slice.Reference(reason);
+                }
+            }
+        }
+    }, cancellation);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L68-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enrich_using_entity_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
