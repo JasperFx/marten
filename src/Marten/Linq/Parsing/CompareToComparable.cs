@@ -18,7 +18,7 @@ internal class CompareToComparable: IComparableMember
 
     public ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
-        // Only compare to 0 is valid: CompareTo() > 0 → ">", CompareTo() == 0 → "=", etc.
+        // Only compare to 0 is valid: CompareTo() > 0 → ">", CompareTo() == 0 → "=", CompareTo() < 0 → "<"
         if (constant.Value is int intValue && intValue == 0)
         {
             var leftFragment = _left.FindValueFragment();
