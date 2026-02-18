@@ -114,7 +114,7 @@ public class UpsertArgument
 
             var dbTypeString = rawMemberType!.IsArray
                 ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
-                : Constant.ForEnum(DbType).Usage;
+                : $"({typeof(NpgsqlDbType).FullNameInCode()})({(int)DbType})";
 
             var accessorString = AccessorString(type);
             var requiresCast = DeclaringType is { } dt && dt != type.BaseType;
@@ -196,7 +196,7 @@ END
 
         var dbTypeString = rawMemberType.IsArray
             ? $"{Constant.ForEnum(NpgsqlDbType.Array).Usage} | {Constant.ForEnum(PostgresqlProvider.Instance.ToParameterType(rawMemberType.GetElementType()!)).Usage}"
-            : Constant.ForEnum(DbType).Usage;
+            : $"({typeof(NpgsqlDbType).FullNameInCode()})({(int)DbType})";
 
 
         var memberPath = _members.Select(x => x.Name).Join("?.");
