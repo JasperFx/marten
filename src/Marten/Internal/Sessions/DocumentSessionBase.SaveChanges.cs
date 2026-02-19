@@ -99,7 +99,8 @@ public abstract partial class DocumentSessionBase
         return _workTracker.Operations().Select(x => x.DocumentType).Where(x => x != null).Distinct();
     }
 
-    internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection)
+    internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection,
+        IReadOnlyList<ITransactionParticipant>? Participants)
     {
         public List<Exception> Exceptions { get; } = new();
     }
@@ -118,7 +119,23 @@ public abstract partial class DocumentSessionBase
         var pages = batch.BuildPages(this);
         if (!pages.Any()) return;
 
-        var execution = new PagesExecution(pages, _connection);
+        // Merge participants from both the batch (async daemon) and the session (inline projections)
+        IReadOnlyList<ITransactionParticipant>? participants = null;
+        if (batch.TransactionParticipants is { Count: > 0 } && _transactionParticipants.Count > 0)
+        {
+            var merged = new List<ITransactionParticipant>(batch.TransactionParticipants);
+            merged.AddRange(_transactionParticipants);
+            participants = merged;
+        }
+        else if (batch.TransactionParticipants is { Count: > 0 })
+        {
+            participants = batch.TransactionParticipants;
+        }
+        else if (_transactionParticipants.Count > 0)
+        {
+            participants = _transactionParticipants;
+        }
+        var execution = new PagesExecution(pages, _connection, participants);
 
         try
         {
@@ -128,7 +145,7 @@ public abstract partial class DocumentSessionBase
                 await executeBeforeCommitListeners(batch).ConfigureAwait(false);
 
                 await Options.ResiliencePipeline.ExecuteAsync(
-                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t)), execution, token).ConfigureAwait(false);
+                    static (e, t) => new ValueTask(e.Connection.ExecuteBatchPagesAsync(e.Pages, e.Exceptions, t, e.Participants)), execution, token).ConfigureAwait(false);
 
                 await executeAfterCommitListeners(batch).ConfigureAwait(false);
             }

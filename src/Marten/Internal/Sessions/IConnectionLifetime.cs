@@ -64,7 +64,8 @@ public interface IConnectionLifetime: IAsyncDisposable, IDisposable
 
     void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions);
     Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
-        List<Exception> exceptions, CancellationToken token);
+        List<Exception> exceptions, CancellationToken token,
+        IReadOnlyList<ITransactionParticipant>? participants = null);
 }
 
 

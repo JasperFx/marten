@@ -287,7 +287,8 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
     }
 
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
-        List<Exception> exceptions, CancellationToken token)
+        List<Exception> exceptions, CancellationToken token,
+        IReadOnlyList<ITransactionParticipant>? participants = null)
     {
         try
         {

@@ -13,7 +13,7 @@ namespace Marten.Events.Daemon.Internals;
 ///     Lightweight session specifically used to capture operations for a specific tenant
 ///     in the asynchronous projections
 /// </summary>
-internal class ProjectionDocumentSession: DocumentSessionBase
+internal class ProjectionDocumentSession: DocumentSessionBase, ITransactionParticipantRegistrar
 {
     public ShardExecutionMode Mode { get; }
 
@@ -62,5 +62,13 @@ internal class ProjectionDocumentSession: DocumentSessionBase
     protected internal override void ejectById<T>(string id)
     {
         // nothing
+    }
+
+    public void AddTransactionParticipant(ITransactionParticipant participant)
+    {
+        if (_workTracker is ProjectionUpdateBatch batch)
+        {
+            batch.AddTransactionParticipant(participant);
+        }
     }
 }

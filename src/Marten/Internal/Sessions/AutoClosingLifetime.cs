@@ -286,7 +286,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     }
 
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions,
-        CancellationToken token)
+        CancellationToken token, IReadOnlyList<ITransactionParticipant>? participants = null)
     {
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
@@ -365,6 +365,14 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
                 }
 
                 throw new AggregateException(exceptions);
+            }
+
+            if (participants is { Count: > 0 })
+            {
+                foreach (var participant in participants)
+                {
+                    await participant.BeforeCommitAsync(conn, tx, token).ConfigureAwait(false);
+                }
             }
 
             await tx.CommitAsync(token).ConfigureAwait(false);

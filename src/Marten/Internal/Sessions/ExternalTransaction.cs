@@ -285,7 +285,8 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
     }
 
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
-        List<Exception> exceptions, CancellationToken token)
+        List<Exception> exceptions, CancellationToken token,
+        IReadOnlyList<ITransactionParticipant>? participants = null)
     {
         try
         {
@@ -313,6 +314,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         if (exceptions.Any())
         {
             throw new AggregateException(exceptions);
+        }
+
+        if (participants is { Count: > 0 })
+        {
+            foreach (var participant in participants)
+            {
+                await participant.BeforeCommitAsync(Connection, Transaction, token).ConfigureAwait(false);
+            }
         }
 
         await CommitAsync(token).ConfigureAwait(true);

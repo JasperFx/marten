@@ -367,7 +367,8 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     }
 
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages,
-        List<Exception> exceptions, CancellationToken token)
+        List<Exception> exceptions, CancellationToken token,
+        IReadOnlyList<ITransactionParticipant>? participants = null)
     {
         try
         {
@@ -398,6 +399,14 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         {
             await RollbackAsync(token).ConfigureAwait(false);
             throw new AggregateException(exceptions);
+        }
+
+        if (participants is { Count: > 0 })
+        {
+            foreach (var participant in participants)
+            {
+                await participant.BeforeCommitAsync(Connection, Transaction!, token).ConfigureAwait(false);
+            }
         }
 
         await CommitAsync(token).ConfigureAwait(true);
