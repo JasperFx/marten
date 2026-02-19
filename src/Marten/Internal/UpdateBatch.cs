@@ -34,6 +34,8 @@ public class UpdateBatch: IUpdateBatch
         return Task.CompletedTask;
     }
 
+    public IReadOnlyList<ITransactionParticipant> TransactionParticipants => [];
+
     public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
     {
         return buildPages(session).ToList();

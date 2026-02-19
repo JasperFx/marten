@@ -13,4 +13,6 @@ public interface IUpdateBatch
     IReadOnlyList<Type> DocumentTypes();
     Task PostUpdateAsync(IMartenSession session);
     Task PreUpdateAsync(IMartenSession session);
+
+    IReadOnlyList<ITransactionParticipant> TransactionParticipants { get; }
 }

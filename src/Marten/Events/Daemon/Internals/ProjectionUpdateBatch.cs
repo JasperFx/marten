@@ -25,6 +25,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 {
     private readonly List<Type> _documentTypes = new();
     private readonly List<OperationPage> _pages = new();
+    private readonly List<ITransactionParticipant> _transactionParticipants = new();
 
     private readonly List<IStorageOperation> _patches = new();
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -281,6 +282,13 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             await listener.BeforeCommitAsync((IDocumentSession)session, unitOfWorkData, _token)
                 .ConfigureAwait(false);
         }
+    }
+
+    public IReadOnlyList<ITransactionParticipant> TransactionParticipants => _transactionParticipants;
+
+    public void AddTransactionParticipant(ITransactionParticipant participant)
+    {
+        _transactionParticipants.Add(participant);
     }
 
     public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
