@@ -192,13 +192,14 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions, CancellationToken token)
+    public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions,
+        CancellationToken token, IReadOnlyList<ITransactionParticipant>? participants = null)
     {
         _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
 
         try
         {
-            await InnerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token).ConfigureAwait(false);
+            await InnerConnectionLifetime.ExecuteBatchPagesAsync(pages, exceptions, token, participants).ConfigureAwait(false);
 
             writeVerboseEvents(pages);
         }

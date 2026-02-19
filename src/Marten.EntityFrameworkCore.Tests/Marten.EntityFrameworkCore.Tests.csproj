@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Marten.EntityFrameworkCore\Marten.EntityFrameworkCore.csproj" />
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Shouldly" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+            <Link>Harness\ConnectionSource.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
+            <Link>Harness\TestsSettings.cs</Link>
+        </Compile>
+    </ItemGroup>
+</Project>

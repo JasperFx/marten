@@ -14,9 +14,10 @@ using Marten.Storage;
 
 namespace Marten.Internal.Sessions;
 
-public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession
+public abstract partial class DocumentSessionBase: QuerySession, IDocumentSession, ITransactionParticipantRegistrar
 {
     internal readonly ISessionWorkTracker _workTracker;
+    private readonly List<ITransactionParticipant> _transactionParticipants = new();
 
     private Dictionary<string, NestedTenantSession>? _byTenant;
 
@@ -43,6 +44,13 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
     internal ITenancy Tenancy => DocumentStore.As<DocumentStore>().Tenancy;
 
     internal ISessionWorkTracker WorkTracker => _workTracker;
+
+    public virtual void AddTransactionParticipant(ITransactionParticipant participant)
+    {
+        _transactionParticipants.Add(participant);
+    }
+
+    internal IReadOnlyList<ITransactionParticipant> TransactionParticipants => _transactionParticipants;
 
     public void EjectAllPendingChanges()
     {
