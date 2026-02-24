@@ -32,6 +32,12 @@ internal class SubQueryFilter: ISubQueryFilter
     /// </summary>
     public bool Not { get; set; }
 
+    /// <summary>
+    ///     When true, skips the automatic tenant_id filter in Apply().
+    ///     Set when AnyTenant() is used in the query.
+    /// </summary>
+    internal bool BypassTenantFilter { get; set; }
+
     public ISqlFragment Reverse()
     {
         Not = !Not;
@@ -45,7 +51,7 @@ internal class SubQueryFilter: ISubQueryFilter
             builder.Append("NOT(");
         }
 
-        if (builder.TenantId != StorageConstants.DefaultTenantId && Member is ChildCollectionMember child)
+        if (!BypassTenantFilter && builder.TenantId != StorageConstants.DefaultTenantId && Member is ChildCollectionMember child)
         {
             if (child.Ancestors[0] is DocumentQueryableMemberCollection c && c.TenancyStyle == TenancyStyle.Conjoined)
             {

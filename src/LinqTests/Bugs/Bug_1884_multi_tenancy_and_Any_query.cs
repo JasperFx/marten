@@ -1,16 +1,24 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
+using Shouldly;
 namespace LinqTests.Bugs;
 
 public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 {
+    public class ComplexRole(string id)
+    {
+        public string Id { get; set; } = id;
+    }
+
     public class User
     {
         public string Id { get; set; }
         public string UserName { get; set; }
         public string[] Roles { get; set; }
+        public IReadOnlyCollection<ComplexRole> ComplexRoles { get; set; } = [];
     }
 
     public Bug_1884_multi_tenancy_and_Any_query()
@@ -19,6 +27,24 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
         {
             x.Policies.AllDocumentsAreMultiTenanted();
         });
+    }
+
+    [Fact]
+    public async Task any_tenant_with_child_collection_any_in_separate_where_clauses()
+    {
+        var store = theStore;
+
+        var validRoles = new List<string> { "admin", "user" };
+
+        // GH-4146: AnyTenant() in a separate Where clause from a child collection Any()
+        // should not filter by tenant
+        await using var query = store.QuerySession("tenant1");
+        var sql = query.Query<User>()
+            .Where(x => x.AnyTenant())
+            .Where(x => x.ComplexRoles.Any(cr => validRoles.Contains(cr.Id)))
+            .ToCommand().CommandText;
+
+        sql.ShouldNotContain("tenant_id");
     }
 
     [Fact]
@@ -48,11 +74,14 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
         await using (var query = store.QuerySession("tenant1"))
         {
-            query.Query<User>()
+            var linq = query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)) && x.AnyTenant())
                 .OrderBy(x => x.UserName)
-                .Select(x => x.UserName)
-                .ShouldHaveTheSameElementsAs("Bill", "Jill");
+                .Select(x => x.UserName);
+
+            linq.ToCommand().CommandText.ShouldNotContain("tenant_id");
+
+            linq.ShouldHaveTheSameElementsAs("Bill", "Jill");
         }
     }
 
