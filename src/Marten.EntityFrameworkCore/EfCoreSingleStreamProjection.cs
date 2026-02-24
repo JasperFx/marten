@@ -63,7 +63,7 @@ public abstract class EfCoreSingleStreamProjection<TDoc, TId, TDbContext>
     {
         foreach (var @event in events)
         {
-            snapshot = ApplyEvent(snapshot, identity, @event, dbContext);
+            snapshot = ApplyEvent(snapshot, identity, @event, dbContext, session);
         }
 
         return new ValueTask<(TDoc?, ActionType)>(
@@ -76,7 +76,7 @@ public abstract class EfCoreSingleStreamProjection<TDoc, TId, TDbContext>
     /// </summary>
     [JasperFxIgnore]
     public virtual TDoc? ApplyEvent(TDoc? snapshot, TId identity, IEvent @event,
-        TDbContext dbContext)
+        TDbContext dbContext, IQuerySession session)
     {
         return snapshot;
     }

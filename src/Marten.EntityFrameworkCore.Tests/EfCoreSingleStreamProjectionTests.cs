@@ -12,8 +12,9 @@ namespace Marten.EntityFrameworkCore.Tests;
 
 public class OrderAggregate: EfCoreSingleStreamProjection<Order, Guid, TestDbContext>
 {
-    public override Order? ApplyEvent(Order? snapshot, Guid identity, IEvent @event,
-        TestDbContext dbContext)
+    // TODO -- the signature of
+    public override Order ApplyEvent(Order snapshot, Guid identity, IEvent @event,
+        TestDbContext dbContext, IQuerySession session)
     {
         switch (@event.Data)
         {

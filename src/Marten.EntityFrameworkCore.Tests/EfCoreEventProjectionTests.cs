@@ -14,14 +14,14 @@ namespace Marten.EntityFrameworkCore.Tests;
 
 public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
 {
-    protected override async Task ProjectAsync(IEvent @event,
-        EfCoreOperations<TestDbContext> operations, CancellationToken token)
+    public override async Task ProjectAsync(IEvent @event,
+        IDocumentOperations operations, TestDbContext dbContext, CancellationToken token)
     {
         switch (@event.Data)
         {
             case OrderPlaced placed:
                 // Write to EF Core
-                operations.DbContext.OrderSummaries.Add(new OrderSummary
+                dbContext.OrderSummaries.Add(new OrderSummary
                 {
                     Id = placed.OrderId,
                     CustomerName = placed.CustomerName,
@@ -30,7 +30,7 @@ public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
                     Status = "Placed"
                 });
                 // Also write to Marten
-                operations.Marten.Store(new Order
+                operations.Store(new Order
                 {
                     Id = placed.OrderId,
                     CustomerName = placed.CustomerName,
@@ -40,7 +40,7 @@ public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
                 break;
 
             case OrderShipped shipped:
-                var summary = await operations.DbContext.OrderSummaries
+                var summary = await dbContext.OrderSummaries
                     .FindAsync(new object[] { shipped.OrderId }, token);
                 if (summary != null)
                 {

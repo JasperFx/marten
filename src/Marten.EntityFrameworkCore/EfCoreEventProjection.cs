@@ -35,7 +35,7 @@ public abstract class EfCoreEventProjection<TDbContext>: IProjection
 
         foreach (var @event in events)
         {
-            await ProjectAsync(@event, ops, cancellation).ConfigureAwait(false);
+            await ProjectAsync(@event, ops.Marten, ops.DbContext, cancellation).ConfigureAwait(false);
         }
 
         if (operations is ITransactionParticipantRegistrar registrar)
@@ -49,6 +49,6 @@ public abstract class EfCoreEventProjection<TDbContext>: IProjection
     /// Override to handle each event. Use <c>operations.DbContext</c> for EF Core writes
     /// and <c>operations.Marten</c> for Marten document writes.
     /// </summary>
-    protected abstract Task ProjectAsync(IEvent @event,
-        EfCoreOperations<TDbContext> operations, CancellationToken token);
+    public abstract Task ProjectAsync(IEvent @event,
+        IDocumentOperations operations, TDbContext dbContext, CancellationToken token);
 }
