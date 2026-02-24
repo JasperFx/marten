@@ -5,6 +5,7 @@ using JasperFx.Core;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
 using Marten.Linq.Selectors;
+using Marten.Linq.Parsing.Methods;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -151,7 +152,19 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
                             break;
                     }
 
-                    foreach (var subQuery in subQueries) subQuery.PlaceUnnestAbove(session, this, topLevel);
+                    // If AnyTenant() is among the top-level filters, tell SubQueryFilters
+                    // to skip their hardcoded tenant_id filter (GH-4146)
+                    var bypassTenant = topLevel != null && topLevel.ContainsAny<AnyTenant>();
+
+                    foreach (var subQuery in subQueries)
+                    {
+                        if (bypassTenant && subQuery is SubQueryFilter sqf)
+                        {
+                            sqf.BypassTenantFilter = true;
+                        }
+
+                        subQuery.PlaceUnnestAbove(session, this, topLevel);
+                    }
 
                     // We've moved all the non-sub query filters up to the various explode statements
                     Wheres.Clear();
