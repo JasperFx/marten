@@ -45,7 +45,7 @@
 
     <ItemGroup>
       <PackageReference Include="JasperFx" />
-      <PackageReference Include="JasperFx.Events" />
+      <ProjectReference Include="../../../jasperfx/src/JasperFx.Events/JasperFx.Events.csproj" />
       <PackageReference Include="JasperFx.RuntimeCompiler" />
       <PackageReference Include="Weasel.Postgresql" />
     </ItemGroup>

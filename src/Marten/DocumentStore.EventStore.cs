@@ -380,4 +380,42 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     }
 
     public Uri Subject { get; internal set; } = new Uri("marten://main");
+
+    IReadOnlyEventStore IEventStore.OpenReadOnlyEventStore()
+    {
+        var session = QuerySession();
+        return (IReadOnlyEventStore)session.Events;
+    }
+
+    async Task IEventStore.CompactStreamAsync(Guid streamId, CancellationToken token)
+    {
+        await using var session = LightweightSession();
+        var state = await session.Events.FetchStreamStateAsync(streamId, token).ConfigureAwait(false);
+        if (state?.AggregateType == null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot compact stream {streamId}: stream not found or no aggregate type associated.");
+        }
+
+        var method = typeof(IEventStoreOperations).GetMethod(nameof(IEventStoreOperations.CompactStreamAsync),
+            [typeof(Guid), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
+        var genericMethod = method!.MakeGenericMethod(state.AggregateType);
+        await ((Task)genericMethod.Invoke(session.Events, [streamId, null])!).ConfigureAwait(false);
+    }
+
+    async Task IEventStore.CompactStreamAsync(string streamKey, CancellationToken token)
+    {
+        await using var session = LightweightSession();
+        var state = await session.Events.FetchStreamStateAsync(streamKey, token).ConfigureAwait(false);
+        if (state?.AggregateType == null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot compact stream '{streamKey}': stream not found or no aggregate type associated.");
+        }
+
+        var method = typeof(IEventStoreOperations).GetMethod(nameof(IEventStoreOperations.CompactStreamAsync),
+            [typeof(string), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
+        var genericMethod = method!.MakeGenericMethod(state.AggregateType);
+        await ((Task)genericMethod.Invoke(session.Events, [streamKey, null])!).ConfigureAwait(false);
+    }
 }
