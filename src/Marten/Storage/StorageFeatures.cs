@@ -14,6 +14,7 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Events.Daemon;
+using StreamState = Marten.Events.StreamState;
 using Marten.Exceptions;
 using Marten.Schema;
 using Weasel.Core;

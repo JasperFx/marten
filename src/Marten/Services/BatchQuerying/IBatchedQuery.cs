@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Sessions;
+using StreamState = Marten.Events.StreamState;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 

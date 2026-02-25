@@ -15,7 +15,7 @@ using Marten.Storage;
 
 namespace Marten.Events;
 
-internal class QueryEventStore: IQueryEventStore
+internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
 {
     private readonly QuerySession _session;
     private readonly DocumentStore _store;
@@ -229,5 +229,76 @@ internal class QueryEventStore: IQueryEventStore
     private IEventStorage eventStorage()
     {
         return _store.Options.Providers.StorageFor<IEvent>().QueryOnly.As<IEventStorage>();
+    }
+
+    // IReadOnlyEventStore explicit implementations
+    async Task<JasperFx.Events.StreamState?> IReadOnlyEventStore.FetchStreamStateAsync(Guid streamId, CancellationToken token)
+    {
+        var state = await FetchStreamStateAsync(streamId, token).ConfigureAwait(false);
+        return state != null ? ToJasperFxStreamState(state) : null;
+    }
+
+    async Task<JasperFx.Events.StreamState?> IReadOnlyEventStore.FetchStreamStateAsync(string streamKey, CancellationToken token)
+    {
+        var state = await FetchStreamStateAsync(streamKey, token).ConfigureAwait(false);
+        return state != null ? ToJasperFxStreamState(state) : null;
+    }
+
+    public async Task<PagedEvents> QueryEventsAsync(EventQuery query, CancellationToken token = default)
+    {
+        await _tenant.Database.EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var queryable = QueryAllRawEvents();
+
+        if (query.EventTypeName != null)
+        {
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.EventTypeName == query.EventTypeName);
+        }
+
+        if (query.StreamId != null)
+        {
+            if (Guid.TryParse(query.StreamId, out var streamGuid))
+            {
+                queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.StreamId == streamGuid);
+            }
+            else
+            {
+                queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.StreamKey == query.StreamId);
+            }
+        }
+
+        var totalCount = await queryable.CountAsync(token).ConfigureAwait(false);
+
+        var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
+        var offset = (pageNumber - 1) * query.PageSize;
+
+        var events = await queryable
+            .OrderByDescending(e => e.Sequence)
+            .Skip(offset)
+            .Take(query.PageSize)
+            .ToListAsync(token)
+            .ConfigureAwait(false);
+
+        return new PagedEvents
+        {
+            Events = events,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = query.PageSize
+        };
+    }
+
+    private static JasperFx.Events.StreamState ToJasperFxStreamState(StreamState martenState)
+    {
+        return new JasperFx.Events.StreamState
+        {
+            Id = martenState.Id,
+            Key = martenState.Key,
+            Version = martenState.Version,
+            AggregateType = martenState.AggregateType,
+            LastTimestamp = martenState.LastTimestamp,
+            Created = martenState.Created,
+            IsArchived = martenState.IsArchived
+        };
     }
 }
