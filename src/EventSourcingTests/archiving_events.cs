@@ -553,7 +553,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
         await theSession.SaveChangesAsync();
 
-        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+        Marten.Events.StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
 
         // ASSERT
         state.ShouldNotBeNull();
@@ -578,7 +578,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
         theSession.ForTenant(tenantId).Events.ArchiveStream(streamKey);
         await theSession.SaveChangesAsync();
 
-        StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
+        Marten.Events.StreamState? state = await theSession.ForTenant(tenantId).Events.FetchStreamStateAsync(streamKey);
 
         // ASSERT
         state.ShouldNotBeNull();
