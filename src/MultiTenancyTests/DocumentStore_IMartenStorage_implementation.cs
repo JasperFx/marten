@@ -15,7 +15,7 @@ using Weasel.Postgresql.Migrations;
 namespace MultiTenancyTests;
 
 [CollectionDefinition("multi-tenancy", DisableParallelization = true)]
-public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
+public class DocumentStore_IMartenStorage_implementation: IAsyncLifetime
 {
     private IHost _host;
     private IDocumentStore theStore;
@@ -39,7 +39,6 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
 
         return connectionString;
     }
-
 
 
     public async Task InitializeAsync()
@@ -72,7 +71,6 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
                     opts.RegisterDocumentType<Target>();
 
                     opts.Events.AddEventType(typeof(RandomEvent));
-
                 });
             }).StartAsync();
 
@@ -157,4 +155,6 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
     }
 }
 
-public record RandomEvent{}
+public record RandomEvent
+{
+}

@@ -58,6 +58,7 @@
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
     <PackageVersion Include="Weasel.Postgresql" Version="8.8.1" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
