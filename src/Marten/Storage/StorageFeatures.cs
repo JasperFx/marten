@@ -107,7 +107,9 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
         }
 
         _buildingList.Value.Remove(type);
-        var m =  new DocumentMapping(type, options);
+        var fallbackBuilder = typeof(DocumentMappingBuilder<>)
+            .CloseAndBuildAs<IDocumentMappingBuilder>(type);
+        var m = fallbackBuilder.Build(options);
         _options.applyPostPolicies(m);
         return m;
     }
