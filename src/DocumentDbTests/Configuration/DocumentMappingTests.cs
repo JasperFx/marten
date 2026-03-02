@@ -3,7 +3,10 @@ using System.Linq;
 using System.Reflection;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
@@ -917,6 +920,20 @@ public class DocumentMappingTests
 
     #endregion
 
+    [Fact]
+    public void uses_ConfigureMarten_for_projection_view_type_registered_only_via_projection()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Projections.Add<ProjectionWithConfiguredView>(ProjectionLifecycle.Inline);
+        });
+
+        var mapping = store.Options.Storage.MappingFor(typeof(ProjectionConfiguredView));
+        mapping.ShouldBeOfType<DocumentMapping<ProjectionConfiguredView>>();
+        mapping.Indexes.OfType<ComputedIndex>().Any().ShouldBeTrue();
+    }
+
     #region sample_using_DatabaseSchemaName_attribute
 
     [DatabaseSchemaName("organization")]
@@ -931,4 +948,31 @@ public class DocumentMappingTests
 public class BadDoc
 {
     public string Name { get; set; }
+}
+
+public record SomeProjectionEvent(Guid Id, string ImportantField);
+
+public class ProjectionConfiguredView
+{
+    public string Id { get; set; } = "";
+    public string ImportantField { get; set; } = "";
+
+    public static void ConfigureMarten(DocumentMapping<ProjectionConfiguredView> mapping)
+    {
+        mapping.Index(x => x.ImportantField);
+    }
+}
+
+public class ProjectionWithConfiguredView: MultiStreamProjection<ProjectionConfiguredView, string>
+{
+    public ProjectionWithConfiguredView()
+    {
+        Identity<IEvent<SomeProjectionEvent>>(e => e.Data.Id.ToString());
+    }
+
+    public ProjectionConfiguredView Apply(SomeProjectionEvent @event, ProjectionConfiguredView current)
+    {
+        current.ImportantField = @event.ImportantField;
+        return current;
+    }
 }
