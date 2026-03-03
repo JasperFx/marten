@@ -183,6 +183,49 @@ public class reading_configuration_from_jasperfxoptions
         rules.SourceCodeWritingEnabled.ShouldBeFalse();
     }
 
+    [Fact]
+    public void application_assembly_from_critter_stack_defaults_flows_to_store_options()
+    {
+        var expectedAssembly = typeof(JasperFxOptions).Assembly;
+
+        using var container = Container.For(services =>
+        {
+            services.AddMarten(ConnectionSource.ConnectionString);
+            services.CritterStackDefaults(x => x.ApplicationAssembly = expectedAssembly);
+        });
+
+        var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
+
+        #pragma warning disable CS0618
+        store.Options.ApplicationAssembly.ShouldBe(expectedAssembly);
+        #pragma warning restore CS0618
+    }
+
+    [Fact]
+    public void explicit_store_options_application_assembly_takes_precedence_over_critter_stack_defaults()
+    {
+        var critterStackAssembly = typeof(JasperFxOptions).Assembly;
+        var explicitAssembly = typeof(StoreOptions).Assembly;
+
+        using var container = Container.For(services =>
+        {
+            services.AddMarten(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                #pragma warning disable CS0618
+                opts.ApplicationAssembly = explicitAssembly;
+                #pragma warning restore CS0618
+            });
+            services.CritterStackDefaults(x => x.ApplicationAssembly = critterStackAssembly);
+        });
+
+        var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
+
+        #pragma warning disable CS0618
+        store.Options.ApplicationAssembly.ShouldBe(explicitAssembly);
+        #pragma warning restore CS0618
+    }
+
     public static void default_setup()
     {
         #region sample_simplest_possible_setup
