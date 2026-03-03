@@ -28,6 +28,8 @@ public partial class CollectionUsage
     public bool IsDistinct { get; set; }
     public CollectionUsage Inner { get; internal set; } = null!;
     public Expression SelectMany { get; set; } = null!;
+    public MethodCallExpression? SelectManyCallExpression { get; set; }
+    public GroupJoinData? GroupJoinData { get; set; }
 
 
     public void WriteLimit(int limit)

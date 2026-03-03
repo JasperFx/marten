@@ -26,6 +26,7 @@ internal class OperatorLibrary
         AddOrdering(nameof(QueryableExtensions.ThenByDescending), OrderingDirection.Desc);
 
         Add<SelectManyOperator>();
+        Add<GroupJoinOperator>();
         Add<SelectOperator>();
         Add<AnyOperator>();
         Add<DistinctOperator>();

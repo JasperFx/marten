@@ -120,6 +120,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Supported Linq Operators', link: '/documents/querying/linq/operators' },
                 { text: 'Querying within Child Collections', link: '/documents/querying/linq/child-collections' },
                 { text: 'Querying including Related Documents', link: '/documents/querying/linq/include' },
+                { text: 'Joining Documents with GroupJoin', link: '/documents/querying/linq/group-join' },
                 { text: 'Querying to IAsyncEnumerable', link: '/documents/querying/linq/async-enumerable' },
                 { text: 'Extending Marten\'s Linq Support', link: '/documents/querying/linq/extending' },
                 { text: 'Searching on String Fields', link: '/documents/querying/linq/strings' },
