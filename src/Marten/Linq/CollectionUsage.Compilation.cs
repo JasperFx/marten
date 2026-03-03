@@ -193,6 +193,11 @@ public partial class CollectionUsage
     private Statement compileNext(IMartenSession session, IQueryableMemberCollection collection,
         SelectorStatement statement, QueryStatistics? statistics)
     {
+        if (GroupJoinData != null)
+        {
+            return CompileGroupJoin(session, statement, statistics);
+        }
+
         if (SelectMany != null)
         {
             var selection = statement.SelectorStatement();
@@ -240,6 +245,132 @@ public partial class CollectionUsage
         }
 
         return statement;
+    }
+
+    public Statement CompileGroupJoin(IMartenSession session,
+        SelectorStatement outerStatement, QueryStatistics? statistics)
+    {
+        var groupJoin = GroupJoinData!;
+
+        // If there's no flattened result selector, this is GroupJoin as a final operator (Pattern 3)
+        if (groupJoin.FlattenedResultSelector == null)
+        {
+            throw new NotSupportedException(
+                "Marten does not yet support GroupJoin as a final operator with collection materialization. " +
+                "Use GroupJoin + SelectMany for INNER JOIN, or GroupJoin + SelectMany + DefaultIfEmpty for LEFT JOIN.");
+        }
+
+        // 1. Convert the outer statement to a CTE
+        var outerStorage = session.StorageFor(ElementType);
+        var outerCollection = outerStorage.QueryMembers;
+
+        outerStatement.Mode = StatementMode.CommonTableExpression;
+        outerStatement.ExportName = session.NextTempTableName() + "CTE";
+        var outerCteAlias = outerStatement.ExportName;
+
+        // Use SelectClauseWithDuplicatedFields so duplicated columns are available in the CTE
+        outerStatement.SelectClause = outerStorage.SelectClauseWithDuplicatedFields;
+
+        // 2. Create the inner CTE
+        var innerStorage = session.StorageFor(groupJoin.InnerElementType);
+        var innerCollection = innerStorage.QueryMembers;
+
+        var innerStatement = new SelectorStatement
+        {
+            // Use SelectClauseWithDuplicatedFields so duplicated columns are available in the CTE
+            SelectClause = innerStorage.SelectClauseWithDuplicatedFields,
+            Mode = StatementMode.CommonTableExpression,
+            ExportName = session.NextTempTableName() + "CTE"
+        };
+        var innerCteAlias = innerStatement.ExportName;
+
+        // Apply default filters (soft delete, tenancy) to inner CTE
+        innerStatement.ParseWhereClause(
+            Array.Empty<System.Linq.Expressions.Expression>(),
+            session, innerCollection, innerStorage);
+
+        // Chain the inner CTE after the outer CTE
+        outerStatement.InsertAfter(innerStatement);
+
+        var outerKeyMember = outerCollection.MemberFor(groupJoin.OuterKeySelector.Body);
+        var innerKeyMember = innerCollection.MemberFor(groupJoin.InnerKeySelector.Body);
+
+        // Replace d. prefix with CTE aliases for the ON clause
+        var outerKeyLocator = outerKeyMember.TypedLocator.Replace("d.", outerCteAlias + ".");
+        var innerKeyLocator = innerKeyMember.TypedLocator.Replace("d.", innerCteAlias + ".");
+
+        // 4. Build the result projection
+        var joinParser = new JoinSelectParser(
+            _options.Serializer(),
+            outerCollection,
+            innerCollection,
+            outerCteAlias,
+            innerCteAlias,
+            groupJoin.ResultSelector,
+            groupJoin.FlattenedResultSelector);
+
+        // 5. Create the JoinSelectClause and final SelectorStatement
+        var resultType = groupJoin.FlattenedResultSelector.ReturnType;
+        var closedJoinSelectType = typeof(JoinSelectClause<>).MakeGenericType(resultType);
+        var joinSelectClause = (ISelectClause)Activator.CreateInstance(
+            closedJoinSelectType,
+            joinParser.NewObject,
+            outerCteAlias,
+            innerCteAlias,
+            groupJoin.IsLeftJoin,
+            outerKeyLocator,
+            innerKeyLocator)!;
+
+        var joinStatement = new SelectorStatement
+        {
+            SelectClause = joinSelectClause
+        };
+
+        // Chain the join statement after the inner CTE
+        innerStatement.InsertAfter(joinStatement);
+
+        // 6. Apply downstream operators (Where, OrderBy, SingleValueMode, etc.)
+        // from the Inner usage (which was the SelectMany usage)
+        if (Inner != null)
+        {
+            // Transfer SingleValueMode
+            if (Inner.SingleValueMode.HasValue)
+            {
+                SingleValueMode = Inner.SingleValueMode;
+            }
+
+            if (Inner.IsAny)
+            {
+                IsAny = true;
+            }
+
+            // Transfer Limit/Offset
+            joinStatement.Limit = Inner._limit;
+            joinStatement.Offset = Inner._offset;
+
+            // Check if there's a deeper Inner with operators
+            if (Inner.Inner != null)
+            {
+                var deepInner = Inner.Inner;
+                if (deepInner.SingleValueMode.HasValue)
+                {
+                    SingleValueMode = deepInner.SingleValueMode;
+                }
+
+                if (deepInner.IsAny)
+                {
+                    IsAny = true;
+                }
+
+                joinStatement.Limit ??= deepInner._limit;
+                joinStatement.Offset ??= deepInner._offset;
+            }
+        }
+
+        // Apply single value mode to the join statement
+        ProcessSingleValueModeIfAny(joinStatement, session, null, statistics);
+
+        return joinStatement;
     }
 
     public Statement CompileSelectMany(IMartenSession session,

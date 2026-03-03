@@ -14,5 +14,14 @@ public class SelectManyOperator: LinqOperator
     {
         var usage = query.StartNewCollectionUsageFor(expression);
         usage.SelectMany = expression.Arguments.Last();
+
+        // If this SelectMany flattens a GroupJoin, store the full expression
+        // so that GroupJoinOperator / CompileGroupJoin can access the collection selector
+        // (needed to detect DefaultIfEmpty for LEFT JOIN)
+        if (expression.Arguments[0] is MethodCallExpression source &&
+            source.Method.Name == "GroupJoin")
+        {
+            usage.SelectManyCallExpression = expression;
+        }
     }
 }

@@ -90,6 +90,11 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
                 {
                     yield return include.DocumentType;
                 }
+
+                if (collectionUsage.GroupJoinData != null)
+                {
+                    yield return collectionUsage.GroupJoinData.InnerElementType;
+                }
             }
         }
     }
