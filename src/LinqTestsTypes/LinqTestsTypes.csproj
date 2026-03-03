@@ -14,6 +14,6 @@
 
     <ItemGroup>
       <PackageReference Include="FSharp.Core" />
-      <PackageReference Include="JasperFx" />
+      <ProjectReference Include="../../../jasperfx/src/JasperFx/JasperFx.csproj" />
     </ItemGroup>
 </Project>
