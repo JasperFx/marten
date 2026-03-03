@@ -81,7 +81,7 @@ public record HardDeleteEvent(Guid Id);
 
 public record CreateDeletableProjection(Guid Id, Guid InnerGuid);
 
-public class DeletableEventProjection : EventProjection
+public partial class DeletableEventProjection : EventProjection
 {
     public DeletableEventProjection()
     {

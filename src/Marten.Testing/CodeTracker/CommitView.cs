@@ -22,7 +22,7 @@ public class CommitView
     public DateTimeOffset Timestamp { get; set; }
 }
 
-public class CommitViewTransform: EventProjection
+public partial class CommitViewTransform: EventProjection
 {
     public CommitView Transform(IEvent input, Commit data)
     {

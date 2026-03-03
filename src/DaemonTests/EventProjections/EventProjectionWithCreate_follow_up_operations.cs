@@ -11,7 +11,7 @@ using Xunit.Abstractions;
 
 namespace DaemonTests.EventProjections;
 
-public class EventProjectionWithCreate_follow_up_operations: DaemonContext
+public partial class EventProjectionWithCreate_follow_up_operations: DaemonContext
 {
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
@@ -72,7 +72,7 @@ public class EventProjectionWithCreate_follow_up_operations: DaemonContext
 
     public record EntityNameUpdated(Guid Id, string Name);
 
-    public class EntityProjection: EventProjection
+    public partial class EntityProjection: EventProjection
     {
         public EntityProjection()
         {

@@ -159,7 +159,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
 
 #region sample_MonsterDefeatedTransform
 
-public class MonsterDefeatedTransform: EventProjection
+public partial class MonsterDefeatedTransform: EventProjection
 {
     public MonsterDefeated Create(IEvent<MonsterSlayed> input)
     {

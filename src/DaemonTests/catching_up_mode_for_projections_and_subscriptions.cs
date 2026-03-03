@@ -106,7 +106,7 @@ public class ADoc
     public long Id { get; set; }
 }
 
-public class ADocEventProjection: EventProjection
+public partial class ADocEventProjection: EventProjection
 {
     public void Project(IEvent<AEvent> e, IDocumentOperations ops)
     {

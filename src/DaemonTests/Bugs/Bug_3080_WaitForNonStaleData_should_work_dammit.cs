@@ -19,7 +19,7 @@ using Xunit;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_3080_WaitForNonStaleData_should_work_dammit
+public partial class Bug_3080_WaitForNonStaleData_should_work_dammit
 {
     [Fact]
     public async Task WaitForNonStaleProjectionDataAsync_does_not_work()
@@ -157,7 +157,7 @@ public class Bug_3080_WaitForNonStaleData_should_work_dammit
             => this with { Name = @event.Name };
     }
 
-    public class MyAggregateTableProjection: EventProjection
+    public partial class MyAggregateTableProjection: EventProjection
     {
         private readonly string _tableName;
 

@@ -52,7 +52,7 @@ public class EventProjection_follow_up_operations: DaemonContext
 
     public record SomeOtherEntityWithNestedIdentifierPublished(Guid Id);
 
-    public class NestedEntityEventProjection: EventProjection
+    public partial class NestedEntityEventProjection: EventProjection
     {
         public NestedEntityEventProjection()
         {

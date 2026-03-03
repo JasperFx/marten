@@ -220,11 +220,11 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
     }
 }
 
-public class EmptyProjection: EventProjection
+public partial class EmptyProjection: EventProjection
 {
 }
 
-public class SimpleProjection: EventProjection
+public partial class SimpleProjection: EventProjection
 {
     public void Project(UserCreated @event, IDocumentOperations operations) =>
         operations.Store(new User { UserName = @event.UserName });
@@ -233,7 +233,7 @@ public class SimpleProjection: EventProjection
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
 }
 
-public class SimpleTransformProjection: EventProjection
+public partial class SimpleTransformProjection: EventProjection
 {
     public User Transform(UserCreated @event) =>
         new User { UserName = @event.UserName };
@@ -246,7 +246,7 @@ public class OtherCreationEvent: UserCreated
 {
 }
 
-public class SimpleTransformProjectionUsingMetadata: EventProjection
+public partial class SimpleTransformProjectionUsingMetadata: EventProjection
 {
     public User Transform(IEvent<UserCreated> @event)
     {
@@ -272,7 +272,7 @@ public class SimpleTransformProjectionUsingMetadata: EventProjection
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
 }
 
-public class SimpleCreatorProjection: EventProjection
+public partial class SimpleCreatorProjection: EventProjection
 {
     public User Create(UserCreated e) => new User { UserName = e.UserName };
 
@@ -280,7 +280,7 @@ public class SimpleCreatorProjection: EventProjection
         operations.DeleteWhere<User>(x => x.UserName == @event.UserName);
 }
 
-public class SimpleCreatorProjection2: EventProjection
+public partial class SimpleCreatorProjection2: EventProjection
 {
     public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
     {
@@ -301,7 +301,7 @@ public class SimpleCreatorProjection2: EventProjection
 
 #region sample_lambda_definition_of_event_projection
 
-public class LambdaProjection: EventProjection
+public partial class LambdaProjection: EventProjection
 {
     public LambdaProjection()
     {

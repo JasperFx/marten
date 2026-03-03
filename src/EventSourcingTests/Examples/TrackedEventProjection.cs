@@ -49,7 +49,7 @@ public record BaseballGame
     public ImmutableHashSet<string> PlayersWithRuns { get; init; }
 }
 
-public class TrackedEventProjection: EventProjection
+public partial class TrackedEventProjection: EventProjection
 {
     public TrackedEventProjection()
     {

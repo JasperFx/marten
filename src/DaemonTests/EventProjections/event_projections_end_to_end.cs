@@ -142,7 +142,7 @@ public class Distance
 
 #region sample_using_create_in_event_projection
 
-public class DistanceProjection: EventProjection
+public partial class DistanceProjection: EventProjection
 {
     public DistanceProjection()
     {

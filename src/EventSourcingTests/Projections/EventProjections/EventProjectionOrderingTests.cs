@@ -64,7 +64,7 @@ public class OrderingTracker
 
 public record DummyEventForOrdering(int Order);
 
-public class TestOrderingEventProjection: EventProjection
+public partial class TestOrderingEventProjection: EventProjection
 {
     public OrderingTracker Transform(IEvent<DummyEventForOrdering> e)
     {

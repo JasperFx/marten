@@ -61,7 +61,7 @@ public class NameAdded
     public string Name { get; set; }
 }
 
-public class TableCreatingProjection: EventProjection
+public partial class TableCreatingProjection: EventProjection
 {
     public TableCreatingProjection()
     {

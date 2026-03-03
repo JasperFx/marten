@@ -11,7 +11,7 @@ using Xunit;
 
 namespace EventSourcingTests;
 
-public class cannot_register_duplicate_projections_by_name
+public partial class cannot_register_duplicate_projections_by_name
 {
     [Fact]
     public void cannot_register_duplicate_projection_names()
@@ -27,7 +27,7 @@ public class cannot_register_duplicate_projections_by_name
         });
     }
 
-    public class Projection1: EventProjection
+    public partial class Projection1: EventProjection
     {
         public Projection1()
         {
@@ -40,7 +40,7 @@ public class cannot_register_duplicate_projections_by_name
         }
     }
 
-    public class Projection2: EventProjection
+    public partial class Projection2: EventProjection
     {
         public Projection2()
         {

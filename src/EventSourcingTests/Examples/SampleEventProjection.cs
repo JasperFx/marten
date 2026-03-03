@@ -72,7 +72,7 @@ public class Document2
 
 #region sample_SampleEventProjection
 
-public class SampleEventProjection : EventProjection
+public partial class SampleEventProjection : EventProjection
 {
     public SampleEventProjection()
     {
@@ -128,7 +128,7 @@ public class SampleEventProjection : EventProjection
 #endregion
 
 #region sample_explicit_event_projection
-public class ExplicitSampleProjection: EventProjection
+public partial class ExplicitSampleProjection: EventProjection
 {
     public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
     {
