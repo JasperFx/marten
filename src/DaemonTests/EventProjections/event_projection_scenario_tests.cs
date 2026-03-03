@@ -286,7 +286,7 @@ public class DeleteUser
 
 #region sample_user_projection_of_event_projection
 
-public class UserProjection: EventProjection
+public partial class UserProjection: EventProjection
 {
     public User Create(CreateUser create)
     {

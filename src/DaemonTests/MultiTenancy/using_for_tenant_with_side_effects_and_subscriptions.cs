@@ -74,7 +74,7 @@ public class using_for_tenant_with_side_effects_and_subscriptions : OneOffConfig
 }
 
 
-public class NumbersSubscription: EventProjection
+public partial class NumbersSubscription: EventProjection
 {
     public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
     {

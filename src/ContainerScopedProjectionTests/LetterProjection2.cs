@@ -8,7 +8,7 @@ using Marten.Events.Projections;
 
 namespace ContainerScopedProjectionTests;
 
-public class LetterProjection2: EventProjection
+public partial class LetterProjection2: EventProjection
 {
     private readonly IPriceLookup _lookup;
 
@@ -43,7 +43,7 @@ public class LetterProjection2: EventProjection
 }
 
 [ProjectionVersion(3)]
-public class LetterProjection2V3: EventProjection
+public partial class LetterProjection2V3: EventProjection
 {
     private readonly IPriceLookup _lookup;
 

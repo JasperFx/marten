@@ -71,7 +71,7 @@ public class RegisteringProjections
 
 }
 
-public class MySpecialProjection: EventProjection
+public partial class MySpecialProjection: EventProjection
 {
     public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
     {

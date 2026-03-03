@@ -15,7 +15,7 @@ using Xunit;
 
 namespace StressTests.Bugs;
 
-public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationContext
+public sealed partial class Bug_3113_do_not_reorder_sql_operations : BugIntegrationContext
 {
     [Fact]
     public Task does_not_reorder_sql_commands_randomly_single_document_projections()
@@ -123,7 +123,7 @@ public sealed class Bug_3113_do_not_reorder_sql_operations : BugIntegrationConte
             };
     }
 
-    public class MyTableProjection : EventProjection
+    public partial class MyTableProjection : EventProjection
     {
         public const string MainTableName = "mt_tbl_bug_3113";
         public const string UsersTableName = $"{MainTableName}_users";

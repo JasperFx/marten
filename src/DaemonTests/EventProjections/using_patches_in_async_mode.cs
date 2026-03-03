@@ -56,7 +56,7 @@ public class using_patches_in_async_mode : OneOffConfigurationsContext
 
 public record StartAggregate;
 
-public class LetterPatcher: EventProjection
+public partial class LetterPatcher: EventProjection
 {
     public SimpleAggregate Transform(IEvent<StartAggregate> e) => new SimpleAggregate { Id = e.StreamId };
 

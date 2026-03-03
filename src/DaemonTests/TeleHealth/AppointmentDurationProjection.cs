@@ -7,7 +7,7 @@ using Weasel.Postgresql.Tables;
 
 namespace DaemonTests.TeleHealth;
 
-public class AppointmentDurationProjection : EventProjection
+public partial class AppointmentDurationProjection : EventProjection
 {
     public AppointmentDurationProjection()
     {

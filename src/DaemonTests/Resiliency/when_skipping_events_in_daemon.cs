@@ -288,7 +288,7 @@ public class when_skipping_events_in_daemon_with_advanced_tracking : DaemonConte
     }
 }
 
-public class ErrorRejectingEventProjection: EventProjection
+public partial class ErrorRejectingEventProjection: EventProjection
 {
     public ErrorRejectingEventProjection()
     {

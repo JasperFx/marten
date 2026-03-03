@@ -34,7 +34,7 @@ public record ImportFailed;
 
 #region sample_import_sql_projection
 
-public class ImportSqlProjection: EventProjection
+public partial class ImportSqlProjection: EventProjection
 {
     public ImportSqlProjection()
     {
