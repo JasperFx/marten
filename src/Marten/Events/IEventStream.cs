@@ -32,6 +32,14 @@ public interface IEventStream<out T> where T: notnull
     void AppendMany(IEnumerable<object> events);
 
     /// <summary>
+    /// If true, Marten will enforce an optimistic concurrency check on this stream even if no
+    /// events are appended at the time of calling SaveChangesAsync(). This is useful when you want
+    /// to ensure the stream version has not advanced since it was fetched, even if the command
+    /// handler decides not to emit any new events.
+    /// </summary>
+    bool AlwaysEnforceConsistency { get; set; }
+
+    /// <summary>
     /// Try to advance the expected starting version for optimistic concurrency checks to the current version
     /// so that you can reuse a stream object for multiple units of work. This is meant to only be used in
     /// very specific circumstances.
@@ -107,6 +115,12 @@ internal class EventStream<T>: IEventStream<T>, IEventStream where T: notnull
     }
 
     public CancellationToken Cancellation { get; }
+
+    public bool AlwaysEnforceConsistency
+    {
+        get => _stream.AlwaysEnforceConsistency;
+        set => _stream.AlwaysEnforceConsistency = value;
+    }
 
     public IReadOnlyList<IEvent> Events => _stream.Events;
 

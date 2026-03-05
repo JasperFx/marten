@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using Marten.Events.Operations;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
@@ -58,6 +59,23 @@ internal class RichEventAppender: IEventAppender
             foreach (var @event in stream.Events)
             {
                 session.QueueOperation(storage.AppendEvent(eventGraph, session, stream, @event));
+            }
+
+            EventTagOperations.QueueTagOperations(eventGraph, session, stream);
+        }
+
+        // Queue AssertStreamVersion operations for streams with AlwaysEnforceConsistency but no events
+        foreach (var stream in session.WorkTracker.Streams.Where(x => !x.Events.Any() && x.AlwaysEnforceConsistency && x.ExpectedVersionOnServer.HasValue))
+        {
+            stream.TenantId ??= session.TenantId;
+
+            if (stream.Key != null)
+            {
+                session.QueueOperation(new AssertStreamVersionByKey(eventGraph, stream));
+            }
+            else
+            {
+                session.QueueOperation(new AssertStreamVersionById(eventGraph, stream));
             }
         }
 

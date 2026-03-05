@@ -409,6 +409,13 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private Func<string, NpgsqlDataSourceBuilder> _npgsqlDataSourceBuilderFactory = DefaultNpgsqlDataSourceBuilderFactory;
     private INpgsqlDataSourceFactory _npgsqlDataSourceFactory;
     private readonly List<Type> _compiledQueryTypes = new();
+
+    /// <summary>
+    /// Registry of custom projection storage factories, keyed by aggregate document type.
+    /// Used by EF Core projections to substitute Marten document storage with DbContext-based storage.
+    /// </summary>
+    public Dictionary<Type, Func<IQuerySession, string, object>> CustomProjectionStorageProviders { get; } = new();
+
     private int _applyChangesLockId = 4004;
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;

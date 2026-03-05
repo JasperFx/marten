@@ -6,6 +6,8 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
+using Marten.Events.Dcb;
 
 namespace Marten.Events;
 
@@ -413,6 +415,25 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Guid CompletelyReplaceEvent<T>(long sequence, T eventBody) where T : class;
+
+    /// <summary>
+    /// Query events by their tags using the DCB pattern.
+    /// Returns events matching any of the OR'd conditions in the query, ordered by seq_id.
+    /// </summary>
+    Task<IReadOnlyList<IEvent>> QueryByTagsAsync(EventTagQuery query, CancellationToken cancellation = default);
+
+    /// <summary>
+    /// Query events by their tags and aggregate them into type T using a live fold.
+    /// </summary>
+    Task<T?> AggregateByTagsAsync<T>(EventTagQuery query, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    /// Fetch events by tag query, aggregate into T, and establish a DCB consistency boundary.
+    /// At SaveChangesAsync() time, Marten will assert no new matching events were added
+    /// since the query was executed.
+    /// </summary>
+    Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query,
+        CancellationToken cancellation = default) where T : class;
 
 }
 
