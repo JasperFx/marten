@@ -171,6 +171,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Querying Events', link: '/events/querying' },
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
+            { text: 'Dynamic Consistency Boundary', link: '/events/dcb' },
             { text: 'Optimizing Performance', link: '/events/optimizing' },
 
             {
@@ -196,6 +197,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'Asynchronous Projections', link: '/events/projections/async-daemon' },
                 { text: 'Testing Projections', link: '/events/projections/testing' },
                 { text: 'Rebuilding Projections', link: '/events/projections/rebuilding' },
+                { text: 'EF Core Projections', link: '/events/projections/efcore' },
                 { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
             },

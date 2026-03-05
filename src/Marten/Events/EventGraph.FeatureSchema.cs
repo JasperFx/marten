@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
 using Marten.Events.Projections;
 using Marten.Events.Schema;
@@ -70,6 +71,11 @@ public partial class EventGraph: IFeatureSchema
             yield return new EventProgressionSkippingTable(this);
             yield return new SystemFunction(DatabaseSchemaName, "mt_mark_progression_with_skip",
                 "varchar, bigint, bigint");
+        }
+
+        foreach (var tagRegistration in _tagTypes)
+        {
+            yield return new EventTagTable(this, tagRegistration);
         }
     }
 }

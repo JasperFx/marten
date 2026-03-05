@@ -14,6 +14,7 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
+using JasperFx.Events.Tags;
 using Marten.Events.Aggregation;
 using Marten.Events.Schema;
 using Marten.Exceptions;
@@ -30,8 +31,9 @@ using static JasperFx.Events.EventTypeExtensions;
 
 namespace Marten.Events;
 
-public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions, IDisposable, IAsyncDisposable,
-    IEventRegistry, IAggregationSourceFactory<IQuerySession>, IDescribeMyself, ICodeFileCollection
+public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
+    IDisposable, IAsyncDisposable,
+    IAggregationSourceFactory<IQuerySession>, IDescribeMyself, ICodeFileCollection
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -52,7 +54,8 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     private bool _isDisposed;
 
     private DocumentStore _store;
-    private StreamIdentity _streamIdentity = StreamIdentity.AsGuid;
+
+    private readonly List<TagTypeRegistration> _tagTypes = new();
 
     internal EventGraph(StoreOptions options)
     {
@@ -158,17 +161,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         _tombstones?.SafeDispose();
     }
 
-    IEventType IEventRegistry.EventMappingFor(Type eventType)
-    {
-        return EventMappingFor(eventType);
-    }
-
-    public Type AggregateTypeFor(string aggregateTypeName)
+    public override Type AggregateTypeFor(string aggregateTypeName)
     {
         return _aggregateTypeByName[aggregateTypeName];
     }
 
-    public string AggregateAliasFor(Type aggregateType)
+    public override string AggregateAliasFor(Type aggregateType)
     {
         var alias = _aggregateNameByType[aggregateType];
 
@@ -177,7 +175,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return alias;
     }
 
-    public IEvent BuildEvent(object eventData)
+    public override IEvent BuildEvent(object eventData)
     {
         ArgumentNullException.ThrowIfNull(eventData);
 
@@ -206,9 +204,6 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 
-    [IgnoreDescription]
-    public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
-
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
     public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
@@ -216,12 +211,12 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     /// <summary>
     ///     Configure whether event streams are identified with Guid or strings
     /// </summary>
-    public StreamIdentity StreamIdentity
+    public override StreamIdentity StreamIdentity
     {
-        get => _streamIdentity;
+        get => base.StreamIdentity;
         set
         {
-            _streamIdentity = value;
+            base.StreamIdentity = value;
             StreamIdDbType = value == StreamIdentity.AsGuid ? NpgsqlDbType.Uuid : NpgsqlDbType.Varchar;
         }
     }
@@ -258,7 +253,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     ///     the event type
     /// </summary>
     /// <param name="eventType"></param>
-    public void AddEventType(Type eventType)
+    public override void AddEventType(Type eventType)
     {
         _events.FillDefault(eventType);
     }
@@ -272,6 +267,45 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
     public void AddEventTypes(IEnumerable<Type> types)
     {
         types.Each(AddEventType);
+    }
+
+    /// <summary>
+    /// Register a strong-typed identifier as a tag type for DCB support.
+    /// </summary>
+    public TagTypeRegistration RegisterTagType<TTag>()
+    {
+        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
+        if (existing != null) return existing;
+
+        var registration = new TagTypeRegistration(typeof(TTag));
+        _tagTypes.Add(registration);
+        return registration;
+    }
+
+    /// <summary>
+    /// Register a strong-typed identifier as a tag type with a custom table name suffix.
+    /// </summary>
+    public TagTypeRegistration RegisterTagType<TTag>(string tableSuffix)
+    {
+        var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
+        if (existing != null) return existing;
+
+        var registration = new TagTypeRegistration(typeof(TTag), tableSuffix);
+        _tagTypes.Add(registration);
+        return registration;
+    }
+
+    /// <summary>
+    /// The registered tag types for DCB support.
+    /// </summary>
+    public IReadOnlyList<TagTypeRegistration> TagTypes => _tagTypes;
+
+    /// <summary>
+    /// Find a tag type registration by type, or null if not registered.
+    /// </summary>
+    public TagTypeRegistration? FindTagType(Type tagType)
+    {
+        return _tagTypes.FirstOrDefault(t => t.TagType == tagType);
     }
 
     public void MapEventType<TEvent>(string eventTypeName) where TEvent : class
@@ -418,7 +452,7 @@ public partial class EventGraph: IEventStoreOptions, IReadOnlyEventStoreOptions,
         return null;
     }
 
-    internal EventMapping EventMappingFor(Type eventType)
+    public override EventMapping EventMappingFor(Type eventType)
     {
         return _events[eventType];
     }

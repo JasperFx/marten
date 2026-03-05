@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Subscriptions;
+using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Exceptions;
@@ -390,6 +391,27 @@ namespace Marten.Events
         /// <param name="func">Function to replace the event with a masked event</param>
         /// <typeparam name="T"></typeparam>
         void AddMaskingRuleForProtectedInformation<T>(Func<T, T> func);
+
+        /// <summary>
+        /// Register a strong-typed identifier as a tag type for Dynamic Consistency Boundary (DCB) support.
+        /// This creates a dedicated tag table for efficient cross-stream querying and consistency checks.
+        /// </summary>
+        /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
+        /// <returns>The tag type registration for further configuration</returns>
+        TagTypeRegistration RegisterTagType<TTag>();
+
+        /// <summary>
+        /// Register a strong-typed identifier as a tag type with a custom table name suffix.
+        /// </summary>
+        /// <typeparam name="TTag">A strong-typed identifier type</typeparam>
+        /// <param name="tableSuffix">Custom table name suffix (e.g., "custom_student")</param>
+        /// <returns>The tag type registration for further configuration</returns>
+        TagTypeRegistration RegisterTagType<TTag>(string tableSuffix);
+
+        /// <summary>
+        /// The registered tag types for DCB support.
+        /// </summary>
+        IReadOnlyList<TagTypeRegistration> TagTypes { get; }
     }
 }
 
