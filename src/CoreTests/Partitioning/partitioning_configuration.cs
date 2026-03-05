@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
@@ -263,5 +264,54 @@ public class partitioning_configuration : OneOffConfigurationsContext
         // This should not throw - PostgreSQL will reject unique indexes
         // that don't include all partition columns
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+    }
+
+    [Fact]
+    public async Task cannot_query_within_child_collections_across_partition_tenants()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>()
+                .MultiTenantedWithPartitioning(x =>
+                {
+                    x.ByHash(Enumerable.Range(0, 2).Select(i => $"h{i:000}").ToArray());
+                });
+        });
+
+        var targetBlue1 = Target.Random();
+        targetBlue1.NestedObject = new([Target.Random()]);
+        targetBlue1.NestedObject.Targets[0].String = "not a green list";
+        await using (var blue = theStore.LightweightSession("Blue"))
+        {
+            blue.Store(targetBlue1);
+            await blue.SaveChangesAsync();
+        }
+
+        var targetRed1 = Target.Random();
+        targetRed1.NestedObject = new([Target.Random()]);
+        targetRed1.NestedObject.Targets[0].String = "not a green list";
+        await using (var red = theStore.LightweightSession("Red"))
+        {
+            red.Store(targetRed1);
+            await red.SaveChangesAsync();
+        }
+
+        await using (var red = theStore.QuerySession("Red"))
+        {
+            (await red.Query<Target>()
+                    .Where(x => x.NestedObject.Targets.Any(i => i.String != null && i.String == "not a green list"))
+                    .ToListAsync())
+                .ShouldHaveSingleItem()
+                .Id.ShouldBe(targetRed1.Id);
+        }
+
+        await using (var blue = theStore.QuerySession("Blue"))
+        {
+            (await blue.Query<Target>()
+                    .Where(x => x.NestedObject.Targets.Any(i => i.String != null && i.String == "not a green list"))
+                    .ToListAsync())
+                .ShouldHaveSingleItem()
+                .Id.ShouldBe(targetBlue1.Id);
+        }
     }
 }

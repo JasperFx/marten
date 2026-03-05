@@ -135,8 +135,6 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
         StoreOptions.applyPostPolicies(this);
 
-        QueryMembers.TenancyStyle = TenancyStyle;
-
         _schema = new Lazy<DocumentSchema>(() => new DocumentSchema(this));
 
         if (DisablePartitioningIfAny)
@@ -286,7 +284,20 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     IReadOnlyHiloSettings IDocumentType.HiloSettings { get; }
 
-    public TenancyStyle TenancyStyle { get; set; } = TenancyStyle.Single;
+    private TenancyStyle _tenancyStyle = TenancyStyle.Single;
+
+    public TenancyStyle TenancyStyle
+    {
+        get => _tenancyStyle;
+        set
+        {
+            _tenancyStyle = value;
+            if (QueryMembers != null)
+            {
+                QueryMembers.TenancyStyle = value;
+            }
+        }
+    }
 
     IDocumentType IDocumentType.Root => this;
 

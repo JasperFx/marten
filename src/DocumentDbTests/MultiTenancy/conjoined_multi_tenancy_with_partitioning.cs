@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
 using Marten;
+using Marten.Linq;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing;
@@ -28,6 +29,10 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
     public conjoined_multi_tenancy_with_partitioning()
     {
+        targetBlue1.NestedObject = new([Target.Random()]);
+        targetBlue1.NestedObject.Targets[0].String = "not a green list";
+        targetRed1.NestedObject = new([Target.Random()]);
+        targetRed1.NestedObject.Targets[0].String = "not a green list";
 
         StoreOptions(opts =>
         {
@@ -81,6 +86,28 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         {
             (await blue.LoadAsync<Target>(targetBlue1.Id)).ShouldNotBeNull();
             (await blue.LoadAsync<Target>(targetRed1.Id)).ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task cannot_query_within_child_collections_across_tenants()
+    {
+        await using (var red = theStore.QuerySession("Red"))
+        {
+            (await red.Query<Target>()
+                    .Where(x => x.NestedObject.Targets.Any(i => i.String != null && i.String == "not a green list"))
+                    .ToListAsync())
+                .ShouldHaveSingleItem()
+                .Id.ShouldBe(targetRed1.Id);
+        }
+
+        await using (var blue = theStore.QuerySession("Blue"))
+        {
+            (await blue.Query<Target>()
+                    .Where(x => x.NestedObject.Targets.Any(i => i.String != null && i.String == "not a green list"))
+                    .ToListAsync())
+                .ShouldHaveSingleItem()
+                .Id.ShouldBe(targetBlue1.Id);
         }
     }
 
