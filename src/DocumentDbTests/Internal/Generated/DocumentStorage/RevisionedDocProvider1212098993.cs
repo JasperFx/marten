@@ -1095,7 +1095,7 @@ namespace Marten.Generated.DocumentStorage
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
-            writer.Write(document.Version <= 0 ? (object)DBNull.Value : (object)document.Version, NpgsqlTypes.NpgsqlDbType.Integer);
+            writer.Write(document.Version <= 0 ? (object)System.DBNull.Value : (object)document.Version, NpgsqlTypes.NpgsqlDbType.Integer);
             await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
