@@ -14,16 +14,26 @@ namespace Marten.EntityFrameworkCore;
 internal static class EfCoreDbContextFactory
 {
     public static (TDbContext DbContext, NpgsqlConnection InitialConnection) Create<TDbContext>(
-        Storage.IMartenDatabase database,
-        Action<DbContextOptionsBuilder<TDbContext>>? configure = null)
+        this Storage.IMartenDatabase database,
+        Action<DbContextOptionsBuilder<TDbContext>>? configure = null,
+        string? schemaName = null)
         where TDbContext : DbContext
     {
         var builder = new DbContextOptionsBuilder<TDbContext>();
 
-        // Create a connection object from Marten's database to register the Npgsql provider.
-        // This connection is used only for provider configuration; the real connection is
-        // set by BeforeCommitAsync when the transaction is ready.
+        // Create a connection from Marten's database for provider registration.
         var connection = database.CreateConnection();
+
+        // If a schema name is provided, open the connection and set the search_path
+        // so EF Core queries target the correct schema when it loads existing aggregates.
+        if (!string.IsNullOrEmpty(schemaName))
+        {
+            connection.Open();
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = $"SET search_path TO {schemaName}";
+            cmd.ExecuteNonQuery();
+        }
+
         builder.UseNpgsql(connection);
         configure?.Invoke(builder);
         var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), builder.Options)!;
