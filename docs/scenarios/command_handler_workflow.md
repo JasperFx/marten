@@ -270,6 +270,49 @@ public async Task Handle3(MarkItemReady command, IDocumentSession session)
 
 Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case, Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or the `IDocumentSession` is disposed.
 
+## Enforcing Consistency Without Appending Events <Badge type="tip" text="8.x" />
+
+In some command handling scenarios, your business logic may evaluate the current aggregate state and decide that no new events need to be emitted. By default, if no events are appended to the stream returned by `FetchForWriting()`, Marten will not perform any concurrency check when `SaveChangesAsync()` is called. This means that if another process has modified the stream between your fetch and save, you won't know about it.
+
+If you need to guarantee that the stream has not been modified even when your handler doesn't emit events, you can set `AlwaysEnforceConsistency = true` on the stream:
+
+```cs
+public async Task Handle(ValidateOrder command, IDocumentSession session)
+{
+    var stream = await session
+        .Events
+        .FetchForWriting<Order>(command.OrderId);
+
+    // Tell Marten to enforce the optimistic concurrency check
+    // even if we don't append any events
+    stream.AlwaysEnforceConsistency = true;
+
+    var order = stream.Aggregate;
+
+    // Business logic that may or may not produce events
+    if (order.NeedsUpdate(command))
+    {
+        stream.AppendOne(new OrderUpdated(command.Data));
+    }
+
+    // If no events were appended, Marten will still verify that the
+    // stream version hasn't changed since FetchForWriting() was called.
+    // Throws ConcurrencyException if another process modified the stream.
+    await session.SaveChangesAsync();
+}
+```
+
+When `AlwaysEnforceConsistency` is `true`:
+
+- **If events are appended**, Marten behaves exactly as before -- the normal optimistic concurrency check via `UpdateStreamVersion` is applied.
+- **If no events are appended**, Marten issues an `AssertStreamVersion` check that reads the current stream version from the database and throws a `ConcurrencyException` if it doesn't match the version that was fetched.
+
+This is useful in workflows where:
+
+- A command handler conditionally emits events and you need to know if another process raced ahead
+- You want to implement "read-then-validate" patterns where consistency of the read matters even without writes
+- You're building saga or process manager patterns where skipping an event is a valid but concurrency-sensitive outcome
+
 ## WriteToAggregate
 
 Lastly, there are several overloads of a method called `IEventStore.WriteToAggregate()` that just puts some syntactic sugar
