@@ -20,15 +20,13 @@ public partial class EventGraph
 
     internal IEventAppender EventAppender { get; set; } = new RichEventAppender();
 
-    private EventAppendMode _appendMode = EventAppendMode.Rich;
-
-    public EventAppendMode AppendMode
+    public override EventAppendMode AppendMode
     {
-        get => _appendMode;
+        get => base.AppendMode;
         set
         {
-            _appendMode = value;
-            EventAppender = _appendMode == EventAppendMode.Rich ? new RichEventAppender() : new QuickEventAppender();
+            base.AppendMode = value;
+            EventAppender = value == EventAppendMode.Rich ? new RichEventAppender() : new QuickEventAppender();
         }
     }
 
