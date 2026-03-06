@@ -16,6 +16,21 @@ internal class QuickEventAppender: IEventAppender
     {
         var storage = session.EventStorage();
 
+        // Queue AssertStreamVersion operations for streams with AlwaysEnforceConsistency but no events
+        foreach (var stream in session.WorkTracker.Streams.Where(x => !x.Events.Any() && x.AlwaysEnforceConsistency && x.ExpectedVersionOnServer.HasValue))
+        {
+            stream.TenantId ??= session.TenantId;
+
+            if (stream.Key != null)
+            {
+                session.QueueOperation(new AssertStreamVersionByKey(eventGraph, stream));
+            }
+            else
+            {
+                session.QueueOperation(new AssertStreamVersionById(eventGraph, stream));
+            }
+        }
+
         foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
         {
             stream.TenantId ??= session.TenantId;
@@ -52,6 +67,9 @@ internal class QuickEventAppender: IEventAppender
                     session.QueueOperation(quickAppendEvents);
                 }
             }
+
+            // Queue tag inserts using event id subquery (sequences not yet assigned in Quick mode)
+            EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
         }
     }
 
