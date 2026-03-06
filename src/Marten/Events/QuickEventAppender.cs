@@ -46,6 +46,9 @@ internal class QuickEventAppender: IEventAppender
                 {
                     session.QueueOperation(storage.QuickAppendEventWithVersion(stream, @event));
                 }
+
+                // Individual inserts don't use the function, so queue separate tag operations
+                EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
             }
             else
             {
@@ -58,18 +61,19 @@ internal class QuickEventAppender: IEventAppender
                     {
                         session.QueueOperation(storage.QuickAppendEventWithVersion(stream, @event));
                     }
+
+                    // Individual inserts don't use the function, so queue separate tag operations
+                    EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
                 }
                 else
                 {
+                    // Tags are handled inside the PostgreSQL function via array parameters
                     stream.PrepareEvents(0, eventGraph, sequences, session);
                     var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
                     quickAppendEvents.Events = eventGraph;
                     session.QueueOperation(quickAppendEvents);
                 }
             }
-
-            // Queue tag inserts using event id subquery (sequences not yet assigned in Quick mode)
-            EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
         }
     }
 

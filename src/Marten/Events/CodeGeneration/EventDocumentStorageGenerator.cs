@@ -356,6 +356,11 @@ internal static class EventDocumentStorageGenerator
             configure.Frames.Code("writeTimestamps(parameterBuilder);");
         }
 
+        if (graph.TagTypes.Count > 0)
+        {
+            configure.Frames.Code("writeAllTagValues(parameterBuilder);");
+        }
+
         configure.Frames.AppendSql(')');
 
         return operationType;

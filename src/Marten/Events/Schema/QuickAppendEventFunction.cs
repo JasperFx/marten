@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -72,9 +73,22 @@ namespace Marten.Events.Schema;
                 metadataParameters += ", timestamps timestamptz[]";
             }
 
+            // Add tag type parameters
+            var tagParameters = "";
+            var tagInserts = "";
+            foreach (var tagType in _events.TagTypes)
+            {
+                var paramName = $"tag_{tagType.TableSuffix}_values";
+                tagParameters += $", {paramName} varchar[]";
+
+                tagInserts += $@"
+		IF {paramName}[index] IS NOT NULL THEN
+			INSERT INTO {databaseSchema}.mt_event_tag_{tagType.TableSuffix} (value, seq_id) VALUES ({paramName}[index]::{PostgresqlTypeFor(tagType.SimpleType)}, seq) ON CONFLICT DO NOTHING;
+		END IF;";
+            }
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
@@ -114,7 +128,7 @@ BEGIN
 			(seq_id, id, stream_id, version, data, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
 		values
 			(seq, event_id, stream, event_version, body, event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues});
-
+{tagInserts}
 		index := index + 1;
 	end loop;
 
@@ -124,6 +138,17 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 ");
+        }
+
+        private static string PostgresqlTypeFor(System.Type simpleType)
+        {
+            if (simpleType == typeof(string)) return "text";
+            if (simpleType == typeof(System.Guid)) return "uuid";
+            if (simpleType == typeof(int)) return "integer";
+            if (simpleType == typeof(long)) return "bigint";
+            if (simpleType == typeof(short)) return "smallint";
+
+            return "text";
         }
 
     }
