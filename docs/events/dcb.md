@@ -41,9 +41,7 @@ public record OrderNumber(int Value);
 
 Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
 
-::: warning
-Tags are only supported with the **Rich** event append mode (the default). Quick append mode does not pre-assign sequence numbers, so tag persistence is not possible in that mode.
-:::
+Tags work with both **Rich** (default) and **Quick** append modes. In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
 
 ## Tagging Events
 
