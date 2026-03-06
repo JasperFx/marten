@@ -8,6 +8,7 @@ using JasperFx.Events.Tags;
 using Marten;
 using Marten.Events;
 using Marten.Events.Dcb;
+using Marten.Services.BatchQuerying;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -398,6 +399,75 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         var e = session1.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
         e.WithTag(studentId, courseId);
         boundary.AppendOne(e);
+
+        await Should.ThrowAsync<DcbConcurrencyException>(async () =>
+        {
+            await session1.SaveChangesAsync();
+        });
+    }
+
+    [Fact]
+    public async Task can_fetch_for_writing_by_tags_via_batch_query()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        await using var session2 = theStore.LightweightSession();
+        var batch = session2.CreateBatchQuery();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundaryTask = batch.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+        await batch.Execute();
+
+        var boundary = await boundaryTask;
+        boundary.Aggregate.ShouldNotBeNull();
+        boundary.Aggregate!.StudentName.ShouldBe("Alice");
+        boundary.Events.Count.ShouldBe(1);
+        boundary.LastSeenSequence.ShouldBeGreaterThan(0);
+
+        // Append via boundary and save
+        var assignment = session2.Events.BuildEvent(new AssignmentSubmitted("HW1", 95));
+        assignment.WithTag(studentId, courseId);
+        boundary.AppendOne(assignment);
+        await session2.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task batch_query_fetch_for_writing_by_tags_detects_concurrency_violation()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        // Session 1: fetch via batch query
+        await using var session1 = theStore.LightweightSession();
+        var batch = session1.CreateBatchQuery();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundaryTask = batch.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+        await batch.Execute();
+        var boundary = await boundaryTask;
+
+        // Session 2: append conflicting event
+        await using var session2 = theStore.LightweightSession();
+        var conflicting = session2.Events.BuildEvent(new AssignmentSubmitted("HW-conflict", 50));
+        conflicting.WithTag(studentId, courseId);
+        session2.Events.Append(streamId, conflicting);
+        await session2.SaveChangesAsync();
+
+        // Session 1: try to save — should throw
+        var assignment = session1.Events.BuildEvent(new AssignmentSubmitted("HW1", 95));
+        assignment.WithTag(studentId, courseId);
+        boundary.AppendOne(assignment);
 
         await Should.ThrowAsync<DcbConcurrencyException>(async () =>
         {
