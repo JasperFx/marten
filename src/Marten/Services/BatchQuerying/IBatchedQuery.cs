@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Tags;
 using Marten.Events;
+using Marten.Events.Dcb;
 using Marten.Internal.Sessions;
 using StreamState = Marten.Events.StreamState;
 using Marten.Linq;
@@ -135,6 +137,15 @@ public interface IBatchEvents
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<T?> FetchLatest<T>(string id) where T : class;
+
+    /// <summary>
+    ///     Fetch events matching a tag query and aggregate them into type T with a DCB consistency boundary.
+    ///     At SaveChangesAsync time, will throw DcbConcurrencyException if new matching events were appended.
+    /// </summary>
+    /// <param name="query"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query) where T : class;
 }
 
 public interface IBatchedQuery

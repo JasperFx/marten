@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Tags;
 using Marten.Events;
+using Marten.Events.Dcb;
 using Marten.Events.Fetching;
 using StreamState = Marten.Events.StreamState;
 using Marten.Events.Querying;
@@ -178,6 +180,15 @@ internal partial class BatchedQuery: IBatchEvents
             _documentTypes.Add(typeof(T));
         }
         var handler = plan.BuildQueryHandler(Parent, id);
+        return AddItem(handler);
+    }
+
+    public Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query) where T : class
+    {
+        Parent.AssertIsDocumentSession();
+        _documentTypes.Add(typeof(IEvent));
+        var store = (DocumentStore)Parent.DocumentStore;
+        var handler = new FetchForWritingByTagsHandler<T>(store, query);
         return AddItem(handler);
     }
 }
