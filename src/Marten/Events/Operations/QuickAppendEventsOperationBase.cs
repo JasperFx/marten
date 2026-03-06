@@ -175,6 +175,36 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.TimestampTz;
     }
 
+    protected void writeAllTagValues(IGroupedParameterBuilder builder)
+    {
+        var tagTypes = Events.TagTypes;
+        var events = Stream.Events;
+        var count = events.Count;
+
+        foreach (var registration in tagTypes)
+        {
+            var values = new string?[count];
+            for (int i = 0; i < count; i++)
+            {
+                var tags = events[i].Tags;
+                if (tags != null)
+                {
+                    foreach (var tag in tags)
+                    {
+                        if (tag.TagType == registration.TagType)
+                        {
+                            values[i] = tag.Value?.ToString();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            var param = builder.AppendParameter(values);
+            param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+        }
+    }
+
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false))
