@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events.Projections;
+using Marten.Internal.Sessions;
+using Marten.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace Marten.EntityFrameworkCore;
@@ -28,20 +30,25 @@ public abstract class EfCoreEventProjection<TDbContext>: IProjection
     public async Task ApplyAsync(IDocumentOperations operations,
         IReadOnlyList<IEvent> events, CancellationToken cancellation)
     {
+        // Ensure EF Core entity tables exist (e.g., after schema was dropped by Clean)
+        await operations.Database.EnsureStorageExistsAsync(typeof(StorageFeatures), cancellation)
+            .ConfigureAwait(false);
+
         // Create a DbContext with a connection object from Marten's database.
         // The actual connection will be swapped in during BeforeCommitAsync.
-        var (dbContext, initialConnection) = EfCoreDbContextFactory.Create<TDbContext>(operations.Database, ConfigureDbContext);
+        var schemaName = (operations as QuerySession)?.Options.DatabaseSchemaName;
+        var (dbContext, initialConnection) = operations.Database.Create<TDbContext>(ConfigureDbContext, schemaName);
         var ops = new EfCoreOperations<TDbContext>(operations, dbContext);
 
         foreach (var @event in events)
         {
-            await ProjectAsync(@event, ops, cancellation).ConfigureAwait(false);
+            await ProjectAsync(@event, ops.DbContext, ops.Marten, cancellation).ConfigureAwait(false);
         }
 
         if (operations is ITransactionParticipantRegistrar registrar)
         {
             registrar.AddTransactionParticipant(
-                new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection));
+                new DbContextTransactionParticipant<TDbContext>(dbContext, initialConnection, schemaName));
         }
     }
 
@@ -50,5 +57,6 @@ public abstract class EfCoreEventProjection<TDbContext>: IProjection
     /// and <c>operations.Marten</c> for Marten document writes.
     /// </summary>
     protected abstract Task ProjectAsync(IEvent @event,
-        EfCoreOperations<TDbContext> operations, CancellationToken token);
+        TDbContext dbContext,
+        IDocumentOperations operations, CancellationToken token);
 }

@@ -22,6 +22,14 @@ public abstract partial class DocumentSessionBase
     public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(string tenantId,
         CancellationToken cancellationToken) where TDoc : notnull where TId : notnull
     {
+        // Check for custom projection storage providers (e.g., EF Core)
+        if (Options.CustomProjectionStorageProviders.TryGetValue(typeof(TDoc), out var factory))
+        {
+            // Ensure ExtendedSchemaObjects (e.g. EF Core entity tables) are created
+            await Database.EnsureStorageExistsAsync(typeof(StorageFeatures), cancellationToken).ConfigureAwait(false);
+            return (IProjectionStorage<TDoc, TId>)factory(this, tenantId);
+        }
+
         await Database.EnsureStorageExistsAsync(typeof(TDoc), cancellationToken).ConfigureAwait(false);
         if (tenantId == TenantId || tenantId.IsEmpty()) return new ProjectionStorage<TDoc, TId>(this, StorageFor<TDoc, TId>());
 

@@ -114,6 +114,11 @@ WHERE  s.sequence_name like 'mt_%' and s.sequence_schema = ANY(:schemas);";
 
         var builder = new CommandBuilder();
 
+        // Drop extended schema objects (e.g., EF Core entity tables) registered via StoreOptions
+        foreach (var schemaObject in Options.Storage.ExtendedSchemaObjects)
+        {
+            builder.Append($"DROP TABLE IF EXISTS {schemaObject.Identifier} CASCADE;");
+        }
 
         foreach (var table in tables) builder.Append($"DROP TABLE IF EXISTS {table} CASCADE;");
 

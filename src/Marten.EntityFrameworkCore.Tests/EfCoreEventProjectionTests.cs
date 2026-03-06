@@ -15,13 +15,14 @@ namespace Marten.EntityFrameworkCore.Tests;
 public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
 {
     protected override async Task ProjectAsync(IEvent @event,
-        EfCoreOperations<TestDbContext> operations, CancellationToken token)
+        TestDbContext dbContext,
+        IDocumentOperations operations, CancellationToken token)
     {
         switch (@event.Data)
         {
             case OrderPlaced placed:
                 // Write to EF Core
-                operations.DbContext.OrderSummaries.Add(new OrderSummary
+                dbContext.OrderSummaries.Add(new OrderSummary
                 {
                     Id = placed.OrderId,
                     CustomerName = placed.CustomerName,
@@ -29,8 +30,9 @@ public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
                     ItemCount = placed.Items,
                     Status = "Placed"
                 });
-                // Also write to Marten
-                operations.Marten.Store(new Order
+
+                // Also write to Marten if you want
+                operations.Store(new Order
                 {
                     Id = placed.OrderId,
                     CustomerName = placed.CustomerName,
@@ -40,7 +42,7 @@ public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
                 break;
 
             case OrderShipped shipped:
-                var summary = await operations.DbContext.OrderSummaries
+                var summary = await dbContext.OrderSummaries
                     .FindAsync(new object[] { shipped.OrderId }, token);
                 if (summary != null)
                 {
@@ -54,42 +56,25 @@ public class OrderSummaryProjection: EfCoreEventProjection<TestDbContext>
 public class EfCoreEventProjectionTests: IAsyncLifetime
 {
     private DocumentStore _store = null!;
-    private NpgsqlConnection _adminConnection = null!;
 
     public async Task InitializeAsync()
     {
-        // Create the EF table
-        _adminConnection = new NpgsqlConnection(ConnectionSource.ConnectionString);
-        await _adminConnection.OpenAsync();
-
-        await using var cmd = _adminConnection.CreateCommand();
-        cmd.CommandText = @"
-            DROP TABLE IF EXISTS ef_order_summaries;
-            CREATE TABLE ef_order_summaries (
-                ""Id"" uuid PRIMARY KEY,
-                ""CustomerName"" text NOT NULL DEFAULT '',
-                ""TotalAmount"" numeric NOT NULL DEFAULT 0,
-                ""ItemCount"" integer NOT NULL DEFAULT 0,
-                ""Status"" text NOT NULL DEFAULT 'Pending'
-            );";
-        await cmd.ExecuteNonQueryAsync();
-
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "efcore_tests";
             opts.Projections.Add(new OrderSummaryProjection(), ProjectionLifecycle.Inline);
+            // Register EF Core entity tables for Weasel migration
+            opts.AddEntityTablesFromDbContext<TestDbContext>();
         });
+
+        await _store.Advanced.Clean.CompletelyRemoveAllAsync();
     }
 
-    public async Task DisposeAsync()
+    public Task DisposeAsync()
     {
         _store?.Dispose();
-        if (_adminConnection != null)
-        {
-            await _adminConnection.CloseAsync();
-            await _adminConnection.DisposeAsync();
-        }
+        return Task.CompletedTask;
     }
 
     [Fact]
@@ -110,8 +95,11 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
         // Verify EF Core entity
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
+        await using var setSchema = conn.CreateCommand();
+        setSchema.CommandText = "SET search_path TO efcore_tests";
+        await setSchema.ExecuteNonQueryAsync();
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT \"CustomerName\", \"Status\" FROM ef_order_summaries WHERE \"Id\" = @id";
+        cmd.CommandText = "SELECT customer_name, status FROM ef_order_summaries WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
         await using var reader = await cmd.ExecuteReaderAsync();
         (await reader.ReadAsync()).ShouldBeTrue();
@@ -132,8 +120,11 @@ public class EfCoreEventProjectionTests: IAsyncLifetime
         // Verify EF Core entity was updated
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
+        await using var setSchema = conn.CreateCommand();
+        setSchema.CommandText = "SET search_path TO efcore_tests";
+        await setSchema.ExecuteNonQueryAsync();
         await using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT \"Status\" FROM ef_order_summaries WHERE \"Id\" = @id";
+        cmd.CommandText = "SELECT status FROM ef_order_summaries WHERE id = @id";
         cmd.Parameters.AddWithValue("id", orderId);
         var status = (string?)await cmd.ExecuteScalarAsync();
         status.ShouldBe("Shipped");

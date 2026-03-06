@@ -17,16 +17,28 @@ internal class DbContextTransactionParticipant<TDbContext>: ITransactionParticip
 {
     public TDbContext DbContext { get; }
     private readonly NpgsqlConnection _initialConnection;
+    private readonly string? _schemaName;
 
-    public DbContextTransactionParticipant(TDbContext dbContext, NpgsqlConnection initialConnection)
+    public DbContextTransactionParticipant(TDbContext dbContext, NpgsqlConnection initialConnection,
+        string? schemaName = null)
     {
         DbContext = dbContext;
         _initialConnection = initialConnection;
+        _schemaName = schemaName;
     }
 
     public async Task BeforeCommitAsync(NpgsqlConnection connection,
         NpgsqlTransaction transaction, CancellationToken token)
     {
+        // Set search_path on Marten's real connection so EF Core targets the right schema
+        if (!string.IsNullOrEmpty(_schemaName))
+        {
+            await using var setSchema = connection.CreateCommand();
+            setSchema.CommandText = $"SET search_path TO {_schemaName}";
+            setSchema.Transaction = transaction;
+            await setSchema.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+
         // Swap to Marten's real connection and transaction
         DbContext.Database.SetDbConnection(connection);
         await DbContext.Database.UseTransactionAsync(transaction, token).ConfigureAwait(false);
