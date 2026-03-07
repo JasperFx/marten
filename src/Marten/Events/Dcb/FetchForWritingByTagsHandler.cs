@@ -53,7 +53,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
                                ?? throw new InvalidOperationException(
                                    $"Tag type '{tagType.Name}' is not registered.");
 
-            builder.Append(" inner join ");
+            builder.Append(" left join ");
             builder.Append(schema);
             builder.Append(".mt_event_tag_");
             builder.Append(registration.TableSuffix);

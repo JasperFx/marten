@@ -116,7 +116,9 @@ internal partial class EventStore
         sb.Append(schema);
         sb.Append(".mt_events e");
 
-        // INNER JOINs to tag tables
+        // LEFT JOINs to tag tables — an event may only have tags in some of the
+        // tag tables, so inner joins would incorrectly filter out events that
+        // don't appear in every tag type table.
         for (var i = 0; i < distinctTagTypes.Count; i++)
         {
             var tagType = distinctTagTypes[i];
@@ -124,7 +126,7 @@ internal partial class EventStore
                                ?? throw new InvalidOperationException(
                                    $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
 
-            sb.Append(" inner join ");
+            sb.Append(" left join ");
             sb.Append(schema);
             sb.Append(".mt_event_tag_");
             sb.Append(registration.TableSuffix);
