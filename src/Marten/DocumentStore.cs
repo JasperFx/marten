@@ -61,6 +61,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
         StorageFeatures.PostProcessConfiguration();
         Events.Initialize(this);
+        Options.Projections.DiscoverGeneratedEvolvers(AppDomain.CurrentDomain.GetAssemblies());
         Options.Projections.AssertValidity(Options);
 
         if (Options.LogFactory != null)

@@ -24,6 +24,12 @@ public record StudentEnrolled(string StudentName, string CourseName);
 public record AssignmentSubmitted(string AssignmentName, int Score);
 public record StudentDropped(string Reason);
 
+// Event with tag-typed properties for inference testing
+public record StudentGraded(StudentId StudentId, CourseId CourseId, int Grade);
+
+// Event with NO tag-typed properties — should fail inference
+public record SystemNotification(string Message);
+
 // Aggregate for DCB
 public class StudentCourseEnrollment
 {
@@ -60,9 +66,12 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
             opts.Events.AddEventType<StudentEnrolled>();
             opts.Events.AddEventType<AssignmentSubmitted>();
             opts.Events.AddEventType<StudentDropped>();
+            opts.Events.AddEventType<StudentGraded>();
 
-            opts.Events.RegisterTagType<StudentId>("student");
-            opts.Events.RegisterTagType<CourseId>("course");
+            opts.Events.RegisterTagType<StudentId>("student")
+                .ForAggregate<StudentCourseEnrollment>();
+            opts.Events.RegisterTagType<CourseId>("course")
+                .ForAggregate<StudentCourseEnrollment>();
 
             opts.Projections.LiveStreamAggregation<StudentCourseEnrollment>();
         });
@@ -473,5 +482,137 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         {
             await session1.SaveChangesAsync();
         });
+    }
+
+    [Fact]
+    public async Task fetch_for_writing_by_tags_throws_on_empty_query()
+    {
+        var query = new EventTagQuery();
+        await Should.ThrowAsync<ArgumentException>(async () =>
+        {
+            await theSession.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+        });
+    }
+
+    [Fact]
+    public async Task append_event_with_inferred_tags_from_properties()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        // Seed initial event with explicit tags
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        // Fetch for writing
+        await using var session2 = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundary = await session2.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+
+        // Append a raw event that has StudentId and CourseId properties —
+        // tags should be inferred automatically
+        boundary.AppendOne(new StudentGraded(studentId, courseId, 95));
+
+        // Should succeed — tags inferred from properties
+        await session2.SaveChangesAsync();
+
+        // Verify the event is discoverable by tag query
+        await using var session3 = theStore.LightweightSession();
+        var events = await session3.Events.QueryByTagsAsync(
+            new EventTagQuery().Or<StudentId>(studentId));
+        events.Count.ShouldBe(2);
+        events[1].Data.ShouldBeOfType<StudentGraded>().Grade.ShouldBe(95);
+    }
+
+    [Fact]
+    public async Task append_event_with_no_tags_and_no_inferable_properties_throws()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        // Seed initial event
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        // Fetch for writing
+        await using var session2 = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundary = await session2.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+
+        // Append an event with no tags and no tag-typed properties — should throw
+        Should.Throw<InvalidOperationException>(() =>
+        {
+            boundary.AppendOne(new SystemNotification("test"));
+        });
+    }
+
+    [Fact]
+    public async Task append_already_wrapped_event_with_explicit_tags_works()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        // Seed initial event
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        // Fetch for writing
+        await using var session2 = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundary = await session2.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+
+        // Append an already-wrapped event with explicit tags
+        var graded = session2.Events.BuildEvent(new StudentGraded(studentId, courseId, 88));
+        graded.WithTag(studentId, courseId);
+        boundary.AppendOne(graded);
+
+        await session2.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task append_event_with_tag_having_no_aggregate_type_creates_new_stream()
+    {
+        // Register a tag type WITHOUT an aggregate association
+        StoreOptions(opts =>
+        {
+            opts.Events.AddEventType<StudentEnrolled>();
+            opts.Events.AddEventType<StudentGraded>();
+
+            opts.Events.RegisterTagType<StudentId>("student");
+            // CourseId registered WITHOUT ForAggregate
+            opts.Events.RegisterTagType<CourseId>("course");
+
+            opts.Projections.LiveStreamAggregation<StudentCourseEnrollment>();
+        });
+
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        await using var session2 = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundary = await session2.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+
+        // CourseId tag has no AggregateType — should create a new stream per event
+        var graded = session2.Events.BuildEvent(new StudentGraded(studentId, courseId, 90));
+        graded.WithTag(courseId);
+        boundary.AppendOne(graded);
+
+        // Should succeed — unrouted tag creates a new stream
+        await session2.SaveChangesAsync();
     }
 }
