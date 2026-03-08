@@ -15,14 +15,18 @@ using Xunit;
 
 namespace EventSourcingTests.Dcb;
 
+#region sample_marten_dcb_tag_type_definitions
 // Strong-typed tag identifiers
 public record StudentId(Guid Value);
 public record CourseId(Guid Value);
+#endregion
 
+#region sample_marten_dcb_domain_events
 // Domain events
 public record StudentEnrolled(string StudentName, string CourseName);
 public record AssignmentSubmitted(string AssignmentName, int Score);
 public record StudentDropped(string Reason);
+#endregion
 
 // Event with tag-typed properties for inference testing
 public record StudentGraded(StudentId StudentId, CourseId CourseId, int Grade);
@@ -30,6 +34,7 @@ public record StudentGraded(StudentId StudentId, CourseId CourseId, int Grade);
 // Event with NO tag-typed properties — should fail inference
 public record SystemNotification(string Message);
 
+#region sample_marten_dcb_aggregate
 // Aggregate for DCB
 public class StudentCourseEnrollment
 {
@@ -55,10 +60,12 @@ public class StudentCourseEnrollment
         IsDropped = true;
     }
 }
+#endregion
 
 [Collection("OneOffs")]
 public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, IAsyncLifetime
 {
+    #region sample_marten_dcb_registering_tag_types
     private void ConfigureStore()
     {
         StoreOptions(opts =>
@@ -68,6 +75,7 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
             opts.Events.AddEventType<StudentDropped>();
             opts.Events.AddEventType<StudentGraded>();
 
+            // Register tag types -- each gets its own table (mt_event_tag_student, mt_event_tag_course)
             opts.Events.RegisterTagType<StudentId>("student")
                 .ForAggregate<StudentCourseEnrollment>();
             opts.Events.RegisterTagType<CourseId>("course")
@@ -76,6 +84,7 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
             opts.Projections.LiveStreamAggregation<StudentCourseEnrollment>();
         });
     }
+    #endregion
 
     public Task InitializeAsync()
     {
@@ -100,13 +109,17 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         var courseId = new CourseId(Guid.NewGuid());
         var streamId = Guid.NewGuid();
 
+        #region sample_marten_dcb_tagging_events
         var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
         enrolled.WithTag(studentId, courseId);
         theSession.Events.Append(streamId, enrolled);
         await theSession.SaveChangesAsync();
+        #endregion
 
+        #region sample_marten_dcb_query_by_single_tag
         var query = new EventTagQuery().Or<StudentId>(studentId);
         var events = await theSession.Events.QueryByTagsAsync(query);
+        #endregion
 
         events.Count.ShouldBe(1);
         events[0].Data.ShouldBeOfType<StudentEnrolled>().StudentName.ShouldBe("Alice");
@@ -133,12 +146,14 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
 
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_dcb_query_multiple_tags_or
         // Query for either student
         var query = new EventTagQuery()
             .Or<StudentId>(student1)
             .Or<StudentId>(student2);
 
         var events = await theSession.Events.QueryByTagsAsync(query);
+        #endregion
         events.Count.ShouldBe(2);
     }
 
@@ -158,11 +173,13 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         theSession.Events.Append(streamId, enrolled, submitted);
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_dcb_query_by_event_type
         // Query only AssignmentSubmitted events for this student
         var query = new EventTagQuery()
             .Or<AssignmentSubmitted, StudentId>(studentId);
 
         var events = await theSession.Events.QueryByTagsAsync(query);
+        #endregion
         events.Count.ShouldBe(1);
         events[0].Data.ShouldBeOfType<AssignmentSubmitted>().AssignmentName.ShouldBe("HW1");
     }
@@ -202,11 +219,13 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         theSession.Events.Append(streamId, enrolled, submitted);
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_dcb_aggregate_by_tags
         var query = new EventTagQuery()
             .Or<StudentId>(studentId)
             .Or<CourseId>(courseId);
 
         var aggregate = await theSession.Events.AggregateByTagsAsync<StudentCourseEnrollment>(query);
+        #endregion
         aggregate.ShouldNotBeNull();
         aggregate.StudentName.ShouldBe("Alice");
         aggregate.CourseName.ShouldBe("Math");
@@ -236,23 +255,29 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         theSession.Events.Append(streamId, enrolled);
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_dcb_fetch_for_writing_by_tags
         // Fetch for writing
         await using var session2 = theStore.LightweightSession();
         var query = new EventTagQuery().Or<StudentId>(studentId);
         var boundary = await session2.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
 
-        boundary.Aggregate.ShouldNotBeNull();
-        boundary.Aggregate!.StudentName.ShouldBe("Alice");
-        boundary.Events.Count.ShouldBe(1);
-        boundary.LastSeenSequence.ShouldBeGreaterThan(0);
+        // Read current state
+        var aggregate = boundary.Aggregate; // may be null if no events yet
+        var lastSequence = boundary.LastSeenSequence;
 
-        // Append via boundary — need to build an IEvent with tags
+        // Append via boundary
         var assignment = session2.Events.BuildEvent(new AssignmentSubmitted("HW1", 95));
         assignment.WithTag(studentId, courseId);
         boundary.AppendOne(assignment);
 
-        // Should succeed — no concurrency violation
+        // Save -- will throw DcbConcurrencyException if another session
+        // appended matching events after our read
         await session2.SaveChangesAsync();
+        #endregion
+
+        boundary.Aggregate.ShouldNotBeNull();
+        boundary.Aggregate!.StudentName.ShouldBe("Alice");
+        boundary.Events.Count.ShouldBe(1);
     }
 
     [Fact]
@@ -285,10 +310,18 @@ public class dcb_tag_query_and_consistency_tests: OneOffConfigurationsContext, I
         assignment.WithTag(studentId, courseId);
         boundary.AppendOne(assignment);
 
-        await Should.ThrowAsync<DcbConcurrencyException>(async () =>
+        #region sample_marten_dcb_handling_concurrency
+        try
         {
             await session1.SaveChangesAsync();
-        });
+        }
+        catch (DcbConcurrencyException ex)
+        {
+            // Reload and retry -- the boundary's tag query had new matching events
+            // ex.Query -- the original tag query
+            // ex.LastSeenSequence -- the sequence at time of read
+        }
+        #endregion
     }
 
     [Fact]

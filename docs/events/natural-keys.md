@@ -12,76 +12,16 @@ Use natural keys when:
 
 ## Declaring Natural Keys
 
-### Using Attributes
-
 Mark a property on your aggregate with `[NaturalKey]`, and mark the methods that set or change the key value with `[NaturalKeySource]`:
 
-```cs
-// Strong-typed identifier wrapping a string
-public record OrderId(string Value);
-
-// Events
-public record OrderCreated(OrderId OrderId, string CustomerName);
-public record OrderNumberChanged(OrderId NewOrderId);
-public record OrderItemAdded(string ProductName, int Quantity);
-
-// Aggregate with natural key
-public class Order
-{
-    public Guid Id { get; set; }  // Stream id (surrogate key)
-
-    [NaturalKey]
-    public OrderId OrderNumber { get; set; }  // Natural key
-
-    public string CustomerName { get; set; }
-    public List<string> Items { get; set; } = new();
-
-    [NaturalKeySource]
-    public static Order Create(OrderCreated e) => new()
-    {
-        OrderNumber = e.OrderId,
-        CustomerName = e.CustomerName
-    };
-
-    [NaturalKeySource]
-    public void Apply(OrderNumberChanged e) => OrderNumber = e.NewOrderId;
-
-    public void Apply(OrderItemAdded e) => Items.Add(e.ProductName);
-}
-```
+<!-- snippet: sample_natural_key_aggregate_types -->
+<!-- endSnippet -->
 
 The `[NaturalKeySource]` attribute tells Marten which `Create` / `Apply` methods produce or change the natural key value. Marten uses this information to keep the lookup table in sync whenever events are appended.
 
-### Using the Fluent API
-
-If you prefer to keep your aggregate free of Marten-specific attributes, you can configure natural keys in a projection class:
-
-```cs
-public class OrderProjection : SingleStreamProjection<Order, Guid>
-{
-    public OrderProjection()
-    {
-        NaturalKey(x => x.OrderNumber)
-            .SetBy<OrderCreated>(e => e.OrderId)
-            .SetBy<OrderNumberChanged>(e => e.NewOrderId);
-    }
-
-    public static Order Create(OrderCreated e) => new()
-    {
-        OrderNumber = e.OrderId,
-        CustomerName = e.CustomerName
-    };
-
-    public void Apply(OrderNumberChanged e, Order order) => order.OrderNumber = e.NewOrderId;
-    public void Apply(OrderItemAdded e, Order order) => order.Items.Add(e.ProductName);
-}
-```
-
-The `NaturalKey()` method identifies the property, and `SetBy<TEvent>()` tells Marten which events carry a new value for the key.
-
 ## Event-to-Key Mappings
 
-Every event type that sets or changes the natural key must be declared either through the `[NaturalKeySource]` attribute or the fluent `SetBy<TEvent>()` call. When Marten processes events during an append operation, it extracts the key value from these mapped events and writes it to the lookup table.
+Every event type that sets or changes the natural key must be declared through the `[NaturalKeySource]` attribute. When Marten processes events during an append operation, it extracts the key value from these mapped events and writes it to the lookup table.
 
 Events that do not affect the natural key (like `OrderItemAdded` in the example above) do not need any mapping.
 
@@ -100,15 +40,8 @@ You do not need to create or manage this table yourself.
 
 The primary use case for natural keys is looking up a stream for writing without knowing its stream id:
 
-```cs
-// Standard: FetchForWriting by stream id
-var stream = await session.Events.FetchForWriting<Order>(streamId);
-
-// With natural key: FetchForWriting by the business identifier
-var stream = await session.Events.FetchForWriting<Order, OrderId>(new OrderId("ORD-12345"));
-stream.AppendOne(new OrderItemAdded("Widget", 3));
-await session.SaveChangesAsync();
-```
+<!-- snippet: sample_marten_fetch_for_writing_by_natural_key -->
+<!-- endSnippet -->
 
 This resolves the natural key to a stream id and fetches the aggregate in a single database round-trip.
 
@@ -116,13 +49,12 @@ This resolves the natural key to a stream id and fetches the aggregate in a sing
 
 For read-only access, you can use `FetchLatest` with a natural key:
 
-```cs
-var order = await session.Events.FetchLatest<Order, OrderId>(new OrderId("ORD-12345"));
-```
+<!-- snippet: sample_marten_fetch_latest_by_natural_key -->
+<!-- endSnippet -->
 
 ## Mutability
 
-Natural keys can change over the lifetime of a stream. When an event mapped with `[NaturalKeySource]` or `SetBy<TEvent>()` is appended, Marten updates the lookup table with the new value. The old key value is replaced, so lookups using the previous key will no longer resolve to that stream.
+Natural keys can change over the lifetime of a stream. When an event mapped with `[NaturalKeySource]` is appended, Marten updates the lookup table with the new value. The old key value is replaced, so lookups using the previous key will no longer resolve to that stream.
 
 ## Null and Default Keys
 

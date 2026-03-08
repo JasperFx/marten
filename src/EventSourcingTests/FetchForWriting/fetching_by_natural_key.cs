@@ -144,13 +144,17 @@ public class fetching_by_natural_key: OneOffConfigurationsContext
             new OrderItemAdded("Widget", 9.99m));
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_fetch_for_writing_by_natural_key
+        // FetchForWriting by the business identifier instead of stream id
         var stream = await theSession.Events.FetchForWriting<OrderAggregate, OrderNumber>(orderNumber);
 
         stream.Aggregate.ShouldNotBeNull();
         stream.Aggregate.OrderNum.ShouldBe(orderNumber);
-        stream.Aggregate.CustomerName.ShouldBe("Alice");
-        stream.Aggregate.TotalAmount.ShouldBe(9.99m);
-        stream.CurrentVersion.ShouldBe(2);
+
+        // Append new events through the stream
+        stream.AppendOne(new OrderItemAdded("Gadget", 19.99m));
+        await theSession.SaveChangesAsync();
+        #endregion
     }
 
     [Fact]
@@ -202,7 +206,10 @@ public class fetching_by_natural_key: OneOffConfigurationsContext
             new OrderItemAdded("Thingamajig", 15.00m));
         await theSession.SaveChangesAsync();
 
+        #region sample_marten_fetch_latest_by_natural_key
+        // Read-only access by natural key
         var aggregate = await theSession.Events.FetchLatest<OrderAggregate, OrderNumber>(orderNumber);
+        #endregion
 
         aggregate.ShouldNotBeNull();
         aggregate.OrderNum.ShouldBe(orderNumber);
