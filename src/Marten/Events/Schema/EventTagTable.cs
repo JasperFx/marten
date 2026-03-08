@@ -7,7 +7,7 @@ namespace Marten.Events.Schema;
 
 internal class EventTagTable: Table
 {
-    public EventTagTable(EventGraph events, TagTypeRegistration registration)
+    public EventTagTable(EventGraph events, ITagTypeRegistration registration)
         : base(new PostgresqlObjectName(events.DatabaseSchemaName, $"mt_event_tag_{registration.TableSuffix}"))
     {
         var pgType = PostgresqlTypeFor(registration.SimpleType);

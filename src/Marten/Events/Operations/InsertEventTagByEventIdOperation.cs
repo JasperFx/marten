@@ -18,16 +18,16 @@ namespace Marten.Events.Operations;
 internal class InsertEventTagByEventIdOperation: IStorageOperation
 {
     private readonly string _schemaName;
-    private readonly TagTypeRegistration _registration;
+    private readonly ITagTypeRegistration _registration;
     private readonly Guid _eventId;
     private readonly object _value;
 
-    public InsertEventTagByEventIdOperation(string schemaName, TagTypeRegistration registration, Guid eventId, object value)
+    public InsertEventTagByEventIdOperation(string schemaName, ITagTypeRegistration registration, Guid eventId, object tagValue)
     {
         _schemaName = schemaName;
         _registration = registration;
         _eventId = eventId;
-        _value = value;
+        _value = registration.ExtractValue(tagValue);
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)

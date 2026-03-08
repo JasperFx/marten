@@ -55,7 +55,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     private DocumentStore _store;
 
-    private readonly List<TagTypeRegistration> _tagTypes = new();
+    private readonly List<ITagTypeRegistration> _tagTypes = new();
 
     internal EventGraph(StoreOptions options)
     {
@@ -272,12 +272,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// Register a strong-typed identifier as a tag type for DCB support.
     /// </summary>
-    public TagTypeRegistration RegisterTagType<TTag>()
+    public ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull
     {
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
         if (existing != null) return existing;
 
-        var registration = new TagTypeRegistration(typeof(TTag));
+        var registration = TagTypeRegistration.Create<TTag>();
         _tagTypes.Add(registration);
         return registration;
     }
@@ -285,12 +285,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// Register a strong-typed identifier as a tag type with a custom table name suffix.
     /// </summary>
-    public TagTypeRegistration RegisterTagType<TTag>(string tableSuffix)
+    public ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull
     {
         var existing = _tagTypes.FirstOrDefault(t => t.TagType == typeof(TTag));
         if (existing != null) return existing;
 
-        var registration = new TagTypeRegistration(typeof(TTag), tableSuffix);
+        var registration = TagTypeRegistration.Create<TTag>(tableSuffix);
         _tagTypes.Add(registration);
         return registration;
     }
@@ -298,12 +298,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <summary>
     /// The registered tag types for DCB support.
     /// </summary>
-    public IReadOnlyList<TagTypeRegistration> TagTypes => _tagTypes;
+    public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
 
     /// <summary>
     /// Find a tag type registration by type, or null if not registered.
     /// </summary>
-    public TagTypeRegistration? FindTagType(Type tagType)
+    public ITagTypeRegistration? FindTagType(Type tagType)
     {
         return _tagTypes.FirstOrDefault(t => t.TagType == tagType);
     }

@@ -14,25 +14,16 @@ namespace Marten.Events.Operations;
 internal class InsertEventTagOperation: IStorageOperation
 {
     private readonly string _schemaName;
-    private readonly TagTypeRegistration _registration;
+    private readonly ITagTypeRegistration _registration;
     private readonly long _seqId;
     private readonly object _value;
 
-    public InsertEventTagOperation(string schemaName, TagTypeRegistration registration, long seqId, object tagValue)
+    public InsertEventTagOperation(string schemaName, ITagTypeRegistration registration, long seqId, object tagValue)
     {
         _schemaName = schemaName;
         _registration = registration;
         _seqId = seqId;
         _value = registration.ExtractValue(tagValue);
-    }
-
-    public InsertEventTagOperation(string schemaName, TagTypeRegistration registration, long seqId, object value,
-        bool valueAlreadyExtracted)
-    {
-        _schemaName = schemaName;
-        _registration = registration;
-        _seqId = seqId;
-        _value = value;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
