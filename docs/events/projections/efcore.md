@@ -5,7 +5,7 @@ Marten provides first-class support for projecting events into Entity Framework 
 The `Marten.EntityFrameworkCore` NuGet package provides three projection base classes:
 
 | Base Class | Use Case |
-|------------|----------|
+| ------------ | ---------- |
 | `EfCoreSingleStreamProjection<TDoc, TId, TDbContext>` | Aggregate a single event stream into one EF Core entity |
 | `EfCoreMultiStreamProjection<TDoc, TId, TDbContext>` | Aggregate events across multiple streams into one EF Core entity |
 | `EfCoreEventProjection<TDbContext>` | React to individual events, writing to both EF Core and Marten |
