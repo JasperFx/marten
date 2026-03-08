@@ -193,7 +193,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
                     {
                         if (tag.TagType == registration.TagType)
                         {
-                            values[i] = tag.Value?.ToString();
+                            values[i] = registration.ExtractValue(tag.Value)?.ToString();
                             break;
                         }
                     }

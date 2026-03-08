@@ -24,8 +24,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                // Tag values are already extracted by the WithTag extension method
-                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value, valueAlreadyExtracted: true));
+                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value));
             }
         }
     }

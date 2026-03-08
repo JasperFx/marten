@@ -398,7 +398,7 @@ namespace Marten.Events
         /// </summary>
         /// <typeparam name="TTag">A strong-typed identifier type (e.g., StudentId)</typeparam>
         /// <returns>The tag type registration for further configuration</returns>
-        TagTypeRegistration RegisterTagType<TTag>();
+        ITagTypeRegistration RegisterTagType<TTag>() where TTag : notnull;
 
         /// <summary>
         /// Register a strong-typed identifier as a tag type with a custom table name suffix.
@@ -406,12 +406,12 @@ namespace Marten.Events
         /// <typeparam name="TTag">A strong-typed identifier type</typeparam>
         /// <param name="tableSuffix">Custom table name suffix (e.g., "custom_student")</param>
         /// <returns>The tag type registration for further configuration</returns>
-        TagTypeRegistration RegisterTagType<TTag>(string tableSuffix);
+        ITagTypeRegistration RegisterTagType<TTag>(string tableSuffix) where TTag : notnull;
 
         /// <summary>
         /// The registered tag types for DCB support.
         /// </summary>
-        IReadOnlyList<TagTypeRegistration> TagTypes { get; }
+        IReadOnlyList<ITagTypeRegistration> TagTypes { get; }
     }
 }
 
