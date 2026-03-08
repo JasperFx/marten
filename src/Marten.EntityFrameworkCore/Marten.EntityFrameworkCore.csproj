@@ -15,7 +15,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
-        <ProjectReference Include="..\..\..\weasel\src\Weasel.EntityFrameworkCore\Weasel.EntityFrameworkCore.csproj" />
+        <PackageReference Include="Weasel.EntityFrameworkCore" />
     </ItemGroup>
 
     <ItemGroup>
