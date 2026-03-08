@@ -4,6 +4,7 @@ using System.Linq;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
@@ -23,7 +24,7 @@ namespace Marten.Events.Projections;
 public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations, IQuerySession>
 {
     internal readonly IFetchPlanner[] _builtInPlanners =
-        [new InlineFetchPlanner(), new AsyncFetchPlanner(), new LiveFetchPlanner()];
+        [new NaturalKeyFetchPlanner(), new InlineFetchPlanner(), new AsyncFetchPlanner(), new LiveFetchPlanner()];
 
     private readonly StoreOptions _options;
 
@@ -72,10 +73,21 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
 
     internal IInlineProjection<IDocumentOperations>[] BuildInlineProjections(DocumentStore store)
     {
-        return All
+        var projections = All
             .Where(x => x.Lifecycle == ProjectionLifecycle.Inline)
             .Select(x => x.BuildForInline())
-            .ToArray();
+            .ToList();
+
+        // Auto-register NaturalKeyProjection for any aggregate that has a NaturalKeyDefinition
+        foreach (var aggregate in All.OfType<IAggregateProjection>())
+        {
+            if (aggregate.NaturalKeyDefinition != null)
+            {
+                projections.Add(new NaturalKeyProjection(_options.EventGraph, aggregate.NaturalKeyDefinition));
+            }
+        }
+
+        return projections.ToArray();
     }
 
     /// <summary>
@@ -248,5 +260,18 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         {
             hasLogger.AttachLogger(loggerFactory);
         }
+    }
+
+    /// <summary>
+    /// Find a registered natural key definition for the given aggregate type, if any.
+    /// </summary>
+    public NaturalKeyDefinition? FindNaturalKeyDefinition(Type aggregateType)
+    {
+        if (TryFindAggregate(aggregateType, out var projection))
+        {
+            return projection.NaturalKeyDefinition;
+        }
+
+        return null;
     }
 }

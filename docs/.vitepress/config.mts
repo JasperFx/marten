@@ -171,6 +171,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Querying Events', link: '/events/querying' },
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
+            { text: 'Natural Keys', link: '/events/natural-keys' },
             { text: 'Dynamic Consistency Boundary', link: '/events/dcb' },
             { text: 'Optimizing Performance', link: '/events/optimizing' },
 
