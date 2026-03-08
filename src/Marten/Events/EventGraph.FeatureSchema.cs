@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
@@ -64,6 +65,15 @@ public partial class EventGraph: IFeatureSchema
         {
             var objects = schemaSource.CreateSchemaObjects(this);
             foreach (var schemaObject in objects) yield return schemaObject;
+        }
+
+        // Natural key tables for aggregates with NaturalKeyDefinition
+        foreach (var aggregate in Options.Projections.All.OfType<IAggregateProjection>())
+        {
+            if (aggregate.NaturalKeyDefinition != null)
+            {
+                yield return new NaturalKeyTable(this, aggregate.NaturalKeyDefinition);
+            }
         }
 
         if (EnableAdvancedAsyncTracking)

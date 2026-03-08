@@ -22,7 +22,7 @@ namespace Marten.Events;
 
 internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityStrategy<string>
 {
-    private ImHashMap<Type, object> _fetchStrategies = ImHashMap<Type, object>.Empty;
+    private ImHashMap<(Type, Type), object> _fetchStrategies = ImHashMap<(Type, Type), object>.Empty;
 
     async Task<IEventStorage> IEventIdentityStrategy<Guid>.EnsureEventStorageExists<T>(
         DocumentSessionBase session, CancellationToken cancellation)
@@ -128,6 +128,27 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return new ListQueryHandler<IEvent>(statement, selector);
     }
 
+    public Task<IEventStream<T>> FetchForWriting<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull
+    {
+        var plan = FindFetchPlan<T, TId>();
+        return plan.FetchForWriting(_session, id, false, cancellation);
+    }
+
+    public Task<IEventStream<T>> FetchForExclusiveWriting<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull
+    {
+        var plan = FindFetchPlan<T, TId>();
+        return plan.FetchForWriting(_session, id, true, cancellation);
+    }
+
+    public ValueTask<T?> FetchLatest<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull
+    {
+        var plan = FindFetchPlan<T, TId>();
+        return plan.FetchForReading(_session, id, cancellation);
+    }
+
     public Task<IEventStream<T>> FetchForWriting<T>(Guid id, CancellationToken cancellation = default) where T : class
     {
         var plan = FindFetchPlan<T, Guid>();
@@ -199,30 +220,49 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         {
             _session.Options.EventGraph.EnsureAsGuidStorage(_session);
         }
-        else
+        else if (typeof(TId) == typeof(string))
         {
             _session.Options.EventGraph.EnsureAsStringStorage(_session);
         }
+        // else: natural key type — event storage initialization deferred to the plan
 
-        if (_fetchStrategies.TryFind(typeof(TDoc), out var stored))
+        // Use (TDoc, TId) as cache key to support both stream id and natural key lookups
+        var cacheKey = (typeof(TDoc), typeof(TId));
+        if (_fetchStrategies.TryFind(cacheKey, out var stored))
         {
             return (IAggregateFetchPlan<TDoc, TId>)stored;
         }
 
         var plan = determineFetchPlan<TDoc, TId>(_session.Options);
 
-        _fetchStrategies = _fetchStrategies.AddOrUpdate(typeof(TDoc), plan);
+        _fetchStrategies = _fetchStrategies.AddOrUpdate(cacheKey, plan);
 
         return plan;
     }
 
     private IAggregateFetchPlan<TDoc, TId> determineFetchPlan<TDoc, TId>(StoreOptions options) where TDoc : class where TId : notnull
     {
-        foreach (var planner in options.Projections.allPlanners())
+        // For natural key types (not Guid/string), try natural key planners first
+        // before attempting the cast to IEventIdentityStrategy<TId>
+        if (typeof(TId) != typeof(Guid) && typeof(TId) != typeof(string))
         {
-            if (planner.TryMatch<TDoc, TId>((IEventIdentityStrategy<TId>)this, options, out var plan))
+            foreach (var planner in options.Projections.allPlanners())
             {
-                return plan;
+                // Pass null identity - natural key planners don't use it
+                if (planner.TryMatch<TDoc, TId>(null!, options, out var naturalKeyPlan))
+                {
+                    return naturalKeyPlan;
+                }
+            }
+        }
+        else
+        {
+            foreach (var planner in options.Projections.allPlanners())
+            {
+                if (planner.TryMatch<TDoc, TId>((IEventIdentityStrategy<TId>)this, options, out var plan))
+                {
+                    return plan;
+                }
             }
         }
 

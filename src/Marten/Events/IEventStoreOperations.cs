@@ -435,5 +435,25 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query,
         CancellationToken cancellation = default) where T : class;
 
+    /// <summary>
+    ///     Fetch projected aggregate T by a natural key or any registered identifier type with
+    ///     built in optimistic concurrency checks. Use this for natural key lookups.
+    /// </summary>
+    Task<IEventStream<T>> FetchForWriting<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull;
+
+    /// <summary>
+    ///     Fetch projected aggregate T by a natural key for exclusive writing with row-level locking.
+    /// </summary>
+    Task<IEventStream<T>> FetchForExclusiveWriting<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by a natural key or any registered identifier type.
+    ///     This is a lightweight, read-only version of FetchForWriting.
+    /// </summary>
+    ValueTask<T?> FetchLatest<T, TId>(TId id, CancellationToken cancellation = default)
+        where T : class where TId : notnull;
+
 }
 
