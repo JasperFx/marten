@@ -21,6 +21,6 @@
         <ProjectReference Include="..\EventSourcingTests\EventSourcingTests.csproj"/>
         <ProjectReference Include="..\Marten.AspNetCore\Marten.AspNetCore.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
-        <ProjectReference Include="../../../jasperfx/src/JasperFx.Events.SourceGenerator/JasperFx.Events.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 </Project>
