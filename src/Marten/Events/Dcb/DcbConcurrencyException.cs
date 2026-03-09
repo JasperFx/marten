@@ -1,6 +1,6 @@
 using System;
-using JasperFx;
 using JasperFx.Events.Tags;
+using Marten.Exceptions;
 
 namespace Marten.Events.Dcb;
 
@@ -8,7 +8,7 @@ namespace Marten.Events.Dcb;
 /// Thrown when a DCB consistency check fails — new events matching the tag query
 /// were appended after the boundary was established.
 /// </summary>
-public class DcbConcurrencyException: ConcurrencyException
+public class DcbConcurrencyException: MartenException
 {
     public DcbConcurrencyException(EventTagQuery query, long lastSeenSequence)
         : base($"DCB consistency violation: new events matching the tag query were appended after sequence {lastSeenSequence}")
