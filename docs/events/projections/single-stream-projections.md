@@ -224,7 +224,7 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L42-L98' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/Appointments.cs#L43-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And a more complicated sample from our tests that just shows how you can create a reentrant workflow that includes
@@ -300,5 +300,5 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L636-L705' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L615-L684' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

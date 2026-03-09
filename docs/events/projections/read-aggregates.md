@@ -25,15 +25,15 @@ consistent data from Marten asynchronous projections through this usage:
 <!-- snippet: sample_querying_for_non_stale_projection_data -->
 <a id='snippet-sample_querying_for_non_stale_projection_data'></a>
 ```cs
-// theSession is an IDocumentSession
-var summaries = await theSession
+// _compositeSession is an IDocumentSession
+var summaries = await _compositeSession
     // This makes Marten "wait" until the async daemon progress for whatever projection
     // is building the BoardSummary document to catch up to the point at which the
     // event store was at when you first tired to execute the LINQ query
     .QueryForNonStaleData<BoardSummary>(10.Seconds())
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L235-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_non_stale_projection_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L317-L327' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_non_stale_projection_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To be clear though, if you need the latest version of a single stream projection, we recommend always

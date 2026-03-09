@@ -503,8 +503,6 @@ public async Task include_a_single_reference()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Logger = new TestOutputMartenLogger(_output);
-
     var list = new List<Teacher>();
 
     var loaded = await theSession
@@ -517,7 +515,7 @@ public async Task include_a_single_reference()
     list.Single().Id.ShouldBe(teacher.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L47-L76' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L43-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 * Within LINQ `Where()` clauses

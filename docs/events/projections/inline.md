@@ -6,7 +6,7 @@ to the event store at the time that `IDocumentSession.SaveChanges()` is called t
 <!-- snippet: sample_MonsterDefeatedTransform -->
 <a id='snippet-sample_monsterdefeatedtransform'></a>
 ```cs
-public class MonsterDefeatedTransform: EventProjection
+public partial class MonsterDefeatedTransform: EventProjection
 {
     public MonsterDefeated Create(IEvent<MonsterSlayed> input)
     {

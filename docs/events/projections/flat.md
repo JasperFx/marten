@@ -40,7 +40,7 @@ new projection that we can replay against the existing events when we’re ready
 <!-- snippet: sample_import_sql_projection -->
 <a id='snippet-sample_import_sql_projection'></a>
 ```cs
-public class ImportSqlProjection: EventProjection
+public partial class ImportSqlProjection: EventProjection
 {
     public ImportSqlProjection()
     {

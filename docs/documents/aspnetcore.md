@@ -192,7 +192,7 @@ public Task GetOrder(Guid orderId, [FromServices] IDocumentSession session)
     return session.Events.WriteLatest<Order>(orderId, HttpContext);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L50-L59' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_to_httpresponse' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L50-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_to_httpresponse' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Usage with a `string`-identified stream:
@@ -206,7 +206,7 @@ public Task GetNamedOrder(string orderId, [FromServices] IDocumentSession sessio
     return session.Events.WriteLatest<NamedOrder>(orderId, HttpContext);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L61-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_by_string_to_httpresponse' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/WriteLatestController.cs#L62-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_latest_aggregate_by_string_to_httpresponse' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Like `WriteById<T>()`, `WriteLatest<T>()` returns a 200 status with the JSON body if the aggregate

@@ -60,18 +60,29 @@ in Marten:~~~~
 <!-- snippet: sample_defining_a_composite_projection -->
 <a id='snippet-sample_defining_a_composite_projection'></a>
 ```cs
+if(tenancyStyle == TenancyStyle.Conjoined)
+{
+    opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+    opts.Policies.AllDocumentsAreMultiTenantedWithPartitioning(x =>
+    {
+        x.ByHash(Enumerable.Range(1, 2).Select(i => $"b_{i}").ToArray());
+    });
+    opts.Advanced.DefaultTenantUsageEnabled = false;
+}
 opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
 {
     projection.Add<ProviderShiftProjection>();
     projection.Add<AppointmentProjection>();
     projection.Snapshot<Board>();
+    projection.Add(new AppointmentMetricsProjection());
 
     // 2nd stage projections
     projection.Add<AppointmentDetailsProjection>(2);
     projection.Add<BoardSummaryProjection>(2);
+    projection.Add<AppointmentByExternalIdentifierProjection>(2);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L182-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/multi_stage_projections.cs#L244-L268' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_defining_a_composite_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 First, let's just look at the simple `ProviderShiftProjection`:
@@ -158,7 +169,7 @@ ultimately need to use the build products of all three upstream projections:
 <!-- snippet: sample_AppointmentDetailsProjection -->
 <a id='snippet-sample_appointmentdetailsprojection'></a>
 ```cs
-public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDetails, Guid>
+public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
 {
     public AppointmentDetailsProjection()
     {
@@ -174,7 +185,8 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
         Identity<ProjectionDeleted<Appointment, Guid>>(x => x.Identity);
     }
 
-    public override async Task EnrichEventsAsync(SliceGroup<AppointmentDetails, Guid> group, IQuerySession querySession, CancellationToken cancellation)
+    public override async Task EnrichEventsAsync(SliceGroup<AppointmentDetails, Guid> group, IQuerySession querySession,
+        CancellationToken cancellation)
     {
         // Look up and apply specialty information from the document store
         // Specialty is just reference data stored as a document in Marten
@@ -198,13 +210,80 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
             .ForEntityId(x => x.ProviderId)
             .AddReferences();
 
-        // Look up and apply Board information that matches the events being
-        // projected
+        // Look up and apply Board information that matches the events being projected
         await group
             .EnrichWith<Board>()
             .ForEvent<AppointmentRouted>()
             .ForEntityId(x => x.BoardId)
             .AddReferences();
+
+        // Enrich RoutingReason documents based on a business key (ReasonCode),
+        // not on the document id. This example also demonstrates how to use
+        // the provided cache to avoid repeated database queries.
+        await group
+            .EnrichWith<RoutingReason>()
+            .ForEvent<AppointmentRouted>()
+            .EnrichUsingEntityQuery<string>(async (slices, events, cache, ct) =>
+            {
+                // Collect all distinct reason codes across the incoming events
+                var reasonCodes = events
+                    .Select(e => e.Data.ReasonCode)
+                    .Where(x => x.IsNotEmpty())
+                    .Distinct()
+                    .ToArray();
+
+                // Nothing to enrich if no reason codes are present
+                if (reasonCodes.Length == 0)
+                {
+                    return;
+                }
+
+                // Try to resolve RoutingReason documents from the cache first
+                // Note: cache may be null when there is no upstream aggregate cache for the entity type
+                var missingCodes = cache != null
+                    ? reasonCodes.Where(code => !cache.TryFind(code, out _)).ToList()
+                    : reasonCodes.ToList();
+
+                // Only query the database for codes that are not yet cached
+                // Use a local dictionary for lookups when cache is unavailable
+                var localLookup = new Dictionary<string, RoutingReason>();
+                if (missingCodes.Count > 0)
+                {
+                    var reasonsFromDb = await querySession
+                        .Query<RoutingReason>()
+                        .Where(r => r.Code.IsOneOf(missingCodes))
+                        .Where(r => r.IsActive)
+                        .ToListAsync(ct);
+
+                    // Store fetched documents in the cache (if available) and local lookup for reuse
+                    foreach (var reason in reasonsFromDb)
+                    {
+                        cache?.Store(reason.Code, reason);
+                        localLookup[reason.Code] = reason;
+                    }
+                }
+
+                // Apply the resolved RoutingReason references per slice
+                foreach (var slice in slices)
+                {
+                    // Snapshot the events first, referencing modifies slice state
+                    var codesInSlice = slice.Events()
+                        .OfType<IEvent<AppointmentRouted>>()
+                        .Select(x => x.Data.ReasonCode)
+                        .Where(x => x.IsNotEmpty())
+                        .Distinct()
+                        .ToArray();
+
+                    foreach (var code in codesInSlice)
+                    {
+                        if ((cache != null && cache.TryFind(code, out var reason)) ||
+                            localLookup.TryGetValue(code, out reason))
+                        {
+                            slice.Reference(reason);
+                        }
+                    }
+                }
+            }, cancellation);
 
     }
 
@@ -249,6 +328,12 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
                 snapshot.BoardId = board.Entity.Id;
                 break;
 
+            case References<RoutingReason> reason:
+                snapshot.RoutingReasonCode = reason.Entity.Code;
+                snapshot.RoutingReasonDescription = reason.Entity.Description;
+                snapshot.RoutingReasonSeverity = reason.Entity.Severity;
+                break;
+
             // The matching projection for Appointment was deleted
             // so we'll delete this enriched projection as well
             // ProjectionDeleted<TDoc> is a synthetic event that Marten
@@ -263,7 +348,7 @@ public class AppointmentDetailsProjection : MultiStreamProjection<AppointmentDet
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L14-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetailsprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L14-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetailsprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip

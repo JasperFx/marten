@@ -23,7 +23,6 @@ public async Task simple_include_for_a_single_document()
     await session.SaveChangesAsync();
 
     using var query = theStore.QuerySession();
-    query.Logger = new TestOutputMartenLogger(_output);
 
     User included = null;
     var issue2 = query
@@ -37,7 +36,7 @@ public async Task simple_include_for_a_single_document()
     issue2.ShouldNotBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L85-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L83-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Include()` method takes an expression that will assign the fetched related document to a previously declared variable (`included` in our case). The `Include()` method should then be followed by the `On()` method (named after sql `LEFT JOIN ... ON ...`). The first parameter of `On()` method takes an expression that specifies the document properties on which the join will be done (`AssigneeId` in this case).
@@ -78,7 +77,7 @@ public async Task include_to_dictionary()
     dict.ContainsKey(user2.Id).ShouldBeTrue();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L483-L510' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L481-L508' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Filtering included documents
@@ -105,7 +104,7 @@ public async Task filter_included_documents_to_lambda()
     list.Count.ShouldBe(Data.Count(x => x.Color == Colors.Blue));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/includes_with_filtering_on_included_documents.cs#L49-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_filter_included_documents' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/includes_with_filtering_on_included_documents.cs#L50-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_filter_included_documents' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Include Multiple Document Types
@@ -137,7 +136,6 @@ public async Task multiple_includes()
     User assignee2 = null;
     User reporter2 = null;
 
-    query.Logger = new TestOutputMartenLogger(_output);
     query
         .Query<Issue>()
         .Include<User>(x => assignee2 = x).On(x => x.AssigneeId)
@@ -149,7 +147,7 @@ public async Task multiple_includes()
     reporter2.Id.ShouldBe(reporter.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L740-L771' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L738-L769' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_multiple_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Mapping to documents on any property
@@ -182,7 +180,7 @@ public async Task include_using_custom_map()
     user2.ShouldNotBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L945-L970' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L943-L968' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By joining on a value other than the document id, this opens up the possibility of one-to-many joins, with potentially many related documents matching the queried document. Using a list as described above will allow for all matching records to be returned.  Alternatively you can also use a dictionary of lists, where the key is the Id type and the value is an `IList` of a type corresponding to the Document type:
@@ -221,7 +219,7 @@ public async Task include_to_dictionary_list()
     dict[class2.RoomCode].Count.ShouldBe(2);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L972-L1005' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L970-L1003' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Batched query Support
@@ -238,5 +236,5 @@ var found = batch.Query<Issue>()
     .Where(x => x.Title == issue1.Title)
     .Single();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L47-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L45-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

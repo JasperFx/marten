@@ -15,7 +15,7 @@ immediate developer productivity:
 ```cs
 var store = DocumentStore.For("connection string");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L188-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L231-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the configuration above, as needed, behind the scenes Marten is:

@@ -246,7 +246,7 @@ public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsights
         => current with { NewCustomers = current.NewCustomers - 1 };
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Bugs/Bug_2883_ievent_not_working_as_identity_source_in_multistream_projections.cs#L80-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ievent_for_document_identity_in_projections' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Bugs/Bug_2883_ievent_not_working_as_identity_source_in_multistream_projections.cs#L70-L90' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_ievent_for_document_identity_in_projections' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Simple Example of Events Updating Multiple Views

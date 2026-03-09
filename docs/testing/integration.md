@@ -302,9 +302,10 @@ public class MartenSettings
 {
     public const string SECTION = "Marten";
     public string SchemaName { get; set; }
+    public bool UseStringStreamIdentity { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/MartenSettings.cs#L3-L9' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_settings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/MartenSettings.cs#L3-L10' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_settings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now in your actual application you should configure the schema name:
@@ -324,10 +325,20 @@ services.AddMarten(sp =>
         options.DatabaseSchemaName = martenSettings.SchemaName;
     }
 
+    if (martenSettings.UseStringStreamIdentity)
+    {
+        options.Events.StreamIdentity = StreamIdentity.AsString;
+        options.Projections.Snapshot<NamedOrder>(SnapshotLifecycle.Inline);
+    }
+    else
+    {
+        options.Projections.Snapshot<Order>(SnapshotLifecycle.Inline);
+    }
+
     return options;
 }).UseLightweightSessions();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L32-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Startup.cs#L35-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_integration_use_scheme_name' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning

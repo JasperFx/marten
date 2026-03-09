@@ -283,7 +283,7 @@ public async Task can_query_against_event_type()
         .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L39-L57' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use any Linq operator that Marten supports to query against event data. We think that this functionality is probably more useful for diagnostics or troubleshooting rather than something you would routinely use to support your application. We recommend that you favor event projection views over querying within the raw event table.
@@ -301,7 +301,7 @@ public void example_of_querying_for_event_data(IDocumentSession session, Guid st
         .ToList();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L164-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L162-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This mechanism will allow you to query by any property of the `IEvent` interface shown above.
@@ -318,5 +318,5 @@ var raw = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.EventTypesAre(typeof(CEvent), typeof(DEvent)))
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L259-L265' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L257-L263' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_event_types_are' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

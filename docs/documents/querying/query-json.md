@@ -72,6 +72,7 @@ And the asynchronous version:
 [Fact]
 public async Task when_get_json_then_raw_json_should_be_returned_async()
 {
+    await theStore.Advanced.ResetAllData();
     var issue = new Issue { Title = "Issue 1" };
 
     theSession.Store(issue);
@@ -85,7 +86,7 @@ public async Task when_get_json_then_raw_json_should_be_returned_async()
     json = await theSession.Query<Issue>().ToJsonSingleOrDefault();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L31-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json-async' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/get_raw_json_Tests.cs#L31-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get-raw-json-async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using AsJson() with Select() Transforms
@@ -105,7 +106,7 @@ var json = await theSession
 
 json.ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1004-L1014' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L1009-L1019' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And another example, but this time transforming to an anonymous type:
@@ -124,5 +125,5 @@ And another example, but this time transforming to an anonymous type:
         .ToJsonFirstOrDefault())
     .ShouldBe("{\"Name\": \"Bill\"}");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L977-L989' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/streaming_json_results.cs#L982-L994' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_asjson-plus-select-2' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

@@ -31,7 +31,7 @@ public async Task SampleArchive(IDocumentSession session, string streamId)
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L37-L45' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archive_stream_usage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L36-L44' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_archive_stream_usage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As in all cases with an `IDocumentSession`, you need to call `SaveChanges()` to commit the
@@ -55,7 +55,7 @@ var events = await theSession.Events
     .Where(x => x.IsArchived)
     .ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L237-L244' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L232-L239' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_for_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for all events both archived and not archived with `MaybeArchived()`
@@ -67,7 +67,7 @@ like so:
 var events = await theSession.Events.QueryAllRawEvents()
     .Where(x => x.MaybeArchived()).ToListAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L272-L277' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/archiving_events.cs#L265-L270' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_for_maybe_archived_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Hot/Cold Storage Partitioning <Badge type="tip" text="7.25" />

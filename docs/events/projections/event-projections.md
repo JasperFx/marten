@@ -9,7 +9,7 @@ but otherwise write perfectly explicit code by overriding the `ApplyAsync()` met
 <!-- snippet: sample_explicit_event_projection -->
 <a id='snippet-sample_explicit_event_projection'></a>
 ```cs
-public class ExplicitSampleProjection: EventProjection
+public partial class ExplicitSampleProjection: EventProjection
 {
     public override ValueTask ApplyAsync(IDocumentOperations operations, IEvent e, CancellationToken cancellation)
     {
@@ -49,7 +49,7 @@ To show off what `EventProjection` does, here's a sample that uses most features
 <!-- snippet: sample_SampleEventProjection -->
 <a id='snippet-sample_sampleeventprojection'></a>
 ```cs
-public class SampleEventProjection : EventProjection
+public partial class SampleEventProjection : EventProjection
 {
     public SampleEventProjection()
     {
@@ -211,7 +211,7 @@ public record BaseballGame
     public ImmutableHashSet<string> PlayersWithRuns { get; init; }
 }
 
-public class TrackedEventProjection: EventProjection
+public partial class TrackedEventProjection: EventProjection
 {
     public TrackedEventProjection()
     {

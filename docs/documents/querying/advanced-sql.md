@@ -91,7 +91,7 @@ var doc = (await session.AdvancedSql.QueryAsync<DocWithMeta>(
     $"select id, data, mt_version from {schema.For<DocWithMeta>()} where data ->> 'Name' = 'Max'",
     CancellationToken.None)).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L86-L91' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L87-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_documents_with_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also query for multiple related documents and scalar, e.g. for paging:
@@ -136,7 +136,7 @@ results[0].detail.Detail.ShouldBe("Hates soap operas");
 results[1].doc.Name.ShouldBe("Beatrix");
 results[1].detail.Detail.ShouldBe("Likes to cook");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L101-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L103-L140' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 All `AdvancedSql` methods also support parameters:
@@ -195,7 +195,7 @@ await foreach (var result in asyncEnumerable)
     collectedResults.Add(result);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L173-L208' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_stream_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L177-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_stream_related_documents_and_scalar' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Using this you can resolve schemas:
