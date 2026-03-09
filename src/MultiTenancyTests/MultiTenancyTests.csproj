@@ -30,6 +30,7 @@
 
         <PackageReference Include="NSubstitute" />
         <PackageReference Include="Shouldly" />
+        <PackageReference Include="System.IO.Hashing" />
     </ItemGroup>
 
     <ItemGroup>
