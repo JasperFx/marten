@@ -1,11 +1,17 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten.Events.Operations;
 using Marten.Events.Protected;
 using Marten.Internal.Sessions;
+using Marten.Linq.Parsing;
 using Marten.Storage;
+using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Events;
 
@@ -32,5 +38,43 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
         _session.QueueOperation(op);
     }
 
+    public void AssignTagWhere(Expression<Func<IEvent, bool>> expression, object tag)
+    {
+        if (expression == null) throw new ArgumentNullException(nameof(expression));
+        if (tag == null) throw new ArgumentNullException(nameof(tag));
 
+        var tagType = tag.GetType();
+        var registration = _store.Events.FindTagType(tagType)
+                           ?? throw new InvalidOperationException(
+                               $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
+
+        var value = registration.ExtractValue(tag);
+        var schema = _store.Events.DatabaseSchemaName;
+
+        // Parse the expression into a SQL WHERE fragment using EventQueryMapping
+        var mapping = new EventQueryMapping(_store.Options);
+        var holder = new SimpleWhereFragmentHolder();
+        var parser = new WhereClauseParser(_store.Options, mapping.QueryMembers, holder);
+        parser.Visit(expression.Body);
+
+        ISqlFragment whereFragment = holder.Fragments.Count switch
+        {
+            0 => throw new ArgumentException("Expression did not produce any WHERE clause."),
+            1 => holder.Fragments[0],
+            _ => CompoundWhereFragment.And(holder.Fragments)
+        };
+
+        var op = new AssignTagWhereOperation(schema, registration, value, whereFragment);
+        _session.QueueOperation(op);
+    }
+
+    private class SimpleWhereFragmentHolder: IWhereFragmentHolder
+    {
+        public List<ISqlFragment> Fragments { get; } = new();
+
+        public void Register(ISqlFragment filter)
+        {
+            if (filter != null) Fragments.Add(filter);
+        }
+    }
 }

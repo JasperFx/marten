@@ -16,6 +16,14 @@ namespace Marten.Events;
 
 internal partial class EventStore
 {
+    public async Task<bool> EventsExistAsync(EventTagQuery query, CancellationToken cancellation = default)
+    {
+        await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), cancellation).ConfigureAwait(false);
+
+        var handler = new EventsExistByTagsHandler(_store, query);
+        return await _session.ExecuteHandlerAsync(handler, cancellation).ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<IEvent>> QueryByTagsAsync(EventTagQuery query,
         CancellationToken cancellation = default)
     {

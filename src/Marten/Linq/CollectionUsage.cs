@@ -30,6 +30,7 @@ public partial class CollectionUsage
     public Expression SelectMany { get; set; } = null!;
     public MethodCallExpression? SelectManyCallExpression { get; set; }
     public GroupJoinData? GroupJoinData { get; set; }
+    public GroupByData? GroupByData { get; set; }
 
 
     public void WriteLimit(int limit)

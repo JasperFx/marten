@@ -73,6 +73,56 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     string TenantId { get; }
 
     /// <summary>
+    ///     Check if a document of type T with the given string id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> CheckExistsAsync<T>(string id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
+    ///     Check if a document of type T with the given int id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> CheckExistsAsync<T>(int id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
+    ///     Check if a document of type T with the given long id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> CheckExistsAsync<T>(long id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
+    ///     Check if a document of type T with the given Guid id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> CheckExistsAsync<T>(Guid id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
+    ///     Check if a document of type T with the given id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<bool> CheckExistsAsync<T>(object id, CancellationToken token = default) where T : notnull;
+
+    /// <summary>
     ///     Asynchronously find or load a single document of type T by a string id
     /// </summary>
     /// <typeparam name="T"></typeparam>

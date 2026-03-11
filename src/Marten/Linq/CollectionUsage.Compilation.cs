@@ -1,7 +1,9 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -36,6 +38,12 @@ public partial class CollectionUsage
         }
 
         statement.ParseWhereClause(WhereExpressions, session, collection, storage);
+
+        // If this is a GroupBy query, handle it separately
+        if (GroupByData != null)
+        {
+            return CompileGroupBy(session, statement, collection, statistics);
+        }
 
         ParseIncludes(collection, session);
         if (Includes.Any())
@@ -371,6 +379,155 @@ public partial class CollectionUsage
         ProcessSingleValueModeIfAny(joinStatement, session, null, statistics);
 
         return joinStatement;
+    }
+
+    public Statement CompileGroupBy(IMartenSession session,
+        SelectorStatement statement, IQueryableMemberCollection collection, QueryStatistics? statistics)
+    {
+        var groupBy = GroupByData!;
+        var groupingUsage = Inner; // The IGrouping<K,T> usage with SelectExpression and WhereExpressions
+
+        if (groupingUsage?.SelectExpression == null)
+        {
+            throw new BadLinqExpressionException(
+                "GroupBy must be followed by a Select() projection. Marten does not support returning IGrouping<K,T> directly.");
+        }
+
+        // Find the grouping parameter from the select expression
+        // The SelectExpression is the body of the lambda; we need the original lambda's parameter
+        // The grouping parameter was on the Select's lambda: g => new { ... }
+        // We need to find it from the expression tree
+        ParameterExpression groupingParam = FindGroupingParameter(groupingUsage.SelectExpression);
+
+        var parser = new GroupBySelectParser(
+            _options.Serializer(),
+            collection,
+            groupBy.KeySelector,
+            groupingUsage.SelectExpression,
+            groupingParam);
+
+        // Set GROUP BY columns
+        foreach (var col in parser.GroupByColumns)
+        {
+            statement.GroupByColumns.Add(col);
+        }
+
+        // Set SELECT clause
+        if (parser.IsScalar)
+        {
+            var fragment = parser.ScalarFragment;
+            if (fragment is IQueryableMember member)
+            {
+                if (member.MemberType == typeof(string))
+                {
+                    statement.SelectClause =
+                        new NewScalarStringSelectClause(member.RawLocator, statement.SelectClause.FromObject);
+                }
+                else if (member.MemberType.IsSimple() || member.MemberType == typeof(Guid) ||
+                         member.MemberType == typeof(decimal) || member.MemberType == typeof(DateTimeOffset))
+                {
+                    statement.SelectClause =
+                        typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member,
+                            statement.SelectClause.FromObject,
+                            member.MemberType);
+                }
+            }
+            else if (fragment is LiteralSql literal)
+            {
+                // Aggregate scalar like count(*)
+                statement.SelectClause =
+                    new NewScalarSelectClause<int>(literal.Text, statement.SelectClause.FromObject);
+            }
+        }
+        else
+        {
+            var resultType = groupingUsage.SelectExpression.Type;
+            statement.SelectClause =
+                typeof(SelectDataSelectClause<>).CloseAndBuildAs<ISelectClause>(
+                    statement.SelectClause.FromObject,
+                    parser.NewObject,
+                    resultType);
+        }
+
+        // Process HAVING from the grouping usage's WhereExpressions
+        if (groupingUsage.WhereExpressions.Any())
+        {
+            // Build key member dictionaries for the HAVING resolver
+            var keyMembers = new Dictionary<string, IQueryableMember>();
+            IQueryableMember simpleKeyMember = null;
+            bool isCompositeKey;
+
+            var keyBody = groupBy.KeySelector.Body;
+            if (keyBody is NewExpression newExpr)
+            {
+                isCompositeKey = true;
+                var parameters = newExpr.Constructor!.GetParameters();
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    keyMembers[parameters[i].Name!] = collection.MemberFor(newExpr.Arguments[i]);
+                }
+            }
+            else
+            {
+                isCompositeKey = false;
+                simpleKeyMember = collection.MemberFor(keyBody);
+            }
+
+            foreach (var whereExpr in groupingUsage.WhereExpressions)
+            {
+                var havingFragment = GroupBySelectParser.ResolveHavingFragment(
+                    whereExpr, collection, groupBy.KeySelector, keyMembers, simpleKeyMember, isCompositeKey);
+                statement.HavingClauses.Add(havingFragment);
+            }
+        }
+
+        // Transfer downstream operators from the grouping usage's Inner (if any)
+        // e.g., OrderBy, Take, Skip after Select
+        var downstream = groupingUsage.Inner;
+        if (downstream != null)
+        {
+            statement.Limit ??= downstream._limit;
+            statement.Offset ??= downstream._offset;
+
+            if (downstream.SingleValueMode.HasValue)
+            {
+                SingleValueMode = downstream.SingleValueMode;
+            }
+
+            if (downstream.IsAny)
+            {
+                IsAny = true;
+            }
+        }
+
+        // Apply single value mode (Count, First, etc. after the GroupBy+Select)
+        ProcessSingleValueModeIfAny(statement, session, collection, statistics);
+
+        return statement.Top();
+    }
+
+    private static ParameterExpression FindGroupingParameter(Expression expression)
+    {
+        var finder = new GroupingParameterFinder();
+        finder.Visit(expression);
+        return finder.Parameter ?? throw new BadLinqExpressionException(
+            "Could not find the IGrouping parameter in the GroupBy Select expression");
+    }
+
+    private class GroupingParameterFinder: ExpressionVisitor
+    {
+        public ParameterExpression? Parameter { get; private set; }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (Parameter == null && node.Type.IsGenericType &&
+                node.Type.GetGenericTypeDefinition() == typeof(IGrouping<,>))
+            {
+                Parameter = node;
+            }
+
+            return base.VisitParameter(node);
+        }
     }
 
     public Statement CompileSelectMany(IMartenSession session,
