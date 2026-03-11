@@ -100,7 +100,6 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy' },
             { text: 'Environment Checks', link: '/configuration/environment-checks' },
             { text: 'Custom IoC Integration', link: '/configuration/ioc' },
-            { text: 'MCP Server', link: '/configuration/mcp' },
           ]
         },
         {

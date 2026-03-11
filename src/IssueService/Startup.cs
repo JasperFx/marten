@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using IssueService.Controllers;
 using JasperFx.Events;
 using Marten;
-using Marten.AspNetCore;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Microsoft.AspNetCore.Builder;
@@ -83,7 +82,6 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
-            endpoints.MapMartenMcp();
         });
     }
 }
