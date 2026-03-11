@@ -139,6 +139,14 @@ public interface IBatchEvents
     Task<T?> FetchLatest<T>(string id) where T : class;
 
     /// <summary>
+    ///     Check whether any events exist that match the given tag query, without loading the events.
+    ///     This is a lightweight existence check useful for DCB guard clauses.
+    /// </summary>
+    /// <param name="query"></param>
+    /// <returns></returns>
+    Task<bool> EventsExist(EventTagQuery query);
+
+    /// <summary>
     ///     Fetch events matching a tag query and aggregate them into type T with a DCB consistency boundary.
     ///     At SaveChangesAsync time, will throw DcbConcurrencyException if new matching events were appended.
     /// </summary>
@@ -156,6 +164,51 @@ public interface IBatchedQuery
     IBatchEvents Events { get; }
 
     QuerySession Parent { get; }
+
+    /// <summary>
+    ///     Check if a document of type T with the given string id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> CheckExists<T>(string id) where T : class;
+
+    /// <summary>
+    ///     Check if a document of type T with the given int id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> CheckExists<T>(int id) where T : class;
+
+    /// <summary>
+    ///     Check if a document of type T with the given long id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> CheckExists<T>(long id) where T : class;
+
+    /// <summary>
+    ///     Check if a document of type T with the given Guid id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> CheckExists<T>(Guid id) where T : class;
+
+    /// <summary>
+    ///     Check if a document of type T with the given id exists in the database
+    ///     without loading or deserializing the document
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="id"></param>
+    /// <returns></returns>
+    Task<bool> CheckExists<T>(object id) where T : class;
 
     /// <summary>
     ///     Load a single document of Type "T" by id

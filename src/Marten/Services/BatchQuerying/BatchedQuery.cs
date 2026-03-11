@@ -136,6 +136,58 @@ internal partial class BatchedQuery: IBatchedQuery
         return plan.Fetch(this);
     }
 
+    public Task<bool> CheckExists<T>(string id) where T : class
+    {
+        return checkExists<T, string>(id);
+    }
+
+    public Task<bool> CheckExists<T>(int id) where T : class
+    {
+        return checkExists<T, int>(id);
+    }
+
+    public Task<bool> CheckExists<T>(long id) where T : class
+    {
+        return checkExists<T, long>(id);
+    }
+
+    public Task<bool> CheckExists<T>(Guid id) where T : class
+    {
+        return checkExists<T, Guid>(id);
+    }
+
+    public Task<bool> CheckExists<T>(object id) where T : class
+    {
+        var checker = typeof(ExistsChecker<>).CloseAndBuildAs<IExistsChecker>(id.GetType());
+        return checker.CheckExists<T>(id, this);
+    }
+
+    private Task<bool> checkExists<T, TId>(TId id) where T : class where TId : notnull
+    {
+        _documentTypes.Add(typeof(T));
+        var storage = Parent.StorageFor<T>();
+        if (storage is IDocumentStorage<T, TId> s)
+        {
+            var handler = new CheckExistsByIdHandler<T, TId>(s, id);
+            return AddItem(handler);
+        }
+
+        throw new DocumentIdTypeMismatchException(storage, typeof(TId));
+    }
+
+    private interface IExistsChecker
+    {
+        Task<bool> CheckExists<T>(object id, BatchedQuery parent) where T : class;
+    }
+
+    private class ExistsChecker<TId>: IExistsChecker where TId : notnull
+    {
+        public Task<bool> CheckExists<T>(object id, BatchedQuery parent) where T : class
+        {
+            return parent.checkExists<T, TId>((TId)id);
+        }
+    }
+
     private Task<T?> load<T, TId>(TId id) where T : class where TId : notnull
     {
         _documentTypes.Add(typeof(T));

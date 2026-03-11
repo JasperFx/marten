@@ -28,6 +28,7 @@ internal class OperatorLibrary
         Add<SelectManyOperator>();
         Add<GroupJoinOperator>();
         Add<SelectOperator>();
+        Add<GroupByOperator>();
         Add<AnyOperator>();
         Add<DistinctOperator>();
         Add<IncludeOperator>(); // TODO -- is this necessary?

@@ -183,6 +183,14 @@ internal partial class BatchedQuery: IBatchEvents
         return AddItem(handler);
     }
 
+    public Task<bool> EventsExist(EventTagQuery query)
+    {
+        _documentTypes.Add(typeof(IEvent));
+        var store = (DocumentStore)Parent.DocumentStore;
+        var handler = new EventsExistByTagsHandler(store, query);
+        return AddItem(handler);
+    }
+
     public Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query) where T : class
     {
         Parent.AssertIsDocumentSession();

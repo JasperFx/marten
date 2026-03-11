@@ -116,6 +116,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             {
               text: 'Querying Documents', link: '/documents/querying/', collapsed: true, items: [
                 { text: 'Loading Documents by Id', link: '/documents/querying/byid' },
+                { text: 'Checking Document Existence', link: '/documents/querying/check-exists' },
                 { text: 'Querying Documents with Linq', link: '/documents/querying/linq/' },
                 { text: 'Supported Linq Operators', link: '/documents/querying/linq/operators' },
                 { text: 'Querying within Child Collections', link: '/documents/querying/linq/child-collections' },

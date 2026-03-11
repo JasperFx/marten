@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Internal;
@@ -25,6 +26,9 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
 
     public bool IsDistinct { get; set; }
 
+    public List<string> GroupByColumns { get; } = new();
+    public List<ISqlFragment> HavingClauses { get; } = new();
+
     public void Register(ISqlFragment fragment)
     {
         Wheres.Add(fragment);
@@ -44,6 +48,28 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
             {
                 sql.Append(" and ");
                 Wheres[i].Apply(sql);
+            }
+        }
+
+        if (GroupByColumns.Count > 0)
+        {
+            sql.Append(" GROUP BY ");
+            sql.Append(GroupByColumns[0]);
+            for (var i = 1; i < GroupByColumns.Count; i++)
+            {
+                sql.Append(", ");
+                sql.Append(GroupByColumns[i]);
+            }
+        }
+
+        if (HavingClauses.Count > 0)
+        {
+            sql.Append(" HAVING ");
+            HavingClauses[0].Apply(sql);
+            for (var i = 1; i < HavingClauses.Count; i++)
+            {
+                sql.Append(" and ");
+                HavingClauses[i].Apply(sql);
             }
         }
 
