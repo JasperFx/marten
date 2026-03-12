@@ -1,8 +1,12 @@
 #nullable enable
 using System;
+using System.Reflection;
+using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration.Filters;
+using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
@@ -26,22 +30,48 @@ internal class StringEquals: StringComparisonParser
     }
 }
 
-internal class StringEqualsIgnoreCaseFilter : ISqlFragment
+internal class StringEqualsIgnoreCaseFilter : ISqlFragment, ICompiledQueryAwareFilter
 {
     public IQueryableMember Member { get; }
     public CommandParameter Value { get; }
+    private readonly string _rawValue;
+    private MemberInfo? _queryMember;
 
     public StringEqualsIgnoreCaseFilter(IQueryableMember member, CommandParameter value)
     {
         Member = member;
-        Value = new CommandParameter(StringComparisonParser.EscapeValue(value.Value?.ToString() ?? string.Empty));
+        _rawValue = value.Value as string ?? string.Empty;
+        Value = new CommandParameter(StringComparisonParser.EscapeValue(_rawValue));
     }
 
     public void Apply(ICommandBuilder builder)
     {
         builder.Append(Member.RawLocator);
         builder.Append(StringComparisonParser.CaseInSensitiveLike);
-        Value.Apply(builder);
+        builder.AppendParameter(StringComparisonParser.EscapeValue(_rawValue));
+        ParameterName = builder.LastParameterName;
     }
 
+    public bool TryMatchValue(object value, MemberInfo member)
+    {
+        if (_rawValue.Equals(value))
+        {
+            _queryMember = member;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
+    {
+        var maskedValue = $"EqualsIgnoreCaseValue(_query.{_queryMember!.Name})";
+
+        method.Frames.Code($@"
+{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
+{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
+", NpgsqlDbType.Varchar);
+    }
+
+    public string? ParameterName { get; private set; }
 }
