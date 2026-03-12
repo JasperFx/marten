@@ -41,20 +41,25 @@ public abstract class ComplexCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 
     protected string StartsWith(string value)
     {
-        return $"%{value}";
+        return $"%{EscapeLikeValue(value)}";
     }
 
     protected string ContainsString(string value)
     {
-        return $"%{value}%";
+        return $"%{EscapeLikeValue(value)}%";
     }
 
     protected string EndsWith(string value)
     {
-        return $"{value}%";
+        return $"{EscapeLikeValue(value)}%";
     }
 
     protected string EqualsIgnoreCaseValue(string value)
+    {
+        return EscapeLikeValue(value);
+    }
+
+    private static string EscapeLikeValue(string value)
     {
         return value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
     }
