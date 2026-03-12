@@ -570,6 +570,38 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         {
             mapping.JsonTransformation(null);
         }
+
+        autoDiscoverTagTypesFromProjections();
+    }
+
+    private static readonly HashSet<Type> PrimitiveIdentityTypes =
+    [
+        typeof(Guid), typeof(string), typeof(int), typeof(long), typeof(short)
+    ];
+
+    private static readonly System.Reflection.MethodInfo CreateTagTypeMethod =
+        typeof(TagTypeRegistration).GetMethod(nameof(TagTypeRegistration.Create))!;
+
+    private void autoDiscoverTagTypesFromProjections()
+    {
+        foreach (var projection in Options.Projections.All.OfType<IAggregateProjection>())
+        {
+            var identityType = projection.IdentityType;
+            if (identityType == null || PrimitiveIdentityTypes.Contains(identityType)) continue;
+            if (_tagTypes.Any(t => t.TagType == identityType)) continue;
+
+            try
+            {
+                var generic = CreateTagTypeMethod.MakeGenericMethod(identityType);
+                var registration = (ITagTypeRegistration)generic.Invoke(null, [null])!;
+                registration.ForAggregate(projection.AggregateType);
+                _tagTypes.Add(registration);
+            }
+            catch
+            {
+                // Not a valid strong-typed identifier — skip silently
+            }
+        }
     }
 
     IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()

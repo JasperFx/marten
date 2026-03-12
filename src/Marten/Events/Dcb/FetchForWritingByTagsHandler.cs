@@ -7,10 +7,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using NpgsqlTypes;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Dcb;
@@ -90,7 +92,34 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             builder.Append(")");
         }
 
-        builder.Append(") order by e.seq_id");
+        builder.Append(")");
+
+        // If the aggregator has event type filtering, apply it to limit the returned events
+        var eventTypeNames = resolveAggregatorEventTypeNames();
+        if (eventTypeNames != null)
+        {
+            builder.Append(" and e.type = ANY(");
+            var parameter = builder.AppendParameter(eventTypeNames);
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar | NpgsqlDbType.Array;
+            builder.Append(")");
+        }
+
+        builder.Append(" order by e.seq_id");
+    }
+
+    private string[]? resolveAggregatorEventTypeNames()
+    {
+        var aggregator = _store.Options.Projections.AggregatorFor<T>();
+        if (aggregator is not EventFilterable filterable) return null;
+
+        var includedTypes = filterable.IncludedEventTypes;
+        if (includedTypes.Count == 0 || includedTypes.Any(x => x.IsAbstract || x.IsInterface)) return null;
+
+        var additionalAliases = _store.Events.AliasesForEvents(includedTypes);
+        return includedTypes
+            .Select(x => _store.Events.EventMappingFor(x).Alias)
+            .Union(additionalAliases)
+            .ToArray();
     }
 
     public IEventBoundary<T> Handle(DbDataReader reader, IMartenSession session)
