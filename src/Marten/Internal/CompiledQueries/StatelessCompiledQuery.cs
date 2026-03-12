@@ -37,7 +37,7 @@ public abstract class StatelessCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 
     protected string StartsWith(string value)
     {
-        return $"%{EscapeLikeValue(value)}";
+        return $"{EscapeLikeValue(value)}%";
     }
 
     protected string ContainsString(string value)
@@ -47,7 +47,7 @@ public abstract class StatelessCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
 
     protected string EndsWith(string value)
     {
-        return $"{EscapeLikeValue(value)}%";
+        return $"%{EscapeLikeValue(value)}";
     }
 
     protected string EqualsIgnoreCaseValue(string value)
