@@ -54,4 +54,9 @@ public abstract class ClonedCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
     {
         return $"%{value}";
     }
+
+    protected string EqualsIgnoreCaseValue(string value)
+    {
+        return value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+    }
 }
