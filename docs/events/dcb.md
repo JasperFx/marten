@@ -42,6 +42,28 @@ private void ConfigureStore()
 
 Each tag type gets its own table (`mt_event_tag_student`, `mt_event_tag_course`, etc.) with a composite primary key of `(value, seq_id)`.
 
+### Automatic Tag Type Registration
+
+When you register a `SingleStreamProjection<TDoc, TId>` or `MultiStreamProjection<TDoc, TId>` that uses a strong-typed identifier as its `TId`, Marten will **automatically register that type as a tag type** with `ForAggregate()` pointing to `TDoc`. This means you don't need to call `RegisterTagType<TId>()` explicitly in most cases:
+
+```csharp
+// The projection's TId (TicketId) is auto-registered as a tag type
+opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
+
+// No need for: opts.Events.RegisterTagType<TicketId>().ForAggregate<TicketSummary>();
+```
+
+Auto-discovery only applies to strong-typed identifiers (e.g., `record struct TicketId(Guid Value)`). Primitive types like `Guid`, `string`, `int`, `long`, and `short` are not auto-registered.
+
+If you explicitly register a tag type before auto-discovery runs, your explicit registration takes precedence. This lets you customize the table suffix when needed:
+
+```csharp
+// Explicit registration with custom table suffix — auto-discovery won't overwrite this
+opts.Events.RegisterTagType<TicketId>("custom_ticket")
+    .ForAggregate<TicketSummary>();
+opts.Projections.Add<TicketSummaryProjection>(ProjectionLifecycle.Inline);
+```
+
 ### Tag Type Requirements
 
 Tag types should be simple wrapper records around a primitive value:
