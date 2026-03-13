@@ -364,7 +364,8 @@ class Build : NukeBuild
             {
                 "./src/Marten",
                 "./src/Marten.NodaTime",
-                "./src/Marten.AspNetCore"
+                "./src/Marten.AspNetCore",
+                "./src/Marten.EntityFrameworkCore"
             };
 
             foreach (var project in projects)
