@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using LinqTests.Acceptance.Support;
 using Marten;
+using Marten.Exceptions;
 using Marten.Services.Json;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -389,6 +390,58 @@ public class select_clause_usage: IntegrationContext
         actual.Number.ShouldBe(target.Inner.Number);
     }
 
+    [Fact]
+    public async Task select_to_class_with_primary_constructor_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank", LastName = "Aaron" });
+        theSession.Store(new User { FirstName = "Bill", LastName = "Laimbeer" });
+        await theSession.SaveChangesAsync();
+
+        var projections = theSession.Query<User>()
+            .OrderBy(u => u.FirstName)
+            .Select(u => new UserProjection(u));
+
+        Should.Throw<BadLinqExpressionException>(() => projections.ToList());
+    }
+
+    [Fact]
+    public async Task select_to_class_with_required_properties()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var result = await theSession.Query<User>()
+            .Where(u => u.FirstName == "Hank")
+            .Select(u => new UserRequired { Name = u.FirstName })
+            .FirstOrDefaultAsync();
+
+        result.ShouldNotBeNull();
+        result.Name.ShouldBe("Hank");
+    }
+
+    [Fact]
+    public async Task select_with_complex_expression_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var query = theSession.Query<User>()
+            .Select(u => ReverseString(u.FirstName));
+
+        Should.Throw<BadLinqExpressionException>(() => query.ToList());
+    }
+
+    [Fact]
+    public async Task select_with_complex_expression_in_object_throws_exception()
+    {
+        theSession.Store(new User { FirstName = "Hank" });
+        await theSession.SaveChangesAsync();
+
+        var query = theSession.Query<User>()
+            .Select(u => new { Name = ReverseString(u.FirstName) });
+
+        Should.Throw<BadLinqExpressionException>(() => query.ToList());
+    }
 
     public class FlatTarget
     {
@@ -413,6 +466,14 @@ public class select_clause_usage: IntegrationContext
     public select_clause_usage(DefaultStoreFixture fixture) : base(fixture)
     {
     }
+
+    // Method that should not be translatable to SQL
+    private static string ReverseString(string input)
+    {
+        char[] charArray = input.ToCharArray();
+        Array.Reverse(charArray);
+        return new string(charArray);
+    }
 }
 
 
@@ -421,4 +482,19 @@ public class UserName
     public string Name { get; set; }
 }
 
+public class UserProjection
+{
+    public UserProjection(User u)
+    {
+        FirstName = u.FirstName;
+        LastName = u.LastName;
+    }
 
+    public string FirstName { get; }
+    public string LastName { get; }
+}
+
+public class UserRequired
+{
+    public required string Name { get; set; }
+}
