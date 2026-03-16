@@ -201,6 +201,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool EnableAdvancedAsyncTracking { get; set; }
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
+    public bool UseListenNotifyForEventAppends { get; set; }
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 

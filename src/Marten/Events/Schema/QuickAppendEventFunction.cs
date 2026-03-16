@@ -134,6 +134,8 @@ BEGIN
 
 	update {databaseSchema}.mt_streams set version = event_version, timestamp = now() where {streamsWhere};
 
+	PERFORM pg_notify('mt_events_appended', '');
+
 	return return_value;
 END
 $$ LANGUAGE plpgsql;
