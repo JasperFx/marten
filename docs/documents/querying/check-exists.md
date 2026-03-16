@@ -12,7 +12,7 @@ Sometimes you only need to know whether a document with a given id exists in the
 ## Supported Identity Types
 
 | Id Type | Supported |
-|---------|-----------|
+| ------- | --------- |
 | `Guid` | Yes |
 | `int` | Yes |
 | `long` | Yes |

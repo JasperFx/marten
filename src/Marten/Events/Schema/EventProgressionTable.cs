@@ -25,6 +25,14 @@ internal class EventProgressionTable: Table
             AddColumn<int>("assigned_node").DefaultValueByExpression("0");
         }
 
+        if (eventGraph.EnableExtendedProgressionTracking)
+        {
+            AddColumn("heartbeat", "timestamp with time zone").AllowNulls();
+            AddColumn("agent_status", "varchar(20)").AllowNulls();
+            AddColumn("pause_reason", "text").AllowNulls();
+            AddColumn("running_on_node", "integer").AllowNulls();
+        }
+
         PrimaryKeyName = "pk_mt_event_progression";
     }
 }
