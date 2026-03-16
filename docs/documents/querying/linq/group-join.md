@@ -190,4 +190,4 @@ The following patterns are **not yet supported** and will throw `NotSupportedExc
 
 - **GroupJoin as a final operator** (without `SelectMany`) — materializing the grouped collection is not supported. Use `GroupJoin` + `SelectMany` instead.
 - **Composite keys** — joining on multiple fields simultaneously is not supported.
-- **Cross-apply / subquery joins** — only simple key-to-key "equi-joins" are supported.
+- **Cross-apply / subquery joins** — only simple key-to-key joins are supported.
