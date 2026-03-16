@@ -30,16 +30,45 @@ internal class ShardStateSelector: ISelector<ShardState>
         var sequence = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
         var state = new ShardState(name, sequence);
 
+        var nextIndex = 2;
+
         if (_events.UseOptimizedProjectionRebuilds)
         {
-            var modeString = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            var modeString = await reader.GetFieldValueAsync<string>(nextIndex++, token).ConfigureAwait(false);
             if (Enum.TryParse<ShardMode>(modeString, out var mode))
             {
                 state.Mode = mode;
             }
 
-            state.RebuildThreshold = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
-            state.AssignedNodeNumber = await reader.GetFieldValueAsync<int>(4, token).ConfigureAwait(false);
+            state.RebuildThreshold = await reader.GetFieldValueAsync<long>(nextIndex++, token).ConfigureAwait(false);
+            state.AssignedNodeNumber = await reader.GetFieldValueAsync<int>(nextIndex++, token).ConfigureAwait(false);
+        }
+
+        if (_events.EnableExtendedProgressionTracking)
+        {
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.LastHeartbeat = await reader.GetFieldValueAsync<DateTimeOffset>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
+
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.AgentStatus = await reader.GetFieldValueAsync<string>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
+
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.PauseReason = await reader.GetFieldValueAsync<string>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
+
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.RunningOnNode = await reader.GetFieldValueAsync<int>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
         }
 
         return state;

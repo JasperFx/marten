@@ -200,6 +200,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseMonitoredAdvisoryLock { get; set; } = true;
     public bool EnableAdvancedAsyncTracking { get; set; }
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+
+    /// <summary>
+    /// When enabled, adds heartbeat, agent_status, pause_reason, and running_on_node
+    /// columns to the event progression table for CritterWatch monitoring
+    /// </summary>
+    public bool EnableExtendedProgressionTracking { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
