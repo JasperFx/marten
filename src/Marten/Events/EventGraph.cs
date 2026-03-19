@@ -478,6 +478,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         return _byEventName[eventType];
     }
 
+    internal EventMapping? TryGetRegisteredMappingForDotNetTypeName(string dotnetTypeName)
+    {
+        return AllEvents().FirstOrDefault(x => x.DotNetTypeName == dotnetTypeName);
+    }
+
     // Fetch additional event aliases that map to these types
     internal IReadOnlySet<string> AliasesForEvents(IReadOnlyCollection<Type> types)
     {
