@@ -251,7 +251,11 @@ public abstract class EventDocumentStorage: IEventStorage
             var dotnetTypeName = reader.GetFieldValue<string>(2);
             if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)
             {
-                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+                var altMapping = Events.TryGetRegisteredMappingForDotNetTypeName(dotnetTypeName);
+                if (altMapping != null)
+                {
+                    mapping = altMapping;
+                }
             }
         }
 
@@ -277,7 +281,11 @@ public abstract class EventDocumentStorage: IEventStorage
             var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)
             {
-                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+                var altMapping = Events.TryGetRegisteredMappingForDotNetTypeName(dotnetTypeName);
+                if (altMapping != null)
+                {
+                    mapping = altMapping;
+                }
             }
         }
 
