@@ -100,9 +100,12 @@ public static class EfCoreProjectionExtensions
         {
             var table = migrator.MapToTable(entityType);
 
-            // Move EF Core tables into the same schema as the Marten store
-            // so they participate in schema migration and cleanup together
-            if (!string.IsNullOrEmpty(schemaName) && table is Table pgTable)
+            // Only move tables to the Marten schema if the entity does NOT have an
+            // explicit schema configured in EF Core. When a user has deliberately placed
+            // entities in a separate schema (e.g., via HasDefaultSchema or ToTable("name", "schema")),
+            // that schema should be respected. See https://github.com/JasperFx/marten/issues/4175
+            var efSchema = entityType.GetSchema();
+            if (efSchema == null && !string.IsNullOrEmpty(schemaName) && table is Table pgTable)
             {
                 pgTable.MoveToSchema(schemaName);
             }
