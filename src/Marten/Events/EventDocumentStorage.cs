@@ -246,6 +246,14 @@ public abstract class EventDocumentStorage: IEventStorage
 
             mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
         }
+        else if (!reader.IsDBNull(2))
+        {
+            var dotnetTypeName = reader.GetFieldValue<string>(2);
+            if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)
+            {
+                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+            }
+        }
 
         var @event = mapping.ReadEventData(_serializer, reader);
 
@@ -263,6 +271,14 @@ public abstract class EventDocumentStorage: IEventStorage
             var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
 
             mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+        }
+        else if (!await reader.IsDBNullAsync(2, token).ConfigureAwait(false))
+        {
+            var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)
+            {
+                mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
+            }
         }
 
         IEvent @event;
