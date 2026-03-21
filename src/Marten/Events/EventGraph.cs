@@ -207,6 +207,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableExtendedProgressionTracking { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
+    public bool UseListenNotifyForEventAppends { get; set; }
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 
