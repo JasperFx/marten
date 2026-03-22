@@ -460,7 +460,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
 internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
 {
-    private readonly string[] _selectFields;
+    private string[] _selectFields;
+
+    internal void EnsureColumn(string columnLocator)
+    {
+        if (!_selectFields.Contains(columnLocator))
+        {
+            _selectFields = [.._selectFields, columnLocator];
+        }
+    }
     private readonly IDocumentStorage _parent;
 
     public DuplicatedFieldSelectClause(string fromObject, string selector, string[] selectFields, Type selectedType,

@@ -303,6 +303,11 @@ public partial class CollectionUsage
         var outerKeyMember = outerCollection.MemberFor(groupJoin.OuterKeySelector.Body);
         var innerKeyMember = innerCollection.MemberFor(groupJoin.InnerKeySelector.Body);
 
+        // Ensure join key columns are present in CTE SELECT lists (they may be
+        // excluded when using QueryOnly storage, e.g. d.id is omitted by IdColumn)
+        EnsureJoinKeyInCte(outerStatement, outerStorage, outerKeyMember.TypedLocator);
+        EnsureJoinKeyInCte(innerStatement, innerStorage, innerKeyMember.TypedLocator);
+
         // Replace d. prefix with CTE aliases for the ON clause
         var outerKeyLocator = outerKeyMember.TypedLocator.Replace("d.", outerCteAlias + ".");
         var innerKeyLocator = innerKeyMember.TypedLocator.Replace("d.", innerCteAlias + ".");
@@ -689,6 +694,30 @@ public partial class CollectionUsage
                     throw new BadLinqExpressionException("See https://github.com/JasperFx/marten/issues/2704");
                 }
             }
+        }
+    }
+
+    private static void EnsureJoinKeyInCte(SelectorStatement statement, IDocumentStorage storage, string keyLocator)
+    {
+        var selectClause = statement.SelectClause;
+        var currentFields = selectClause.SelectFields();
+
+        if (currentFields.Contains(keyLocator))
+        {
+            return;
+        }
+
+        if (selectClause is DuplicatedFieldSelectClause duplicatedClause)
+        {
+            duplicatedClause.EnsureColumn(keyLocator);
+        }
+        else
+        {
+            // When there are no duplicate fields, SelectClauseWithDuplicatedFields returns
+            // the storage itself. Wrap it in a DuplicatedFieldSelectClause to add the column.
+            var fields = currentFields.Append(keyLocator).ToArray();
+            statement.SelectClause = new DuplicatedFieldSelectClause(
+                selectClause.FromObject, string.Empty, fields, selectClause.SelectedType, storage);
         }
     }
 }
