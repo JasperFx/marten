@@ -549,4 +549,59 @@ public class group_join_operator: OneOffConfigurationsContext
     }
 
     #endregion
+
+    #region QuerySession (QueryOnly storage) Tests
+
+    [Fact]
+    public async Task GroupJoin_left_join_on_id_with_query_session()
+    {
+        await SetupData();
+
+        // Use QuerySession (QueryOnly storage) where IdColumn.ShouldSelect returns false.
+        // This verifies that d.id is included in the CTE SELECT list even though
+        // QueryOnly storage normally excludes it.
+        await using var querySession = _store.QuerySession();
+
+        var results = await querySession.Query<JoinCustomer>()
+            .GroupJoin(
+                querySession.Query<JoinOrder>(),
+                c => c.Id,
+                o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(
+                x => x.orders.DefaultIfEmpty(),
+                (x, o) => new { CustomerName = x.c.Name, OrderStatus = (string?)o.Status })
+            .ToListAsync();
+
+        results.Count.ShouldBe(4); // Alice(2) + Bob(1) + Charlie(1 null)
+        results.Count(r => r.CustomerName == "Alice").ShouldBe(2);
+        results.Count(r => r.CustomerName == "Bob").ShouldBe(1);
+
+        var charlie = results.Single(r => r.CustomerName == "Charlie");
+        charlie.OrderStatus.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task GroupJoin_inner_join_on_id_with_query_session()
+    {
+        await SetupData();
+
+        await using var querySession = _store.QuerySession();
+
+        var results = await querySession.Query<JoinCustomer>()
+            .GroupJoin(
+                querySession.Query<JoinOrder>(),
+                c => c.Id,
+                o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(
+                x => x.orders,
+                (x, o) => new { x.c.Name, o.Amount })
+            .ToListAsync();
+
+        results.Count.ShouldBe(3);
+        results.Count(r => r.Name == "Alice").ShouldBe(2);
+    }
+
+    #endregion
 }
