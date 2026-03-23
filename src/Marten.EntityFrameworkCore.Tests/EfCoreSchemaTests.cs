@@ -70,6 +70,40 @@ public class SeparateSchemaDbContext : DbContext
     }
 }
 
+/// <summary>
+/// DbContext with no explicit schema - these entities should be moved to the
+/// Marten document store schema, including their FK references.
+/// See https://github.com/JasperFx/marten/issues/4192
+/// </summary>
+public class NoEfSchemaDbContext : DbContext
+{
+    public NoEfSchemaDbContext(DbContextOptions<NoEfSchemaDbContext> options) : base(options)
+    {
+    }
+
+    public DbSet<Entity> Entities => Set<Entity>();
+    public DbSet<EntityType> EntityTypes => Set<EntityType>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EntityType>(entity =>
+        {
+            entity.ToTable("entity_type");
+            entity.HasKey(e => e.Id);
+        });
+
+        modelBuilder.Entity<Entity>(entity =>
+        {
+            entity.ToTable("entity");
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.EntityType)
+                .WithMany()
+                .HasForeignKey(e => e.EntityTypeId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+}
+
 public class EfCoreSchemaTests
 {
     [Fact]
@@ -219,5 +253,44 @@ public class EfCoreSchemaTests
             finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {SeparateSchemaDbContext.EfSchema} CASCADE";
             await finalCmd.ExecuteNonQueryAsync();
         }
+    }
+
+    [Fact]
+    public void should_move_tables_and_fk_without_explicit_schema_to_marten_schema()
+    {
+        // Issue #4192: When EF Core entities do NOT have an explicit schema,
+        // tables AND their FK references should be moved to Marten's schema.
+        const string martenSchema = "test_marten_schema";
+
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = martenSchema;
+
+            // NoEfSchemaDbContext does not set an explicit schema
+            opts.AddEntityTablesFromDbContext<NoEfSchemaDbContext>();
+        });
+
+        var extendedObjects = store.Options.Storage.ExtendedSchemaObjects;
+
+        var entityTable = extendedObjects.OfType<Table>()
+            .FirstOrDefault(t => t.Identifier.Name == "entity");
+        var entityTypeTable = extendedObjects.OfType<Table>()
+            .FirstOrDefault(t => t.Identifier.Name == "entity_type");
+
+        entityTable.ShouldNotBeNull();
+        entityTypeTable.ShouldNotBeNull();
+
+        // These tables should be moved to Marten's schema
+        entityTable.Identifier.Schema.ShouldBe(martenSchema,
+            "Entity table should be moved to Marten's schema");
+        entityTypeTable.Identifier.Schema.ShouldBe(martenSchema,
+            "EntityType table should be moved to Marten's schema");
+
+        // FK references should also point to Marten's schema
+        var entityFk = entityTable.ForeignKeys.FirstOrDefault();
+        entityFk.ShouldNotBeNull("Entity should have a FK to EntityType");
+        entityFk.LinkedTable!.Schema.ShouldBe(martenSchema,
+            "Foreign keys should also be updated to reference the correct schema");
     }
 }
