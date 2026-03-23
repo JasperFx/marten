@@ -26,15 +26,6 @@ internal class NaturalKeyTable: Table
 
         AddColumn(streamCol, streamColType).NotNull();
 
-        // FK to mt_streams with CASCADE delete
-        ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream")
-        {
-            ColumnNames = new[] { streamCol },
-            LinkedNames = new[] { "id" },
-            LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
-            OnDelete = CascadeAction.Cascade
-        });
-
         // Tenancy support
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
@@ -46,6 +37,26 @@ internal class NaturalKeyTable: Table
         if (events.UseArchivedStreamPartitioning)
         {
             archiving.PartitionByListValues().AddPartition("archived", true);
+
+            // FK to mt_streams must include is_archived when streams table is partitioned
+            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_is_archived")
+            {
+                ColumnNames = new[] { streamCol, "is_archived" },
+                LinkedNames = new[] { "id", "is_archived" },
+                LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
+                OnDelete = CascadeAction.Cascade
+            });
+        }
+        else
+        {
+            // FK to mt_streams with CASCADE delete
+            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream")
+            {
+                ColumnNames = new[] { streamCol },
+                LinkedNames = new[] { "id" },
+                LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
+                OnDelete = CascadeAction.Cascade
+            });
         }
 
         // Index on stream id/key for reverse lookups
