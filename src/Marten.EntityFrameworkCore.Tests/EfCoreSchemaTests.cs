@@ -1,8 +1,12 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using JasperFx;
 using Marten.Testing.Harness;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Shouldly;
+using Weasel.EntityFrameworkCore;
 using Weasel.Postgresql.Tables;
 using Xunit;
 
@@ -125,5 +129,95 @@ public class EfCoreSchemaTests
         orderSummariesTable.ShouldNotBeNull();
         orderSummariesTable.Identifier.Schema.ShouldBe(martenSchema,
             "Tables without explicit schema should be moved to Marten's schema");
+    }
+
+    [Fact]
+    public void should_return_entity_types_in_fk_dependency_order()
+    {
+        // Issue #4180: GetEntityTypesForMigration should return entity types sorted
+        // so that referenced tables come before referencing tables.
+        var builder = new DbContextOptionsBuilder<SeparateSchemaDbContext>();
+        builder.UseNpgsql("Host=localhost");
+
+        using var dbContext = new SeparateSchemaDbContext(builder.Options);
+
+        var entityTypes = DbContextExtensions.GetEntityTypesForMigration(dbContext);
+        var names = entityTypes.Select(e => e.GetTableName()).ToList();
+
+        // entity_type must come before entity because entity has a FK to entity_type
+        var entityTypeIndex = names.IndexOf("entity_type");
+        var entityIndex = names.IndexOf("entity");
+
+        entityTypeIndex.ShouldBeGreaterThanOrEqualTo(0);
+        entityIndex.ShouldBeGreaterThanOrEqualTo(0);
+        entityTypeIndex.ShouldBeLessThan(entityIndex,
+            "entity_type should come before entity due to FK dependency (issue #4180)");
+    }
+
+    [Fact]
+    public async Task should_apply_schema_with_fk_dependencies_without_error()
+    {
+        // Issue #4180: End-to-end test proving that Marten can apply schema changes
+        // for EF Core entities with FK dependencies without table ordering errors.
+        const string testSchema = "ef_fk_order_test";
+
+        // Clean up any previous test schema
+        await using var cleanupConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await cleanupConn.OpenAsync();
+        await using (var cmd = cleanupConn.CreateCommand())
+        {
+            cmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
+            await cmd.ExecuteNonQueryAsync();
+        }
+        await cleanupConn.CloseAsync();
+
+        try
+        {
+            await using var store = DocumentStore.For(opts =>
+            {
+                opts.Connection(ConnectionSource.ConnectionString);
+                opts.DatabaseSchemaName = testSchema;
+                opts.AutoCreateSchemaObjects = AutoCreate.All;
+
+                opts.AddEntityTablesFromDbContext<SeparateSchemaDbContext>(b =>
+                {
+                    b.UseNpgsql("Host=localhost");
+                });
+            });
+
+            // This triggers schema creation - should not throw due to FK ordering
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+            // Verify tables were created by querying the information schema
+            await using var verifyConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await verifyConn.OpenAsync();
+            await using var verifyCmd = verifyConn.CreateCommand();
+            verifyCmd.CommandText = @"
+                SELECT table_name FROM information_schema.tables
+                WHERE table_schema = @schema
+                ORDER BY table_name";
+            verifyCmd.Parameters.AddWithValue("schema", SeparateSchemaDbContext.EfSchema);
+
+            var tables = new System.Collections.Generic.List<string>();
+            await using var reader = await verifyCmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                tables.Add(reader.GetString(0));
+            }
+
+            tables.ShouldContain("entity");
+            tables.ShouldContain("entity_type");
+        }
+        finally
+        {
+            // Clean up
+            await using var finalConn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+            await finalConn.OpenAsync();
+            await using var finalCmd = finalConn.CreateCommand();
+            finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {testSchema} CASCADE";
+            await finalCmd.ExecuteNonQueryAsync();
+            finalCmd.CommandText = $"DROP SCHEMA IF EXISTS {SeparateSchemaDbContext.EfSchema} CASCADE";
+            await finalCmd.ExecuteNonQueryAsync();
+        }
     }
 }
