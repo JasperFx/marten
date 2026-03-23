@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
@@ -11,6 +13,8 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Projections;
+using Marten.Events.Fetching;
+using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
@@ -246,6 +250,10 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         // before attempting the cast to IEventIdentityStrategy<TId>
         if (typeof(TId) != typeof(Guid) && typeof(TId) != typeof(string))
         {
+            // Auto-discover natural key from [NaturalKey] attribute on the aggregate type
+            // BEFORE iterating planners, so the projection is registered and available
+            tryAutoRegisterNaturalKeyProjection<TDoc, TId>(options);
+
             foreach (var planner in options.Projections.allPlanners())
             {
                 // Pass null identity - natural key planners don't use it
@@ -268,6 +276,34 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
         throw new InvalidOperationException(
             $"Unable to determine a fetch plan for aggregate {typeof(TDoc).FullNameInCode()}. Is there a valid single stream aggregation projection for this type?");
+    }
+
+    /// <summary>
+    /// Auto-discovers a natural key from [NaturalKey] attribute on the aggregate type
+    /// and registers an Inline snapshot projection if no projection exists yet.
+    /// This enables FetchForWriting with natural keys on self-aggregating types
+    /// without requiring explicit projection registration.
+    /// </summary>
+    private static void tryAutoRegisterNaturalKeyProjection<TDoc, TId>(StoreOptions options)
+        where TDoc : class where TId : notnull
+    {
+        // Skip if a projection is already registered for this aggregate type
+        if (options.Projections.TryFindAggregate(typeof(TDoc), out _))
+        {
+            return;
+        }
+
+        var naturalKeyProp = typeof(TDoc).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .FirstOrDefault(p => p.GetCustomAttribute<NaturalKeyAttribute>() != null);
+
+        if (naturalKeyProp == null || naturalKeyProp.PropertyType != typeof(TId))
+        {
+            return;
+        }
+
+        // Register an Inline snapshot projection so the natural key infrastructure
+        // (natural key table, inline projection, NaturalKeyFetchPlanner) all activate
+        options.Projections.Snapshot<TDoc>(SnapshotLifecycle.Inline);
     }
 }
 
