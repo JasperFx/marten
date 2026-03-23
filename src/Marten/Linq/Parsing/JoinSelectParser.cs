@@ -258,7 +258,7 @@ internal class JoinSelectParser: ExpressionVisitor
         var parameters = node.Constructor.GetParameters();
         for (var i = 0; i < parameters.Length; i++)
         {
-            _currentField = parameters[i].Name;
+            _currentField = SelectParser.ResolveFieldName(node, parameters, i);
             Visit(node.Arguments[i]);
         }
         return node;

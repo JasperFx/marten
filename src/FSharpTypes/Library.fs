@@ -29,6 +29,46 @@ let toLinqExpression expr  =
     |> LeafExpressionConverter.QuotationToExpression
     |> stripFSharpFunc
     |> unbox<System.Linq.Expressions.Expression<System.Func<Target, bool>>>
+// Types for Bug #4182 - F# record projection in GroupJoin/SelectMany
+[<CLIMutable>]
+type FSharpMembership = {
+    Id: Guid
+    UserId: Guid
+    OrganizationId: Guid
+    Role: string
+    AddedOn: DateTimeOffset
+}
+
+[<CLIMutable>]
+type FSharpUser = {
+    Id: Guid
+    FirstName: string
+    LastName: string
+    Email: string
+}
+
+// CLIMutable version - uses MemberInit expression from C#
+[<CLIMutable>]
+type FSharpMemberDtoCLIMutable = {
+    UserId: Guid
+    FirstName: string
+    LastName: string
+    Email: string
+    Role: string
+    JoinedOn: DateTimeOffset
+}
+
+// Non-CLIMutable version - forces constructor call from C# which
+// exposes the camelCase parameter name issue
+type FSharpMemberDto = {
+    UserId: Guid
+    FirstName: string
+    LastName: string
+    Email: string
+    Role: string
+    JoinedOn: DateTimeOffset
+}
+
 let greaterThanWithFsharpDateOption =
     <@ fun (o1: Target) -> o1.FSharpDateTimeOffsetOption >= Some DateTimeOffset.UtcNow  @> |> toLinqExpression
 let lesserThanWithFsharpDateOption = <@ (fun (o1: Target) -> o1.FSharpDateTimeOffsetOption <= Some DateTimeOffset.UtcNow ) @> |> toLinqExpression

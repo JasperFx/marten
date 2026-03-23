@@ -173,13 +173,49 @@ internal class SelectParser: ExpressionVisitor
 
         for (var i = 0; i < parameters.Length; i++)
         {
-            _currentField = parameters[i].Name;
+            _currentField = ResolveFieldName(node, parameters, i);
             Visit(node.Arguments[i]);
         }
 
         return node;
     }
 
+    /// <summary>
+    /// Resolves the field name for a constructor parameter in a NewExpression.
+    /// Prefers NewExpression.Members (populated for C# anonymous types), then falls back
+    /// to matching properties by position for F# records where constructor parameters
+    /// are camelCase but properties are PascalCase.
+    /// </summary>
+    internal static string ResolveFieldName(NewExpression node, System.Reflection.ParameterInfo[] parameters, int index)
+    {
+        // Prefer NewExpression.Members when available (C# anonymous types, F# anonymous records)
+        if (node.Members != null && index < node.Members.Count)
+        {
+            return node.Members[index].Name;
+        }
+
+        // For F# records, constructor params are camelCase but properties are PascalCase.
+        // F# records are marked with CompilationMappingAttribute(SourceConstructFlags.RecordType).
+        // Match by position since F# guarantees property order matches constructor parameter order.
+        if (IsFSharpRecord(node.Type))
+        {
+            var properties = node.Type.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+            if (index < properties.Length &&
+                string.Equals(properties[index].Name, parameters[index].Name, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return properties[index].Name;
+            }
+        }
+
+        return parameters[index].Name;
+    }
+
+    private static bool IsFSharpRecord(System.Type type)
+    {
+        return type.GetCustomAttributes(false)
+            .Any(a => a.GetType().FullName == "Microsoft.FSharp.Core.CompilationMappingAttribute"
+                      && a.GetType().GetProperty("SourceConstructFlags")?.GetValue(a)?.ToString() == "RecordType");
+    }
 }
 
 
