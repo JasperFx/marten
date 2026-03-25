@@ -69,9 +69,9 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         {
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, tenant_id, is_archived) " +
                       $"VALUES (?, ?, ?, false) " +
-                      $"ON CONFLICT (natural_key_value) DO UPDATE SET {streamCol} = ?, tenant_id = ?, is_archived = false";
+                      $"ON CONFLICT (natural_key_value, tenant_id) DO UPDATE SET {streamCol} = ?, is_archived = false";
             operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId,
-                streamId, stream.TenantId);
+                streamId);
         }
         else
         {

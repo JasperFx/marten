@@ -10,6 +10,7 @@ using JasperFx.Events.Tags;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Storage;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Dcb;
@@ -109,7 +110,16 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
             builder.Append(")");
         }
 
-        builder.Append(") limit 1)");
+        builder.Append(")");
+
+        // Filter by tenant_id for conjoined tenancy
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            builder.Append(" and t0.tenant_id = ");
+            builder.AppendParameter(session.TenantId);
+        }
+
+        builder.Append(" limit 1)");
     }
 
     public bool Handle(DbDataReader reader, IMartenSession session)

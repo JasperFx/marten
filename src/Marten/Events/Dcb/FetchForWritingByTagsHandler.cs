@@ -12,6 +12,7 @@ using JasperFx.Events.Tags;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Linq.QueryHandlers;
+using Marten.Storage;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -93,6 +94,13 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         }
 
         builder.Append(")");
+
+        // Filter by tenant_id for conjoined tenancy
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            builder.Append(" and e.tenant_id = ");
+            builder.AppendParameter(session.TenantId);
+        }
 
         // If the aggregator has event type filtering, apply it to limit the returned events
         var eventTypeNames = resolveAggregatorEventTypeNames();

@@ -26,10 +26,11 @@ internal class NaturalKeyTable: Table
 
         AddColumn(streamCol, streamColType).NotNull();
 
-        // Tenancy support
-        if (events.TenancyStyle == TenancyStyle.Conjoined)
+        // Tenancy support - tenant_id is part of PK so same natural key can exist in different tenants
+        var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
+        if (isConjoined)
         {
-            AddColumn<TenantIdColumn>();
+            AddColumn<TenantIdColumn>().AsPrimaryKey();
         }
 
         // Archive support
@@ -38,11 +39,36 @@ internal class NaturalKeyTable: Table
         {
             archiving.PartitionByListValues().AddPartition("archived", true);
 
-            // FK to mt_streams must include is_archived when streams table is partitioned
-            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_is_archived")
+            if (isConjoined)
             {
-                ColumnNames = new[] { streamCol, "is_archived" },
-                LinkedNames = new[] { "id", "is_archived" },
+                // FK must include tenant_id and is_archived to match mt_streams composite PK
+                ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_tenant_is_archived")
+                {
+                    ColumnNames = new[] { streamCol, TenantIdColumn.Name, "is_archived" },
+                    LinkedNames = new[] { "id", TenantIdColumn.Name, "is_archived" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
+                    OnDelete = CascadeAction.Cascade
+                });
+            }
+            else
+            {
+                // FK to mt_streams must include is_archived when streams table is partitioned
+                ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_is_archived")
+                {
+                    ColumnNames = new[] { streamCol, "is_archived" },
+                    LinkedNames = new[] { "id", "is_archived" },
+                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
+                    OnDelete = CascadeAction.Cascade
+                });
+            }
+        }
+        else if (isConjoined)
+        {
+            // FK must include tenant_id to match mt_streams composite PK (tenant_id, id)
+            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_tenant")
+            {
+                ColumnNames = new[] { streamCol, TenantIdColumn.Name },
+                LinkedNames = new[] { "id", TenantIdColumn.Name },
                 LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
                 OnDelete = CascadeAction.Cascade
             });

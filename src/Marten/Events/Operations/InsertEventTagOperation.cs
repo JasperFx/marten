@@ -17,13 +17,15 @@ internal class InsertEventTagOperation: IStorageOperation
     private readonly ITagTypeRegistration _registration;
     private readonly long _seqId;
     private readonly object _value;
+    private readonly bool _isConjoined;
 
-    public InsertEventTagOperation(string schemaName, ITagTypeRegistration registration, long seqId, object tagValue)
+    public InsertEventTagOperation(string schemaName, ITagTypeRegistration registration, long seqId, object tagValue, bool isConjoined = false)
     {
         _schemaName = schemaName;
         _registration = registration;
         _seqId = seqId;
         _value = registration.ExtractValue(tagValue);
+        _isConjoined = isConjoined;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
@@ -32,10 +34,24 @@ internal class InsertEventTagOperation: IStorageOperation
         builder.Append(_schemaName);
         builder.Append(".mt_event_tag_");
         builder.Append(_registration.TableSuffix);
-        builder.Append(" (value, seq_id) values (");
-        builder.AppendParameter(_value);
-        builder.Append(", ");
-        builder.AppendParameter(_seqId);
+
+        if (_isConjoined)
+        {
+            builder.Append(" (value, tenant_id, seq_id) values (");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(session.TenantId);
+            builder.Append(", ");
+            builder.AppendParameter(_seqId);
+        }
+        else
+        {
+            builder.Append(" (value, seq_id) values (");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(_seqId);
+        }
+
         builder.Append(") on conflict do nothing");
     }
 

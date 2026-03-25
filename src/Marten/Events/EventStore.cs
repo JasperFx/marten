@@ -64,7 +64,8 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
             _ => CompoundWhereFragment.And(holder.Fragments)
         };
 
-        var op = new AssignTagWhereOperation(schema, registration, value, whereFragment);
+        var isConjoined = _store.Events.TenancyStyle == Storage.TenancyStyle.Conjoined;
+        var op = new AssignTagWhereOperation(schema, registration, value, whereFragment, isConjoined);
         _session.QueueOperation(op);
     }
 

@@ -81,10 +81,20 @@ namespace Marten.Events.Schema;
                 var paramName = $"tag_{tagType.TableSuffix}_values";
                 tagParameters += $", {paramName} varchar[]";
 
-                tagInserts += $@"
+                if (tenancyStyle == TenancyStyle.Conjoined)
+                {
+                    tagInserts += $@"
+		IF {paramName}[index] IS NOT NULL THEN
+			INSERT INTO {databaseSchema}.mt_event_tag_{tagType.TableSuffix} (value, tenant_id, seq_id) VALUES ({paramName}[index]::{PostgresqlTypeFor(tagType.SimpleType)}, tenantid, seq) ON CONFLICT DO NOTHING;
+		END IF;";
+                }
+                else
+                {
+                    tagInserts += $@"
 		IF {paramName}[index] IS NOT NULL THEN
 			INSERT INTO {databaseSchema}.mt_event_tag_{tagType.TableSuffix} (value, seq_id) VALUES ({paramName}[index]::{PostgresqlTypeFor(tagType.SimpleType)}, seq) ON CONFLICT DO NOTHING;
 		END IF;";
+                }
             }
 
             writer.WriteLine($@"
