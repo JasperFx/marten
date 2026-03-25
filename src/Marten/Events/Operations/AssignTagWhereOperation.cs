@@ -24,14 +24,16 @@ internal class AssignTagWhereOperation: IStorageOperation
     private readonly ITagTypeRegistration _registration;
     private readonly object _value;
     private readonly ISqlFragment _whereFragment;
+    private readonly bool _isConjoined;
 
     public AssignTagWhereOperation(string schemaName, ITagTypeRegistration registration, object value,
-        ISqlFragment whereFragment)
+        ISqlFragment whereFragment, bool isConjoined = false)
     {
         _schemaName = schemaName;
         _registration = registration;
         _value = value;
         _whereFragment = whereFragment;
+        _isConjoined = isConjoined;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
@@ -40,9 +42,22 @@ internal class AssignTagWhereOperation: IStorageOperation
         builder.Append(_schemaName);
         builder.Append(".mt_event_tag_");
         builder.Append(_registration.TableSuffix);
-        builder.Append(" (value, seq_id) select ");
-        builder.AppendParameter(_value);
-        builder.Append(", d.seq_id from ");
+
+        if (_isConjoined)
+        {
+            builder.Append(" (value, tenant_id, seq_id) select ");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(session.TenantId);
+            builder.Append(", d.seq_id from ");
+        }
+        else
+        {
+            builder.Append(" (value, seq_id) select ");
+            builder.AppendParameter(_value);
+            builder.Append(", d.seq_id from ");
+        }
+
         builder.Append(_schemaName);
         builder.Append(".mt_events as d where ");
         _whereFragment.Apply(builder);

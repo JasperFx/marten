@@ -1,5 +1,6 @@
 using JasperFx.Events;
 using Marten.Internal.Sessions;
+using Marten.Storage;
 
 namespace Marten.Events.Operations;
 
@@ -13,6 +14,7 @@ internal static class EventTagOperations
         if (eventGraph.TagTypes.Count == 0) return;
 
         var schema = eventGraph.DatabaseSchemaName;
+        var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
 
         foreach (var @event in stream.Events)
         {
@@ -24,7 +26,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value));
+                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value, isConjoined));
             }
         }
     }
@@ -37,6 +39,7 @@ internal static class EventTagOperations
         if (eventGraph.TagTypes.Count == 0) return;
 
         var schema = eventGraph.DatabaseSchemaName;
+        var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
 
         foreach (var @event in stream.Events)
         {
@@ -48,7 +51,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value));
+                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined));
             }
         }
     }

@@ -1,6 +1,8 @@
 using System;
 using JasperFx.Events.Tags;
 using Marten.Events.Archiving;
+using Marten.Storage;
+using Marten.Storage.Metadata;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 
@@ -12,9 +14,16 @@ internal class EventTagTable: Table
         : base(new PostgresqlObjectName(events.DatabaseSchemaName, $"mt_event_tag_{registration.TableSuffix}"))
     {
         var pgType = PostgresqlTypeFor(registration.SimpleType);
+        var isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
 
         // Composite primary key with value first for query performance
         AddColumn("value", pgType).NotNull().AsPrimaryKey();
+
+        // Add tenant_id to PK for conjoined tenancy to enable tenant-scoped tag queries
+        if (isConjoined)
+        {
+            AddColumn<TenantIdColumn>().AsPrimaryKey();
+        }
 
         if (events.UseArchivedStreamPartitioning)
         {

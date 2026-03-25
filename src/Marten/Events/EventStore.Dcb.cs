@@ -11,6 +11,7 @@ using JasperFx.Events.Projections;
 using JasperFx.Events.Tags;
 using Marten.Events.Dcb;
 using Marten.Internal.Sessions;
+using Marten.Storage;
 using Npgsql;
 
 namespace Marten.Events;
@@ -184,6 +185,14 @@ internal partial class EventStore
         }
 
         sb.Append(')');
+
+        // Filter by tenant_id for conjoined tenancy
+        if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            sb.Append(" and e.tenant_id = @p");
+            sb.Append(paramValues.Count);
+            paramValues.Add(_session.TenantId);
+        }
 
         // If the aggregator has event type filtering, apply it to limit the returned events
         if (aggregatorEventTypeNames is { Length: > 0 })
