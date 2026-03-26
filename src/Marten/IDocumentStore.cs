@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using Marten.Events.Daemon;
 using Marten.Services;
@@ -299,6 +300,29 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
     Task BulkInsertDocumentsAsync(string tenantId, IEnumerable<object> documents,
         BulkInsertMode mode = BulkInsertMode.InsertsOnly,
         int batchSize = 1000, CancellationToken cancellation = default);
+
+    /// <summary>
+    ///     Uses PostgreSQL's COPY ... FROM STDIN BINARY feature to efficiently bulk-load
+    ///     a large number of events into the event store. This bypasses the normal append pipeline
+    ///     (no inline projections, no optimistic concurrency) and is intended for seeding,
+    ///     migration, and load testing scenarios.
+    /// </summary>
+    /// <param name="streams">The stream actions containing events to insert</param>
+    /// <param name="batchSize">Number of rows per COPY batch</param>
+    /// <param name="cancellation"></param>
+    Task BulkInsertEventsAsync(IReadOnlyList<StreamAction> streams, int batchSize = 1000,
+        CancellationToken cancellation = default);
+
+    /// <summary>
+    ///     Uses PostgreSQL's COPY ... FROM STDIN BINARY feature to efficiently bulk-load
+    ///     a large number of events into the event store for a specific tenant.
+    /// </summary>
+    /// <param name="tenantId">The tenant to insert events for</param>
+    /// <param name="streams">The stream actions containing events to insert</param>
+    /// <param name="batchSize">Number of rows per COPY batch</param>
+    /// <param name="cancellation"></param>
+    Task BulkInsertEventsAsync(string tenantId, IReadOnlyList<StreamAction> streams, int batchSize = 1000,
+        CancellationToken cancellation = default);
 
     /// <summary>
     ///     Build a new instance of the asynchronous projection daemon to use interactively
