@@ -482,6 +482,13 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     private void assertMemoryPackable(Type eventType)
     {
+        // Skip validation for Marten/JasperFx internal event types (e.g., Archived)
+        var ns = eventType.Namespace ?? "";
+        if (ns.StartsWith("JasperFx.") || ns.StartsWith("Marten."))
+        {
+            return;
+        }
+
         // Check by attribute name to avoid hard dependency on MemoryPack package
         var hasAttribute = eventType.GetCustomAttributes(true)
             .Any(a => a.GetType().Name == "MemoryPackableAttribute");
