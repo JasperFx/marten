@@ -165,6 +165,65 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         await bulkInsertion.BulkInsertDocumentsAsync(documents, mode, batchSize, cancellation).ConfigureAwait(false);
     }
 
+    public async Task BulkInsertEventsAsync(IReadOnlyList<StreamAction> streams, int batchSize = 1000,
+        CancellationToken cancellation = default)
+    {
+        await Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+
+        var tenant = Tenancy.Default;
+        var appender = new BulkEventAppender(Events, Options.Serializer());
+
+        await using var conn = tenant.Database.CreateConnection();
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+
+        try
+        {
+            await appender.BulkInsertAsync(conn, streams, batchSize, cancellation).ConfigureAwait(false);
+            await tx.CommitAsync(cancellation).ConfigureAwait(false);
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    public async Task BulkInsertEventsAsync(string tenantId, IReadOnlyList<StreamAction> streams,
+        int batchSize = 1000, CancellationToken cancellation = default)
+    {
+        await Storage.ApplyAllConfiguredChangesToDatabaseAsync().ConfigureAwait(false);
+
+        var tenant = await Tenancy.GetTenantAsync(Options.TenantIdStyle.MaybeCorrectTenantId(tenantId))
+            .ConfigureAwait(false);
+        var appender = new BulkEventAppender(Events, Options.Serializer());
+
+        // Set tenant on all streams
+        foreach (var stream in streams)
+        {
+            stream.TenantId = tenantId;
+            foreach (var e in stream.Events)
+            {
+                e.TenantId = tenantId;
+            }
+        }
+
+        await using var conn = tenant.Database.CreateConnection();
+        await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
+
+        try
+        {
+            await appender.BulkInsertAsync(conn, streams, batchSize, cancellation).ConfigureAwait(false);
+            await tx.CommitAsync(cancellation).ConfigureAwait(false);
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellation).ConfigureAwait(false);
+            throw;
+        }
+    }
+
     public IDiagnostics Diagnostics { get; }
 
     public IDocumentSession OpenSession(SessionOptions options)
