@@ -275,7 +275,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     [ChildDescription]
     public AdvancedOptions Advanced => _advanced;
 
-    internal EventGraph EventGraph => _eventGraph;
+    public EventGraph EventGraph => _eventGraph;
 
     /// <summary>
     ///     Configuration of event streams and projections

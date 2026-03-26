@@ -85,6 +85,18 @@ namespace Marten.Events
         public IMessageOutbox MessageOutbox { get; set; }
 
         /// <summary>
+        ///     When enabled, event data is stored as binary (bytea) instead of JSON (jsonb)
+        ///     using the configured <see cref="BinarySerializer"/>. This is an "all or nothing"
+        ///     mode — every event type must support binary serialization (e.g., [MemoryPackable]).
+        /// </summary>
+        public bool UseMemoryPackSerialization { get; set; }
+
+        /// <summary>
+        ///     The binary serializer to use when <see cref="UseMemoryPackSerialization"/> is enabled.
+        /// </summary>
+        public IEventBinarySerializer? BinarySerializer { get; set; }
+
+        /// <summary>
         /// Opt into some performance optimizations for projection rebuilds for both single stream and
         /// multi-stream projections. This will result in new table columns and a potential database
         /// migration. This will be a default in Marten 8.

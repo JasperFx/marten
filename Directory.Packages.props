@@ -21,6 +21,7 @@
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
     <PackageVersion Include="Marten" Version="8.2.1" />
+    <PackageVersion Include="MemoryPack" Version="1.21.4" />
     <PackageVersion Include="Meziantou.Analyzer" Version="2.0.257" />
     <PackageVersion Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />

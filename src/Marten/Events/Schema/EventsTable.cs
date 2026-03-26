@@ -20,7 +20,14 @@ internal class EventsTable: Table
         AddColumn(new StreamIdColumn(events));
 
         AddColumn(new VersionColumn());
-        AddColumn<EventJsonDataColumn>();
+        if (events.UseMemoryPackSerialization)
+        {
+            AddColumn<EventBinaryDataColumn>();
+        }
+        else
+        {
+            AddColumn<EventJsonDataColumn>();
+        }
         AddColumn<EventTypeColumn>();
         AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
             .NotNull().DefaultValueByString("(now())");
@@ -126,7 +133,8 @@ internal class EventsTable: Table
         var columns = new List<IEventTableColumn>();
         columns.AddRange(Columns.OfType<IEventTableColumn>());
 
-        var data = columns.OfType<EventJsonDataColumn>().Single();
+        var data = (IEventTableColumn?)columns.OfType<EventJsonDataColumn>().SingleOrDefault()
+                   ?? columns.OfType<EventBinaryDataColumn>().Single();
         var typeName = columns.OfType<EventTypeColumn>().Single();
         var dotNetTypeName = columns.OfType<DotNetTypeColumn>().Single();
 

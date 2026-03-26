@@ -197,6 +197,18 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public bool UseOptimizedProjectionRebuilds { get; set; }
     public bool UseMandatoryStreamTypeDeclaration { get; set; }
+
+    /// <summary>
+    ///     When enabled, event data is stored as binary (bytea) instead of JSON (jsonb)
+    ///     using the configured <see cref="BinarySerializer"/>. This is an "all or nothing"
+    ///     mode — every event type must support binary serialization (e.g., [MemoryPackable]).
+    /// </summary>
+    public bool UseMemoryPackSerialization { get; set; }
+
+    /// <summary>
+    ///     The binary serializer to use when <see cref="UseMemoryPackSerialization"/> is enabled.
+    /// </summary>
+    public IEventBinarySerializer? BinarySerializer { get; set; }
     public bool UseMonitoredAdvisoryLock { get; set; } = true;
     public bool EnableAdvancedAsyncTracking { get; set; }
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
@@ -460,7 +472,27 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public override EventMapping EventMappingFor(Type eventType)
     {
+        if (UseMemoryPackSerialization)
+        {
+            assertMemoryPackable(eventType);
+        }
+
         return _events[eventType];
+    }
+
+    private void assertMemoryPackable(Type eventType)
+    {
+        // Check by attribute name to avoid hard dependency on MemoryPack package
+        var hasAttribute = eventType.GetCustomAttributes(true)
+            .Any(a => a.GetType().Name == "MemoryPackableAttribute");
+
+        if (!hasAttribute)
+        {
+            throw new InvalidOperationException(
+                $"Event type '{eventType.FullName}' must have the [MemoryPackable] attribute when " +
+                $"UseMemoryPackSerialization is enabled. All event types must support binary serialization " +
+                $"in this mode.");
+        }
     }
 
     internal EventMapping EventMappingFor<T>() where T : class

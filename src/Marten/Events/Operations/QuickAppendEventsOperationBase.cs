@@ -96,7 +96,6 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         var ids = new Guid[count];
         var typeNames = new string[count];
         var dotNetTypeNames = new string[count];
-        var jsonBodies = new string[count];
 
         for (int i = 0; i < count; i++)
         {
@@ -104,7 +103,6 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             ids[i] = e.Id;
             typeNames[i] = e.EventTypeName;
             dotNetTypeNames[i] = e.DotNetTypeName;
-            jsonBodies[i] = session.Serializer.ToJson(e.Data);
         }
 
         var param3 = builder.AppendParameter(ids);
@@ -116,8 +114,28 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         var param5 = builder.AppendParameter(dotNetTypeNames);
         param5.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
 
-        var param6 = builder.AppendParameter(jsonBodies);
-        param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+        if (Events is { UseMemoryPackSerialization: true, BinarySerializer: not null })
+        {
+            var binaryBodies = new byte[count][];
+            for (int i = 0; i < count; i++)
+            {
+                binaryBodies[i] = Events.BinarySerializer.Serialize(events[i].EventType, events[i].Data);
+            }
+
+            var param6 = builder.AppendParameter(binaryBodies);
+            param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea;
+        }
+        else
+        {
+            var jsonBodies = new string[count];
+            for (int i = 0; i < count; i++)
+            {
+                jsonBodies[i] = session.Serializer.ToJson(events[i].Data);
+            }
+
+            var param6 = builder.AppendParameter(jsonBodies);
+            param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+        }
     }
 
     protected void writeCausationIds(IGroupedParameterBuilder builder)

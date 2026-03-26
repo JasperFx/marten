@@ -97,13 +97,15 @@ namespace Marten.Events.Schema;
                 }
             }
 
+            var bodiesType = _events.UseMemoryPackSerialization ? "bytea" : "jsonb";
+
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies {bodiesType}[]{metadataParameters}{tagParameters}) RETURNS int[] AS $$
 DECLARE
 	event_version int;
 	event_type varchar;
 	event_id uuid;
-	body jsonb;
+	body {bodiesType};
 	index int;
 	seq int;
     actual_tenant varchar;

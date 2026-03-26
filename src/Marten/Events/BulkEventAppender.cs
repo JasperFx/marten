@@ -308,9 +308,17 @@ internal class BulkEventAppender
         // version
         await writer.WriteAsync(e.Version, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
 
-        // data (jsonb)
-        var json = _serializer.ToJson(e.Data);
-        await writer.WriteAsync(json, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
+        // data (jsonb or bytea)
+        if (_events.UseMemoryPackSerialization && _events.BinarySerializer != null)
+        {
+            var bytes = _events.BinarySerializer.Serialize(e.EventType, e.Data);
+            await writer.WriteAsync(bytes, NpgsqlDbType.Bytea, cancellation).ConfigureAwait(false);
+        }
+        else
+        {
+            var json = _serializer.ToJson(e.Data);
+            await writer.WriteAsync(json, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
+        }
 
         // type
         await writer.WriteAsync(e.EventTypeName, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);

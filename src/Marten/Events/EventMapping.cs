@@ -60,7 +60,14 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
 
         _defaultWhereFragment = filter;
 
-        JsonTransformation(null);
+        if (parent.UseMemoryPackSerialization && parent.BinarySerializer != null)
+        {
+            ConfigureBinaryDeserialization(parent.BinarySerializer);
+        }
+        else
+        {
+            JsonTransformation(null);
+        }
     }
 
     [IgnoreDescription]
@@ -126,6 +133,28 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     }
 
     public abstract IEvent Wrap(object data);
+
+    /// <summary>
+    ///     Configures the read delegates for binary event deserialization (e.g., MemoryPack).
+    ///     When active, event data is read as byte[] from the database and deserialized
+    ///     using the provided <see cref="IEventBinarySerializer"/>.
+    /// </summary>
+    internal void ConfigureBinaryDeserialization(IEventBinarySerializer binarySerializer)
+    {
+        ReadEventData = (serializer, reader) =>
+        {
+            var bytes = reader.GetFieldValue<byte[]>(0);
+            var data = binarySerializer.Deserialize(DocumentType, bytes);
+            return Wrap(data);
+        };
+
+        ReadEventDataAsync = async (serializer, reader, token) =>
+        {
+            var bytes = await reader.GetFieldValueAsync<byte[]>(0, token).ConfigureAwait(false);
+            var data = binarySerializer.Deserialize(DocumentType, bytes);
+            return Wrap(data);
+        };
+    }
 
     /// <summary>
     ///     <para>
