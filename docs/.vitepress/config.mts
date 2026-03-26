@@ -169,6 +169,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Quick Start', link: '/events/quickstart' },
             { text: 'Storage', link: '/events/storage' },
             { text: 'Appending Events', link: '/events/appending' },
+            { text: 'Bulk Appending Events', link: '/events/bulk-appending' },
             { text: 'Querying Events', link: '/events/querying' },
             { text: 'Metadata', link: '/events/metadata' },
             { text: 'Archiving Streams', link: '/events/archiving' },
