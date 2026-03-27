@@ -60,16 +60,42 @@ public class ShardedTenancyFixture : IAsyncLifetime
             await using var tenantConn = new NpgsqlConnection(connStr);
             await tenantConn.OpenAsync();
             try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            // Drop Marten objects in public schema but keep the schema itself
-try
-{
-    var tables = await tenantConn.ExistingTablesAsync();
-    foreach (var table in tables.Where(t => t.Schema == "public" && t.Name.StartsWith("mt_")))
-    {
-        await tenantConn.CreateCommand($"DROP TABLE IF EXISTS {table.QualifiedName} CASCADE").ExecuteNonQueryAsync();
-    }
-} catch { }
+            await cleanMartenObjectsInPublicSchema(tenantConn);
         }
+    }
+
+    internal static async Task cleanMartenObjectsInPublicSchema(NpgsqlConnection conn)
+    {
+        try
+        {
+            // Ensure public schema exists (may have been dropped by a previous test)
+            await conn.CreateCommand("CREATE SCHEMA IF NOT EXISTS public").ExecuteNonQueryAsync();
+
+            // Drop all mt_ tables
+            var tables = await conn.ExistingTablesAsync();
+            foreach (var table in tables.Where(t => t.Schema == "public" && t.Name.StartsWith("mt_")))
+            {
+                await conn.CreateCommand($"DROP TABLE IF EXISTS {table.QualifiedName} CASCADE").ExecuteNonQueryAsync();
+            }
+
+            // Drop all mt_ functions
+            var funcs = await conn.CreateCommand(
+                "SELECT proname FROM pg_proc p JOIN pg_namespace n ON p.pronamespace = n.oid WHERE n.nspname = 'public' AND p.proname LIKE 'mt_%'")
+                .ExecuteReaderAsync();
+            var funcNames = new List<string>();
+            while (await funcs.ReadAsync()) funcNames.Add(await funcs.GetFieldValueAsync<string>(0));
+            await funcs.CloseAsync();
+            foreach (var f in funcNames)
+            {
+                await conn.CreateCommand($"DROP FUNCTION IF EXISTS public.{f} CASCADE").ExecuteNonQueryAsync();
+            }
+
+            // Drop all mt_ sequences
+            await conn.CreateCommand(
+                "DO $$ DECLARE r RECORD; BEGIN FOR r IN (SELECT sequencename FROM pg_sequences WHERE schemaname = 'public' AND sequencename LIKE 'mt_%') LOOP EXECUTE 'DROP SEQUENCE IF EXISTS public.' || r.sequencename || ' CASCADE'; END LOOP; END $$")
+                .ExecuteNonQueryAsync();
+        }
+        catch { }
     }
 
     public Task DisposeAsync() => Task.CompletedTask;
@@ -98,15 +124,7 @@ public class sharded_tenancy_tests : IAsyncLifetime
             await using var tenantConn = new NpgsqlConnection(connStr);
             await tenantConn.OpenAsync();
             try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            // Drop Marten objects in public schema but keep the schema itself
-try
-{
-    var tables = await tenantConn.ExistingTablesAsync();
-    foreach (var table in tables.Where(t => t.Schema == "public" && t.Name.StartsWith("mt_")))
-    {
-        await tenantConn.CreateCommand($"DROP TABLE IF EXISTS {table.QualifiedName} CASCADE").ExecuteNonQueryAsync();
-    }
-} catch { }
+            await ShardedTenancyFixture.cleanMartenObjectsInPublicSchema(tenantConn);
         }
     }
 

@@ -280,6 +280,7 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
     public async ValueTask MarkDatabaseFullAsync(string databaseId, CancellationToken ct)
     {
         await maybeApplyChanges().ConfigureAwait(false);
+        await maybeSeedDatabases().ConfigureAwait(false);
 
         await _dataSource.Value
             .CreateCommand(
