@@ -121,6 +121,11 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
         var rules = options.CreateGenerationRules();
 
         rules.GeneratedNamespace = SchemaConstants.MartenGeneratedNamespace;
+        // CreateGenerationRules() appends StoreName to the output path, but
+        // SecondaryDocumentStores.Rules (used by codegen write) strips it via
+        // ParentDirectory(). Align the paths to avoid writing duplicate files
+        // with the same namespace and class name to different directories (#4185)
+        rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory();
         this.InitializeSynchronously(rules, Parent, provider);
 
         var store = (T)Activator.CreateInstance(_storeType!, options)!;
