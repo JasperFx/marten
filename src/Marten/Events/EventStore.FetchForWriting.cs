@@ -18,6 +18,7 @@ using Marten.Events.Projections;
 using Marten.Internal;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
+using Marten.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -252,7 +253,17 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         {
             // Auto-discover natural key from [NaturalKey] attribute on the aggregate type
             // BEFORE iterating planners, so the projection is registered and available
-            tryAutoRegisterNaturalKeyProjection<TDoc, TId>(options);
+            if (tryAutoRegisterNaturalKeyProjection<TDoc, TId>(options))
+            {
+                // The projection was just auto-registered, which adds a NaturalKeyTable
+                // to the IEvent feature schema. Reset the schema existence check so
+                // EnsureStorageExistsAsync(typeof(IEvent)) will re-evaluate and create
+                // the natural key table.
+                if (_session.Database is MartenDatabase martenDb)
+                {
+                    martenDb.ResetSchemaExistenceChecks();
+                }
+            }
 
             foreach (var planner in options.Projections.allPlanners())
             {
@@ -284,13 +295,14 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     /// This enables FetchForWriting with natural keys on self-aggregating types
     /// without requiring explicit projection registration.
     /// </summary>
-    private static void tryAutoRegisterNaturalKeyProjection<TDoc, TId>(StoreOptions options)
+    /// <returns>True if a projection was newly registered</returns>
+    private static bool tryAutoRegisterNaturalKeyProjection<TDoc, TId>(StoreOptions options)
         where TDoc : class where TId : notnull
     {
         // Skip if a projection is already registered for this aggregate type
         if (options.Projections.TryFindAggregate(typeof(TDoc), out _))
         {
-            return;
+            return false;
         }
 
         var naturalKeyProp = typeof(TDoc).GetProperties(BindingFlags.Public | BindingFlags.Instance)
@@ -298,12 +310,13 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
 
         if (naturalKeyProp == null || naturalKeyProp.PropertyType != typeof(TId))
         {
-            return;
+            return false;
         }
 
         // Register an Inline snapshot projection so the natural key infrastructure
         // (natural key table, inline projection, NaturalKeyFetchPlanner) all activate
         options.Projections.Snapshot<TDoc>(SnapshotLifecycle.Inline);
+        return true;
     }
 }
 
