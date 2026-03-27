@@ -252,10 +252,10 @@ filtering.
 
 This approach gives you:
 
-- **Horizontal scaling** — spread data across many databases to distribute I/O and storage
-- **Physical tenant isolation** — each tenant has its own PostgreSQL partitions for both document and event tables
-- **Dynamic tenant routing** — new tenants are automatically assigned to databases based on a pluggable strategy
-- **Runtime expandability** — add new databases to the pool without downtime
+* **Horizontal scaling** — spread data across many databases to distribute I/O and storage
+* **Physical tenant isolation** — each tenant has its own PostgreSQL partitions for both document and event tables
+* **Dynamic tenant routing** — new tenants are automatically assigned to databases based on a pluggable strategy
+* **Runtime expandability** — add new databases to the pool without downtime
 
 ### Configuration
 
@@ -288,9 +288,9 @@ builder.Services.AddMarten(opts =>
 
 Calling `MultiTenantedWithShardedDatabases()` automatically enables:
 
-- `Policies.AllDocumentsAreMultiTenanted()` — all document types use conjoined tenancy
-- `Events.TenancyStyle = TenancyStyle.Conjoined` — events are partitioned by tenant
-- `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` — native PG list partitions are created per tenant
+* `Policies.AllDocumentsAreMultiTenanted()` — all document types use conjoined tenancy
+* `Events.TenancyStyle = TenancyStyle.Conjoined` — events are partitioned by tenant
+* `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` — native PG list partitions are created per tenant
 
 ### Tenant Assignment Strategies
 
@@ -374,7 +374,7 @@ The sharded tenancy model uses two tables in the master database to track the po
 **`mt_database_pool`** — registry of all databases in the pool:
 
 | Column | Type | Description |
-|--------|------|-------------|
+| ------ | ---- | ----------- |
 | `database_id` | `VARCHAR` (PK) | Unique identifier for the database |
 | `connection_string` | `VARCHAR NOT NULL` | PostgreSQL connection string |
 | `is_full` | `BOOLEAN NOT NULL DEFAULT false` | When true, no new tenants are assigned here |
@@ -383,7 +383,7 @@ The sharded tenancy model uses two tables in the master database to track the po
 **`mt_tenant_assignments`** — maps each tenant to its assigned database:
 
 | Column | Type | Description |
-|--------|------|-------------|
+| ------ | ---- | ----------- |
 | `tenant_id` | `VARCHAR` (PK) | The tenant identifier |
 | `database_id` | `VARCHAR NOT NULL` (FK) | References `mt_database_pool.database_id` |
 | `assigned_at` | `TIMESTAMPTZ NOT NULL DEFAULT now()` | When the assignment was made |
