@@ -237,6 +237,214 @@ public async Task add_tenant_database_and_verify_the_daemon_projections_are_runn
 
 At runtime, if the Marten V7 version of the async daemon (our sub system for building asynchronous projections constantly in a background IHostedService) is constantly doing “health checks” to make sure that *some process* is running all known asynchronous projections on all known client databases. Long story, short, Marten 7 is able to detect new tenant databases and spin up the asynchronous projection handling for these new tenants with zero downtime.
 
+## Sharded Multi-Tenancy with Database Pooling <Badge type="tip" text="8.x" />
+
+::: tip
+This strategy was designed for extreme scalability scenarios targeting hundreds of billions of events across
+many tenants. It combines database-level sharding, conjoined tenancy, and native PostgreSQL list partitioning
+into a single cohesive multi-tenancy model.
+:::
+
+For systems with very large numbers of tenants and massive data volumes, Marten provides a sharded tenancy model
+that distributes tenants across a **pool of databases**. Within each database, tenant data is physically isolated
+using native PostgreSQL LIST partitioning by tenant ID, while Marten's conjoined tenancy handles the query-level
+filtering.
+
+This approach gives you:
+
+- **Horizontal scaling** — spread data across many databases to distribute I/O and storage
+- **Physical tenant isolation** — each tenant has its own PostgreSQL partitions for both document and event tables
+- **Dynamic tenant routing** — new tenants are automatically assigned to databases based on a pluggable strategy
+- **Runtime expandability** — add new databases to the pool without downtime
+
+### Configuration
+
+```csharp
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.MultiTenantedWithShardedDatabases(x =>
+    {
+        // Connection to the master database that holds the pool registry
+        x.ConnectionString = masterConnectionString;
+
+        // Schema for the registry tables in the master database
+        x.SchemaName = "tenants";
+
+        // Schema for the partition tracking table within each tenant database
+        x.PartitionSchemaName = "partitions";
+
+        // Seed the database pool on startup
+        x.AddDatabase("shard_01", shard1ConnectionString);
+        x.AddDatabase("shard_02", shard2ConnectionString);
+        x.AddDatabase("shard_03", shard3ConnectionString);
+        x.AddDatabase("shard_04", shard4ConnectionString);
+
+        // Choose a tenant assignment strategy (see below)
+        x.UseHashAssignment(); // this is the default
+    });
+});
+```
+
+Calling `MultiTenantedWithShardedDatabases()` automatically enables:
+
+- `Policies.AllDocumentsAreMultiTenanted()` — all document types use conjoined tenancy
+- `Events.TenancyStyle = TenancyStyle.Conjoined` — events are partitioned by tenant
+- `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement()` — native PG list partitions are created per tenant
+
+### Tenant Assignment Strategies
+
+When a previously unknown tenant ID is encountered, Marten needs to decide which database in the pool
+should host that tenant. Three built-in strategies are available, and you can provide your own.
+
+#### Hash Assignment (Default)
+
+```csharp
+x.UseHashAssignment();
+```
+
+Uses a deterministic FNV-1a hash of the tenant ID modulo the number of available (non-full) databases.
+This is the fastest strategy and requires no database queries to make the assignment decision. The same
+tenant ID will always hash to the same database, making it predictable and debuggable.
+
+Best for: systems where tenants are roughly equal in size and you want even distribution without any
+management overhead.
+
+#### Smallest Database Assignment
+
+```csharp
+x.UseSmallestDatabaseAssignment();
+
+// Or with a custom sizing strategy
+x.UseSmallestDatabaseAssignment(new MyCustomSizingStrategy());
+```
+
+Assigns new tenants to the database with the fewest existing tenants. By default, "smallest" is
+determined by the `tenant_count` column in the pool registry table. You can provide a custom
+`IDatabaseSizingStrategy` implementation that queries actual row counts, disk usage, or any other
+metric to determine database capacity.
+
+```csharp
+public interface IDatabaseSizingStrategy
+{
+    ValueTask<string> FindSmallestDatabaseAsync(
+        IReadOnlyList<PooledDatabase> databases);
+}
+```
+
+Best for: systems where tenants vary significantly in size and you want to balance load more carefully.
+
+#### Explicit Assignment
+
+```csharp
+x.UseExplicitAssignment();
+```
+
+Requires all tenants to be pre-assigned to a database via the admin API before they can be used.
+Any attempt to use an unrecognized tenant ID throws an `UnknownTenantIdException`. This gives you
+complete control over tenant placement at the cost of requiring an upfront registration step.
+
+Best for: regulated environments where tenant placement must be deliberate, or when you need to
+co-locate related tenants in the same database.
+
+#### Custom Strategy
+
+```csharp
+x.UseCustomAssignment(new MyStrategy());
+```
+
+Implement the `ITenantAssignmentStrategy` interface from `Weasel.Core.MultiTenancy`:
+
+```csharp
+public interface ITenantAssignmentStrategy
+{
+    ValueTask<string> AssignTenantToDatabaseAsync(
+        string tenantId,
+        IReadOnlyList<PooledDatabase> availableDatabases);
+}
+```
+
+The strategy is called under a PostgreSQL advisory lock, so it does not need to handle concurrency
+itself. The `availableDatabases` list only includes databases that are not marked as full.
+
+### Database Registry Tables
+
+The sharded tenancy model uses two tables in the master database to track the pool and tenant assignments:
+
+**`mt_database_pool`** — registry of all databases in the pool:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `database_id` | `VARCHAR` (PK) | Unique identifier for the database |
+| `connection_string` | `VARCHAR NOT NULL` | PostgreSQL connection string |
+| `is_full` | `BOOLEAN NOT NULL DEFAULT false` | When true, no new tenants are assigned here |
+| `tenant_count` | `INTEGER NOT NULL DEFAULT 0` | Number of tenants currently assigned |
+
+**`mt_tenant_assignments`** — maps each tenant to its assigned database:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `tenant_id` | `VARCHAR` (PK) | The tenant identifier |
+| `database_id` | `VARCHAR NOT NULL` (FK) | References `mt_database_pool.database_id` |
+| `assigned_at` | `TIMESTAMPTZ NOT NULL DEFAULT now()` | When the assignment was made |
+
+These tables are created automatically when `AutoCreateSchemaObjects` is enabled.
+
+### Admin API
+
+Marten provides an admin API on `IDocumentStore.Advanced` for managing the database pool and tenant
+assignments at runtime. All mutating operations acquire a PostgreSQL advisory lock on the master
+database to prevent concurrent corruption.
+
+#### Adding Tenants
+
+```csharp
+// Auto-assign a tenant using the configured strategy
+// Returns the database_id the tenant was assigned to
+var dbId = await store.Advanced.AddTenantToShardAsync("new-tenant", ct);
+
+// Explicitly assign a tenant to a specific database
+await store.Advanced.AddTenantToShardAsync("vip-tenant", "shard_01", ct);
+```
+
+When a tenant is assigned, Marten automatically creates native PostgreSQL LIST partitions for that
+tenant in the target database across all multi-tenanted document tables and event tables.
+
+#### Managing the Database Pool
+
+```csharp
+// Add a new database to the pool at runtime
+await store.Advanced.AddDatabaseToPoolAsync("shard_05", newConnectionString, ct);
+
+// Mark a database as full — no new tenants will be assigned to it
+await store.Advanced.MarkDatabaseFullAsync("shard_01", ct);
+```
+
+Marking a database as full is useful when a database is approaching capacity limits. Existing tenants
+in that database continue to work normally, but all new tenant assignments will go to other databases.
+
+#### Implicit Assignment
+
+If you are using the hash or smallest strategy, you do not need to explicitly add tenants. When a
+session is opened for an unknown tenant ID, Marten will automatically:
+
+1. Acquire an advisory lock on the master database
+2. Check if another process already assigned the tenant (double-check after lock)
+3. Run the assignment strategy to pick a database
+4. Write the assignment to `mt_tenant_assignments`
+5. Create list partitions in the target database
+6. Release the lock and return the session
+
+This means your application code can simply use `store.LightweightSession("any-tenant-id")` and
+Marten handles the rest.
+
+### Async Daemon Support
+
+The async daemon automatically discovers all databases in the pool through `BuildDatabases()` and
+runs asynchronous projections across all of them. When new databases or tenants are added at runtime,
+the daemon's periodic health check picks them up and starts projection processing without any
+downtime or reconfiguration.
+
 ## Dynamically applying changes to tenants databases
 
 If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).
