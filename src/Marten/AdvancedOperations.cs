@@ -419,6 +419,61 @@ public class AdvancedOperations
     }
 
     /// <summary>
+    ///     Auto-assign a tenant to a database using the configured assignment strategy,
+    ///     then create list partitions in the target database. Only available with sharded tenancy.
+    /// </summary>
+    /// <returns>The database_id the tenant was assigned to</returns>
+    public async Task<string> AddTenantToShardAsync(string tenantId, CancellationToken ct)
+    {
+        var sharded = _store.Options.Tenancy as ShardedTenancy
+            ?? throw new InvalidOperationException(
+                "AddTenantToShardAsync is only available when using MultiTenantedWithShardedDatabases()");
+
+        await sharded.GetTenantAsync(tenantId).ConfigureAwait(false);
+        return await sharded.FindDatabaseForTenantAsync(tenantId, ct).ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"Tenant '{tenantId}' was not assigned to any database");
+    }
+
+    /// <summary>
+    ///     Explicitly assign a tenant to a specific database in the pool,
+    ///     then create list partitions in the target database. Only available with sharded tenancy.
+    /// </summary>
+    public async Task AddTenantToShardAsync(string tenantId, string databaseId, CancellationToken ct)
+    {
+        var sharded = _store.Options.Tenancy as ShardedTenancy
+            ?? throw new InvalidOperationException(
+                "AddTenantToShardAsync is only available when using MultiTenantedWithShardedDatabases()");
+
+        await sharded.AssignTenantAsync(tenantId, databaseId, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Add a new database to the sharded tenancy pool at runtime.
+    ///     Only available with sharded tenancy.
+    /// </summary>
+    public async Task AddDatabaseToPoolAsync(string databaseId, string connectionString, CancellationToken ct)
+    {
+        var sharded = _store.Options.Tenancy as ShardedTenancy
+            ?? throw new InvalidOperationException(
+                "AddDatabaseToPoolAsync is only available when using MultiTenantedWithShardedDatabases()");
+
+        await sharded.AddDatabaseAsync(databaseId, connectionString, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Mark a database as full so no new tenants will be assigned to it.
+    ///     Only available with sharded tenancy.
+    /// </summary>
+    public async Task MarkDatabaseFullAsync(string databaseId, CancellationToken ct)
+    {
+        var sharded = _store.Options.Tenancy as ShardedTenancy
+            ?? throw new InvalidOperationException(
+                "MarkDatabaseFullAsync is only available when using MultiTenantedWithShardedDatabases()");
+
+        await sharded.MarkDatabaseFullAsync(databaseId, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     Configure and execute a batch masking of protected data for a subset of the events
     ///     in the event store
     /// </summary>
