@@ -980,6 +980,31 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         Tenancy = tenancy;
     }
 
+    /// <summary>
+    /// Configure sharded multi-tenancy where tenants are distributed across a pool of databases
+    /// with conjoined tenancy and native PG list partitioning per tenant within each database.
+    /// </summary>
+    public void MultiTenantedWithShardedDatabases(Action<ShardedTenancyOptions> configure)
+    {
+        var configuration = new ShardedTenancyOptions();
+        configure(configuration);
+
+        if (configuration.ConnectionString.IsEmpty() && configuration.DataSource == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(configure),
+                $"Either a {nameof(ShardedTenancyOptions.ConnectionString)} or {nameof(ShardedTenancyOptions.DataSource)} must be supplied");
+        }
+
+        // Set up conjoined tenancy + managed partitioning
+        Policies.AllDocumentsAreMultiTenanted();
+        Events.TenancyStyle = TenancyStyle.Conjoined;
+        Policies.PartitionMultiTenantedDocumentsUsingMartenManagement(configuration.PartitionSchemaName);
+
+        var tenancy = new ShardedTenancy(this, configuration);
+        Advanced.DefaultTenantUsageEnabled = false;
+        Tenancy = tenancy;
+    }
+
     IDocumentSchemaResolver IReadOnlyStoreOptions.Schema => this;
 
     string IDocumentSchemaResolver.EventsSchemaName => Events.DatabaseSchemaName;
