@@ -399,9 +399,16 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
     internal void StoreDocumentInItemMap<TDoc, TId>(TId id, TDoc document) where TDoc : class where TId : notnull
     {
-        if (ItemMap.ContainsKey(typeof(TDoc)))
+        if (ItemMap.TryGetValue(typeof(TDoc), out var existing))
         {
-            ItemMap[typeof(TDoc)].As<Dictionary<TId, TDoc>>()[id] = document;
+            if (existing is Dictionary<TId, TDoc> typedDict)
+            {
+                typedDict[id] = document;
+            }
+            // else: The identity map was created with a different key type (e.g., a strong-typed ID
+            // like PaymentId while TId is Guid). The document is already stored by the inline
+            // projection under the strong-typed key, so we skip storing it again to avoid
+            // replacing the dictionary with an incompatible key type.
         }
         else
         {
