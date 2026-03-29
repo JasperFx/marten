@@ -111,11 +111,43 @@ internal class QueryCompiler
 
             return values;
         });
+
+        // Register array-type finders for compiled query members used with IsOneOf() etc.
+        forArrayType<string>(count =>
+        {
+            var values = new string[count];
+            for (var i = 0; i < count; i++) values[i] = $"_plan_{Guid.NewGuid():N}";
+            return values;
+        });
+        forArrayType<Guid>(count =>
+        {
+            var values = new Guid[count];
+            for (var i = 0; i < count; i++) values[i] = Guid.NewGuid();
+            return values;
+        });
+        forArrayType<int>(count =>
+        {
+            var values = new int[count];
+            for (var i = 0; i < count; i++) values[i] = -(500000 + i);
+            return values;
+        });
+        forArrayType<long>(count =>
+        {
+            var values = new long[count];
+            for (var i = 0; i < count; i++) values[i] = -(600000L + i);
+            return values;
+        });
     }
 
     private static void forType<T>(Func<int, T[]> uniqueValues)
     {
         var finder = new SimpleParameterFinder<T>(uniqueValues);
+        Finders.Add(finder);
+    }
+
+    private static void forArrayType<T>(Func<int, T[]> uniqueElementValues)
+    {
+        var finder = new ArrayParameterFinder<T>(uniqueElementValues);
         Finders.Add(finder);
     }
 

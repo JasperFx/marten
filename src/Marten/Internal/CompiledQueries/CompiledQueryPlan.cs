@@ -67,6 +67,22 @@ public class CompiledQueryPlan : ICommandBuilder
             {
                 IncludeMembers.Add(member);
             }
+            else if (memberType.IsArray && QueryCompiler.Finders.Any(x => x.Matches(memberType.GetElementType()!)))
+            {
+                // Arrays like string[], int[], Guid[] etc. whose element type has a registered
+                // parameter finder should be treated as query parameters, NOT as include members.
+                // This check must come before the IList<> check since arrays implement IList<T>.
+                if (member is PropertyInfo)
+                {
+                    var queryMember = typeof(PropertyQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
+                    QueryMembers.Add(queryMember);
+                }
+                else if (member is FieldInfo)
+                {
+                    var queryMember = typeof(FieldQueryMember<>).CloseAndBuildAs<IQueryMember>(member, memberType);
+                    QueryMembers.Add(queryMember);
+                }
+            }
             else if (memberType.Closes(typeof(IList<>)))
             {
                 IncludeMembers.Add(member);

@@ -87,10 +87,47 @@ internal class ParameterUsage
     private void generateSimpleCode(GeneratedMethod method, MemberInfo member, Type memberType,
         string parametersVariableName)
     {
-        method.Frames.Code($@"
+        // Array types like string[], Guid[], int[] need composite NpgsqlDbType (Array | ElementType)
+        // which can't be passed as a single enum value to the code generation template
+        if (memberType.IsArray)
+        {
+            var dbTypeCode = npgsqlArrayDbTypeCodeFor(memberType);
+            method.Frames.Code(
+                $"{parametersVariableName}[{Index}].NpgsqlDbType = {dbTypeCode};\n" +
+                $"{parametersVariableName}[{Index}].Value = _query.{member.Name};");
+        }
+        else
+        {
+            method.Frames.Code($@"
 {parametersVariableName}[{Index}].NpgsqlDbType = {{0}};
 {parametersVariableName}[{Index}].Value = _query.{member.Name};
 ", PostgresqlProvider.Instance.ToParameterType(memberType));
+        }
+    }
+
+    private static string npgsqlArrayDbTypeCodeFor(Type arrayType)
+    {
+        var elementType = arrayType.GetElementType()!;
+        var npgsqlTypeName = typeof(NpgsqlDbType).FullNameInCode();
+
+        if (elementType == typeof(string))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Varchar}";
+        if (elementType == typeof(Guid))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Uuid}";
+        if (elementType == typeof(int))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Integer}";
+        if (elementType == typeof(long))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Bigint}";
+        if (elementType == typeof(float))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Real}";
+        if (elementType == typeof(decimal))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Numeric}";
+        if (elementType == typeof(DateTime))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.Timestamp}";
+        if (elementType == typeof(DateTimeOffset))
+            return $"{npgsqlTypeName}.{NpgsqlDbType.Array} | {npgsqlTypeName}.{NpgsqlDbType.TimestampTz}";
+
+        throw new NotSupportedException($"Array type {arrayType.FullNameInCode()} is not supported for compiled query parameters");
     }
 
     private void generateEnumCode(GeneratedMethod method, StoreOptions storeOptions, MemberInfo member,
