@@ -72,10 +72,29 @@ internal abstract class QueryMember<T>: IQueryMember<T>
 
     public MemberInfo Member { get; }
 
+    private static bool valuesAreEqual(object value, object? parameterValue)
+    {
+        if (value.Equals(parameterValue)) return true;
+
+        // For array types (string[], Guid[], int[], etc.), Equals() does reference comparison.
+        // We need structural comparison to match array parameter values from compiled query planning.
+        if (value is Array valueArray && parameterValue is Array paramArray)
+        {
+            if (valueArray.Length != paramArray.Length) return false;
+            for (var i = 0; i < valueArray.Length; i++)
+            {
+                if (!Equals(valueArray.GetValue(i), paramArray.GetValue(i))) return false;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
     private bool tryToFind(NpgsqlParameter parameter, ICompiledQueryAwareFilter[] filters,
         object value, out ICompiledQueryAwareFilter? filterUsed)
     {
-        if (filters.All(x => x.ParameterName != parameter.ParameterName) && value.Equals(parameter.Value))
+        if (filters.All(x => x.ParameterName != parameter.ParameterName) && valuesAreEqual(value, parameter.Value))
         {
             filterUsed = null;
             return true;
