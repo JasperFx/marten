@@ -69,6 +69,18 @@ internal class ShardStateSelector: ISelector<ShardState>
                 state.RunningOnNode = await reader.GetFieldValueAsync<int>(nextIndex, token).ConfigureAwait(false);
             }
             nextIndex++;
+
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.WarningBehindThreshold = await reader.GetFieldValueAsync<long>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
+
+            if (!await reader.IsDBNullAsync(nextIndex, token).ConfigureAwait(false))
+            {
+                state.CriticalBehindThreshold = await reader.GetFieldValueAsync<long>(nextIndex, token).ConfigureAwait(false);
+            }
+            nextIndex++;
         }
 
         return state;

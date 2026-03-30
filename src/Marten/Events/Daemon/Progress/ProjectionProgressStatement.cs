@@ -29,7 +29,7 @@ internal class ProjectionProgressStatement: Statement
     {
         if (_events.UseOptimizedProjectionRebuilds && _events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node, heartbeat, agent_status, pause_reason, running_on_node from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, mode, rebuild_threshold, assigned_node, heartbeat, agent_status, pause_reason, running_on_node, warning_behind_threshold, critical_behind_threshold from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else if (_events.UseOptimizedProjectionRebuilds)
         {
@@ -37,7 +37,7 @@ internal class ProjectionProgressStatement: Statement
         }
         else if (_events.EnableExtendedProgressionTracking)
         {
-            builder.Append($"select name, last_seq_id, heartbeat, agent_status, pause_reason, running_on_node from {_events.DatabaseSchemaName}.mt_event_progression");
+            builder.Append($"select name, last_seq_id, heartbeat, agent_status, pause_reason, running_on_node, warning_behind_threshold, critical_behind_threshold from {_events.DatabaseSchemaName}.mt_event_progression");
         }
         else
         {
