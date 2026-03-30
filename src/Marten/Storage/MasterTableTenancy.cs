@@ -19,7 +19,7 @@ using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
-public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
+public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase, IDynamicTenantSource<string>
 {
     private readonly MasterTableTenancyOptions _configuration;
     private readonly Lazy<NpgsqlDataSource> _dataSource;
@@ -90,7 +90,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             }
 
             await using var reader = await ((DbCommand)conn
-                    .CreateCommand($"select tenant_id, connection_string from {_schemaName}.{TenantTable.TableName}"))
+                    .CreateCommand($"select tenant_id, connection_string from {_schemaName}.{TenantTable.TableName} where {TenantTable.DisabledColumn} = false"))
                 .ExecuteReaderAsync().ConfigureAwait(false);
 
             while (await reader.ReadAsync().ConfigureAwait(false))
@@ -246,6 +246,137 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
             .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
+    #region IDynamicTenantSource<string>
+
+    async ValueTask<string> ITenantedSource<string>.FindAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        var connectionString = (string)await _dataSource.Value
+            .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id and {TenantTable.DisabledColumn} = false")
+            .With("id", tenantId)
+            .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+
+        if (connectionString.IsEmpty())
+        {
+            throw new UnknownTenantIdException(tenantId);
+        }
+
+        return _configuration.CorrectConnectionString(connectionString);
+    }
+
+    Task ITenantedSource<string>.RefreshAsync()
+    {
+        // Reset the databases cache so next access re-reads from the master table
+        _databases = ImHashMap<string, MartenDatabase>.Empty;
+        return Task.CompletedTask;
+    }
+
+    IReadOnlyList<string> ITenantedSource<string>.AllActive()
+    {
+        return _databases.Enumerate().Select(x =>
+        {
+            // Return the connection strings for active databases
+            return x.Value.Identifier;
+        }).Distinct().ToList();
+    }
+
+    IReadOnlyList<Assignment<string>> ITenantedSource<string>.AllActiveByTenant()
+    {
+        return _databases.Enumerate().Select(pair => new Assignment<string>(pair.Key, pair.Key)).ToList();
+    }
+
+    public async Task AddTenantAsync(string tenantId, string connectionValue)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        await AddDatabaseRecordAsync(tenantId, connectionValue).ConfigureAwait(false);
+
+        // Eagerly create and cache the database
+        connectionValue = _configuration.CorrectConnectionString(connectionValue);
+        var database = new MartenDatabase(_options, _options.NpgsqlDataSourceFactory.Create(connectionValue), tenantId);
+        database.TenantIds.Fill(tenantId);
+        _databases = _databases.AddOrUpdate(tenantId, database);
+    }
+
+    public async Task DisableTenantAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
+
+        await _dataSource.Value
+            .CreateCommand($"update {_schemaName}.{TenantTable.TableName} set {TenantTable.DisabledColumn} = true where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // Evict from cache and dispose
+        if (_databases.TryFind(tenantId, out var database))
+        {
+            _databases = _databases.Remove(tenantId);
+#pragma warning disable VSTHRD103
+            database.Dispose();
+#pragma warning restore VSTHRD103
+        }
+    }
+
+    public async Task RemoveTenantAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+
+        // Evict from cache and dispose before deleting the record
+        if (_databases.TryFind(tenantId, out var database))
+        {
+            _databases = _databases.Remove(tenantId);
+#pragma warning disable VSTHRD103
+            database.Dispose();
+#pragma warning restore VSTHRD103
+        }
+
+        await DeleteDatabaseRecordAsync(tenantId).ConfigureAwait(false);
+    }
+
+    public async Task<IReadOnlyList<string>> AllDisabledAsync()
+    {
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
+
+        var list = new List<string>();
+        await using var conn = _dataSource.Value.CreateConnection();
+        await conn.OpenAsync().ConfigureAwait(false);
+
+        try
+        {
+            await using var reader = await ((DbCommand)conn
+                    .CreateCommand($"select tenant_id from {_schemaName}.{TenantTable.TableName} where {TenantTable.DisabledColumn} = true"))
+                .ExecuteReaderAsync().ConfigureAwait(false);
+
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                list.Add(await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false));
+            }
+
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return list;
+    }
+
+    public async Task EnableTenantAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        await maybeApplyChanges(_tenantDatabase.Value).ConfigureAwait(false);
+
+        await _dataSource.Value
+            .CreateCommand($"update {_schemaName}.{TenantTable.TableName} set {TenantTable.DisabledColumn} = false where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // The tenant will be lazily loaded into cache on next access
+    }
+
+    #endregion
+
     private async Task maybeApplyChanges(TenantLookupDatabase tenantDatabase)
     {
         if (!_hasAppliedChanges && (_configuration.AutoCreate ?? _options.AutoCreateSchemaObjects) != AutoCreate.None)
@@ -288,7 +419,7 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
     {
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         var connectionString = (string)await _dataSource.Value
-            .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id")
+            .CreateCommand($"select connection_string from {_schemaName}.{TenantTable.TableName} where tenant_id = :id and {TenantTable.DisabledColumn} = false")
             .With("id", tenantId)
             .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
 
@@ -356,7 +487,10 @@ public class MasterTableTenancy: ITenancy, ITenancyWithMasterDatabase
         {
             AddColumn<string>(StorageConstants.TenantIdColumn).AsPrimaryKey();
             AddColumn<string>(StorageConstants.ConnectionStringColumn).NotNull();
+            AddColumn<bool>(DisabledColumn).DefaultValueByExpression("false").NotNull();
         }
+
+        public const string DisabledColumn = "disabled";
     }
 
     public async ValueTask<DatabaseUsage> DescribeDatabasesAsync(CancellationToken token)
