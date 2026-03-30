@@ -31,6 +31,8 @@ internal class EventProgressionTable: Table
             AddColumn("agent_status", "varchar(20)").AllowNulls();
             AddColumn("pause_reason", "text").AllowNulls();
             AddColumn("running_on_node", "integer").AllowNulls();
+            AddColumn("warning_behind_threshold", "bigint").AllowNulls();
+            AddColumn("critical_behind_threshold", "bigint").AllowNulls();
         }
 
         PrimaryKeyName = "pk_mt_event_progression";
