@@ -168,6 +168,10 @@ public class SingleStreamProjection<TDoc, TId>:
     protected IEnumerable<string> validateDocumentIdentity(StoreOptions options,
         DocumentMapping mapping)
     {
+        // Skip ID type validation for aggregates that use natural keys —
+        // they intentionally have an ID type that differs from the stream identity
+        if (NaturalKeyDefinition != null) yield break;
+
         var matches = IsIdTypeValidForStream(mapping.IdType, options, out var expectedType, out var valueTypeInfo);
         if (!matches)
         {
