@@ -65,7 +65,13 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         StorageFeatures.PostProcessConfiguration();
         Events.Initialize(this);
         Options.Projections.DiscoverGeneratedEvolvers(AppDomain.CurrentDomain.GetAssemblies());
-        DiscoverNaturalKeyAggregates(AppDomain.CurrentDomain.GetAssemblies());
+        // Only discover natural key aggregates from the application assembly,
+        // not all loaded assemblies — shared compile references (e.g., test projects)
+        // may contain aggregates with incompatible stream identity types
+        if (Options.ApplicationAssembly != null)
+        {
+            DiscoverNaturalKeyAggregates(new[] { Options.ApplicationAssembly });
+        }
         Options.Projections.AssertValidity(Options);
 
         if (Options.LogFactory != null)
