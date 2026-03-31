@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Source Generator for Marten document and projection type discovery</Description>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <LangVersion>12</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>false</ImplicitUsings>
+        <NoWarn>$(NoWarn);CS8603;CS8602;CS8604</NoWarn>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <IsRoslynComponent>true</IsRoslynComponent>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    </ItemGroup>
+
+    <!-- Source generators must not pull in the global Directory.Build.props TargetFramework -->
+    <PropertyGroup>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+</Project>
