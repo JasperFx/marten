@@ -110,7 +110,6 @@ public class BulkLoaderBuilder
     public string CopyNewDocumentsFromTempTable()
     {
         var table = _mapping.Schema.Table;
-        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
 
         var storageTable = table.Identifier.QualifiedName;
         var columns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
@@ -118,29 +117,29 @@ public class BulkLoaderBuilder
         var selectColumns = table.Columns.Where(x => x.Name != SchemaConstants.LastModifiedColumn)
             .Select(x => $"{_tempTable}.\\\"{x.Name}\\\"").Join(", ");
 
-        var joinExpression = isMultiTenanted
-            ? $"{_tempTable}.id = {storageTable}.id and {_tempTable}.tenant_id = {storageTable}.tenant_id"
-            : $"{_tempTable}.id = {storageTable}.id";
+        var joinExpression = buildPrimaryKeyJoinExpression(table, _tempTable, storageTable);
+
+        // Use the first PK column for the NULL check (any PK column works since they're all NOT NULL)
+        var firstPkColumn = table.PrimaryKeyColumns.First();
 
         return
             $"insert into {storageTable} ({columns}, {SchemaConstants.LastModifiedColumn}) " +
             $"(select {selectColumns}, transaction_timestamp() " +
             $"from {_tempTable} left join {storageTable} on {joinExpression} " +
-            $"where {storageTable}.id is null)";
+            $"where {storageTable}.{firstPkColumn} is null)";
     }
 
     public string OverwriteDuplicatesFromTempTable()
     {
         var table = _mapping.Schema.Table;
-        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
         var storageTable = table.Identifier.QualifiedName;
 
-        var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
+        var pkColumns = table.PrimaryKeyColumns.ToArray();
+        var updates = table.Columns
+            .Where(x => !pkColumns.Contains(x.Name) && x.Name != SchemaConstants.LastModifiedColumn)
             .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-        var joinExpression = isMultiTenanted
-            ? "source.id = target.id and source.tenant_id = target.tenant_id"
-            : "source.id = target.id";
+        var joinExpression = buildPrimaryKeyJoinExpression(table, "source", "target");
 
         return
             $"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE {joinExpression}";
@@ -154,17 +153,28 @@ public class BulkLoaderBuilder
         }
 
         var table = _mapping.Schema.Table;
-        var isMultiTenanted = _mapping.TenancyStyle == TenancyStyle.Conjoined;
         var storageTable = table.Identifier.QualifiedName;
 
-        var updates = table.Columns.Where(x => x.Name != "id" && x.Name != SchemaConstants.LastModifiedColumn)
+        var pkColumns = table.PrimaryKeyColumns.ToArray();
+        var updates = table.Columns
+            .Where(x => !pkColumns.Contains(x.Name) && x.Name != SchemaConstants.LastModifiedColumn)
             .Select(x => $"{x.Name} = source.{x.Name}").Join(", ");
 
-        var joinExpression = isMultiTenanted
-            ? "source.id = target.id and source.tenant_id = target.tenant_id"
-            : "source.id = target.id";
+        var joinExpression = buildPrimaryKeyJoinExpression(table, "source", "target");
 
         return $"update {storageTable} target SET {updates}, {SchemaConstants.LastModifiedColumn} = transaction_timestamp() FROM {_tempTable} source WHERE {joinExpression} and target.{SchemaConstants.VersionColumn} = source.{SchemaConstants.ExpectedVersionColumn}";
+    }
+
+    /// <summary>
+    /// Build a join expression using all primary key columns from the table.
+    /// This handles composite PKs from partitioned tables where partition columns
+    /// are part of the primary key.
+    /// </summary>
+    private static string buildPrimaryKeyJoinExpression(Weasel.Postgresql.Tables.Table table, string leftAlias, string rightAlias)
+    {
+        return table.PrimaryKeyColumns
+            .Select(col => $"{leftAlias}.{col} = {rightAlias}.{col}")
+            .Join(" and ");
     }
 
     public string CreateTempTableForCopying()
