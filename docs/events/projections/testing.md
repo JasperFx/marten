@@ -399,3 +399,47 @@ public async Task test_async_aggregation_with_wait_for_and_fake_time_provider()
 <!-- endSnippet -->
 
 In the sample above, I used the `FakeTimeProvider` from the Microsoft.Extensions.TimeProvider.Testing Nuget package.
+
+## Testing Tips for Integration Tests
+
+### Solo Daemon Mode <Badge type="tip" text="8.8" />
+
+When running integration tests that use async projections, the default "Hot/Cold" leader election
+mode can cause slow test startup and advisory lock contention. Use `MartenDaemonModeIsSolo()` to
+override the daemon mode for faster, more reliable tests:
+
+```cs
+Host = await AlbaHost.For<Program>(b =>
+{
+    b.ConfigureServices((context, services) =>
+    {
+        // Override production daemon settings for testing
+        services.MartenDaemonModeIsSolo();
+    });
+});
+```
+
+This configures the async daemon in Solo mode regardless of the production configuration,
+eliminating lock contention when tests rapidly start and stop the host.
+
+### Resetting State Between Tests
+
+For test suites that share a database, use `ResetAllMartenDataAsync()` to cleanly reset
+state between test runs. This method:
+
+1. Disables all asynchronous projections and subscriptions
+2. Resets the data store to baseline (wipes event and document data)
+3. Restarts all async projections and subscriptions from the new baseline
+
+```cs
+public async Task InitializeAsync()
+{
+    await Host.ResetAllMartenDataAsync();
+}
+```
+
+This is much more reliable than manually deleting data, as it ensures the async daemon
+restarts cleanly from a known state.
+
+For more details on these testing patterns, see the blog post
+[Faster & More Reliable Integration Testing Against Marten Projections](https://jeremydmiller.com/2025/08/19/faster-more-reliable-integration-testing-against-marten-projections-or-subscriptions/).

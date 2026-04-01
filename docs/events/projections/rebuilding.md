@@ -85,6 +85,31 @@ streams were last modified. This was conceived of as being combined with the [`F
 single stream projections for zero downtime deployments while trying to create less load on the database than the original
 "left fold" / "from zero" rebuild would be. 
 
+## Blue/Green Deployments with Projection Versioning
+
+When deploying projection changes to production without downtime, you can use projection
+versioning to run old and new projection versions in parallel:
+
+1. **Increment `ProjectionVersion`** on your projection class to create a new version that
+   writes to separate database tables from the previous version
+2. **Use Async lifecycle** for the new version so it can "catch up" to the current event
+   sequence while the old version continues serving requests
+3. **Deploy new nodes** ("green") running the updated code alongside existing nodes ("blue").
+   The green nodes build the new projection version while blue nodes continue serving traffic
+4. **Switch traffic** to the green nodes once the new projection has caught up
+
+The `FetchForWriting()` API handles this transparently -- it provides strong consistency
+regardless of the underlying projection lifecycle, so command handlers work correctly during
+the transition period without code changes.
+
+When using Wolverine's managed event subscription distribution
+(`UseWolverineManagedEventSubscriptionDistribution = true`), projection shards are
+automatically distributed across all nodes in the cluster, enabling parallel execution
+of old and new projection versions.
+
+For a deeper discussion of this deployment strategy, see
+[Projections, Consistency Models, and Zero Downtime Deployments](https://jeremydmiller.com/2025/03/26/projections-consistency-models-and-zero-downtime-deployments-with-the-critter-stack/).
+
 ## Rebuilding a Single Stream <Badge type="tip" text="7.28" />
 
 A long standing request has been to be able to rebuild only a single stream or subset of streams

@@ -371,6 +371,10 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Working with dates',
               link: '/postgres/dates'
             },
+            {
+              text: 'Read Replicas',
+              link: '/postgres/read-replicas'
+            },
             // {
             //   text: 'Backup and restore',
             //   link: '/postgres/backup-restore/'

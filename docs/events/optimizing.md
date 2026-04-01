@@ -145,3 +145,27 @@ data set is in your Marten database. To that end, you have a pair of complementa
 
 * [Event Archiving](/events/archiving)
 * [Stream Compacting](/events/compacting)
+
+## Distributed Async Projections with Wolverine
+
+By default, async projection and subscription processing is coordinated across your application cluster using
+Marten's built-in "Hot/Cold" leader election. An alternative is to use Wolverine's more sophisticated agent
+distribution to spread projection work across all nodes in your application cluster:
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    // your configuration...
+})
+.IntegrateWithWolverine(opts =>
+{
+    opts.UseWolverineManagedEventSubscriptionDistribution = true;
+});
+```
+
+This eliminates single-node bottlenecks in multi-instance deployments by distributing projection shards
+across available nodes rather than centralizing all processing on the elected leader. See the
+[Wolverine integration documentation](https://wolverinefx.net/guide/durability/marten/event-sourcing.html)
+for more details.
+
+For more on this topic, see [Wolverine-managed distribution](https://jeremydmiller.com/2025/06/02/making-event-sourcing-with-marten-go-faster/).
