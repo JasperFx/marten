@@ -288,6 +288,12 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         logger ??= store.Options.LogFactory?.CreateLogger<ProjectionDaemon>() ??
                    store.Options.DotNetLogger ?? NullLogger.Instance;
 
+        if (Options.EventGraph.UseListenNotifyForEventAppends)
+        {
+            store.Options.Projections.Wakeup =
+                new PostgresqlListenWakeup(DataSource, logger);
+        }
+
         var detector = new HighWaterDetector(this, Options.EventGraph, logger);
 
         return new ProjectionDaemon(store, this, logger, detector);
