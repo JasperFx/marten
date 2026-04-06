@@ -15,8 +15,8 @@ internal class UpdateFunction: UpsertFunction
         string updates)
     {
         var statement = updates.Contains("where")
-            ? $"UPDATE {_tableName} SET {updates} and id = docId;"
-            : $"UPDATE {_tableName} SET {updates} where id = docId;";
+            ? $"UPDATE {_tableName} SET {updates} and id = docId{_andPartitionWhereClause};"
+            : $"UPDATE {_tableName} SET {updates} where id = docId{_andPartitionWhereClause};";
 
         if (_mapping.Metadata.Revision.Enabled)
         {
@@ -29,7 +29,7 @@ DECLARE
   current_version INTEGER;
 BEGIN
   if revision <= 1 then
-    SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause};
+    SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
     if current_version is not null then
       revision = current_version + 1;
     end if;
@@ -37,7 +37,7 @@ BEGIN
 
   {statement}
 
-  SELECT mt_version FROM {_tableName} into final_version WHERE id = docId {_andTenantWhereClause};
+  SELECT mt_version FROM {_tableName} into final_version WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
   RETURN final_version;
 END;
 $function$;
@@ -54,7 +54,7 @@ DECLARE
 BEGIN
   {statement}
 
-  SELECT mt_version FROM {_tableName} into final_version WHERE id = docId {_andTenantWhereClause};
+  SELECT mt_version FROM {_tableName} into final_version WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
   RETURN final_version;
 END;
 $function$;

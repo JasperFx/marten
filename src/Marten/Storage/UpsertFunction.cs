@@ -24,6 +24,7 @@ internal class UpsertFunction: Function
 
     public readonly IList<UpsertArgument> Arguments = new List<UpsertArgument>();
     protected readonly string _primaryKeyFields;
+    protected string _andPartitionWhereClause = "";
     protected readonly string _versionSourceTable;
     protected readonly string _versionColumnName;
     protected readonly string _tenantVersionWhereClause;
@@ -112,6 +113,29 @@ internal class UpsertFunction: Function
         }
 
         _primaryKeyFields = table.Columns.Where(x => x.IsPrimaryKey).Select(x => x.Name).Join(", ");
+
+        // Build WHERE clause fragment for partition columns (columns that are part of the PK
+        // but are not 'id' or 'tenant_id'). These must be included in UPDATE WHERE and
+        // SELECT WHERE clauses for partitioned tables to correctly target a single row.
+        if (table.Partitioning != null)
+        {
+            var partitionClauses = new List<string>();
+            foreach (var colName in table.Partitioning.Columns)
+            {
+                // Find the matching argument for this partition column
+                var arg = Arguments.FirstOrDefault(a =>
+                    a.Column.Equals(colName, StringComparison.OrdinalIgnoreCase));
+                if (arg != null)
+                {
+                    partitionClauses.Add($"{colName} = {arg.Arg}");
+                }
+            }
+
+            if (partitionClauses.Any())
+            {
+                _andPartitionWhereClause = " and " + partitionClauses.Join(" and ");
+            }
+        }
     }
 
     public void AddIfActive(MetadataColumn column)
@@ -200,7 +224,7 @@ DECLARE
   current_version INTEGER;
 BEGIN
 
-SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause};
+SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause}{_andPartitionWhereClause};
 if revision = 0 then
   if current_version is not null then
     {revisionModification}
@@ -219,7 +243,7 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
-  SELECT mt_version into final_version FROM {_tableName.QualifiedName} WHERE id = docId {_andTenantWhereClause};
+  SELECT mt_version into final_version FROM {_tableName.QualifiedName} WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
   RETURN final_version;
 END;
 $function$;
@@ -239,7 +263,7 @@ INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ({_primaryKeyFields})
   DO UPDATE SET {updates};
 
-  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause};
+  SELECT mt_version FROM {_tableName.QualifiedName} into final_version WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
   RETURN final_version;
 END;
 $function$;
