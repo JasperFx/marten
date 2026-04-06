@@ -45,7 +45,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
             if (isConjoined)
             {
                 // FK must include tenant_id and is_archived to match mt_streams composite PK
-                ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_tenant_is_archived")
+                ForeignKeys.Add(new ForeignKey(PostgresqlIdentifier.Shorten($"fk_{Identifier.Name}_stream_tenant_is_archived"))
                 {
                     ColumnNames = new[] { streamCol, TenantIdColumn.Name, "is_archived" },
                     LinkedNames = new[] { "id", TenantIdColumn.Name, "is_archived" },
@@ -56,7 +56,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
             else
             {
                 // FK to mt_streams must include is_archived when streams table is partitioned
-                ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_is_archived")
+                ForeignKeys.Add(new ForeignKey(PostgresqlIdentifier.Shorten($"fk_{Identifier.Name}_stream_is_archived"))
                 {
                     ColumnNames = new[] { streamCol, "is_archived" },
                     LinkedNames = new[] { "id", "is_archived" },
@@ -68,7 +68,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
         else if (isConjoined)
         {
             // FK must include tenant_id to match mt_streams composite PK (tenant_id, id)
-            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream_tenant")
+            ForeignKeys.Add(new ForeignKey(PostgresqlIdentifier.Shorten($"fk_{Identifier.Name}_stream_tenant"))
             {
                 ColumnNames = new[] { streamCol, TenantIdColumn.Name },
                 LinkedNames = new[] { "id", TenantIdColumn.Name },
@@ -79,7 +79,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
         else
         {
             // FK to mt_streams with CASCADE delete
-            ForeignKeys.Add(new ForeignKey($"fk_{Identifier.Name}_stream")
+            ForeignKeys.Add(new ForeignKey(PostgresqlIdentifier.Shorten($"fk_{Identifier.Name}_stream"))
             {
                 ColumnNames = new[] { streamCol },
                 LinkedNames = new[] { "id" },
@@ -89,7 +89,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
         }
 
         // Index on stream id/key for reverse lookups
-        Indexes.Add(new IndexDefinition($"idx_{Identifier.Name}_{streamCol}")
+        Indexes.Add(new IndexDefinition(PostgresqlIdentifier.Shorten($"idx_{Identifier.Name}_{streamCol}"))
         {
             IsUnique = false,
             Columns = new[] { streamCol }
