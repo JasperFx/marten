@@ -36,6 +36,7 @@ internal class OperatorLibrary
 
         Add<OrderBySqlOperator>();
         Add<ThenBySqlOperator>();
+        Add<OrderByNgramRankOperator>();
 
         foreach (var mode in Enum.GetValues<SingleValueMode>()) addSingleValueMode(mode);
     }
