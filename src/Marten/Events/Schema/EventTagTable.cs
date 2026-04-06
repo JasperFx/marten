@@ -35,7 +35,8 @@ internal class EventTagTable: Table
             archiving.AsPrimaryKey();
             archiving.PartitionByListValues().AddPartition("archived", true);
 
-            ForeignKeys.Add(new ForeignKey($"fkey_mt_event_tag_{registration.TableSuffix}_seq_id_is_archived")
+            ForeignKeys.Add(new ForeignKey(
+                PostgresqlIdentifier.Shorten($"fkey_mt_event_tag_{registration.TableSuffix}_seq_id_is_archived"))
             {
                 ColumnNames = new[] { "seq_id", "is_archived" },
                 LinkedNames = new[] { "seq_id", "is_archived" },
@@ -48,7 +49,7 @@ internal class EventTagTable: Table
                 .ForeignKeyTo(new PostgresqlObjectName(events.DatabaseSchemaName, "mt_events"), "seq_id");
         }
 
-        PrimaryKeyName = $"pk_mt_event_tag_{registration.TableSuffix}";
+        PrimaryKeyName = PostgresqlIdentifier.Shorten($"pk_mt_event_tag_{registration.TableSuffix}");
     }
 
     private static string PostgresqlTypeFor(Type simpleType)
