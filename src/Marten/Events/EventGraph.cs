@@ -212,6 +212,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
+    /// <summary>
+    /// Opt into adding a composite index on (type, seq_id) to the mt_events table.
+    /// This can dramatically improve performance for projection rebuilds and async
+    /// projections that filter on a small subset of event types, especially when
+    /// there are large sequence gaps between matching events.
+    /// </summary>
+    public bool EnableEventTypeIndex { get; set; } = false;
+
     public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
 
     /// <summary>
