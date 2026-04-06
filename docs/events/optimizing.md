@@ -173,6 +173,53 @@ It will fall back to progressively simpler query strategies:
 
 This adaptive behavior is automatic and requires no configuration.
 
+### When to Enable the Event Type Index
+
+Consider enabling `EnableEventTypeIndex` if you observe any of these symptoms:
+
+* **Projection rebuilds time out** — especially for projections that use `IncludeType<T>()` or
+  only handle a small subset of your total event types
+* **New async projections take a long time to catch up** — when deployed against an existing
+  event store with millions of events and the projection only cares about a few event types
+* **Blue/green deployments are slow** — the new projection version needs to rebuild from scratch
+  and the event type distribution is uneven
+
+You generally do **not** need this index if:
+
+* Your event store is small (under a few million events)
+* Your projections consume most or all event types
+* You only use inline projections (no async daemon)
+
+### Diagnosing Slow Projection Rebuilds
+
+When the adaptive event loader falls back to a slower strategy, it logs a warning:
+
+```
+Event loading timed out with Normal strategy for range [X, Y].
+Falling back to SkipAhead. Consider enabling opts.Events.EnableEventTypeIndex
+for better performance.
+```
+
+If you see these messages in your logs, enable the event type index and the warnings
+will stop — the index eliminates the need for the fallback strategies entirely.
+
+### Tuning Batch Size
+
+The default batch size for the async daemon is 500 events per fetch. If you are
+experiencing timeouts during projection rebuilds **and** cannot add the event type index,
+you can reduce the batch size as a workaround:
+
+```cs
+opts.Projections.Snapshot<MyAggregate>(SnapshotLifecycle.Async, asyncOptions =>
+{
+    asyncOptions.BatchSize = 100;
+});
+```
+
+A smaller batch size means smaller sequence ranges per query, reducing the chance of
+scanning through large stretches of non-matching events. The trade-off is more round
+trips to the database.
+
 ## Keeping the Database Smaller
 
 One great way to maintain performance over time as a system database grows is to simply keep a lid on how big the **active**
