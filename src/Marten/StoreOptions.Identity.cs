@@ -11,7 +11,6 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
-using Microsoft.FSharp.Core;
 
 namespace Marten;
 
@@ -122,7 +121,7 @@ public partial class StoreOptions
         {
             valueProperty = type.GetProperties().Where(x => x.Name != "Tag").SingleOrDefaultIfMany();
         }
-        else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        else if (FSharpTypeHelper.IsFSharpOptionType(type))
         {
             var innerType = type.GetGenericArguments().Single();
             valueProperty = type.GetProperty("Value");
@@ -164,21 +163,21 @@ public partial class StoreOptions
 
     public void RegisterFSharpOptionValueTypes()
     {
-        RegisterValueType(typeof(FSharpOption<Guid>));
-        RegisterValueType(typeof(FSharpOption<string>));
-        RegisterValueType(typeof(FSharpOption<long>));
-        RegisterValueType(typeof(FSharpOption<int>));
-        RegisterValueType(typeof(FSharpOption<bool>));
-        RegisterValueType(typeof(FSharpOption<decimal>));
-        RegisterValueType(typeof(FSharpOption<char>));
-        RegisterValueType(typeof(FSharpOption<double>));
-        RegisterValueType(typeof(FSharpOption<float>));
-        RegisterValueType(typeof(FSharpOption<uint>));
-        RegisterValueType(typeof(FSharpOption<ulong>));
-        RegisterValueType(typeof(FSharpOption<short>));
-        RegisterValueType(typeof(FSharpOption<ushort>));
-        RegisterValueType(typeof(FSharpOption<DateTime>));
-        RegisterValueType(typeof(FSharpOption<DateTimeOffset>));
+        if (!FSharpTypeHelper.IsFSharpCoreAvailable) return;
+
+        var innerTypes = new[]
+        {
+            typeof(Guid), typeof(string), typeof(long), typeof(int), typeof(bool),
+            typeof(decimal), typeof(char), typeof(double), typeof(float),
+            typeof(uint), typeof(ulong), typeof(short), typeof(ushort),
+            typeof(DateTime), typeof(DateTimeOffset)
+        };
+
+        foreach (var inner in innerTypes)
+        {
+            var optionType = FSharpTypeHelper.MakeFSharpOptionType(inner);
+            if (optionType != null) RegisterValueType(optionType);
+        }
     }
 
     internal List<ValueTypeInfo> ValueTypes { get; } = new();

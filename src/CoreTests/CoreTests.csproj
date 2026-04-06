@@ -16,6 +16,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FSharp.Core" />
         <PackageReference Include="Jil" />
         <PackageReference Include="Microsoft.FeatureManagement" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />
