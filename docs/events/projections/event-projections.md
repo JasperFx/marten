@@ -241,3 +241,86 @@ public partial class TrackedEventProjection: EventProjection
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/TrackedEventProjection.cs#L32-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_enable_document_tracking_in_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+## Event Enrichment <Badge type="tip" text="8.29" />
+
+`EventProjection` supports an `EnrichEventsAsync` hook that runs **before** individual events
+are processed. This allows you to batch-load reference data from the database and enrich events
+with it, avoiding N+1 query problems.
+
+This is the same pattern available on [aggregation projections](/events/projections/enrichment),
+now extended to `EventProjection`.
+
+### Basic Usage
+
+Override `EnrichEventsAsync` in your `EventProjection` subclass:
+
+```cs
+public class TaskSummaryProjection : EventProjection
+{
+    public TaskSummaryProjection()
+    {
+        // The Project handler reads UserName that was set by EnrichEventsAsync
+        Project<TaskAssigned>((e, ops) =>
+        {
+            ops.Store(new TaskSummary
+            {
+                Id = e.TaskId,
+                AssignedUserName = e.UserName
+            });
+        });
+    }
+
+    public override async Task EnrichEventsAsync(
+        IQuerySession querySession,
+        IReadOnlyList<IEvent> events,
+        CancellationToken cancellation)
+    {
+        // 1. Find events that need enrichment
+        var assigned = events
+            .OfType<IEvent<TaskAssigned>>()
+            .ToArray();
+
+        if (assigned.Length == 0) return;
+
+        // 2. Batch-load reference data (one query, not N queries)
+        var userIds = assigned
+            .Select(e => e.Data.UserId)
+            .Distinct()
+            .ToArray();
+
+        var users = await querySession
+            .LoadManyAsync<User>(cancellation, userIds);
+        var lookup = users.ToDictionary(u => u.Id);
+
+        // 3. Set enriched properties on event data
+        foreach (var e in assigned)
+        {
+            if (lookup.TryGetValue(e.Data.UserId, out var user))
+            {
+                e.Data.UserName = $"{user.FirstName} {user.LastName}";
+            }
+        }
+    }
+}
+```
+
+### How It Works
+
+* `EnrichEventsAsync` is called **once per tenant batch** before any individual event handlers run
+* The `querySession` parameter provides read access to the database for loading reference data
+* Modifications to `e.Data` properties are visible to `Project<T>` and `ProjectAsync<T>` handlers
+* Works with both **Inline** and **Async** projection lifecycles
+* The method has a no-op default implementation -- only override it when you need enrichment
+
+### When to Use
+
+Use `EnrichEventsAsync` when your `EventProjection` handlers need data that isn't in the
+event itself. Common scenarios:
+
+* Looking up user names, product details, or other reference data by ID
+* Resolving business keys to internal identifiers
+* Loading configuration or lookup tables needed during projection
+
+Without enrichment, each handler would need to load this data individually, resulting in
+N+1 database queries when processing a batch of events.
