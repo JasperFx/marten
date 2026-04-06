@@ -194,7 +194,7 @@ You generally do **not** need this index if:
 
 When the adaptive event loader falls back to a slower strategy, it logs a warning:
 
-```
+```text
 Event loading timed out with Normal strategy for range [X, Y].
 Falling back to SkipAhead. Consider enabling opts.Events.EnableEventTypeIndex
 for better performance.
