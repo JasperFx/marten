@@ -524,6 +524,26 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    ///     Apply additional configuration to every NpgsqlDataSourceBuilder created by Marten,
+    ///     including those for tenant databases. Use this to register Npgsql plugins like
+    ///     UseVector() (pgvector), UseNodaTime(), UseNetTopologySuite(), etc.
+    /// </summary>
+    /// <param name="configure">Action applied to each NpgsqlDataSourceBuilder before Build() is called</param>
+    public void ConfigureNpgsqlDataSourceBuilder(Action<NpgsqlDataSourceBuilder> configure)
+    {
+        var original = NpgsqlDataSourceBuilderFactory;
+        NpgsqlDataSourceBuilderFactory = cs =>
+        {
+            var builder = original(cs);
+            configure(builder);
+            return builder;
+        };
+
+        // Rebuild the data source factory so it uses the updated builder factory
+        NpgsqlDataSourceFactory = new DefaultNpgsqlDataSourceFactory(NpgsqlDataSourceBuilderFactory);
+    }
+
+    /// <summary>
     ///     Override the JSON serialization by ISerializer type
     /// </summary>
     /// <param name="serializer"></param>
