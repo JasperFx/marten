@@ -1,8 +1,17 @@
 # Enriching Events <Badge type="tip" text="8.11" />
 
 ::: tip
-We added a newer recipe for more declarative and efficient event enrichment in Marten 8.18. 
+We added a newer recipe for more declarative and efficient event enrichment in Marten 8.18.
 Please see the later examples in the page too.
+:::
+
+::: warning
+Event enrichment via `EnrichEventsAsync` is designed for **read model / query model** projections
+processed by the async daemon or inline during `SaveChangesAsync`. It is **not** called during
+`FetchForWriting()` or `FetchLatest()` with Live aggregations. If your aggregate is used as a
+write model in CQRS command handlers, avoid depending on enriched event data in your
+`Create`/`Apply`/`Evolve` methods. Instead, resolve reference data directly in your command
+handler before appending events, or include the resolved data in the event payload itself.
 :::
 
 So here’s a common scenario when building a system using Event Sourcing with Marten:

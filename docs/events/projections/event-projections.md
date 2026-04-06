@@ -244,6 +244,12 @@ public partial class TrackedEventProjection: EventProjection
 
 ## Event Enrichment <Badge type="tip" text="8.29" />
 
+::: warning
+Event enrichment is designed for **read model / query model** projections processed by the async
+daemon or inline during `SaveChangesAsync`. It is **not** called during `FetchForWriting()` or
+`FetchLatest()`. Avoid depending on enriched data in write model aggregates used with those APIs.
+:::
+
 `EventProjection` supports an `EnrichEventsAsync` hook that runs **before** individual events
 are processed. This allows you to batch-load reference data from the database and enrich events
 with it, avoiding N+1 query problems.
