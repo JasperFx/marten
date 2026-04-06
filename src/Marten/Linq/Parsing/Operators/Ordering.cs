@@ -41,8 +41,28 @@ public class Ordering
     /// </summary>
     public bool IsTransformed { get; set; }
 
+    /// <summary>
+    /// For NgramRank ordering: the search term to rank against.
+    /// </summary>
+    internal string? NgramRankSearchTerm { get; init; }
+
+    /// <summary>
+    /// For NgramRank ordering: the member expression to resolve at compilation time.
+    /// </summary>
+    internal Expression? NgramRankMemberExpression { get; init; }
+
+    /// <summary>
+    /// For NgramRank ordering: the store options for schema name and unaccent config.
+    /// </summary>
+    internal StoreOptions? NgramRankOptions { get; init; }
+
     public string BuildExpression(IQueryableMemberCollection collection)
     {
+        if (NgramRankSearchTerm != null && NgramRankMemberExpression != null)
+        {
+            return BuildNgramRankExpression(collection);
+        }
+
         if (_literal.IsNotEmpty()) return _literal;
 
         var member = MemberName.IsNotEmpty()
@@ -50,5 +70,16 @@ public class Ordering
             : collection.MemberFor(Expression, "Invalid OrderBy() expression");
 
         return member.BuildOrderingExpression(this, CasingRule);
+    }
+
+    private string BuildNgramRankExpression(IQueryableMemberCollection collection)
+    {
+        var member = collection.MemberFor(NgramRankMemberExpression!, "Invalid OrderByNgramRank() member expression");
+        var schemaName = NgramRankOptions!.DatabaseSchemaName;
+        var useUnaccent = NgramRankOptions.Advanced.UseNGramSearchWithUnaccent.ToString().ToUpperInvariant();
+        var escapedTerm = NgramRankSearchTerm!.Replace("'", "''");
+
+        return $"ts_rank({schemaName}.mt_grams_vector({member.RawLocator},{useUnaccent}), " +
+               $"{schemaName}.mt_grams_query('{escapedTerm}',{useUnaccent})) desc";
     }
 }

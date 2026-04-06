@@ -786,6 +786,29 @@ public static class QueryableExtensions
             Expression.Constant(sql)));
     }
 
+    private static MethodInfo _orderByNgramRankMethod = typeof(QueryableExtensions).GetMethod(nameof(OrderByNgramRank),
+        BindingFlags.Public | BindingFlags.Static | BindingFlags.NonPublic)!;
+
+    /// <summary>
+    /// Order query results by ngram search relevance using PostgreSQL's ts_rank function.
+    /// Use in combination with NgramSearch in the Where clause.
+    /// Results are ordered by highest relevance first (descending) by default.
+    /// </summary>
+    /// <param name="queryable"></param>
+    /// <param name="memberExpression">The string property to rank on (same as the NgramSearch target)</param>
+    /// <param name="searchTerm">The search term to rank against</param>
+    /// <typeparam name="T"></typeparam>
+    public static IQueryable<T> OrderByNgramRank<T>(this IQueryable<T> queryable,
+        Expression<Func<T, string>> memberExpression, string searchTerm)
+    {
+        return queryable.Provider.CreateQuery<T>(
+            Expression.Call(null,
+                _orderByNgramRankMethod.MakeGenericMethod(typeof(T)),
+                queryable.Expression,
+                memberExpression,
+                Expression.Constant(searchTerm)));
+    }
+
     /// <summary>
     ///     Retrieve the total number of persisted rows in the database that match this
     ///     query. Useful for server side paging.

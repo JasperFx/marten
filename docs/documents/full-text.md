@@ -472,3 +472,35 @@ var result = await session
     .Where(x => x.SearchString.NgramSearch(term))
     .ToListAsync();
 ```
+
+### Sorting NGram Results by Relevance <Badge type="tip" text="8.29" />
+
+Use `OrderByNgramRank()` to sort ngram search results by relevance using PostgreSQL's
+`ts_rank()` function. Results are ordered by highest relevance first (descending):
+
+```csharp
+var results = await session
+    .Query<User>()
+    .Where(x => x.SearchString.NgramSearch("search term"))
+    .OrderByNgramRank(x => x.SearchString, "search term")
+    .ToListAsync();
+```
+
+This generates SQL like:
+```sql
+SELECT d.data FROM mt_doc_user d
+WHERE mt_grams_vector(d.data ->> 'SearchString', FALSE) @@ mt_grams_query($1, FALSE)
+ORDER BY ts_rank(mt_grams_vector(d.data ->> 'SearchString', FALSE), mt_grams_query('search term', FALSE)) DESC
+```
+
+`OrderByNgramRank()` can be combined with `Select()`, `Take()`, and other LINQ operators:
+
+```csharp
+var topResults = await session
+    .Query<User>()
+    .Where(x => x.SearchString.NgramSearch(term))
+    .OrderByNgramRank(x => x.SearchString, term)
+    .Take(10)
+    .Select(x => new { x.Id, x.SearchString })
+    .ToListAsync();
+```

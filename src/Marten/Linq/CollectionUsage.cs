@@ -22,6 +22,7 @@ public partial class CollectionUsage
     }
 
     public Type ElementType { get; }
+    internal StoreOptions Options => _options;
 
     public SingleValueMode? SingleValueMode { get; set; }
     public bool IsAny { get; set; }
