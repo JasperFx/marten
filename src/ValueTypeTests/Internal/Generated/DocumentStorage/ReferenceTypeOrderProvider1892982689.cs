@@ -786,13 +786,15 @@ namespace Marten.Generated.DocumentStorage
 
         public const string MAIN_LOADER_SQL = "COPY strong_typed_fsharp.mt_doc_referencetypeorder(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
-        public const string TEMP_LOADER_SQL = "COPY mt_doc_referencetypeorder_temp(\"mt_dotnet_type\", \"id\", \"mt_version\", \"data\") FROM STDIN BINARY";
+        public const string TEMP_LOADER_SQL = "COPY mt_doc_referencetypeorder_temp(\"mt_dotnet_type\", \"id\", \"mt_expected_version\", \"mt_version\", \"data\") FROM STDIN BINARY";
 
         public const string COPY_NEW_DOCUMENTS_SQL = "insert into strong_typed_fsharp.mt_doc_referencetypeorder (\"id\", \"data\", \"mt_version\", \"mt_dotnet_type\", mt_last_modified) (select mt_doc_referencetypeorder_temp.\"id\", mt_doc_referencetypeorder_temp.\"data\", mt_doc_referencetypeorder_temp.\"mt_version\", mt_doc_referencetypeorder_temp.\"mt_dotnet_type\", transaction_timestamp() from mt_doc_referencetypeorder_temp left join strong_typed_fsharp.mt_doc_referencetypeorder on mt_doc_referencetypeorder_temp.id = strong_typed_fsharp.mt_doc_referencetypeorder.id where strong_typed_fsharp.mt_doc_referencetypeorder.id is null)";
 
         public const string OVERWRITE_SQL = "update strong_typed_fsharp.mt_doc_referencetypeorder target SET data = source.data, mt_version = source.mt_version, mt_dotnet_type = source.mt_dotnet_type, mt_last_modified = transaction_timestamp() FROM mt_doc_referencetypeorder_temp source WHERE source.id = target.id";
 
-        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_referencetypeorder_temp (like strong_typed_fsharp.mt_doc_referencetypeorder including defaults)";
+        public const string OVERWRITE_WITH_VERSION_SQL = "update strong_typed_fsharp.mt_doc_referencetypeorder target SET data = source.data, mt_version = source.mt_version, mt_dotnet_type = source.mt_dotnet_type, mt_last_modified = transaction_timestamp() FROM mt_doc_referencetypeorder_temp source WHERE source.id = target.id and target.mt_version = source.mt_expected_version";
+
+        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_referencetypeorder_temp (like strong_typed_fsharp.mt_doc_referencetypeorder including defaults, \"mt_expected_version\" uuid)";
 
 
         public override string CreateTempTableForCopying()
@@ -813,10 +815,26 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
+        public override string OverwriteDuplicatesFromTempTableWithVersionCheck()
+        {
+            return OVERWRITE_WITH_VERSION_SQL;
+        }
+
+
         public override async System.Threading.Tasks.Task LoadRowAsync(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.StrongTypedId.ReferenceTypeOrder document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((ValueTypeTests.StrongTypedId.ReferenceTypeOrder)document).Id.Item, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            await writer.WriteAsync(JasperFx.Core.CombGuidIdGeneration.NewGuid(), NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
+        }
+
+
+        public override async System.Threading.Tasks.Task LoadTempRowAsync(Npgsql.NpgsqlBinaryImporter writer, ValueTypeTests.StrongTypedId.ReferenceTypeOrder document, Marten.Storage.Tenant tenant, Marten.ISerializer serializer, System.Threading.CancellationToken cancellation)
+        {
+            await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
+            await writer.WriteAsync(((ValueTypeTests.StrongTypedId.ReferenceTypeOrder)document).Id.Item, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
+            writer.Write(System.DBNull.Value, 0);
             await writer.WriteAsync(JasperFx.Core.CombGuidIdGeneration.NewGuid(), NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }

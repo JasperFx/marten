@@ -12,7 +12,6 @@ using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
-using Microsoft.FSharp.Core;
 using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
 
@@ -66,22 +65,22 @@ public partial class StoreOptions
                 : new EnumAsStringMember(parent, serializer.Casing, member);
         }
 
-        if (memberType == typeof(DateTime) || memberType == typeof(FSharpOption<DateTime>))
+        if (memberType == typeof(DateTime) || memberType == FSharpTypeHelper.MakeFSharpOptionType(typeof(DateTime)))
         {
             return new DateTimeMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateTimeOffset) || memberType == typeof(FSharpOption<DateTimeOffset>))
+        if (memberType == typeof(DateTimeOffset) || memberType == FSharpTypeHelper.MakeFSharpOptionType(typeof(DateTimeOffset)))
         {
             return new DateTimeOffsetMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(DateOnly) || memberType == typeof(FSharpOption<DateOnly>))
+        if (memberType == typeof(DateOnly) || memberType == FSharpTypeHelper.MakeFSharpOptionType(typeof(DateOnly)))
         {
             return new DateOnlyMember(this, parent, casing, member);
         }
 
-        if (memberType == typeof(TimeOnly)  || memberType == typeof(FSharpOption<TimeOnly>) )
+        if (memberType == typeof(TimeOnly)  || memberType == FSharpTypeHelper.MakeFSharpOptionType(typeof(TimeOnly)) )
         {
             return new TimeOnlyMember(this, parent, casing, member);
         }
@@ -153,7 +152,7 @@ internal class ValueTypeMemberSource: IMemberSource
         }
 
         if (valueType.OuterType.IsGenericType
-            && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>)
+            && valueType.OuterType.GetGenericTypeDefinition() == FSharpTypeHelper.GetFSharpOptionOpenType()
             && isSpecialFSharpOptionDateType(valueType.SimpleType))
         {
             member = null;
@@ -161,9 +160,10 @@ internal class ValueTypeMemberSource: IMemberSource
         }
 
         Type baseType;
-        if (valueType.OuterType.IsGenericType && valueType.OuterType.GetGenericTypeDefinition() == typeof(FSharpOption<>))
+        if (valueType.OuterType.IsGenericType && valueType.OuterType.GetGenericTypeDefinition() == FSharpTypeHelper.GetFSharpOptionOpenType())
         {
-            baseType = typeof(FSharpOptionValueTypeMember<>).MakeGenericType(valueType.SimpleType);
+            var fsharpOptionType = FSharpTypeHelper.MakeFSharpOptionType(valueType.SimpleType)!;
+            baseType = typeof(ValueTypeMember<,>).MakeGenericType(fsharpOptionType, valueType.SimpleType);
         }
         else if (valueType.SimpleType == typeof(string))
         {

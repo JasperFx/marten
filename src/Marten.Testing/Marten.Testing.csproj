@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FSharp.Core" />
         <PackageReference Include="Jil" />
         <PackageReference Include="Lamar.Microsoft.DependencyInjection" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" />

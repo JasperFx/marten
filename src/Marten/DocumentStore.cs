@@ -27,7 +27,6 @@ using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.FSharp.Control;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
 

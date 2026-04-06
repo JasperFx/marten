@@ -36,7 +36,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="FSharp.Core" />
+        <!-- FSharp.Core removed: F# support uses reflection via FSharpTypeHelper -->
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
         <PackageReference Include="Newtonsoft.Json" />
         <!-- This is forced by Npgsql peer dependency -->
