@@ -114,6 +114,14 @@ internal class EventsTable: Table
             });
         }
 
+        if (events.EnableEventTypeIndex)
+        {
+            Indexes.Add(new IndexDefinition("idx_mt_events_event_type_seq_id")
+            {
+                Columns = ["type", "seq_id"]
+            });
+        }
+
         var archiving = AddColumn<IsArchivedColumn>();
         if (events.UseArchivedStreamPartitioning)
         {

@@ -138,6 +138,41 @@ so that updates from new events can be directly applied to the in memory documen
 load those documents over and over again from the database as new events trickle in. This is of course much more effective
 when your projection is constantly updating a relatively small number of different aggregates.
 
+## Event Type Index for Projection Rebuilds <Badge type="tip" text="8.29" />
+
+If you have projections that filter on a small subset of event types and your event store has
+large volumes of other event types, projection rebuilds can become very slow. The daemon's query
+scans through ranges of events sequentially, and when matching events are sparse, most of the
+scan is wasted.
+
+Enable the event type index to add a composite index on `(type, seq_id)`:
+
+```cs
+opts.Events.EnableEventTypeIndex = true;
+```
+
+This creates:
+```sql
+CREATE INDEX idx_mt_events_event_type_seq_id ON mt_events (type, seq_id);
+```
+
+The index allows PostgreSQL to jump directly to matching event types within a sequence range,
+turning projection rebuilds from O(N) full scans into O(log N) index lookups.
+
+::: warning
+This index adds storage overhead and slightly increases write latency on every event append.
+Only enable it if you experience slow projection rebuilds with type-filtered projections.
+:::
+
+Even without the index, the async daemon automatically adapts when event loading times out.
+It will fall back to progressively simpler query strategies:
+
+1. **Normal**: Standard range query with type filter
+2. **Skip-ahead**: Find the MIN(seq_id) matching the type filter, then fetch from there
+3. **Window-step**: Advance through the sequence in fixed 10,000-event windows
+
+This adaptive behavior is automatic and requires no configuration.
+
 ## Keeping the Database Smaller
 
 One great way to maintain performance over time as a system database grows is to simply keep a lid on how big the **active**
