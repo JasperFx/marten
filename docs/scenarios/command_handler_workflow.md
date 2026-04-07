@@ -268,7 +268,7 @@ public async Task Handle3(MarkItemReady command, IDocumentSession session)
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L140-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample_fetch_for_writing_exclusive_lock' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case, Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called or the `IDocumentSession` is disposed.
+Do note that the `FetchForExclusiveWriting()` command can time out if it is unable to achieve a lock in a timely manner. In this case, Marten will throw a `StreamLockedException`. The lock will be released when either `IDocumentSession.SaveChangesAsync()` is called with any pending changes or the `IDocumentSession` is disposed. Calling `IDocumentSession.SaveChangesAsync()` without pending changes will short circuit the transaction logic keeping the lock active.
 
 ## Enforcing Consistency Without Appending Events <Badge type="tip" text="8.x" />
 
