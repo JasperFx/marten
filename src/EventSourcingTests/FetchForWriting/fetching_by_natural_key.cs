@@ -3,8 +3,10 @@ using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
@@ -514,4 +516,80 @@ public class fetching_by_natural_key: OneOffConfigurationsContext
     }
 
     #endregion
+
+    [Fact]
+    public async Task natural_key_source_on_projection_class_with_string_streams()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Projections.Add<BookListingProjection>(ProjectionLifecycle.Inline);
+        });
+
+        theSession.Events.StartStream<BookListing>("SHELF-1",
+            new BookAcquired(new Isbn("978-0-13-468599-1"), "O'Reilly", 2019, "Kernighan", "Unix"));
+        await theSession.SaveChangesAsync();
+
+        var latest = await theSession.Events.FetchLatest<BookListing, Isbn>(new Isbn("978-0-13-468599-1"));
+
+        latest.ShouldNotBeNull();
+        latest.Author.ShouldBe("Kernighan");
+    }
 }
+
+
+public sealed class BookListing
+{
+    public required string Id { get; init; }
+
+    [NaturalKey]
+    public required Isbn Isbn { get; set; }
+    public required string Publisher { get; set; }
+    public required int Year { get; set; }
+    public required string Author { get; set; }
+    public required string Title { get; set; }
+}
+
+
+public readonly record struct Isbn(string Value);
+
+public sealed class BookListingProjection : SingleStreamProjection<BookListing, string>
+{
+    [NaturalKeySource]
+    public static BookListing Create(BookAcquired data, IEvent e) =>
+        new()
+        {
+            Id = e.StreamKey!,
+            Isbn = data.Isbn,
+            Publisher = data.Publisher,
+            Year = data.Year,
+            Author = data.Author,
+            Title = data.Title
+        };
+
+    [NaturalKeySource]
+    public static BookListing Create(IEvent<BookTransferred> @event) =>
+        new()
+        {
+            Id = @event.StreamKey!,
+            Isbn = @event.Data.Isbn,
+            Publisher = @event.Data.Publisher,
+            Year = @event.Data.Year,
+            Author = @event.Data.Author,
+            Title = @event.Data.Title
+        };
+
+    [NaturalKeySource]
+    public static void Apply(BookListing current, IEvent<BookAcquired> @event)
+    {
+        current.Isbn = @event.Data.Isbn;
+        current.Publisher = @event.Data.Publisher;
+        current.Year = @event.Data.Year;
+        current.Author = @event.Data.Author;
+        current.Title = @event.Data.Title;
+    }
+}
+
+public record BookTransferred(Isbn Isbn, string Publisher, int Year, string Author, string Title);
+
+public record BookAcquired(Isbn Isbn, string Publisher, int Year, string Author, string Title);
