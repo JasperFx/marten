@@ -197,8 +197,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
 
     public string UpdateSqlFragment()
     {
-        var quotedColumnName = SchemaUtils.IsReservedKeyword(ColumnName) ? $"\"{ColumnName}\"" : ColumnName;
-        return $"{quotedColumnName} = {InnerMember.SelectorForDuplication(PgType)}";
+        return $"\"{ColumnName}\" = {InnerMember.SelectorForDuplication(PgType)}";
     }
 
     public static DuplicatedField For<T>(StoreOptions options, Expression<Func<T, object>> expression,
