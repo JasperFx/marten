@@ -15,6 +15,7 @@ internal static class EventTagOperations
 
         var schema = eventGraph.DatabaseSchemaName;
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
+        var useArchived = eventGraph.UseArchivedStreamPartitioning;
 
         foreach (var @event in stream.Events)
         {
@@ -26,7 +27,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value, isConjoined));
+                session.QueueOperation(new InsertEventTagOperation(schema, registration, @event.Sequence, tag.Value, isConjoined, useArchived));
             }
         }
     }
@@ -40,6 +41,7 @@ internal static class EventTagOperations
 
         var schema = eventGraph.DatabaseSchemaName;
         var isConjoined = eventGraph.TenancyStyle == TenancyStyle.Conjoined;
+        var useArchived = eventGraph.UseArchivedStreamPartitioning;
 
         foreach (var @event in stream.Events)
         {
@@ -51,7 +53,7 @@ internal static class EventTagOperations
                 var registration = eventGraph.FindTagType(tag.TagType);
                 if (registration == null) continue;
 
-                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined));
+                session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined, useArchived));
             }
         }
     }
