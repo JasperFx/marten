@@ -1,3 +1,7 @@
+---
+description: Append events to streams in Marten's event store. Covers starting streams, appending to existing streams, Rich vs Quick append modes, and optimistic concurrency.
+---
+
 # Appending Events
 
 ::: tip

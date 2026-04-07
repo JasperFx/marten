@@ -1,3 +1,7 @@
+---
+description: Use Marten as an event store on PostgreSQL. Full event sourcing implementation with stream appending, projections, async daemon, subscriptions, and multi-tenancy.
+---
+
 # Marten as Event Store
 
 ## What is Event Sourcing?

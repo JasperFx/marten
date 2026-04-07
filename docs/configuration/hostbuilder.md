@@ -1,3 +1,7 @@
+---
+description: Configure and bootstrap Marten in ASP.NET Core and .NET applications using AddMarten(), dependency injection, and IHostBuilder integration.
+---
+
 # Bootstrapping Marten
 
 As briefly shown in the [getting started](/) page, Marten comes with the `AddMarten()` extension method for the .NET `IServiceCollection` to quickly add Marten to any ASP&#46;NET Core or Worker Service application:

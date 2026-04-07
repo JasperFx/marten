@@ -1,3 +1,7 @@
+---
+description: Marten projections transform event streams into read models. Supports single-stream, multi-stream, inline, async, and custom projections with the async daemon.
+---
+
 # Projections
 
 ::: tip

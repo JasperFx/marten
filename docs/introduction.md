@@ -1,3 +1,7 @@
+---
+description: Introduction to Marten, the .NET transactional document database and event store built on PostgreSQL with JSONB support, LINQ querying, and full event sourcing.
+---
+
 # Introduction
 
 Welcome to the Marten documentation! Join our friendly [Discord channel](https://discord.gg/WMxrvegf8H) to learn more with us and the community!

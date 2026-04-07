@@ -1,3 +1,7 @@
+---
+description: Use Marten as a document database on PostgreSQL. Store, query, and manage .NET objects as JSON documents with LINQ support, full-text search, and multi-tenancy.
+---
+
 # Marten as Document DB
 
 Marten's original focus was on enabling Postgresql as a document database for .Net developers. In Marten's case, this means

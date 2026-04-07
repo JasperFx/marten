@@ -1,3 +1,7 @@
+---
+description: Configure multi-tenancy in Marten with database-per-tenant, conjoined tenancy, sharded databases, master table routing, and dynamic tenant provisioning.
+---
+
 # Multi-Tenancy with Database per Tenant
 
 Marten has support for two types of multi-tenanted storage and data retrieval, [conjoined multi-tenancy](/documents/multi-tenancy) where

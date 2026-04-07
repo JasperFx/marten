@@ -1,3 +1,7 @@
+---
+description: Get started with Marten in your .NET application. Install the NuGet package, configure the document store, and start storing and querying documents in minutes.
+---
+
 # Getting Started
 
 Following the common .NET idiom, Marten supplies extension methods to quickly integrate Marten into any .NET application that uses the `IServiceCollection` abstractions to register IoC services. 

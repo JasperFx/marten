@@ -8,6 +8,7 @@ const config: UserConfig<DefaultTheme.Config> = {
   base: '/',
   lang: 'en-US',
   title: 'Marten',
+  titleTemplate: ':title | Marten - .NET Document DB & Event Store',
   description: '.NET Transactional Document DB and Event Store on PostgreSQL',
   head: [
     ['link', { rel: 'apple-touch-icon', type: 'image/png', size: "180x180", href: '/apple-touch-icon.png' }],
@@ -22,8 +23,29 @@ const config: UserConfig<DefaultTheme.Config> = {
     ['meta', { property: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { property: 'twitter:site', content: 'marten_lib' }],
     ['meta', { property: 'twitter:creator', content: 'marten_lib' }],
-    ['meta', { property: 'twitter:image', content: 'https://martendb.io/social.png' }]
+    ['meta', { property: 'twitter:image', content: 'https://martendb.io/social.png' }],
+    // JSON-LD structured data for search engines
+    ['script', { type: 'application/ld+json' }, JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareSourceCode',
+      'name': 'Marten',
+      'description': '.NET Transactional Document DB and Event Store on PostgreSQL',
+      'url': 'https://martendb.io',
+      'codeRepository': 'https://github.com/JasperFx/marten',
+      'programmingLanguage': 'C#',
+      'runtimePlatform': '.NET',
+      'license': 'https://opensource.org/licenses/MIT',
+      'author': {
+        '@type': 'Organization',
+        'name': 'JasperFx Software',
+        'url': 'https://www.jasperfx.net'
+      }
+    })]
   ],
+
+  sitemap: {
+    hostname: 'https://martendb.io'
+  },
 
   lastUpdated: true,
 
