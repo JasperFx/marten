@@ -22,14 +22,17 @@ internal class InsertEventTagByEventIdOperation: IStorageOperation
     private readonly Guid _eventId;
     private readonly object _value;
     private readonly bool _isConjoined;
+    private readonly bool _useArchivedPartitioning;
 
-    public InsertEventTagByEventIdOperation(string schemaName, ITagTypeRegistration registration, Guid eventId, object tagValue, bool isConjoined = false)
+    public InsertEventTagByEventIdOperation(string schemaName, ITagTypeRegistration registration, Guid eventId,
+        object tagValue, bool isConjoined = false, bool useArchivedPartitioning = false)
     {
         _schemaName = schemaName;
         _registration = registration;
         _eventId = eventId;
         _value = registration.ExtractValue(tagValue);
         _isConjoined = isConjoined;
+        _useArchivedPartitioning = useArchivedPartitioning;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
@@ -39,13 +42,27 @@ internal class InsertEventTagByEventIdOperation: IStorageOperation
         builder.Append(".mt_event_tag_");
         builder.Append(_registration.TableSuffix);
 
-        if (_isConjoined)
+        if (_isConjoined && _useArchivedPartitioning)
+        {
+            builder.Append(" (value, tenant_id, seq_id, is_archived) select ");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(session.TenantId);
+            builder.Append(", seq_id, is_archived from ");
+        }
+        else if (_isConjoined)
         {
             builder.Append(" (value, tenant_id, seq_id) select ");
             builder.AppendParameter(_value);
             builder.Append(", ");
             builder.AppendParameter(session.TenantId);
             builder.Append(", seq_id from ");
+        }
+        else if (_useArchivedPartitioning)
+        {
+            builder.Append(" (value, seq_id, is_archived) select ");
+            builder.AppendParameter(_value);
+            builder.Append(", seq_id, is_archived from ");
         }
         else
         {

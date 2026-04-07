@@ -18,14 +18,17 @@ internal class InsertEventTagOperation: IStorageOperation
     private readonly long _seqId;
     private readonly object _value;
     private readonly bool _isConjoined;
+    private readonly bool _useArchivedPartitioning;
 
-    public InsertEventTagOperation(string schemaName, ITagTypeRegistration registration, long seqId, object tagValue, bool isConjoined = false)
+    public InsertEventTagOperation(string schemaName, ITagTypeRegistration registration, long seqId, object tagValue,
+        bool isConjoined = false, bool useArchivedPartitioning = false)
     {
         _schemaName = schemaName;
         _registration = registration;
         _seqId = seqId;
         _value = registration.ExtractValue(tagValue);
         _isConjoined = isConjoined;
+        _useArchivedPartitioning = useArchivedPartitioning;
     }
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
@@ -35,7 +38,17 @@ internal class InsertEventTagOperation: IStorageOperation
         builder.Append(".mt_event_tag_");
         builder.Append(_registration.TableSuffix);
 
-        if (_isConjoined)
+        if (_isConjoined && _useArchivedPartitioning)
+        {
+            builder.Append(" (value, tenant_id, seq_id, is_archived) values (");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(session.TenantId);
+            builder.Append(", ");
+            builder.AppendParameter(_seqId);
+            builder.Append(", false");
+        }
+        else if (_isConjoined)
         {
             builder.Append(" (value, tenant_id, seq_id) values (");
             builder.AppendParameter(_value);
@@ -43,6 +56,14 @@ internal class InsertEventTagOperation: IStorageOperation
             builder.AppendParameter(session.TenantId);
             builder.Append(", ");
             builder.AppendParameter(_seqId);
+        }
+        else if (_useArchivedPartitioning)
+        {
+            builder.Append(" (value, seq_id, is_archived) values (");
+            builder.AppendParameter(_value);
+            builder.Append(", ");
+            builder.AppendParameter(_seqId);
+            builder.Append(", false");
         }
         else
         {

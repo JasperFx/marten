@@ -23,6 +23,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
     private readonly string _tableName;
     private readonly bool _isConjoined;
     private readonly bool _isGuid;
+    private readonly bool _useArchivedPartitioning;
 
     public NaturalKeyProjection(EventGraph events, NaturalKeyDefinition naturalKey)
     {
@@ -30,6 +31,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         _naturalKey = naturalKey;
         _table = new NaturalKeyTable(events, naturalKey);
         _tableName = _table.Identifier.QualifiedName;
+        _useArchivedPartitioning = events.UseArchivedStreamPartitioning;
         _isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
         _isGuid = events.StreamIdentity == StreamIdentity.AsGuid;
     }
@@ -65,13 +67,28 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         var streamCol = _isGuid ? "stream_id" : "stream_key";
         object streamId = _isGuid ? (object)stream.Id : stream.Key!;
 
-        if (_isConjoined)
+        // When UseArchivedStreamPartitioning is on, is_archived is part of the PK
+        // and must be included in the ON CONFLICT clause
+        if (_isConjoined && _useArchivedPartitioning)
+        {
+            var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, tenant_id, is_archived) " +
+                      $"VALUES (?, ?, ?, false) " +
+                      $"ON CONFLICT (natural_key_value, tenant_id, is_archived) DO UPDATE SET {streamCol} = ?";
+            operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId, streamId);
+        }
+        else if (_isConjoined)
         {
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, tenant_id, is_archived) " +
                       $"VALUES (?, ?, ?, false) " +
                       $"ON CONFLICT (natural_key_value, tenant_id) DO UPDATE SET {streamCol} = ?, is_archived = false";
-            operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId,
-                streamId);
+            operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId, streamId);
+        }
+        else if (_useArchivedPartitioning)
+        {
+            var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, is_archived) " +
+                      $"VALUES (?, ?, false) " +
+                      $"ON CONFLICT (natural_key_value, is_archived) DO UPDATE SET {streamCol} = ?";
+            operations.QueueSqlCommand(sql, innerValue, streamId, streamId);
         }
         else
         {
