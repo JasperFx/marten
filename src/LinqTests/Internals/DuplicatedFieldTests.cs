@@ -91,8 +91,8 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(EnumStorage.AsInteger, "color = CAST(data ->> 'Color' as integer)")]
-    [InlineData(EnumStorage.AsString, "color = data ->> 'Color'")]
+    [InlineData(EnumStorage.AsInteger, "\"color\" = CAST(data ->> 'Color' as integer)")]
+    [InlineData(EnumStorage.AsString, "\"color\" = data ->> 'Color'")]
     public void storage_is_set_when_passed_in(EnumStorage storageMode, string expectedUpdateFragment)
     {
         var storeOptions = new StoreOptions();
@@ -103,9 +103,9 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "string = data ->> 'String'")]
-    [InlineData("varchar", "string = data ->> 'String'")]
-    [InlineData("text", "string = data ->> 'String'")]
+    [InlineData(null, "\"string\" = data ->> 'String'")]
+    [InlineData("varchar", "\"string\" = data ->> 'String'")]
+    [InlineData("text", "\"string\" = data ->> 'String'")]
     public void pg_type_is_used_for_string(string pgType, string expectedUpdateFragment)
     {
         var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.String);
@@ -119,9 +119,9 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "user_id = CAST(data ->> 'UserId' as uuid)")]
-    [InlineData("uuid", "user_id = CAST(data ->> 'UserId' as uuid)")]
-    [InlineData("text", "user_id = CAST(data ->> 'UserId' as text)")]
+    [InlineData(null, "\"user_id\" = CAST(data ->> 'UserId' as uuid)")]
+    [InlineData("uuid", "\"user_id\" = CAST(data ->> 'UserId' as uuid)")]
+    [InlineData("text", "\"user_id\" = CAST(data ->> 'UserId' as text)")]
     public void pg_type_is_used_for_guid(string pgType, string expectedUpdateFragment)
     {
         var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.UserId);
@@ -135,9 +135,9 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
-    [InlineData("varchar[]", "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
-    [InlineData("text[]", "tags_array = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as text[])")]
+    [InlineData(null, "\"tags_array\" = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
+    [InlineData("varchar[]", "\"tags_array\" = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as varchar[])")]
+    [InlineData("text[]", "\"tags_array\" = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsArray' as jsonb))) as text[])")]
     public void pg_type_is_used_for_string_array(string pgType, string expectedUpdateFragment)
     {
         var field = DuplicatedField.For<Target>(new StoreOptions(), x => x.TagsArray);
@@ -151,9 +151,9 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "tags_list = CAST(data ->> 'TagsList' as jsonb)")]
-    [InlineData("varchar[]", "tags_list = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as varchar[])")]
-    [InlineData("text[]", "tags_list = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as text[])")]
+    [InlineData(null, "\"tags_list\" = CAST(data ->> 'TagsList' as jsonb)")]
+    [InlineData("varchar[]", "\"tags_list\" = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as varchar[])")]
+    [InlineData("text[]", "\"tags_list\" = CAST(ARRAY(SELECT jsonb_array_elements_text(CAST(data ->> 'TagsList' as jsonb))) as text[])")]
     public void pg_type_is_used_for_string_list(string pgType, string expectedUpdateFragment)
     {
         var field = DuplicatedField.For<ListTarget>(new StoreOptions(), x => x.TagsList);
@@ -167,8 +167,8 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "date = public.mt_immutable_timestamp(data ->> 'Date')")]
-    [InlineData("myergen", "date = myergen.mt_immutable_timestamp(data ->> 'Date')")]
+    [InlineData(null, "\"date\" = public.mt_immutable_timestamp(data ->> 'Date')")]
+    [InlineData("myergen", "\"date\" = myergen.mt_immutable_timestamp(data ->> 'Date')")]
     public void store_options_schema_name_is_used_for_timestamp(string schemaName, string expectedUpdateFragment)
     {
         var storeOptions = schemaName != null
@@ -180,8 +180,8 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(null, "date_offset = public.mt_immutable_timestamptz(data ->> 'DateOffset')")]
-    [InlineData("myergen", "date_offset = myergen.mt_immutable_timestamptz(data ->> 'DateOffset')")]
+    [InlineData(null, "\"date_offset\" = public.mt_immutable_timestamptz(data ->> 'DateOffset')")]
+    [InlineData("myergen", "\"date_offset\" = myergen.mt_immutable_timestamptz(data ->> 'DateOffset')")]
     public void store_options_schema_name_is_used_for_timestamptz(string schemaName, string expectedUpdateFragment)
     {
         var storeOptions = schemaName != null
@@ -193,8 +193,8 @@ public class DuplicatedFieldTests
     }
 
     [Theory]
-    [InlineData(Casing.Default, "other_id = CAST(data ->> 'OtherId' as uuid)")]
-    [InlineData(Casing.CamelCase, "other_id = CAST(data ->> 'otherId' as uuid)")]
+    [InlineData(Casing.Default, "\"other_id\" = CAST(data ->> 'OtherId' as uuid)")]
+    [InlineData(Casing.CamelCase, "\"other_id\" = CAST(data ->> 'otherId' as uuid)")]
     public void store_options_serializer_with_casing(Casing casing, string expectedUpdateFragment)
     {
         var storeOptions = new StoreOptions();
