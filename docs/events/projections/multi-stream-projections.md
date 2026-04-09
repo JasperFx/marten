@@ -958,3 +958,159 @@ Event = monthlyAllocation.Key.Source.WithData(
 <!-- endSnippet -->
 
 Read also more in the [Event transformations, a tool to keep our processes loosely coupled](https://event-driven.io/en/event_transformations_and_loosely_coupling/?utm_source=marten_docs).
+
+## Time-Based Segmentation: Monthly Activity per Account
+
+A common real-world pattern is segmenting a single stream's events by time period — monthly
+reports, daily summaries, billing periods, etc. Multi-stream projections handle this naturally
+by routing events to documents with a **composite identity key** that combines the stream ID
+with a time bucket.
+
+This example builds a `MonthlyAccountActivity` read model that summarizes deposits, withdrawals,
+and fees per account per calendar month. Each document's ID is `"{accountId}:{yyyy-MM}"`:
+
+### Events
+
+<!-- snippet: sample_monthly_account_activity_events -->
+<a id='snippet-sample_monthly_account_activity_events'></a>
+```cs
+public record AccountOpened(string AccountName);
+public record DepositRecorded(decimal Amount);
+public record WithdrawalRecorded(decimal Amount);
+public record FeeCharged(decimal Amount, string Reason);
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L16-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_events' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Read Model
+
+<!-- snippet: sample_monthly_account_activity_document -->
+<a id='snippet-sample_monthly_account_activity_document'></a>
+```cs
+/// <summary>
+/// Read model that summarizes account activity for a single calendar month.
+/// The Id is a composite key: "{streamId}:{yyyy-MM}"
+/// </summary>
+public class MonthlyAccountActivity
+{
+    public string Id { get; set; } = "";
+    public Guid AccountId { get; set; }
+    public int Year { get; set; }
+    public int Month { get; set; }
+    public int TransactionCount { get; set; }
+    public decimal TotalDeposits { get; set; }
+    public decimal TotalWithdrawals { get; set; }
+    public decimal TotalFees { get; set; }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L24-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_document' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Projection
+
+The key technique is `Identity<IEvent<T>>()` which gives you access to both the stream ID
+(`e.StreamId`) and event metadata (`e.Timestamp`) to build the composite key:
+
+<!-- snippet: sample_monthly_account_activity_projection -->
+<a id='snippet-sample_monthly_account_activity_projection'></a>
+```cs
+public class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAccountActivity, string>
+{
+    public MonthlyAccountActivityProjection()
+    {
+        // Route each event to a document keyed by "{accountId}:{yyyy-MM}"
+        // using the stream ID (account) + event timestamp (month)
+        Identity<IEvent<DepositRecorded>>(e =>
+            $"{e.StreamId}:{e.Timestamp:yyyy-MM}");
+
+        Identity<IEvent<WithdrawalRecorded>>(e =>
+            $"{e.StreamId}:{e.Timestamp:yyyy-MM}");
+
+        Identity<IEvent<FeeCharged>>(e =>
+            $"{e.StreamId}:{e.Timestamp:yyyy-MM}");
+    }
+
+    public MonthlyAccountActivity Create(IEvent<DepositRecorded> e)
+    {
+        var (accountId, year, month) = ParseKey(e);
+        return new MonthlyAccountActivity
+        {
+            AccountId = accountId, Year = year, Month = month,
+            TransactionCount = 1, TotalDeposits = e.Data.Amount
+        };
+    }
+
+    public void Apply(IEvent<DepositRecorded> e, MonthlyAccountActivity activity)
+    {
+        activity.TransactionCount++;
+        activity.TotalDeposits += e.Data.Amount;
+    }
+
+    public MonthlyAccountActivity Create(IEvent<WithdrawalRecorded> e)
+    {
+        var (accountId, year, month) = ParseKey(e);
+        return new MonthlyAccountActivity
+        {
+            AccountId = accountId, Year = year, Month = month,
+            TransactionCount = 1, TotalWithdrawals = e.Data.Amount
+        };
+    }
+
+    public void Apply(IEvent<WithdrawalRecorded> e, MonthlyAccountActivity activity)
+    {
+        activity.TransactionCount++;
+        activity.TotalWithdrawals += e.Data.Amount;
+    }
+
+    public MonthlyAccountActivity Create(IEvent<FeeCharged> e)
+    {
+        var (accountId, year, month) = ParseKey(e);
+        return new MonthlyAccountActivity
+        {
+            AccountId = accountId, Year = year, Month = month,
+            TransactionCount = 1, TotalFees = e.Data.Amount
+        };
+    }
+
+    public void Apply(IEvent<FeeCharged> e, MonthlyAccountActivity activity)
+    {
+        activity.TransactionCount++;
+        activity.TotalFees += e.Data.Amount;
+    }
+
+    private static (Guid AccountId, int Year, int Month) ParseKey(IEvent e)
+    {
+        return (e.StreamId, e.Timestamp.Year, e.Timestamp.Month);
+    }
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L43-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_projection' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+### Registration
+
+```cs
+builder.Services.AddMarten(opts =>
+{
+    // Register as Async for production use with the daemon
+    opts.Projections.Add<MonthlyAccountActivityProjection>(ProjectionLifecycle.Async);
+});
+```
+
+### How It Works
+
+When events are appended to an account stream, the projection routes each event to a
+document based on `{streamId}:{yyyy-MM}`. If three deposits happen in January and two
+in February, you get two separate `MonthlyAccountActivity` documents:
+
+- `"{accountId}:2026-01"` — 3 transactions, January totals
+- `"{accountId}:2026-02"` — 2 transactions, February totals
+
+This pattern works because `Identity<IEvent<T>>()` gives you access to:
+
+- **`e.StreamId`** — the account's stream identity (Guid)
+- **`e.Timestamp`** — the event's timestamp for time bucketing
+- **`e.Data`** — the event payload for any additional routing logic
+
+You can adapt this pattern for any time granularity (daily, weekly, quarterly) by
+changing the format string in the identity expression.
