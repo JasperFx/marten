@@ -126,6 +126,14 @@ namespace Marten.Events
         public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
         /// <summary>
+        /// When enabled, uses PostgreSQL LISTEN/NOTIFY to wake the async projection daemon
+        /// immediately when new events are appended, instead of relying solely on polling.
+        /// This provides near-instant projection updates while still falling back to polling
+        /// as a safety net. Default is false.
+        /// </summary>
+        public bool UseListenNotifyForEventAppends { get; set; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.
