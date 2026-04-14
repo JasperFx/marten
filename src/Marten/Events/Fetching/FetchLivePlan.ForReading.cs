@@ -45,6 +45,20 @@ internal partial class FetchLivePlan<TDoc, TId>
         return await _aggregator.BuildAsync(events, session, default, id, _documentStorage, cancellation).ConfigureAwait(false);
     }
 
+    public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
+
+        var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
+        if (pendingEvents is { Count: > 0 })
+        {
+            snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _documentStorage, cancellation)
+                .ConfigureAwait(false);
+        }
+
+        return snapshot;
+    }
+
     public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)
     {
         var aggregate = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
