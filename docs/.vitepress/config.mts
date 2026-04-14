@@ -225,6 +225,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                 { text: 'EF Core Projections', link: '/events/projections/efcore' },
                 { text: 'Projections and IoC Services', link: '/events/projections/ioc' },
                 { text: 'Ancillary Stores in Projections', link: '/events/projections/ancillary-stores' },
+                { text: 'ProjectLatest — Include Pending Events', link: '/events/projections/project-latest' },
                 { text: 'Async Daemon HealthChecks', link: '/events/projections/healthchecks' },]
             },
             {

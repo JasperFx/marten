@@ -383,6 +383,30 @@ public interface IEventStoreOperations: IEventOperations, IQueryEventStore
     ValueTask<T?> FetchLatest<T>(string id, CancellationToken cancellation = default) where T : class;
 
     /// <summary>
+    ///     Fetch the projected aggregate T by id, including any events appended
+    ///     in this session that have not yet been committed. For inline projections,
+    ///     the updated document is also stored in the session so it will be persisted
+    ///     on the next SaveChangesAsync() call.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    ValueTask<T?> ProjectLatest<T>(Guid id, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
+    ///     Fetch the projected aggregate T by id, including any events appended
+    ///     in this session that have not yet been committed. For inline projections,
+    ///     the updated document is also stored in the session so it will be persisted
+    ///     on the next SaveChangesAsync() call.
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="cancellation"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    ValueTask<T?> ProjectLatest<T>(string id, CancellationToken cancellation = default) where T : class;
+
+    /// <summary>
     ///     Stream the raw JSON of the projected aggregate T by id directly to a destination stream.
     /// This avoids any deserialization/serialization round-trip when the aggregate is stored inline or
     /// the async projection is caught up. Returns true if found, false if not found.

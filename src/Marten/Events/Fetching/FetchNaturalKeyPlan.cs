@@ -207,6 +207,16 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         }
     }
 
+    public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TNaturalKey id,
+        CancellationToken cancellation)
+    {
+        // For natural keys, we cannot reliably find pending events because they are
+        // tracked by stream ID (Guid/string), not by natural key. The natural key mapping
+        // is typically created by the inline projection itself, which hasn't run yet for
+        // uncommitted events. Fall back to FetchForReading.
+        return await FetchForReading(session, id, cancellation).ConfigureAwait(false);
+    }
+
     public async Task<bool> StreamForReading(DocumentSessionBase session, TNaturalKey id, Stream destination,
         CancellationToken cancellation)
     {

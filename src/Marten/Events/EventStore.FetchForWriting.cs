@@ -207,6 +207,18 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         return plan.FetchForReading(_session, id, cancellation);
     }
 
+    public ValueTask<T?> ProjectLatest<T>(Guid id, CancellationToken cancellation = default) where T : class
+    {
+        var plan = FindFetchPlan<T, Guid>();
+        return plan.ProjectLatest(_session, id, cancellation);
+    }
+
+    public ValueTask<T?> ProjectLatest<T>(string id, CancellationToken cancellation = default) where T : class
+    {
+        var plan = FindFetchPlan<T, string>();
+        return plan.ProjectLatest(_session, id, cancellation);
+    }
+
     public Task<bool> StreamLatestJson<T>(Guid id, Stream destination, CancellationToken cancellation = default) where T : class
     {
         var plan = FindFetchPlan<T, Guid>();
@@ -331,6 +343,12 @@ public interface IAggregateFetchPlan<TDoc, in TId> where TDoc : notnull
         CancellationToken cancellation = default);
 
     ValueTask<TDoc?> FetchForReading(DocumentSessionBase session, TId id, CancellationToken cancellation);
+
+    /// <summary>
+    ///     Fetch the projected aggregate including any uncommitted events in the session.
+    ///     For inline projections, the updated document is also stored in the session.
+    /// </summary>
+    ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation);
 
     Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation);
 

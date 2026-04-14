@@ -59,6 +59,25 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         return await readLatest(session, id, cancellation, loadHandler, reader, selector).ConfigureAwait(false);
     }
 
+    public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
+
+        var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
+        if (pendingEvents is not { Count: > 0 }) return snapshot;
+
+        snapshot = await _aggregator.BuildAsync(pendingEvents, session, snapshot, id, _storage, cancellation)
+            .ConfigureAwait(false);
+
+        // Store the updated document so it persists when the session commits
+        if (snapshot != null)
+        {
+            session.Store(snapshot);
+        }
+
+        return snapshot;
+    }
+
     public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)
     {
         await _identityStrategy.EnsureEventStorageExists<TDoc>(session, cancellation).ConfigureAwait(false);
