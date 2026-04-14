@@ -98,16 +98,16 @@ namespace Marten.Events.Schema;
             }
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS bigint[] AS $$
 DECLARE
-	event_version int;
+	event_version bigint;
 	event_type varchar;
 	event_id uuid;
 	body jsonb;
 	index int;
-	seq int;
+	seq bigint;
     actual_tenant varchar;
-	return_value int[];
+	return_value bigint[];
 BEGIN
 	select version into event_version from {databaseSchema}.mt_streams where {streamsWhere};
 	if event_version IS NULL then
