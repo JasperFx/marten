@@ -15,6 +15,7 @@ public class Bug_4246_integer_out_of_range_in_quick_append_function : OneOffConf
         StoreOptions(opts =>
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
+            opts.Events.EnableBigIntEvents = true;
             opts.Connection(ConnectionSource.ConnectionString);
         });
     }
