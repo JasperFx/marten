@@ -313,6 +313,7 @@ public static class MartenServiceCollectionExtensions
         stores.Add(config);
 
         services.AddSingleton<T>(s => config.Build(s));
+        services.AddSingleton<Lazy<T>>(s => new Lazy<T>(() => s.GetRequiredService<T>()));
 
         // Default keyed session factory for the ancillary store
         services.AddKeyedSingleton<ISessionFactory>(typeof(T), (sp, _) =>
