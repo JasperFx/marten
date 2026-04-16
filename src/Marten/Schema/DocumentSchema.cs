@@ -88,9 +88,10 @@ internal class DocumentSchema: IFeatureSchema
 
         if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
+            var (enabled, settingName) = _mapping.ResolveRowLevelSecurity();
             yield return new RlsPolicySchemaObject(
                 _mapping.TableName,
-                _mapping.StoreOptions.RlsTenantSessionSetting);
+                enabled ? settingName : null);
         }
     }
 }

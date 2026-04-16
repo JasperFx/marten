@@ -291,4 +291,211 @@ public class row_level_security_with_conjoined_tenancy: OneOffConfigurationsCont
         reader.GetBoolean(0).ShouldBeFalse();
         reader.GetBoolean(1).ShouldBeFalse();
     }
+
+    [Fact]
+    public async Task mapping_opt_out_excludes_only_that_table_when_store_rls_enabled()
+    {
+        StoreOptions(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted();
+            opts.Schema.For<User>().MultiTenanted().DisableRowLevelSecurity();
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var targetTable = theStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+        var userTable = theStore.Options.Storage.MappingFor(typeof(User)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        (await PolicyCountAsync(conn, targetTable)).ShouldBe(1);
+        (await PolicyCountAsync(conn, userTable)).ShouldBe(0);
+
+        var (targetRls, targetForce) = await ReadRlsFlagsAsync(conn, targetTable);
+        targetRls.ShouldBeTrue();
+        targetForce.ShouldBeTrue();
+
+        var (userRls, userForce) = await ReadRlsFlagsAsync(conn, userTable);
+        userRls.ShouldBeFalse();
+        userForce.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task mapping_custom_setting_writes_policy_with_that_setting()
+    {
+        StoreOptions(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted();
+            opts.Schema.For<User>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var targetTable = theStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+        var userTable = theStore.Options.Storage.MappingFor(typeof(User)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        (await ReadPolicyExpressionAsync(conn, targetTable)).ShouldContain("current_setting('app.tenant_id'");
+        (await ReadPolicyExpressionAsync(conn, userTable)).ShouldContain("current_setting('app.org_id'");
+    }
+
+    [Fact]
+    public async Task mapping_opt_out_drops_previously_applied_policy_on_next_migration()
+    {
+        using var initialStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted();
+        });
+
+        await initialStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        using var updatedStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted().DisableRowLevelSecurity();
+        });
+
+        await updatedStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var tableName = updatedStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        (await PolicyCountAsync(conn, tableName)).ShouldBe(0);
+
+        var (rls, force) = await ReadRlsFlagsAsync(conn, tableName);
+        rls.ShouldBeFalse();
+        force.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task global_setting_switches_to_table_specific_setting_on_next_migration()
+    {
+        using var initialStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted();
+        });
+
+        await initialStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        using var updatedStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+        });
+
+        await updatedStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var tableName = updatedStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var expression = await ReadPolicyExpressionAsync(conn, tableName);
+        expression.ShouldContain("current_setting('app.org_id'");
+        expression.ShouldNotContain("current_setting('app.tenant_id'");
+    }
+
+    [Fact]
+    public async Task table_specific_setting_reverts_to_global_setting_when_override_removed()
+    {
+        using var initialStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+        });
+
+        await initialStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        using var updatedStore = SeparateStore(opts =>
+        {
+            opts.UseRowLevelSecurity();
+            opts.Schema.For<Target>().MultiTenanted();
+        });
+
+        await updatedStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var tableName = updatedStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        var expression = await ReadPolicyExpressionAsync(conn, tableName);
+        expression.ShouldContain("current_setting('app.tenant_id'");
+        expression.ShouldNotContain("current_setting('app.org_id'");
+    }
+
+    [Fact]
+    public async Task mapping_level_opt_in_creates_policy_when_store_rls_is_off()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var tableName = theStore.Options.Storage.MappingFor(typeof(Target)).TableName;
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+
+        (await PolicyCountAsync(conn, tableName)).ShouldBe(1);
+
+        var (rls, force) = await ReadRlsFlagsAsync(conn, tableName);
+        rls.ShouldBeTrue();
+        force.ShouldBeTrue();
+
+        (await ReadPolicyExpressionAsync(conn, tableName)).ShouldContain("current_setting('app.org_id'");
+    }
+
+    private static async Task<long> PolicyCountAsync(NpgsqlConnection conn, Weasel.Core.DbObjectName tableName)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "select count(*) from pg_policy p " +
+            "join pg_class c on p.polrelid = c.oid " +
+            "join pg_namespace n on c.relnamespace = n.oid " +
+            "where n.nspname = @schema and c.relname = @table and p.polname = 'marten_tenant_isolation'";
+        cmd.Parameters.AddWithValue("schema", tableName.Schema);
+        cmd.Parameters.AddWithValue("table", tableName.Name);
+        return (long)await cmd.ExecuteScalarAsync();
+    }
+
+    private static async Task<(bool Rls, bool Force)> ReadRlsFlagsAsync(NpgsqlConnection conn, Weasel.Core.DbObjectName tableName)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "select c.relrowsecurity, c.relforcerowsecurity from pg_class c " +
+            "join pg_namespace n on c.relnamespace = n.oid " +
+            "where n.nspname = @schema and c.relname = @table";
+        cmd.Parameters.AddWithValue("schema", tableName.Schema);
+        cmd.Parameters.AddWithValue("table", tableName.Name);
+
+        await using var reader = await cmd.ExecuteReaderAsync();
+        (await reader.ReadAsync()).ShouldBeTrue();
+        return (reader.GetBoolean(0), reader.GetBoolean(1));
+    }
+
+    private static async Task<string> ReadPolicyExpressionAsync(NpgsqlConnection conn, Weasel.Core.DbObjectName tableName)
+    {
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "select pg_get_expr(p.polqual, p.polrelid) from pg_policy p " +
+            "join pg_class c on p.polrelid = c.oid " +
+            "join pg_namespace n on c.relnamespace = n.oid " +
+            "where n.nspname = @schema and c.relname = @table and p.polname = 'marten_tenant_isolation'";
+        cmd.Parameters.AddWithValue("schema", tableName.Schema);
+        cmd.Parameters.AddWithValue("table", tableName.Name);
+        var result = await cmd.ExecuteScalarAsync();
+        return (string)result;
+    }
 }

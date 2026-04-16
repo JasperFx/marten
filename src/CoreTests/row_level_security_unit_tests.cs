@@ -132,4 +132,87 @@ public class row_level_security_unit_tests
 
         schema.Objects.Any(x => x is RlsPolicySchemaObject).ShouldBeTrue();
     }
+
+    [Fact]
+    public void mapping_without_override_inherits_store_rls_setting()
+    {
+        var options = new StoreOptions();
+        options.UseRowLevelSecurity("app.tenant_id");
+        options.Schema.For<Target>().MultiTenanted();
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeTrue();
+        settingName.ShouldBe("app.tenant_id");
+    }
+
+    [Fact]
+    public void mapping_disable_override_wins_even_when_store_enabled()
+    {
+        var options = new StoreOptions();
+        options.UseRowLevelSecurity();
+        options.Schema.For<Target>().MultiTenanted().DisableRowLevelSecurity();
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeFalse();
+        settingName.ShouldBeNull();
+    }
+
+    [Fact]
+    public void mapping_enable_override_uses_explicit_setting()
+    {
+        var options = new StoreOptions();
+        options.UseRowLevelSecurity();
+        options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeTrue();
+        settingName.ShouldBe("app.org_id");
+    }
+
+    [Fact]
+    public void mapping_enable_override_with_null_setting_falls_back_to_store_setting()
+    {
+        var options = new StoreOptions();
+        options.UseRowLevelSecurity("security.tenant");
+        options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity();
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeTrue();
+        settingName.ShouldBe("security.tenant");
+    }
+
+    [Fact]
+    public void mapping_enable_override_with_null_setting_and_no_store_setting_falls_back_to_default()
+    {
+        var options = new StoreOptions();
+        options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity();
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeTrue();
+        settingName.ShouldBe("app.tenant_id");
+    }
+
+    [Fact]
+    public void single_tenancy_resolves_disabled_regardless_of_override()
+    {
+        var options = new StoreOptions();
+        options.UseRowLevelSecurity();
+        options.Schema.For<Target>().UseRowLevelSecurity("app.org_id");
+
+        var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
+            .ResolveRowLevelSecurity();
+
+        enabled.ShouldBeFalse();
+        settingName.ShouldBeNull();
+    }
 }

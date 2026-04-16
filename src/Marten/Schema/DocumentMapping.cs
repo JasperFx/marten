@@ -190,6 +190,47 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     // TODO: This should be smarter, maybe nullable option for Schema or some other base type
     internal bool SkipSchemaGeneration { get; set; }
 
+    /// <summary>
+    /// Per-mapping override for Row Level Security.
+    /// Null inherits the store-level <see cref="StoreOptions.RlsTenantSessionSetting"/>;
+    /// true forces RLS on for this mapping; false forces it off.
+    /// </summary>
+    internal bool? RlsOverride { get; set; }
+
+    /// <summary>
+    /// Optional per-mapping GUC setting name. Only relevant when RLS is enabled for the
+    /// mapping (either via <see cref="RlsOverride"/> == true or inherited from the store).
+    /// When null, the store-level setting is used.
+    /// </summary>
+    internal string? RlsSettingOverride { get; set; }
+
+    /// <summary>
+    /// Resolves the effective RLS configuration for this mapping: whether a policy
+    /// should be applied and which GUC setting name it should reference.
+    /// Only returns an enabled result for <see cref="TenancyStyle.Conjoined"/> mappings.
+    /// </summary>
+    internal (bool Enabled, string? SettingName) ResolveRowLevelSecurity()
+    {
+        if (TenancyStyle != TenancyStyle.Conjoined)
+        {
+            return (false, null);
+        }
+
+        var storeSetting = StoreOptions.RlsTenantSessionSetting;
+
+        if (RlsOverride == false)
+        {
+            return (false, null);
+        }
+
+        if (RlsOverride == true)
+        {
+            return (true, RlsSettingOverride ?? storeSetting ?? "app.tenant_id");
+        }
+
+        return storeSetting != null ? (true, storeSetting) : (false, null);
+    }
+
     public MemberInfo IdMember
     {
         get => _idMember;
