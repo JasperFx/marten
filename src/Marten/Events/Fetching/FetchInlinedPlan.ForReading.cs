@@ -1,6 +1,9 @@
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core.Reflection;
+using JasperFx.Events.Aggregation;
 using Marten.Internal.Sessions;
 using Marten.Internal.Storage;
 using Marten.Linq.QueryHandlers;
@@ -33,6 +36,34 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
         return document;
+    }
+
+    public async ValueTask<TDoc?> ProjectLatest(DocumentSessionBase session, TId id, CancellationToken cancellation)
+    {
+        var snapshot = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
+
+        var pendingEvents = FetchPlanHelper.FindPendingEvents<TId>(session, id);
+        if (pendingEvents is not { Count: > 0 }) return snapshot;
+
+        // Build the aggregator on demand
+        var raw = session.Options.Projections.AggregatorFor<TDoc>();
+        var storage = findDocumentStorage(session);
+        var aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
+                         ?? typeof(IdentityForwardingAggregator<,,,>)
+                             .CloseAndBuildAs<IAggregator<TDoc, TId, IQuerySession>>(raw, storage, typeof(TDoc),
+                                 storage is IDocumentStorage<TDoc, TId> s ? s.IdType : typeof(TId),
+                                 typeof(TId), typeof(IQuerySession));
+
+        snapshot = await aggregator.BuildAsync(pendingEvents, session, snapshot, id, storage, cancellation)
+            .ConfigureAwait(false);
+
+        // Store the updated document so it persists when the session commits
+        if (snapshot != null)
+        {
+            session.Store(snapshot);
+        }
+
+        return snapshot;
     }
 
     public async Task<bool> StreamForReading(DocumentSessionBase session, TId id, Stream destination, CancellationToken cancellation)

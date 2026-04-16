@@ -220,6 +220,14 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableEventTypeIndex { get; set; } = false;
 
+    /// <summary>
+    /// Opt into using bigint (64-bit) types for event version, sequence, and return
+    /// values in the mt_quick_append_events and mt_get_next_hi PostgreSQL functions.
+    /// This prevents integer overflow when sequence values exceed int32 range (~2.1 billion).
+    /// Default is false for backward compatibility. Will become true by default in Marten 9.0.
+    /// </summary>
+    public bool EnableBigIntEvents { get; set; } = false;
+
     public bool EnableSideEffectsOnInlineProjections { get; set; } = false;
 
     /// <summary>

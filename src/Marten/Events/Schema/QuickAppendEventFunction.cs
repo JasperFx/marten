@@ -97,17 +97,22 @@ namespace Marten.Events.Schema;
                 }
             }
 
+            // When EnableBigIntEvents is true, use bigint for version/sequence/return
+            // to prevent integer overflow when sequences exceed int32 range (~2.1B)
+            var intType = _events.EnableBigIntEvents ? "bigint" : "int";
+            var returnType = _events.EnableBigIntEvents ? "bigint[]" : "int[]";
+
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS int[] AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
 DECLARE
-	event_version int;
+	event_version {intType};
 	event_type varchar;
 	event_id uuid;
 	body jsonb;
 	index int;
-	seq int;
+	seq {intType};
     actual_tenant varchar;
-	return_value int[];
+	return_value {returnType};
 BEGIN
 	select version into event_version from {databaseSchema}.mt_streams where {streamsWhere};
 	if event_version IS NULL then
