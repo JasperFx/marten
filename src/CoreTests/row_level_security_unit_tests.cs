@@ -22,7 +22,11 @@ public class row_level_security_unit_tests
     {
         var options = new StoreOptions();
 
+        #region sample_enable_row_level_security
+
         options.UseRowLevelSecurity();
+
+        #endregion
 
         options.RlsTenantSessionSetting.ShouldBe("app.tenant_id");
     }
@@ -32,7 +36,11 @@ public class row_level_security_unit_tests
     {
         var options = new StoreOptions();
 
+        #region sample_enable_row_level_security_custom_setting
+
         options.UseRowLevelSecurity("security.tenant");
+
+        #endregion
 
         options.RlsTenantSessionSetting.ShouldBe("security.tenant");
     }
@@ -151,8 +159,13 @@ public class row_level_security_unit_tests
     public void mapping_disable_override_wins_even_when_store_enabled()
     {
         var options = new StoreOptions();
+
+        #region sample_disable_row_level_security_per_mapping
+
         options.UseRowLevelSecurity();
         options.Schema.For<Target>().MultiTenanted().DisableRowLevelSecurity();
+
+        #endregion
 
         var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
             .ResolveRowLevelSecurity();
@@ -165,8 +178,13 @@ public class row_level_security_unit_tests
     public void mapping_enable_override_uses_explicit_setting()
     {
         var options = new StoreOptions();
+
+        #region sample_use_row_level_security_per_mapping
+
         options.UseRowLevelSecurity();
         options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+
+        #endregion
 
         var (enabled, settingName) = options.Storage.MappingFor(typeof(Target))
             .ResolveRowLevelSecurity();

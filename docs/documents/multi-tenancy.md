@@ -502,7 +502,7 @@ To exempt document types from having partitioned tables, such as for tables you 
 even harm by partitioning, you can use either an attribute on the document type:
 
 <!-- snippet: sample_using_DoNotPartitionAttribute -->
-<a id='snippet-sample_using_donotpartitionattribute'></a>
+<a id='snippet-sample_using_DoNotPartitionAttribute'></a>
 ```cs
 [DoNotPartition]
 public class DocThatShouldBeExempted1
@@ -510,7 +510,7 @@ public class DocThatShouldBeExempted1
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L296-L304' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_donotpartitionattribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/MultiTenancyTests/marten_managed_tenant_id_partitioning.cs#L296-L304' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_DoNotPartitionAttribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 or exempt a single document type through the fluent interface:
@@ -553,6 +553,76 @@ This API will:
 - Delete tenant specific data out of any document table that is configured for `Conjoined` multi-tenancy for that named tenant
 
 This API is able to differentiate between documents that are configured for tenancy and document types that are global.
+
+## Row Level Security <Badge type="tip" text="8.31" />
+
+Conjoined tenancy filters rows by `tenant_id` at Marten's query layer. PostgreSQL [Row Level Security (RLS)](https://www.postgresql.org/docs/current/ddl-rowsecurity.html) adds a database-enforced safety net so any connection — including raw SQL, ad-hoc analytics, or code that bypasses Marten's session — can only see rows belonging to the current tenant.
+
+When you opt in, Marten will:
+
+1. Call `set_config('<setting>', '<tenantId>', false)` on every opened session connection, so PostgreSQL knows which tenant the session is acting as.
+2. On conjoined-tenancy document tables, emit `ENABLE ROW LEVEL SECURITY`, `FORCE ROW LEVEL SECURITY`, and a `marten_tenant_isolation` policy that restricts visible rows to `tenant_id = current_setting('<setting>')`. These are produced through Marten's normal schema migration pipeline.
+
+`FORCE ROW LEVEL SECURITY` ensures the policy applies to the table owner as well. Note that PostgreSQL **superusers always bypass RLS** regardless of the `FORCE` flag — run your application (and any ad-hoc verification) as a non-superuser role to see RLS in effect.
+
+### Enable for the whole store
+
+<!-- snippet: sample_enable_row_level_security -->
+<a id='snippet-sample_enable_row_level_security'></a>
+```cs
+options.UseRowLevelSecurity();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L25-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enable_row_level_security' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The default GUC setting name is `app.tenant_id`. Pass a custom name when it conflicts with an existing GUC naming scheme in your database:
+
+<!-- snippet: sample_enable_row_level_security_custom_setting -->
+<a id='snippet-sample_enable_row_level_security_custom_setting'></a>
+```cs
+options.UseRowLevelSecurity("security.tenant");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L39-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enable_row_level_security_custom_setting' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The setting name must be a qualified PostgreSQL custom GUC identifier of the form `prefix.name` using letters, digits, and underscores. Marten validates this at configuration time because the setting name is interpolated into `CREATE POLICY ... current_setting('<name>')` DDL. The *tenant id* is sent as a bound parameter so it accepts any value.
+
+### Per-document overrides
+
+You can selectively exclude individual document types from RLS when it would otherwise apply store-wide — useful for tables such as audit logs, read-only reference data, or anything explicitly intended to be accessible across tenants:
+
+<!-- snippet: sample_disable_row_level_security_per_mapping -->
+<a id='snippet-sample_disable_row_level_security_per_mapping'></a>
+```cs
+options.UseRowLevelSecurity();
+options.Schema.For<Target>().MultiTenanted().DisableRowLevelSecurity();
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L163-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disable_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Or use a different GUC setting name for a specific document type:
+
+<!-- snippet: sample_use_row_level_security_per_mapping -->
+<a id='snippet-sample_use_row_level_security_per_mapping'></a>
+```cs
+options.UseRowLevelSecurity();
+options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L182-L187' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_use_row_level_security_per_mapping' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The resolution order per mapping is: explicit mapping-level override, then the store-level setting, falling back to `"app.tenant_id"`.
+
+**Caveat:** Marten's connection initializer only sets the *store-level* GUC on each opened session. If you override a mapping to use a different setting name, your application is responsible for populating that GUC itself on any session that queries that document — Marten writes the policy but does not automatically set the custom GUC.
+
+### Reconfiguring and rolling back
+
+Toggling RLS off store-wide, or adding `DisableRowLevelSecurity()` on a mapping that was previously RLS-enabled, produces a `DROP POLICY` delta on the next schema migration. Changing the setting name (globally or per mapping) is detected by comparing the policy expression against `pg_get_expr(polqual, ...)` and triggers a drop-and-recreate.
+
+### Limitations
+
+- RLS applies only to `TenancyStyle.Conjoined` document tables. Single-tenancy and per-database tenancy are unchanged.
+- Event store tables (`mt_events`, `mt_streams`) do not currently get RLS policies.
 
 ## Implementation Details
 
