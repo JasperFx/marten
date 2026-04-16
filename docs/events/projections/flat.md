@@ -112,6 +112,36 @@ A couple notes on this version of the code:
 
 The `FlatTableProjection` in its first incarnation is not yet able to use event metadata.
 
+### Partial-Mapping Events (Update-Only) <Badge type="tip" text="8.x" />
+
+When an event mapped into a `FlatTableProjection` does not populate every non-primary-key
+column on the target table, Marten generates an **UPDATE-only** function for that event:
+
+```sql
+-- For an event that maps only the `field` column:
+CREATE FUNCTION mt_upsert_proj_eventb(p_id uuid, p_field text) RETURNS void
+LANGUAGE plpgsql AS $function$
+BEGIN
+  UPDATE proj SET field = p_field WHERE id = p_id;
+END;
+$function$;
+```
+
+Events that map **every** non-PK column still use the original `INSERT … ON CONFLICT DO UPDATE`
+form so they can both create and update rows.
+
+This means partial-mapping events are **safe against NOT NULL constraints** on columns they
+don't populate — they cannot create a half-populated row. It also means that if a partial
+event fires for a stream whose row does not yet exist, the UPDATE matches zero rows and is
+a no-op. Streams should therefore start with a full-mapping event that can create the row.
+
+::: warning
+Prior to Marten 8.x, all events generated `INSERT … ON CONFLICT DO UPDATE`. If your table
+had NOT NULL columns not populated by every event, appending those events would raise
+`23502: null value in column "…" violates not-null constraint`. The partial-mapping
+UPDATE-only behavior resolves this.
+:::
+
 ## Using EventProjection for Flat Tables
 
 ::: tip
