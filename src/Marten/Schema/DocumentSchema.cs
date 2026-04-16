@@ -86,8 +86,7 @@ internal class DocumentSchema: IFeatureSchema
             yield return Overwrite;
         }
 
-        if (_mapping.StoreOptions.RlsTenantSessionSetting != null
-            && _mapping.TenancyStyle == TenancyStyle.Conjoined)
+        if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
         {
             yield return new RlsPolicySchemaObject(
                 _mapping.TableName,

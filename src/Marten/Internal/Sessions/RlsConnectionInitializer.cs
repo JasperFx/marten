@@ -1,6 +1,4 @@
 #nullable enable
-using System;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Npgsql;
@@ -8,30 +6,20 @@ using Npgsql;
 namespace Marten.Internal.Sessions;
 
 /// <summary>
-/// Connection initializer that issues a PostgreSQL <c>SET</c> statement on every
-/// opened connection so Row Level Security policies can read the current tenant
-/// via <c>current_setting(...)</c>.
+/// Connection initializer that calls <c>set_config</c> on every opened connection
+/// so Row Level Security policies can read the current tenant via
+/// <c>current_setting(...)</c>. Both the setting name and tenant id are sent as
+/// bound parameters, so no value-level escaping is required.
 /// </summary>
-internal sealed partial class RlsConnectionInitializer: IConnectionInitializer
+internal sealed class RlsConnectionInitializer: IConnectionInitializer
 {
+    private const string SetConfigSql = "SELECT set_config(@name, @value, false)";
+
     private readonly string _tenantId;
     private readonly string _settingName;
 
-    /// <summary>
-    /// Create a new initializer for the given tenant.
-    /// </summary>
-    /// <param name="tenantId">Tenant identifier to set as the session variable value. Must match <c>[a-zA-Z0-9\-_]+</c>.</param>
-    /// <param name="settingName">The PostgreSQL session setting name to use. Defaults to <c>app.tenant_id</c>.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="tenantId"/> contains characters outside the allowed set.</exception>
     public RlsConnectionInitializer(string tenantId, string settingName = "app.tenant_id")
     {
-        if (!TenantIdPattern().IsMatch(tenantId))
-        {
-            throw new ArgumentException(
-                $"Tenant ID '{tenantId}' contains invalid characters. Only alphanumeric characters, hyphens, and underscores are allowed.",
-                nameof(tenantId));
-        }
-
         _tenantId = tenantId;
         _settingName = settingName;
     }
@@ -40,7 +28,9 @@ internal sealed partial class RlsConnectionInitializer: IConnectionInitializer
     public void Initialize(NpgsqlConnection connection)
     {
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"SET {_settingName} = '{_tenantId}'";
+        cmd.CommandText = SetConfigSql;
+        cmd.Parameters.AddWithValue("name", _settingName);
+        cmd.Parameters.AddWithValue("value", _tenantId);
         cmd.ExecuteNonQuery();
     }
 
@@ -48,10 +38,9 @@ internal sealed partial class RlsConnectionInitializer: IConnectionInitializer
     public async Task InitializeAsync(NpgsqlConnection connection, CancellationToken token)
     {
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"SET {_settingName} = '{_tenantId}'";
+        cmd.CommandText = SetConfigSql;
+        cmd.Parameters.AddWithValue("name", _settingName);
+        cmd.Parameters.AddWithValue("value", _tenantId);
         await cmd.ExecuteNonQueryAsync(token).ConfigureAwait(false);
     }
-
-    [GeneratedRegex(@"^[a-zA-Z0-9\-_]+$")]
-    private static partial Regex TenantIdPattern();
 }
