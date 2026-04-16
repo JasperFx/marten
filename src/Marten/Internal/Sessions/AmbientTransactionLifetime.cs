@@ -116,6 +116,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
             _connection.Open();
+            ConnectionInitializer.Initialize(_connection);
             _connection.EnlistTransaction(_options.DotNetTransaction);
         }
     }
@@ -133,6 +134,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
             await _connection.OpenAsync(token).ConfigureAwait(false);
+            await ConnectionInitializer.InitializeAsync(_connection, token).ConfigureAwait(false);
             _connection.EnlistTransaction(_options.DotNetTransaction);
         }
     }

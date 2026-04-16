@@ -207,6 +207,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public bool UseStickyConnectionLifetimes { get; set; } = false;
 
     /// <summary>
+    /// The PostgreSQL session setting name used for RLS tenant identification.
+    /// Null means RLS is disabled. Defaults to null.
+    /// </summary>
+    public string? RlsTenantSessionSetting { get; private set; }
+
+    /// <summary>
+    /// Enable PostgreSQL Row Level Security. Marten will:
+    /// 1. Execute SET {settingName} = '{tenantId}' on every connection
+    /// 2. Automatically create RLS policies on conjoined-tenancy tables
+    /// </summary>
+    /// <param name="settingName">The PostgreSQL session setting name to use. Defaults to "app.tenant_id".</param>
+    public void UseRowLevelSecurity(string settingName = "app.tenant_id")
+    {
+        RlsTenantSessionSetting = settingName;
+    }
+
+    /// <summary>
     /// Polly policies for retries within Marten command execution
     /// </summary>
     internal ResiliencePipeline ResiliencePipeline { get; set; }

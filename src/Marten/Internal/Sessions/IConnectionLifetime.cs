@@ -14,6 +14,9 @@ internal class ConnectionLifetimeBase
 {
     public IMartenSessionLogger Logger { get; set; } = new NulloMartenLogger();
 
+    internal IConnectionInitializer ConnectionInitializer { get; set; }
+        = NullConnectionInitializer.Instance;
+
     protected void handleCommandException(NpgsqlCommand cmd, Exception e)
     {
         Logger.LogFailure(cmd, e);

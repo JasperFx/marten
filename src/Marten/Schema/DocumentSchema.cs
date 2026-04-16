@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
+using JasperFx.MultiTenancy;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Weasel.Core;
@@ -83,6 +84,14 @@ internal class DocumentSchema: IFeatureSchema
         if (Overwrite != null)
         {
             yield return Overwrite;
+        }
+
+        if (_mapping.StoreOptions.RlsTenantSessionSetting != null
+            && _mapping.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            yield return new RlsPolicySchemaObject(
+                _mapping.TableName,
+                _mapping.StoreOptions.RlsTenantSessionSetting);
         }
     }
 }

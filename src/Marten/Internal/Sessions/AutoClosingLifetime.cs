@@ -54,6 +54,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(cmd);
         using var conn = _database.CreateConnection();
         conn.Open();
+        ConnectionInitializer.Initialize(conn);
         try
         {
             cmd.Connection = conn;
@@ -80,6 +81,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
+        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -108,6 +110,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
+        ConnectionInitializer.Initialize(conn);
 
         try
         {
@@ -132,6 +135,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
+        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -156,6 +160,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
+        ConnectionInitializer.Initialize(conn);
 
         try
         {
@@ -179,6 +184,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
+        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -201,6 +207,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     {
         using var conn = _database.CreateConnection();
         conn.Open();
+        ConnectionInitializer.Initialize(conn);
 
         try
         {
@@ -290,6 +297,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     {
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
+        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
 
         try
         {

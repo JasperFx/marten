@@ -194,6 +194,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             _connection.Open();
+            ConnectionInitializer.Initialize(_connection);
         }
     }
 
@@ -209,6 +210,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             await _connection.OpenAsync(token).ConfigureAwait(false);
+            await ConnectionInitializer.InitializeAsync(_connection, token).ConfigureAwait(false);
         }
     }
 

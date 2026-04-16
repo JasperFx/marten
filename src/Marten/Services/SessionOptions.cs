@@ -111,24 +111,26 @@ public sealed class SessionOptions
             Mode = CommandRunnerMode.External;
         }
 
+        var initializer = resolveConnectionInitializer(store);
+
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             if (IsolationLevel == IsolationLevel.Serializable)
             {
                 var transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout }
-                    : new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
+                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer }
+                    : new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
                 transaction.BeginTransaction();
 
                 return transaction;
             }
             else if (store.Options.UseStickyConnectionLifetimes)
             {
-                return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
+                return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
             }
 
             {
-                return new AutoClosingLifetime(this, store.Options);
+                return new AutoClosingLifetime(this, store.Options) { ConnectionInitializer = initializer };
             }
         }
 
@@ -141,16 +143,26 @@ public sealed class SessionOptions
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
+            return new AmbientTransactionLifetime(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
         }
 
         if (Connection != null)
         {
-            return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
+            return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
         }
 
 
         throw new NotSupportedException("Invalid combination of SessionOptions");
+    }
+
+    private IConnectionInitializer resolveConnectionInitializer(DocumentStore store)
+    {
+        if (store.Options.RlsTenantSessionSetting is { } setting && Tenant != null)
+        {
+            return new RlsConnectionInitializer(Tenant.TenantId, setting);
+        }
+
+        return NullConnectionInitializer.Instance;
     }
 
     internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode,
@@ -172,11 +184,13 @@ public sealed class SessionOptions
             Mode = CommandRunnerMode.External;
         }
 
+        var initializer = resolveConnectionInitializer(store);
+
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyTransactionalConnection(this)
-                : new TransactionalConnection(this);
+                ? new ReadOnlyTransactionalConnection(this) { ConnectionInitializer = initializer }
+                : new TransactionalConnection(this) { ConnectionInitializer = initializer };
 
             if (IsolationLevel == IsolationLevel.Serializable)
             {
@@ -193,7 +207,7 @@ public sealed class SessionOptions
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this);
+            return new AmbientTransactionLifetime(this) { ConnectionInitializer = initializer };
         }
 
         throw new NotSupportedException("Invalid combination of SessionOptions");
