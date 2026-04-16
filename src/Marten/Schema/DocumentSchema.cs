@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using JasperFx.Core;
-using JasperFx.MultiTenancy;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Weasel.Core;
