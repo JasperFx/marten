@@ -585,7 +585,7 @@ options.UseRowLevelSecurity("security.tenant");
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/row_level_security_unit_tests.cs#L39-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_enable_row_level_security_custom_setting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The setting name must be a qualified PostgreSQL custom GUC identifier of the form `prefix.name` using letters, digits, and underscores. Marten validates this at configuration time because the setting name is interpolated into `CREATE POLICY ... current_setting('<name>')` DDL. The *tenant id* is sent as a bound parameter so it accepts any value.
+The setting name must be a qualified PostgreSQL custom GUC identifier of the form `prefix.name` using letters, digits, and underscores. Marten validates this at configuration time because the setting name is interpolated into `CREATE POLICY ... current_setting('<name>')` DDL. The _tenant id_ is sent as a bound parameter so it accepts any value.
 
 ### Per-document overrides
 
@@ -613,7 +613,7 @@ options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
 
 The resolution order per mapping is: explicit mapping-level override, then the store-level setting, falling back to `"app.tenant_id"`.
 
-**Caveat:** Marten only sets the *store-level* GUC on each opened session connection. If you override a mapping to use a different setting name, your application is responsible for populating that GUC itself on any session that queries that document — Marten writes the policy but does not automatically set the custom GUC.
+**Caveat:** Marten only sets the _store-level_ GUC on each opened session connection. If you override a mapping to use a different setting name, your application is responsible for populating that GUC itself on any session that queries that document — Marten writes the policy but does not automatically set the custom GUC.
 
 ### Reconfiguring and rolling back
 
