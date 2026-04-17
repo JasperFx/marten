@@ -33,7 +33,7 @@ internal class RlsPolicySchemaObject: ISchemaObject
         _enabled = !string.IsNullOrWhiteSpace(settingName);
         Identifier = new PostgresqlObjectName(
             _tableName.Schema,
-            $"{_tableName.Name}_{PolicyName}",
+            PostgresqlIdentifier.Shorten($"{_tableName.Name}_{PolicyName}"),
             SchemaUtils.IdentifierUsage.General);
     }
 
