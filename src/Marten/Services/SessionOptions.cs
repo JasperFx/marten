@@ -10,6 +10,7 @@ using JasperFx.MultiTenancy;
 using Marten.Exceptions;
 using Marten.Internal.OpenTelemetry;
 using Marten.Internal.Sessions;
+using Marten.Internal.Sessions.Rls;
 using Marten.Storage;
 using Npgsql;
 using IsolationLevel = System.Data.IsolationLevel;
@@ -111,58 +112,97 @@ public sealed class SessionOptions
             Mode = CommandRunnerMode.External;
         }
 
-        var initializer = resolveConnectionInitializer(store);
+        if (store.Options.RlsTenantSessionSetting is { } rls && Tenant is not null)
+        {
+            return buildRlsConnectionLifetime(store, mode, rls);
+        }
+
+        var timeout = Timeout ?? store.Options.CommandTimeout;
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             if (IsolationLevel == IsolationLevel.Serializable)
             {
                 var transaction = mode == CommandRunnerMode.ReadOnly
-                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer }
-                    : new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
+                    ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = timeout }
+                    : new TransactionalConnection(this) { CommandTimeout = timeout };
                 transaction.BeginTransaction();
-
                 return transaction;
             }
-            else if (store.Options.UseStickyConnectionLifetimes)
+
+            if (store.Options.UseStickyConnectionLifetimes)
             {
-                return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
+                return new TransactionalConnection(this) { CommandTimeout = timeout };
             }
 
-            {
-                return new AutoClosingLifetime(this, store.Options) { ConnectionInitializer = initializer };
-            }
+            return new AutoClosingLifetime(this, store.Options);
         }
-
 
         if (Transaction != null)
         {
-            return new ExternalTransaction(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout };
+            return new ExternalTransaction(this) { CommandTimeout = timeout };
         }
-
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
+            return new AmbientTransactionLifetime(this) { CommandTimeout = timeout };
         }
 
         if (Connection != null)
         {
-            return new TransactionalConnection(this) { CommandTimeout = Timeout ?? store.Options.CommandTimeout, ConnectionInitializer = initializer };
+            return new TransactionalConnection(this) { CommandTimeout = timeout };
         }
-
 
         throw new NotSupportedException("Invalid combination of SessionOptions");
     }
 
-    private IConnectionInitializer resolveConnectionInitializer(DocumentStore store)
+    private IConnectionLifetime buildRlsConnectionLifetime(DocumentStore store, CommandRunnerMode mode, string rls)
     {
-        if (store.Options.RlsTenantSessionSetting is { } setting && Tenant != null)
+        var tenantId = Tenant!.TenantId;
+        var timeout = Timeout ?? store.Options.CommandTimeout;
+
+        if (OwnsConnection && OwnsTransactionLifecycle)
         {
-            return new RlsConnectionInitializer(Tenant.TenantId, setting);
+            if (IsolationLevel == IsolationLevel.Serializable)
+            {
+                var transaction = mode == CommandRunnerMode.ReadOnly
+                    ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
+                    : (TransactionalConnection)new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
+                transaction.BeginTransaction();
+                return transaction;
+            }
+
+            if (store.Options.UseStickyConnectionLifetimes)
+            {
+                return new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
+            }
+
+            return new RlsAutoClosingLifetime(this, store.Options, tenantId, rls);
         }
 
-        return NullConnectionInitializer.Instance;
+        if (Transaction != null)
+        {
+            return new RlsExternalTransaction(this, tenantId, rls) { CommandTimeout = timeout };
+        }
+
+        if (DotNetTransaction != null)
+        {
+            return new RlsAmbientTransactionLifetime(this, tenantId, rls) { CommandTimeout = timeout };
+        }
+
+        if (Connection != null)
+        {
+            return new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
+        }
+
+        throw new NotSupportedException("Invalid combination of SessionOptions");
+    }
+
+    internal AutoClosingLifetime BuildAutoClosingLifetime(DocumentStore store)
+    {
+        return store.Options.RlsTenantSessionSetting is { } rls && Tenant is not null
+            ? new RlsAutoClosingLifetime(this, store.Options, Tenant.TenantId, rls)
+            : new AutoClosingLifetime(this, store.Options);
     }
 
     internal async Task<IConnectionLifetime> InitializeAsync(DocumentStore store, CommandRunnerMode mode,
@@ -184,13 +224,18 @@ public sealed class SessionOptions
             Mode = CommandRunnerMode.External;
         }
 
-        var initializer = resolveConnectionInitializer(store);
+        if (store.Options.RlsTenantSessionSetting is { } rls)
+        {
+            return await buildRlsConnectionLifetimeAsync(store, mode, rls, token).ConfigureAwait(false);
+        }
+
+        var timeout = Timeout ?? store.Options.CommandTimeout;
 
         if (OwnsConnection && OwnsTransactionLifecycle)
         {
             var transaction = mode == CommandRunnerMode.ReadOnly
-                ? new ReadOnlyTransactionalConnection(this) { ConnectionInitializer = initializer }
-                : new TransactionalConnection(this) { ConnectionInitializer = initializer };
+                ? new ReadOnlyTransactionalConnection(this) { CommandTimeout = timeout }
+                : new TransactionalConnection(this) { CommandTimeout = timeout };
 
             if (IsolationLevel == IsolationLevel.Serializable)
             {
@@ -202,12 +247,54 @@ public sealed class SessionOptions
 
         if (Transaction != null)
         {
-            return new ExternalTransaction(this);
+            return new ExternalTransaction(this) { CommandTimeout = timeout };
         }
 
         if (DotNetTransaction != null)
         {
-            return new AmbientTransactionLifetime(this) { ConnectionInitializer = initializer };
+            return new AmbientTransactionLifetime(this) { CommandTimeout = timeout };
+        }
+
+        if (Connection != null)
+        {
+            return new TransactionalConnection(this) { CommandTimeout = timeout };
+        }
+
+        throw new NotSupportedException("Invalid combination of SessionOptions");
+    }
+
+    private async Task<IConnectionLifetime> buildRlsConnectionLifetimeAsync(DocumentStore store, CommandRunnerMode mode, string rls, CancellationToken token)
+    {
+        var tenantId = Tenant!.TenantId;
+        var timeout = Timeout ?? store.Options.CommandTimeout;
+
+        if (OwnsConnection && OwnsTransactionLifecycle)
+        {
+            TransactionalConnection transaction = mode == CommandRunnerMode.ReadOnly
+                ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
+                : new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
+
+            if (IsolationLevel == IsolationLevel.Serializable)
+            {
+                await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
+            }
+
+            return transaction;
+        }
+
+        if (Transaction != null)
+        {
+            return new RlsExternalTransaction(this, tenantId, rls) { CommandTimeout = timeout };
+        }
+
+        if (DotNetTransaction != null)
+        {
+            return new RlsAmbientTransactionLifetime(this, tenantId, rls) { CommandTimeout = timeout };
+        }
+
+        if (Connection != null)
+        {
+            return new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
         }
 
         throw new NotSupportedException("Invalid combination of SessionOptions");

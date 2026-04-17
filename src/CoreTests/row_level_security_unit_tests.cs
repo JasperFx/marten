@@ -4,6 +4,7 @@ using System.Linq;
 using Marten;
 using Marten.Schema;
 using Marten.Internal.Sessions;
+using Marten.Internal.Sessions.Rls;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -46,7 +47,7 @@ public class row_level_security_unit_tests
     }
 
     [Fact]
-    public void session_options_builds_rls_connection_initializer_when_enabled()
+    public void session_options_builds_rls_auto_closing_lifetime_when_enabled()
     {
         using var store = DocumentStore.For(opts =>
         {
@@ -60,12 +61,11 @@ public class row_level_security_unit_tests
         var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
             new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
 
-        lifetime.ShouldBeOfType<AutoClosingLifetime>()
-            .ConnectionInitializer.ShouldBeOfType<RlsConnectionInitializer>();
+        lifetime.ShouldBeOfType<RlsAutoClosingLifetime>();
     }
 
     [Fact]
-    public void session_options_uses_null_connection_initializer_when_disabled()
+    public void session_options_uses_plain_auto_closing_lifetime_when_disabled()
     {
         using var store = DocumentStore.For(opts => opts.Connection(ConnectionSource.ConnectionString));
 
@@ -75,8 +75,46 @@ public class row_level_security_unit_tests
         var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
             new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
 
-        lifetime.ShouldBeOfType<AutoClosingLifetime>()
-            .ConnectionInitializer.ShouldBeSameAs(NullConnectionInitializer.Instance);
+        lifetime.ShouldBeOfType<AutoClosingLifetime>();
+        lifetime.ShouldNotBeOfType<RlsAutoClosingLifetime>();
+    }
+
+    [Fact]
+    public void session_options_builds_rls_sticky_transactional_connection_when_sticky_enabled()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.UseRowLevelSecurity();
+            opts.UseStickyConnectionLifetimes = true;
+        });
+
+        var database = Substitute.For<IMartenDatabase>();
+        var sessionOptions = SessionOptions.ForDatabase("tenant_blue", database);
+
+        var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
+            new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
+
+        lifetime.ShouldBeOfType<RlsTransactionalConnection>();
+    }
+
+    [Fact]
+    public void session_options_uses_plain_sticky_transactional_connection_when_rls_disabled()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.UseStickyConnectionLifetimes = true;
+        });
+
+        var database = Substitute.For<IMartenDatabase>();
+        var sessionOptions = SessionOptions.ForDatabase("tenant_blue", database);
+
+        var lifetime = sessionOptions.Initialize(store, CommandRunnerMode.Transactional,
+            new OpenTelemetryOptions { TrackConnections = TrackLevel.None });
+
+        lifetime.ShouldBeOfType<TransactionalConnection>();
+        lifetime.ShouldNotBeOfType<RlsTransactionalConnection>();
     }
 
     [Fact]

@@ -54,20 +54,26 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
 
 
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
+        if (_connection is { State: ConnectionState.Open })
+        {
+            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+        }
         if (_connection != null)
         {
-            return _connection.DisposeAsync();
+            await _connection.DisposeAsync().ConfigureAwait(false);
         }
-
-        return new ValueTask();
     }
 
     public void Dispose()
     {
         if (OwnsConnection)
         {
+            if (_connection is { State: ConnectionState.Open })
+            {
+                BeforeClose(_connection);
+            }
             _connection?.Close();
             _connection?.Dispose();
         }
@@ -116,7 +122,7 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
             _connection.Open();
-            ConnectionInitializer.Initialize(_connection);
+            AfterOpened(_connection);
             _connection.EnlistTransaction(_options.DotNetTransaction);
         }
     }
@@ -134,9 +140,27 @@ internal class AmbientTransactionLifetime: ConnectionLifetimeBase, IAlwaysConnec
             _connection = _options.Tenant.Database.CreateConnection();
 #pragma warning restore CS8602
             await _connection.OpenAsync(token).ConfigureAwait(false);
-            await ConnectionInitializer.InitializeAsync(_connection, token).ConfigureAwait(false);
+            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
             _connection.EnlistTransaction(_options.DotNetTransaction);
         }
+    }
+
+    protected virtual void AfterOpened(NpgsqlConnection connection)
+    {
+    }
+
+    protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected virtual void BeforeClose(NpgsqlConnection connection)
+    {
+    }
+
+    protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
+    {
+        return Task.CompletedTask;
     }
 
     public int Execute(NpgsqlCommand cmd)

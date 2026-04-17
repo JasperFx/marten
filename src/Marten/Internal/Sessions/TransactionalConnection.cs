@@ -49,6 +49,11 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             await Transaction.DisposeAsync().ConfigureAwait(false);
         }
 
+        if (_connection is { State: ConnectionState.Open })
+        {
+            await BeforeCloseAsync(_connection, CancellationToken.None).ConfigureAwait(false);
+        }
+
         if (_connection != null)
         {
             await _connection.DisposeAsync().ConfigureAwait(false);
@@ -58,6 +63,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
     public void Dispose()
     {
         Transaction?.SafeDispose();
+        if (_connection is { State: ConnectionState.Open })
+        {
+            BeforeClose(_connection);
+        }
         _connection?.SafeDispose();
     }
 
@@ -125,6 +134,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         Transaction.Dispose();
         Transaction = null;
 
+        if (_connection is { State: ConnectionState.Open })
+        {
+            BeforeClose(_connection);
+        }
         _connection?.Close();
         _connection = null;
     }
@@ -142,6 +155,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
 
         if (_connection != null)
         {
+            if (_connection.State == ConnectionState.Open)
+            {
+                await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+            }
             await _connection.CloseAsync().ConfigureAwait(false);
             await _connection.DisposeAsync().ConfigureAwait(false);
         }
@@ -157,6 +174,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
             Transaction.Dispose();
             Transaction = null;
 
+            if (_connection is { State: ConnectionState.Open })
+            {
+                BeforeClose(_connection);
+            }
             _connection?.Close();
             _connection?.Dispose();
             _connection = null;
@@ -173,6 +194,10 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
 
             if (_connection != null)
             {
+                if (_connection.State == ConnectionState.Open)
+                {
+                    await BeforeCloseAsync(_connection, token).ConfigureAwait(false);
+                }
                 await _connection.CloseAsync().ConfigureAwait(false);
                 await _connection.DisposeAsync().ConfigureAwait(false);
             }
@@ -194,7 +219,7 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             _connection.Open();
-            ConnectionInitializer.Initialize(_connection);
+            AfterOpened(_connection);
         }
     }
 
@@ -210,8 +235,26 @@ internal class TransactionalConnection: ConnectionLifetimeBase, IAlwaysConnected
         if (_connection.State == ConnectionState.Closed)
         {
             await _connection.OpenAsync(token).ConfigureAwait(false);
-            await ConnectionInitializer.InitializeAsync(_connection, token).ConfigureAwait(false);
+            await AfterOpenedAsync(_connection, token).ConfigureAwait(false);
         }
+    }
+
+    protected virtual void AfterOpened(NpgsqlConnection connection)
+    {
+    }
+
+    protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
+    protected virtual void BeforeClose(NpgsqlConnection connection)
+    {
+    }
+
+    protected virtual Task BeforeCloseAsync(NpgsqlConnection connection, CancellationToken token)
+    {
+        return Task.CompletedTask;
     }
 
     public int Execute(NpgsqlCommand cmd)

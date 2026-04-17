@@ -49,12 +49,21 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 
     }
 
+    protected virtual void AfterOpened(NpgsqlConnection connection)
+    {
+    }
+
+    protected virtual Task AfterOpenedAsync(NpgsqlConnection connection, CancellationToken token)
+    {
+        return Task.CompletedTask;
+    }
+
     public int Execute(NpgsqlCommand cmd)
     {
         Logger.OnBeforeExecute(cmd);
         using var conn = _database.CreateConnection();
         conn.Open();
-        ConnectionInitializer.Initialize(conn);
+        AfterOpened(conn);
         try
         {
             cmd.Connection = conn;
@@ -81,7 +90,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         Logger.OnBeforeExecute(command);
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
-        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
+        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -110,7 +119,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
-        ConnectionInitializer.Initialize(conn);
+        AfterOpened(conn);
 
         try
         {
@@ -135,7 +144,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
-        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
+        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -160,7 +169,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         conn.Open();
-        ConnectionInitializer.Initialize(conn);
+        AfterOpened(conn);
 
         try
         {
@@ -184,7 +193,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
         // Do NOT use a using block here because we're returning the reader
         var conn = _database.CreateConnection(_readerConnectionUsage);
         await conn.OpenAsync(token).ConfigureAwait(false);
-        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
+        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -207,7 +216,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     {
         using var conn = _database.CreateConnection();
         conn.Open();
-        ConnectionInitializer.Initialize(conn);
+        AfterOpened(conn);
 
         try
         {
@@ -297,7 +306,7 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
     {
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
-        await ConnectionInitializer.InitializeAsync(conn, token).ConfigureAwait(false);
+        await AfterOpenedAsync(conn, token).ConfigureAwait(false);
 
         try
         {
@@ -393,22 +402,22 @@ internal class AutoClosingLifetime: ConnectionLifetimeBase, IConnectionLifetime,
 
     public IAlwaysConnectedLifetime Start()
     {
-        var transaction = _options.Mode == CommandRunnerMode.ReadOnly
-            ? new ReadOnlyTransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout}
-            : new TransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout};
+        var transaction = CreateStickyConnection();
         transaction.BeginTransaction();
-
         return transaction;
     }
 
     public async Task<IAlwaysConnectedLifetime> StartAsync(CancellationToken token)
     {
-        var transaction = _options.Mode == CommandRunnerMode.ReadOnly
-            ? new ReadOnlyTransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout}
-            : new TransactionalConnection(_options){Logger = Logger, CommandTimeout = CommandTimeout };
-
+        var transaction = CreateStickyConnection();
         await transaction.BeginTransactionAsync(token).ConfigureAwait(false);
-
         return transaction;
+    }
+
+    protected virtual TransactionalConnection CreateStickyConnection()
+    {
+        return _options.Mode == CommandRunnerMode.ReadOnly
+            ? new ReadOnlyTransactionalConnection(_options) { Logger = Logger, CommandTimeout = CommandTimeout }
+            : new TransactionalConnection(_options) { Logger = Logger, CommandTimeout = CommandTimeout };
     }
 }

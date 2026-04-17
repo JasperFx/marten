@@ -613,7 +613,7 @@ options.Schema.For<Target>().MultiTenanted().UseRowLevelSecurity("app.org_id");
 
 The resolution order per mapping is: explicit mapping-level override, then the store-level setting, falling back to `"app.tenant_id"`.
 
-**Caveat:** Marten's connection initializer only sets the *store-level* GUC on each opened session. If you override a mapping to use a different setting name, your application is responsible for populating that GUC itself on any session that queries that document — Marten writes the policy but does not automatically set the custom GUC.
+**Caveat:** Marten only sets the *store-level* GUC on each opened session connection. If you override a mapping to use a different setting name, your application is responsible for populating that GUC itself on any session that queries that document — Marten writes the policy but does not automatically set the custom GUC.
 
 ### Reconfiguring and rolling back
 

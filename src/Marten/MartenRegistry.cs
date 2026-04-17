@@ -792,7 +792,7 @@ public class MartenRegistry
         /// any store-level setting. Requires conjoined tenancy. When <paramref name="settingName"/>
         /// is null the store-level RLS setting is used, falling back to "app.tenant_id".
         /// <para>
-        /// Note: Marten's session connection initializer only sets the store-level GUC. If this
+        /// Note: Marten only sets the store-level GUC on each opened session connection. If this
         /// override uses a different setting name than the store, the application is responsible
         /// for populating that GUC on each session; Marten writes the policy but does not set
         /// the custom GUC automatically.

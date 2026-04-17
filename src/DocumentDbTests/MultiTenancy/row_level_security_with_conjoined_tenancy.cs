@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 using Marten;
+using Marten.Services;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -78,6 +80,70 @@ public class row_level_security_with_conjoined_tenancy: OneOffConfigurationsCont
         var value = (await session.QueryAsync<string>("select current_setting('app.tenant_id')")).Single();
 
         value.ShouldBe("tenant_blue");
+    }
+
+    [Fact]
+    public async Task sets_session_tenant_setting_for_caller_supplied_transaction()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>().MultiTenanted();
+            opts.UseRowLevelSecurity();
+        });
+
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var tx = await conn.BeginTransactionAsync();
+
+        var sessionOptions = SessionOptions.ForTransaction(tx);
+        sessionOptions.TenantId = "tenant_violet";
+
+        await using var session = theStore.QuerySession(sessionOptions);
+        var value = (await session.QueryAsync<string>("select current_setting('app.tenant_id')")).Single();
+
+        value.ShouldBe("tenant_violet");
+    }
+
+    [Fact]
+    public async Task bulk_insert_succeeds_under_rls_for_conjoined_tenant()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>().MultiTenanted();
+            opts.UseRowLevelSecurity();
+        });
+
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        var targets = new[] { Target.Random(), Target.Random(), Target.Random() };
+        await theStore.BulkInsertAsync("tenant_magenta", targets);
+
+        await using var session = theStore.QuerySession("tenant_magenta");
+        var ids = (await session.Query<Target>().ToListAsync()).Select(x => x.Id).OrderBy(x => x).ToList();
+        ids.ShouldBe(targets.Select(x => x.Id).OrderBy(x => x).ToList());
+    }
+
+    [Fact]
+    public async Task sets_session_tenant_setting_for_ambient_dot_net_transaction()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<Target>().MultiTenanted();
+            opts.UseRowLevelSecurity();
+        });
+
+        using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+
+        var sessionOptions = SessionOptions.ForCurrentTransaction();
+        sessionOptions.TenantId = "tenant_cyan";
+
+        await using (var session = theStore.QuerySession(sessionOptions))
+        {
+            var value = (await session.QueryAsync<string>("select current_setting('app.tenant_id')")).Single();
+            value.ShouldBe("tenant_cyan");
+        }
+
+        scope.Complete();
     }
 
     [Fact]
