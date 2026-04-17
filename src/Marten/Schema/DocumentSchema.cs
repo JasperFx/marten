@@ -84,5 +84,13 @@ internal class DocumentSchema: IFeatureSchema
         {
             yield return Overwrite;
         }
+
+        if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            var (enabled, settingName) = _mapping.ResolveRowLevelSecurity();
+            yield return new RlsPolicySchemaObject(
+                _mapping.TableName,
+                enabled ? settingName : null);
+        }
     }
 }

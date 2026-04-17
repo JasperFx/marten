@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using ImTools;
 using JasperFx;
 using JasperFx.CodeGeneration;
@@ -205,6 +206,43 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// Default is false
     /// </summary>
     public bool UseStickyConnectionLifetimes { get; set; } = false;
+
+    /// <summary>
+    /// The PostgreSQL session setting name used for RLS tenant identification.
+    /// Null means RLS is disabled. Defaults to null.
+    /// </summary>
+    public string? RlsTenantSessionSetting { get; private set; }
+
+    private static readonly Regex RlsSettingNamePattern =
+        new(@"^[a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Enable PostgreSQL Row Level Security. Marten will:
+    /// 1. Call set_config('{settingName}', '{tenantId}', false) on every connection
+    /// 2. Automatically create RLS policies on conjoined-tenancy tables
+    /// </summary>
+    /// <param name="settingName">
+    /// The PostgreSQL session setting name to use. Must be a qualified custom GUC
+    /// identifier of the form "prefix.name" (letters, digits, underscores only).
+    /// Defaults to "app.tenant_id".
+    /// </param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="settingName"/> is not a qualified identifier.
+    /// Required because the setting name is interpolated into <c>current_setting(...)</c>
+    /// inside the generated RLS policy DDL.
+    /// </exception>
+    public void UseRowLevelSecurity(string settingName = "app.tenant_id")
+    {
+        if (!RlsSettingNamePattern.IsMatch(settingName))
+        {
+            throw new ArgumentException(
+                $"Setting name '{settingName}' is not a valid PostgreSQL custom GUC identifier. " +
+                "Expected form: 'prefix.name' using letters, digits, and underscores.",
+                nameof(settingName));
+        }
+
+        RlsTenantSessionSetting = settingName;
+    }
 
     /// <summary>
     /// Polly policies for retries within Marten command execution

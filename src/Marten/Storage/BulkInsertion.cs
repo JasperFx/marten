@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Sessions.Rls;
 using Marten.Schema.BulkLoading;
 using Npgsql;
 using Weasel.Postgresql;
@@ -14,11 +15,20 @@ namespace Marten.Storage;
 internal class BulkInsertion: IDisposable
 {
     private readonly Tenant _tenant;
+    private readonly string? _rlsSettingName;
 
     public BulkInsertion(Tenant tenant, StoreOptions options)
     {
         _tenant = tenant;
         Serializer = options.Serializer();
+        _rlsSettingName = options.RlsTenantSessionSetting;
+    }
+
+    private Task applyRlsIfEnabledAsync(NpgsqlConnection conn, CancellationToken cancellation)
+    {
+        return _rlsSettingName is null
+            ? Task.CompletedTask
+            : RlsSessionVariableApplier.ApplyAsync(conn, _rlsSettingName, _tenant.TenantId, cancellation);
     }
 
     public ISerializer Serializer { get; }
@@ -41,6 +51,7 @@ internal class BulkInsertion: IDisposable
 
             await using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
+            await applyRlsIfEnabledAsync(conn, cancellation).ConfigureAwait(false);
 
             var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
             try
@@ -70,6 +81,7 @@ internal class BulkInsertion: IDisposable
             await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
             await using var conn = _tenant.Database.CreateConnection();
             await conn.OpenAsync(cancellation).ConfigureAwait(false);
+            await applyRlsIfEnabledAsync(conn, cancellation).ConfigureAwait(false);
             conn.EnlistTransaction(transaction);
             await bulkInsertDocumentsAsync(documents, batchSize, conn, mode, cancellation).ConfigureAwait(false);
         }
@@ -99,6 +111,7 @@ internal class BulkInsertion: IDisposable
         await using var conn = _tenant.Database.CreateConnection();
 
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        await applyRlsIfEnabledAsync(conn, cancellation).ConfigureAwait(false);
         var tx = await conn.BeginTransactionAsync(cancellation).ConfigureAwait(false);
 
         try
@@ -132,6 +145,7 @@ internal class BulkInsertion: IDisposable
 
         await using var conn = _tenant.Database.CreateConnection();
         await conn.OpenAsync(cancellation).ConfigureAwait(false);
+        await applyRlsIfEnabledAsync(conn, cancellation).ConfigureAwait(false);
         conn.EnlistTransaction(transaction);
 
         foreach (var group in groups)
