@@ -371,3 +371,73 @@ public class ApiResponseRecord
     public string Response { get; set; }
     public DateTime RequestTimeUtc { get; set; }
 }
+
+public class computed_indexes_jsonpropertyname : OneOffConfigurationsContext
+{
+    [Fact]
+    public async Task datetimeoffset_index_ddl_uses_json_property_name()
+    {
+        StoreOptions(_ =>
+        {
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsInteger, Casing.Default);
+            _.Schema.For<Bug4253Doc>().Index(x => x.Timestamp, c => c.Name = "idx_b4253_ts");
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+
+        await theStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+
+        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Bug4253Doc));
+        var index = table.IndexFor("idx_b4253_ts");
+
+        index.ShouldNotBeNull();
+        var ddl = index.ToDDL(table);
+
+        // Must reference the JSON key 'ts' from [JsonPropertyName], not the C# name 'Timestamp'
+        ddl.ShouldContain("'ts'");
+        ddl.ShouldNotContain("'Timestamp'");
+    }
+
+    [Fact]
+    public async Task datetimeoffset_required_init_index_ddl_uses_json_property_name()
+    {
+        StoreOptions(_ =>
+        {
+            _.UseSystemTextJsonForSerialization(EnumStorage.AsInteger, Casing.Default);
+            _.Schema.For<Bug4253RequiredInitDoc>().Index(x => x.Timestamp, c => c.Name = "idx_b4253_req_ts");
+            _.AutoCreateSchemaObjects = AutoCreate.All;
+        });
+
+        await theStore.Storage.Database.ApplyAllConfiguredChangesToDatabaseAsync(AutoCreate.CreateOrUpdate);
+
+        var table = await theStore.Tenancy.Default.Database.ExistingTableFor(typeof(Bug4253RequiredInitDoc));
+        var index = table.IndexFor("idx_b4253_req_ts");
+
+        index.ShouldNotBeNull();
+        var ddl = index.ToDDL(table);
+
+        ddl.ShouldContain("'ts'");
+        ddl.ShouldNotContain("'Timestamp'");
+    }
+}
+
+public class Bug4253Doc
+{
+    public Guid Id { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("ts")]
+    public DateTimeOffset Timestamp { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("auid")]
+    public int ActorUserId { get; set; }
+}
+
+public class Bug4253RequiredInitDoc
+{
+    public Guid Id { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("ts")]
+    public required DateTimeOffset Timestamp { get; init; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("auid")]
+    public required int ActorUserId { get; init; }
+}
