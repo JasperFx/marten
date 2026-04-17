@@ -239,11 +239,11 @@ that dispatch any `IResult` return value), `Marten.AspNetCore` ships three typed
 result wrappers that carry the streaming behavior above as endpoint return values
 while also contributing correct OpenAPI metadata:
 
-| Type                 | Source                                           | Response shape    | 404 on miss? |
-| -------------------- | ------------------------------------------------ | ----------------- | ------------ |
-| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query  | Single `T`        | yes          |
+| Type                 | Source                                           | Response shape    | 404 on miss?           |
+| -------------------- | ------------------------------------------------ | ----------------- | ---------------------- |
+| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query  | Single `T`        | yes                    |
 | `StreamMany<T>`      | `IQueryable<T>` — regular Marten document query  | JSON array `T[]`  | no (empty array = 200) |
-| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced   | Single `T`        | yes          |
+| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced   | Single `T`        | yes                    |
 
 Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
 `ExecuteAsync`) and `IEndpointMetadataProvider` (so Swashbuckle, NSwag, and the
