@@ -231,3 +231,117 @@ writes the raw JSON to any `Stream`, which you can use to build your own respons
 var stream = new MemoryStream();
 bool found = await session.Events.StreamLatestJson<Order>(orderId, stream);
 ```
+
+## Typed Streaming Result Types <Badge type="tip" text="8.x" />
+
+For Minimal API endpoints (and for frameworks like [Wolverine.Http](https://wolverinefx.net/guide/http/)
+that dispatch any `IResult` return value), `Marten.AspNetCore` ships three typed
+result wrappers that carry the streaming behavior above as endpoint return values
+while also contributing correct OpenAPI metadata:
+
+| Type                 | Source                                           | Response shape    | 404 on miss?           |
+| -------------------- | ------------------------------------------------ | ----------------- | ---------------------- |
+| `StreamOne<T>`       | `IQueryable<T>` — regular Marten document query  | Single `T`        | yes                    |
+| `StreamMany<T>`      | `IQueryable<T>` — regular Marten document query  | JSON array `T[]`  | no (empty array = 200) |
+| `StreamAggregate<T>` | `IDocumentSession` + stream id — event-sourced   | Single `T`        | yes                    |
+
+Each type implements both `IResult` (so ASP.NET Minimal API dispatches it via
+`ExecuteAsync`) and `IEndpointMetadataProvider` (so Swashbuckle, NSwag, and the
+built-in OpenAPI generator see the right response shape), while delegating the
+actual body write to `WriteSingle`/`WriteArray`/`WriteLatest`. Returning one
+from an endpoint is a concise, typed alternative to writing the HTTP handshake
+manually.
+
+### `StreamOne<T>` — single document with 404 on miss
+
+```csharp
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == id)));
+```
+
+Returns `200 application/json` with the document JSON on a hit, `404` on a miss.
+`Content-Length` and `Content-Type` are set automatically, matching the
+behavior of `WriteSingle<T>`.
+
+### `StreamMany<T>` — JSON array
+
+```csharp
+app.MapGet("/issues/open",
+    (IQuerySession session) =>
+        new StreamMany<Issue>(session.Query<Issue>().Where(x => x.Open)));
+```
+
+Returns `200 application/json` with a JSON array body. An empty result set
+yields `[]`, not a 404 — matching the behavior of `WriteArray<T>`.
+
+### `StreamAggregate<T>` — event-sourced aggregate (latest)
+
+```csharp
+app.MapGet("/orders/{id:guid}",
+    (Guid id, IDocumentSession session) =>
+        new StreamAggregate<Order>(session, id));
+```
+
+Returns `200 application/json` with the JSON of the latest projected aggregate
+state, or `404` if no stream exists. A constructor overload accepts `string`
+ids for stores configured with string-keyed streams.
+
+### StreamOne vs StreamAggregate
+
+- **`StreamOne<T>`** is for regular Marten documents — plain objects persisted
+  via `session.Store()` and queried with `session.Query<T>()`. The query hits
+  the document table directly.
+- **`StreamAggregate<T>`** is for event-sourced aggregates. Marten rebuilds the
+  latest aggregate state by folding events from the event store (or reads a
+  projected snapshot if one is configured). Use this when `T` is an
+  event-sourced aggregate, not a stored document.
+
+### Customizing status code and content type
+
+All three types expose init-only properties:
+
+```csharp
+app.MapPost("/issues",
+    (CreateIssue cmd, IQuerySession session) =>
+        new StreamOne<Issue>(session.Query<Issue>().Where(x => x.Id == cmd.IssueId))
+        {
+            OnFoundStatus = StatusCodes.Status201Created,
+            ContentType = "application/vnd.myapi.issue+json"
+        });
+```
+
+### Compiled query overloads
+
+`StreamOne` and `StreamMany` also accept Marten compiled queries. These overloads
+take an extra generic argument for the query result type and the `IQuerySession`
+alongside the compiled query:
+
+```csharp
+public class IssueById : ICompiledQuery<Issue, Issue>
+{
+    public Guid Id { get; set; }
+    public Expression<Func<IMartenQueryable<Issue>, Issue>> QueryIs()
+        => q => q.FirstOrDefault(x => x.Id == Id);
+}
+
+public class OpenIssues : ICompiledListQuery<Issue>
+{
+    public Expression<Func<IMartenQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
+        => q => q.Where(x => x.Open);
+}
+
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue, Issue>(session, new IssueById { Id = id }));
+
+app.MapGet("/issues/open",
+    (IQuerySession session) =>
+        new StreamMany<Issue, IEnumerable<Issue>>(session, new OpenIssues()));
+```
+
+These use `WriteOne` / `WriteArray` for compiled queries under the hood. OpenAPI
+metadata advertises `200: TOut` (and `404` for `StreamOne`), where `TOut` is the
+compiled query's declared return type. Prefer compiled queries when the endpoint
+is on a hot path — Marten caches the compiled SQL and bypasses LINQ parsing on
+subsequent calls.
