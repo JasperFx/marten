@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -196,6 +197,115 @@ public class GroupingForUnknownIdsByBookKeepingIdListExample: OneOffConfiguratio
         public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _)
             => view.ShippingLabels++;
     }
+    #endregion
+}
+
+public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
+{
+    // Pattern 4 — batch-aware grouper.
+    //
+    // Unlike Pattern 1 (which relies on an inline lookup projection that MUST have
+    // committed before the async daemon processes the batch) and Pattern 2 (which
+    // races the projected document being updated), Pattern 4's grouper consults the
+    // current batch's events FIRST to pick up any link events that share the batch,
+    // and falls back to a DB lookup for links that were committed earlier. An
+    // in-memory per-grouper-instance cache keeps repeated DB lookups off the hot path.
+    //
+    // This pattern is safe under same-batch ordering of link + usage events.
+
+    public record CustomerRegistered(Guid CustomerId, string DisplayName);
+    public record CustomerLinkedToExternalAccount(Guid CustomerId, string ExternalAccountId);
+    public record ShippingLabelCreated(string ExternalAccountId);
+
+    #region sample_batch-aware-grouper
+
+    public class CustomerBillingMetrics
+    {
+        public Guid Id { get; set; }
+        public int ShippingLabels { get; set; }
+    }
+
+    public class ExternalAccountLink
+    {
+        public required string Id { get; set; }
+        public required Guid CustomerId { get; set; }
+    }
+
+    public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+    {
+        public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
+        {
+            link.Id = e.ExternalAccountId;
+            link.CustomerId = e.CustomerId;
+        }
+    }
+
+    /// <summary>
+    /// Batch-aware grouper: consults in-batch link events first, then falls back to
+    /// a DB lookup for any external ids still unresolved. Maintains a small
+    /// grouper-instance cache to avoid repeated DB round-trips across daemon cycles.
+    /// </summary>
+    public class BatchAwareExternalAccountGrouper: IAggregateGrouper<Guid>
+    {
+        private readonly ConcurrentDictionary<string, Guid> _cache = new();
+
+        public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+        {
+            var materialized = events as IReadOnlyCollection<IEvent> ?? events.ToList();
+
+            var labelEvents = materialized.OfType<IEvent<ShippingLabelCreated>>().ToList();
+            if (labelEvents.Count == 0) return;
+
+            // 1) Pick up any link events that share THIS batch.
+            foreach (var linkEvent in materialized.OfType<IEvent<CustomerLinkedToExternalAccount>>())
+            {
+                _cache[linkEvent.Data.ExternalAccountId] = linkEvent.Data.CustomerId;
+            }
+
+            // 2) For any external ids still unresolved, query the lookup table.
+            var unresolved = labelEvents
+                .Select(x => x.Data.ExternalAccountId)
+                .Distinct()
+                .Where(id => !_cache.ContainsKey(id))
+                .ToList();
+
+            if (unresolved.Count > 0)
+            {
+                var links = await session.Query<ExternalAccountLink>()
+                    .Where(x => unresolved.Contains(x.Id))
+                    .Select(x => new { x.Id, x.CustomerId })
+                    .ToListAsync();
+
+                foreach (var link in links)
+                {
+                    _cache[link.Id] = link.CustomerId;
+                }
+            }
+
+            // 3) Route each usage event to the matching customer id.
+            foreach (var e in labelEvents)
+            {
+                if (_cache.TryGetValue(e.Data.ExternalAccountId, out var customerId))
+                {
+                    grouping.AddEvent(customerId, e);
+                }
+            }
+        }
+    }
+
+    public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+    {
+        public CustomerBillingProjection()
+        {
+            Identity<CustomerRegistered>(e => e.CustomerId);
+            CustomGrouping(new BatchAwareExternalAccountGrouper());
+        }
+
+        public CustomerBillingMetrics Create(CustomerRegistered e) => new() { Id = e.CustomerId };
+
+        public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _) => view.ShippingLabels++;
+    }
+
     #endregion
 }
 
