@@ -63,6 +63,27 @@ public static class StreamingMinimalEndpoints
             (string id, IDocumentSession session)
                 => new StreamAggregate<NamedOrder>(session, id));
 
+        // --- StreamOne<TDoc, TOut> — compiled query ---
+
+        app.MapGet("/minimal/compiled/issue/{id:guid}",
+            (Guid id, IQuerySession session)
+                => new StreamOne<Issue, Issue>(session, new IssueById { Id = id }));
+
+        // Custom OnFoundStatus for the compiled single overload
+        app.MapGet("/minimal/compiled/issue/{id:guid}/accepted",
+            (Guid id, IQuerySession session)
+                => new StreamOne<Issue, Issue>(session, new IssueById { Id = id })
+                {
+                    OnFoundStatus = StatusCodes.Status202Accepted
+                });
+
+        // --- StreamMany<TDoc, TOut> — compiled list query ---
+
+        app.MapGet("/minimal/compiled/issues/open",
+            (IQuerySession session)
+                => new StreamMany<Issue, System.Collections.Generic.IEnumerable<Issue>>(
+                    session, new OpenIssues()));
+
         return app;
     }
 }

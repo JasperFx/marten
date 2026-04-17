@@ -310,3 +310,38 @@ app.MapPost("/issues",
             ContentType = "application/vnd.myapi.issue+json"
         });
 ```
+
+### Compiled query overloads
+
+`StreamOne` and `StreamMany` also accept Marten compiled queries. These overloads
+take an extra generic argument for the query result type and the `IQuerySession`
+alongside the compiled query:
+
+```csharp
+public class IssueById : ICompiledQuery<Issue, Issue>
+{
+    public Guid Id { get; set; }
+    public Expression<Func<IMartenQueryable<Issue>, Issue>> QueryIs()
+        => q => q.FirstOrDefault(x => x.Id == Id);
+}
+
+public class OpenIssues : ICompiledListQuery<Issue>
+{
+    public Expression<Func<IMartenQueryable<Issue>, IEnumerable<Issue>>> QueryIs()
+        => q => q.Where(x => x.Open);
+}
+
+app.MapGet("/issues/{id:guid}",
+    (Guid id, IQuerySession session) =>
+        new StreamOne<Issue, Issue>(session, new IssueById { Id = id }));
+
+app.MapGet("/issues/open",
+    (IQuerySession session) =>
+        new StreamMany<Issue, IEnumerable<Issue>>(session, new OpenIssues()));
+```
+
+These use `WriteOne` / `WriteArray` for compiled queries under the hood. OpenAPI
+metadata advertises `200: TOut` (and `404` for `StreamOne`), where `TOut` is the
+compiled query's declared return type. Prefer compiled queries when the endpoint
+is on a hot path — Marten caches the compiled SQL and bypasses LINQ parsing on
+subsequent calls.

@@ -224,6 +224,102 @@ public class streaming_result_types_tests: IntegrationContext
             .ShouldContain(m => m.StatusCode == 404);
     }
 
+    // ───────────────── StreamOne<TDoc, TOut> compiled query ─────────────────
+
+    [Fact]
+    public async Task compiled_stream_one_returns_matching_document_as_json()
+    {
+        var issue = new Issue { Description = "compiled stream_one hit", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/compiled/issue/{issue.Id}");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        var read = result.ReadAsJson<Issue>();
+        read.Description.ShouldBe(issue.Description);
+    }
+
+    [Fact]
+    public async Task compiled_stream_one_returns_404_when_no_match()
+    {
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/compiled/issue/{Guid.NewGuid()}");
+            s.StatusCodeShouldBe(404);
+        });
+    }
+
+    [Fact]
+    public async Task compiled_stream_one_honours_custom_onfound_status()
+    {
+        var issue = new Issue { Description = "compiled custom-status", Open = true };
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(issue);
+            await session.SaveChangesAsync();
+        }
+
+        await theHost.Scenario(s =>
+        {
+            s.Get.Url($"/minimal/compiled/issue/{issue.Id}/accepted");
+            s.StatusCodeShouldBe(202);
+        });
+    }
+
+    [Fact]
+    public void compiled_stream_one_endpoint_advertises_produces_T_and_404_in_metadata()
+    {
+        var metadata = EndpointMetadataFor("GET", "/minimal/compiled/issue/{id:guid}");
+
+        metadata.OfType<IProducesResponseTypeMetadata>()
+            .ShouldContain(m => m.StatusCode == 200 && m.Type == typeof(Issue));
+        metadata.OfType<IProducesResponseTypeMetadata>()
+            .ShouldContain(m => m.StatusCode == 404);
+    }
+
+    // ──────────────── StreamMany<TDoc, TOut> compiled list query ────────────────
+
+    [Fact]
+    public async Task compiled_stream_many_returns_json_array()
+    {
+        await using (var session = theHost.Services.GetRequiredService<IDocumentStore>().LightweightSession())
+        {
+            session.Store(new Issue { Description = "compiled-open-1", Open = true });
+            session.Store(new Issue { Description = "compiled-open-2", Open = true });
+            session.Store(new Issue { Description = "compiled-closed", Open = false });
+            await session.SaveChangesAsync();
+        }
+
+        var result = await theHost.Scenario(s =>
+        {
+            s.Get.Url("/minimal/compiled/issues/open");
+            s.StatusCodeShouldBe(200);
+            s.ContentTypeShouldBe("application/json");
+        });
+
+        var read = result.ReadAsJson<List<Issue>>();
+        read.ShouldNotBeNull();
+        read.ShouldAllBe(x => x.Open);
+    }
+
+    [Fact]
+    public void compiled_stream_many_endpoint_advertises_produces_enumerable_in_metadata()
+    {
+        var metadata = EndpointMetadataFor("GET", "/minimal/compiled/issues/open");
+
+        // TOut is IEnumerable<Issue> for OpenIssues : ICompiledListQuery<Issue>
+        metadata.OfType<IProducesResponseTypeMetadata>()
+            .ShouldContain(m => m.StatusCode == 200 && m.Type == typeof(IEnumerable<Issue>));
+    }
+
     private EndpointMetadataCollection EndpointMetadataFor(string method, string pattern)
     {
         var endpoint = theHost.Services.GetServices<EndpointDataSource>()
