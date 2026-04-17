@@ -165,9 +165,9 @@ public sealed class SessionOptions
         {
             if (IsolationLevel == IsolationLevel.Serializable)
             {
-                var transaction = mode == CommandRunnerMode.ReadOnly
+                TransactionalConnection transaction = mode == CommandRunnerMode.ReadOnly
                     ? new RlsReadOnlyTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout }
-                    : (TransactionalConnection)new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
+                    : new RlsTransactionalConnection(this, tenantId, rls) { CommandTimeout = timeout };
                 transaction.BeginTransaction();
                 return transaction;
             }
