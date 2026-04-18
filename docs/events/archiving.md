@@ -253,3 +253,28 @@ If you rely on asynchronous multi-stream projections and need all events to be p
 
 This ensures all prior events are fully projected before the stream is marked as archived.
 :::
+
+### Archived in Composite Projections <Badge type="tip" text="8.x" />
+
+When multiple single-stream projections run inside the same
+[composite projection](/events/projections/composite), every child projection
+processes every slice in the batch. An `Archived` event raised on one child's
+stream is therefore *seen* by every sibling. To prevent unintended side effects,
+Marten gates `Archived` handling on whether a given child actually **owns** the
+stream — measured by whether the child has a snapshot for that stream id (either
+loaded before the slice was applied, or materialized by the slice itself):
+
+1. `Archived` can never **create** a new aggregate in a sibling that has no
+   snapshot. If a sibling happens to declare `Create(Archived)` — legal but
+   almost always accidental in a composite — that method is skipped while the
+   snapshot is still null. Once the snapshot exists, `Apply(Archived)` hooks
+   run normally, so `Apply(Archived, current)` patterns on genuine owners keep
+   working.
+2. `mt_archive_stream` is only issued from the child that owns the stream.
+   Siblings that did not materialize anything skip the archival call, avoiding
+   redundant (or phantom) database operations.
+
+In practice: appending `Archived` to a stream that belongs to projection A
+archives that stream from A's perspective, even when A shares a composite group
+with unrelated sibling projections B and C. No documents are created in B or C
+for A's stream id.
