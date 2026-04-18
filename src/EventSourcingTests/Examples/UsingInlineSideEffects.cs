@@ -9,7 +9,7 @@ public class UsingInlineSideEffects
 {
     public static async Task bootstrap()
     {
-        #region sample_using_EnableSideEffectsOnInlineProjections
+        #region sample_using_enablesideeffectsoninlineprojections
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>

@@ -5,7 +5,7 @@ using JasperFx.Core;
 
 namespace EventSourcingTests.Projections;
 
-#region sample_QuestPartyWithEvents
+#region sample_questpartyWithEvents
 public class QuestPartyWithEvents
 {
     private readonly IList<string> _members = new List<string>();

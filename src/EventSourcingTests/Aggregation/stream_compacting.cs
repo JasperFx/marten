@@ -442,7 +442,7 @@ public class LetterCountsProjection1: SingleStreamProjection<LetterCounts, Guid>
 
 public class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
 {
-    #region sample_EvolveAsync
+    #region sample_evolveasync
 
     public override ValueTask<LetterCounts> EvolveAsync(LetterCounts snapshot, Guid id, IQuerySession session, IEvent e, CancellationToken cancellation)
     {

@@ -328,7 +328,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
     internal async Task BulkInsertModeSamples()
     {
-        #region sample_BulkInsertMode_usages
+        #region sample_bulkinsertmode_usages
 
         // Just say we have an array of documents we want to bulk insert
         var data = Target.GenerateRandomData(100).ToArray();
@@ -361,7 +361,7 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
 
     internal async Task MultiTenancySample()
     {
-        #region sample_MultiTenancyWithBulkInsert
+        #region sample_multitenancywithbulkinsert
 
         // Just say we have an array of documents we want to bulk insert
         var data = Target.GenerateRandomData(100).ToArray();

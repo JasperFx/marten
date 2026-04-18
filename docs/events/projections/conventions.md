@@ -13,7 +13,7 @@ document type -- which doesn't have to be public by the way.
 
 You can also use a constructor that takes an event type as shown in this sample of a `Trip` stream aggregation:
 
-<!-- snippet: sample_Trip_stream_aggregation -->
+<!-- snippet: sample_trip_stream_aggregation -->
 <a id='snippet-sample_trip_stream_aggregation'></a>
 ```cs
 public class Trip
@@ -69,7 +69,7 @@ public class Trip
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
 
-<!-- snippet: sample_TripProjection_aggregate -->
+<!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
 public class TripProjection: SingleStreamProjection<Trip, Guid>
@@ -120,7 +120,7 @@ Marten will apply all those event types that can be cast to the interface or abs
 
 To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the overloads of `ProjectEvent()`:
 
-<!-- snippet: sample_using_ProjectEvent_in_aggregate_projection -->
+<!-- snippet: sample_using_projectevent_in_aggregate_projection -->
 <a id='snippet-sample_using_projectevent_in_aggregate_projection'></a>
 ```cs
 public class TripProjection: SingleStreamProjection<Trip, Guid>
@@ -151,7 +151,7 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
 
 I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
 
-<!-- snippet: sample_TripProjection_aggregate -->
+<!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
 public class TripProjection: SingleStreamProjection<Trip, Guid>

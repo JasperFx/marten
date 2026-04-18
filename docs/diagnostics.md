@@ -43,7 +43,7 @@ All of the functionality in this section was added as part of Marten v0.8
 
 Marten has a facility for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
 
-<!-- snippet: sample_IDocumentSessionListener -->
+<!-- snippet: sample_idocumentsessionlistener -->
 <a id='snippet-sample_idocumentsessionlistener'></a>
 ```cs
 public interface IChangeListener
@@ -211,7 +211,7 @@ Listeners will never get activated during projection rebuilds to safe guard agai
 :::
 
 A sample listener:
-<!-- snippet: sample_AsyncDaemonListener -->
+<!-- snippet: sample_asyncdaemonlistener -->
 <a id='snippet-sample_asyncdaemonlistener'></a>
 ```cs
 public class FakeListener: IChangeListener
@@ -241,7 +241,7 @@ public class FakeListener: IChangeListener
 <!-- endSnippet -->
 
 Wiring a Async Daemon listener:
-<!-- snippet: sample_AsyncListeners -->
+<!-- snippet: sample_asynclisteners -->
 <a id='snippet-sample_asynclisteners'></a>
 ```cs
 var listener = new FakeListener();
@@ -258,7 +258,7 @@ StoreOptions(x =>
 
 Marten v0.8 comes with a new mechanism to plug in custom logging to the `IDocumentStore`, `IQuerySession`, and `IDocumentSession` activity:
 
-<!-- snippet: sample_IMartenLogger -->
+<!-- snippet: sample_imartenlogger -->
 <a id='snippet-sample_imartenlogger'></a>
 ```cs
 /// <summary>
@@ -372,7 +372,7 @@ session.Logger = new RecordingLogger();
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
 
-<!-- snippet: sample_ConsoleMartenLogger -->
+<!-- snippet: sample_consolemartenlogger -->
 <a id='snippet-sample_consolemartenlogger'></a>
 ```cs
 public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger

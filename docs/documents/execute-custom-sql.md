@@ -4,7 +4,7 @@ Use `QueueSqlCommand(string sql, params object[] parameterValues)` method to reg
 
 `?` placeholders can be used to denote parameter values. Postgres [type casts `::`](https://www.postgresql.org/docs/15/sql-expressions.html#SQL-SYNTAX-TYPE-CASTS) can be applied to the parameter if needed. If the `?` character is not suitable as a placeholder because you need to use `?` in your sql query, you can change the placeholder by providing an alternative. Pass this in before the sql argument. 
 
-<!-- snippet: sample_QueueSqlCommand -->
+<!-- snippet: sample_queuesqlcommand -->
 <a id='snippet-sample_queuesqlcommand'></a>
 ```cs
 theSession.QueueSqlCommand("insert into names (name) values ('Jeremy')");

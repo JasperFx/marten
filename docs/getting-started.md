@@ -29,7 +29,7 @@ dotnet paket add Marten
 
 In the startup of your .NET application, make a call to `AddMarten()` to register Marten services like so:
 
-<!-- snippet: sample_StartupConfigureServices -->
+<!-- snippet: sample_startupconfigureservices -->
 <a id='snippet-sample_startupconfigureservices'></a>
 ```cs
 // This is the absolute, simplest way to integrate Marten into your
@@ -73,7 +73,7 @@ Marten uses the [Npgsql](http://www.npgsql.org) library to access PostgreSQL fro
 
 Now, for your first document type, we'll represent the users in our system:
 
-<!-- snippet: sample_GettingStartedUser -->
+<!-- snippet: sample_gettingstarteduser -->
 <a id='snippet-sample_gettingstarteduser'></a>
 ```cs
 public class User
@@ -98,7 +98,7 @@ you'll rarely need to interact with that service.
 
 From here, an instance of `IDocumentStore` or a type of `IDocumentSession` can be injected into the class/controller/endpoint of your choice and we can start persisting and loading user documents:
 
-<!-- snippet: sample_UserEndpoints -->
+<!-- snippet: sample_userendpoints -->
 <a id='snippet-sample_userendpoints'></a>
 ```cs
 // You can inject the IDocumentStore and open sessions yourself

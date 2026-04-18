@@ -163,7 +163,7 @@ public class StreamCompactingRequest<T>
     }
 }
 
-#region sample_IEventsArchiver
+#region sample_ieventsarchiver
 
 /// <summary>
 /// Callback interface for executing event archiving

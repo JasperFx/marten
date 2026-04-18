@@ -127,7 +127,7 @@ The out-of-the box convention is to expose `public Apply(<EventType>)` methods o
 
 Sticking with the fantasy theme, the `QuestParty` class shown below could be used to aggregate streams of quest data:
 
-<!-- snippet: sample_QuestParty -->
+<!-- snippet: sample_questparty -->
 <a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
@@ -214,7 +214,7 @@ At this point, you would be able to query against `QuestParty` as just another d
 `AddMarten()`, all the projections registered in your Marten application will have an instance property for the
 `ILogger` like this:
 
-<!-- snippet: sample_using_Logger_in_projections -->
+<!-- snippet: sample_using_logger_in_projections -->
 <a id='snippet-sample_using_logger_in_projections'></a>
 ```cs
 // If you have to be all special and want to group the logging

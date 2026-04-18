@@ -57,7 +57,7 @@ For strictly read-only querying, the `QuerySession` is a lightweight session tha
 for reading. The `IServiceCollection.AddMarten()` configuration will set up a DI registration for
 `IQuerySession`, so you can inject that into classes like this sample MVC controller:
 
-<!-- snippet: sample_GetIssueController -->
+<!-- snippet: sample_getissuecontroller -->
 <a id='snippet-sample_getissuecontroller'></a>
 ```cs
 public class GetIssueController: ControllerBase
@@ -315,7 +315,7 @@ There is no place within Marten where it keeps a stateful connection open across
 By default, Marten just uses the underlying timeout configuration from the [Npgsql connection string](http://www.npgsql.org/doc/connection-string-parameters.html).
 You can though, opt to set a different command timeout per session with this syntax:
 
-<!-- snippet: sample_ConfigureCommandTimeout -->
+<!-- snippet: sample_configurecommandtimeout -->
 <a id='snippet-sample_configurecommandtimeout'></a>
 ```cs
 public void ConfigureCommandTimeout(IDocumentStore store)

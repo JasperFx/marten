@@ -10,7 +10,7 @@ using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.ConfiguringSessionCreation;
 
-#region sample_CustomSessionFactory
+#region sample_customsessionfactory
 
 public class CustomSessionFactory: ISessionFactory
 {
@@ -53,7 +53,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenWithCustomSessionCreation
+        #region sample_addmartenwithcustomsessioncreation
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>

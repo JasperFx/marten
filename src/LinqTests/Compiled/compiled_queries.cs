@@ -35,7 +35,7 @@ public class compiled_queries: IntegrationContext
         await theStore.BulkInsertDocumentsAsync(new[] { _user1, user2, user3, user4, _user5 });
     }
 
-    #region sample_using_QueryStatistics_with_compiled_query
+    #region sample_using_querystatistics_with_compiled_query
 
     [Fact]
     public async Task use_compiled_query_with_statistics()
@@ -374,7 +374,7 @@ public class compiled_queries: IntegrationContext
     }
 }
 
-#region sample_FindUserByAllTheThings
+#region sample_finduserbyallthethings
 
 public class FindUserByAllTheThings: ICompiledQuery<User>
 {
@@ -393,7 +393,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 
 #endregion
 
-#region sample_CompiledAsJson
+#region sample_compiledasjson
 
 public class FindJsonUserByUsername: ICompiledQuery<User>
 {
@@ -408,7 +408,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
 
 #endregion
 
-#region sample_CompiledToJsonArray
+#region sample_compiledtojsonarray
 
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 {
@@ -522,7 +522,7 @@ public class LoginPayload
     public string Username { get; set; }
 }
 
-#region sample_TargetsInOrder
+#region sample_targetsinorder
 
 public class TargetsInOrder: ICompiledListQuery<Target>
 {
@@ -586,7 +586,7 @@ public class UserByUsernameSingleOrDefault: ICompiledQuery<User>
     }
 }
 
-#region sample_UsersByFirstName-Query
+#region sample_usersbyfirstname-query
 
 public class UsersByFirstName: ICompiledListQuery<User>
 {
@@ -611,7 +611,7 @@ public class UsersByFirstNameWithFields: ICompiledListQuery<User>
     }
 }
 
-#region sample_UserNamesForFirstName
+#region sample_usernamesforfirstname
 
 public class UserNamesForFirstName: ICompiledListQuery<User, string>
 {

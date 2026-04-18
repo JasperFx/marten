@@ -21,7 +21,7 @@ namespace CoreTests;
 
 public class SessionOptionsTests: OneOffConfigurationsContext
 {
-    #region sample_ConfigureCommandTimeout
+    #region sample_configurecommandtimeout
 
     public void ConfigureCommandTimeout(IDocumentStore store)
     {

@@ -24,7 +24,7 @@ public sealed record MembersEscaped(Guid QuestId, string Location, string[] Memb
 #endregion
 
 
-#region sample_QuestParty
+#region sample_questparty
 
 public sealed record QuestParty(Guid Id, List<string> Members)
 {
@@ -51,7 +51,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
 
 #endregion
 
-#region sample_AddMembers_command_handler
+#region sample_addmembers_command_handler
 
 public record AddMembers(Guid Id, int Day, string Location, string[] Members);
 
@@ -81,7 +81,7 @@ public static class AddMembersHandler
 #endregion
 
 
-#region sample_Quest
+#region sample_quest
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 
 public sealed class QuestProjection: SingleStreamProjection<Quest, Guid>

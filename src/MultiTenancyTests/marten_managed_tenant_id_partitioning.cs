@@ -293,7 +293,7 @@ public class marten_managed_tenant_id_partitioning: StoreContext<MartenManagedPa
     }
 }
 
-#region sample_using_DoNotPartitionAttribute
+#region sample_using_donotpartitionattribute
 
 [DoNotPartition]
 public class DocThatShouldBeExempted1

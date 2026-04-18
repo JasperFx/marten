@@ -26,7 +26,7 @@ public partial class AppointmentDurationProjection : EventProjection
         Options.DeleteDataInTableOnTeardown(table.Identifier.QualifiedName);
     }
 
-    #region sample_using_Logger_in_projections
+    #region sample_using_logger_in_projections
 
     // If you have to be all special and want to group the logging
     // your own way, just override this method:

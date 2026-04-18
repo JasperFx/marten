@@ -26,7 +26,7 @@ public class using_per_database_multitenancy: IAsyncLifetime
     private IHost _host;
     private IDocumentStore theStore;
 
-    #region sample_MySpecialTenancy
+    #region sample_myspecialtenancy
 
     // Make sure you implement the Dispose() method and
     // dispose all MartenDatabase objects

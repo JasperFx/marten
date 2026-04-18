@@ -16,17 +16,17 @@ public class MigrationSamples
 
         });
 
-        #region sample_WritePatch
+        #region sample_writepatch
 
         // All migration code is async now!
         await store.Storage.Database.WriteMigrationFileAsync("1.initial.sql");
         #endregion
 
-        #region sample_ApplyAllConfiguredChangesToDatabase
+        #region sample_applyallconfiguredchangestodatabase
         await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
         #endregion
 
-        #region sample_AssertDatabaseMatchesConfiguration
+        #region sample_assertdatabasematchesconfiguration
         await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
         #endregion
     }

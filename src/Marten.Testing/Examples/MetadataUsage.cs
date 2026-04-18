@@ -7,7 +7,7 @@ public class MetadataUsage
 {
     public void DisableAllInformationalFields()
     {
-        #region sample_DisableAllInformationalFields
+        #region sample_disableallinformationalfields
 
         var store = DocumentStore.For(opts =>
         {
@@ -77,7 +77,7 @@ public class MetadataUsage
 
     #endregion
 
-    #region sample_DocWithMetadata
+    #region sample_docwithmetadata
 
     public class DocWithMetadata
     {
@@ -115,7 +115,7 @@ public class MetadataUsage
 
     public void ConfigureEventMetadata()
     {
-        #region sample_ConfigureEventMetadata
+        #region sample_configureeventmetadata
 
         var store = DocumentStore.For(opts =>
         {

@@ -295,7 +295,7 @@ var posts = session.Query<BlogPost>()
 
 They allow also to specify language (regConfig) of the text search query (by default `english` is being used)
 
-<!-- snippet: sample_text_search_with_non_default_regConfig_sample -->
+<!-- snippet: sample_text_search_with_non_default_regconfig_sample -->
 <a id='snippet-sample_text_search_with_non_default_regconfig_sample'></a>
 ```cs
 var posts = session.Query<BlogPost>()

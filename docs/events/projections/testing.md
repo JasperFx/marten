@@ -307,7 +307,7 @@ See Andrew Lock's blog post [Avoiding flaky tests with TimeProvider and ITimer](
 
 In the example projection, I've been capturing the timestamp in the `Invoice` document from the Marten event metadata:
 
-<!-- snippet: sample_using_event_metadata_in_Invoice -->
+<!-- snippet: sample_using_event_metadata_in_invoice -->
 <a id='snippet-sample_using_event_metadata_in_invoice'></a>
 ```cs
 public static Invoice Create(IEvent<InvoiceCreated> created)

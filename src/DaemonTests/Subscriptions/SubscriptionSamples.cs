@@ -22,7 +22,7 @@ using Newtonsoft.Json;
 
 namespace DaemonTests.Subscriptions;
 
-#region sample_ConsoleSubscription
+#region sample_consolesubscription
 
 public class ConsoleSubscription: ISubscription
 {
@@ -47,7 +47,7 @@ public class ConsoleSubscription: ISubscription
 
 #endregion
 
-#region sample_ErrorHandlingSubscription
+#region sample_errorhandlingsubscription
 
 public class ErrorHandlingSubscription: SubscriptionBase
 {
@@ -130,7 +130,7 @@ public static class SubscriptionBootstrapping
 {
     public static async Task bootstrap_console()
     {
-        #region sample_register_ConsoleSubscription
+        #region sample_register_consolesubscription
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>
@@ -167,7 +167,7 @@ public static class SubscriptionBootstrapping
 
     public static async Task bootstrap_kafka()
     {
-        #region sample_registering_KafkaSubscription
+        #region sample_registering_kafkasubscription
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>
@@ -288,7 +288,7 @@ public static class SubscriptionBootstrapping
     }
 }
 
-#region sample_KafkaSubscription
+#region sample_kafkasubscription
 
 public class KafkaSubscription: SubscriptionBase
 {

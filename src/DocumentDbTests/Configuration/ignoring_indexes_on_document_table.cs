@@ -24,7 +24,7 @@ public class ignoring_indexes_on_document_table : OneOffConfigurationsContext
     [Fact]
     public void ignore_index_through_configuration()
     {
-        #region sample_IgnoreIndex
+        #region sample_ignoreindex
         var store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);

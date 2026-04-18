@@ -7,7 +7,7 @@ that also adds a foreign key constraint to enforce referential integrity between
 One of our sample document types in Marten is the `Issue` class that has
 a couple properties that link to the id's of related `User` documents:
 
-<!-- snippet: sample_Issue -->
+<!-- snippet: sample_issue -->
 <a id='snippet-sample_issue'></a>
 ```cs
 public class Issue

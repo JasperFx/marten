@@ -208,7 +208,7 @@ public partial class ImportSqlProjection: EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/Flattened/using_event_projection_for_flat_tables.cs#L18-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_import_sql_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/Flattened/using_event_projection_for_flat_tables.cs#L29-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_import_sql_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 A couple notes about the `EventProjection` approach:

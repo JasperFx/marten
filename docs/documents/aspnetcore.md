@@ -96,7 +96,7 @@ that allow you to use Linq queries without the runtime overhead of continuously 
 
 Back to the sample endpoint above where we write an array of all the open issues. We can express the same query in a simple compiled query like this:
 
-<!-- snippet: sample_OpenIssues -->
+<!-- snippet: sample_openissues -->
 <a id='snippet-sample_openissues'></a>
 ```cs
 public class OpenIssues: ICompiledListQuery<Issue>
@@ -130,7 +130,7 @@ Likewise, you _could_ use a compiled query to write a single document. As a cont
 sample, here's an example compiled query that reads a single `Issue` document by its
 id:
 
-<!-- snippet: sample_IssueById -->
+<!-- snippet: sample_issuebyid -->
 <a id='snippet-sample_issuebyid'></a>
 ```cs
 public class IssueById: ICompiledQuery<Issue, Issue>

@@ -46,7 +46,7 @@ With conventional method usage, the `EventProjection` recipe does the pattern ma
 
 To show off what `EventProjection` does, here's a sample that uses most features that `EventProjection` supports:
 
-<!-- snippet: sample_SampleEventProjection -->
+<!-- snippet: sample_sampleeventprojection -->
 <a id='snippet-sample_sampleeventprojection'></a>
 ```cs
 public partial class SampleEventProjection : EventProjection

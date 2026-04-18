@@ -251,6 +251,27 @@ The consistency check only detects events that match the **same tag query**. Eve
 If you only need to know whether any events matching a tag query exist -- without loading or deserializing them -- use `EventsExistAsync`. This is a lightweight `SELECT EXISTS(...)` query that avoids the overhead of fetching and materializing event data:
 
 <!-- snippet: sample_marten_dcb_events_exist_async -->
+<a id='snippet-sample_marten_dcb_events_exist_async'></a>
+```cs
+[Fact]
+public async Task events_exist_returns_true_when_matching_events_found()
+{
+    var studentId = new StudentId(Guid.NewGuid());
+    var courseId = new CourseId(Guid.NewGuid());
+    var streamId = Guid.NewGuid();
+
+    var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+    enrolled.WithTag(studentId, courseId);
+    theSession.Events.Append(streamId, enrolled);
+    await theSession.SaveChangesAsync();
+
+    // Check existence -- lightweight, no event loading
+    var query = new EventTagQuery().Or<StudentId>(studentId);
+    var exists = await theSession.Events.EventsExistAsync(query);
+    exists.ShouldBeTrue();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_tag_query_and_consistency_tests.cs#L520-L538' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_events_exist_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This is useful for guard clauses and validation logic in DCB workflows where you need to check preconditions before appending new events.

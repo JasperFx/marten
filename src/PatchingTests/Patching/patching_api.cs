@@ -1434,7 +1434,7 @@ public class patching_api: OneOffConfigurationsContext
         (await theSession.Events.FetchStreamStateAsync(aggregateId)).Version.ShouldBe(2);
     }
 
-    #region sample_QuestPatchTestProjection
+    #region sample_questpatchtestprojection
 
     public class QuestPatchTestProjection: IProjection
     {

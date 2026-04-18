@@ -37,7 +37,7 @@ To that end, Marten has the `FetchForWriting()` operation for optimized command 
 
 Let's say that you are building an order fulfillment system, so we're naturally going to model our domain as an `Order` aggregate:
 
-<!-- snippet: sample_Order_for_optimized_command_handling -->
+<!-- snippet: sample_order_for_optimized_command_handling -->
 <a id='snippet-sample_order_for_optimized_command_handling'></a>
 ```cs
 public class Item
@@ -81,7 +81,7 @@ public class Order
 
 And with some events like these:
 
-<!-- snippet: sample_Order_events_for_optimized_command_handling -->
+<!-- snippet: sample_order_events_for_optimized_command_handling -->
 <a id='snippet-sample_order_events_for_optimized_command_handling'></a>
 ```cs
 public record OrderShipped;
@@ -318,7 +318,7 @@ This is useful in workflows where:
 Lastly, there are several overloads of a method called `IEventStore.WriteToAggregate()` that just puts some syntactic sugar
 over the top of `FetchForWriting()` to simplify the entire workflow. Using that method, our handler versions above becomes:
 
-<!-- snippet: sample_using_WriteToAggregate -->
+<!-- snippet: sample_using_writetoaggregate -->
 <a id='snippet-sample_using_writetoaggregate'></a>
 ```cs
 public Task Handle4(MarkItemReady command, IDocumentSession session)
@@ -353,7 +353,7 @@ public Task Handle4(MarkItemReady command, IDocumentSession session)
 
 If you are utilizing `FetchForWriting()` for your command handlers -- and you really, really should! -- and at least some of your aggregates are updated `Inline` as shown below:
 
-<!-- snippet: sample_registering_Order_as_Inline -->
+<!-- snippet: sample_registering_order_as_inline -->
 <a id='snippet-sample_registering_order_as_inline'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();

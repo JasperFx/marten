@@ -28,7 +28,7 @@ scenarios.
 
 To use the expanded command line options to a .NET application, add this last line of code shown below to your `Program.cs`:
 
-<!-- snippet: sample_using_WebApplication_1 -->
+<!-- snippet: sample_using_webapplication_1 -->
 <a id='snippet-sample_using_webapplication_1'></a>
 ```cs
 var builder = WebApplication.CreateBuilder(args);
@@ -43,7 +43,7 @@ builder.Host.ApplyJasperFxExtensions();
 And finally, use JasperFx as the command line parser and executor by replacing `App.Run()` as the last line of code in your
 `Program.cs` file:
 
-<!-- snippet: sample_using_WebApplication_2 -->
+<!-- snippet: sample_using_webapplication_2 -->
 <a id='snippet-sample_using_webapplication_2'></a>
 ```cs
 // Instead of App.Run(), use the app.RunJasperFxCommands(args)

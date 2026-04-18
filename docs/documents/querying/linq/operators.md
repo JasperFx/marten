@@ -224,6 +224,25 @@ Marten supports the `GroupBy()` LINQ operator for grouping documents by one or m
 ### Simple Key with Aggregates
 
 <!-- snippet: sample_group_by_simple_key_with_count -->
+<a id='snippet-sample_group_by_simple_key_with_count'></a>
+```cs
+[Fact]
+public async Task group_by_simple_key_with_count()
+{
+    await SetupTargetData();
+
+    var results = await _session.Query<Target>()
+        .GroupBy(x => x.Color)
+        .Select(g => new { Color = g.Key, Count = g.Count() })
+        .ToListAsync();
+
+    results.Count.ShouldBe(3);
+    results.Single(x => x.Color == Colors.Blue).Count.ShouldBe(2);
+    results.Single(x => x.Color == Colors.Green).Count.ShouldBe(3);
+    results.Single(x => x.Color == Colors.Red).Count.ShouldBe(1);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/group_by_operator.cs#L42-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_group_by_simple_key_with_count' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Composite Key

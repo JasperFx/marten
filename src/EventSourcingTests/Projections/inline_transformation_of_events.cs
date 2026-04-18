@@ -157,7 +157,7 @@ public class inline_transformation_of_events: OneOffConfigurationsContext
     }
 }
 
-#region sample_MonsterDefeatedTransform
+#region sample_monsterdefeatedtransform
 
 public partial class MonsterDefeatedTransform: EventProjection
 {

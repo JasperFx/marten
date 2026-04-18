@@ -22,7 +22,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenByStoreOptions
+        #region sample_addmartenbystoreoptions
         var connectionString = Configuration.GetConnectionString("postgres");
 
         // Build a StoreOptions object yourself

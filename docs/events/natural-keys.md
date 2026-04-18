@@ -108,7 +108,7 @@ public record OrderNumberChanged(OrderNumber NewOrderNumber);
 public record OrderCompleted;
 public record InvoiceCreated(InvoiceNumber Code, decimal Amount);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L16-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_aggregate_types' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L18-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_natural_key_aggregate_types' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `[NaturalKeySource]` attribute tells Marten which `Create` / `Apply` methods produce or change the natural key value. Marten uses this information to keep the lookup table in sync whenever events are appended.
@@ -147,7 +147,7 @@ stream.Aggregate.OrderNum.ShouldBe(orderNumber);
 stream.AppendOne(new OrderItemAdded("Gadget", 19.99m));
 await theSession.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L147-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_fetch_for_writing_by_natural_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L149-L159' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_fetch_for_writing_by_natural_key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This resolves the natural key to a stream id and fetches the aggregate in a single database round-trip.
@@ -162,7 +162,7 @@ For read-only access, you can use `FetchLatest` with a natural key:
 // Read-only access by natural key
 var aggregate = await theSession.Events.FetchLatest<OrderAggregate, OrderNumber>(orderNumber);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L209-L212' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_fetch_latest_by_natural_key' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/FetchForWriting/fetching_by_natural_key.cs#L211-L214' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_fetch_latest_by_natural_key' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Mutability

@@ -26,7 +26,7 @@ Fortunately, Marten supports the concept of a _Compiled Query_ that you can use 
 
 All compiled queries are classes that implement the `ICompiledQuery<TDoc, TResult>` interface shown below:
 
-<!-- snippet: sample_ICompiledQuery -->
+<!-- snippet: sample_icompiledquery -->
 <a id='snippet-sample_icompiledquery'></a>
 ```cs
 public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
@@ -39,7 +39,7 @@ public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: n
 
 In its simplest usage, let's say that we want to find the first user document with a certain first name. That class would look like this:
 
-<!-- snippet: sample_FindByFirstName -->
+<!-- snippet: sample_findbyfirstname -->
 <a id='snippet-sample_findbyfirstname'></a>
 ```cs
 public class FindByFirstName: ICompiledQuery<User, User>
@@ -172,7 +172,7 @@ To query for multiple results, you need to just return the raw `IQueryable<T>` a
 
 If you are selecting the whole document without any kind of `Select()` transform, you can use this interface:
 
-<!-- snippet: sample_ICompiledListQuery-with-no-select -->
+<!-- snippet: sample_icompiledlistquery-with-no-select -->
 <a id='snippet-sample_icompiledlistquery-with-no-select'></a>
 ```cs
 public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where TDoc : notnull
@@ -184,7 +184,7 @@ public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where 
 
 A sample usage of this type of query is shown below:
 
-<!-- snippet: sample_UsersByFirstName-Query -->
+<!-- snippet: sample_usersbyfirstname-query -->
 <a id='snippet-sample_usersbyfirstname-query'></a>
 ```cs
 public class UsersByFirstName: ICompiledListQuery<User>
@@ -203,7 +203,7 @@ public class UsersByFirstName: ICompiledListQuery<User>
 
 If you do want to use a `Select()` transform, use this interface:
 
-<!-- snippet: sample_ICompiledListQuery-with-select -->
+<!-- snippet: sample_icompiledlistquery-with-select -->
 <a id='snippet-sample_icompiledlistquery-with-select'></a>
 ```cs
 public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>> where TDoc : notnull
@@ -215,7 +215,7 @@ public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerabl
 
 A sample usage of this type of query is shown below:
 
-<!-- snippet: sample_UserNamesForFirstName -->
+<!-- snippet: sample_usernamesforfirstname -->
 <a id='snippet-sample_usernamesforfirstname'></a>
 ```cs
 public class UserNamesForFirstName: ICompiledListQuery<User, string>
@@ -424,7 +424,7 @@ we handle Include queries.
 
 If you are querying for a single document with no transformation, you can use this interface as a convenience:
 
-<!-- snippet: sample_ICompiledQuery-for-single-doc -->
+<!-- snippet: sample_icompiledquery-for-single-doc -->
 <a id='snippet-sample_icompiledquery-for-single-doc'></a>
 ```cs
 public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc> where TDoc : notnull
@@ -436,7 +436,7 @@ public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc> where TDoc : n
 
 And an example:
 
-<!-- snippet: sample_FindUserByAllTheThings -->
+<!-- snippet: sample_finduserbyallthethings -->
 <a id='snippet-sample_finduserbyallthethings'></a>
 ```cs
 public class FindUserByAllTheThings: ICompiledQuery<User>
@@ -461,7 +461,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
 
 To query for multiple results and have them returned as a Json string, you may run any query on your `IQueryable<T>` (be it ordering or filtering) and then simply finalize the query with `ToJsonArray();` like so:
 
-<!-- snippet: sample_CompiledToJsonArray -->
+<!-- snippet: sample_compiledtojsonarray -->
 <a id='snippet-sample_compiledtojsonarray'></a>
 ```cs
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
@@ -483,7 +483,7 @@ If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method
 
 A sample usage of this type of query is shown below:
 
-<!-- snippet: sample_CompiledToJsonArray -->
+<!-- snippet: sample_compiledtojsonarray -->
 <a id='snippet-sample_compiledtojsonarray'></a>
 ```cs
 public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
@@ -507,7 +507,7 @@ Note that the result has the documents comma separated and wrapped in angle brac
 
 Finally, if you are querying for a single document as json, you will need to prepend your call to `Single()`, `First()` and so on with a call to `AsJson()`:
 
-<!-- snippet: sample_CompiledAsJson -->
+<!-- snippet: sample_compiledasjson -->
 <a id='snippet-sample_compiledasjson'></a>
 ```cs
 public class FindJsonUserByUsername: ICompiledQuery<User>
@@ -526,7 +526,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
 
 And an example:
 
-<!-- snippet: sample_CompiledAsJson -->
+<!-- snippet: sample_compiledasjson -->
 <a id='snippet-sample_compiledasjson'></a>
 ```cs
 public class FindJsonUserByUsername: ICompiledQuery<User>
@@ -552,7 +552,7 @@ on your compiled query class of type `QueryStatistics` with a value. Marten will
 object to collect the total number of rows in the database when the query is executed. Here's an example
 from the Marten tests:
 
-<!-- snippet: sample_TargetsInOrder -->
+<!-- snippet: sample_targetsinorder -->
 <a id='snippet-sample_targetsinorder'></a>
 ```cs
 public class TargetsInOrder: ICompiledListQuery<Target>
@@ -576,7 +576,7 @@ public class TargetsInOrder: ICompiledListQuery<Target>
 
 And when used in the actual test:
 
-<!-- snippet: sample_using_QueryStatistics_with_compiled_query -->
+<!-- snippet: sample_using_querystatistics_with_compiled_query -->
 <a id='snippet-sample_using_querystatistics_with_compiled_query'></a>
 ```cs
 [Fact]
@@ -684,7 +684,7 @@ public static async Task use_query_plan(IQuerySession session, CancellationToken
 
 There is also a similar interface for usage with [batch querying](/documents/querying/batched-queries):
 
-<!-- snippet: sample_IBatchQueryPlan -->
+<!-- snippet: sample_ibatchqueryplan -->
 <a id='snippet-sample_ibatchqueryplan'></a>
 ```cs
 /// <summary>

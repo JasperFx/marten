@@ -219,7 +219,7 @@ public class string_filtering: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            #region sample_sample-linq-EqualsIgnoreCase
+            #region sample_sample-linq-equalsignorecase
 
             query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
             query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);

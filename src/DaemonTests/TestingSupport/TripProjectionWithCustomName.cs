@@ -45,7 +45,7 @@ namespace DaemonTests.TestingSupport
     }
 
 
-    #region sample_TripProjection_aggregate
+    #region sample_tripprojection_aggregate
 
     public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
@@ -120,7 +120,7 @@ namespace TripProjection.StreamAggregation
     }
 
 
-    #region sample_Trip_stream_aggregation
+    #region sample_trip_stream_aggregation
 
     public class Trip
     {
@@ -176,7 +176,7 @@ namespace TripProjection.StreamAggregation
 
 namespace TripProjection.UsingLambdas
 {
-    #region sample_using_ProjectEvent_in_aggregate_projection
+    #region sample_using_projectevent_in_aggregate_projection
 
     public class TripProjection: SingleStreamProjection<Trip, Guid>
     {

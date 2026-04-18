@@ -25,7 +25,7 @@ public class event_projections_end_to_end : DaemonContext
         _output = output;
     }
 
-    #region sample_using_WaitForNonStaleProjectionDataAsync
+    #region sample_using_waitfornonstaleprojectiondataasync
 
     [Fact]
     public async Task run_simultaneously()

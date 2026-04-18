@@ -25,7 +25,7 @@ public async Task query_with_matches_sql()
 
 Older version of Marten also offer the `MatchesJsonPath()` method which uses the `^` character as a placeholder. This will continue to be supported.
 
-<!-- snippet: sample_using_MatchesJsonPath -->
+<!-- snippet: sample_using_matchesjsonpath -->
 <a id='snippet-sample_using_matchesjsonpath'></a>
 ```cs
 var results2 = await theSession

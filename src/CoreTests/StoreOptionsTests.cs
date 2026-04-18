@@ -53,7 +53,7 @@ public class StoreOptionsTests
     [Fact(Skip = "sample usage code")]
     public void using_auto_create_field()
     {
-        #region sample_AutoCreateSchemaObjects
+        #region sample_autocreateschemaobjects
 
         var store = DocumentStore.For(opts =>
         {

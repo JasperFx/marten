@@ -8,7 +8,7 @@ using Weasel.Core;
 
 namespace Marten;
 
-#region sample_ISerializer
+#region sample_iserializer
 
 /// <summary>
 ///     When selecting data through Linq Select() transforms,

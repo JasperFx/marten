@@ -8,7 +8,7 @@ using Npgsql;
 
 namespace Marten;
 
-#region sample_IMartenLogger
+#region sample_imartenlogger
 
 /// <summary>
 ///     Records command usage, schema changes, and sessions within Marten
@@ -95,7 +95,7 @@ public interface IMartenSessionLogger
 
 #endregion
 
-#region sample_ConsoleMartenLogger
+#region sample_consolemartenlogger
 
 public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
 {

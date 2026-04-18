@@ -392,7 +392,7 @@ public class SpecialCounter
     public int DCount { get; set; }
 }
 
-#region sample_SpecialCounterProjection
+#region sample_specialcounterprojection
 
 public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
 {
@@ -407,7 +407,7 @@ public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Gu
 
 
 
-#region sample_SpecialCounterProjection2
+#region sample_specialcounterprojection2
 
 public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
 {

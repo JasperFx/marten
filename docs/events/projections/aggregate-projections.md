@@ -46,7 +46,7 @@ fantasy series like "The Lord of the Rings" or the "Wheel of Time" and we're usi
 state changes when the "quest party" adds or subtracts members. We might very well need a "write model" for 
 the current state of the quest for our command handlers like this one:
 
-<!-- snippet: sample_QuestParty -->
+<!-- snippet: sample_questparty -->
 <a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
@@ -77,7 +77,7 @@ public sealed record QuestParty(Guid Id, List<string> Members)
 
 For a little more context, the `QuestParty` above might be consumed in a command handler like this:
 
-<!-- snippet: sample_AddMembers_command_handler -->
+<!-- snippet: sample_addmembers_command_handler -->
 <a id='snippet-sample_addmembers_command_handler'></a>
 ```cs
 public record AddMembers(Guid Id, int Day, string Location, string[] Members);

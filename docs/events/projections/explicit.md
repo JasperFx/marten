@@ -16,7 +16,7 @@ code by overriding *one and only one* of these methods:
 The simplest and most common usage is to override the synchronous `Evolve` method that can update a projected document
 through only the event data:
 
-<!-- snippet: sample_AppointmentProjection -->
+<!-- snippet: sample_appointmentprojection -->
 <a id='snippet-sample_appointmentprojection'></a>
 ```cs
 public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
@@ -79,7 +79,7 @@ public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 If your "evolve" step will require some data lookups or need to utilize any kind of asynchronous service, use
 `EvolveAsync`:
 
-<!-- snippet: sample_EvolveAsync -->
+<!-- snippet: sample_evolveasync -->
 <a id='snippet-sample_evolveasync'></a>
 ```cs
 public override ValueTask<LetterCounts> EvolveAsync(LetterCounts snapshot, Guid id, IQuerySession session, IEvent e, CancellationToken cancellation)
@@ -196,7 +196,7 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 
 and another example:
 
-<!-- snippet: sample_HardDeletedStartAndStopProjection -->
+<!-- snippet: sample_harddeletedstartandstopprojection -->
 <a id='snippet-sample_harddeletedstartandstopprojection'></a>
 ```cs
 public class HardDeletedStartAndStopProjection: SingleStreamProjection<HardDeletedStartAndStopAggregate, Guid>

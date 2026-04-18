@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Host.ApplyJasperFxExtensions();
 
-#region sample_StartupConfigureServices
+#region sample_startupconfigureservices
 // This is the absolute, simplest way to integrate Marten into your
 // .NET application with Marten's default configuration
 builder.Services.AddMarten(options =>
@@ -45,7 +45,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-#region sample_UserEndpoints
+#region sample_userendpoints
 // You can inject the IDocumentStore and open sessions yourself
 app.MapPost("/user",
     async (CreateUserRequest create,

@@ -93,7 +93,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         #endregion
     }
 
-    #region sample_FindByFirstName
+    #region sample_findbyfirstname
 
     public class FindByFirstName: ICompiledQuery<User, User>
     {

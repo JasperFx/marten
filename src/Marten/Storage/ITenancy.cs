@@ -18,7 +18,7 @@ public interface ITenancyWithMasterDatabase
     PostgresqlDatabase TenantDatabase { get; }
 }
 
-#region sample_ITenancy
+#region sample_itenancy
 
 /// <summary>
 ///     Pluggable interface for Marten multi-tenancy by database

@@ -6,7 +6,7 @@ Marten's previous, homegrown `IRetryPolicy` mechanism was completely replaced by
 
 Out of the box, Marten is using [Polly.Core](https://www.pollydocs.org/) for resiliency on most operations with this setup:
 
-<!-- snippet: sample_default_Polly_setup -->
+<!-- snippet: sample_default_polly_setup -->
 <a id='snippet-sample_default_polly_setup'></a>
 ```cs
 // default Marten policies
