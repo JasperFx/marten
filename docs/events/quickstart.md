@@ -54,7 +54,7 @@ await session.SaveChangesAsync();
 
 At some point we would like to know what members are currently part of the quest party. To keep things simple, we're going to use Marten's _live_ stream aggregation feature to model a `QuestParty` that updates itself based on our events:
 
-<!-- snippet: sample_QuestParty -->
+<!-- snippet: sample_questparty -->
 <a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
@@ -105,7 +105,7 @@ Simple, right? The above code will load the events from the database and run the
 
 What about the quest itself? On top of seeing our in-progress quest, we also want the ability to query our entire history of past quests. For this, we'll create an _inline_ `SingleStreamProjection` that persists our Quest state to the database as the events are being written:
 
-<!-- snippet: sample_Quest -->
+<!-- snippet: sample_quest -->
 <a id='snippet-sample_quest'></a>
 ```cs
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);

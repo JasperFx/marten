@@ -3,7 +3,7 @@
 An "inline" projection just means that Marten will process the projection against new events being appended
 to the event store at the time that `IDocumentSession.SaveChanges()` is called to commit a unit of work. Here's a small example projection:
 
-<!-- snippet: sample_MonsterDefeatedTransform -->
+<!-- snippet: sample_monsterdefeatedtransform -->
 <a id='snippet-sample_monsterdefeatedtransform'></a>
 ```cs
 public partial class MonsterDefeatedTransform: EventProjection

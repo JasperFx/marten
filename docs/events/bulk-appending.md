@@ -55,7 +55,7 @@ public static async Task BulkAppendBasicExample(DocumentStore store)
     await store.BulkInsertEventsAsync(streams);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L14-L37' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_basic' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L12-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_basic' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Multi-Tenancy
@@ -85,7 +85,7 @@ public static async Task BulkAppendWithTenantExample(DocumentStore store)
     await store.BulkInsertEventsAsync("tenant-abc", streams);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L39-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_tenant' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L38-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_tenant' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Event Metadata
@@ -118,7 +118,7 @@ public static async Task BulkAppendWithMetadataExample(DocumentStore store)
     await store.BulkInsertEventsAsync(new[] { action });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L62-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L62-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Controlling Batch Size
@@ -146,7 +146,7 @@ public static async Task BulkAppendWithBatchSizeExample(DocumentStore store)
     await store.BulkInsertEventsAsync(streams, batchSize: 5000);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L87-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_batch_size' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L88-L107' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_with_batch_size' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## String Stream Identity
@@ -176,7 +176,7 @@ public static async Task BulkAppendWithStringIdentityExample(DocumentStore store
     await store.BulkInsertEventsAsync(streams);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L107-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_string_identity' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/BulkAppendSamples.cs#L109-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_bulk_append_events_string_identity' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Supported Configurations

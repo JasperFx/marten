@@ -14,7 +14,7 @@ export both metrics and [Open Telemetry](https://opentelemetry.io/) activity tra
 said, here's a sample of configuring the exporting -- this case just exporting information to
 a Project Aspire dashboard in the end:
 
-<!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
+<!-- snippet: sample_enabling_open_telemetry_exporting_from_marten -->
 <a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little

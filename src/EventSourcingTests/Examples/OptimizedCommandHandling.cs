@@ -11,7 +11,7 @@ using NSubstitute;
 
 namespace EventSourcingTests.Examples;
 
-#region sample_Order_events_for_optimized_command_handling
+#region sample_order_events_for_optimized_command_handling
 
 public record OrderShipped;
 public record OrderCreated(Item[] Items);
@@ -21,7 +21,7 @@ public record ItemReady(string Name);
 
 #endregion
 
-#region sample_Order_for_optimized_command_handling
+#region sample_order_for_optimized_command_handling
 
 public class Item
 {
@@ -173,7 +173,7 @@ public class ShipOrderHandler
 
     #endregion
 
-    #region sample_using_WriteToAggregate
+    #region sample_using_writetoaggregate
 
     public Task Handle4(MarkItemReady command, IDocumentSession session)
     {
@@ -207,7 +207,7 @@ public static class BootstrappingSample
 {
     public static async Task bootstrap()
     {
-        #region sample_registering_Order_as_Inline
+        #region sample_registering_order_as_inline
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>

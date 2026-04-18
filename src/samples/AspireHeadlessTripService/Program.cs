@@ -18,7 +18,7 @@ builder.Logging.AddOpenTelemetry(logging =>
     logging.IncludeScopes = true;
 });
 
-#region sample_enabling_open_telemetry_exporting_from_Marten
+#region sample_enabling_open_telemetry_exporting_from_marten
 
 // This is passed in by Project Aspire. The exporter usage is a little
 // different for other tools like Prometheus or SigNoz

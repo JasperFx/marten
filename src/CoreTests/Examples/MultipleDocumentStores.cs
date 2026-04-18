@@ -13,7 +13,7 @@ public class MultipleDocumentStores
 {
     public static async Task bootstrap()
     {
-        #region sample_bootstrapping_separate_Store
+        #region sample_bootstrapping_separate_store
 
         using var host = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -89,7 +89,7 @@ public class DefaultDataSet: IInitialData
     }
 }
 
-#region sample_IInvoicingStore
+#region sample_iinvoicingstore
 
 // These marker interfaces *must* be public
 public interface IInvoicingStore : IDocumentStore
@@ -99,7 +99,7 @@ public interface IInvoicingStore : IDocumentStore
 
 #endregion
 
-#region sample_InvoicingService
+#region sample_invoicingservice
 
 public class InvoicingService
 {

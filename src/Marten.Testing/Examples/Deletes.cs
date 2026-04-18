@@ -20,7 +20,7 @@ public class Deletes
 
     #endregion
 
-    #region sample_UndoDeletion
+    #region sample_undodeletion
 
     internal Task UndoDeletion(IDocumentSession session, Guid userId)
     {
@@ -33,7 +33,7 @@ public class Deletes
 
     #endregion
 
-    #region sample_AllDocumentTypesShouldBeSoftDeleted
+    #region sample_alldocumenttypesshouldbesoftdeleted
 
     internal void AllDocumentTypesShouldBeSoftDeleted()
     {
@@ -46,7 +46,7 @@ public class Deletes
 
     #endregion
 
-    #region sample_HardDeletes
+    #region sample_harddeletes
 
     internal void ExplicitlyHardDelete(IDocumentSession session, User document)
     {

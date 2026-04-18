@@ -136,7 +136,7 @@ both `Inline` and `Async` execution of projections.
 Let's try to make this concrete by building a simple order processing system that might include this
 aggregate:
 
-<!-- snippet: sample_Order_for_optimized_command_handling -->
+<!-- snippet: sample_order_for_optimized_command_handling -->
 <a id='snippet-sample_order_for_optimized_command_handling'></a>
 ```cs
 public class Item
@@ -181,7 +181,7 @@ public class Order
 Next, let's say we're having the `Order` aggregate snapshotted so that it's updated every time new events 
 are captured like so:
 
-<!-- snippet: sample_registering_Order_as_Inline -->
+<!-- snippet: sample_registering_order_as_inline -->
 <a id='snippet-sample_registering_order_as_inline'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();

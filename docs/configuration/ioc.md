@@ -19,7 +19,7 @@ use the `AddMarten()` method directly with Lamar as well.
 
 Using [Lamar](https://jasperfx.github.io/lamar) as the example container, we recommend registering Marten something like this:
 
-<!-- snippet: sample_MartenServices -->
+<!-- snippet: sample_martenservices -->
 <a id='snippet-sample_martenservices'></a>
 ```cs
 public class MartenServices : ServiceRegistry

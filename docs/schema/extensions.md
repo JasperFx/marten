@@ -67,7 +67,7 @@ But it **won't apply them** for multi-tenancy per database with **unknown
 
 Postgresql tables can be modeled with the `Table` class from `Weasel.Postgresql.Tables` as shown in this example below:
 
-<!-- snippet: sample_CustomSchemaTable -->
+<!-- snippet: sample_customschematable -->
 <a id='snippet-sample_customschematable'></a>
 ```cs
 StoreOptions(opts =>
@@ -89,7 +89,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
 Postgresql functions can be managed by creating a function using `Weasel.Postgresql.Functions.Function` as below:
 
-<!-- snippet: sample_CustomSchemaFunction -->
+<!-- snippet: sample_customschemafunction -->
 <a id='snippet-sample_customschemafunction'></a>
 ```cs
 StoreOptions(opts =>
@@ -119,7 +119,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
 [Postgresql sequences](https://www.postgresql.org/docs/10/static/sql-createsequence.html) can be created using `Weasel.Postgresql.Sequence` as below:
 
-<!-- snippet: sample_CustomSchemaSequence -->
+<!-- snippet: sample_customschemasequence -->
 <a id='snippet-sample_customschemasequence'></a>
 ```cs
 StoreOptions(opts =>
@@ -141,7 +141,7 @@ await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
 Postgresql extensions can be enabled using `Weasel.Postgresql.Extension` as below:
 
-<!-- snippet: sample_CustomSchemaExtension -->
+<!-- snippet: sample_customschemaextension -->
 <a id='snippet-sample_customschemaextension'></a>
 ```cs
 StoreOptions(opts =>

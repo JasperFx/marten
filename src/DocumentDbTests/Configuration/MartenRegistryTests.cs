@@ -170,7 +170,7 @@ public class MartenRegistryTests: OneOffConfigurationsContext
     }
     #endregion
 
-    #region sample_OrganizationRegistry
+    #region sample_organizationregistry
 
     public class OrganizationRegistry: MartenRegistry
     {
@@ -203,7 +203,7 @@ public class MartenRegistryTests: OneOffConfigurationsContext
     [Fact]
     public void using_registry_include()
     {
-        #region sample_including_a_custom_MartenRegistry
+        #region sample_including_a_custom_martenregistry
 
         var store = DocumentStore.For(opts =>
         {

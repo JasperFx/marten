@@ -18,7 +18,7 @@ Single stream projections (i.e., a projected view of the events within a single 
 are aggregations that roll up the events for a single stream into a projected view. Starting with the simplest possible
 approach and a simplistic workflow, let's revisit the `QuestParty` event modeling with a "self-aggregating" `QuestParty`:
 
-<!-- snippet: sample_QuestParty -->
+<!-- snippet: sample_questparty -->
 <a id='snippet-sample_questparty'></a>
 ```cs
 public sealed record QuestParty(Guid Id, List<string> Members)
@@ -90,7 +90,7 @@ If you don't like putting the conventional methods directly on the projected typ
 more advanced settings for projections, you can move those `Apply` or `Create` methods to a separate type that
 inherits from the `SingleStreamProjection<TDoc, TId>` base type like this:
 
-<!-- snippet: sample_TripProjection_aggregate -->
+<!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
 public class TripProjection: SingleStreamProjection<Trip, Guid>
@@ -167,7 +167,7 @@ still inherit from `SingleStreamProjection<TDoc, TId>`, but this time override *
 
 Here's a simple example of explicit code in projections:
 
-<!-- snippet: sample_AppointmentProjection -->
+<!-- snippet: sample_appointmentprojection -->
 <a id='snippet-sample_appointmentprojection'></a>
 ```cs
 public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>

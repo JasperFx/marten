@@ -87,7 +87,7 @@ opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
 
 First, let's just look at the simple `ProviderShiftProjection`:
 
-<!-- snippet: sample_ProviderShiftProjection -->
+<!-- snippet: sample_providershiftprojection -->
 <a id='snippet-sample_providershiftprojection'></a>
 ```cs
 public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
@@ -166,7 +166,7 @@ public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid
 Now, let's go downstream and look at the `AppointmentDetailsProjection` that will
 ultimately need to use the build products of all three upstream projections:
 
-<!-- snippet: sample_AppointmentDetailsProjection -->
+<!-- snippet: sample_appointmentdetailsprojection -->
 <a id='snippet-sample_appointmentdetailsprojection'></a>
 ```cs
 public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
@@ -364,7 +364,7 @@ just as conveniences to avoid the proliferation of ugly generics in your code.
 
 And also the definition for the downstream `BoardSummary` view:
 
-<!-- snippet: sample_BoardSummaryProjection -->
+<!-- snippet: sample_boardsummaryprojection -->
 <a id='snippet-sample_boardsummaryprojection'></a>
 ```cs
 public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>

@@ -17,7 +17,7 @@ public class hilo_configuration_overrides
     [Fact]
     public async Task can_establish_the_hilo_starting_point()
     {
-        #region sample_ResetHiloSequenceFloor
+        #region sample_resethilosequencefloor
         var store = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);

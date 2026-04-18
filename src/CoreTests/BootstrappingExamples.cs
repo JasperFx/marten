@@ -11,7 +11,7 @@ namespace CoreTests;
 
 public static class UserModule
 {
-    #region sample_AddUserModule
+    #region sample_addusermodule
 
     public static IServiceCollection AddUserModule(this IServiceCollection services)
     {
@@ -33,7 +33,7 @@ public static class UserModule
 
 public static class UserModule2
 {
-    #region sample_AddUserModule2
+    #region sample_addusermodule2
 
     public static IServiceCollection AddUserModule2(this IServiceCollection services)
     {
@@ -61,7 +61,7 @@ public class InvoicingStoreConfiguration: IConfigureMarten<IInvoicingStore>
     }
 }
 
-#region sample_UserMartenConfiguration
+#region sample_usermartenconfiguration
 
 internal class UserMartenConfiguration: IConfigureMarten
 {

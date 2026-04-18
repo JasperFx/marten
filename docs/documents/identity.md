@@ -54,7 +54,7 @@ If you really want to, or you're migrating existing document types from another 
 the `[Identity]` attribute to force Marten to use a property or field as the identifier that doesn't match
 the "id" or "Id" or "ID" convention:
 
-<!-- snippet: sample_IdentityAttribute -->
+<!-- snippet: sample_identityattribute -->
 <a id='snippet-sample_identityattribute'></a>
 ```cs
 public class NonStandardDoc
@@ -182,7 +182,7 @@ var store = DocumentStore.For(_ =>
 
 Marten 1.2 adds a convenience method to reset the "floor" of the Hilo sequence for a single document type:
 
-<!-- snippet: sample_ResetHiloSequenceFloor -->
+<!-- snippet: sample_resethilosequencefloor -->
 <a id='snippet-sample_resethilosequencefloor'></a>
 ```cs
 var store = DocumentStore.For(opts =>
@@ -217,7 +217,7 @@ so you will not be able to use any kind of punctuation characters or spaces.
 
 Let's say you have a document type with a `string` for the identity member like this one:
 
-<!-- snippet: sample_DocumentWithStringId -->
+<!-- snippet: sample_documentwithstringid -->
 <a id='snippet-sample_documentwithstringid'></a>
 ```cs
 public class DocumentWithStringId
@@ -232,7 +232,7 @@ You can use the "identity key" option for identity generation that would create 
 
 You can opt into the _identity key_ strategy for identity and even override the document alias name with this syntax:
 
-<!-- snippet: sample_using_IdentityKey -->
+<!-- snippet: sample_using_identitykey -->
 <a id='snippet-sample_using_identitykey'></a>
 ```cs
 var store = DocumentStore.For(opts =>
@@ -412,7 +412,7 @@ As you might infer -- or not -- there's a couple rules and internal behavior:
 
 For another example, here's a usage of an `int` wrapped identifier:
 
-<!-- snippet: sample_order2_with_STRONG_TYPED_identifier -->
+<!-- snippet: sample_order2_with_strong_typed_identifier -->
 <a id='snippet-sample_order2_with_strong_typed_identifier'></a>
 ```cs
 [StronglyTypedId(Template.Int)]

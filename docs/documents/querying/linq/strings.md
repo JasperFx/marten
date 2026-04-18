@@ -39,7 +39,7 @@ public void case_insensitive_string_fields(IDocumentSession session)
 
 A shorthand for case-insensitive string matching is provided through `EqualsIgnoreCase` (string extension method in *Baseline*):
 
-<!-- snippet: sample_sample-linq-EqualsIgnoreCase -->
+<!-- snippet: sample_sample-linq-equalsignorecase -->
 <a id='snippet-sample_sample-linq-equalsignorecase'></a>
 ```cs
 query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);

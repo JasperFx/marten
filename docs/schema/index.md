@@ -7,7 +7,7 @@ In all cases, the Marten schema objects are all prefixed with `mt_.`
 As of Marten v0.8, you have much finer grained ability to control the automatic generation or updates of schema objects through the
 `StoreOptions.AutoCreateSchemaObjects` like so:
 
-<!-- snippet: sample_AutoCreateSchemaObjects -->
+<!-- snippet: sample_autocreateschemaobjects -->
 <a id='snippet-sample_autocreateschemaobjects'></a>
 ```cs
 var store = DocumentStore.For(opts =>

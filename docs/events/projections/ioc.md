@@ -13,7 +13,7 @@ until this feature introduced in 6.2.
 Let's say you have a custom aggregation projection like this one below that needs to use a service named
 `IPriceLookup` at runtime:
 
-<!-- snippet: sample_ProductProjection -->
+<!-- snippet: sample_productprojection -->
 <a id='snippet-sample_productprojection'></a>
 ```cs
 public class ProductProjection: SingleStreamProjection<Product, Guid>

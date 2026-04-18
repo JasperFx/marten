@@ -70,7 +70,7 @@ public class Document2
     public DateTimeOffset Timestamp { get; set; }
 }
 
-#region sample_SampleEventProjection
+#region sample_sampleeventprojection
 
 public partial class SampleEventProjection : EventProjection
 {

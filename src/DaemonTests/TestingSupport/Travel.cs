@@ -37,7 +37,7 @@ public class Travel : IDayEvent
 
     public int Day { get; set; }
 
-    #region sample_Travel_Movements
+    #region sample_travel_movements
 
     public IList<Movement> Movements { get; set; } = new List<Movement>();
     public List<Stop> Stops { get; set; } = new();

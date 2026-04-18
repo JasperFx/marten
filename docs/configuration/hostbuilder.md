@@ -6,7 +6,7 @@ description: Configure and bootstrap Marten in ASP.NET Core and .NET application
 
 As briefly shown in the [getting started](/) page, Marten comes with the `AddMarten()` extension method for the .NET `IServiceCollection` to quickly add Marten to any ASP&#46;NET Core or Worker Service application:
 
-<!-- snippet: sample_StartupConfigureServices -->
+<!-- snippet: sample_startupconfigureservices -->
 <a id='snippet-sample_startupconfigureservices'></a>
 ```cs
 // This is the absolute, simplest way to integrate Marten into your
@@ -64,7 +64,7 @@ All the examples in this page are assuming the usage of the default IoC containe
 
 First, if you are using Marten completely out of the box with no customizations (besides attributes on your documents), you can just supply a connection string to the underlying Postgresql database like this:
 
-<!-- snippet: sample_AddMartenByConnectionString -->
+<!-- snippet: sample_addmartenbyconnectionstring -->
 <a id='snippet-sample_addmartenbyconnectionstring'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -77,7 +77,7 @@ services.AddMarten(connectionString);
 
 The second option is to supply a [nested closure](https://martinfowler.com/dslCatalog/nestedClosure.html) to configure Marten inline like so:
 
-<!-- snippet: sample_AddMartenByNestedClosure -->
+<!-- snippet: sample_addmartenbynestedclosure -->
 <a id='snippet-sample_addmartenbynestedclosure'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -100,7 +100,7 @@ services.CritterStackDefaults(x =>
 
 Lastly, if you prefer, you can pass a Marten `StoreOptions` object to `AddMarten()` like this example:
 
-<!-- snippet: sample_AddMartenByStoreOptions -->
+<!-- snippet: sample_addmartenbystoreoptions -->
 <a id='snippet-sample_addmartenbystoreoptions'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -135,7 +135,7 @@ You can also use the [NpgsqlDataSource](https://www.npgsql.org/doc/basic-usage.h
 
 You can use the `AddNpgsqlDataSource` method from [Npgsql.DependencyInjection package](https://www.nuget.org/packages/Npgsql.DependencyInjection) to perform a setup by calling the `UseNpgsqlDataSourceMethod`:
 
-<!-- snippet: sample_using_UseNpgsqlDataSource -->
+<!-- snippet: sample_using_usenpgsqldatasource -->
 <a id='snippet-sample_using_usenpgsqldatasource'></a>
 ```cs
 services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
@@ -149,7 +149,7 @@ services.AddMarten()
 
 If you're on .NET 8 (and above), you can also use a dedicated [keyed registration](https://learn.microsoft.com/en-us/dotnet/core/whats-new/dotnet-8#keyed-di-services). This can be useful for scenarios where you need more than one data source registered:
 
-<!-- snippet: sample_using_UseNpgsqlDataSource_keyed -->
+<!-- snippet: sample_using_usenpgsqldatasource_keyed -->
 <a id='snippet-sample_using_usenpgsqldatasource_keyed'></a>
 ```cs
 const string dataSourceKey = "marten_data_source";
@@ -173,7 +173,7 @@ Host=my-db-host.com,my-db-host-readonly-1.com;Database=marten;...
 
 Configuring `NpgsqlMultiHostDataSource` is very similar to a normal data source, simply swapping it for `AddMultiHostNpgsqlDataSource`. Marten will always use the primary node for queries with a `NpgsqlMultiHostDataSource` unless you explicitly opt to use the standby nodes. You can adjust what type of node Marten uses for querying via the `MultiHostSettings` store options:
 
-<!-- snippet: sample_using_UseNpgsqlDataSourceMultiHost -->
+<!-- snippet: sample_using_usenpgsqldatasourcemultihost -->
 <a id='snippet-sample_using_usenpgsqldatasourcemultihost'></a>
 ```cs
 services.AddMultiHostNpgsqlDataSource(ConnectionSource.ConnectionString);
@@ -204,7 +204,7 @@ The `AddMarten()` mechanism assumes that you are expressing all of the Marten co
 
 Fear not, Marten V5.0 introduced a new way to add or modify the Marten configuration from `AddMarten()`. Let's assume that we're building a system that has a subsystem related to *users* and want to segregate all the service registrations and Marten configuration related to *users* into a single place like this extension method:
 
-<!-- snippet: sample_AddUserModule -->
+<!-- snippet: sample_addusermodule -->
 <a id='snippet-sample_addusermodule'></a>
 ```cs
 public static IServiceCollection AddUserModule(this IServiceCollection services)
@@ -249,7 +249,7 @@ using var host = await Host.CreateDefaultBuilder()
 The `ConfigureMarten()` method is the interesting part of the code samples above. That is registering a small
 service that implements the `IConfigureMarten` interface into the underlying IoC container:
 
-<!-- snippet: sample_IConfigureMarten -->
+<!-- snippet: sample_iconfiguremarten -->
 <a id='snippet-sample_iconfiguremarten'></a>
 ```cs
 /// <summary>
@@ -261,12 +261,12 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L944-L955' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L945-L956' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
 
-<!-- snippet: sample_UserMartenConfiguration -->
+<!-- snippet: sample_usermartenconfiguration -->
 <a id='snippet-sample_usermartenconfiguration'></a>
 ```cs
 internal class UserMartenConfiguration: IConfigureMarten
@@ -283,7 +283,7 @@ internal class UserMartenConfiguration: IConfigureMarten
 
 and registering it in your IoC container something like this:
 
-<!-- snippet: sample_AddUserModule2 -->
+<!-- snippet: sample_addusermodule2 -->
 <a id='snippet-sample_addusermodule2'></a>
 ```cs
 public static IServiceCollection AddUserModule2(this IServiceCollection services)
@@ -312,7 +312,7 @@ be used to selectively configure Marten using potentially asynchronous methods a
 
 That interface signature is:
 
-<!-- snippet: sample_IAsyncConfigureMarten -->
+<!-- snippet: sample_iasyncconfiguremarten -->
 <a id='snippet-sample_iasyncconfiguremarten'></a>
 ```cs
 /// <summary>
@@ -325,12 +325,12 @@ public interface IAsyncConfigureMarten
     ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L957-L969' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L958-L970' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:
 
-<!-- snippet: sample_FeatureManagementUsingExtension -->
+<!-- snippet: sample_featuremanagementusingextension -->
 <a id='snippet-sample_featuremanagementusingextension'></a>
 ```cs
 public class FeatureManagementUsingExtension: IAsyncConfigureMarten
@@ -376,7 +376,7 @@ overhead in most cases where the sessions are short-lived, but we keep this beha
 compatibility with early Marten and RavenDb behavior before that. To opt into using lightweight sessions
 without the identity map behavior, use this syntax:
 
-<!-- snippet: sample_AddMartenWithLightweightSessions -->
+<!-- snippet: sample_addmartenwithlightweightsessions -->
 <a id='snippet-sample_addmartenwithlightweightsessions'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -398,7 +398,7 @@ services.AddMarten(opts =>
 By default, Marten will create a document session with the basic identity map enabled and a [ReadCommitted](https://docs.microsoft.com/en-us/dotnet/api/system.transactions.isolationlevel?view=netcore-3.1) transaction isolation level. If you want to use a different configuration for sessions globally in your application, you can use a custom implementation of the `ISessionFactory` class
 as shown in this example:
 
-<!-- snippet: sample_CustomSessionFactory -->
+<!-- snippet: sample_customsessionfactory -->
 <a id='snippet-sample_customsessionfactory'></a>
 ```cs
 public class CustomSessionFactory: ISessionFactory
@@ -432,7 +432,7 @@ public class CustomSessionFactory: ISessionFactory
 
 To register the custom session factory, use the `BuildSessionsWith()` method as shown in this example:
 
-<!-- snippet: sample_AddMartenWithCustomSessionCreation -->
+<!-- snippet: sample_addmartenwithcustomsessioncreation -->
 <a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -468,7 +468,7 @@ session identification in your application? That's now possible by using a custo
 
 Taking the example of an ASP&#46;NET Core application, let's say that you have a small service scoped to an HTTP request that tracks a correlation identifier for the request like this:
 
-<!-- snippet: sample_CorrelationIdWithISession -->
+<!-- snippet: sample_correlationidwithisession -->
 <a id='snippet-sample_correlationidwithisession'></a>
 ```cs
 public interface ISession
@@ -481,7 +481,7 @@ public interface ISession
 
 And a custom Marten session logger to add the correlation identifier to the log output like this:
 
-<!-- snippet: sample_CorrelatedMartenLogger -->
+<!-- snippet: sample_correlatedmartenlogger -->
 <a id='snippet-sample_correlatedmartenlogger'></a>
 ```cs
 public class CorrelatedMartenLogger: IMartenSessionLogger
@@ -541,7 +541,7 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
 
 Now, let's move on to building out a custom session factory that will attach our correlated marten logger to sessions being resolved from the IoC container:
 
-<!-- snippet: sample_CustomSessionFactoryByScope -->
+<!-- snippet: sample_customsessionfactorybyscope -->
 <a id='snippet-sample_customsessionfactorybyscope'></a>
 ```cs
 public class ScopedSessionFactory: ISessionFactory
@@ -581,7 +581,7 @@ public class ScopedSessionFactory: ISessionFactory
 
 Lastly, let's register our new session factory, but this time we need to take care to register the session factory as `Scoped` in the underlying container so we're using the correct `ISession` at runtime:
 
-<!-- snippet: sample_AddMartenWithCustomSessionCreationByScope -->
+<!-- snippet: sample_addmartenwithcustomsessioncreationbyscope -->
 <a id='snippet-sample_addmartenwithcustomsessioncreationbyscope'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");
@@ -628,7 +628,7 @@ document stores along with the default store from `AddMarten()`.
 To utilize the type system and your application's underlying IoC container, the first step is to create a custom *marker* interface for your separate document store like this one 
 below targeting a separate "invoicing" database:
 
-<!-- snippet: sample_IInvoicingStore -->
+<!-- snippet: sample_iinvoicingstore -->
 <a id='snippet-sample_iinvoicingstore'></a>
 ```cs
 // These marker interfaces *must* be public
@@ -647,7 +647,7 @@ A couple notes on the interface:
 
 And now to bootstrap that separate store in our system:
 
-<!-- snippet: sample_bootstrapping_separate_Store -->
+<!-- snippet: sample_bootstrapping_separate_store -->
 <a id='snippet-sample_bootstrapping_separate_store'></a>
 ```cs
 using var host = Host.CreateDefaultBuilder()
@@ -689,7 +689,7 @@ using var host = Host.CreateDefaultBuilder()
 At runtime we can inject an instance of our new `IInvoicingStore` and work with it like any other
 Marten `IDocumentStore` as shown below in an internal `InvoicingService`:
 
-<!-- snippet: sample_InvoicingService -->
+<!-- snippet: sample_invoicingservice -->
 <a id='snippet-sample_invoicingservice'></a>
 ```cs
 public class InvoicingService

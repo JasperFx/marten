@@ -24,7 +24,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
 
-        #region sample_DeleteWhere
+        #region sample_deletewhere
         theSession.DeleteWhere<Target>(x => x.Double == 578);
 
         await theSession.SaveChangesAsync();

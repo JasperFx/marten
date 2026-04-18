@@ -824,7 +824,7 @@ public class Shop
     public Guid Id { get; set; } = Guid.NewGuid();
 }
 
-#region sample_UseOptimisticConcurrencyAttribute
+#region sample_useoptimisticconcurrencyattribute
 [UseOptimisticConcurrency]
 public class CoffeeShop: Shop
 {

@@ -25,7 +25,7 @@ events to the Marten event storage.**
 
 Subscriptions will always be an implementation of the `ISubscription` interface shown below:
 
-<!-- snippet: sample_ISubscription -->
+<!-- snippet: sample_isubscription -->
 <a id='snippet-sample_isubscription'></a>
 ```cs
 /// <summary>
@@ -71,7 +71,7 @@ So far, the subscription model gives you these abilities:
 To make this concrete, here's the simplest possible subscription you can make to simply write out a console message
 for every event:
 
-<!-- snippet: sample_ConsoleSubscription -->
+<!-- snippet: sample_consolesubscription -->
 <a id='snippet-sample_consolesubscription'></a>
 ```cs
 public class ConsoleSubscription: ISubscription
@@ -100,7 +100,7 @@ public class ConsoleSubscription: ISubscription
 
 And to register that with our Marten store:
 
-<!-- snippet: sample_register_ConsoleSubscription -->
+<!-- snippet: sample_register_consolesubscription -->
 <a id='snippet-sample_register_consolesubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
@@ -138,7 +138,7 @@ await host.StartAsync();
 
 Here's a slightly more complicated sample that publishes events to a configured Kafka topic:
 
-<!-- snippet: sample_KafkaSubscription -->
+<!-- snippet: sample_kafkasubscription -->
 <a id='snippet-sample_kafkasubscription'></a>
 ```cs
 public class KafkaSubscription: SubscriptionBase
@@ -205,7 +205,7 @@ public class KafkaProducerConfig
 This time, it's requiring IoC services injected through its constructor, so we're going to use this mechanism
 to add it to Marten:
 
-<!-- snippet: sample_registering_KafkaSubscription -->
+<!-- snippet: sample_registering_kafkasubscription -->
 <a id='snippet-sample_registering_kafkasubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
@@ -250,7 +250,7 @@ is a great tool for this.
 
 Stateless subscriptions can simply be registered like this:
 
-<!-- snippet: sample_register_ConsoleSubscription -->
+<!-- snippet: sample_register_consolesubscription -->
 <a id='snippet-sample_register_consolesubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
@@ -289,7 +289,7 @@ await host.StartAsync();
 But, if you need to utilize services from your IoC container within your subscription -- and you very likely do --
 you can utilize the `AddSubscriptionWithServices()` mechanisms:
 
-<!-- snippet: sample_registering_KafkaSubscription -->
+<!-- snippet: sample_registering_kafkasubscription -->
 <a id='snippet-sample_registering_kafkasubscription'></a>
 ```cs
 var builder = Host.CreateApplicationBuilder();
@@ -411,7 +411,7 @@ The `SubscriptionBase` class can be used as a convenient base class for subscrip
 the various configuration options for that subscription right into the subscription itself. The usage of that
 base class is shown below:
 
-<!-- snippet: sample_KafkaSubscription -->
+<!-- snippet: sample_kafkasubscription -->
 <a id='snippet-sample_kafkasubscription'></a>
 ```cs
 public class KafkaSubscription: SubscriptionBase
@@ -525,7 +525,7 @@ that the controller is told.
 
 The following is an example of using these facilities for error handling:
 
-<!-- snippet: sample_ErrorHandlingSubscription -->
+<!-- snippet: sample_errorhandlingsubscription -->
 <a id='snippet-sample_errorhandlingsubscription'></a>
 ```cs
 public class ErrorHandlingSubscription: SubscriptionBase
@@ -583,13 +583,13 @@ public class ErrorHandlingSubscription: SubscriptionBase
     {
         public Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
-            Console.WriteLine("Marten just made a commit for any changes");
+            Console.WriteLine("Marten is about to make a commit for any changes");
             return Task.CompletedTask;
         }
 
         public Task BeforeCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
         {
-            Console.WriteLine("Marten is about to make a commit for any changes");
+            Console.WriteLine("Marten just made a commit for any changes");
             return Task.CompletedTask;
         }
     }

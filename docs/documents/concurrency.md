@@ -25,7 +25,7 @@ as being revisioned
 
 In Marten's case, you have to explicitly opt into optimistic versioning for each document type. You can do that with either an attribute on your document type like so:
 
-<!-- snippet: sample_UseOptimisticConcurrencyAttribute -->
+<!-- snippet: sample_useoptimisticconcurrencyattribute -->
 <a id='snippet-sample_useoptimisticconcurrencyattribute'></a>
 ```cs
 [UseOptimisticConcurrency]
@@ -111,7 +111,7 @@ Marten is throwing an `AggregateException` for the entire batch of changes.
 
 A new feature in Marten V4 is the `IVersioned` marker interface. If your document type implements this interface as shown below:
 
-<!-- snippet: sample_MyVersionedDoc -->
+<!-- snippet: sample_myversioneddoc -->
 <a id='snippet-sample_myversioneddoc'></a>
 ```cs
 public class MyVersionedDoc: IVersioned
@@ -142,7 +142,7 @@ designating a public property or field on the document type as the "Version" (th
 You can opt into this behavior on a document by document basis by using the fluent interface
 like this:
 
-<!-- snippet: sample_UseNumericRevisions_fluent_interface -->
+<!-- snippet: sample_usenumericrevisions_fluent_interface -->
 <a id='snippet-sample_usenumericrevisions_fluent_interface'></a>
 ```cs
 using var store = DocumentStore.For(opts =>

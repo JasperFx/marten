@@ -18,7 +18,7 @@ public interface IQueryPlan<T>
     Task<T> Fetch(IQuerySession session, CancellationToken token);
 }
 
-#region sample_IBatchQueryPlan
+#region sample_ibatchqueryplan
 
 /// <summary>
 /// Marten's concept of the "Specification" pattern for reusable

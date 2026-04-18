@@ -37,7 +37,7 @@ public class executing_arbitrary_sql_as_part_of_transaction : OneOffConfiguratio
 
         await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
 
-        #region sample_QueueSqlCommand
+        #region sample_queuesqlcommand
         theSession.QueueSqlCommand("insert into names (name) values ('Jeremy')");
         theSession.QueueSqlCommand("insert into names (name) values ('Babu')");
         theSession.Store(Target.Random());

@@ -46,7 +46,7 @@ var store = DocumentStore.For(opts =>
 
 Or by using an attribute on your document type:
 
-<!-- snippet: sample_using_DatabaseSchemaName_attribute -->
+<!-- snippet: sample_using_databaseschemaname_attribute -->
 <a id='snippet-sample_using_databaseschemaname_attribute'></a>
 ```cs
 [DatabaseSchemaName("organization")]

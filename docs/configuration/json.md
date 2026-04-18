@@ -231,7 +231,7 @@ Please talk to the Marten team before you undergo any significant effort to supp
 
 Internally, Marten uses an adapter interface for JSON serialization:
 
-<!-- snippet: sample_ISerializer -->
+<!-- snippet: sample_iserializer -->
 <a id='snippet-sample_iserializer'></a>
 ```cs
 /// <summary>

@@ -40,7 +40,7 @@ public class Invoice
     {
     }
 
-    #region sample_using_event_metadata_in_Invoice
+    #region sample_using_event_metadata_in_invoice
 
     public static Invoice Create(IEvent<InvoiceCreated> created)
     {

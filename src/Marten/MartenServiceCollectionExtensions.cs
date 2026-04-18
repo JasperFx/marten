@@ -942,7 +942,7 @@ public static class MartenServiceCollectionExtensions
 
 public interface IGlobalConfigureMarten: IConfigureMarten;
 
-#region sample_IConfigureMarten
+#region sample_iconfiguremarten
 
 /// <summary>
 ///     Mechanism to register additional Marten configuration that is applied after AddMarten()
@@ -955,7 +955,7 @@ public interface IConfigureMarten
 
 #endregion
 
-#region sample_IAsyncConfigureMarten
+#region sample_iasyncconfiguremarten
 
 /// <summary>
 ///     Mechanism to register additional Marten configuration that is applied after AddMarten()

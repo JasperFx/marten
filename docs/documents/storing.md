@@ -11,7 +11,7 @@ method and not have to worry about whether or not the document is brand new or i
 a previously persisted document with the same identity. Here's that method in action
 with a sample that shows storing both a brand new document and a modified document:
 
-<!-- snippet: sample_using_DocumentSession_Store -->
+<!-- snippet: sample_using_documentsession_store -->
 <a id='snippet-sample_using_documentsession_store'></a>
 ```cs
 using var store = DocumentStore.For("some connection string");
@@ -131,7 +131,7 @@ theSession.Query<Target>().Count().ShouldBe(data.Length);
 
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
 
-<!-- snippet: sample_BulkInsertMode_usages -->
+<!-- snippet: sample_bulkinsertmode_usages -->
 <a id='snippet-sample_bulkinsertmode_usages'></a>
 ```cs
 // Just say we have an array of documents we want to bulk insert
@@ -161,7 +161,7 @@ The bulk insert feature can also be used with multi-tenanted documents, but in t
 case you are limited to only loading documents to a single tenant at a time as
 shown below:
 
-<!-- snippet: sample_MultiTenancyWithBulkInsert -->
+<!-- snippet: sample_multitenancywithbulkinsert -->
 <a id='snippet-sample_multitenancywithbulkinsert'></a>
 ```cs
 // Just say we have an array of documents we want to bulk insert

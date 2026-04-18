@@ -18,7 +18,7 @@ Heads up, all the API methods for invoking schema checks or patches or migration
 As long as you have rights to alter your Postgresql database, you can happily set up Marten in one of the permissive "AutoCreate"
 modes and not worry about schema changes at all as you happily code new features and change existing document types:
 
-<!-- snippet: sample_AutoCreateSchemaObjects -->
+<!-- snippet: sample_autocreateschemaobjects -->
 <a id='snippet-sample_autocreateschemaobjects'></a>
 ```cs
 var store = DocumentStore.For(opts =>
@@ -94,7 +94,7 @@ dotnet run -- marten-patch [filename]
 If you'd rather write a database SQL migration file with your own code, bootstrap your `IDocumentStore` pointing to the database connection you
 want to update, and use:
 
-<!-- snippet: sample_WritePatch -->
+<!-- snippet: sample_writepatch -->
 <a id='snippet-sample_writepatch'></a>
 ```cs
 // All migration code is async now!
@@ -121,7 +121,7 @@ While there are many options to include these exported scripts in your ci/cd pip
 
 To programmatically apply all detectable schema changes upfront , you can use this mechanism:
 
-<!-- snippet: sample_ApplyAllConfiguredChangesToDatabase -->
+<!-- snippet: sample_applyallconfiguredchangestodatabase -->
 <a id='snippet-sample_applyallconfiguredchangestodatabase'></a>
 ```cs
 await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
@@ -143,7 +143,7 @@ dotnet run -- marten-apply
 
 Lastly, Marten V5 adds a new option to have the latest database changes detected and applied on application startup with
 
-<!-- snippet: sample_using_ApplyAllDatabaseChangesOnStartup -->
+<!-- snippet: sample_using_applyalldatabasechangesonstartup -->
 <a id='snippet-sample_using_applyalldatabasechangesonstartup'></a>
 ```cs
 // The normal Marten configuration
@@ -172,7 +172,7 @@ In the option above, Marten is calling the same functionality within an `IHosted
 As a possible [environment test](http://codebetter.com/jeremymiller/2006/04/06/environment-tests-and-self-diagnosing-configuration-with-structuremap/), Marten can do a complete check of its known configuration versus the active Postgresql database and assert any differences
 by throwing an exception:
 
-<!-- snippet: sample_AssertDatabaseMatchesConfiguration -->
+<!-- snippet: sample_assertdatabasematchesconfiguration -->
 <a id='snippet-sample_assertdatabasematchesconfiguration'></a>
 ```cs
 await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();

@@ -979,7 +979,7 @@ public class streaming_json_results : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        #region sample_AsJson-plus-Select-2
+        #region sample_asjson-plus-select-2
 
         (await theSession
                 .Query<User>()
@@ -1006,7 +1006,7 @@ public class streaming_json_results : IntegrationContext
 
         // Postgres sticks some extra spaces into the JSON string
 
-        #region sample_AsJson-plus-Select-1
+        #region sample_asjson-plus-select-1
         var json = await theSession
             .Query<User>()
             .OrderBy(x => x.FirstName)

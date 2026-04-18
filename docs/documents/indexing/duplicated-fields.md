@@ -34,7 +34,7 @@ public class Employee
 
 Or by using the fluent interface off of `StoreOptions`:
 
-<!-- snippet: sample_IndexExamples -->
+<!-- snippet: sample_indexexamples -->
 <a id='snippet-sample_indexexamples'></a>
 ```cs
 var store = DocumentStore.For(options =>

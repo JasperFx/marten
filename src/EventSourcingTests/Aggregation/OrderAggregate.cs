@@ -3,7 +3,7 @@ using EventSourcingTests.Examples;
 
 namespace EventSourcingTests.Aggregation;
 
-#region sample_OrderAggregate_with_version
+#region sample_orderaggregate_with_version
 
 public class OrderAggregate
 {

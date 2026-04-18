@@ -393,7 +393,7 @@ public class full_text_index: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            #region sample_text_search_with_non_default_regConfig_sample
+            #region sample_text_search_with_non_default_regconfig_sample
 
             var posts = session.Query<BlogPost>()
                 .Where(x => x.PhraseSearch("somefilter", "italian"))

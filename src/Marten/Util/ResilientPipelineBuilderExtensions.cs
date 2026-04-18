@@ -11,7 +11,7 @@ internal static class ResilientPipelineBuilderExtensions
 {
     public static ResiliencePipelineBuilder AddMartenDefaults(this ResiliencePipelineBuilder builder)
     {
-        #region sample_default_Polly_setup
+        #region sample_default_polly_setup
 
         // default Marten policies
         return builder

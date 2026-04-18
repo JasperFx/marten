@@ -20,7 +20,7 @@ public class InitialDataSamples
 {
     public static async Task use_testing_data()
     {
-        #region sample_using_InitializeMartenWith
+        #region sample_using_initializemartenwith
 
         // Use the configured host builder for your application
         // by calling the Program.CreateHostBuilder() method from
@@ -54,7 +54,7 @@ public class InitialDataSamples
     }
 }
 
-#region sample_MyTestingData
+#region sample_mytestingdata
 
 public class MyTestingData: IInitialData
 {

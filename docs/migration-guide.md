@@ -59,7 +59,7 @@ On the bright side, we believe that the "event slicing" usage in Marten 8 is sig
 
 The existing "Optimized Artifacts Workflow" was completely removed in V8. Instead though, there is a new option shown below:
 
-<!-- snippet: sample_AddMartenWithCustomSessionCreation -->
+<!-- snippet: sample_addmartenwithcustomsessioncreation -->
 <a id='snippet-sample_addmartenwithcustomsessioncreation'></a>
 ```cs
 var connectionString = Configuration.GetConnectionString("postgres");

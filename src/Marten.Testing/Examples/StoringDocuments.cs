@@ -34,7 +34,7 @@ public class StoringDocuments
 
     public async Task using_store()
     {
-        #region sample_using_DocumentSession_Store
+        #region sample_using_documentsession_store
 
         using var store = DocumentStore.For("some connection string");
 

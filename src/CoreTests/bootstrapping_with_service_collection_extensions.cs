@@ -180,7 +180,7 @@ public class bootstrapping_with_service_collection_extensions
         {
             services.AddLogging();
 
-            #region sample_using_ApplyAllDatabaseChangesOnStartup
+            #region sample_using_applyalldatabasechangesonstartup
 
             // The normal Marten configuration
             services.AddMarten(opts =>
@@ -328,7 +328,7 @@ public class bootstrapping_with_service_collection_extensions
     {
         var services = new ServiceCollection();
 
-        #region sample_using_UseNpgsqlDataSource
+        #region sample_using_usenpgsqldatasource
 
         services.AddNpgsqlDataSource(ConnectionSource.ConnectionString);
 
@@ -350,7 +350,7 @@ public class bootstrapping_with_service_collection_extensions
     {
         var services = new ServiceCollection();
 
-        #region sample_using_UseNpgsqlDataSourceMultiHost
+        #region sample_using_usenpgsqldatasourcemultihost
 
         services.AddMultiHostNpgsqlDataSource(ConnectionSource.ConnectionString);
 
@@ -378,7 +378,7 @@ public class bootstrapping_with_service_collection_extensions
     {
         var services = new ServiceCollection();
 
-        #region sample_using_UseNpgsqlDataSource_keyed
+        #region sample_using_usenpgsqldatasource_keyed
 
         const string dataSourceKey = "marten_data_source";
 

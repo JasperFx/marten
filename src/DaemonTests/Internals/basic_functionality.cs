@@ -120,7 +120,7 @@ public class basic_functionality: DaemonContext
 
     }
 
-    #region sample_AsyncDaemonListener
+    #region sample_asyncdaemonlistener
 
     public class FakeListener: IChangeListener
     {
@@ -150,7 +150,7 @@ public class basic_functionality: DaemonContext
     [Fact]
     public async Task can_listen_for_commits_in_daemon()
     {
-        #region sample_AsyncListeners
+        #region sample_asynclisteners
 
         var listener = new FakeListener();
         StoreOptions(x =>

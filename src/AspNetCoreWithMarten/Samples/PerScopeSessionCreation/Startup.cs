@@ -14,14 +14,14 @@ using Weasel.Postgresql;
 
 namespace AspNetCoreWithMarten.Samples.PerScopeSessionCreation;
 
-#region sample_CorrelationIdWithISession
+#region sample_correlationidwithisession
 public interface ISession
 {
     Guid CorrelationId { get; set; }
 }
 #endregion
 
-#region sample_CorrelatedMartenLogger
+#region sample_correlatedmartenlogger
 public class CorrelatedMartenLogger: IMartenSessionLogger
 {
     private readonly ILogger<IDocumentSession> _logger;
@@ -76,7 +76,7 @@ public class CorrelatedMartenLogger: IMartenSessionLogger
 #endregion
 
 
-#region sample_CustomSessionFactoryByScope
+#region sample_customsessionfactorybyscope
 public class ScopedSessionFactory: ISessionFactory
 {
     private readonly IDocumentStore _store;
@@ -124,7 +124,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenWithCustomSessionCreationByScope
+        #region sample_addmartenwithcustomsessioncreationbyscope
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>

@@ -11,7 +11,7 @@ using Marten.Events.Projections;
 
 namespace DaemonTests.TeleHealth;
 
-#region sample_AppointmentDetailsProjection
+#region sample_appointmentdetailsprojection
 
 public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
 {
@@ -139,7 +139,7 @@ public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDeta
 
     }
 
-    #region sample_AppointmentDetails_Evolve
+    #region sample_appointmentdetails_evolve
 
     public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, IEvent e)
     {

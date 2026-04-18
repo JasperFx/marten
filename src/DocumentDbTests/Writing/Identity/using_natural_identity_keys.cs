@@ -71,7 +71,7 @@ public class using_natural_identity_keys: IntegrationContext
     }
 }
 
-#region sample_IdentityAttribute
+#region sample_identityattribute
 public class NonStandardDoc
 {
     [Identity]

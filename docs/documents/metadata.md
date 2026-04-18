@@ -103,7 +103,7 @@ but this is an opt in behavior. You can explicitly map a public member of your d
 type to a metadata value individually. Let's say that you have a document type like
 this where you want to track metadata:
 
-<!-- snippet: sample_DocWithMetadata -->
+<!-- snippet: sample_docwithmetadata -->
 <a id='snippet-sample_docwithmetadata'></a>
 ```cs
 public class DocWithMetadata
@@ -149,7 +149,7 @@ Note that mapping a document member to a metadata column will implicitly enable 
 For correlation, causation, and last modified tracking, an easy way to do this is to
 just implement the Marten `ITracked` interface as shown below:
 
-<!-- snippet: sample_MyTrackedDoc -->
+<!-- snippet: sample_mytrackeddoc -->
 <a id='snippet-sample_mytrackeddoc'></a>
 ```cs
 public class MyTrackedDoc: ITracked
@@ -168,7 +168,7 @@ If your document type implements this interface, Marten will automatically enabl
 Likewise, version tracking directly on the document is probably easiest with the `IVersioned`
 interface as shown below:
 
-<!-- snippet: sample_MyVersionedDoc -->
+<!-- snippet: sample_myversioneddoc -->
 <a id='snippet-sample_myversioneddoc'></a>
 ```cs
 public class MyVersionedDoc: IVersioned
@@ -187,7 +187,7 @@ checking with mapping of the current version to the `IVersioned.Version` propert
 
 If you want Marten to run lean, you can omit all metadata fields from Marten with this configuration:
 
-<!-- snippet: sample_DisableAllInformationalFields -->
+<!-- snippet: sample_disableallinformationalfields -->
 <a id='snippet-sample_disableallinformationalfields'></a>
 ```cs
 var store = DocumentStore.For(opts =>

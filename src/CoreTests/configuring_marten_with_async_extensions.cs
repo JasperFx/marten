@@ -74,7 +74,7 @@ public class configuring_marten_with_async_extensions
     }
 }
 
-#region sample_FeatureManagementUsingExtension
+#region sample_featuremanagementusingextension
 
 public class FeatureManagementUsingExtension: IAsyncConfigureMarten
 {

@@ -475,7 +475,7 @@ public class Product
 
 public record ProductRegistered(string Name, string Category);
 
-#region sample_ProductProjection
+#region sample_productprojection
 
 public class ProductProjection: SingleStreamProjection<Product, Guid>
 {

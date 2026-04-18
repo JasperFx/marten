@@ -604,7 +604,7 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
     /// <param name="configure"></param>
     /// <returns></returns>
 
-    #region sample_DocumentStore.For
+    #region sample_documentstore.For
 
     public static DocumentStore For(Action<StoreOptions> configure)
     {

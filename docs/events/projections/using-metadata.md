@@ -13,7 +13,7 @@ in order to opt into the optimistic concurrency check.
 
 To start with, let's say we have an `OrderAggregate` defined like this:
 
-<!-- snippet: sample_OrderAggregate_with_version -->
+<!-- snippet: sample_orderaggregate_with_version -->
 <a id='snippet-sample_orderaggregate_with_version'></a>
 ```cs
 public class OrderAggregate
@@ -147,7 +147,7 @@ your aggregate in any way you wish.
 
 Here's an example of using a custom header value of the events captured to update an aggregate based on the last event encountered:
 
-<!-- snippet: sample_using_ApplyMetadata -->
+<!-- snippet: sample_using_applymetadata -->
 <a id='snippet-sample_using_applymetadata'></a>
 ```cs
 public class Item

@@ -400,7 +400,7 @@ public record ShippingLabelCreated(string ExternalAccountId): IExternalAccountEv
 
 public record TrackingItemSeen(string ExternalAccountId, string Mode): IExternalAccountEvent;
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L18-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L19-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Lookup document projected per external account:
@@ -423,7 +423,7 @@ public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccou
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L35-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L36-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Custom grouper that resolves `CustomerId` in bulk per event range:
@@ -463,7 +463,7 @@ public class ExternalAccountToCustomerGrouper: IAggregateGrouper<Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L54-L88' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-grouper' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L55-L89' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-grouper' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The multi stream projection stays focused on applying events:
@@ -501,7 +501,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L90-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L91-L123' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Registration:
@@ -512,7 +512,7 @@ Registration:
 opts.Projections.Add<ExternalAccountLinkProjection>(ProjectionLifecycle.Inline);
 opts.Projections.Add<CustomerBillingProjection>(ProjectionLifecycle.Async);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L128-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-lookup-registration' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L129-L134' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-lookup-registration' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Pattern 2, keep the linked single stream ids on the projected document, then query by containment
@@ -615,7 +615,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
         => view.ShippingLabels++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L140-L199' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-id-list-grouper' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L141-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_external-account-link-id-list-grouper' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Pattern 4, batch-aware grouper with in-memory lookup plus DB fallback
@@ -734,7 +734,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
     public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _) => view.ShippingLabels++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L205-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-aware-grouper' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L220-L309' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-aware-grouper' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Register the lookup projection inline and the multi-stream projection async, exactly
@@ -778,7 +778,7 @@ public record ShipmentCompleted;
 
 public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L204-L218' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L314-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Live aggregate state:
@@ -800,7 +800,7 @@ public class Shipment
     public void Apply(ItemScanned e) => Items.Add(e.ItemId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L220-L236' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L330-L346' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Derived event that is projection friendly (includes `CustomerId` again):
@@ -810,7 +810,7 @@ Derived event that is projection friendly (includes `CustomerId` again):
 ```cs
 public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L212-L216' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-billed' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L322-L326' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-billed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Command endpoint using the aggregate handler workflow, Wolverine loads the aggregate for you, you return the event, Wolverine appends it to the same stream:
@@ -857,7 +857,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L238-L264' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L348-L374' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -914,7 +914,7 @@ opts.Events.EnableGlobalProjectionsForConjoinedTenancy = true;
 The `ViewProjection` also provides the ability to "fan out" child events from a parent event into the segment of events being used to
 create an aggregated view. As an example, a `Travel` event we use in Marten testing contains a list of `Movement` objects:
 
-<!-- snippet: sample_Travel_Movements -->
+<!-- snippet: sample_travel_movements -->
 <a id='snippet-sample_travel_movements'></a>
 ```cs
 public IList<Movement> Movements { get; set; } = new List<Movement>();
@@ -1137,7 +1137,7 @@ public record DepositRecorded(decimal Amount);
 public record WithdrawalRecorded(decimal Amount);
 public record FeeCharged(decimal Amount, string Reason);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L16-L22' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L16-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Read Model
@@ -1161,7 +1161,7 @@ public class MonthlyAccountActivity
     public decimal TotalFees { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L24-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L25-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Projection
@@ -1242,7 +1242,7 @@ public class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAcc
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L43-L116' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/monthly_account_activity_projection.cs#L45-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_monthly_account_activity_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ### Registration

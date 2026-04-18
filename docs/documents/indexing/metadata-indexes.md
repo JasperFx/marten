@@ -51,7 +51,7 @@ public class TenantIdIndexCustomer
 
 Or by using the fluent interface:
 
-<!-- snippet: sample_index-tenantId-via-fi -->
+<!-- snippet: sample_index-tenantid-via-fi -->
 <a id='snippet-sample_index-tenantid-via-fi'></a>
 ```cs
 DocumentStore.For(_ =>
@@ -68,7 +68,7 @@ DocumentStore.For(_ =>
 If using the [soft deletes](/documents/deletes) functionality you can ask Marten
 to create a partial index on the deleted documents either using `SoftDeletedAttribute`:
 
-<!-- snippet: sample_SoftDeletedWithIndexAttribute -->
+<!-- snippet: sample_softdeletedwithindexattribute -->
 <a id='snippet-sample_softdeletedwithindexattribute'></a>
 ```cs
 [SoftDeleted(Indexed = true)]
