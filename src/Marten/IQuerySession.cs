@@ -13,6 +13,7 @@ using Marten.Services.BatchQuerying;
 using Marten.Storage;
 using Marten.Storage.Metadata;
 using Npgsql;
+using Weasel.Core;
 using Weasel.Postgresql.Tables.Indexes;
 
 namespace Marten;
@@ -593,6 +594,36 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
     Task<T> QueryByPlanAsync<T>(IQueryPlan<T> plan, CancellationToken token = default);
+
+    /// <summary>
+    ///     Fetch the next value of a PostgreSQL sequence by name (optionally schema-qualified).
+    ///     The underlying call is the Postgres <c>nextval()</c> function. The returned value is
+    ///     cast to <see cref="int" /> in SQL; use
+    ///     <see cref="NextSequenceValueAsLong(string, CancellationToken)" /> when the sequence
+    ///     may exceed <see cref="int.MaxValue" />.
+    /// </summary>
+    Task<int> NextSequenceValue(string sequenceName, CancellationToken token = default);
+
+    /// <summary>
+    ///     Fetch the next value of a PostgreSQL sequence described by a <see cref="DbObjectName" />.
+    ///     The underlying call is the Postgres <c>nextval()</c> function. The returned value is
+    ///     cast to <see cref="int" /> in SQL; use
+    ///     <see cref="NextSequenceValueAsLong(DbObjectName, CancellationToken)" /> when the sequence
+    ///     may exceed <see cref="int.MaxValue" />.
+    /// </summary>
+    Task<int> NextSequenceValue(DbObjectName sequenceName, CancellationToken token = default);
+
+    /// <summary>
+    ///     Fetch the next value of a PostgreSQL sequence by name (optionally schema-qualified)
+    ///     as a 64-bit integer, matching the native type of <c>nextval()</c>.
+    /// </summary>
+    Task<long> NextSequenceValueAsLong(string sequenceName, CancellationToken token = default);
+
+    /// <summary>
+    ///     Fetch the next value of a PostgreSQL sequence described by a <see cref="DbObjectName" />
+    ///     as a 64-bit integer, matching the native type of <c>nextval()</c>.
+    /// </summary>
+    Task<long> NextSequenceValueAsLong(DbObjectName sequenceName, CancellationToken token = default);
 
 
 }
