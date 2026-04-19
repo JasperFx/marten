@@ -788,6 +788,42 @@ public class MartenRegistry
         }
 
         /// <summary>
+        /// Enable PostgreSQL Row Level Security for this document type only, overriding
+        /// any store-level setting. Requires conjoined tenancy. When <paramref name="settingName"/>
+        /// is null the store-level RLS setting is used, falling back to "app.tenant_id".
+        /// <para>
+        /// Note: Marten only sets the store-level GUC on each opened session connection. If this
+        /// override uses a different setting name than the store, the application is responsible
+        /// for populating that GUC on each session; Marten writes the policy but does not set
+        /// the custom GUC automatically.
+        /// </para>
+        /// </summary>
+        public DocumentMappingExpression<T> UseRowLevelSecurity(string? settingName = null)
+        {
+            _builder.Alter = m =>
+            {
+                m.RlsOverride = true;
+                m.RlsSettingOverride = settingName;
+            };
+            return this;
+        }
+
+        /// <summary>
+        /// Explicitly disable PostgreSQL Row Level Security for this document type, even
+        /// when Row Level Security is enabled store-wide. A subsequent schema migration
+        /// drops any previously applied tenant-isolation policy on this table.
+        /// </summary>
+        public DocumentMappingExpression<T> DisableRowLevelSecurity()
+        {
+            _builder.Alter = m =>
+            {
+                m.RlsOverride = false;
+                m.RlsSettingOverride = null;
+            };
+            return this;
+        }
+
+        /// <summary>
         ///     Marks just this document type as being stored with conjoined multi-tenancy
         /// </summary>
         /// <returns></returns>

@@ -35,24 +35,24 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
 
     public NpgsqlTransaction Transaction { get; }
 
-    public ValueTask DisposeAsync()
+    public virtual ValueTask DisposeAsync()
     {
         return new ValueTask();
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         // Nothing
     }
 
-    public void Apply(NpgsqlCommand command)
+    public virtual void Apply(NpgsqlCommand command)
     {
         command.Connection = Connection;
         command.Transaction = Transaction;
         command.CommandTimeout = CommandTimeout;
     }
 
-    public Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
+    public virtual Task ApplyAsync(NpgsqlCommand command, CancellationToken token)
     {
         command.Connection = Connection;
         command.Transaction = Transaction;
@@ -61,14 +61,14 @@ internal class ExternalTransaction: ConnectionLifetimeBase, IAlwaysConnectedLife
         return Task.CompletedTask;
     }
 
-    public void Apply(NpgsqlBatch batch)
+    public virtual void Apply(NpgsqlBatch batch)
     {
         batch.Connection = Connection;
         batch.Transaction = Transaction;
         batch.Timeout = CommandTimeout;
     }
 
-    public Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
+    public virtual Task ApplyAsync(NpgsqlBatch batch, CancellationToken token)
     {
         batch.Connection = Connection;
         batch.Transaction = Transaction;
