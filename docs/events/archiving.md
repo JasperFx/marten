@@ -259,22 +259,25 @@ This ensures all prior events are fully projected before the stream is marked as
 When multiple single-stream projections run inside the same
 [composite projection](/events/projections/composite), every child projection
 processes every slice in the batch. An `Archived` event raised on one child's
-stream is therefore *seen* by every sibling. To prevent unintended side effects,
-Marten gates `Archived` handling on whether a given child actually **owns** the
-stream — measured by whether the child has a snapshot for that stream id (either
-loaded before the slice was applied, or materialized by the slice itself):
+stream is therefore *seen* by every sibling. To avoid redundant stream-archival
+operations, the `mt_archive_stream` call is only issued from the child that
+actually **owns** the stream — measured by whether the child has a snapshot for
+that stream id (either loaded before the slice was applied, or materialized by
+the slice itself). Siblings that did not materialize anything skip the archive.
 
-1. `Archived` can never **create** a new aggregate in a sibling that has no
-   snapshot. If a sibling happens to declare `Create(Archived)` — legal but
-   almost always accidental in a composite — that method is skipped while the
-   snapshot is still null. Once the snapshot exists, `Apply(Archived)` hooks
-   run normally, so `Apply(Archived, current)` patterns on genuine owners keep
-   working.
-2. `mt_archive_stream` is only issued from the child that owns the stream.
-   Siblings that did not materialize anything skip the archival call, avoiding
-   redundant (or phantom) database operations.
+::: tip
+Archiving a stream and deleting the projected document are **independent**
+operations. Marten does not delete projected documents as a side effect of an
+`Archived` event — that's a common and legitimate pattern: keep the read model
+around for historical queries while the underlying event stream moves out of
+the hot table. If you *do* want the document removed when the stream is
+archived, either call `session.Delete<T>(id)` explicitly (see the earlier tip)
+or register the deletion in your projection's `Apply(Archived, current)`
+method by returning `null` (or otherwise opting in).
+:::
 
-In practice: appending `Archived` to a stream that belongs to projection A
-archives that stream from A's perspective, even when A shares a composite group
-with unrelated sibling projections B and C. No documents are created in B or C
-for A's stream id.
+Whether a projection's `Create(Archived)` or `Apply(Archived, current)` method
+runs is entirely governed by the user-defined handlers on that projection —
+`Archived` is just an event and receives no special treatment at the
+`EvolveAsync` level. The ownership guard described above only scopes the
+stream-archival side effect.
