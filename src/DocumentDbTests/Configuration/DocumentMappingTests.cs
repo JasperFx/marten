@@ -891,7 +891,7 @@ public class DocumentMappingTests
 
 
 
-    #region sample_ConfigureMarten-generic
+    #region sample_configuremarten-generic
 
     public class ConfiguresItself
     {
@@ -905,7 +905,7 @@ public class DocumentMappingTests
 
     #endregion
 
-    #region sample_ConfigureMarten-specifically
+    #region sample_configuremarten-specifically
 
     public class ConfiguresItselfSpecifically
     {
@@ -934,7 +934,7 @@ public class DocumentMappingTests
         mapping.Indexes.OfType<ComputedIndex>().Any().ShouldBeTrue();
     }
 
-    #region sample_using_DatabaseSchemaName_attribute
+    #region sample_using_databaseschemaname_attribute
 
     [DatabaseSchemaName("organization")]
     public class Customer

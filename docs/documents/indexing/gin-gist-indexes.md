@@ -5,7 +5,7 @@ See [Exploring the Postgres GIN index](https://hashrocket.com/blog/posts/explori
 To optimize a wider range of ad-hoc queries against the document JSONB, you can apply a [GIN index](http://www.postgresql.org/docs/9.4/static/gin.html) to
 the JSON field in the database:
 
-<!-- snippet: sample_IndexExamples -->
+<!-- snippet: sample_indexexamples -->
 <a id='snippet-sample_indexexamples'></a>
 ```cs
 var store = DocumentStore.For(options =>

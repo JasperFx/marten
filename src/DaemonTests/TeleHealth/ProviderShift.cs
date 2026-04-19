@@ -8,7 +8,7 @@ using Marten.Events.Aggregation;
 
 namespace DaemonTests.TeleHealth;
 
-#region sample_ProviderShift
+#region sample_providershift
 
 public class ProviderShift(Guid boardId, Provider provider)
 {
@@ -40,13 +40,13 @@ public record ProviderScheduled(Guid ProviderId, DateTimeOffset ExpectedStart);
 
 public record AppointmentAssigned(Guid AppointmentId);
 
-#region sample_ProviderJoined
+#region sample_providerjoined
 
 public record ProviderJoined(Guid BoardId, Guid ProviderId);
 
 #endregion
 
-#region sample_EnhancedProviderJoined
+#region sample_enhancedproviderjoined
 
 public record EnhancedProviderJoined(Guid BoardId, Provider Provider);
 
@@ -59,7 +59,7 @@ public record ChartingFinished;
 
 public record ChartingStarted;
 
-#region sample_ProviderShiftProjection
+#region sample_providershiftprojection
 
 public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
 {
@@ -69,7 +69,7 @@ public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid
         Options.CacheLimitPerTenant = 1000;
     }
 
-    #region sample_ProviderShift_EnrichEventsAsync
+    #region sample_providershift_enricheventsasync
 
     public override async Task EnrichEventsAsync(SliceGroup<ProviderShift, Guid> group, IQuerySession querySession, CancellationToken cancellation)
     {
@@ -100,7 +100,7 @@ public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid
 
     #endregion
 
-    #region sample_ProviderShift_Evolve
+    #region sample_providershift_evolve
 
     public override ProviderShift Evolve(ProviderShift snapshot, Guid id, IEvent e)
     {

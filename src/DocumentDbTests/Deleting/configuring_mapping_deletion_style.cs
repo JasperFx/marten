@@ -18,7 +18,7 @@ public class configuring_mapping_deletion_style
             .DeleteStyle.ShouldBe(DeleteStyle.Remove);
     }
 
-    #region sample_SoftDeletedAttribute
+    #region sample_softdeletedattribute
     [SoftDeleted]
     public class SoftDeletedDoc
     {
@@ -42,7 +42,7 @@ public class configuring_mapping_deletion_style
             .ShouldBe(1);
     }
 
-    #region sample_SoftDeletedWithIndexAttribute
+    #region sample_softdeletedwithindexattribute
     [SoftDeleted(Indexed = true)]
     public class IndexedSoftDeletedDoc
     {

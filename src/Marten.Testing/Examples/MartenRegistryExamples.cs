@@ -29,7 +29,7 @@ public class MartenRegistryExamples
         });
         #endregion
 
-        #region sample_index-tenantId-via-fi
+        #region sample_index-tenantid-via-fi
         DocumentStore.For(_ =>
         {
             _.Schema.For<User>().MultiTenanted();
@@ -63,7 +63,7 @@ public static class IndexExamples
 {
     public static void Configure()
     {
-        #region sample_IndexExamples
+        #region sample_indexexamples
         var store = DocumentStore.For(options =>
         {
             // Add a gin index to the User document type

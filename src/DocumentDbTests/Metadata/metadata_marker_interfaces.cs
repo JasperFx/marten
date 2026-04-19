@@ -118,7 +118,7 @@ public class metadata_marker_interfaces : IntegrationContext
     }
 }
 
-#region sample_MyVersionedDoc
+#region sample_myversioneddoc
 
 public class MyVersionedDoc: IVersioned
 {
@@ -128,7 +128,7 @@ public class MyVersionedDoc: IVersioned
 
 #endregion
 
-#region sample_implementing_ISoftDeleted
+#region sample_implementing_isoftdeleted
 
 public class MySoftDeletedDoc: ISoftDeleted
 {
@@ -144,7 +144,7 @@ public class MySoftDeletedDoc: ISoftDeleted
 
 #endregion
 
-#region sample_ASoftDeletedDoc
+#region sample_asoftdeleteddoc
 
 public class ASoftDeletedDoc
 {
@@ -160,7 +160,7 @@ public class ASoftDeletedDoc
 
 
 
-#region sample_MyTrackedDoc
+#region sample_mytrackeddoc
 
 public class MyTrackedDoc: ITracked
 {

@@ -23,7 +23,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenByNestedClosure
+        #region sample_addmartenbynestedclosure
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>

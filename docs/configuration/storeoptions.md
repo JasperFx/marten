@@ -4,7 +4,7 @@ The `StoreOptions` object in Marten is the root of all of the configuration for 
 The static builder methods like `DocumentStore.For(configuration)` or `IServiceCollection.AddMarten(configuration)` are just
 syntactic sugar around building up a `StoreOptions` object and passing that to the constructor function of a `DocumentStore`:
 
-<!-- snippet: sample_DocumentStore.For -->
+<!-- snippet: sample_documentstore.For -->
 <a id='snippet-sample_documentstore.for'></a>
 ```cs
 public static DocumentStore For(Action<StoreOptions> configure)
@@ -15,7 +15,7 @@ public static DocumentStore For(Action<StoreOptions> configure)
     return new DocumentStore(options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L505-L515' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/DocumentStore.cs#L607-L617' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentstore.for' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The major parts of `StoreOptions` are shown in the class diagram below:
@@ -82,7 +82,7 @@ to compose your document type configuration in additional `MartenRegistry` objec
 
 To use your own subclass of `MartenRegistry` and place declarations in the constructor function like this example:
 
-<!-- snippet: sample_OrganizationRegistry -->
+<!-- snippet: sample_organizationregistry -->
 <a id='snippet-sample_organizationregistry'></a>
 ```cs
 public class OrganizationRegistry: MartenRegistry
@@ -99,7 +99,7 @@ public class OrganizationRegistry: MartenRegistry
 
 To apply your new `MartenRegistry`, just include it when you bootstrap the `IDocumentStore` as in this example:
 
-<!-- snippet: sample_including_a_custom_MartenRegistry -->
+<!-- snippet: sample_including_a_custom_martenregistry -->
 <a id='snippet-sample_including_a_custom_martenregistry'></a>
 ```cs
 var store = DocumentStore.For(opts =>
@@ -139,7 +139,7 @@ var store = DocumentStore.For(opts =>
 If there's some kind of customization you'd like to use attributes for that isn't already supported by Marten,
 you're still in luck. If you write a subclass of the `MartenAttribute` shown below:
 
-<!-- snippet: sample_MartenAttribute -->
+<!-- snippet: sample_martenattribute -->
 <a id='snippet-sample_martenattribute'></a>
 ```cs
 public abstract class MartenAttribute: Attribute
@@ -177,7 +177,7 @@ picked up and used by Marten to configure the underlying `DocumentMapping` model
 As an example, an attribute to add a gin index to the JSONB storage for more efficient adhoc querying of a document
 would look like this:
 
-<!-- snippet: sample_GinIndexedAttribute -->
+<!-- snippet: sample_ginindexedattribute -->
 <a id='snippet-sample_ginindexedattribute'></a>
 ```cs
 [AttributeUsage(AttributeTargets.Class)]
@@ -198,7 +198,7 @@ Lastly, Marten can examine the document types themselves for a `public static Co
 and invoke that to let the document type make its own customizations for its storage. Here's an example from
 the unit tests:
 
-<!-- snippet: sample_ConfigureMarten-generic -->
+<!-- snippet: sample_configuremarten-generic -->
 <a id='snippet-sample_configuremarten-generic'></a>
 ```cs
 public class ConfiguresItself
@@ -221,7 +221,7 @@ queried from within a Marten application. All the other configuration options en
 You can optionally take in the more specific `DocumentMapping<T>` for your document type to get at
 some convenience methods for indexing or duplicating fields that depend on .Net Expression's:
 
-<!-- snippet: sample_ConfigureMarten-specifically -->
+<!-- snippet: sample_configuremarten-specifically -->
 <a id='snippet-sample_configuremarten-specifically'></a>
 ```cs
 public class ConfiguresItselfSpecifically

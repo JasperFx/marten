@@ -7,7 +7,7 @@ using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 
-#region sample_using_WebApplication_1
+#region sample_using_webapplication_1
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,7 +53,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-#region sample_using_WebApplication_2
+#region sample_using_webapplication_2
 
 // Instead of App.Run(), use the app.RunJasperFxCommands(args)
 // as the last line of your Program.cs file

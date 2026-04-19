@@ -28,7 +28,7 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
         GetId(users, "User3").ShouldBe("userwithstring/3");
     }
 
-    #region sample_DocumentWithStringId
+    #region sample_documentwithstringid
 
     public class DocumentWithStringId
     {
@@ -39,7 +39,7 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
 
     private void sample_usage()
     {
-        #region sample_using_IdentityKey
+        #region sample_using_identitykey
 
         var store = DocumentStore.For(opts =>
         {

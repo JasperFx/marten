@@ -230,7 +230,7 @@ var store = DocumentStore.For(_ =>
 
 Same can be configured for Duplicated Field:
 
-<!-- snippet: sample_IndexExamples -->
+<!-- snippet: sample_indexexamples -->
 <a id='snippet-sample_indexexamples'></a>
 ```cs
 var store = DocumentStore.For(options =>

@@ -20,7 +20,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenWithLightweightSessions
+        #region sample_addmartenwithlightweightsessions
         var connectionString = Configuration.GetConnectionString("postgres");
 
         services.AddMarten(opts =>

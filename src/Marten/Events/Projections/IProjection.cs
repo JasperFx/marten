@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Events.Projections;
 
-#region sample_IProjection
+#region sample_iprojection
 
 /// <summary>
 ///     Interface for all event projections

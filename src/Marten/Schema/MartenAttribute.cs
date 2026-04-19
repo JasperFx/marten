@@ -9,7 +9,7 @@ namespace Marten.Schema;
 ///     or per document type customization to the document storage
 /// </summary>
 
-#region sample_MartenAttribute
+#region sample_martenattribute
 
 public abstract class MartenAttribute: Attribute
 {

@@ -79,7 +79,7 @@ public static class CustomExtensions
     #endregion
 }
 
-#region sample_IsBlue
+#region sample_isblue
 
 public class IsBlue: IMethodCallParser
 {

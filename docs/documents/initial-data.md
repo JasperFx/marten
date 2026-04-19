@@ -76,7 +76,7 @@ var store = host.Services.GetRequiredService<IDocumentStore>();
 We think it's common that you'll use the `IInitialData` mechanism strictly for test data setup. Let's say that you have
 a set of baseline data for testing that lives in your test project:
 
-<!-- snippet: sample_MyTestingData -->
+<!-- snippet: sample_mytestingdata -->
 <a id='snippet-sample_mytestingdata'></a>
 ```cs
 public class MyTestingData: IInitialData
@@ -95,7 +95,7 @@ Now, you'd like to use your exact application Marten configuration, but only for
 set to the application's Marten configuration. You can do that as of Marten v5.1 with the `IServiceCollection.InitializeMartenWith()`
 methods as shown in a sample below for a testing project:
 
-<!-- snippet: sample_using_InitializeMartenWith -->
+<!-- snippet: sample_using_initializemartenwith -->
 <a id='snippet-sample_using_initializemartenwith'></a>
 ```cs
 // Use the configured host builder for your application

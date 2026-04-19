@@ -7,7 +7,7 @@ namespace Marten.Schema;
 ///     Adds a gin index to the JSONB data of a document
 /// </summary>
 
-#region sample_GinIndexedAttribute
+#region sample_ginindexedattribute
 
 [AttributeUsage(AttributeTargets.Class)]
 public class GinIndexedAttribute: MartenAttribute

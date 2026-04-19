@@ -61,7 +61,7 @@ As of v0.8.10, Marten allows you to incorporate [compiled queries](/documents/qu
 
 Say you have a compiled query that finds the first user with a given first name:
 
-<!-- snippet: sample_FindByFirstName -->
+<!-- snippet: sample_findbyfirstname -->
 <a id='snippet-sample_findbyfirstname'></a>
 ```cs
 public class FindByFirstName: ICompiledQuery<User, User>

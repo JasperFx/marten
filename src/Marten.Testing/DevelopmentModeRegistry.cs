@@ -5,7 +5,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Testing;
 
-#region sample_MartenServices
+#region sample_martenservices
 public class MartenServices : ServiceRegistry
 {
     public MartenServices()

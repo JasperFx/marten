@@ -10,7 +10,7 @@ public static class NumericRevisioningSample
 {
     public static async Task configure_for_revisioned()
     {
-        #region sample_UseNumericRevisions_fluent_interface
+        #region sample_usenumericrevisions_fluent_interface
 
         using var store = DocumentStore.For(opts =>
         {

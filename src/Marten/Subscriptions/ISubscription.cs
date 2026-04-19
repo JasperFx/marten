@@ -8,7 +8,7 @@ using Marten.Events.Daemon;
 
 namespace Marten.Subscriptions;
 
-#region sample_ISubscription
+#region sample_isubscription
 
 /// <summary>
 /// Basic abstraction for custom subscriptions to Marten events through the async daemon. Use this in

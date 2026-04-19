@@ -148,7 +148,7 @@ public class mandatory_stream_type_behavior : OneOffConfigurationsContext
 
     public static void configure_mandatory_stream_type()
     {
-        #region sample_UseMandatoryStreamTypeDeclaration
+        #region sample_usemandatorystreamtypedeclaration
 
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>

@@ -82,6 +82,7 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
+            endpoints.MapStreamingMinimalEndpoints();
         });
     }
 }

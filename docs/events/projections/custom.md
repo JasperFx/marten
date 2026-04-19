@@ -2,7 +2,7 @@
 
 To build your own Marten projection, you just need a class that implements the `Marten.Events.Projections.IProjection` interface shown below:
 
-<!-- snippet: sample_IProjection -->
+<!-- snippet: sample_iprojection -->
 <a id='snippet-sample_iprojection'></a>
 ```cs
 /// <summary>
@@ -19,7 +19,7 @@ The `StreamAction` aggregates outstanding events by the event stream, which is h
 yet to be committed. The `IDocumentOperations` interface will give you access to a large subset of the `IDocumentSession` API to make document changes
 or deletions. Here's a sample custom projection from our tests:
 
-<!-- snippet: sample_QuestPatchTestProjection -->
+<!-- snippet: sample_questpatchtestprojection -->
 <a id='snippet-sample_questpatchtestprojection'></a>
 ```cs
 public class QuestPatchTestProjection: IProjection

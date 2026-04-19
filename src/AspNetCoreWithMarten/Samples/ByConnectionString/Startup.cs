@@ -15,7 +15,7 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        #region sample_AddMartenByConnectionString
+        #region sample_addmartenbyconnectionstring
 
         var connectionString = Configuration.GetConnectionString("postgres");
 

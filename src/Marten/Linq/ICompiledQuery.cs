@@ -26,7 +26,7 @@ public interface ICompiledQueryMarker{}
 /// <typeparam name="TDoc">The document</typeparam>
 /// <typeparam name="TOut">The result type for a query</typeparam>
 
-#region sample_ICompiledQuery
+#region sample_icompiledquery
 
 public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: notnull
 {
@@ -41,7 +41,7 @@ public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc: n
 /// </summary>
 /// <typeparam name="TDoc">The document</typeparam>
 
-#region sample_ICompiledListQuery-with-no-select
+#region sample_icompiledlistquery-with-no-select
 
 public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where TDoc : notnull
 {
@@ -55,7 +55,7 @@ public interface ICompiledListQuery<TDoc>: ICompiledListQuery<TDoc, TDoc> where 
 /// <typeparam name="TDoc">The document</typeparam>
 /// <typeparam name="TOut">The output type</typeparam>
 
-#region sample_ICompiledListQuery-with-select
+#region sample_icompiledlistquery-with-select
 
 public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerable<TOut>> where TDoc : notnull
 {
@@ -68,7 +68,7 @@ public interface ICompiledListQuery<TDoc, TOut>: ICompiledQuery<TDoc, IEnumerabl
 /// </summary>
 /// <typeparam name="TDoc">The document</typeparam>
 
-#region sample_ICompiledQuery-for-single-doc
+#region sample_icompiledquery-for-single-doc
 
 public interface ICompiledQuery<TDoc>: ICompiledQuery<TDoc, TDoc> where TDoc : notnull
 {

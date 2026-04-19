@@ -40,7 +40,7 @@ public class Appointment
     public DateTimeOffset? Completed { get; set; }
 }
 
-#region sample_AppointmentProjection
+#region sample_appointmentprojection
 
 public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 {

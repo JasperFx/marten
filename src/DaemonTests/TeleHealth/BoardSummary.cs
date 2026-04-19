@@ -27,7 +27,7 @@ public class BoardSummary
 
 public record AssignedAppointment(Appointment Appointment, Provider Provider);
 
-#region sample_BoardSummaryProjection
+#region sample_boardsummaryprojection
 
 public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
 {

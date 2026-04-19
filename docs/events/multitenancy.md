@@ -28,7 +28,7 @@ be global within your system.
 
 Let's start with a possible implementation of a single stream projection:
 
-<!-- snippet: sample_SpecialCounterProjection -->
+<!-- snippet: sample_specialcounterprojection -->
 <a id='snippet-sample_specialcounterprojection'></a>
 ```cs
 public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
@@ -45,7 +45,7 @@ public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Gu
 
 Or this equivalent, but see how I'm explicitly registering event types, because that's going to be important:
 
-<!-- snippet: sample_SpecialCounterProjection2 -->
+<!-- snippet: sample_specialcounterprojection2 -->
 <a id='snippet-sample_specialcounterprojection2'></a>
 ```cs
 public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>

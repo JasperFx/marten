@@ -57,7 +57,7 @@ public class deleting_multiple_documents: IntegrationContext
     {
         using var session = OpenSession(tracking);
 
-        #region sample_DeleteObjects
+        #region sample_deleteobjects
 
         // Store a mix of different document types
         var user1 = new User { FirstName = "Jamie", LastName = "Vaughan" };

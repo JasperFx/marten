@@ -2,7 +2,7 @@ using System;
 
 namespace Marten.Testing.Documents;
 
-#region sample_Issue
+#region sample_issue
 public class Issue
 {
     public Issue()

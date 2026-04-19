@@ -49,7 +49,7 @@ public Task DeleteByDocument(IDocumentSession session, User user)
 
 Marten also provides the ability to delete any documents of a certain type meeting a Linq expression using the `IDocumentSession.DeleteWhere<T>()` method:
 
-<!-- snippet: sample_DeleteWhere -->
+<!-- snippet: sample_deletewhere -->
 <a id='snippet-sample_deletewhere'></a>
 ```cs
 theSession.DeleteWhere<Target>(x => x.Double == 578);
@@ -69,7 +69,7 @@ A couple things to note:
 
 Documents of mixed or varying types can be deleted using `IDocumentSession.DeleteObjects(IEnumerable<object> documents)` method.
 
-<!-- snippet: sample_DeleteObjects -->
+<!-- snippet: sample_deleteobjects -->
 <a id='snippet-sample_deleteobjects'></a>
 ```cs
 // Store a mix of different document types
@@ -103,7 +103,7 @@ documents marked as _deleted_ unless you explicitly state otherwise in the Linq 
 
 You can direct Marten to make a document type soft deleted by either marking the class with an attribute:
 
-<!-- snippet: sample_SoftDeletedAttribute -->
+<!-- snippet: sample_softdeletedattribute -->
 <a id='snippet-sample_softdeletedattribute'></a>
 ```cs
 [SoftDeleted]
@@ -131,7 +131,7 @@ var store = DocumentStore.For(_ =>
 With Marten v4.0, you can also opt into soft-deleted mechanics by having your document type implement the Marten `ISoftDeleted`
 interface as shown below:
 
-<!-- snippet: sample_implementing_ISoftDeleted -->
+<!-- snippet: sample_implementing_isoftdeleted -->
 <a id='snippet-sample_implementing_isoftdeleted'></a>
 ```cs
 public class MySoftDeletedDoc: ISoftDeleted
@@ -155,7 +155,7 @@ on documents.
 Also starting in Marten v4.0, you can also say globally that you want all document types
 to be soft-deleted unless explicitly configured otherwise like this:
 
-<!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
+<!-- snippet: sample_alldocumenttypesshouldbesoftdeleted -->
 <a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
 ```cs
 internal void AllDocumentTypesShouldBeSoftDeleted()
@@ -484,7 +484,7 @@ public async Task query_is_soft_deleted_since_docs()
 
 _Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:
 
-<!-- snippet: sample_AllDocumentTypesShouldBeSoftDeleted -->
+<!-- snippet: sample_alldocumenttypesshouldbesoftdeleted -->
 <a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
 ```cs
 internal void AllDocumentTypesShouldBeSoftDeleted()
@@ -504,7 +504,7 @@ internal void AllDocumentTypesShouldBeSoftDeleted()
 New in Marten v4.0 is a mechanism to mark any soft-deleted documents matching a supplied criteria
 as not being deleted. The only usage so far is using a Linq expression as shown below:
 
-<!-- snippet: sample_UndoDeletion -->
+<!-- snippet: sample_undodeletion -->
 <a id='snippet-sample_undodeletion'></a>
 ```cs
 internal Task UndoDeletion(IDocumentSession session, Guid userId)
@@ -524,7 +524,7 @@ internal Task UndoDeletion(IDocumentSession session, Guid userId)
 New in v4.0 is the ability to force Marten to perform hard deletes even on document types
 that are normally soft-deleted:
 
-<!-- snippet: sample_HardDeletes -->
+<!-- snippet: sample_harddeletes -->
 <a id='snippet-sample_harddeletes'></a>
 ```cs
 internal void ExplicitlyHardDelete(IDocumentSession session, User document)
@@ -551,7 +551,7 @@ The easiest way to expose the metadata about whether or not a document is delete
 and when it was deleted is to implement the `ISoftDeleted` interface as shown
 in this sample document:
 
-<!-- snippet: sample_implementing_ISoftDeleted -->
+<!-- snippet: sample_implementing_isoftdeleted -->
 <a id='snippet-sample_implementing_isoftdeleted'></a>
 ```cs
 public class MySoftDeletedDoc: ISoftDeleted
@@ -582,7 +582,7 @@ soft-deleted by Marten when a `DocumentStore` is initialized.
 Now, if you don't want to couple your document types to Marten by implementing that interface,
 you're still in business. Let's say you have this document type:
 
-<!-- snippet: sample_ASoftDeletedDoc -->
+<!-- snippet: sample_asoftdeleteddoc -->
 <a id='snippet-sample_asoftdeleteddoc'></a>
 ```cs
 public class ASoftDeletedDoc

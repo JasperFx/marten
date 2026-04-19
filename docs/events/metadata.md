@@ -7,7 +7,7 @@ The metadata tracking for events can be extended in Marten by opting into extra 
 for causation, correlation, user names, and key/value headers with this syntax as part of configuring
 Marten:
 
-<!-- snippet: sample_ConfigureEventMetadata -->
+<!-- snippet: sample_configureeventmetadata -->
 <a id='snippet-sample_configureeventmetadata'></a>
 ```cs
 var store = DocumentStore.For(opts =>

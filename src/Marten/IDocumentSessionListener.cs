@@ -24,7 +24,7 @@ public class NullChangeListener: IChangeListener
     }
 }
 
-#region sample_IDocumentSessionListener
+#region sample_idocumentsessionlistener
 
 public interface IChangeListener
 {

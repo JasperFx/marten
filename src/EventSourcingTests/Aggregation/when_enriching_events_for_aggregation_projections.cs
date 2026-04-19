@@ -82,7 +82,7 @@ public class UserAssigned
     public User? User { get; set; }
 }
 
-#region snippet_UserTaskProjection
+#region snippet_usertaskprojection
 
 public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 {

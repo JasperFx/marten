@@ -501,8 +501,8 @@ upfront so that it is better able to add the partitions for each tenant id as ne
 To exempt document types from having partitioned tables, such as for tables you expect to be so small that there's no value and maybe
 even harm by partitioning, you can use either an attribute on the document type:
 
-<!-- snippet: sample_using_DoNotPartitionAttribute -->
-<a id='snippet-sample_using_DoNotPartitionAttribute'></a>
+<!-- snippet: sample_using_donotpartitionattribute -->
+<a id='snippet-sample_using_donotpartitionattribute'></a>
 ```cs
 [DoNotPartition]
 public class DocThatShouldBeExempted1

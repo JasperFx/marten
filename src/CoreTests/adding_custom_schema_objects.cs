@@ -46,7 +46,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
         // The schema is dropped when this method is called, so existing
         // tables would be dropped first
 
-        #region sample_CustomSchemaTable
+        #region sample_customschematable
 
         StoreOptions(opts =>
         {
@@ -73,7 +73,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public async Task enable_an_extension()
     {
-        #region sample_CustomSchemaExtension
+        #region sample_customschemaextension
 
         StoreOptions(opts =>
         {
@@ -192,7 +192,7 @@ public class adding_custom_schema_objects: OneOffConfigurationsContext
     [Fact]
     public async Task create_a_function()
     {
-        #region sample_CustomSchemaFunction
+        #region sample_customschemafunction
 
         StoreOptions(opts =>
         {
@@ -228,7 +228,7 @@ $f$  language sql immutable;
     [Fact]
     public async Task create_a_sequence()
     {
-        #region sample_CustomSchemaSequence
+        #region sample_customschemasequence
 
         StoreOptions(opts =>
         {

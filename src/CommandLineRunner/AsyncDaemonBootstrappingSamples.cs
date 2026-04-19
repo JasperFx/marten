@@ -106,7 +106,7 @@ public class AsyncDaemonBootstrappingSamples
         #endregion
     }
 
-    #region sample_DaemonDiagnostics
+    #region sample_daemondiagnostics
 
     public static async Task ShowDaemonDiagnostics(IDocumentStore store)
     {

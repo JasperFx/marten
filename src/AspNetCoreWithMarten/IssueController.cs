@@ -52,7 +52,7 @@ public class IssueCreator
 }
 
 
-#region sample_GetIssueController
+#region sample_getissuecontroller
 
 public class GetIssueController: ControllerBase
 {

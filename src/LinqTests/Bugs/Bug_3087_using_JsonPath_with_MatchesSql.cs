@@ -16,7 +16,7 @@ public class Bug_3087_using_JsonPath_with_MatchesSql : BugIntegrationContext
 
         var results = await theSession.Query<Target>().Where(x => !x.Children.Any()).ToListAsync();
 
-        #region sample_using_MatchesJsonPath
+        #region sample_using_matchesjsonpath
 
         var results2 = await theSession
             .Query<Target>().Where(x => x.MatchesSql('^', "d.data @? '$ ? (@.Children[*] == null || @.Children[*].size() == 0)'"))

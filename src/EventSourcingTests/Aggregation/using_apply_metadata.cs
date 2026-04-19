@@ -170,7 +170,7 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
 
 
-#region sample_using_ApplyMetadata
+#region sample_using_applymetadata
 
 public class Item
 {

@@ -58,7 +58,7 @@ The latest, greatest Marten projection bits are always able to restart any singl
 There's not yet any default archiver, but we're open to suggestions about what that might be in the future. To carry out event archival, supply
 an implementation of this interface:
 
-<!-- snippet: sample_IEventsArchiver -->
+<!-- snippet: sample_ieventsarchiver -->
 <a id='snippet-sample_ieventsarchiver'></a>
 ```cs
 /// <summary>

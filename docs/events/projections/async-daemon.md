@@ -219,7 +219,7 @@ projections are caught up to the latest events posted at the time of the call.
 You can see the usage below from one of the Marten tests where we use that method to just wait until the running projection
 daemon has caught up:
 
-<!-- snippet: sample_using_WaitForNonStaleProjectionDataAsync -->
+<!-- snippet: sample_using_waitfornonstaleprojectiondataasync -->
 <a id='snippet-sample_using_waitfornonstaleprojectiondataasync'></a>
 ```cs
 [Fact]
@@ -288,7 +288,7 @@ public async Task run_simultaneously()
 
 The following code shows the diagnostics support for the async daemon as it is today:
 
-<!-- snippet: sample_DaemonDiagnostics -->
+<!-- snippet: sample_daemondiagnostics -->
 <a id='snippet-sample_daemondiagnostics'></a>
 ```cs
 public static async Task ShowDaemonDiagnostics(IDocumentStore store)
@@ -428,7 +428,7 @@ from systems using Marten.
 
 If your system is configured to export metrics and Open Telemetry data from Marten like this:
 
-<!-- snippet: sample_enabling_open_telemetry_exporting_from_Marten -->
+<!-- snippet: sample_enabling_open_telemetry_exporting_from_marten -->
 <a id='snippet-sample_enabling_open_telemetry_exporting_from_marten'></a>
 ```cs
 // This is passed in by Project Aspire. The exporter usage is a little

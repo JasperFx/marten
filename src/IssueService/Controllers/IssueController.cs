@@ -111,7 +111,7 @@ namespace IssueService.Controllers
         #endregion
     }
 
-    #region sample_OpenIssues
+    #region sample_openissues
 
     public class OpenIssues: ICompiledListQuery<Issue>
     {
@@ -123,7 +123,7 @@ namespace IssueService.Controllers
 
     #endregion
 
-    #region sample_IssueById
+    #region sample_issuebyid
 
     public class IssueById: ICompiledQuery<Issue, Issue>
     {
