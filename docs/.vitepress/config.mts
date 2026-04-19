@@ -135,6 +135,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Opening Sessions', link: '/documents/sessions' },
             { text: 'Storing Documents', link: '/documents/storing' },
             { text: 'Deleting Documents', link: '/documents/deletes' },
+            { text: 'PostgreSQL Sequences', link: '/documents/sequences' },
             {
               text: 'Querying Documents', link: '/documents/querying/', collapsed: true, items: [
                 { text: 'Loading Documents by Id', link: '/documents/querying/byid' },
