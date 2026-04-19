@@ -45,7 +45,8 @@
 	  "Citus",
     "Telehealth",
     "Tele",
-    "revisioning"
+    "revisioning",
+    "Swashbuckle"
   ],
   "ignoreWords": [
     "JSONB",
