@@ -213,8 +213,9 @@ public partial class ImportSqlProjection: EventProjection
 
 A couple notes about the `EventProjection` approach:
 
-* **Schema management** -- The `Table` model comes from the Weasel library. Adding it to `SchemaObjects` allows Marten's
-  built-in schema management to create and migrate the table automatically.
+* **Schema management** -- The `Table` model comes from the [Weasel](https://weasel.jasperfx.net/) library. Adding it
+  to `SchemaObjects` allows Marten's built-in schema management to create and migrate the table automatically. See the
+  [Weasel documentation](https://weasel.jasperfx.net/) for the full schema-object model.
 * **Batched execution** -- The `QueueSqlCommand()` method doesn't execute inline. Instead, it adds the SQL to be executed
   in a batch query when you call `IDocumentSession.SaveChangesAsync()`. This batching reduces network round trips to the
   database and is a consistent performance win.

@@ -5,6 +5,14 @@ All of the schema migration functionality is surfaced through Marten's [command 
 recommended approach for using the schema migration functionality described in this page.
 :::
 
+::: tip
+Marten's schema management is built on top of the [Weasel](https://weasel.jasperfx.net/) schema
+library. The APIs in this section — `Table`, `Function`, `Sequence`, `ISchemaObject`,
+`ApplyAllConfiguredChangesToDatabaseAsync`, and friends — are Weasel types surfaced through Marten.
+See the [Weasel documentation](https://weasel.jasperfx.net/) for details on the underlying
+migration engine, the diff model, and custom schema object authoring.
+:::
+
 While it's going to be far less mechanical work than persisting an application via relational tables, Marten still needs to create
 matching schema objects in your Postgresql database and you'll need some mechanism for keeping your database schema up to date
 with the Marten `StoreOptions` configuration in your system.

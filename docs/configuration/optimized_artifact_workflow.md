@@ -38,6 +38,14 @@ in the Marten code that has been problematic for folks using Marten from Blazor.
 To allow for maximum developer productivity while using more efficient production
 options, use this option in Marten bootstrapping:
 
+::: tip
+`CritterStackDefaults` is defined in the shared JasperFx infrastructure that Marten and Wolverine
+both consume. For the full reference of the per-environment options, how `ResourceAutoCreate` and
+`GeneratedCodeMode` are resolved from `JasperFxOptions`, and how to override them programmatically
+or from configuration, see the
+[JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+:::
+
 <!-- snippet: sample_using_optimized_artifact_workflow -->
 <a id='snippet-sample_using_optimized_artifact_workflow'></a>
 ```cs

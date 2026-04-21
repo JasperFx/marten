@@ -1,5 +1,13 @@
 # Pre-Building Generated Types
 
+::: tip
+Marten's runtime code generation, the `codegen` command used to pre-build types, and the
+`TypeLoadMode` switch shown on this page are all driven by the shared JasperFx code-generation
+infrastructure. For the broader reference — including how `JasperFxOptions` resolves
+`GeneratedCodeMode` per environment and how to extend the pipeline — see the
+[JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+:::
+
 Marten uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
 This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have
 significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).

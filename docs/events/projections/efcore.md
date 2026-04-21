@@ -49,7 +49,7 @@ public class OrderDbContext : DbContext
 ```
 
 ::: tip
-Entity tables defined in the DbContext are automatically migrated alongside Marten's own schema objects through Weasel. You do not need to run `dotnet ef database update` separately.
+Entity tables defined in the DbContext are automatically migrated alongside Marten's own schema objects through [Weasel](https://weasel.jasperfx.net/). You do not need to run `dotnet ef database update` separately.
 :::
 
 ## Single Stream Projections

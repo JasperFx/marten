@@ -1,6 +1,13 @@
 # Schema Feature Extensions
 
-New in Marten 5.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's [schema management facilities](/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the [Weasel.Core](https://www.nuget.org/packages/Weasel.Core/) library.
+::: tip
+The `Table`, `Function`, `Sequence`, and `Extension` types used on this page come from the
+[Weasel](https://weasel.jasperfx.net/) schema library. See the
+[Weasel documentation](https://weasel.jasperfx.net/) for the full reference of schema-object
+models, diffs, and custom migration authoring.
+:::
+
+New in Marten 5.4.0 is the ability to add additional features with custom database schema objects that simply plug into Marten's [schema management facilities](/schema/migrations). The key abstraction is the `IFeatureSchema` interface from the [Weasel.Core](https://www.nuget.org/packages/Weasel.Core/) library ([docs](https://weasel.jasperfx.net/)).
 
 Not to worry though, Marten comes with a base class that makes it a bit simpler to build out new features. Here's a very simple example that defines a custom table with one column:
 
