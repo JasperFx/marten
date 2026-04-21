@@ -72,6 +72,20 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
         await batch.PublishAsync(message, tenantId).ConfigureAwait(false);
     }
 
+    /// <summary>
+    ///     Metadata-aware overload matching
+    ///     <see cref="IProjectionBatch.PublishMessageAsync(object, MessageMetadata)"/>.
+    ///     Forwards to the underlying <see cref="IMessageSink"/> implementation with
+    ///     full metadata so downstream consumers (e.g. Wolverine's
+    ///     MartenToWolverineMessageBatch) can map it to their native delivery
+    ///     options (correlation id, causation id, headers, user name).
+    /// </summary>
+    public async Task PublishMessageAsync(object message, MessageMetadata metadata)
+    {
+        var batch = await _batch.CurrentMessageBatch(_session).ConfigureAwait(false);
+        await batch.PublishAsync(message, metadata).ConfigureAwait(false);
+    }
+
     public IDocumentOperations SessionForTenant(string tenantId)
     {
         if (tenantId.IsEmpty() || tenantId == StorageConstants.DefaultTenantId)
