@@ -756,7 +756,7 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         }
         else
         {
-            duplicatedField = new DuplicatedField(enumStorage, member, null, dateTimeStorage, notNull);
+            duplicatedField = new DuplicatedField(enumStorage, member, dateTimeStorage, notNull);
         }
 
         if (pgType.IsNotEmpty())
@@ -814,7 +814,7 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
         }
         else
         {
-            duplicatedField = new DuplicatedField(enumStorage, (QueryableMember)member, null, dateTimeStorage, notNull);
+            duplicatedField = new DuplicatedField(enumStorage, (QueryableMember)member, dateTimeStorage, notNull);
         }
 
         parent.ReplaceMember(members.Last(), duplicatedField);

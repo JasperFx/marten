@@ -20,7 +20,7 @@ namespace Marten.Linq.Members;
 
 internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQueryableMemberCollection
 {
-    public DuplicatedArrayField(EnumStorage enumStorage, QueryableMember innerMember, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false) : base(enumStorage, innerMember, null, useTimestampWithoutTimeZoneForDateTime, notNull)
+    public DuplicatedArrayField(EnumStorage enumStorage, QueryableMember innerMember, bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false) : base(enumStorage, innerMember, useTimestampWithoutTimeZoneForDateTime, notNull)
     {
         if (innerMember is not ValueCollectionMember)
             throw new ArgumentOutOfRangeException(nameof(innerMember),

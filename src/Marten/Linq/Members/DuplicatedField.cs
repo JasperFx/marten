@@ -27,15 +27,13 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
     private readonly bool useTimestampWithoutTimeZoneForDateTime;
     private string _columnName;
 
-    public DuplicatedField(EnumStorage enumStorage, QueryableMember innerMember, ValueTypeInfo? valueTypeInfo,
+    public DuplicatedField(EnumStorage enumStorage, QueryableMember innerMember,
         bool useTimestampWithoutTimeZoneForDateTime = true, bool notNull = false)
     {
         InnerMember = innerMember;
         MemberName = InnerMember.Ancestors.OfType<QueryableMember>().Select(x => x.MemberName).Append(InnerMember.MemberName).Join("");
 
         Members = InnerMember.Ancestors.OfType<QueryableMember>().Append(InnerMember).Select(x => x.Member).ToArray();
-
-        ValueTypeInfo = valueTypeInfo;
 
         NotNull = notNull;
         ColumnName = MemberName.ToTableAlias();
@@ -130,33 +128,14 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
     /// </summary>
     public NpgsqlDbType DbType { get; set; }
 
-    public ValueTypeInfo? ValueTypeInfo { get; }
-
-    internal UpsertArgument UpsertArgument
+    internal virtual UpsertArgument UpsertArgument => new()
     {
-        get
-        {
-            UpsertArgument upsertArgument = new()
-            {
-                Arg = "arg_" + ColumnName.ToLower()
-                , Column = ColumnName.ToLower()
-                , PostgresType = PgType
-                , Members = Members
-                , DbType = DbType
-            };
-
-            if (!IsInnerMemberValueType()) return upsertArgument;
-
-            if (InnerMember.Member.GetRawMemberType()!.IsNullable())
-            {
-                upsertArgument.ParameterValue = $"{InnerMember.Member.Name}.Value.{ValueTypeInfo!.ValueProperty.Name}";
-            }
-
-            upsertArgument.ParameterValue = $"{InnerMember.Member.Name}.{ValueTypeInfo!.ValueProperty.Name}";
-
-            return upsertArgument;
-        }
-    }
+        Arg = "arg_" + ColumnName.ToLower(),
+        Column = ColumnName.ToLower(),
+        PostgresType = PgType,
+        Members = Members,
+        DbType = DbType
+    };
 
     public string ColumnName
     {
@@ -187,13 +166,8 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
         throw new NotSupportedException();
     }
 
-    public ISqlFragment CreateComparison(string op, ConstantExpression constant)
+    public virtual ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
-        if (IsInnerMemberValueType())
-        {
-            return InnerMember.CreateComparison(op, constant);
-        }
-
         if (constant.Value == null)
         {
             return op switch
@@ -230,7 +204,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
     {
         var inner = new DocumentMapping<T>(options).QueryMembers.MemberFor(expression);
 
-        return new DuplicatedField(options.EnumStorage, (QueryableMember)inner, null, useTimestampWithoutTimeZoneForDateTime);
+        return new DuplicatedField(options.EnumStorage, (QueryableMember)inner, useTimestampWithoutTimeZoneForDateTime);
     }
 
     // I say you don't need a ForeignKey
@@ -277,6 +251,4 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
     {
         // Nothing
     }
-
-    private bool IsInnerMemberValueType() => ValueTypeInfo is not null;
 }
