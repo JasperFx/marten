@@ -938,6 +938,60 @@ public static class MartenServiceCollectionExtensions
             options.InitialData.Add(_data);
         }
     }
+
+    /// <summary>
+    ///     Register a projection that depends on application services, against the default Marten store.
+    ///     Equivalent to <see cref="MartenConfigurationExpression.AddProjectionWithServices{T}(ProjectionLifecycle, ServiceLifetime, Action{ProjectionBase})"/>
+    ///     but usable from any module that only has access to <see cref="IServiceCollection"/> —
+    ///     intended for modular-monolith setups where the <c>AddMarten</c> builder chain is
+    ///     consumed once at composition root. See https://github.com/JasperFx/marten/issues/4267.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="lifecycle">The projection lifecycle for Marten</param>
+    /// <param name="lifetime">
+    ///     The IoC lifecycle for the projection instance. Note that the Transient lifetime will still
+    ///     be treated as Scoped.
+    /// </param>
+    /// <param name="configure">Optional configuration of the projection name, version, event filtering, and async execution</param>
+    /// <typeparam name="TProjection">The type of projection to register</typeparam>
+    public static IServiceCollection AddProjectionWithServices<TProjection>(
+        this IServiceCollection services,
+        ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime = ServiceLifetime.Scoped,
+        Action<ProjectionBase>? configure = null)
+        where TProjection : class, IMartenRegistrable
+    {
+        TProjection.Register<TProjection>(services, lifecycle, lifetime, configure);
+        return services;
+    }
+
+    /// <summary>
+    ///     Register a projection that depends on application services, against the ancillary
+    ///     Marten store <typeparamref name="TStore"/>. Equivalent to
+    ///     <see cref="MartenStoreExpression{T}.AddProjectionWithServices{TProjection}(ProjectionLifecycle, ServiceLifetime, Action{ProjectionBase})"/>
+    ///     but usable from any module that only has access to <see cref="IServiceCollection"/>.
+    ///     See https://github.com/JasperFx/marten/issues/4267.
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="lifecycle">The projection lifecycle for Marten</param>
+    /// <param name="lifetime">
+    ///     The IoC lifecycle for the projection instance. Note that the Transient lifetime will still
+    ///     be treated as Scoped.
+    /// </param>
+    /// <param name="configure">Optional configuration of the projection name, version, event filtering, and async execution</param>
+    /// <typeparam name="TProjection">The type of projection to register</typeparam>
+    /// <typeparam name="TStore">The ancillary store interface the projection belongs to</typeparam>
+    public static IServiceCollection AddProjectionWithServices<TProjection, TStore>(
+        this IServiceCollection services,
+        ProjectionLifecycle lifecycle,
+        ServiceLifetime lifetime = ServiceLifetime.Scoped,
+        Action<ProjectionBase>? configure = null)
+        where TProjection : class, IMartenRegistrable
+        where TStore : class, IDocumentStore
+    {
+        TProjection.Register<TProjection, TStore>(services, lifecycle, lifetime, configure);
+        return services;
+    }
 }
 
 public interface IGlobalConfigureMarten: IConfigureMarten;
