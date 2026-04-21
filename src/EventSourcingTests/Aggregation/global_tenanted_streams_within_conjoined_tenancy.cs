@@ -56,6 +56,34 @@ public class global_tenanted_streams_within_conjoined_tenancy : OneOffConfigurat
         decorator.EventTypes.ShouldContain(typeof(SpecialD));
     }
 
+    // Reproducer for bug: GlobalEventAppenderDecorator.Matches() also fires for non-global streams
+    // that happen to contain event types registered in the global projection.
+    // As a result their tenant_id is incorrectly overwritten to *DEFAULT*.
+    [Fact]
+    public async Task non_global_stream_should_keep_tenant_id_when_event_types_overlap_with_global_projection()
+    {
+        var nonGlobalStreamId = Guid.NewGuid();
+
+        // Session explicitly for "tenant1"
+        await using var tenantSession = theStore.LightweightSession("tenant1");
+
+        // Start a stream WITHOUT specifying SpecialCounter as the aggregate type.
+        // SpecialA and SpecialB are in GlobalEventAppenderDecorator.EventTypes,
+        // so the decorator matches this stream and overwrites tenant_id to *DEFAULT*.
+        tenantSession.Events.StartStream(nonGlobalStreamId, new SpecialA(), new SpecialB());
+        await tenantSession.SaveChangesAsync();
+
+        // This stream belongs to "tenant1" – it must NOT be visible from the default-tenant session.
+        // If the bug is present, the events were stored with tenant_id = *DEFAULT* and this will NOT be empty.
+        var eventsFromDefault = await theSession.Events.FetchStreamAsync(nonGlobalStreamId);
+        eventsFromDefault.ShouldBeEmpty("Non-global stream events were incorrectly stored with *DEFAULT* tenant_id");
+
+        // Events should still be visible from the correct tenant.
+        var eventsFromTenant = await tenantSession.Events.FetchStreamAsync(nonGlobalStreamId);
+        eventsFromTenant.ShouldNotBeEmpty();
+        eventsFromTenant.ShouldAllBe(e => e.TenantId == "tenant1");
+    }
+
     /*
      * Test cases
      * Rich vs Quick on all
