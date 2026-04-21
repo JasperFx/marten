@@ -42,6 +42,7 @@
       <Compile Remove="Internal\Generated\DocumentStorage\Invoice2Provider479877131.cs" />
       <Compile Remove="Internal\Generated\DocumentStorage\GradeProvider907442297.cs" />
       <Compile Remove="Internal\Generated\DocumentStorage\DuplicateValueTypeDocProvider1638096971.cs" />
+      <Compile Remove="Internal\Generated\DocumentStorage\DuplicateValueTypeDocProvider1126046928.cs" />
     </ItemGroup>
 
     <ItemGroup>

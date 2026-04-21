@@ -6,9 +6,9 @@ using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
-using Vogen;
+using StronglyTypedIds;
 
-namespace ValueTypeTests.VogenIds;
+namespace ValueTypeTests.StrongTypedId;
 
 public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposable
 {
@@ -20,7 +20,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
         theStore = DocumentStore.For(opts =>
         {
             opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "duplicated_value_type_field2";
+            opts.DatabaseSchemaName = "duplicated_value_type_field1";
 
             opts.ApplicationAssembly = GetType().Assembly;
             opts.GeneratedCodeMode = TypeLoadMode.Auto;
@@ -51,7 +51,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     [Fact]
     public async Task store_a_document_smoke_test()
     {
-        var duplicatedDoc = new DuplicateValueTypeDoc(){DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
+        var duplicatedDoc = new DuplicateValueTypeDoc(){DuplicateValueType = DuplicateValueType.New()};
         theSession.Store(duplicatedDoc);
 
         await theSession.SaveChangesAsync();
@@ -65,7 +65,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
         var duplicatedDoc = new DuplicateValueTypeDoc
         {
             Id = Guid.NewGuid(),
-            DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())
+            DuplicateValueType = DuplicateValueType.New()
         };
         theSession.Store(duplicatedDoc);
 
@@ -78,9 +78,9 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     [Fact]
     public async Task load_many()
     {
-        var duplicatedDoc1 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
-        var duplicatedDoc2 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
-        var duplicatedDoc3 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
+        var duplicatedDoc1 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
+        var duplicatedDoc2 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
+        var duplicatedDoc3 = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
         theSession.Store(duplicatedDoc1, duplicatedDoc2, duplicatedDoc3);
 
         await theSession.SaveChangesAsync();
@@ -92,7 +92,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     [Fact]
     public async Task use_in_LINQ_where_clause()
     {
-        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
+        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
         theSession.Store(duplicatedDoc);
 
         await theSession.SaveChangesAsync();
@@ -106,7 +106,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     [Fact]
     public async Task use_in_LINQ_duplicatedDoc_clause()
     {
-        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
+        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
         theSession.Store(duplicatedDoc);
 
         await theSession.SaveChangesAsync();
@@ -117,7 +117,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     [Fact]
     public async Task use_in_LINQ_select_clause()
     {
-        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.From(Guid.NewGuid())};
+        var duplicatedDoc = new DuplicateValueTypeDoc{DuplicateValueType = DuplicateValueType.New()};
         theSession.Store(duplicatedDoc);
 
         await theSession.SaveChangesAsync();
@@ -127,7 +127,7 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
     }
 }
 
-[ValueObject<Guid>]
+[StronglyTypedId(Template.Guid)]
 public readonly partial struct DuplicateValueType;
 
 public class DuplicateValueTypeDoc
