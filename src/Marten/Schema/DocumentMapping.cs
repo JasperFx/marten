@@ -19,6 +19,7 @@ using Marten.Schema.Indexing.FullText;
 using Marten.Schema.Indexing.Unique;
 using Marten.Storage;
 using Marten.Storage.Metadata;
+using Marten.Util;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -741,20 +742,33 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
         var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
         var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
-        var duplicate = member is ValueCollectionMember collectionMember
-            ? new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull)
-            : new DuplicatedField(enumStorage, (QueryableMember)member, dateTimeStorage, notNull);
+
+        DuplicatedField duplicatedField;
+
+        if (member is ValueCollectionMember collectionMember)
+        {
+            duplicatedField = new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull);
+        }
+        else if (member.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>)))
+        {
+            var valueTypeInfo = StoreOptions.ValueTypes.FirstOrDefault(x => x.OuterType == member.MemberType)!;
+            duplicatedField = new DuplicatedValueTypeField(enumStorage, member, valueTypeInfo, notNull);
+        }
+        else
+        {
+            duplicatedField = new DuplicatedField(enumStorage, member, null, dateTimeStorage, notNull);
+        }
 
         if (pgType.IsNotEmpty())
         {
-            duplicate.PgType = pgType;
+            duplicatedField.PgType = pgType;
         }
 
-        QueryMembers.ReplaceMember(member.Member, duplicate);
+        QueryMembers.ReplaceMember(member.Member, duplicatedField);
 
-        _duplicates.Add(duplicate);
+        _duplicates.Add(duplicatedField);
 
-        return duplicate;
+        return duplicatedField;
     }
 
     public DuplicatedField DuplicateField(MemberInfo[] members, string? pgType = null, string? columnName = null,
@@ -786,9 +800,22 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
         var enumStorage = StoreOptions.Advanced.DuplicatedFieldEnumStorage;
         var dateTimeStorage = StoreOptions.Advanced.DuplicatedFieldUseTimestampWithoutTimeZoneForDateTime;
-        var duplicatedField = member is ValueCollectionMember collectionMember
-            ? new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull)
-            : new DuplicatedField(enumStorage, (QueryableMember)member, dateTimeStorage, notNull);
+
+        DuplicatedField duplicatedField;
+
+        if (member is ValueCollectionMember collectionMember)
+        {
+            duplicatedField = new DuplicatedArrayField(enumStorage, collectionMember, dateTimeStorage, notNull);
+        }
+        else if (member.IsGenericInterfaceImplementation(typeof(IValueTypeMember<,>)))
+        {
+            var valueTypeInfo = StoreOptions.ValueTypes.FirstOrDefault(x => x.OuterType == member.MemberType)!;
+            duplicatedField = new DuplicatedValueTypeField(enumStorage, (QueryableMember)member, valueTypeInfo, notNull);
+        }
+        else
+        {
+            duplicatedField = new DuplicatedField(enumStorage, (QueryableMember)member, null, dateTimeStorage, notNull);
+        }
 
         parent.ReplaceMember(members.Last(), duplicatedField);
 
