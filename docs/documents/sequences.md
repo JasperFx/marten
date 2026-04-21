@@ -38,9 +38,10 @@ var second = await session.NextSequenceValue($"{SchemaName}.seq_int_str");
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/next_sequence_value_tests.cs#L32-L41' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_next_sequence_value_by_string' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-If you already have a `DbObjectName` handle — for example, from a Weasel
-`Sequence` schema object in one of your custom feature schemas — pass it
-directly. Marten uses its `QualifiedName` under the hood:
+If you already have a `DbObjectName` handle — for example, from a
+[Weasel](https://weasel.jasperfx.net/) `Sequence` schema object in one of your
+custom feature schemas — pass it directly. Marten uses its `QualifiedName` under
+the hood:
 
 <!-- snippet: sample_next_sequence_value_by_dbobjectname -->
 <a id='snippet-sample_next_sequence_value_by_dbobjectname'></a>

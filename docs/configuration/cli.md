@@ -1,5 +1,11 @@
 # Command Line Tooling
 
+::: tip
+The command line tooling described on this page is provided by the shared JasperFx infrastructure
+libraries. For the full reference of available commands, extensibility points, and `JasperFxOptions`,
+see the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
+:::
+
 ::: warning
 The usage of JasperFx commands shown in this document are only valid for applications bootstrapped with the
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.
@@ -21,10 +27,11 @@ OaktonEnvironment.AutoStartHost = true;
 Without this setting, creating the test server will fail to bootstrap. See also [Creating an Integration Test Harness](https://wolverinefx.net/tutorials/cqrs-with-marten.html#creating-an-integration-test-harness)
 :::
 
-Through dependencies on the _JasperFx_ and _Weasel_ libraries, Marten has support for command line tools to apply or generate
-database migrations from the command line. Marten also has support for running or rebuilding projections from the command line.
-Lastly, Marten has a more recent command for some advanced Event Store management features that might be useful in deployment
-scenarios. 
+Through dependencies on the [JasperFx](https://shared-libs.jasperfx.net/) and
+[Weasel](https://weasel.jasperfx.net/) libraries, Marten has support for command line tools to apply
+or generate database migrations from the command line. Marten also has support for running or
+rebuilding projections from the command line. Lastly, Marten has a more recent command for some
+advanced Event Store management features that might be useful in deployment scenarios. 
 
 To use the expanded command line options to a .NET application, add this last line of code shown below to your `Program.cs`:
 
