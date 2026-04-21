@@ -72,9 +72,16 @@ public class Bug_4268_projection_async_to_inline_migration : BugIntegrationConte
         //    on. This mirrors the reporter's deploy: same DB, new code.
         var inline = SeparateStore(opts => ConfigureStore(opts, ProjectionLifecycle.Inline));
 
-        // 4) The first append on the new store triggers
-        //    DocumentSessionBase.SaveChangesAsync → ensureStorageExistsAsync
-        //    which is where the reporter's migration blew up.
+        // 4) Force the migration to run over the full model rather than
+        //    just the document types that a single SaveChanges would
+        //    materialize. This mirrors the widest possible surface the
+        //    reporter's running app could hit on the first deploy and is
+        //    where Marten's schema diff would emit the failing
+        //    "drop partitioning column" DDL if the shape we hypothesized
+        //    actually reproduces.
+        await inline.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        // 5) And a subsequent append still has to succeed.
         await using (var session = inline.LightweightSession("tenant-a"))
         {
             session.Events.StartStream<Bug4268Product>(
