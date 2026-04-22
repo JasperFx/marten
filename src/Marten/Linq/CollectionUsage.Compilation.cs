@@ -486,6 +486,19 @@ public partial class CollectionUsage
             }
         }
 
+        // Transfer single-value operators applied directly on the grouping usage
+        // itself (e.g., .GroupBy(...).Select(...).CountAsync() / .AnyAsync()).
+        // See https://github.com/JasperFx/marten/issues/4278.
+        if (groupingUsage.SingleValueMode.HasValue)
+        {
+            SingleValueMode ??= groupingUsage.SingleValueMode;
+        }
+
+        if (groupingUsage.IsAny)
+        {
+            IsAny = true;
+        }
+
         // Transfer downstream operators from the grouping usage's Inner (if any)
         // e.g., OrderBy, Take, Skip after Select
         var downstream = groupingUsage.Inner;
@@ -630,6 +643,22 @@ public partial class CollectionUsage
                         return;
                     }
 
+                    if (statement.GroupByColumns.Count > 0)
+                    {
+                        // .GroupBy(...).Select(...).CountAsync() should return the
+                        // number of groups, not count(*) over the grouped rows.
+                        // Wrap the GROUP BY query in a CTE and count its rows.
+                        // See https://github.com/JasperFx/marten/issues/4278.
+                        statement.ConvertToCommonTableExpression(session);
+                        var groupCount = new SelectorStatement
+                        {
+                            SelectClause = new CountClause<int>(statement.ExportName)
+                        };
+
+                        statement.AddToEnd(groupCount);
+                        return;
+                    }
+
                     statement.SelectClause = new CountClause<int>(statement.SelectClause.FromObject);
 
                     break;
@@ -649,6 +678,21 @@ public partial class CollectionUsage
                         };
 
                         statement.AddToEnd(count);
+                        return;
+                    }
+
+                    if (statement.GroupByColumns.Count > 0)
+                    {
+                        // .GroupBy(...).Select(...).LongCountAsync() should return
+                        // the number of groups. See
+                        // https://github.com/JasperFx/marten/issues/4278.
+                        statement.ConvertToCommonTableExpression(session);
+                        var groupLongCount = new SelectorStatement
+                        {
+                            SelectClause = new CountClause<long>(statement.ExportName)
+                        };
+
+                        statement.AddToEnd(groupLongCount);
                         return;
                     }
 

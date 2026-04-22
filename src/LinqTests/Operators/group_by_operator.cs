@@ -222,4 +222,33 @@ public class group_by_operator: OneOffConfigurationsContext
         results.Single(x => x.Color == Colors.Blue).Count.ShouldBe(2L);
         results.Single(x => x.Color == Colors.Green).Count.ShouldBe(3L);
     }
+
+    // https://github.com/JasperFx/marten/issues/4278
+    [Fact]
+    public async Task group_by_count()
+    {
+        await SetupTargetData();
+
+        var count = await _session.Query<Target>()
+            .GroupBy(x => x.Color)
+            .Select(x => x.Key)      // Select must always follow GroupBy
+            .CountAsync();
+
+        // Blue, Green, Red -> three distinct groups
+        count.ShouldBe(3);
+    }
+
+    // https://github.com/JasperFx/marten/issues/4278
+    [Fact]
+    public async Task group_by_long_count()
+    {
+        await SetupTargetData();
+
+        var count = await _session.Query<Target>()
+            .GroupBy(x => x.Color)
+            .Select(x => x.Key)
+            .LongCountAsync();
+
+        count.ShouldBe(3L);
+    }
 }
