@@ -92,4 +92,39 @@ public class Bug_4197_fetch_for_writing_natural_key : OneOffConfigurationsContex
         stream.Aggregate.ShouldNotBeNull();
         stream.Aggregate.Key.ShouldBe(aggregateKey);
     }
+
+    // Regression coverage for https://github.com/JasperFx/marten/issues/4277.
+    // Self-aggregating aggregate (record) with a static [NaturalKeySource] factory.
+    public sealed record Bug4277SelfAggregate(Guid Id, [property: NaturalKey] Bug4197AggregateKey Key)
+    {
+        [NaturalKeySource]
+        public static Bug4277SelfAggregate Create(Bug4197AggregateCreatedEvent e)
+            => new(e.Id, new Bug4197AggregateKey(e.Key));
+    }
+
+    [Fact]
+    public async Task fetch_for_writing_with_natural_key_on_self_aggregating_record_with_static_source()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Snapshot<Bug4277SelfAggregate>(SnapshotLifecycle.Inline);
+        });
+
+        await using var session = theStore.LightweightSession();
+
+        var aggregateId = Guid.NewGuid();
+        var aggregateKey = new Bug4197AggregateKey("another-key-value");
+        var e = new Bug4197AggregateCreatedEvent(aggregateId, aggregateKey.Value);
+
+        session.Events.StartStream<Bug4277SelfAggregate>(aggregateId, e);
+        await session.SaveChangesAsync();
+
+        // Before the fix, the natural-key lookup row was never written, so this
+        // FetchForWriting by natural key returned a null aggregate.
+        var stream = await session.Events.FetchForWriting<Bug4277SelfAggregate, Bug4197AggregateKey>(aggregateKey);
+
+        stream.ShouldNotBeNull();
+        stream.Aggregate.ShouldNotBeNull();
+        stream.Aggregate.Key.ShouldBe(aggregateKey);
+    }
 }
