@@ -9,6 +9,7 @@ using Marten.Events.Projections;
 using Marten.Schema;
 using Marten.Storage;
 using Marten.Testing.Harness;
+using Npgsql;
 using Weasel.Core;
 using Xunit;
 using Xunit.Abstractions;
@@ -146,4 +147,53 @@ public class Bug4268ProductProjection : SingleStreamProjection<Bug4268Product, S
 
     public void Apply(Bug4268Registered @event, Bug4268Product state)
         => state.Apply(@event);
+}
+
+public class Bug_4268_hash_partitioned_envelope_migration : IAsyncLifetime
+{
+    private const string SchemaName = "bug_4268_envelope";
+
+    public async Task InitializeAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand($"DROP SCHEMA IF EXISTS {SchemaName} CASCADE", conn);
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    [Fact]
+    public async Task changing_hash_partitioned_envelope_to_single_tenanted_should_not_fail()
+    {
+        await using (var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = SchemaName;
+            opts.DisableNpgsqlLogging = true;
+
+            opts.Schema.For<Bug4268Envelope>()
+                .MultiTenantedWithPartitioning(x => x.ByHash("h000", "h001"));
+        }))
+        {
+            await store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+        }
+
+        await using var singleTenanted = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = SchemaName;
+            opts.DisableNpgsqlLogging = true;
+
+            opts.Schema.For<Bug4268Envelope>().SingleTenanted();
+        });
+
+        await singleTenanted.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+    }
+}
+
+[DocumentAlias("envelope")]
+public class Bug4268Envelope
+{
+    public System.Guid Id { get; set; }
 }
