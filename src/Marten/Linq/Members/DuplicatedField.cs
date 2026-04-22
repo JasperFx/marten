@@ -128,8 +128,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
     /// </summary>
     public NpgsqlDbType DbType { get; set; }
 
-
-    internal UpsertArgument UpsertArgument => new()
+    internal virtual UpsertArgument UpsertArgument => new()
     {
         Arg = "arg_" + ColumnName.ToLower(),
         Column = ColumnName.ToLower(),
@@ -167,7 +166,7 @@ public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenM
         throw new NotSupportedException();
     }
 
-    public ISqlFragment CreateComparison(string op, ConstantExpression constant)
+    public virtual ISqlFragment CreateComparison(string op, ConstantExpression constant)
     {
         if (constant.Value == null)
         {
