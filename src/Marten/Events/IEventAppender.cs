@@ -67,10 +67,29 @@ internal class GlobalEventAppenderDecorator: IEventAppender
         var streamActions = session.WorkTracker.Streams.Where(Matches).ToArray();
         foreach (var action in streamActions)
         {
+            // Route the stream (and its mt_events rows) to the default tenant so
+            // that AddGlobalProjection's documented "single-tenanted within a
+            // conjoined tenancy" guarantee still holds.
+            //
+            // NOTE: StreamAction.TenantId's setter propagates the new value onto
+            // every IEvent in the stream (see JasperFx.Events StreamAction). If
+            // we stopped there, inline SingleStreamProjection Create(IEvent<T>)
+            // / Apply(IEvent<T>, TDoc) convention methods would read
+            // @event.TenantId as "*DEFAULT*" instead of the session tenant
+            // under which the user appended them — see
+            // https://github.com/JasperFx/marten/issues/4270. To preserve the
+            // session tenant on in-flight events, we capture the original tenant
+            // before forcing the default on the action, then restore it on each
+            // event. The stream-level action.TenantId keeps the default tenant,
+            // so storage (mt_events / mt_streams) stays single-tenanted.
+            var originalTenantId = action.TenantId;
             action.TenantId = StorageConstants.DefaultTenantId;
-            foreach (var e in action.Events)
+            if (originalTenantId != null && originalTenantId != StorageConstants.DefaultTenantId)
             {
-                e.TenantId = StorageConstants.DefaultTenantId;
+                foreach (var e in action.Events)
+                {
+                    e.TenantId = originalTenantId;
+                }
             }
         }
 
