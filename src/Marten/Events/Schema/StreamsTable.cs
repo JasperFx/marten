@@ -20,6 +20,7 @@ namespace Marten.Events.Schema;
 internal class StreamsTable: Table
 {
     public const string TableName = "mt_streams";
+    public const string DefaultPartionedTableName = $"{TableName}_default";
 
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {

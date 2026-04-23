@@ -49,11 +49,16 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
     }
 
     private static bool matches(Exception e)
-    {
+    {        
         return e is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
             TableName: StreamsTable.TableName
+        }
+        || e is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            TableName: StreamsTable.DefaultPartionedTableName
         };
     }
 
