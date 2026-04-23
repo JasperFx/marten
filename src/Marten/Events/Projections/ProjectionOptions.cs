@@ -71,6 +71,14 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         foreach (var planner in _builtInPlanners) yield return planner;
     }
 
+    internal void AttachServiceProvider(IServiceProvider services)
+    {
+        foreach (var composite in All.OfType<CompositeProjection>())
+        {
+            composite.AttachServiceProvider(services);
+        }
+    }
+
     internal IInlineProjection<IDocumentOperations>[] BuildInlineProjections(DocumentStore store)
     {
         var projections = All
