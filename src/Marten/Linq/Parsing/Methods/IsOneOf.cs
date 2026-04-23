@@ -28,6 +28,11 @@ internal class IsOneOf: IMethodCallParser
         var locator = queryableMember.TypedLocator;
         var values = expression.Arguments[1].ReduceToConstant().Value!;
 
+        if (queryableMember is ICollectionMember collectionMember)
+        {
+            return new CollectionIsOneOfFilter(collectionMember, values);
+        }
+
         if (queryableMember.MemberType.IsEnum)
         {
             return new EnumIsOneOfWhereFragment(values, options.Serializer().EnumStorage, locator);
@@ -44,7 +49,6 @@ internal class IsOneOf: IMethodCallParser
 
         return new IsOneOfFilter(queryableMember, new CommandParameter(values));
     }
-
 }
 
 internal class IsOneOfFilter: ISqlFragment
