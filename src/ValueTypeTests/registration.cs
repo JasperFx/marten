@@ -26,6 +26,15 @@ public class registration
         value.ValueProperty.Name.ShouldBe("Value");
     }
 
+    [Fact]
+    public void picks_builder_whose_return_type_matches_value_type()
+    {
+        var options = new StoreOptions();
+        var value = options.RegisterValueType(typeof(SpecialValueWithNullableSibling));    
+        value.Builder.Name.ShouldBe("From");
+        value.Builder.ReturnType.ShouldBe(typeof(SpecialValueWithNullableSibling));
+    }
+
     [Theory]
     [InlineData(typeof(NotValidId))]
     [InlineData(typeof(DefinitelyNotValid))]
@@ -51,6 +60,21 @@ public readonly struct SpecialValue
     public string Value { get; }
 
     public static SpecialValue From(string value) => new SpecialValue(value);
+}
+
+public readonly struct SpecialValueWithNullableSibling
+{
+    private SpecialValueWithNullableSibling(string value)
+    {
+        Value = value;
+    }
+
+    public string Value { get; }
+
+    public static SpecialValueWithNullableSibling? FromNullable(string? value)
+        => value is null ? null : From(value);
+
+    public static SpecialValueWithNullableSibling From(string value) => new(value);
 }
 
 public class NotValidId(string Value);

@@ -147,8 +147,14 @@ public partial class StoreOptions
             return valueType;
         }
 
-        var builder = type.GetMethods(BindingFlags.Static | BindingFlags.Public).FirstOrDefault(x =>
-            x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == valueProperty.PropertyType);
+        var candidateBuilders = type.GetMethods(BindingFlags.Static | BindingFlags.Public).Where(x =>
+        {
+            var parameters = x.GetParameters();
+            return parameters.Length == 1 && parameters[0].ParameterType == valueProperty.PropertyType;
+        }).ToArray();
+
+        var builder = candidateBuilders.FirstOrDefault(x => x.ReturnType == type)
+                      ?? candidateBuilders.FirstOrDefault();
 
         if (builder != null)
         {
