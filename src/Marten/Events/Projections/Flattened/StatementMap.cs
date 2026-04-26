@@ -20,10 +20,14 @@ public class StatementMap<T>: IEventHandler
     private readonly MemberInfo[] _pkMembers;
     private DbObjectName _functionIdentifier;
 
-    private readonly List<IParameterSetter<IEvent>> _setters = new();
+    // Setters are realized in Compile() so they can read StoreOptions
+    // (DuplicatedFieldEnumStorage and registered value types) off the EventGraph.
+    // The pending list captures only the member arrays declared via Map / Increment /
+    // Decrement; the leading PK setter is added in Compile.
+    private readonly List<MemberInfo[]> _pendingMemberSetters = new();
+    private IParameterSetter<IEvent>[] _setters = Array.Empty<IParameterSetter<IEvent>>();
     private string _sql;
     private readonly bool _streamIdentified;
-    private bool _hasBuiltPK;
 
     public StatementMap(FlatTableProjection parent, MemberInfo[] pkMembers)
     {
@@ -31,11 +35,6 @@ public class StatementMap<T>: IEventHandler
         _pkMembers = pkMembers;
 
         _streamIdentified = pkMembers.IsEmpty();
-        if (pkMembers.Length != 0)
-        {
-            _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(pkMembers));
-            _hasBuiltPK = true;
-        }
     }
 
     Type IEventHandler.EventType => typeof(T);
@@ -55,24 +54,37 @@ public class StatementMap<T>: IEventHandler
 
     public void Compile(EventGraph events, Table table)
     {
-        if (_streamIdentified && !_hasBuiltPK)
+        var storeOptions = events.Options;
+        var setters = new List<IParameterSetter<IEvent>>(_pendingMemberSetters.Count + 1);
+
+        // Primary-key setter is always at column index 0.
+        if (_streamIdentified)
         {
-            _hasBuiltPK = true;
             var setter = events.StreamIdentity == StreamIdentity.AsGuid
                 ? (IParameterSetter<IEvent>)new ParameterSetter<IEvent, Guid>(e => e.StreamId)
                 : new ParameterSetter<IEvent, string>(e => e.StreamKey);
-
-            _setters.Insert(0, setter);
+            setters.Add(setter);
+        }
+        else
+        {
+            setters.Add(FlatTableProjection.BuildPrimaryKeySetter<T>(_pkMembers, storeOptions));
         }
 
+        foreach (var members in _pendingMemberSetters)
+        {
+            setters.Add(FlatTableProjection.BuildSetterForMembers<T>(members, storeOptions));
+        }
+
+        _setters = setters.ToArray();
+
         createFunctionName(table);
-        var parameters = _setters.Select(x => "?").Join(", ");
+        var parameters = _setters.Select(_ => "?").Join(", ");
         _sql = $"select {_functionIdentifier}({parameters})";
     }
 
     public void Handle(IDocumentOperations operations, IEvent e)
     {
-        var op = new SqlOperation(_sql, e, _setters.ToArray());
+        var op = new SqlOperation(_sql, e, _setters);
         operations.QueueOperation(op);
     }
 
@@ -95,7 +107,7 @@ public class StatementMap<T>: IEventHandler
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Value);
         _columnMaps.Add(map);
 
-        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
+        _pendingMemberSetters.Add(map.Members);
 
         return map.ResolveColumn(_parent.Table);
     }
@@ -113,7 +125,7 @@ public class StatementMap<T>: IEventHandler
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Increment);
         _columnMaps.Add(map);
 
-        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
+        _pendingMemberSetters.Add(map.Members);
 
         return map.ResolveColumn(_parent.Table);
     }
@@ -141,7 +153,7 @@ public class StatementMap<T>: IEventHandler
         var map = new MemberMap<T, TValue>(members, columnName, ColumnMapType.Decrement);
         _columnMaps.Add(map);
 
-        _setters.Add(FlatTableProjection.BuildSetterForMembers<T>(map.Members));
+        _pendingMemberSetters.Add(map.Members);
 
 
         return map.ResolveColumn(_parent.Table);

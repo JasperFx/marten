@@ -14,24 +14,26 @@ internal class EventDeleter<T> : IEventHandler
 {
     private string _sql;
     private IParameterSetter<IEvent>? _parameter;
+    private readonly MemberInfo[] _pkMembers;
 
     public EventDeleter(MemberInfo[] members, Table table)
     {
-        if (members.Length != 0)
-        {
-            _parameter = FlatTableProjection.BuildPrimaryKeySetter<T>(members);
-        }
+        _pkMembers = members;
     }
 
     public void Compile(EventGraph events, Table table)
     {
-        if (_parameter == null)
+        if (_pkMembers.Length != 0)
+        {
+            _parameter = FlatTableProjection.BuildPrimaryKeySetter<T>(_pkMembers, events.Options);
+        }
+        else
         {
             _parameter = events.StreamIdentity == StreamIdentity.AsGuid
                 ? (IParameterSetter<IEvent>)new ParameterSetter<IEvent, Guid>(e => e.StreamId)
                 : new ParameterSetter<IEvent, string>(e => e.StreamKey);
-
         }
+
         _sql = $"delete from {table.Identifier} where {table.PrimaryKeyColumns[0]} = ?";
     }
 

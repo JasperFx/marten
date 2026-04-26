@@ -112,6 +112,57 @@ A couple notes on this version of the code:
 
 The `FlatTableProjection` in its first incarnation is not yet able to use event metadata.
 
+### Enums, Nullable Values, and Registered Value Types <Badge type="tip" text="8.x" />
+
+`FlatTableProjection.Map(...)` honors three things on top of the property type
+itself:
+
+1. **Enum columns** follow `StoreOptions.Advanced.DuplicatedFieldEnumStorage`,
+   which defaults to your serializer's `EnumStorage`. Set it explicitly when
+   you want to lock the column type:
+
+   ```cs
+   var store = DocumentStore.For(opts =>
+   {
+       opts.Connection(connectionString);
+       // Store all duplicated-field-style enums (including FlatTableProjection
+       // columns) as text. The matching table column should be `varchar`/`text`.
+       opts.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
+
+       opts.Projections.Add<MyFlatProjection>(ProjectionLifecycle.Inline);
+   });
+   ```
+
+   With `EnumStorage.AsString`, `Map(x => x.Status)` writes `Status.ToString()`
+   into a text column. With `EnumStorage.AsInteger` (the default for the
+   built-in JSON serializers), the same call writes the underlying integer
+   value into an int column. Make sure the column type you declare on
+   `Table.AddColumn<T>(...)` matches your `DuplicatedFieldEnumStorage` setting.
+
+2. **Nullable enums and nullable value-typed properties** are handled
+   automatically — when the property value is `null`, Marten writes `DBNull`;
+   otherwise the same enum / value-type projection rules apply. The target
+   column needs to be marked `AllowNulls()` (or otherwise be nullable).
+
+3. **Registered value types** (e.g. Vogen-style single-value wrappers
+   registered through `opts.RegisterValueType<TWrapper>()`) are unwrapped to
+   their inner primitive automatically. `Map(x => x.MyValueObject)` projects
+   the value type's inner property into the column without any manual
+   `cfg.Map(x => x.MyValueObject.Value, "...")` workaround. The column type
+   should match the wrapped primitive (e.g. `Table.AddColumn<int>(...)` for a
+   `record struct WrapperId(int Value)`).
+
+::: warning
+Prior to Marten 8.x, `FlatTableProjection` ignored
+`DuplicatedFieldEnumStorage` and could not handle registered value types or
+nullable wrappers. Mapping a `string` enum column threw
+`Writing values of '<EnumType>' is not supported for parameters having
+NpgsqlDbType 'Integer'`, and mapping a registered value-type property threw
+`Can't infer NpgsqlDbType for type <Wrapper>`. See
+[#4290](https://github.com/JasperFx/marten/issues/4290) and
+[#4291](https://github.com/JasperFx/marten/issues/4291).
+:::
+
 ### Partial-Mapping Events (Update-Only) <Badge type="tip" text="8.x" />
 
 When an event mapped into a `FlatTableProjection` does not populate every non-primary-key

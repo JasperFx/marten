@@ -17,6 +17,7 @@ using JasperFx.Events.Subscriptions;
 using Marten.Events.Daemon;
 using Marten.Linq.Parsing;
 using Microsoft.Extensions.Logging;
+using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using IReplayExecutor = JasperFx.Events.Daemon.IReplayExecutor;
@@ -220,54 +221,127 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         Options.DeleteDataInTableOnTeardown(Table.Identifier);
     }
 
-    internal static IParameterSetter<IEvent> BuildPrimaryKeySetter<T>(MemberInfo[] members)
+    internal static IParameterSetter<IEvent> BuildPrimaryKeySetter<T>(MemberInfo[] members, StoreOptions storeOptions)
     {
         // It's off of IEvent directly
         if (members.Length == 1)
         {
             if (members[0].DeclaringType == typeof(IEvent))
             {
-                return typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<IEvent>>(members[0], typeof(IEvent), members[0].GetRawMemberType()!);
+                return (IParameterSetter<IEvent>)BuildLeafParameterSetter(members[0], typeof(IEvent), storeOptions);
             }
 
-            var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0], typeof(T), members[0].GetRawMemberType()!);
-            return new EventForwarder<T>(setter);
+            var setter = BuildLeafParameterSetter(members[0], typeof(T), storeOptions);
+            return new EventForwarder<T>((IParameterSetter<T>)setter);
         }
 
         if (members.Length == 2)
         {
-            var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[1], typeof(T),
-                members[1].GetRawMemberType()!);
-
-            return new EventForwarder<T>(inner);
+            var inner = BuildLeafParameterSetter(members[1], typeof(T), storeOptions);
+            return new EventForwarder<T>((IParameterSetter<T>)inner);
         }
 
-        return BuildSetterForMembers<T>(members.Skip(0).ToArray());
+        return BuildSetterForMembers<T>(members.Skip(0).ToArray(), storeOptions);
     }
 
-    internal static IParameterSetter<IEvent> BuildSetterForMembers<T>(MemberInfo[] members)
+    internal static IParameterSetter<IEvent> BuildSetterForMembers<T>(MemberInfo[] members, StoreOptions storeOptions)
     {
         if (members.Length == 1)
         {
             if (members[0].DeclaringType != typeof(IEvent))
             {
-                var inner = typeof(ParameterSetter<,>).CloseAndBuildAs<IParameterSetter<T>>(members[0],typeof(T), members[0].GetRawMemberType()!);
-                return new EventForwarder<T>(inner);
+                var inner = BuildLeafParameterSetter(members[0], typeof(T), storeOptions);
+                return new EventForwarder<T>((IParameterSetter<T>)inner);
             }
         }
 
-        // off of something on the event
-        var outsideToInside = members.Reverse().ToArray();
+        // off of something on the event - MemberFinder.Determine returns the chain
+        // outer-to-leaf, e.g. [Foo, Bar, Value]. Reversing puts the leaf first so
+        // the ParameterSetter at the bottom does the actual parameter write, and
+        // each RelayParameterSetter wraps it with the next level out (handling
+        // intermediate nulls).
+        var leafFirst = members.Reverse().ToArray();
 
-        var dbType = PostgresqlProvider.Instance.ToParameterType(outsideToInside[0].GetRawMemberType()!);
-        var setter = typeof(ParameterSetter<,>).CloseAndBuildAs<object>(outsideToInside[0], outsideToInside[1].GetRawMemberType()!,
-            outsideToInside[0].GetRawMemberType()!);
+        // Leaf decides the storage db type and any value transform (enum->string,
+        // value-type unwrap, etc.). Use that db type all the way up so intermediate
+        // nulls write DBNull with the correct type.
+        var (dbType, _) = ResolveLeafStorage(leafFirst[0].GetRawMemberType()!, storeOptions);
 
-        for (int i = 1; i < outsideToInside.Length; i++)
+        var setter = BuildLeafParameterSetter(leafFirst[0], leafFirst[1].GetRawMemberType()!, storeOptions);
+
+        for (var i = 1; i < leafFirst.Length; i++)
         {
-            setter = typeof(RelayParameterSetter<,>).CloseAndBuildAs<object>(dbType, setter, outsideToInside[i], outsideToInside[i].DeclaringType!, outsideToInside[i].GetRawMemberType()!);
+            setter = typeof(RelayParameterSetter<,>).CloseAndBuildAs<object>(dbType, setter,
+                leafFirst[i], leafFirst[i].DeclaringType!, leafFirst[i].GetRawMemberType()!);
         }
 
         return new EventForwarder<T>((IParameterSetter<T>)setter);
+    }
+
+    /// <summary>
+    /// Build a leaf <see cref="ParameterSetter{TSource,TValue}"/> for a single
+    /// member off of a known source type. Honors <see cref="StoreOptions"/> for
+    /// enum storage, registered value types, and nullable variants of either —
+    /// scenarios <see cref="PostgresqlProvider.ToParameterType(Type)"/> can't
+    /// resolve on its own.
+    /// </summary>
+    private static object BuildLeafParameterSetter(MemberInfo member, Type sourceType, StoreOptions storeOptions)
+    {
+        var memberType = member.GetRawMemberType()!;
+        var (dbType, transform) = ResolveLeafStorage(memberType, storeOptions);
+
+        // Default path (no special handling): preserve historical 1-arg construction
+        // so we don't churn the existing tests / reflection layout.
+        if (transform == null)
+        {
+            return typeof(ParameterSetter<,>).CloseAndBuildAs<object>(member, sourceType, memberType);
+        }
+
+        // Special path (enum / value type / nullable variants): use the explicit
+        // (member, dbType, transform) constructor so PostgresqlProvider never has
+        // to infer a parameter type from the .NET wrapper type.
+        return typeof(ParameterSetter<,>).CloseAndBuildAs<object>(
+            member, dbType, transform,
+            sourceType, memberType);
+    }
+
+    /// <summary>
+    /// Decide the PostgreSQL parameter type and any value-projection function
+    /// needed for a member of the supplied (possibly nullable) .NET type.
+    /// </summary>
+    /// <returns>
+    /// <c>(dbType, transform)</c> where <c>transform</c> is non-null when the
+    /// .NET value needs projection (enum-to-string, value-type-to-inner) before
+    /// being handed to Npgsql.
+    /// </returns>
+    internal static (NpgsqlDbType dbType, Func<object, object?>? transform) ResolveLeafStorage(Type memberType, StoreOptions storeOptions)
+    {
+        // Unwrap Nullable<T> for the type-introspection pass. The runtime setter
+        // sees the nullable type as TValue and writes DBNull whenever the value is null;
+        // only the non-null value hits the transform.
+        var nonNullable = Nullable.GetUnderlyingType(memberType) ?? memberType;
+
+        if (nonNullable.IsEnum)
+        {
+            if (storeOptions.Advanced.DuplicatedFieldEnumStorage == EnumStorage.AsString)
+            {
+                return (NpgsqlDbType.Varchar, raw => raw.ToString());
+            }
+
+            // AsInteger: convert each enum value to its underlying int. Use
+            // Convert.ToInt32 rather than a direct cast so non-Int32-backed enums
+            // (byte, short, long) round-trip into the int column without a runtime cast error.
+            return (NpgsqlDbType.Integer, raw => Convert.ToInt32(raw));
+        }
+
+        var valueTypeInfo = storeOptions.TryFindValueType(nonNullable);
+        if (valueTypeInfo != null)
+        {
+            var innerDbType = PostgresqlProvider.Instance.ToParameterType(valueTypeInfo.SimpleType);
+            var valueProperty = valueTypeInfo.ValueProperty;
+            return (innerDbType, raw => valueProperty.GetValue(raw));
+        }
+
+        return (PostgresqlProvider.Instance.ToParameterType(memberType), null);
     }
 }
