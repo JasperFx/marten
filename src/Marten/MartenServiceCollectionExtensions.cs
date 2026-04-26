@@ -178,6 +178,7 @@ public static class MartenServiceCollectionExtensions
             options.ReadJasperFxOptions(s.GetService<JasperFxOptions>());
 
             options.InitialData.AddRange(s.GetServices<IInitialData>());
+            options.Projections.AttachServiceProvider(s);
 
             return options;
         });

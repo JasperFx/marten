@@ -111,6 +111,7 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
         options.StoreName = typeof(T).Name;
         options.ReadJasperFxOptions(provider.GetService<JasperFxOptions>());
+        options.Projections.AttachServiceProvider(provider);
 
         return options;
     }
