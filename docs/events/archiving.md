@@ -110,6 +110,63 @@ will probably require system downtime because it actually has to copy the old ta
 table, copy all the existing data from the temp table to the new partitioned table, and finally drop the temporary table.
 :::
 
+### Strict Stream Identity After Archive <Badge type="tip" text="8.x" />
+
+::: tip
+This setting is only necessary when stream identity is generated **outside** of
+Marten — most commonly when the user is providing string keys themselves
+(order numbers, external reference ids, etc.). With Marten-generated `Guid`
+ids, accidental reuse is vanishingly unlikely, so the default of `false` is
+fine for most projects.
+:::
+
+When `UseArchivedStreamPartitioning = true` is enabled, archiving a stream
+physically moves its row from the active partition (`mt_streams_default`) to
+the archived partition (`mt_streams_archived`). PostgreSQL requires the
+partition key (`is_archived`) to be part of the primary key on a partitioned
+table, so the effective stream-table PK becomes `(id, is_archived)`. That
+means a fresh `StartStream` call with the same id as a previously-archived
+stream **does not collide** — you can silently reuse the identity, ending up
+with two rows: one active, one archived.
+
+In the "classic" (non-partitioned) mode, archive merely flips
+`is_archived = TRUE` on the existing row. The unique constraint on the id
+still fires, so reuse throws `ExistingStreamIdCollisionException`. Without
+extra configuration, the partitioning mode is therefore **less strict** about
+identity reuse than the non-partitioned mode.
+
+If you want the strict behavior under both modes, opt in to the
+`EnableStrictStreamIdentityEnforcement` flag:
+
+```cs
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddMarten(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Recommended companion when stream ids come from outside Marten
+    // (especially string keys) and you also want hot/cold partitioning.
+    opts.Events.UseArchivedStreamPartitioning = true;
+    opts.Events.EnableStrictStreamIdentityEnforcement = true;
+});
+```
+
+Under the hood Marten creates a sibling, **non-partitioned**
+`mt_streams_identity` table whose primary key is just the stream identity
+(`(id)`, or `(tenant_id, id)` under conjoined tenancy). Each `StartStream` is
+rewritten to also INSERT into that table in the same prepared statement (via
+a modifying CTE), so a duplicate identity raises a unique violation that
+Marten translates into the same `ExistingStreamIdCollisionException` you'd
+expect in non-partitioned mode. Archive does **not** touch
+`mt_streams_identity`, so the identity row stays put and the protection
+spans the active / archived divide.
+
+The flag is cheap when partitioning is off — it adds a second tiny INSERT
+per stream creation — but the practical reason to enable it is exactly the
+combination above. If you only have Marten-generated `Guid` stream ids and
+don't use partitioning, the default `mt_streams` primary key already
+enforces this and the flag is unnecessary.
+
 ## Archived Event <Badge type="tip" text="7.34" />
 
 ::: tip

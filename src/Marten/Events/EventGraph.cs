@@ -207,6 +207,19 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableExtendedProgressionTracking { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
+
+    /// <summary>
+    /// Opt into a global, partition-spanning unique constraint on stream identity by
+    /// also writing each new stream id (or key) into a non-partitioned
+    /// <c>mt_streams_identity</c> tracking table at append time. Causes
+    /// <see cref="ExistingStreamIdCollisionException"/> to fire on
+    /// <c>StartStream</c> when the same identity has already been used — even after
+    /// the original stream was archived under <see cref="UseArchivedStreamPartitioning"/>.
+    /// Defaults to false. See https://martendb.io/events/archiving for the
+    /// recommended use cases (typically only needed when stream identities are
+    /// produced outside Marten — e.g. user-supplied string keys).
+    /// </summary>
+    public bool EnableStrictStreamIdentityEnforcement { get; set; } = false;
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 

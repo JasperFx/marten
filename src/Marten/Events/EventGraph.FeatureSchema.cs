@@ -40,6 +40,14 @@ public partial class EventGraph: IFeatureSchema
     private IEnumerable<ISchemaObject> createAllSchemaObjects()
     {
         yield return new StreamsTable(this);
+
+        if (EnableStrictStreamIdentityEnforcement)
+        {
+            // Non-partitioned tracking table for cross-partition stream-identity
+            // uniqueness. See StreamIdentityEnforcementTable for the rationale.
+            yield return new StreamIdentityEnforcementTable(this);
+        }
+
         var eventsTable = new EventsTable(this);
         yield return eventsTable;
 

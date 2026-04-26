@@ -54,6 +54,7 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
             TableName: StreamsTable.TableName
+                or StreamIdentityEnforcementTable.TableName
         };
     }
 
