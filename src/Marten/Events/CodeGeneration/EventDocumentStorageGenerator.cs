@@ -377,14 +377,34 @@ internal static class EventDocumentStorageGenerator
             .Where(x => x.Writes)
             .ToArray();
 
-        var sql =
-            $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values (";
-
-
         var configureCommand = operationType.MethodFor("ConfigureCommand");
         configureCommand.DerivedVariables.Add(new Variable(typeof(StreamAction), nameof(InsertStreamBase.Stream)));
 
-        configureCommand.Frames.AppendSql(sql);
+        // Strict identity enforcement: wrap the mt_streams insert in a modifying
+        // CTE so we can also INSERT into the non-partitioned mt_streams_identity
+        // tracking table in the same prepared statement. Postgres rejects
+        // semicolon-separated multi-statement prepared statements ("cannot insert
+        // multiple commands into a prepared statement"), so a single statement
+        // with a data-modifying CTE is the right shape here.
+        // PostgreSQL surfaces unique violations from the chained INSERT with
+        // TableName = "mt_streams_identity"; InsertStreamBase.matches() recognizes
+        // that name and translates it into ExistingStreamIdCollisionException.
+        if (graph.EnableStrictStreamIdentityEnforcement)
+        {
+            var identityColumnNames = graph.TenancyStyle == TenancyStyle.Conjoined
+                ? "tenant_id, id"
+                : "id";
+
+            var cteHead =
+                $"with new_stream as (insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values (";
+            configureCommand.Frames.AppendSql(cteHead);
+        }
+        else
+        {
+            var sql =
+                $"insert into {graph.DatabaseSchemaName}.mt_streams ({columns.Select(x => x.Name).Join(", ")}) values (";
+            configureCommand.Frames.AppendSql(sql);
+        }
 
         configureCommand.Frames.Code($"var parameterBuilder = {{0}}.{nameof(CommandBuilder.CreateGroupedParameterBuilder)}(',');", Use.Type<ICommandBuilder>());
 
@@ -393,7 +413,25 @@ internal static class EventDocumentStorageGenerator
             columns[i].GenerateAppendCode(configureCommand, i);
         }
 
-        configureCommand.Frames.AppendSql(')');
+        if (graph.EnableStrictStreamIdentityEnforcement)
+        {
+            var identityColumnNames = graph.TenancyStyle == TenancyStyle.Conjoined
+                ? "tenant_id, id"
+                : "id";
+
+            // Close the CTE's INSERT, return the identity columns, then chain the
+            // identity-table INSERT off the CTE so it sees the same row that
+            // mt_streams just wrote. No new parameters needed — we're piping
+            // values through the CTE.
+            configureCommand.Frames.AppendSql(
+                $") returning {identityColumnNames}) " +
+                $"insert into {graph.DatabaseSchemaName}.{StreamIdentityEnforcementTable.TableName} ({identityColumnNames}) " +
+                $"select {identityColumnNames} from new_stream");
+        }
+        else
+        {
+            configureCommand.Frames.AppendSql(')');
+        }
 
         builderType.MethodFor(nameof(EventDocumentStorage.InsertStream))
             .Frames.ReturnNewGeneratedTypeObject(operationType, "stream");

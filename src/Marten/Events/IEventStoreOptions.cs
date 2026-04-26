@@ -93,6 +93,17 @@ namespace Marten.Events
         public bool UseArchivedStreamPartitioning { get; set; }
 
         /// <summary>
+        /// Opt into a global, partition-spanning unique constraint on stream
+        /// identity (id / key). When enabled, Marten writes each new stream's
+        /// identity into a non-partitioned <c>mt_streams_identity</c> tracking
+        /// table at append time and translates a unique violation there into
+        /// <see cref="ExistingStreamIdCollisionException"/>. This catches reuse
+        /// of an identity even after the original stream was archived under
+        /// <see cref="UseArchivedStreamPartitioning"/>. Defaults to false.
+        /// </summary>
+        public bool EnableStrictStreamIdentityEnforcement { get; set; }
+
+        /// <summary>
         /// Optional extension point to receive published messages as a side effect from
         /// aggregation projections
         /// </summary>
