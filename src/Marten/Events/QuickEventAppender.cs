@@ -31,12 +31,15 @@ internal class QuickEventAppender: IEventAppender
             }
         }
 
+        // The quick-append path never reads from this queue (PrepareEvents calls
+        // applyQuickMetadata, not applyRichMetadata, and only the rich variant
+        // dequeues from it). Hoist a single throwaway instance out of the
+        // per-stream loop so we don't allocate one per stream on every save.
+        var sequences = new Queue<long>();
+
         foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
         {
             stream.TenantId ??= session.TenantId;
-
-            // Not really using it, just need a stand in
-            var sequences = new Queue<long>();
             if (stream.ActionType == StreamActionType.Start)
             {
                 stream.PrepareEvents(0, eventGraph, sequences, session);
