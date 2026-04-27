@@ -96,7 +96,20 @@ public abstract partial class DocumentSessionBase
 
     private IEnumerable<Type> operationDocumentTypes()
     {
-        return _workTracker.Operations().Select(x => x.DocumentType).Where(x => x != null).Distinct();
+        // Single-pass HashSet so we don't enumerate Operations() twice (once for
+        // Select, once for the Distinct hash) and don't allocate intermediate
+        // LINQ enumerator chains on every SaveChanges.
+        var types = new HashSet<Type>();
+        foreach (var op in _workTracker.Operations())
+        {
+            var documentType = op.DocumentType;
+            if (documentType != null)
+            {
+                types.Add(documentType);
+            }
+        }
+
+        return types;
     }
 
     internal record PagesExecution(IReadOnlyList<OperationPage> Pages, IConnectionLifetime Connection,
