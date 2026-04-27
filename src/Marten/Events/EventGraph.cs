@@ -606,10 +606,31 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
-        foreach (var mapping in _events)
+
+        // Pre-warm name->type so the first read of each event type from the database
+        // doesn't fall through Type.GetType(assemblyQualifiedName) in TypeForDotNetName,
+        // which is itself O(loaded-assemblies). Populate both AssemblyQualifiedName and
+        // FullName since both shapes appear in event metadata over the lifetime of a
+        // store. Done as a single Swap so we don't churn ImHashMap.
+        _nameToType.Swap(map =>
         {
-            mapping.JsonTransformation(null);
-        }
+            foreach (var mapping in _events)
+            {
+                mapping.JsonTransformation(null);
+
+                var docType = mapping.DocumentType;
+                if (docType.AssemblyQualifiedName is { } aqn)
+                {
+                    map = map.AddOrUpdate(aqn, docType);
+                }
+                if (docType.FullName is { } fullName)
+                {
+                    map = map.AddOrUpdate(fullName, docType);
+                }
+            }
+
+            return map;
+        });
 
         autoDiscoverTagTypesFromProjections();
     }
