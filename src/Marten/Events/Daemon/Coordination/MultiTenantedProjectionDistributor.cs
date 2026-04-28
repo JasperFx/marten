@@ -7,6 +7,7 @@ using JasperFx.Core;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Weasel.Core;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Coordination;
@@ -14,16 +15,19 @@ namespace Marten.Events.Daemon.Coordination;
 public class MultiTenantedProjectionDistributor: IProjectionDistributor
 {
     private readonly DocumentStore _store;
-    private readonly Cache<IMartenDatabase, AdvisoryLock> _locks;
+    private readonly Cache<IMartenDatabase, IAdvisoryLock> _locks;
 
     public MultiTenantedProjectionDistributor(DocumentStore store)
     {
         _store = store;
 
-        var logger = _store.Options.LogFactory?.CreateLogger<AdvisoryLock>() ??
-                     _store.Options.DotNetLogger ?? NullLogger<AdvisoryLock>.Instance;
+        var useMonitoredAdvisoryLock = store.Options.Events.UseMonitoredAdvisoryLock;
+        var logger = useMonitoredAdvisoryLock ? Logger<AdvisoryLock>() : Logger<NativeAdvisoryLock>();
 
-        _locks = new(db => new AdvisoryLock(((MartenDatabase)db).DataSource, logger, db.Id.Identity, new AdvisoryLockOptions { LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock }));
+        _locks = new(db => AdvisoryLockFactory.Create(((MartenDatabase)db).DataSource, logger, db.Id.Identity, new AdvisoryLockOptions { LockMonitoringEnabled = useMonitoredAdvisoryLock }));
+
+        ILogger Logger<T>() =>
+            store.Options.LogFactory?.CreateLogger<T>() ?? store.Options.DotNetLogger ?? NullLogger<T>.Instance;
     }
 
     public async ValueTask DisposeAsync()

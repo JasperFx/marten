@@ -92,11 +92,15 @@ As of right now, the daemon can run as one of two modes:
    projection on each tenant database and **ensure that each projection is running on exactly one running process**.
 
 ::: tip
-When running in `HotCold` mode, Marten will monitor the Postgres advisory lock by running a `SELECT pg_catalog.pg_sleep(60)` query to detect if the database restarts or fails-over.
-Without this monitoring, Marten will not be aware of the lock loss and multiple async daemons can start running concurrently across multiple nodes, causing application failure.
+In `HotCold` mode, Marten coordinates leader election with a PostgreSQL session-level advisory lock. By default (`UseMonitoredAdvisoryLock = true`) the lock is acquired 
+through [Medallion.Threading.Postgres](https://github.com/madelson/DistributedLock), which detects lock loss after a database restart or fail-over via a `SELECT pg_sleep(60)` 
+keep-alive query and shuts down the affected agents so they do not run concurrently. Some monitoring tools report the keep-alive as load — it is a sleep and does not consume database resources.
+:::
 
-Some monitoring tools erroneously report this query as "load", however this query simply sleeps for 60 seconds and **does not** consume any database resources. 
-If this monitoring is undesirable for your scenario, you can opt-out by setting `options.Events.UseMonitoredAdvisoryLock` to false when configuring Marten.
+::: warning
+Setting `options.Events.UseMonitoredAdvisoryLock = false` switches to a native implementation that issues `pg_try_advisory_lock` directly with no `SET LOCAL` and no keep-alive query. 
+This avoids the `SET LOCAL can only be used in transaction blocks` warnings emitted by the third-party locker under PostgreSQL 18, but **lock loss is no longer detected** — only choose 
+this mode when an external mechanism prevents two daemon instances from staying up simultaneously.
 :::
 
 ## Projection Distribution
