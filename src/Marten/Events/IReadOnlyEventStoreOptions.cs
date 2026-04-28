@@ -108,6 +108,11 @@ public interface IReadOnlyEventStoreOptions
     public bool UseMonitoredAdvisoryLock { get; set; }
 
     /// <summary>
+    /// Uses a transaction-scoped advisory lock instead of a session-scoped one. This improves compatibility with PGBouncer and suppresses some irrelevant warning spam in Postgres logs. Enabled by default.
+    /// </summary>
+    public bool UseAdvisoryLockTransaction { get; set; }
+
+    /// <summary>
     /// Opt into different aliasing styles for .NET event types
     /// </summary>
     EventNamingStyle EventNamingStyle { get; set; }
