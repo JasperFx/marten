@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -7,7 +6,6 @@ using JasperFx.Events;
 using JasperFx.Events.Grouping;
 using JasperFx.Events.Projections;
 using Marten;
-using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -33,8 +31,8 @@ public class ancillary_store_enrichment_tests : IAsyncLifetime
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ancillary_enrich_primary";
+                    opts.Projections.Add<OrderProjection>(ProjectionLifecycle.Async);
                 })
-                .AddProjectionWithServices<OrderProjection>(ProjectionLifecycle.Async, ServiceLifetime.Singleton)
                 .ApplyAllDatabaseChangesOnStartup();
 
                 services.AddMartenStore<IProductStore>(opts =>
@@ -112,22 +110,16 @@ public record OrderPlaced
 
 // ── projection ────────────────────────────────────────────────────────────────
 
+// No constructor injection needed — the store is resolved from DI at enrichment time
 public class OrderProjection : SingleStreamProjection<Order, Guid>
 {
-    private readonly Lazy<IProductStore> _productStore;
-
-    public OrderProjection(Lazy<IProductStore> productStore)
-    {
-        _productStore = productStore;
-    }
-
     public override async Task EnrichEventsAsync(
         SliceGroup<Order, Guid> group,
         IQuerySession querySession,
         CancellationToken cancellation)
     {
         await group.EnrichWith<Product>()
-            .UsingStore(_productStore)
+            .UsingStore<IProductStore>()
             .ForEvent<OrderPlaced>()
             .ForEntityId(e => e.ProductId)
             .EnrichAsync((slice, e, product) =>

@@ -7,8 +7,9 @@ namespace Marten.Events.Aggregation;
 public static class AncillaryStoreEnrichmentExtensions
 {
     /// <summary>
-    /// Switch the enrichment source to an ancillary Marten store. The store is resolved
-    /// lazily so projection construction does not deadlock DI. A lightweight session is
+    /// Switch the enrichment source to an ancillary Marten store supplied as a
+    /// <see cref="Lazy{T}"/>. The store is resolved only when enrichment executes
+    /// so projection construction does not deadlock DI. A lightweight session is
     /// opened per enrichment call and disposed automatically when enrichment completes.
     /// </summary>
     /// <example>

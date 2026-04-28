@@ -474,6 +474,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     public int CommandTimeout { get; set; } = DefaultTimeout;
 
+    // Service provider from DI — set during store construction so sessions can resolve ancillary stores
+    internal IServiceProvider? Services { get; set; }
+
     // This is used to move logging into the >v7 async daemon
     internal ILoggerFactory? LogFactory { get; set; }
 
