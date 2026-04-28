@@ -72,7 +72,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         new ProjectionDocumentPolicy()
     ];
 
-    private readonly List<IDocumentPolicy> _postPolicies = new();
+    private readonly List<IDocumentPolicy> _postPolicies = new() { new ProjectionVersionAliasPolicy() };
 
     /// <summary>
     ///     Register "initial data loads" that will be applied to the DocumentStore when it is
