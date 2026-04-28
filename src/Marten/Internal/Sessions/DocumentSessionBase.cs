@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
@@ -18,6 +19,8 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 {
     internal readonly ISessionWorkTracker _workTracker;
     private readonly List<ITransactionParticipant> _transactionParticipants = new();
+
+    IServiceProvider? IStorageOperations.Services => Options.Services;
 
     private Dictionary<string, NestedTenantSession>? _byTenant;
 
