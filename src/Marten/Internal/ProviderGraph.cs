@@ -59,7 +59,13 @@ public class ProviderGraph: IProviderGraph
         if (documentType == typeof(IEvent))
         {
             var rules = _options.CreateGenerationRules();
-            _options.EventGraph.InitializeSynchronously(rules, _options.EventGraph, null);
+            // Disambiguated against JasperFx 1.28's new
+            // JasperFx.CodeGeneration.CodeFileExtensions.InitializeSynchronously
+            // which requires IAssemblyGenerator in DI. We pass null services here
+            // so we deliberately route through the obsolete RuntimeCompiler
+            // overload that constructs a fresh AssemblyGenerator. Proper
+            // migration tracked under Marten 9.0 issue #4309.
+            JasperFx.RuntimeCompiler.CodeFileExtensions.InitializeSynchronously(_options.EventGraph, rules, _options.EventGraph, null);
 
             _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
 
@@ -78,7 +84,8 @@ public class ProviderGraph: IProviderGraph
 
                     var rules = _options.CreateGenerationRules();
                     rules.ReferenceTypes(m.DocumentType);
-                    builder.InitializeSynchronously(rules, _options, null);
+                    // See note above for the disambiguation rationale.
+                    JasperFx.RuntimeCompiler.CodeFileExtensions.InitializeSynchronously(builder, rules, _options, null);
                     var slot = builder.BuildProvider<T>();
 
                     _storage = _storage.AddOrUpdate(documentType, slot);
