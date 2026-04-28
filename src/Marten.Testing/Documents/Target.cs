@@ -22,7 +22,33 @@ public class Target
     public record Nested(Target[] Targets);
 
     public Nested NestedObject { get; set; }
-    private static readonly Random _random = new Random(67);
+
+    // Seeded random shared across all tests in the assembly. The seed is fixed
+    // (67), but consumption is shared: every Target.Random() call advances the
+    // sequence, so a test's effective random data depends on which other tests
+    // (and how many Random() calls each made) ran before it. xUnit test
+    // discovery / ordering is mostly stable but not perfectly so — flakes that
+    // surface only on CI typically come from a small order shift consuming a
+    // different slice of the sequence and producing different test data.
+    //
+    // ResetRandomSeed below lets a test that genuinely depends on specific
+    // random data pin the sequence at the start. Keep the static so unaffected
+    // tests are unchanged.
+    private static Random _random = new Random(67);
+
+    /// <summary>
+    /// Reset the shared random sequence to a known seed. Call from a test that
+    /// needs deterministic test data (assertions on exact counts, IDs of the
+    /// first N records, etc.) to remove its dependency on whatever sibling
+    /// tests happened to consume from the static random before it.
+    /// </summary>
+    /// <param name="seed">Seed for the new random sequence. Defaults to 67 to
+    /// match the historical default; pass a different value if a test wants its
+    /// own deterministic-but-distinct stream.</param>
+    public static void ResetRandomSeed(int seed = 67)
+    {
+        _random = new Random(seed);
+    }
 
     private static readonly string[] _strings =
     {

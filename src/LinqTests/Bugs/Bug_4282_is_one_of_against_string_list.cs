@@ -25,18 +25,24 @@ public class Bug_4282_is_one_of_against_string_list: OneOffConfigurationsContext
 
         var ids = await session.Query<Issue4282Target>()
             .Where(x => x.RelatedIds.IsOneOf(relatedIds))
-            .OrderBy(x => x.Id)
             .Select(x => x.Id)
             .ToListAsync();
 
-        ids.ShouldHaveTheSameElementsAs(doc1.Id, doc3.Id);
+        // doc1 (matches "related-2") and doc3 (matches "related-4") are
+        // expected; doc2 should not match. Use set-membership rather than a
+        // sequential ShouldHaveTheSameElementsAs because the Ids are
+        // server-generated Guids and don't sort in declaration order.
+        ids.Count.ShouldBe(2);
+        ids.ShouldContain(doc1.Id);
+        ids.ShouldContain(doc3.Id);
 
         var notIds = await session.Query<Issue4282Target>()
             .Where(x => !x.RelatedIds.IsOneOf(relatedIds))
             .Select(x => x.Id)
             .ToListAsync();
 
-        notIds.ShouldHaveTheSameElementsAs(doc2.Id);
+        notIds.Count.ShouldBe(1);
+        notIds.ShouldContain(doc2.Id);
     }
 
     public class Issue4282Target

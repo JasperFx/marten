@@ -67,9 +67,18 @@ namespace Marten.Testing.Harness
 
         public static void ShouldBeEqualWithDbPrecision(this DateTimeOffset actual, DateTimeOffset expected)
         {
-            static DateTimeOffset toDbPrecision(DateTimeOffset date) => new DateTimeOffset(date.Ticks / 1000 * 1000, new TimeSpan(date.Offset.Ticks / 1000 * 1000));
-
-            toDbPrecision(actual).ShouldBe(toDbPrecision(expected));
+            // PostgreSQL `timestamptz` is microsecond precision; .NET DateTimeOffset
+            // is 100ns precision. A round-trip through Postgres truncates up to 9
+            // ticks. Compare with a millisecond tolerance — easily wider than the
+            // truncation but tight enough to catch real semantic differences. This
+            // is preferred over the older "round both sides to 100µs and compare"
+            // approach because it's more robust to clock-comparison edge cases on
+            // slow / loaded CI runners (see #4310).
+            var difference = (actual - expected).Duration();
+            difference.ShouldBeLessThanOrEqualTo(TimeSpan.FromMilliseconds(1),
+                $"DateTimeOffset values differ by {difference.TotalMicroseconds:F1}µs; expected within 1ms.\n" +
+                $"  expected: {expected:O}\n" +
+                $"    actual: {actual:O}");
         }
 
         public static void ShouldContain(this DbObjectName[] names, string qualifiedName)

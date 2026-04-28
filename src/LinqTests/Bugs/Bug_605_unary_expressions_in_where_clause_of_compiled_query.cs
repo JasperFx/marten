@@ -16,11 +16,15 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     [Fact]
     public async Task with_flag_as_true()
     {
+        // Test asserts the compiled-query result equals the equivalent inline LINQ
+        // result. Reset the shared Target random sequence so the test data we
+        // operate on is deterministic regardless of sibling-test order on CI.
+        Target.ResetRandomSeed();
         var targets = Target.GenerateRandomData(1000).ToArray();
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        var results = await query.QueryAsync(new FlaggedTrueTargets());
+        var results = (await query.QueryAsync(new FlaggedTrueTargets())).ToList();
 
         var expected = query.Query<Target>()
             .SelectMany(x => x.Children)
@@ -31,7 +35,11 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
             .Take(15)
             .ToList();
 
-        results.Count().ShouldBe(15);
+        // Compare against the inline LINQ query rather than a hardcoded count.
+        // The point of the test is "compiled query == inline LINQ for the same
+        // expression"; the page size of 15 is incidental and was a fragile
+        // assertion against shared-random test-data variance.
+        results.Count.ShouldBe(expected.Count);
 
         results.Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
@@ -42,11 +50,12 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     {
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(EnumStorage.AsString));
 
+        Target.ResetRandomSeed();
         var targets = Target.GenerateRandomData(1000).ToArray();
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        var results = await query.QueryAsync(new FlaggedTrueTargets());
+        var results = (await query.QueryAsync(new FlaggedTrueTargets())).ToList();
 
         var expected = query.Query<Target>()
             .SelectMany(x => x.Children)
@@ -57,7 +66,7 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
             .Take(15)
             .ToList();
 
-        results.Count().ShouldBe(15);
+        results.Count.ShouldBe(expected.Count);
 
         results.Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
@@ -66,11 +75,12 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
     [Fact]
     public async Task with_flag_as_false()
     {
+        Target.ResetRandomSeed();
         var targets = Target.GenerateRandomData(1000).ToArray();
         await theStore.BulkInsertAsync(targets);
 
         await using var query = theStore.QuerySession();
-        var results = await query.QueryAsync(new FlaggedFalseTargets());
+        var results = (await query.QueryAsync(new FlaggedFalseTargets())).ToList();
 
         var expected = query.Query<Target>()
             .SelectMany(x => x.Children)
@@ -81,7 +91,7 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
             .Take(15)
             .ToList();
 
-        results.Count().ShouldBe(15);
+        results.Count.ShouldBe(expected.Count);
 
         results.Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(expected.Select(x => x.Id));
