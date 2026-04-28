@@ -179,6 +179,7 @@ public static class MartenServiceCollectionExtensions
 
             options.InitialData.AddRange(s.GetServices<IInitialData>());
             options.Projections.AttachServiceProvider(s);
+            options.Services = s;
 
             return options;
         });
@@ -315,6 +316,7 @@ public static class MartenServiceCollectionExtensions
 
         services.AddSingleton<T>(s => config.Build(s));
         services.AddSingleton<Lazy<T>>(s => new Lazy<T>(() => s.GetRequiredService<T>()));
+        services.AddSingleton<Func<T, IStorageOperations>>(_ => store => (IStorageOperations)store.LightweightSession());
 
         // Default keyed session factory for the ancillary store
         services.AddKeyedSingleton<ISessionFactory>(typeof(T), (sp, _) =>
