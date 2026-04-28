@@ -127,7 +127,14 @@ internal class SecondaryStoreConfig<T>: IStoreConfig where T : IDocumentStore
         // ParentDirectory(). Align the paths to avoid writing duplicate files
         // with the same namespace and class name to different directories (#4185)
         rules.GeneratedCodeOutputPath = rules.GeneratedCodeOutputPath.ParentDirectory();
-        this.InitializeSynchronously(rules, Parent, provider);
+        // Disambiguated against JasperFx 1.28's new
+        // JasperFx.CodeGeneration.CodeFileExtensions.InitializeSynchronously.
+        // The 'provider' here may be non-null (it's the host IServiceProvider)
+        // but it isn't required to have IAssemblyGenerator registered, so we
+        // route through the obsolete RuntimeCompiler overload that uses a
+        // fresh AssemblyGenerator. Proper migration tracked under Marten 9.0
+        // issue #4309.
+        JasperFx.RuntimeCompiler.CodeFileExtensions.InitializeSynchronously(this, rules, Parent, provider);
 
         var store = (T)Activator.CreateInstance(_storeType!, options)!;
         store.As<DocumentStore>().Subject = new Uri("marten://" + typeof(T).Name.ToLowerInvariant());

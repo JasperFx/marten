@@ -198,6 +198,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseOptimizedProjectionRebuilds { get; set; }
     public bool UseMandatoryStreamTypeDeclaration { get; set; }
     public bool UseMonitoredAdvisoryLock { get; set; } = true;
+
+    public bool UseAdvisoryLockTransaction { get; set; } = true;
+
     public bool EnableAdvancedAsyncTracking { get; set; }
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
@@ -606,9 +609,46 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
 
         _tombstones = new RetryBlock<UpdateBatch>(executeTombstoneBlock, logger, _cancellation.Token);
-        foreach (var mapping in _events)
+
+        // Pre-warm name->type so the first read of each event type from the database
+        // doesn't fall through Type.GetType(assemblyQualifiedName) in TypeForDotNetName,
+        // which is itself O(loaded-assemblies). Populate both AssemblyQualifiedName and
+        // FullName since both shapes appear in event metadata over the lifetime of a
+        // store. Done as a single Swap so we don't churn ImHashMap. Also pre-fill
+        // _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on
+        // first lookup of every registered event-type alias.
+        _nameToType.Swap(map =>
         {
-            mapping.JsonTransformation(null);
+            foreach (var mapping in _events)
+            {
+                mapping.JsonTransformation(null);
+
+                var docType = mapping.DocumentType;
+                if (docType.AssemblyQualifiedName is { } aqn)
+                {
+                    map = map.AddOrUpdate(aqn, docType);
+                }
+                if (docType.FullName is { } fullName)
+                {
+                    map = map.AddOrUpdate(fullName, docType);
+                }
+
+                _byEventName.Fill(mapping.EventTypeName, mapping);
+            }
+
+            return map;
+        });
+
+        // Pre-warm the aggregate-name -> aggregate-type cache so AggregateTypeFor
+        // (and therefore the LINQ-from-aggregate-alias path) doesn't pay the linear
+        // AllAggregateTypes() walk on the first lookup of each aggregate alias.
+        // findAggregateType is the OnMissing on _aggregateTypeByName and would do
+        // exactly this work lazily; pre-populating moves the cost off the request
+        // path and into the once-per-store Initialize.
+        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
+        {
+            var alias = _aggregateNameByType[aggregateType];
+            _aggregateTypeByName.Fill(alias, aggregateType);
         }
 
         autoDiscoverTagTypesFromProjections();

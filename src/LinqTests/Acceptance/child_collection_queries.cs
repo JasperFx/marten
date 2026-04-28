@@ -64,7 +64,14 @@ public class child_collection_queries: LinqTestContext<child_collection_queries>
         @where(x => x.StringArray != null && x.String.Equals("Orange") && x.StringArray.Contains("Red") && x.AnotherString.Equals("one"));
 
         // GH-2975
-        @where(x => x.Children.Any(c => c.NullableDateOffset <= DateTimeOffset.UtcNow));
+        // Capture a fixed timestamp far enough in the future to dominate the
+        // ±60-second jitter in Target.Random's NullableDateOffset values. Using
+        // DateTimeOffset.UtcNow inline here would be evaluated independently by
+        // the LINQ-to-objects "expected" path and by the LINQ-to-SQL "actual"
+        // path; values close to "now" could land on opposite sides of <= and
+        // disagree, producing a flaky test on slow CI runners.
+        var asOf = DateTimeOffset.UtcNow.AddDays(1);
+        @where(x => x.Children.Any(c => c.NullableDateOffset <= asOf));
     }
 
     [Theory]
