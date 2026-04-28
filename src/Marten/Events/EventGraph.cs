@@ -614,7 +614,9 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // doesn't fall through Type.GetType(assemblyQualifiedName) in TypeForDotNetName,
         // which is itself O(loaded-assemblies). Populate both AssemblyQualifiedName and
         // FullName since both shapes appear in event metadata over the lifetime of a
-        // store. Done as a single Swap so we don't churn ImHashMap.
+        // store. Done as a single Swap so we don't churn ImHashMap. Also pre-fill
+        // _byEventName so EventMappingFor(string) skips its O(n) AllEvents() walk on
+        // first lookup of every registered event-type alias.
         _nameToType.Swap(map =>
         {
             foreach (var mapping in _events)
@@ -630,10 +632,24 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
                 {
                     map = map.AddOrUpdate(fullName, docType);
                 }
+
+                _byEventName.Fill(mapping.EventTypeName, mapping);
             }
 
             return map;
         });
+
+        // Pre-warm the aggregate-name -> aggregate-type cache so AggregateTypeFor
+        // (and therefore the LINQ-from-aggregate-alias path) doesn't pay the linear
+        // AllAggregateTypes() walk on the first lookup of each aggregate alias.
+        // findAggregateType is the OnMissing on _aggregateTypeByName and would do
+        // exactly this work lazily; pre-populating moves the cost off the request
+        // path and into the once-per-store Initialize.
+        foreach (var aggregateType in Options.Projections.AllAggregateTypes())
+        {
+            var alias = _aggregateNameByType[aggregateType];
+            _aggregateTypeByName.Fill(alias, aggregateType);
+        }
 
         autoDiscoverTagTypesFromProjections();
     }
