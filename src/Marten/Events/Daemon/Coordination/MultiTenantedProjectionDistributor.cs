@@ -23,7 +23,7 @@ public class MultiTenantedProjectionDistributor: IProjectionDistributor
         var logger = _store.Options.LogFactory?.CreateLogger<AdvisoryLock>() ??
                      _store.Options.DotNetLogger ?? NullLogger<AdvisoryLock>.Instance;
 
-        _locks = new(db => new AdvisoryLock(((MartenDatabase)db).DataSource, logger, db.Id.Identity, new AdvisoryLockOptions { LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock }));
+        _locks = new(db => new AdvisoryLock(((MartenDatabase)db).DataSource, logger, db.Id.Identity, new AdvisoryLockOptions { LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock, TransactionalLockEnabled = store.Options.Events.UseAdvisoryLockTransaction }));
     }
 
     public async ValueTask DisposeAsync()
