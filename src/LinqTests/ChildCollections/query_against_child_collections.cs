@@ -24,6 +24,12 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
     private async Task buildUpTargetData()
     {
+        // Pin the shared random sequence so the per-test data is deterministic
+        // regardless of which sibling tests consumed Target's static random
+        // before us. Without this, tests that assert on the random distribution
+        // (e.g. "at least one Green child") could occasionally see a slice of
+        // the sequence that doesn't produce a match.
+        Target.ResetRandomSeed();
         targets = Target.GenerateRandomData(20).ToArray();
         targets.SelectMany(x => x.Children).Each(x => x.Number = 5);
 

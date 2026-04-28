@@ -13,6 +13,10 @@ public class Bug_3337_select_page : BugIntegrationContext
     [Fact]
     public async Task try_it_out()
     {
+        // Reset the shared Target random sequence so the data we generate is
+        // deterministic regardless of sibling-test order. Without this, a
+        // surprise zero in `Number` or null in `String` would silently flake.
+        Target.ResetRandomSeed();
         await theStore.BulkInsertAsync(Target.GenerateRandomData(1000).ToArray());
 
         var results = await theSession.Query<Target>().Where(x => x.Inner != null)
