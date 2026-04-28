@@ -38,6 +38,20 @@ public class blue_green_deployment_of_aggregates
         var mapping = store.Options.Storage.MappingFor(typeof(OtherAggregate));
         mapping.Alias.ShouldBe("otheraggregate_3");
     }
+
+    [Fact]
+    public void apply_the_version_suffix_when_document_alias_is_set_via_fluent_api()
+    {
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Projections.Add<Version2>(ProjectionLifecycle.Async);
+            opts.Schema.For<MyAggregate>().DocumentAlias("custom_alias");
+        });
+
+        var mapping = store.Options.Storage.MappingFor(typeof(MyAggregate));
+        mapping.Alias.ShouldBe("custom_alias_2");
+    }
 }
 
 public class Version2: SingleStreamProjection<MyAggregate, Guid>

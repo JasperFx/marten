@@ -14,11 +14,6 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
 
         if (mapping.StoreOptions.Projections.TryFindAggregate(mapping.DocumentType, out var projection))
         {
-            if (projection.Version > 1)
-            {
-                mapping.Alias += "_" + projection.Version;
-            }
-
             mapping.UseOptimisticConcurrency = false;
             mapping.Metadata.Version.Enabled = false;
             mapping.UseNumericRevisions = true;
@@ -28,7 +23,26 @@ internal class ProjectionDocumentPolicy : IDocumentPolicy
             {
                 m.ConfigureAggregateMapping(mapping, mapping.StoreOptions);
             }
+        }
+    }
+}
 
+internal class ProjectionVersionAliasPolicy : IDocumentPolicy
+{
+    public void Apply(DocumentMapping mapping)
+    {
+        if (mapping.StoreOptions.Projections == null) return;
+
+        if (mapping.StoreOptions.Projections.TryFindAggregate(mapping.DocumentType, out var projection))
+        {
+            if (projection.Version > 1)
+            {
+                var suffix = "_" + projection.Version;
+                if (!mapping.Alias.EndsWith(suffix))
+                {
+                    mapping.Alias += suffix;
+                }
+            }
         }
     }
 }
