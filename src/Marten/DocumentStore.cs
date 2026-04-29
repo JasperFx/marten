@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx;
+using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -68,7 +69,17 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         // is called with a type that has [NaturalKey]. Assembly-level scanning was
         // removed because it caused spurious InvalidProjectionException failures
         // when test projects share compile references with incompatible stream identity types.
-        Options.Projections.AssertValidity(Options);
+        //
+        // 9.0: Skip AssertValidity when running in TypeLoadMode.Static (#4305).
+        // Static mode means the runtime is loading pre-generated artifacts that
+        // would not have been emitted if validation had failed at codegen time —
+        // re-running the validation walk on every host start is pure cold-start
+        // overhead. Dynamic and Auto modes still validate, so any hot-reload or
+        // first-run codegen path keeps the existing fail-fast behavior.
+        if (Options.GeneratedCodeMode != TypeLoadMode.Static)
+        {
+            Options.Projections.AssertValidity(Options);
+        }
 
         if (Options.LogFactory != null)
         {
