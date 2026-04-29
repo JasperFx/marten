@@ -76,9 +76,15 @@ public class end_to_end_with_composite_projection : DaemonContext
             });
         }, true);
 
-        // Finding the document types correctly, preliminary step
-        theStore.Options.Storage.AllDocumentMappings.Any(x => x.DocumentType == typeof(Trip)).ShouldBeTrue();
-        theStore.Options.Storage.AllDocumentMappings.Any(x => x.DocumentType == typeof(Day)).ShouldBeTrue();
+        // Finding the document types correctly, preliminary step.
+        // 9.0: AllDocumentMappings is lazy now (#4303); use the public
+        // AllKnownDocumentTypes() accessor which materializes everything.
+        var knownTypes = ((IReadOnlyStoreOptions)theStore.Options)
+            .AllKnownDocumentTypes()
+            .Select(x => x.DocumentType)
+            .ToList();
+        knownTypes.ShouldContain(typeof(Trip));
+        knownTypes.ShouldContain(typeof(Day));
 
         // Another precondition that was a problem
         theStore.Options.Storage.MappingFor(typeof(Trip))

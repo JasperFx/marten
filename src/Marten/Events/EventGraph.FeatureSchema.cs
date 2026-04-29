@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Tags;
@@ -20,13 +21,24 @@ public partial class EventGraph: IFeatureSchema
     internal DbObjectName ProgressionTable => new PostgresqlObjectName(DatabaseSchemaName, "mt_event_progression");
     internal DbObjectName StreamsTable => new PostgresqlObjectName(DatabaseSchemaName, "mt_streams");
 
+    // 9.0: cache the schema-object enumeration (#4304). Construction iterates
+    // every registered projection, every aggregate's NaturalKeyDefinition, and
+    // every tag registration — work that's only meaningful for full-schema
+    // operations like ApplyAllConfiguredChangesToDatabaseAsync or the CLI
+    // tools, but the IFeatureSchema.Objects getter is reachable from
+    // dependency-graph traversal at boot. Compute once on first read.
+    private Lazy<ISchemaObject[]>? _objectsCache;
 
     IEnumerable<Type> IFeatureSchema.DependentTypes()
     {
         yield return typeof(DeadLetterEvent);
     }
 
-    ISchemaObject[] IFeatureSchema.Objects => createAllSchemaObjects().ToArray();
+    ISchemaObject[] IFeatureSchema.Objects =>
+        (_objectsCache ??= new Lazy<ISchemaObject[]>(
+            () => createAllSchemaObjects().ToArray(),
+            LazyThreadSafetyMode.ExecutionAndPublication))
+        .Value;
 
     Type IFeatureSchema.StorageType => typeof(EventGraph);
     string IFeatureSchema.Identifier { get; } = "eventstore";
