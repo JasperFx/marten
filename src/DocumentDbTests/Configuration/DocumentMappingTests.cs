@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
@@ -725,27 +726,41 @@ public class DocumentMappingTests
     }
 
     [Fact]
-    public void cannot_use_a_doc_type_with_no_id()
+    public async Task cannot_use_a_doc_type_with_no_id()
     {
-        Should.Throw<InvalidDocumentException>(() =>
+        // 9.0: configuration-error timing changed (#4303). DocumentMapping
+        // is now built and validated lazily on first session access for the
+        // affected type rather than at DocumentStore.For() time. This shaves
+        // cold start by skipping eager builds for every registered type.
+        // See migration guide.
+        var store = DocumentStore.For(opts =>
         {
-            var store = DocumentStore.For(opts =>
-            {
-                opts.Connection(ConnectionSource.ConnectionString);
-                opts.Schema.For<BadDoc>();
-            });
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.Schema.For<BadDoc>();
+        });
+
+        await using var session = store.LightweightSession();
+        await Should.ThrowAsync<InvalidDocumentException>(async () =>
+        {
+            await session.Query<BadDoc>().ToListAsync();
         });
     }
 
     [Fact]
-    public void cannot_use_a_doc_type_with_no_id_with_store()
+    public async Task cannot_use_a_doc_type_with_no_id_with_store()
     {
-        Should.Throw<InvalidDocumentException>(() =>
+        // 9.0: as above — error surfaces on first session use, not at store
+        // construction (#4303).
+        var store = DocumentStore.For(options =>
         {
-            DocumentStore.For(options =>
-            {
-                options.Schema.For<BadDoc>();
-            });
+            options.Connection(ConnectionSource.ConnectionString);
+            options.Schema.For<BadDoc>();
+        });
+
+        await using var session = store.LightweightSession();
+        await Should.ThrowAsync<InvalidDocumentException>(async () =>
+        {
+            await session.Query<BadDoc>().ToListAsync();
         });
     }
 

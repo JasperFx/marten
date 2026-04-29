@@ -412,6 +412,9 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     IReadOnlyList<IDocumentType> IReadOnlyStoreOptions.AllKnownDocumentTypes()
     {
+        // 9.0: AllDocumentMappings is now lazily populated (#4303); force
+        // every registered type to materialize before snapshotting the list.
+        Storage.BuildAllMappings();
         return Storage.AllDocumentMappings.OfType<IDocumentType>().ToList();
     }
 
@@ -685,10 +688,20 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     internal void ApplyConfiguration()
     {
-        Storage.BuildAllMappings();
-
+        // 9.0: BuildAllMappings is no longer called here (#4303). Mappings
+        // are now materialized lazily on first MappingFor(type) call, with
+        // CompileAndValidate moved into that path. This removes a meaningful
+        // chunk of cold start proportional to the number of registered
+        // document types. Behavioral shift: configuration errors that used
+        // to throw at AddMarten now surface on the first session touching
+        // the affected type. Callers that genuinely need every mapping
+        // materialized (codegen, full schema migration, type-enumeration
+        // APIs) should call Storage.BuildAllMappings() explicitly.
         Schema.For<DeadLetterEvent>().DatabaseSchemaName(Events.DatabaseSchemaName).SingleTenanted();
 
+        // Validate any mappings that were already materialized during
+        // configuration (Schema.For<T>() with eager builder customization
+        // doesn't add to _documentMappings, but custom code may).
         foreach (var mapping in Storage.AllDocumentMappings)
             mapping.CompileAndValidate();
     }

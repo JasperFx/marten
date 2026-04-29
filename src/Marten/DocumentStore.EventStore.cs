@@ -52,6 +52,9 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
             if (Options.Events.TenancyStyle == TenancyStyle.Conjoined) return true;
 
+            // 9.0: AllDocumentMappings is lazy now (#4303); materialize
+            // before scanning for a Conjoined document type.
+            Options.Storage.BuildAllMappings();
             if (Options.Storage.AllDocumentMappings.Any(x => x.TenancyStyle == TenancyStyle.Conjoined)) return true;
 
             return false;

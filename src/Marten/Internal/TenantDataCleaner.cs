@@ -101,6 +101,8 @@ internal class TenantDataCleaner
 
     private void deleteDataForTenantDatabase(Action<DbObjectName> deleteTenantedDataIfExists, Action<DbObjectName> deleteDataIfExists)
     {
+        // 9.0: AllDocumentMappings is lazy (#4303); cleaner needs every type.
+        _store.Options.Storage.BuildAllMappings();
         var allTypes = _store.Options.Storage.AllDocumentMappings.OfType<IDocumentType>()
             .Select(x => x.DocumentType)
             .ToList();
@@ -128,6 +130,8 @@ internal class TenantDataCleaner
 
     private void deleteDataForSingleDatabase(Action<DbObjectName> deleteTenantedDataIfExists)
     {
+        // 9.0: AllDocumentMappings is lazy (#4303); cleaner needs every type.
+        _store.Options.Storage.BuildAllMappings();
         var tenantedTypes = _store.Options.Storage.AllDocumentMappings.OfType<IDocumentType>()
             .Where(x => x.TenancyStyle == TenancyStyle.Conjoined)
             .Select(x => x.DocumentType)

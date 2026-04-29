@@ -78,12 +78,15 @@ public class event_projection_should_register_document_types : OneOffConfigurati
     {
         // Issue #4166: Document types used in operations.Store<T>() inside an explicit
         // ApplyAsync override should be automatically discovered and registered.
+        // 9.0: AllDocumentMappings is lazy now (#4303). Use the public
+        // AllKnownDocumentTypes() API which triggers full materialization.
         StoreOptions(opts =>
         {
             opts.Projections.Add(new AuditRecordProjection(), ProjectionLifecycle.Inline);
         });
 
-        var documentTypes = theStore.StorageFeatures.AllDocumentMappings
+        var documentTypes = ((IReadOnlyStoreOptions)theStore.Options)
+            .AllKnownDocumentTypes()
             .Select(x => x.DocumentType).ToList();
 
         documentTypes.ShouldContain(typeof(AuditRecord),
@@ -94,12 +97,15 @@ public class event_projection_should_register_document_types : OneOffConfigurati
     public void conventional_create_projection_should_register_document_types()
     {
         // EventProjection with Create method should also register the return type.
+        // 9.0: as above — AllDocumentMappings is lazy, AllKnownDocumentTypes()
+        // is the materialize-then-snapshot accessor.
         StoreOptions(opts =>
         {
             opts.Projections.Add(new AuditRecordCreatorProjection(), ProjectionLifecycle.Inline);
         });
 
-        var documentTypes = theStore.StorageFeatures.AllDocumentMappings
+        var documentTypes = ((IReadOnlyStoreOptions)theStore.Options)
+            .AllKnownDocumentTypes()
             .Select(x => x.DocumentType).ToList();
 
         documentTypes.ShouldContain(typeof(AuditRecord),

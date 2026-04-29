@@ -38,8 +38,11 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
     {
         UseProjection<SimpleTransformProjectionUsingMetadata>();
 
-        // MyAggregate is the aggregate type for AllGood above
-        theStore.StorageFeatures.AllDocumentMappings.Select(x => x.DocumentType)
+        // MyAggregate is the aggregate type for AllGood above.
+        // 9.0: AllDocumentMappings is lazy (#4303); AllKnownDocumentTypes()
+        // is the public accessor that materializes everything first.
+        ((IReadOnlyStoreOptions)theStore.Options).AllKnownDocumentTypes()
+            .Select(x => x.DocumentType)
             .ShouldContain(typeof(User));
     }
 

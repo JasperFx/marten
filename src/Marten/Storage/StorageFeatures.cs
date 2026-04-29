@@ -140,8 +140,24 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
     internal void BuildAllMappings()
     {
         foreach (var pair in _builders.Value.ToArray())
+        {
+            // 9.0: DeadLetterEvent is registered unconditionally in
+            // ApplyConfiguration but is only meant to participate in schema
+            // generation when the event store is active (#4303). The eager
+            // pre-#4303 path skipped this implicitly because materialization
+            // was driven by AllActiveFeatures' conditional MappingFor call;
+            // now that we're forcing materialization explicitly, replicate
+            // that gate here so we don't conjure a dlq table for stores that
+            // never use the event store.
+            if (pair.Key == typeof(DeadLetterEvent)
+                && !_options.Events.As<EventGraph>().IsActive(_options))
+            {
+                continue;
+            }
+
             // Just forcing them all to be built
             FindMapping(pair.Key);
+        }
 
         // This needs to be done second so that it can pick up any subclass
         // relationships
@@ -187,8 +203,44 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
     {
         if (!_documentMappings.Value.TryFind(documentType, out var value))
         {
+            // Whether this type was explicitly registered (via Schema.For<T>()
+            // or AddMappingFor) decides whether we apply CompileAndValidate.
+            // Master's eager pre-#4303 path only validated registered types;
+            // fallback-built mappings for live-aggregation-only targets (no
+            // Id, no persistence) deliberately skipped validation. Preserve
+            // that distinction now that validation is lazy.
+            var explicitlyRegistered = _builders.Value.TryFind(documentType, out _);
+
             value = Build(documentType, _options);
             _documentMappings.Swap(d => d.AddOrUpdate(documentType, value));
+
+            // 9.0: Validation moved here from ApplyConfiguration's eager loop
+            // (#4303). Each newly-materialized mapping is validated on first
+            // access so AddMarten no longer has to walk every registered
+            // document type, but configuration errors still surface — they
+            // surface on the first session that touches the affected type
+            // rather than at host build time. Documented in the 9.0 migration
+            // guide as a behavioral shift. Live-aggregation-only types
+            // (e.g. an aggregate without an Id used solely with
+            // AggregateStreamAsync<T>) are not validated to match master.
+            if (explicitlyRegistered)
+            {
+                value.CompileAndValidate();
+            }
+
+            // 9.0: Flatten this mapping's SubClasses into _mappings and
+            // _features as part of materialization so subclass-only callers
+            // (FindMapping, FindFeature, BulkInsertAsync<SubClass>, schema
+            // migration for a sub-type) don't need a prior eager pass.
+            // Mirrors what PostProcessConfiguration used to do up-front.
+            if (!value.SkipSchemaGeneration)
+            {
+                foreach (var subClass in value.SubClasses)
+                {
+                    _mappings.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass));
+                    _features.Swap(d => d.AddOrUpdate(subClass.DocumentType, subClass.Parent.Schema));
+                }
+            }
         }
 
         return value;
@@ -200,6 +252,30 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
 
         if (!_mappings.Value.TryFind(documentType, out var value))
         {
+            // 9.0: BuildAllMappings is no longer eager (#4303), so a subclass
+            // looked up on its own (without the parent ever being touched)
+            // wouldn't show up in AllDocumentMappings. Walk the type chain
+            // and the implemented-interfaces set, force-materializing any
+            // registered ancestor so its SubClasses declarations populate.
+            // This is targeted: we only materialize candidates that the
+            // queried type actually inherits from, not every builder.
+            for (var ancestor = documentType.BaseType;
+                 ancestor != null && ancestor != typeof(object);
+                 ancestor = ancestor.BaseType)
+            {
+                if (_builders.Value.TryFind(ancestor, out _))
+                {
+                    MappingFor(ancestor);
+                }
+            }
+            foreach (var iface in documentType.GetInterfaces())
+            {
+                if (_builders.Value.TryFind(iface, out _))
+                {
+                    MappingFor(iface);
+                }
+            }
+
             var subclass = AllDocumentMappings.SelectMany(x => x.SubClasses)
                 .FirstOrDefault(x => x.DocumentType == documentType) as IDocumentMapping;
 
@@ -262,6 +338,20 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
             return this;
         }
 
+        // 9.0: With lazy mapping materialization (#4303) a subclass-only
+        // feature lookup (e.g. EnsureStorageExistsAsync(typeof(SuperUser))
+        // when User is the registered parent) can't be served from
+        // _features yet. Route through FindMapping so its type-chain walk
+        // materializes the parent, populates _features for the subclass,
+        // and we can complete the lookup correctly. If that still doesn't
+        // produce a feature entry the type is genuinely a top-level
+        // mapping and MappingFor.Schema is the right answer.
+        FindMapping(featureType);
+        if (_features.Value.TryFind(featureType, out schema))
+        {
+            return schema;
+        }
+
         return MappingFor(featureType).Schema;
     }
 
@@ -314,6 +404,13 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
 
     internal IEnumerable<IFeatureSchema> AllActiveFeatures(IMartenDatabase database)
     {
+        // 9.0: AllActiveFeatures is the entry point for full-schema operations
+        // (ApplyAllConfiguredChangesToDatabaseAsync, the CLI tools). Force every
+        // registered document type to materialize before enumerating
+        // DocumentMappingsWithSchema so we don't silently miss types after #4303
+        // moved BuildAllMappings off the cold-start path.
+        BuildAllMappings();
+
         yield return SystemFunctions;
 
         if (_options.Events.As<EventGraph>().IsActive(_options))

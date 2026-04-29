@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Schema;
 using Marten.Schema.Indexing.Unique;
@@ -144,18 +146,27 @@ public class unique_indexes: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void unique_index_without_any_property_should_not_add_unique_index()
+    public async Task unique_index_without_any_property_should_not_add_unique_index()
     {
-        Should.Throw<InvalidOperationException>(() =>
+        // 9.0: configuration-error timing changed (#4303). DocumentMappings
+        // are built and validated lazily on first session use, so the
+        // missing-property error now surfaces when User is first queried
+        // rather than at DocumentStore.For() construction. The error
+        // message itself is unchanged.
+        var store = DocumentStore.For(_ =>
         {
-            var store = DocumentStore.For(_ =>
-            {
-                _.Connection(ConnectionSource.ConnectionString);
-                _.DatabaseSchemaName = "unique_text";
-                // unique index without any property
-                _.Schema.For<User>().UniqueIndex();
-            });
-        }).Message.ShouldBe($"Unique index on {typeof(User)} requires at least one property/field");
+            _.Connection(ConnectionSource.ConnectionString);
+            _.DatabaseSchemaName = "unique_text";
+            // unique index without any property
+            _.Schema.For<User>().UniqueIndex();
+        });
+
+        await using var session = store.LightweightSession();
+        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        {
+            await session.Query<User>().ToListAsync();
+        });
+        ex.Message.ShouldBe($"Unique index on {typeof(User)} requires at least one property/field");
     }
 
 }
