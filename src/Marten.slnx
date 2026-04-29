@@ -1,0 +1,73 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/AspNetCore/">
+    <Project Path="IssueService/IssueService.csproj" />
+    <Project Path="Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj" />
+    <Project Path="Marten.AspNetCore/Marten.AspNetCore.csproj" />
+  </Folder>
+  <Folder Name="/CommandLine/">
+    <Project Path="CommandLineRunner/CommandLineRunner.csproj" />
+    <Project Path="EventPublisher/EventPublisher.csproj" />
+    <Project Path="EventSourceWorker/EventSourceWorker.csproj" />
+    <Project Path="EventStoreMigrations/EventStoreMigrations.csproj" />
+    <Project Path="MultiDatabaseCommandLineRunner/MultiDatabaseCommandLineRunner.csproj" />
+  </Folder>
+  <Folder Name="/NodaTime/">
+    <Project Path="Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj" />
+    <Project Path="Marten.NodaTime/Marten.NodaTime.csproj" />
+  </Folder>
+  <Folder Name="/Samples/">
+    <Project Path="AspNetCoreWithMarten/AspNetCoreWithMarten.csproj" />
+    <Project Path="samples/DocSamples/DocSamples.csproj" />
+    <Project Path="samples/EventSourcingIntro/EventSourcingIntro.csproj" />
+    <Project Path="samples/MinimalAPI/MinimalAPI.csproj" />
+  </Folder>
+  <Folder Name="/Samples/OData/">
+    <Project Path="AspNetODataWithMarten/AspNetODataWithMarten.csproj" />
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="../.github/workflows/daemon.yml" />
+    <File Path="../.github/workflows/docs-prs.yml" />
+    <File Path="../.github/workflows/docs.yml" />
+    <File Path="../.github/workflows/on-manual-do-nuget-publish.yml" />
+    <File Path="../.github/workflows/on-push-do-ci-build-pg15-jsonnet.yml" />
+    <File Path="../.github/workflows/on-push-do-ci-build-pgLatest-systemtextjson.yml" />
+    <File Path="../Analysis.Build.props" />
+    <File Path="../dcb-summary.md" />
+    <File Path="../Directory.Build.props" />
+    <File Path="../Directory.Packages.props" />
+    <File Path="../docker-compose.yml" />
+    <File Path="../package.json" />
+    <File Path="../README.md" />
+    <File Path=".editorconfig" />
+  </Folder>
+  <Folder Name="/Testing/">
+    <File Path="TestSetup.cs" />
+    <Project Path="ContainerScopedProjectionTests/ContainerScopedProjectionTests.csproj" />
+    <Project Path="CoreTests/CoreTests.csproj" />
+    <Project Path="DaemonTests.ManualOnly/DaemonTests.ManualOnly.csproj" />
+    <Project Path="DaemonTests/DaemonTests.csproj" />
+    <Project Path="DocumentDbTests/DocumentDbTests.csproj" />
+    <Project Path="EventSourcingTests/EventSourcingTests.csproj" />
+    <Project Path="FSharpTypes/FSharpTypes.fsproj" />
+    <Project Path="LinqTests/LinqTests.csproj" />
+    <Project Path="LinqTestsTypes/LinqTestsTypes.csproj" />
+    <Project Path="Marten.Testing.OtherAssembly/Marten.Testing.OtherAssembly.csproj" />
+    <Project Path="Marten.Testing.ThirdAssembly/Marten.Testing.ThirdAssembly.csproj" />
+    <Project Path="Marten.Testing/Marten.Testing.csproj" />
+    <Project Path="MultiTenancyTests/MultiTenancyTests.csproj" />
+    <Project Path="PatchingTests/PatchingTests.csproj" />
+    <Project Path="StressTests/StressTests.csproj" />
+    <Project Path="ValueTypeTests/ValueTypeTests.csproj" />
+  </Folder>
+  <Project Path="../build/build.csproj" />
+  <Project Path="EventAppenderPerfTester/EventAppenderPerfTester.csproj" />
+  <Project Path="Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj" />
+  <Project Path="Marten.EntityFrameworkCore/Marten.EntityFrameworkCore.csproj" />
+  <Project Path="Marten/Marten.csproj" />
+  <Project Path="MemoryUsageChecker/MemoryUsageChecker.csproj" />
+</Solution>

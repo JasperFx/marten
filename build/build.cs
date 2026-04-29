@@ -243,7 +243,7 @@ class Build : NukeBuild
                 DotNetRun(s => s
                     .SetProjectFile("src/CommandLineRunner")
                     .SetConfiguration(Configuration)
-                    .SetFramework("net8.0")
+                    .SetFramework("net10.0")
                     .SetApplicationArguments(command)
                 );
             }

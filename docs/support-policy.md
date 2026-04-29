@@ -15,10 +15,11 @@ Customers with a [JasperFx Support Plan](https://jasperfx.net/support-plans/) ar
 
 ## .NET Version Compatibility
 
-Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten currently targets `net8.0`, `net9.0`, `net10.0`.
+Marten aligns with the [.NET Support Lifecycle](https://dotnet.microsoft.com/platform/support/policy/dotnet-core) to determine platform support. Marten 9 targets `net9.0` and `net10.0`. .NET 8 support was dropped in 9.0; use Marten 8.x for applications still on .NET 8.
 
 | Marten Version |       .NET 5       |       .NET 6       |       .NET 7       |       .NET 8       |       .NET 9       |      .NET 10       |
 | -------------- | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: | :----------------: |
+| 9              |        :x:         |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: |
 | 8              |        :x:         |        :x:         |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: |
 | 7              |        :x:         | :white_check_mark: | :white_check_mark: | :white_check_mark: | :white_check_mark: |        :x:         |
 | 6              |        :x:         | :white_check_mark: | :white_check_mark: |        :x:         |        :x:         |        :x:         |

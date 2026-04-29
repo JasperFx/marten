@@ -1,5 +1,25 @@
 # Migration Guide
 
+## Key Changes in 9.0.0
+
+### Platform support
+
+* **.NET 8 support was dropped.** Marten 9 targets `net9.0` and `net10.0`. Stay on Marten 8.x if you still need .NET 8.
+* The solution file format changed from `.sln` to the new XML-based `.slnx`. No action required for consumers — this is purely an internal repo change.
+
+### Streams table cleanup
+
+* The `snapshot` (`jsonb`) and `snapshot_version` (`integer`) columns on `mt_streams` have been removed. They were vestigial holdovers from pre-1.0 Marten and were never written or read at runtime — the table simply carried two empty columns on every event store database.
+
+  Marten 9's automatic schema migration will **not** drop these columns from existing databases (we don't drop columns automatically as a safety policy). If you want to reclaim the space, run the following once per event-store schema after upgrading:
+
+  ```sql
+  ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot;
+  ALTER TABLE my_schema.mt_streams DROP COLUMN snapshot_version;
+  ```
+
+  This is purely cosmetic — leaving the columns in place is harmless. New databases created by Marten 9 will not have them. See [#4316](https://github.com/JasperFx/marten/issues/4316).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.

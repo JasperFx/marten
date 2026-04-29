@@ -46,8 +46,11 @@ internal class StreamsTable: Table
             Type = "timestamptz", Writes = false, AllowNulls = false, DefaultExpression = "(now())"
         });
 
-        AddColumn("snapshot", "jsonb");
-        AddColumn("snapshot_version", "integer");
+        // Note: the `snapshot` (jsonb) and `snapshot_version` (integer) columns
+        // were vestigial holdovers from pre-1.0 Marten and were never actually
+        // populated or read at runtime. They were dropped in Marten 9.0.
+        // The 8→9 migration guide explains how to drop them from existing
+        // databases (no data migration required).
 
         AddColumn(new StreamTableColumn("created", x => x.Created)
         {

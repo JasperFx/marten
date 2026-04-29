@@ -4,9 +4,6 @@
         <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
-        <LangVersion>12</LangVersion>
-    </PropertyGroup>
     <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
         <LangVersion>13</LangVersion>
     </PropertyGroup>
