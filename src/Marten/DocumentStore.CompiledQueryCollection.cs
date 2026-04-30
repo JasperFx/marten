@@ -48,14 +48,12 @@ internal class CompiledQueryCollection
         var rules = _store.Options.CreateGenerationRules();
         rules.ReferenceTypes(typeof(TDoc), typeof(TOut), query.GetType());
 
-        // Disambiguated against JasperFx 1.28's new
-        // JasperFx.CodeGeneration.CodeFileExtensions.InitializeSynchronously,
-        // which requires IAssemblyGenerator registered in DI. Marten passes a
-        // null IServiceProvider here, so we explicitly call the obsolete
-        // JasperFx.RuntimeCompiler overload that still falls back to a fresh
-        // AssemblyGenerator. Tracked for proper migration in Marten 9.0
-        // (see issue #4309 — AOT-friendly mode).
-        JasperFx.RuntimeCompiler.CodeFileExtensions.InitializeSynchronously(file, rules, _store, null);
+        // 9.0 (#4309): route through the AllowRuntimeCodeGeneration gate so
+        // AOT-friendly hosts can opt out of Roslyn — compiled queries that
+        // weren't pre-generated will throw with a descriptive message rather
+        // than silently invoke the runtime compiler.
+        Marten.Internal.CodeGeneration.StaticOnlyCodeFileLoader.Initialize(
+            file, rules, _store, null, _store.Options.AllowRuntimeCodeGeneration);
 
         source = file.Build(rules);
         _querySources = _querySources.AddOrUpdate(query.GetType(), source);

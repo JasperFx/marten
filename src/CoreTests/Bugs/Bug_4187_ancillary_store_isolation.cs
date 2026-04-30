@@ -61,9 +61,10 @@ public class Bug_4187_ancillary_store_isolation
         var primaryStore = (DocumentStore)host.Services.GetRequiredService<IDocumentStore>();
         var ancillaryStore = (DocumentStore)host.Services.GetRequiredService<IAncillaryStore>();
 
-        // Verify: primary store should only know about PrimaryDoc
-        var primaryMappings = primaryStore.StorageFeatures
-            .AllDocumentMappings
+        // 9.0: AllDocumentMappings is lazy now (#4303); use the public
+        // AllKnownDocumentTypes() accessor that materializes everything.
+        var primaryMappings = ((IReadOnlyStoreOptions)primaryStore.Options)
+            .AllKnownDocumentTypes()
             .Select(m => m.DocumentType)
             .ToList();
 
@@ -72,8 +73,8 @@ public class Bug_4187_ancillary_store_isolation
             "AncillaryDoc should NOT be registered in the primary store");
 
         // Verify: ancillary store should only know about AncillaryDoc
-        var ancillaryMappings = ancillaryStore.StorageFeatures
-            .AllDocumentMappings
+        var ancillaryMappings = ((IReadOnlyStoreOptions)ancillaryStore.Options)
+            .AllKnownDocumentTypes()
             .Select(m => m.DocumentType)
             .ToList();
 

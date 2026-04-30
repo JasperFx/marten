@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -338,14 +340,20 @@ public class foreign_keys: OneOffConfigurationsContext
     [Fact]
     public void throws_exception_on_cyclic_dependency()
     {
+        // 9.0: cyclic-dependency detection now surfaces when the mappings
+        // are first built (a lazy materialization step driven by AllKnownDocumentTypes
+        // or the schema-migration pipeline) rather than at StoreOptions
+        // configuration time (#4303). Force materialization by enumerating
+        // every known document type on the assembled options.
         Should.Throw<InvalidOperationException>(() =>
         {
-            StoreOptions(_ =>
+            var store = StoreOptions(_ =>
             {
                 _.Schema.For<Node1>().ForeignKey<Node3>(x => x.Link);
                 _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Link);
                 _.Schema.For<Node3>().ForeignKey<Node2>(x => x.Link);
             });
+            ((IReadOnlyStoreOptions)store.Options).AllKnownDocumentTypes();
         }).Message.ShouldContain("Cyclic", Case.Insensitive);
 
     }

@@ -294,6 +294,28 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
+    ///     When <c>false</c>, Marten refuses to invoke <c>JasperFx.RuntimeCompiler</c>
+    ///     and will throw if a generated type is missing from the entry assembly.
+    ///     Defaults to <c>true</c> for back-compatibility.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Set this to <c>false</c> in combination with
+    ///         <see cref="GeneratedCodeMode"/> = <see cref="TypeLoadMode.Static"/>
+    ///         when publishing under <c>PublishAot=true</c> (NativeAOT). The flag
+    ///         lets Marten verify at startup that every required code-generated
+    ///         type was pre-built and shipped in the application assembly, instead
+    ///         of falling back to Roslyn at runtime — which Native AOT can't do.
+    ///     </para>
+    ///     <para>
+    ///         AOT-friendly Tier 1 (#4309). Marten 9 still emits trim warnings on
+    ///         the dynamic codepaths; turning this off lets you opt out of those
+    ///         paths completely so the linker can drop them.
+    ///     </para>
+    /// </remarks>
+    public bool AllowRuntimeCodeGeneration { get; set; } = true;
+
+    /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
     [ChildDescription]

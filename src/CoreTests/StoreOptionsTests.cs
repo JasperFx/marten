@@ -102,7 +102,10 @@ public class StoreOptionsTests
             options.RegisterDocumentTypes(new[] { typeof(Target), typeof(Issue) });
         });
 
-        store.Options.Storage.AllDocumentMappings.OrderBy(x => x.DocumentType.Name)
+        // 9.0: AllDocumentMappings is lazy (#4303); read through the public
+        // AllKnownDocumentTypes() accessor.
+        ((IReadOnlyStoreOptions)store.Options).AllKnownDocumentTypes()
+            .OrderBy(x => x.DocumentType.Name)
             .Select(x => x.DocumentType.Name)
             .ShouldBe(["Company", "Issue", "Target", "User"]);
     }

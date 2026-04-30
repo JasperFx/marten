@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten;
 using Marten.Events;
 using Marten.Linq;
 using Marten.Schema;
@@ -53,8 +54,12 @@ public class auto_register_specs : OneOffConfigurationsContext
     [Fact]
     public void discover_documents_by_attribute()
     {
-        theStore.Options.Storage.AllDocumentMappings.ShouldContain(x => x.DocumentType == typeof(DiscoveredDocument1));
-        theStore.Options.Storage.AllDocumentMappings.ShouldContain(x => x.DocumentType == typeof(DiscoveredDocument2));
+        // 9.0: AllDocumentMappings is lazy now (#4303); use the public
+        // AllKnownDocumentTypes() accessor that materializes everything first.
+        var knownTypes = ((IReadOnlyStoreOptions)theStore.Options).AllKnownDocumentTypes()
+            .Select(x => x.DocumentType).ToList();
+        knownTypes.ShouldContain(typeof(DiscoveredDocument1));
+        knownTypes.ShouldContain(typeof(DiscoveredDocument2));
     }
 
     [Fact]
