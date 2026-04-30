@@ -64,27 +64,55 @@ public partial class StoreOptions: ICodeFileCollection
 
     string ICodeFileCollection.ChildNamespace { get; } = "DocumentStorage";
 
+    // 9.0: cache the base GenerationRules so we don't redo Path.Combine,
+    // Assembly.GetEntryAssembly, and the two ReferenceAssembly walks on
+    // every CreateGenerationRules() call (#4307). Callers that need to
+    // ReferenceTypes(...) for a specific document type get a Clone() so
+    // the mutation stays scoped to their compile and doesn't accumulate
+    // on the cached base.
+    private GenerationRules? _cachedBaseRules;
+    private readonly object _cachedRulesLock = new();
+
     internal GenerationRules CreateGenerationRules()
     {
-        var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
-        {
-            TypeLoadMode = GeneratedCodeMode,
-            GeneratedCodeOutputPath = GeneratedCodeOutputPath ?? AppContext.BaseDirectory
-                .AppendPath("Internal", "Generated"),
-            ApplicationAssembly = ApplicationAssembly ?? Assembly.GetEntryAssembly(),
-            SourceCodeWritingEnabled = SourceCodeWritingEnabled
-        };
+        return GetCachedBaseRules().Clone();
+    }
 
-        if (StoreName.IsNotEmpty() && StoreName != "Marten" && StoreName != "Main")
+    private GenerationRules GetCachedBaseRules()
+    {
+        if (_cachedBaseRules is { } existing)
         {
-            rules.GeneratedNamespace += "." + StoreName;
-            rules.GeneratedCodeOutputPath = Path.Combine(rules.GeneratedCodeOutputPath, StoreName);
+            return existing;
         }
 
-        rules.ReferenceAssembly(GetType().Assembly);
-        rules.ReferenceAssembly(Assembly.GetEntryAssembly()!);
+        lock (_cachedRulesLock)
+        {
+            if (_cachedBaseRules is { } existing2)
+            {
+                return existing2;
+            }
 
-        return rules;
+            var rules = new GenerationRules(SchemaConstants.MartenGeneratedNamespace)
+            {
+                TypeLoadMode = GeneratedCodeMode,
+                GeneratedCodeOutputPath = GeneratedCodeOutputPath ?? AppContext.BaseDirectory
+                    .AppendPath("Internal", "Generated"),
+                ApplicationAssembly = ApplicationAssembly ?? Assembly.GetEntryAssembly(),
+                SourceCodeWritingEnabled = SourceCodeWritingEnabled
+            };
+
+            if (StoreName.IsNotEmpty() && StoreName != "Marten" && StoreName != "Main")
+            {
+                rules.GeneratedNamespace += "." + StoreName;
+                rules.GeneratedCodeOutputPath = Path.Combine(rules.GeneratedCodeOutputPath, StoreName);
+            }
+
+            rules.ReferenceAssembly(GetType().Assembly);
+            rules.ReferenceAssembly(Assembly.GetEntryAssembly()!);
+
+            _cachedBaseRules = rules;
+            return rules;
+        }
     }
 
     internal void ReadJasperFxOptions(JasperFxOptions? options)
