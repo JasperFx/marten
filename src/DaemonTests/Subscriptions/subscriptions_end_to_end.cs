@@ -674,6 +674,43 @@ public class using_simple_subscription_registrations: OneOffConfigurationsContex
         wrapper.IncludedEventTypes.ShouldContain(typeof(MTAEvent));
         wrapper.IncludedEventTypes.ShouldContain(typeof(MTBEvent));
     }
+
+    // Regression for #4318: any Options / Name / Version configured in
+    // the subscriber's constructor used to be silently dropped on the
+    // Scoped registration path. They must surface on the wrapper because
+    // it's the wrapper the daemon reads from at runtime.
+    [Fact]
+    public void scoped_subscription_wrapper_propagates_constructor_configured_options_4318()
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<ConstructorConfiguredSubscription>();
+
+        var provider = services.BuildServiceProvider();
+
+        var wrapper = new ScopedSubscriptionServiceWrapper<ConstructorConfiguredSubscription>(provider);
+
+        wrapper.Options.BatchSize.ShouldBe(123);
+        wrapper.Options.MaximumHopperSize.ShouldBe(7777);
+        wrapper.Name.ShouldBe("custom-subscription-name");
+        wrapper.Version.ShouldBe(7u);
+    }
+}
+
+public class ConstructorConfiguredSubscription: SubscriptionBase
+{
+    public ConstructorConfiguredSubscription()
+    {
+        Options.BatchSize = 123;
+        Options.MaximumHopperSize = 7777;
+        Name = "custom-subscription-name";
+        Version = 7;
+    }
+
+    public override Task<IChangeListener> ProcessEventsAsync(EventRange page, ISubscriptionController controller,
+        IDocumentOperations operations, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Substitute.For<IChangeListener>());
+    }
 }
 
 public class FilteredSubscription: SubscriptionBase, IDisposable
