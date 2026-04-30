@@ -31,14 +31,9 @@ internal partial class LinqQueryParser
                                          typeof(TResult).FullNameInCode());
         }
 
-        // 9.0 (#4308): GenericFactoryCache.Build caches (open, typeArg) →
-        // compiled-delegate ctor invocation, so steady-state ad-hoc LINQ
-        // queries no longer pay for MakeGenericType + Activator.CreateInstance
-        // on every execution. The first call still does the reflection;
-        // subsequent calls hit a ConcurrentDictionary lookup + a typed
-        // delegate invocation.
-        var nullableSelector = GenericFactoryCache.Build<object>(typeof(NullableSelector<>), typeof(TDocument), selector);
-        return GenericFactoryCache.Build<IQueryHandler<TResult>>(typeof(ListQueryHandler<>), itemType!, statement, nullableSelector);
+        var nullableSelector = Activator.CreateInstance(typeof(NullableSelector<>).MakeGenericType(typeof(TDocument)), selector);
+        var handlerType = typeof(ListQueryHandler<>).MakeGenericType(itemType!);
+        return (IQueryHandler<TResult>)Activator.CreateInstance(handlerType, statement, nullableSelector)!;
     }
 
     private static Type? TryGetEnumerableElementType(Type t)

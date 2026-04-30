@@ -31,17 +31,13 @@ public partial class CollectionUsage
             var receiver = expression.Arguments[startingIndex + 1].Value();
 
             var genericArguments = receiver.GetType().GetGenericArguments();
-            // 9.0 (#4308): GenericFactoryCache caches the closed type +
-            // delegate-compiled ctor, so per-query Include parsing skips
-            // both MakeGenericType and Activator.CreateInstance after
-            // the first occurrence of each (includedType, idType) shape.
             if (receiver.GetType().Closes(typeof(IList<>)))
             {
                 var includedType = genericArguments[0];
                 var storage = session.StorageFor(includedType);
 
-                var plan = GenericFactoryCache.Build<IIncludePlan>(
-                    typeof(ListIncludePlan<>), includedType, storage, member, receiver);
+                var type = typeof(ListIncludePlan<>).MakeGenericType(includedType);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -55,8 +51,8 @@ public partial class CollectionUsage
                 var includedType = genericArguments[0];
                 var storage = session.StorageFor(includedType);
 
-                var plan = GenericFactoryCache.Build<IIncludePlan>(
-                    typeof(IncludePlan<>), includedType, storage, member, receiver);
+                var type = typeof(IncludePlan<>).MakeGenericType(includedType);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -71,8 +67,8 @@ public partial class CollectionUsage
                 var includedType = genericArguments[1];
                 var storage = session.StorageFor(includedType);
 
-                var plan = GenericFactoryCache.Build<IIncludePlan>(
-                    typeof(DictionaryIncludePlan<,>), includedType, idType, storage, member, receiver);
+                var type = typeof(DictionaryIncludePlan<,>).MakeGenericType(includedType, idType);
+                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
 
                 if (expression.Arguments.Count == 3)
                 {

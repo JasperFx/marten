@@ -3,6 +3,8 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
+using JasperFx.RuntimeCompiler;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Marten.Internal.CodeGeneration;
 
@@ -48,12 +50,18 @@ internal static class StaticOnlyCodeFileLoader
     {
         if (allowRuntimeCodeGeneration)
         {
-            // Disambiguated against JasperFx 1.28's new
-            // JasperFx.CodeGeneration.CodeFileExtensions.InitializeSynchronously,
-            // which requires IAssemblyGenerator in DI. We may pass null services
-            // here so route through the obsolete RuntimeCompiler overload that
-            // falls back to a fresh AssemblyGenerator.
-            JasperFx.RuntimeCompiler.CodeFileExtensions.InitializeSynchronously(file, rules, parent, services);
+            // 2.0: JasperFx.CodeGeneration.CodeFileExtensions.InitializeSynchronously
+            // dispatches through GenerationRules.Loader to the configured
+            // ITypeLoader. The Dynamic / Auto loaders need an IAssemblyGenerator
+            // resolvable from `services` — the legacy `?? new AssemblyGenerator()`
+            // fallback was removed. When the host hasn't registered one (true
+            // for the bulk of Marten's call sites that pass `services: null`),
+            // wrap the original provider with a stub that resolves
+            // IAssemblyGenerator to a fresh AssemblyGenerator. This preserves
+            // pre-9.0 behavior under Dynamic mode without requiring every
+            // consuming app to do a manual DI registration.
+            var effectiveServices = services ?? RuntimeCompilerFallback.Instance;
+            file.InitializeSynchronously(rules, parent, effectiveServices);
             return;
         }
 
@@ -70,6 +78,29 @@ internal static class StaticOnlyCodeFileLoader
                 $"was not found in {rules.ApplicationAssembly.FullName}. " +
                 "Either run the Marten codegen tooling to emit the missing type, or set " +
                 "StoreOptions.AllowRuntimeCodeGeneration = true to allow Roslyn-based compilation at runtime.");
+        }
+    }
+
+    /// <summary>
+    /// Minimal IServiceProvider that resolves only IAssemblyGenerator. Stands in
+    /// for the legacy `?? new AssemblyGenerator()` fallback that was removed in
+    /// JasperFx 2.0's package-level split (#190 Tier-2). Marten call sites that
+    /// pass `services: null` (most of them) would otherwise hit
+    /// `InvalidOperationException: register IAssemblyGenerator in DI`. We don't
+    /// want every consuming app to have to wire that up by hand for a default
+    /// experience that just worked before.
+    /// </summary>
+    private sealed class RuntimeCompilerFallback : IServiceProvider
+    {
+        public static readonly RuntimeCompilerFallback Instance = new();
+
+        public object? GetService(Type serviceType)
+        {
+            if (serviceType == typeof(IAssemblyGenerator))
+            {
+                return new AssemblyGenerator();
+            }
+            return null;
         }
     }
 }
