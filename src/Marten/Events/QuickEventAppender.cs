@@ -85,9 +85,11 @@ internal class QuickEventAppender: IEventAppender
     {
         registerOperationsForStreams(eventGraph, session);
 
+        // 9.0 (#4306): pass the tracker collection directly now that the
+        // IInlineProjection contract takes IEnumerable<StreamAction>.
         foreach (var projection in inlineProjections)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+            await projection.ApplyAsync(session, session.WorkTracker.Streams, token).ConfigureAwait(false);
         }
     }
 }

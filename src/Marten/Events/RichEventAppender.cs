@@ -80,9 +80,12 @@ internal class RichEventAppender: IEventAppender
         }
 
         // TODO -- look for opportunities to batch up the requests here too!
+        // 9.0 (#4306): IInlineProjection.ApplyAsync now takes IEnumerable<StreamAction>,
+        // so we can pass the session's tracker collection directly without
+        // allocating a fresh List on every SaveChangesAsync.
         foreach (var projection in inlineProjections)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+            await projection.ApplyAsync(session, session.WorkTracker.Streams, token).ConfigureAwait(false);
         }
     }
 }

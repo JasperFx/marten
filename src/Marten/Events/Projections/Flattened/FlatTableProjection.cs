@@ -138,7 +138,7 @@ public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDoc
         return this;
     }
 
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams, CancellationToken cancellation)
+    public Task ApplyAsync(IDocumentOperations operations, IEnumerable<StreamAction> streams, CancellationToken cancellation)
     {
         apply(operations, streams.SelectMany(x => x.Events).ToList());
         return Task.CompletedTask;

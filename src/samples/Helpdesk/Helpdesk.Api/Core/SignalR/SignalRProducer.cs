@@ -12,7 +12,7 @@ public class SignalRProducer: IProjection
     public SignalRProducer(IHubContext hubContext) =>
         this.hubContext = hubContext;
 
-    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streamsActions,
+    public async Task ApplyAsync(IDocumentOperations operations, IEnumerable<StreamAction> streamsActions,
         CancellationToken ct)
     {
         foreach (var @event in streamsActions.SelectMany(streamAction => streamAction.Events))

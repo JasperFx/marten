@@ -18,7 +18,7 @@ public class KafkaProducer: IProjection
                  throw new InvalidOperationException();
     }
 
-    public async Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streamsActions,
+    public async Task ApplyAsync(IDocumentOperations operations, IEnumerable<StreamAction> streamsActions,
         CancellationToken ct)
     {
         foreach (var @event in streamsActions.SelectMany(streamAction => streamAction.Events))

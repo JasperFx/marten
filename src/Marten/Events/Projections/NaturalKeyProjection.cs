@@ -36,7 +36,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         _isGuid = events.StreamIdentity == StreamIdentity.AsGuid;
     }
 
-    public Task ApplyAsync(IDocumentOperations operations, IReadOnlyList<StreamAction> streams,
+    public Task ApplyAsync(IDocumentOperations operations, IEnumerable<StreamAction> streams,
         CancellationToken cancellation)
     {
         foreach (var stream in streams)
