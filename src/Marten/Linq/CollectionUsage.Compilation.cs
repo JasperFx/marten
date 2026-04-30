@@ -322,17 +322,19 @@ public partial class CollectionUsage
             groupJoin.ResultSelector,
             groupJoin.FlattenedResultSelector);
 
-        // 5. Create the JoinSelectClause and final SelectorStatement
+        // 5. Create the JoinSelectClause and final SelectorStatement.
+        // 9.0 (#4308): use GenericFactoryCache instead of
+        // MakeGenericType + Activator.CreateInstance per query execution.
         var resultType = groupJoin.FlattenedResultSelector.ReturnType;
-        var closedJoinSelectType = typeof(JoinSelectClause<>).MakeGenericType(resultType);
-        var joinSelectClause = (ISelectClause)Activator.CreateInstance(
-            closedJoinSelectType,
+        var joinSelectClause = GenericFactoryCache.Build<ISelectClause>(
+            typeof(JoinSelectClause<>),
+            resultType,
             joinParser.NewObject,
             outerCteAlias,
             innerCteAlias,
             groupJoin.IsLeftJoin,
             outerKeyLocator,
-            innerKeyLocator)!;
+            innerKeyLocator);
 
         var joinStatement = new SelectorStatement
         {
