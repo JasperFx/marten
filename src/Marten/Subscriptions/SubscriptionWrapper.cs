@@ -46,6 +46,19 @@ internal class ScopedSubscriptionServiceWrapper<T>: SubscriptionBase where T : I
             IncludedEventTypes.AddRange(subscription.IncludedEventTypes);
             StreamType = subscription.StreamType;
             IncludeArchivedEvents = subscription.IncludeArchivedEvents;
+
+            // #4318: also propagate Name, Version, and Options that the inner
+            // subscriber set in its constructor. Before this, settings like
+            // `Options.BatchSize = 100` or `Options.SubscribeFromPresent()`
+            // configured inside the user's SubscriptionBase ctor were silently
+            // dropped on the Scoped registration path. The Singleton path
+            // already worked because the registration's `configure` lambda
+            // was applied directly to the resolved instance; for Scoped, the
+            // wrapper itself is what the daemon reads, so its Options must
+            // start from the inner subscriber's configured state.
+            Options = subscription.Options;
+            Name = subscription.Name;
+            Version = subscription.Version;
         }
         scope.SafeDispose();
     }
