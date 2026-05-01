@@ -154,6 +154,18 @@ public class ValueTypeIdGeneration: ValueTypeInfo, IIdGeneration, IStrongTypedId
             return false;
         }
 
+        // Reject multi-property value objects (e.g. `Money(decimal Amount, Guid CurrencyId)`)
+        // before any further matching. Such types' canonical constructors take more than one
+        // argument; a strong-typed-id wrapper takes at most one. Without this guard the
+        // ValidIdTypes filter below would silently drop the non-id-typed property, see only
+        // the Guid one, match a static `Zero(Guid)` builder, and — as a side effect — register
+        // the entire value object as a `uuid` column on the global PostgresqlProvider singleton,
+        // breaking LINQ resolution for any document that uses it as a property.
+        if (idType.GetConstructors().Any(c => c.GetParameters().Length > 1))
+        {
+            return false;
+        }
+
         var properties = idType.GetProperties()
             .Where(x => DocumentMapping.ValidIdTypes.Contains(x.PropertyType))
             .ToArray();
