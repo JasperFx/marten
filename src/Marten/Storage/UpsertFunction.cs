@@ -222,7 +222,6 @@ CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER
 DECLARE
   final_version INTEGER;
   current_version INTEGER;
-  rows_affected INTEGER;
 BEGIN
 
 SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause}{_andPartitionWhereClause};
@@ -242,15 +241,10 @@ end if;
 
 INSERT INTO {_tableName.QualifiedName} ({inserts}) VALUES ({valueList})
   ON CONFLICT ({_primaryKeyFields})
-  DO UPDATE SET {updates};
+  DO UPDATE SET {updates}
+  RETURNING mt_version INTO final_version;
 
-  GET DIAGNOSTICS rows_affected = ROW_COUNT;
-  if rows_affected = 0 then
-    return 0;
-  end if;
-
-  SELECT mt_version into final_version FROM {_tableName.QualifiedName} WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};
-  RETURN final_version;
+  RETURN COALESCE(final_version, 0);
 END;
 $function$;
 ");
