@@ -376,6 +376,27 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             usage.Events.Add(descriptor);
         }
 
+        // DCB tag-type registrations — flatten ITagTypeRegistration onto the
+        // wire-friendly TagTypeDescriptor (4 strings; configuration shape only,
+        // no row counts).
+        foreach (var registration in Options.EventGraph.TagTypes)
+        {
+            usage.TagTypes.Add(new TagTypeDescriptor
+            {
+                TagType = registration.TagType.FullName ?? registration.TagType.Name,
+                SimpleType = registration.SimpleType.FullName ?? registration.SimpleType.Name,
+                TableSuffix = registration.TableSuffix,
+                AggregateType = registration.AggregateType?.FullName,
+            });
+        }
+
+        // Aggregates that live outside the multi-tenant boundary in tenanted
+        // setups — flat list of CLR type identities.
+        foreach (var aggregateType in Options.EventGraph.GlobalAggregates)
+        {
+            usage.GlobalAggregates.Add(TypeDescriptor.For(aggregateType));
+        }
+
         return usage;
     }
 

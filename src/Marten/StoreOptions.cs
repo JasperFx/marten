@@ -452,6 +452,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// Registry of custom projection storage factories, keyed by aggregate document type.
     /// Used by EF Core projections to substitute Marten document storage with DbContext-based storage.
     /// </summary>
+    [IgnoreDescription]
     public Dictionary<Type, Func<IQuerySession, string, object>> CustomProjectionStorageProviders { get; } = new();
 
     private int _applyChangesLockId = 4004;

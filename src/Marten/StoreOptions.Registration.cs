@@ -87,7 +87,7 @@ public partial class StoreOptions
         CompiledQueryTypes.Fill(queryType);
     }
 
-    public class MartenAssemblyScanner
+public class MartenAssemblyScanner
 {
     private readonly List<Assembly> _assemblies = new();
     private readonly List<Func<Type, bool>> _eventMatchers = new();
