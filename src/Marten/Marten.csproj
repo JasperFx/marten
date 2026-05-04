@@ -37,17 +37,14 @@
 
     <ItemGroup>
         <!-- FSharp.Core removed: F# support uses reflection via FSharpTypeHelper -->
+        <PackageReference Include="JasperFx" />
+        <PackageReference Include="JasperFx.Events" />
+        <PackageReference Include="JasperFx.RuntimeCompiler" />
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
         <PackageReference Include="Newtonsoft.Json" />
         <!-- This is forced by Npgsql peer dependency -->
         <PackageReference Include="Npgsql.Json.NET" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="JasperFx" />
-      <PackageReference Include="JasperFx.Events" />
-      <PackageReference Include="JasperFx.RuntimeCompiler" />
-      <PackageReference Include="Weasel.Postgresql" />
+        <PackageReference Include="Weasel.Postgresql" />
     </ItemGroup>
 
 

@@ -6,6 +6,7 @@ using System.Reflection;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using JasperFx.Descriptors;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Microsoft.Extensions.Hosting;
@@ -46,6 +47,7 @@ public partial class StoreOptions: ICodeFileCollection
     ///     Root folder where generated code should be placed. By default, this is the IHostEnvironment.ContentRootPath
     /// </summary>
     [Obsolete(PreferJasperFxMessage)]
+    [IgnoreDescription]
     public string GeneratedCodeOutputPath { get; set; }
 
     public IReadOnlyList<ICodeFile> BuildFiles()
@@ -57,6 +59,7 @@ public partial class StoreOptions: ICodeFileCollection
             .ToList();
     }
 
+    [IgnoreDescription]
     GenerationRules ICodeFileCollection.Rules => CreateGenerationRules();
 
     string ICodeFileCollection.ChildNamespace { get; } = "DocumentStorage";
