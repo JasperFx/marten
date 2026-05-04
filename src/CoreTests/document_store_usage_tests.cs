@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using Marten;
 using Marten.Testing.Documents;
@@ -191,7 +192,7 @@ public class document_store_usage_tests
             .StartAsync();
     }
 
-    private static async Task<JasperFx.Descriptors.DocumentStoreUsage> GetUsageAsync(IHost host)
+    private static async Task<DocumentStoreUsage> GetUsageAsync(IHost host)
     {
         var store = (IDocumentStoreUsageSource)host.Services.GetRequiredService<IDocumentStore>();
         var usage = await store.TryCreateUsage(CancellationToken.None);
