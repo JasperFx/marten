@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
 using JasperFx;
 using JasperFx.CodeGeneration;
 using JasperFx.Core;
+using Marten;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Services;
@@ -445,8 +449,123 @@ public class numeric_revisioning: OneOffConfigurationsContext
         });
     }
 
+    [Fact]
+    public async Task concurrent_update_revision_does_not_silently_lose_writes()
+    {
+        // Regression: under READ COMMITTED contention, mt_upsert_* for a numeric-revisioned
+        // document could return a non-zero final_version even when its ON CONFLICT ... DO UPDATE
+        // ... WHERE revision > mt_version clause silently skipped the row update because a
+        // concurrent transaction had already bumped mt_version. SaveChangesAsync would not throw,
+        // AfterCommitAsync would fire, and the caller would believe the write landed.
+        //
+        // Invariant: when N sessions all load the same doc at v=1 and race UpdateRevision(doc, 2),
+        // exactly one SaveChanges should succeed and the rest must throw ConcurrencyException.
+
+        var listener = new CommitCountingListener();
+        StoreOptions(opts =>
+        {
+            opts.Schema.For<RevisionedDoc>().UseNumericRevisions(true);
+            opts.Listeners.Add(listener);
+        });
+
+        const int N = 50;
+
+        var doc = new RevisionedDoc { Name = "Initial" };
+        await using (var seed = theStore.LightweightSession())
+        {
+            seed.Store(doc);
+            await seed.SaveChangesAsync();
+        }
+
+        // Warm the connection pool so all N connectors are established before the race.
+        // With a cold pool, connection setup serializes and stretches the timing so the
+        // race window doesn't open; once warm, every run reproduces.
+        await Task.WhenAll(Enumerable.Range(0, N).Select(async _ =>
+        {
+            await using var warm = theStore.QuerySession();
+            await warm.LoadAsync<RevisionedDoc>(doc.Id);
+        }));
+        listener.Reset();
+
+        var sessions = new List<IDocumentSession>(N);
+        try
+        {
+            for (var i = 0; i < N; i++)
+            {
+                var session = theStore.LightweightSession();
+                var loaded = await session.LoadAsync<RevisionedDoc>(doc.Id);
+                loaded.Version.ShouldBe(1);
+                loaded.Name = $"session {i}";
+                session.UpdateRevision(loaded, 2);
+                sessions.Add(session);
+            }
+
+            var successes = 0;
+            var concurrencyFailures = 0;
+            await Parallel.ForEachAsync(sessions,
+                new ParallelOptions { MaxDegreeOfParallelism = N },
+                async (session, ct) =>
+                {
+                    try
+                    {
+                        await Task.Delay(Random.Shared.Next(0, 10), ct);
+                        await session.SaveChangesAsync(ct);
+                        Interlocked.Increment(ref successes);
+                    }
+                    catch (ConcurrencyException)
+                    {
+                        Interlocked.Increment(ref concurrencyFailures);
+                    }
+                });
+
+            await using var verify = theStore.QuerySession();
+            var persisted = await verify.LoadAsync<RevisionedDoc>(doc.Id);
+            persisted.Version.ShouldBe(2);
+
+            // Only one writer can move v=1 → v=2. Every other SaveChanges must surface
+            // as a ConcurrencyException, never as a silent success.
+            successes.ShouldBe(1, "silent writes detected");
+            concurrencyFailures.ShouldBe(N - 1);
+
+            // AfterCommitAsync must not fire for sessions whose write was silently dropped.
+            listener.AfterCommit.ShouldBe(successes);
+            listener.BeforeSave.ShouldBe(N);
+        }
+        finally
+        {
+            foreach (var session in sessions) session.Dispose();
+        }
+    }
 
 
+
+}
+
+internal class CommitCountingListener: DocumentSessionListenerBase
+{
+    private int _beforeSave;
+    private int _afterCommit;
+
+    public int BeforeSave => _beforeSave;
+    public int AfterCommit => _afterCommit;
+
+    public void Reset()
+    {
+        Interlocked.Exchange(ref _beforeSave, 0);
+        Interlocked.Exchange(ref _afterCommit, 0);
+    }
+
+    public override Task BeforeSaveChangesAsync(IDocumentSession session, CancellationToken token)
+    {
+        Interlocked.Increment(ref _beforeSave);
+        return Task.CompletedTask;
+    }
+
+    public override Task AfterCommitAsync(IDocumentSession session, IChangeSet commit, CancellationToken token)
+    {
+        Interlocked.Increment(ref _afterCommit);
+        return Task.CompletedTask;
+    }
 }
 
 
