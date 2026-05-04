@@ -168,7 +168,7 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<ISystemPart, MartenSystemPart>();
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
-            s.GetRequiredService<IDocumentStore>());
+            (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
         {
@@ -292,7 +292,7 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<ISystemPart, MartenSystemPart<T>>();
 
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
-        services.AddSingleton<IDocumentStoreUsageSource>(s => s.GetRequiredService<T>());
+        services.AddSingleton<IDocumentStoreUsageSource>(s => (IDocumentStoreUsageSource)s.GetRequiredService<T>());
 
         var stores = services
             .Where(x => !x.IsKeyedService)
