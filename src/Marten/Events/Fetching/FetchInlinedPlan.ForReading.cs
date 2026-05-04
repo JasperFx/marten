@@ -57,11 +57,10 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         snapshot = await aggregator.BuildAsync(pendingEvents, session, snapshot, id, storage, cancellation)
             .ConfigureAwait(false);
 
-        // Store the updated document so it persists when the session commits
-        if (snapshot != null)
-        {
-            session.Store(snapshot);
-        }
+        // The configured inline projection itself will persist the projected
+        // document during SaveChangesAsync. Calling session.Store(snapshot) here
+        // would queue a redundant upsert at the same revision, which now surfaces
+        // as a ConcurrencyException after the mt_upsert_<doc> write-loss fix.
 
         return snapshot;
     }
