@@ -44,4 +44,12 @@ public class GroupJoinData
     /// (e.g., (c, o) => new { c.Name, o.Amount })
     /// </summary>
     public LambdaExpression? FlattenedResultSelector { get; set; }
+
+    /// <summary>
+    /// CollectionUsage representing the inner IQueryable source. Holds Where
+    /// predicate bodies extracted from the inner source (e.g.
+    /// <c>session.Query&lt;Result&gt;().Where(r => r.Score &gt; 10)</c>) so they can
+    /// be applied to the inner CTE before the join.
+    /// </summary>
+    public CollectionUsage InnerCollectionUsage { get; set; } = null!;
 }
