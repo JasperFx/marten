@@ -436,6 +436,17 @@ For these scenarios Marten provides `EnrichUsingEntityQuery`. This API gives you
 how referenced documents are resolved, while still fitting into the declarative enrichment pipeline
 and avoiding N plus 1 query problems.
 
+::: warning
+The `querySession` available to `EnrichUsingEntityQuery` only sees data that is **already committed
+to the database**. This API is intended for resolving committed reference data (the `RoutingReason`
+example below) — *not* for reading documents produced by an upstream stage of the same
+[composite projection](/events/projections/composite#cross-stage-document-visibility) batch. Inside
+a composite projection, all stages share a single `IProjectionBatch` that flushes once at the end,
+so upstream stage writes are not visible to a SQL query in a downstream stage. To consume upstream
+stage output use `Updated<T>` synthetic events, `EnrichWith<T>().AddReferences()`, or
+`ReferencePeerView<T>()`. See [Cross-stage document visibility](/events/projections/composite#cross-stage-document-visibility).
+:::
+
 Typical use cases include
 
 - resolving reference data by a code instead of a document id  
