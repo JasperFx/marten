@@ -435,6 +435,45 @@ data for that point of the event sequencing.
 Moreover, the composite "telehealth" projection is reading the event range *once* for all five constituent projections,
 and also applying the updates for all five projections at one time to guarantee consistency.
 
+## Cross-stage document visibility
+
+::: warning
+A downstream stage **cannot** see the document writes of an upstream stage by issuing a SQL query
+against `IQuerySession` — those writes are still queued in the in-memory projection batch and have
+not been committed yet. The query goes to PostgreSQL, which has not received them.
+:::
+
+All stages of a composite projection share a single `IProjectionBatch` that is flushed to the
+database **once**, after every stage has run. This is what makes the composite atomic, but it
+also means that during the execution of a later stage, the document writes produced by earlier
+stages are still queued in memory. A query like
+
+```cs
+// Inside a stage-2 projection's EnrichEventsAsync — DOES NOT see Appointment
+// rows written by an upstream stage-1 projection in this same batch
+var appointments = await querySession.Query<Appointment>().ToListAsync();
+```
+
+will return only what was committed by **previous** batches. During a `RebuildProjectionAsync`,
+where every event is replayed from scratch, neither the upstream nor the downstream documents
+have been committed yet, so the query returns an empty result for both.
+
+Marten provides three supported ways for a downstream stage to consume upstream stage output:
+
+* **`Updated<T>` and `ProjectionDeleted<T, TId>` synthetic events.** When an upstream
+  `SingleStreamProjection<T>` or `MultiStreamProjection<T>` updates or deletes a document, Marten
+  injects a synthetic event into the downstream stage's event stream. The current snapshot of `T`
+  is carried directly on the event payload, so no database lookup is needed.
+* **`EnrichWith<T>().ForEvent<E>().ForEntityId(...).AddReferences()`** (and the related
+  `EnrichAsync` overloads). These walk the upstream's in-memory aggregate cache for `T` rather
+  than the database, so they observe in-flight writes from earlier stages in the same batch.
+* **`group.ReferencePeerView<T>()`** for a parallel projected view that shares the same identity
+  as the projection being built.
+
+Direct use of `querySession.Query<T>()` from inside `EnrichEventsAsync` is appropriate for
+**static reference data committed in earlier batches** (for example the `RoutingReason` example
+above) and not for documents produced by upstream stages of the *current* batch.
+
 ## Things to Know About Composite Projections
 
 * Composite projections can include any possible kind of projection including aggregations or event projections or flat table projections
