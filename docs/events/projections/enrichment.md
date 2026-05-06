@@ -443,7 +443,8 @@ example below) — *not* for reading documents produced by an upstream stage of 
 [composite projection](/events/projections/composite#cross-stage-document-visibility) batch. Inside
 a composite projection, all stages share a single `IProjectionBatch` that flushes once at the end,
 so upstream stage writes are not visible to a SQL query in a downstream stage. To consume upstream
-stage output use `Updated<T>` synthetic events, `EnrichWith<T>().AddReferences()`, or
+stage output use `Updated<T>` synthetic events, `EnrichWith<T>().AddReferences()`,
+`group.TryFindUpstreamCache<TId, T>()` <Badge type="tip" text="JasperFx.Events 1.34" />, or
 `ReferencePeerView<T>()`. See [Cross-stage document visibility](/events/projections/composite#cross-stage-document-visibility).
 :::
 

@@ -458,7 +458,7 @@ will return only what was committed by **previous** batches. During a `RebuildPr
 where every event is replayed from scratch, neither the upstream nor the downstream documents
 have been committed yet, so the query returns an empty result for both.
 
-Marten provides three supported ways for a downstream stage to consume upstream stage output:
+Marten provides four supported ways for a downstream stage to consume upstream stage output:
 
 * **`Updated<T>` and `ProjectionDeleted<T, TId>` synthetic events.** When an upstream
   `SingleStreamProjection<T>` or `MultiStreamProjection<T>` updates or deletes a document, Marten
@@ -467,12 +467,33 @@ Marten provides three supported ways for a downstream stage to consume upstream 
 * **`EnrichWith<T>().ForEvent<E>().ForEntityId(...).AddReferences()`** (and the related
   `EnrichAsync` overloads). These walk the upstream's in-memory aggregate cache for `T` rather
   than the database, so they observe in-flight writes from earlier stages in the same batch.
+* **`group.TryFindUpstreamCache<TId, T>(out var cache)`** <Badge type="tip" text="JasperFx.Events 1.34" /> for custom enrichment
+  callbacks (notably inside `EnrichUsingEntityQuery`) that need to look up an in-flight upstream
+  entity by id when it isn't the type of the enclosing `EnrichWith<T>`. Returns `false` when no
+  upstream stage of this composite produces entities of that type — see [the example below](#looking-up-arbitrary-upstream-entities-in-enrichusingentityquery).
 * **`group.ReferencePeerView<T>()`** for a parallel projected view that shares the same identity
   as the projection being built.
 
 Direct use of `querySession.Query<T>()` from inside `EnrichEventsAsync` is appropriate for
 **static reference data committed in earlier batches** (for example the `RoutingReason` example
 above) and not for documents produced by upstream stages of the *current* batch.
+
+### Looking up arbitrary upstream entities in EnrichUsingEntityQuery
+
+`EnrichUsingEntityQuery`'s callback receives a cache parameter typed for the enclosing
+`EnrichWith<T>`. When the callback also needs to read an in-flight upstream entity of a *different*
+type — for example a `RoutingReason` enrichment that needs to consult the upstream `Appointment`
+that is being projected in the same batch — call `group.TryFindUpstreamCache<TId, T>` against the
+captured `SliceGroup` to reach into the upstream stage's in-memory aggregate cache.
+
+<!-- snippet: sample_try_find_upstream_cache -->
+<!-- endSnippet -->
+
+`TryFindUpstreamCache` returns `false` when no upstream stage of this composite is registered as
+producing entities of that type, and the cache it returns is a hint — `IAggregateCache.TryFind` may
+still miss for entities outside the cache window (`Options.CacheLimitPerTenant`), in which case
+the caller should fall back to whatever is appropriate for that data (a SQL query for committed
+reference data, an `Updated<T>` event already in the slice, etc.).
 
 ## Things to Know About Composite Projections
 
