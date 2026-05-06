@@ -44,11 +44,34 @@ internal class MemoryExtensionsContains: IMethodCallParser
 
     private static Expression UnwrapConversions(Expression expression)
     {
-        // Unwrap op_Implicit method calls
-        if (expression is MethodCallExpression { Method.Name: "op_Implicit", Arguments.Count: > 0 } methodCall)
+        // C# 14 with <Nullable>enable</Nullable> can wrap captured-closure
+        // string[] locals with an extra Convert() before the implicit
+        // string[] -> ReadOnlySpan<string> conversion, e.g.
+        //     op_Implicit(Convert(closureField, String[])).Contains(s.Name)
+        // Strip both forms (and any stacked combination) so the receiver can
+        // still be reduced to a constant.
+        while (true)
         {
-            return methodCall.Arguments[0];
+            if (expression is MethodCallExpression
+                {
+                    Method.Name: "op_Implicit" or "op_Explicit",
+                    Arguments.Count: > 0
+                } methodCall)
+            {
+                expression = methodCall.Arguments[0];
+                continue;
+            }
+
+            if (expression is UnaryExpression
+                {
+                    NodeType: ExpressionType.Convert or ExpressionType.ConvertChecked
+                } unary)
+            {
+                expression = unary.Operand;
+                continue;
+            }
+
+            return expression;
         }
-        return expression;
     }
 }
