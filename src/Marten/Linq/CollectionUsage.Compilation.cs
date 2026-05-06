@@ -292,9 +292,9 @@ public partial class CollectionUsage
         };
         var innerCteAlias = innerStatement.ExportName;
 
-        // Apply default filters (soft delete, tenancy) to inner CTE
+        // Apply extracted Where clauses and default filters (soft delete, tenancy) to inner CTE.
         innerStatement.ParseWhereClause(
-            Array.Empty<System.Linq.Expressions.Expression>(),
+            groupJoin.InnerCollectionUsage.WhereExpressions,
             session, innerCollection, innerStorage);
 
         // Chain the inner CTE after the outer CTE

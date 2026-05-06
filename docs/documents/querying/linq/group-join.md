@@ -99,6 +99,40 @@ var results = await session.Query<Customer>()
     .ToListAsync();
 ```
 
+## Filtering Before the Join
+
+`Where` clauses on either side of the join are pushed into the corresponding CTE so filtering happens **before** the join. This applies both to a `Where` applied to the outer source and to a `Where` chained onto the inner `IQueryable` passed as the second argument to `GroupJoin`.
+
+```cs
+var results = await session.Query<Customer>()
+    .Where(c => c.City == "Seattle")                        // filters outer CTE
+    .GroupJoin(
+        session.Query<Order>().Where(o => o.Status == "Shipped"), // filters inner CTE
+        c => c.Id,
+        o => o.CustomerId,
+        (c, orders) => new { c, orders })
+    .SelectMany(
+        x => x.orders,
+        (x, o) => new { CustomerName = x.c.Name, OrderAmount = o.Amount })
+    .ToListAsync();
+```
+
+The generated SQL applies each `Where` to its own CTE so the join only sees pre-filtered rows from both sides:
+
+```sql
+WITH outer_cte AS (
+    SELECT d.id, d.data FROM public.mt_doc_customer AS d
+    WHERE d.data ->> 'City' = 'Seattle'
+),
+inner_cte AS (
+    SELECT d.id, d.data FROM public.mt_doc_order AS d
+    WHERE d.data ->> 'Status' = 'Shipped'
+)
+SELECT ... FROM outer_cte INNER JOIN inner_cte ON ...;
+```
+
+Multiple `Where` calls on either source are supported and are AND-ed together.
+
 ## Left Join (GroupJoin + SelectMany + DefaultIfEmpty)
 
 To include outer rows that have no matching inner rows (a SQL `LEFT JOIN`), add `.DefaultIfEmpty()` to the collection selector in `SelectMany()`:

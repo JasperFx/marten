@@ -604,4 +604,79 @@ public class group_join_operator: OneOffConfigurationsContext
     }
 
     #endregion
+
+    #region Inner Source Where Filter Tests
+
+    [Fact]
+    public async Task GroupJoin_inner_join_with_where_on_inner_source()
+    {
+        await SetupData();
+
+        // Filter the inner IQueryable before GroupJoin: only Active orders should
+        // participate in the join.
+        var results = await _session.Query<JoinCustomer>()
+            .GroupJoin(
+                _session.Query<JoinOrder>().Where(o => o.Status == "Active"),
+                c => c.Id,
+                o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(
+                x => x.orders,
+                (x, o) => new { x.c.Name, o.Status, o.Amount })
+            .ToListAsync();
+
+        results.Count.ShouldBe(2);
+        results.ShouldAllBe(r => r.Status == "Active");
+        results.Count(r => r.Name == "Alice").ShouldBe(1);
+        results.Count(r => r.Name == "Bob").ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task GroupJoin_left_join_with_where_on_inner_source()
+    {
+        await SetupData();
+
+        // LEFT JOIN: customers without matching (Active) orders should still appear with null status.
+        var results = await _session.Query<JoinCustomer>()
+            .GroupJoin(
+                _session.Query<JoinOrder>().Where(o => o.Status == "Active"),
+                c => c.Id,
+                o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(
+                x => x.orders.DefaultIfEmpty(),
+                (x, o) => new { x.c.Name, OrderStatus = (string?)(o == null ? null : o.Status) })
+            .ToListAsync();
+
+        // Alice(1 Active) + Bob(1 Active) + Charlie(no orders -> null)
+        results.Count.ShouldBe(3);
+        results.Count(r => r.OrderStatus == "Active").ShouldBe(2);
+        results.Count(r => r.OrderStatus == null).ShouldBe(1);
+        results.Single(r => r.OrderStatus == null).Name.ShouldBe("Charlie");
+    }
+
+    [Fact]
+    public async Task GroupJoin_inner_join_with_multiple_wheres_on_inner_source()
+    {
+        await SetupData();
+
+        // Two Where calls chained on the inner source: Active AND Amount > 200.
+        var results = await _session.Query<JoinCustomer>()
+            .GroupJoin(
+                _session.Query<JoinOrder>().Where(o => o.Status == "Active").Where(o => o.Amount > 200m),
+                c => c.Id,
+                o => o.CustomerId,
+                (c, orders) => new { c, orders })
+            .SelectMany(
+                x => x.orders,
+                (x, o) => new { x.c.Name, o.Amount })
+            .ToListAsync();
+
+        // Only Bob's Active order with Amount=300 qualifies.
+        results.Count.ShouldBe(1);
+        results.Single().Name.ShouldBe("Bob");
+        results.Single().Amount.ShouldBe(300m);
+    }
+
+    #endregion
 }

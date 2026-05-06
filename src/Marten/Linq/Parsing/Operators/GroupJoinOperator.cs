@@ -1,6 +1,5 @@
 #nullable enable
-using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 
 namespace Marten.Linq.Parsing.Operators;
@@ -33,13 +32,18 @@ public class GroupJoinOperator: LinqOperator
         // Determine inner element type from the inner source's IQueryable<T> generic arg
         var innerElementType = innerSource.Type.GetGenericArguments()[0];
 
+        // Build a CollectionUsage for the inner source so its Where clauses are captured
+        var innerUsage = new CollectionUsage(usage.Options, innerElementType);
+        ExtractInnerWhereExpressions(innerSource, innerUsage);
+
         var groupJoinData = new GroupJoinData
         {
             InnerSourceExpression = innerSource,
             OuterKeySelector = (LambdaExpression)outerKeyExpr,
             InnerKeySelector = (LambdaExpression)innerKeyExpr,
             ResultSelector = (LambdaExpression)resultSelectorExpr,
-            InnerElementType = innerElementType
+            InnerElementType = innerElementType,
+            InnerCollectionUsage = innerUsage
         };
 
         // If SelectMany was processed before us (it's the outermost operator),
@@ -99,6 +103,35 @@ public class GroupJoinOperator: LinqOperator
         }
 
         return false;
+    }
+
+    private static void ExtractInnerWhereExpressions(Expression innerSource, CollectionUsage innerUsage)
+    {
+        // Collect Where calls from outer-most to inner-most, then forward them to
+        // CollectionUsage.AddWhereClause in source order so the predicates land on
+        // the inner usage's WhereExpressions in the same order they appear in the
+        // LINQ chain.
+        var collected = new List<MethodCallExpression>();
+        var current = innerSource;
+        while (current is MethodCallExpression call)
+        {
+            if (call.Method.Name == "Where")
+            {
+                collected.Add(call);
+            }
+
+            if (call.Arguments.Count == 0)
+            {
+                break;
+            }
+
+            current = call.Arguments[0];
+        }
+
+        for (var i = collected.Count - 1; i >= 0; i--)
+        {
+            innerUsage.AddWhereClause(collected[i]);
+        }
     }
 }
 
