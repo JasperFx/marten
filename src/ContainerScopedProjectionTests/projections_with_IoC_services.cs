@@ -412,6 +412,37 @@ public class projections_with_IoC_services
 
 
     [Fact]
+    public async Task use_iconfiguremarten_module_to_register_di_aware_projection()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "ioc_module";
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 30;
+                }).ApplyAllDatabaseChangesOnStartup();
+
+                // The Product module pulls in its own dependencies AND uses
+                // IConfigureMarten to register a projection that needs them.
+                services.AddProductModule();
+            })
+            .StartAsync();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>();
+        await using var session = store.LightweightSession();
+
+        var streamId = session.Events.StartStream<Product>(new ProductRegistered("Ankle Socks", "Socks")).Id;
+        await session.SaveChangesAsync();
+
+        var product = await session.LoadAsync<Product>(streamId);
+        product.ShouldNotBeNull();
+        product.Name.ShouldBe("Ankle Socks");
+        product.Price.ShouldBeGreaterThan(0);
+    }
+
+    [Fact]
     public async Task use_multistream_projection_as_singleton_and_inline_on_martenStore()
     {
         using var host = await Host.CreateDefaultBuilder()
@@ -531,6 +562,56 @@ public class ProductMultiStreamProjection: SingleStreamProjection<Product, Guid>
         }
 
         return snapshot;
+    }
+}
+
+#endregion
+
+#region sample_iconfiguremarten_with_di_projection
+
+// An IConfigureMarten that takes its own dependencies through the constructor and
+// uses them to build a service-aware projection. This is the standard path for
+// modular Marten configuration that needs DI services to register a projection or
+// subscription -- the IoC container resolves IPriceLookup when it constructs the
+// IConfigureMarten implementation, and the resolved instance is then passed to the
+// projection at registration time.
+internal class ProductProjectionRegistration: IConfigureMarten
+{
+    private readonly IPriceLookup _lookup;
+
+    public ProductProjectionRegistration(IPriceLookup lookup)
+    {
+        _lookup = lookup;
+    }
+
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        // Build the projection instance with the injected dependencies and
+        // register it on StoreOptions like any other projection
+        options.Projections.Add(new ProductProjection(_lookup), ProjectionLifecycle.Inline);
+    }
+}
+
+#endregion
+
+#region sample_addproductmodule_with_iconfiguremarten
+
+public static class ProductModuleExtensions
+{
+    /// <summary>
+    /// Module-style registration: the module owns the IPriceLookup service AND the
+    /// IConfigureMarten that uses it to register a service-aware projection. The
+    /// host's AddMarten(...) call lives elsewhere; this module just adds to it.
+    /// </summary>
+    public static IServiceCollection AddProductModule(this IServiceCollection services)
+    {
+        services.AddSingleton<IPriceLookup, PriceLookup>();
+
+        // The IConfigureMarten implementation will receive IPriceLookup through
+        // its constructor at IoC resolution time, then build the projection.
+        services.AddSingleton<IConfigureMarten, ProductProjectionRegistration>();
+
+        return services;
     }
 }
 
