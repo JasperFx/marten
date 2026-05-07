@@ -96,3 +96,29 @@ normal schema migration tooling will handle this automatically.
 The `EnableBigIntEvents` flag is `false` by default in Marten 8.x for backward compatibility. Starting
 in **Marten 9.0**, this flag will default to `true`.
 :::
+
+## Ignoring Custom Indexes
+
+If you add an index on one of Marten's event-store tables (`mt_events`, `mt_streams`, or
+`mt_event_progression`) outside of Marten's own schema configuration — for example, via a custom
+`IFeatureSchema` that declares a GIN index — you need to tell Marten's schema migration to leave that
+index alone. Otherwise the diff will see an unmanaged index on a managed table and try to drop it on
+the next `ApplyAllDatabaseChangesOnStartup()`.
+
+`IEventStoreOptions.IgnoreIndex(name)` adds an index name to the ignore list, mirroring the existing
+`DocumentMapping.IgnoreIndex(name)` for document tables:
+
+<!-- snippet: sample_event_store_ignore_index -->
+<a id='snippet-sample_event_store_ignore_index'></a>
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection(ConnectionSource.ConnectionString);
+    opts.Events.IgnoreIndex("mt_events_headers_gin_idx");
+});
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ignoring_indexes_on_event_store_tables.cs#L47-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_event_store_ignore_index' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+The ignore list is consulted by all three event-store tables, so a single name will be treated as
+"ignored" wherever it might appear.
