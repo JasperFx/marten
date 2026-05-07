@@ -3,6 +3,29 @@ import { defineConfig, type DefaultTheme, type UserConfig } from "vitepress"
 import { withMermaid } from "vitepress-plugin-mermaid"
 import llmstxt from 'vitepress-plugin-llms'
 import blockEmbedPlugin from 'markdown-it-block-embed'
+import { execFileSync } from 'node:child_process'
+import { rmSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const freightShippingSamplePath = resolve(docsRoot, 'src/samples/FreightShipping')
+const freightShippingZipPath = resolve(docsRoot, 'public/freight-shipping-tutorial.zip')
+
+function freightShippingTutorialZipPlugin() {
+  return {
+    name: 'freight-shipping-tutorial-zip',
+    apply: 'build',
+    buildStart() {
+      console.info(`[freight-shipping-tutorial-zip] Building zip from ${freightShippingSamplePath}`)
+      rmSync(freightShippingZipPath, { force: true })
+      execFileSync('zip', ['-r', '-q', freightShippingZipPath, '.'], {
+        cwd: freightShippingSamplePath
+      })
+      console.info(`[freight-shipping-tutorial-zip] Wrote ${freightShippingZipPath}`)
+    }
+  }
+}
 
 const config: UserConfig<DefaultTheme.Config> = {
   base: '/',
@@ -433,9 +456,8 @@ const config: UserConfig<DefaultTheme.Config> = {
     }
   },
   vite: {
-    plugins: [llmstxt()]
+    plugins: [llmstxt(), freightShippingTutorialZipPlugin()]
   }
 }
 
 export default defineConfig(withMermaid(config))
-
