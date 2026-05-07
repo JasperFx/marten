@@ -88,3 +88,100 @@ projection object once and add it to Marten's configuration at application start
 registration is `Scoped` or `Transient`, Marten uses a proxy wrapper around `IProjection` that builds
 the projection object uniquely for each usage through scoped containers, and disposes the inner projection
 object at the end of the operation.
+
+## Registering DI-aware projections through IConfigureMarten modules
+
+If you organize your application's Marten configuration into [modules backed by `IConfigureMarten`](/configuration/hostbuilder#composite-configuration-with-configuremarten)
+and one of those modules needs to register a projection (or subscription) that depends on IoC
+services, the answer is *not* a special "module-aware" overload of `AddProjectionWithServices` —
+it's the constructor of your `IConfigureMarten` itself. The IoC container resolves the
+`IConfigureMarten` implementation, so any service it needs can be declared as a constructor
+dependency, and then handed to a projection that you build explicitly inside `Configure`.
+
+Using the same `ProductProjection` from above (which needs an `IPriceLookup`):
+
+<!-- snippet: sample_iconfiguremarten_with_di_projection -->
+<a id='snippet-sample_iconfiguremarten_with_di_projection'></a>
+```cs
+// An IConfigureMarten that takes its own dependencies through the constructor and
+// uses them to build a service-aware projection. This is the standard path for
+// modular Marten configuration that needs DI services to register a projection or
+// subscription -- the IoC container resolves IPriceLookup when it constructs the
+// IConfigureMarten implementation, and the resolved instance is then passed to the
+// projection at registration time.
+internal class ProductProjectionRegistration: IConfigureMarten
+{
+    private readonly IPriceLookup _lookup;
+
+    public ProductProjectionRegistration(IPriceLookup lookup)
+    {
+        _lookup = lookup;
+    }
+
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        // Build the projection instance with the injected dependencies and
+        // register it on StoreOptions like any other projection
+        options.Projections.Add(new ProductProjection(_lookup), ProjectionLifecycle.Inline);
+    }
+}
+```
+<!-- endSnippet -->
+
+The module's `IServiceCollection` extension wires both the dependency *and* the `IConfigureMarten`
+into DI. The host's `AddMarten(...)` call lives elsewhere — this module just contributes to it:
+
+<!-- snippet: sample_addproductmodule_with_iconfiguremarten -->
+<a id='snippet-sample_addproductmodule_with_iconfiguremarten'></a>
+```cs
+public static class ProductModuleExtensions
+{
+    /// <summary>
+    /// Module-style registration: the module owns the IPriceLookup service AND the
+    /// IConfigureMarten that uses it to register a service-aware projection. The
+    /// host's AddMarten(...) call lives elsewhere; this module just adds to it.
+    /// </summary>
+    public static IServiceCollection AddProductModule(this IServiceCollection services)
+    {
+        services.AddSingleton<IPriceLookup, PriceLookup>();
+
+        // The IConfigureMarten implementation will receive IPriceLookup through
+        // its constructor at IoC resolution time, then build the projection.
+        services.AddSingleton<IConfigureMarten, ProductProjectionRegistration>();
+
+        return services;
+    }
+}
+```
+<!-- endSnippet -->
+
+The host then composes the modules:
+
+```cs
+services.AddMarten(opts =>
+{
+    opts.Connection(connectionString);
+}).ApplyAllDatabaseChangesOnStartup();
+
+services.AddProductModule();
+```
+
+::: tip
+This pattern works equally well for **subscriptions** — register an `IConfigureMarten` that takes the
+subscription's dependencies through its constructor, build the subscription instance inside
+`Configure`, and call `options.Events.Subscribe(...)`. The same constructor-injection trick lets a
+module wire any DI-resolved object into Marten's configuration without going through
+`AddProjectionWithServices`.
+:::
+
+The same shape applies if you have multiple `IDocumentStore` instances and need module-style
+registration against a specific store — implement `IConfigureMarten<TStore>` instead of
+`IConfigureMarten` and register it the same way (`services.AddSingleton<IConfigureMarten<IInvoicingStore>, …>()`).
+
+### When to use which
+
+| Need | Use |
+| --- | --- |
+| Compose Marten configuration from multiple modules, each contributing a service-aware projection | `IConfigureMarten` with constructor injection (above) |
+| Register a single service-aware projection inline against the main `AddMarten()` call | [`AddProjectionWithServices<T>`](#projections-and-ioc-services) |
+| The projection's dependency itself has a `Scoped` lifetime that must be created per use | `AddProjectionWithServices<T>(..., ServiceLifetime.Scoped)` so Marten builds a fresh projection (and dependency) per invocation |
