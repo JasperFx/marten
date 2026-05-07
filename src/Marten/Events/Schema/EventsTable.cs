@@ -15,6 +15,9 @@ internal class EventsTable: Table
 {
     public EventsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, "mt_events"))
     {
+        foreach (var index in events.IgnoredIndexes)
+            IgnoredIndexes.Add(index);
+
         AddColumn(new SequenceColumn()).AsPrimaryKey();
         AddColumn(new EventTableColumn("id", x => x.Id)).NotNull();
         AddColumn(new StreamIdColumn(events));

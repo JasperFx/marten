@@ -149,6 +149,21 @@ namespace Marten.Events
         public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
         /// <summary>
+        ///     Directs the schema migration functionality to ignore the presence of the named index
+        ///     on the event-store tables (<c>mt_events</c>, <c>mt_streams</c>, <c>mt_event_progression</c>).
+        ///     Use this when an external mechanism (e.g. a custom <c>IFeatureSchema</c>) declares an index
+        ///     on a Marten-managed event-store table that Marten itself shouldn't try to manage.
+        /// </summary>
+        /// <param name="indexName">The PostgreSQL index name to ignore</param>
+        /// <returns>Event store options, to allow fluent definition</returns>
+        IEventStoreOptions IgnoreIndex(string indexName);
+
+        /// <summary>
+        ///     Index names that the schema migration functionality should ignore on the event-store tables.
+        /// </summary>
+        IReadOnlyList<string> IgnoredIndexes { get; }
+
+        /// <summary>
         ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
         ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
         ///     the event type. It can also be used for the event namespace migration.

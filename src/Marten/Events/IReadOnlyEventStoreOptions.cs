@@ -128,4 +128,9 @@ public interface IReadOnlyEventStoreOptions
     /// meaning that they do not apply to projections or subscriptions. Use this to "cure" bad events
     /// </summary>
     bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
+
+    /// <summary>
+    /// Index names that the schema migration functionality should ignore on the event-store tables.
+    /// </summary>
+    IReadOnlyList<string> IgnoredIndexes { get; }
 }

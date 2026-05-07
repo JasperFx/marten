@@ -13,6 +13,9 @@ internal class EventProgressionTable: Table
 
     public EventProgressionTable(EventGraph eventGraph): base(new PostgresqlObjectName(eventGraph.DatabaseSchemaName, Name))
     {
+        foreach (var index in eventGraph.IgnoredIndexes)
+            IgnoredIndexes.Add(index);
+
         AddColumn<string>("name").AsPrimaryKey();
         AddColumn("last_seq_id", "bigint").AllowNulls();
         AddColumn("last_updated", "timestamp with time zone")

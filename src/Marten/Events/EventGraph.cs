@@ -228,6 +228,21 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
+    private readonly List<string> _ignoredIndexes = new();
+
+    public IReadOnlyList<string> IgnoredIndexes => _ignoredIndexes;
+
+    public IEventStoreOptions IgnoreIndex(string indexName)
+    {
+        if (string.IsNullOrWhiteSpace(indexName))
+            throw new ArgumentException("Index name must be supplied", nameof(indexName));
+
+        if (!_ignoredIndexes.Contains(indexName))
+            _ignoredIndexes.Add(indexName);
+
+        return this;
+    }
+
     /// <summary>
     /// Opt into adding a composite index on (type, seq_id) to the mt_events table.
     /// This can dramatically improve performance for projection rebuilds and async
