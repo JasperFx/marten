@@ -353,6 +353,60 @@ public class multi_stage_projections(ITestOutputHelper output): DaemonContext(ou
 
     }
 
+    [Fact]
+    public async Task downstream_lookups_survive_tiny_upstream_cache()
+    {
+        // Regression for the second symptom diagnosed in
+        // https://github.com/JasperFx/marten/issues/4329 — with a small
+        // CacheLimitPerTenant on the upstream AppointmentProjection, every
+        // AppointmentByExternalIdentifier slice's EnrichWith<Appointment>.AddReferences
+        // lookup previously fell through to a SQL load that couldn't see the
+        // upstream's queued in-flight writes, so the downstream document never
+        // materialised. JasperFx.Events 1.35.0 keeps the upstream cache at full
+        // size for the duration of the composite batch, fixing it.
+        StoreOptions(opts =>
+        {
+            opts.Projections.CompositeProjectionFor("TeleHealth", projection =>
+            {
+                projection.Add<ProviderShiftProjection>();
+
+                // Force the failure mode: the upstream Appointment cache holds 1 entry,
+                // but the batch produces many appointments at once, so anything past
+                // the survivor would previously be evicted.
+                var appointments = new AppointmentProjection();
+                appointments.Options.CacheLimitPerTenant = 1;
+                projection.Add(appointments);
+
+                projection.Snapshot<Board>();
+                projection.Add(new AppointmentMetricsProjection());
+
+                // 2nd stage projections — AppointmentByExternalIdentifierProjection is
+                // the one that uses EnrichWith<Appointment>().AddReferences(), so it's
+                // the canary for the eviction bug.
+                projection.Add<AppointmentDetailsProjection>(2);
+                projection.Add<BoardSummaryProjection>(2);
+                projection.Add<AppointmentByExternalIdentifierProjection>(2);
+            });
+        });
+
+        var tenantId = TenantId.DefaultTenantId;
+        _compositeSession = theStore.LightweightSession(tenantId);
+
+        await setUpData(tenantId);
+
+        using var daemon = await StartDaemon();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(30.Seconds());
+
+        await startAppointments();
+        await daemon.WaitForNonStaleData(30.Seconds());
+
+        // The downstream lookup-by-id projection should be fully populated, even
+        // though the upstream cache is squeezed to 1 entry.
+        (await _compositeSession.Query<Appointment>().CountAsync()).ShouldBeGreaterThan(0);
+        (await _compositeSession.Query<AppointmentByExternalIdentifier>().CountAsync()).ShouldBeGreaterThan(0);
+    }
+
     private static void verifyDescription(EventStoreUsage usage)
     {
         usage.ShouldNotBeNull();
