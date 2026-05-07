@@ -292,18 +292,7 @@ class Build : NukeBuild
         .DependsOn(DocsBuild)
         .Executes(() =>
         {
-            var sourceDir = "./docs/src/samples/FreightShipping";
-            var zipFile = "./docs/.vitepress/dist/freight-shipping-tutorial.zip";
-
-            if (Directory.Exists(sourceDir))
-            {
-                Log.Information($"Creating zip file {zipFile} from {sourceDir}");
-                System.IO.Compression.ZipFile.CreateFromDirectory(sourceDir, zipFile);
-            }
-            else
-            {
-                Log.Error($"Source directory {sourceDir} does not exist.");
-            }
+            Log.Information("Skipping NUKE zip creation; VitePress build plugin creates freight-shipping-tutorial.zip.");
         });
 
     Target ClearInlineSamples => _ => _
@@ -332,7 +321,7 @@ class Build : NukeBuild
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy-preview")));
 
     Target PublishDocs => _ => _
-        .DependsOn(NpmInstall, InstallMdSnippets, DocsBuild, CreateFreightShippingTutorialZip)
+        .DependsOn(NpmInstall, InstallMdSnippets, DocsBuild)
         .Executes(() => NpmTasks.NpmRun(s => s.SetCommand("deploy")));
     
     Target Benchmarks => _ => _
