@@ -425,6 +425,52 @@ public override AppointmentDetails Evolve(AppointmentDetails snapshot, Guid id, 
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/AppointmentDetailsProjection.cs#L142-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_appointmentdetails_evolve' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### Fan-out enrichment with ForEntityIds <Badge type="tip" text="JasperFx.Events 1.35" />
+
+`ForEntityId` resolves at most one entity per event. When a single event references *several*
+entities of the same type — for example an event payload that carries a list of foreign-key ids,
+or a stream-level "this thing changed; here are the related ids" notification — use `ForEntityIds`
+(plural) instead. The selector returns an `IEnumerable<TEntityId>`, and `AddReferences()` emits
+one `References<TEntity>` synthetic event per resolved id. Missing ids are silently skipped, just
+as `IdentityStep` already does for unresolved single ids.
+
+<!-- snippet: sample_for_entity_ids_fan_out -->
+<!-- endSnippet -->
+
+In the projection's `Evolve()`, treat the synthetic events the same way you would for the 1-to-1
+case — one `case References<TEntity>` arm runs once per resolved entity:
+
+```cs
+public override OrderSummary Evolve(OrderSummary snapshot, Guid id, IEvent e)
+{
+    switch (e.Data)
+    {
+        case OrderPlacedWithLineItems:
+            snapshot ??= new OrderSummary { Id = id };
+            break;
+
+        case References<Product> productRef:
+            snapshot ??= new OrderSummary { Id = id };
+            snapshot.Lines.Add(new OrderLineSummary
+            {
+                ProductId = productRef.Entity.Id,
+                Sku = productRef.Entity.Sku,
+                Name = productRef.Entity.Name,
+                Price = productRef.Entity.Price
+            });
+            snapshot.Total += productRef.Entity.Price;
+            break;
+    }
+
+    return snapshot;
+}
+```
+
+`ForEntityIds` de-duplicates ids before going to storage so the same id is never loaded twice in
+a single enrichment, even when several events in the slice mention it. There is also a
+`ForEntityIdsFromEvent` overload that hands the `IEvent<TEvent>` wrapper to the selector for
+callers that need access to event metadata (headers, sequence, timestamp).
+
 ### Enriching by business keys with EnrichUsingEntityQuery <Badge type="tip" text="8.22" />
 
 The declarative enrichment APIs shown above work very well when events directly reference a document
