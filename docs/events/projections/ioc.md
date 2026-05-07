@@ -181,7 +181,7 @@ registration against a specific store — implement `IConfigureMarten<TStore>` i
 ### When to use which
 
 | Need | Use |
-|---|---|
+| --- | --- |
 | Compose Marten configuration from multiple modules, each contributing a service-aware projection | `IConfigureMarten` with constructor injection (above) |
 | Register a single service-aware projection inline against the main `AddMarten()` call | [`AddProjectionWithServices<T>`](#projections-and-ioc-services) |
 | The projection's dependency itself has a `Scoped` lifetime that must be created per use | `AddProjectionWithServices<T>(..., ServiceLifetime.Scoped)` so Marten builds a fresh projection (and dependency) per invocation |
