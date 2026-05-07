@@ -23,6 +23,9 @@ internal class StreamsTable: Table
 
     public StreamsTable(EventGraph events): base(new PostgresqlObjectName(events.DatabaseSchemaName, TableName))
     {
+        foreach (var index in events.IgnoredIndexes)
+            IgnoredIndexes.Add(index);
+
         // Per https://github.com/JasperFx/marten/issues/2430, this needs to be first in the PK
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
