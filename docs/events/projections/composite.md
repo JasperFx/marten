@@ -467,6 +467,9 @@ Marten provides four supported ways for a downstream stage to consume upstream s
 * **`EnrichWith<T>().ForEvent<E>().ForEntityId(...).AddReferences()`** (and the related
   `EnrichAsync` overloads). These walk the upstream's in-memory aggregate cache for `T` rather
   than the database, so they observe in-flight writes from earlier stages in the same batch.
+  Use **`ForEntityIds`** <Badge type="tip" text="JasperFx.Events 1.35" /> instead of `ForEntityId`
+  when a single event references several entities of the same type — see
+  [Fan-out enrichment](/events/projections/enrichment#fan-out-enrichment-with-forentityids).
 * **`group.TryFindUpstreamCache<TId, T>(out var cache)`** <Badge type="tip" text="JasperFx.Events 1.34" /> for custom enrichment
   callbacks (notably inside `EnrichUsingEntityQuery`) that need to look up an in-flight upstream
   entity by id when it isn't the type of the enclosing `EnrichWith<T>`. Returns `false` when no
@@ -477,6 +480,13 @@ Marten provides four supported ways for a downstream stage to consume upstream s
 Direct use of `querySession.Query<T>()` from inside `EnrichEventsAsync` is appropriate for
 **static reference data committed in earlier batches** (for example the `RoutingReason` example
 above) and not for documents produced by upstream stages of the *current* batch.
+
+::: tip JasperFx.Events 1.35
+Per-projection aggregate caches are no longer compacted between stages of a composite — each
+stage's cache is kept at full size for the entire composite batch and trimmed as a unit at the
+composite boundary. `Options.CacheLimitPerTenant` is therefore a memory tunable again, not a
+correctness lever for downstream `EnrichWith<T>` / `TryFindUpstreamCache` lookups.
+:::
 
 ### Looking up arbitrary upstream entities in EnrichUsingEntityQuery
 
@@ -490,10 +500,9 @@ captured `SliceGroup` to reach into the upstream stage's in-memory aggregate cac
 <!-- endSnippet -->
 
 `TryFindUpstreamCache` returns `false` when no upstream stage of this composite is registered as
-producing entities of that type, and the cache it returns is a hint — `IAggregateCache.TryFind` may
-still miss for entities outside the cache window (`Options.CacheLimitPerTenant`), in which case
-the caller should fall back to whatever is appropriate for that data (a SQL query for committed
-reference data, an `Updated<T>` event already in the slice, etc.).
+producing entities of that type. The cache itself is kept at full size for the duration of the
+composite batch, so any entity the upstream just produced is reachable by id regardless of
+`Options.CacheLimitPerTenant`.
 
 ## Things to Know About Composite Projections
 
