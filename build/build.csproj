@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JasperFx" />
+    <ProjectReference Include="../../jasperfx/src/JasperFx/JasperFx.csproj" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Nuke.Common" />
   </ItemGroup>
