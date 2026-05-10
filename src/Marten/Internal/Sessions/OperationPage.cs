@@ -68,11 +68,17 @@ public class OperationPage
     public void ApplyCallbacks(DbDataReader reader,
         IList<Exception> exceptions)
     {
+        // The sync IStorageOperation.Postprocess overload was removed in Marten 9
+        // per the dedup audit (#4351). Until the synchronous session paths
+        // (AutoClosingLifetime.Execute etc.) are themselves retired, we bridge
+        // here with .GetAwaiter().GetResult(). The bodies of every implementer's
+        // former sync Postprocess were structurally identical to the async path
+        // they delegate to, so this preserves behavior.
         var first = _operations.First();
 
         if (first is not NoDataReturnedCall)
         {
-            first.Postprocess(reader, exceptions);
+            first.PostprocessAsync(reader, exceptions, CancellationToken.None).GetAwaiter().GetResult();
             try
             {
                 reader.NextResult();
@@ -95,7 +101,7 @@ public class OperationPage
                 continue;
             }
 
-            operation.Postprocess(reader, exceptions);
+            operation.PostprocessAsync(reader, exceptions, CancellationToken.None).GetAwaiter().GetResult();
 
             try
             {

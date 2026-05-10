@@ -61,12 +61,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     }
 
     public Type DocumentType => typeof(T);
-
-    public virtual void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        // Nothing
-    }
-
     public virtual Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         return Task.CompletedTask;
@@ -109,52 +103,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         parameter.NpgsqlDbType = NpgsqlDbType.Integer;
     }
 
-    protected bool postprocessConcurrency(DbDataReader reader, IList<Exception> exceptions)
-    {
-        var success = false;
-        if (reader.Read())
-        {
-            var version = reader.GetFieldValue<Guid>(0);
-            success = version == _version;
-        }
-
-        checkVersions(exceptions, success);
-
-        return success;
-    }
-
-    protected bool postprocessRevision(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (IgnoreConcurrencyViolation) return true;
-
-        var success = true;
-        if (reader.Read())
-        {
-            var revision = reader.GetFieldValue<int>(0);
-            if (revision == 0)
-            {
-                exceptions.Add(new ConcurrencyException(typeof(T), _id));
-                return false;
-            }
-            if (Revision != 0) // don't care about zero or 1
-            {
-                if (revision >= Revision)
-                {
-                    exceptions.Add(new ConcurrencyException(typeof(T), _id));
-                    success = false;
-                }
-                else
-                {
-                    success = true;
-                }
-            }
-
-            Revision = revision;
-        }
-
-        return success;
-    }
-
     protected async Task<bool> postprocessRevisionAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (IgnoreConcurrencyViolation) return true;
@@ -185,14 +133,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         }
 
         return success;
-    }
-
-    protected void postprocessUpdate(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (!reader.Read() || reader.IsDBNull(0))
-        {
-            exceptions.Add(new NonExistentDocumentException(typeof(T), _id));
-        }
     }
 
     protected async Task postprocessUpdateAsync(DbDataReader reader, IList<Exception> exceptions,

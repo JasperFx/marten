@@ -31,26 +31,6 @@ internal class AssertStreamVersionByKey: IStorageOperation
     }
 
     public Type DocumentType => typeof(IEvent);
-
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (!reader.Read())
-        {
-            var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key!, Stream.AggregateType,
-                Stream.ExpectedVersionOnServer!.Value, 0);
-            exceptions.Add(ex);
-            return;
-        }
-
-        var actualVersion = reader.GetInt64(0);
-        if (actualVersion != Stream.ExpectedVersionOnServer!.Value)
-        {
-            var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key!, Stream.AggregateType,
-                Stream.ExpectedVersionOnServer.Value, actualVersion);
-            exceptions.Add(ex);
-        }
-    }
-
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false))

@@ -65,15 +65,14 @@ internal class DocumentFunctionOperationBuilder
 
     private void buildPostprocessingMethods(GeneratedType type)
     {
-        var sync = type.MethodFor(nameof(IStorageOperation.Postprocess));
+        // The sync IStorageOperation.Postprocess overload was removed in Marten 9
+        // per the dedup audit (#4351). Only PostprocessAsync is generated now.
         var async = type.MethodFor(nameof(IStorageOperation.PostprocessAsync));
 
         void applyVersionToDocument()
         {
             if (_mapping.Metadata.Version.Member != null)
             {
-                sync.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType,
-                    type);
                 async.Frames.SetMemberValue(_mapping.Metadata.Version.Member, "_version", _mapping.DocumentType,
                     type);
             }
@@ -83,8 +82,6 @@ internal class DocumentFunctionOperationBuilder
         {
             if (_mapping.Metadata.Revision.Member != null)
             {
-                sync.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
-                    type);
                 async.Frames.SetMemberValue(_mapping.Metadata.Revision.Member, "Revision", _mapping.DocumentType,
                     type);
             }
@@ -95,14 +92,10 @@ internal class DocumentFunctionOperationBuilder
             async.AsyncMode = AsyncMode.AsyncTask;
             async.Frames.CodeAsync("BLOCK:if (await postprocessConcurrencyAsync({0}, {1}, {2}))",
                 Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
-            sync.Frames.Code("BLOCK:if (postprocessConcurrency({0}, {1}))", Use.Type<DbDataReader>(),
-                Use.Type<IList<Exception>>());
-
 
             applyVersionToDocument();
 
             async.Frames.Code("END");
-            sync.Frames.Code("END");
 
             return;
         }
@@ -120,22 +113,15 @@ internal class DocumentFunctionOperationBuilder
                 async.AsyncMode = AsyncMode.AsyncTask;
                 async.Frames.CodeAsync("BLOCK:if (await postprocessRevisionAsync({0}, {1}, {2}))",
                     Use.Type<DbDataReader>(), Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
-                sync.Frames.Code("BLOCK:if (postprocessRevision({0}, {1}))", Use.Type<DbDataReader>(),
-                    Use.Type<IList<Exception>>());
-
 
                 applyRevisionToDocument();
 
                 async.Frames.Code("END");
-                sync.Frames.Code("END");
 
                 return;
             }
-
-
         }
 
-        sync.Frames.Code("storeVersion();");
         async.Frames.Code("storeVersion();");
         applyVersionToDocument();
 
@@ -144,8 +130,6 @@ internal class DocumentFunctionOperationBuilder
         {
             async.AsyncMode = AsyncMode.AsyncTask;
 
-            sync.Frames.Code("postprocessUpdate({0}, {1});", Use.Type<DbDataReader>(),
-                Use.Type<IList<Exception>>());
             async.Frames.CodeAsync("await postprocessUpdateAsync({0}, {1}, {2});", Use.Type<DbDataReader>(),
                 Use.Type<IList<Exception>>(), Use.Type<CancellationToken>());
         }

@@ -40,37 +40,6 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     }
 
     public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
-
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (reader.Read())
-        {
-            var values = reader.GetFieldValue<long[]>(0);
-
-            var finalVersion = values[0];
-            var events = Stream.Events;
-            for (int i = events.Count - 1; i >= 0; i--)
-            {
-                events[i].Version = finalVersion;
-                finalVersion--;
-            }
-
-            // Ignore the first value
-            for (int i = 1; i < values.Length; i++)
-            {
-                // Only setting the sequence to aid in tombstone processing
-                events[i - 1].Sequence = values[i];
-            }
-
-            if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
-            {
-                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
-                    ? Stream.Id
-                    : Stream.Key);
-            }
-        }
-    }
-
     protected void writeId(IGroupedParameterBuilder builder)
     {
         var param = builder.AppendParameter(Stream.Id);

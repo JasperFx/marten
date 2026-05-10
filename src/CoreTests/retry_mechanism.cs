@@ -59,15 +59,6 @@ public class SometimesFailingOperation: IStorageOperation
     public int Usage { get; private set; } = 0;
 
     public Type DocumentType { get; }
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        Usage++;
-        if (Usage < 2)
-        {
-            throw new MartenCommandException(new NpgsqlCommand(), new Exception());
-        }
-    }
-
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         Usage++;

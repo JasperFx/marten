@@ -51,12 +51,6 @@ internal class ExecuteSqlStorageOperation: IStorageOperation, NoDataReturnedCall
     }
 
     public Type DocumentType => typeof(StorageFeatures);
-
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        // nothing
-    }
-
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         return Task.CompletedTask;

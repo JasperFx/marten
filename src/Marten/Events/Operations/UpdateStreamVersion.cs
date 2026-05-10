@@ -25,22 +25,16 @@ public abstract class UpdateStreamVersion: IStorageOperation
     public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
     public Type DocumentType => typeof(IEvent);
-
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (reader.RecordsAffected != 0)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key ?? (object)Stream.Id, Stream.AggregateType,
             Stream.ExpectedVersionOnServer.Value, -1);
         exceptions.Add(ex);
-    }
-
-    public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-    {
-        Postprocess(reader, exceptions);
 
         return Task.CompletedTask;
     }
