@@ -8,6 +8,7 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
+using Marten.Linq.Selectors;
 using Marten.Services;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
@@ -159,7 +160,7 @@ internal sealed class EventLoader: IEventLoader
             {
                 try
                 {
-                    var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
+                    var @event = await ((ISelector<IEvent>)_storage).ResolveAsync(reader, token).ConfigureAwait(false);
 
                     if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
                     {
@@ -296,7 +297,7 @@ internal sealed class EventLoader: IEventLoader
                 {
                     try
                     {
-                        var @event = await _storage.ResolveAsync(reader, token).ConfigureAwait(false);
+                        var @event = await ((ISelector<IEvent>)_storage).ResolveAsync(reader, token).ConfigureAwait(false);
 
                         if (!await reader.IsDBNullAsync(_aggregateIndex, token).ConfigureAwait(false))
                         {

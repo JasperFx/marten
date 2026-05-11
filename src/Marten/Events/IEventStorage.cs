@@ -11,8 +11,18 @@ namespace Marten.Events;
 ///     The implementation of this class is generated at runtime based on the configuration
 ///     of the system
 /// </summary>
-public interface IEventStorage: ISelector<IEvent>, IDocumentStorage<IEvent>
+public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocumentStorage<IEvent>
 {
+    /// <summary>
+    ///     The shared SELECT clause used to read <see cref="StreamState"/> rows from
+    ///     <c>mt_streams</c>. The column order is locked to the order
+    ///     <see cref="ISelector{StreamState}"/> reads from the <see cref="System.Data.Common.DbDataReader"/>.
+    ///     Callers append a <c>WHERE</c> / <c>ORDER BY</c> / <c>LIMIT</c> clause for their own query
+    ///     and pass the resulting reader rows back through <see cref="ISelector{T}.Resolve"/> /
+    ///     <see cref="ISelector{T}.ResolveAsync"/>.
+    /// </summary>
+    string StreamStateSelectSql { get; }
+
     /// <summary>
     ///     Create a storage operation to append a single event
     /// </summary>
