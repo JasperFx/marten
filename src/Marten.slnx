@@ -10,16 +10,8 @@
     <Project Path="Marten.AspNetCore/Marten.AspNetCore.csproj" />
   </Folder>
   <Folder Name="/Attached/">
-    <Project Path="../../jasperfx/src/EventTests/EventTests.csproj" />
     <Project Path="../../jasperfx/src/JasperFx.Events.SourceGenerator/JasperFx.Events.SourceGenerator.csproj" />
-    <Project Path="../../jasperfx/src/JasperFx.Events/JasperFx.Events.csproj" />
-    <Project Path="../../jasperfx/src/JasperFx.RuntimeCompiler/JasperFx.RuntimeCompiler.csproj" />
     <Project Path="../../jasperfx/src/JasperFx.SourceGeneration/JasperFx.SourceGeneration.csproj" />
-    <Project Path="../../jasperfx/src/JasperFx/JasperFx.csproj" />
-    <Project Path="../../lamar/src/Lamar.Microsoft.DependencyInjection/Lamar.Microsoft.DependencyInjection.csproj" />
-    <Project Path="../../lamar/src/Lamar/Lamar.csproj" />
-    <Project Path="../../weasel/src/Weasel.Core/Weasel.Core.csproj" />
-    <Project Path="../../weasel/src/Weasel.Postgresql/Weasel.Postgresql.csproj" />
   </Folder>
   <Folder Name="/CommandLine/">
     <Project Path="CommandLineRunner/CommandLineRunner.csproj" />
