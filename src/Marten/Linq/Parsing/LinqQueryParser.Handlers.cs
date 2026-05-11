@@ -31,9 +31,21 @@ internal partial class LinqQueryParser
                                          typeof(TResult).FullNameInCode());
         }
 
-        var nullableSelector = Activator.CreateInstance(typeof(NullableSelector<>).MakeGenericType(typeof(TDocument)), selector);
-        var handlerType = typeof(ListQueryHandler<>).MakeGenericType(itemType!);
-        return (IQueryHandler<TResult>)Activator.CreateInstance(handlerType, statement, nullableSelector)!;
+        // 9.0 (#4308): replace per-call MakeGenericType + Activator.CreateInstance
+        // on the LINQ hot path with delegate-cached factories via
+        // JasperFx.Core.Reflection.GenericFactoryCache.
+        var nullableSelector = GenericFactoryCache.BuildAs<object>(
+            typeof(NullableSelector<>),
+            typeof(TDocument),
+            selector,
+            static closed => arg => Activator.CreateInstance(closed, arg)!);
+
+        return (IQueryHandler<TResult>)GenericFactoryCache.BuildAs<object>(
+            typeof(ListQueryHandler<>),
+            itemType!,
+            statement,
+            nullableSelector,
+            static closed => (a, b) => Activator.CreateInstance(closed, a, b)!);
     }
 
     private static Type? TryGetEnumerableElementType(Type t)

@@ -31,13 +31,23 @@ public partial class CollectionUsage
             var receiver = expression.Arguments[startingIndex + 1].Value();
 
             var genericArguments = receiver.GetType().GetGenericArguments();
+            // 9.0 (#4308): replace per-call MakeGenericType + Activator.CreateInstance
+            // with delegate-cached factories via GenericFactoryCache. The first call
+            // for a given (open type, type args) pair builds + caches an
+            // Activator-backed factory; subsequent calls reuse the cached delegate
+            // and skip the MakeGenericType cost.
             if (receiver.GetType().Closes(typeof(IList<>)))
             {
                 var includedType = genericArguments[0];
                 var storage = session.StorageFor(includedType);
 
-                var type = typeof(ListIncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
+                var plan = (IIncludePlan)GenericFactoryCache.BuildAs<object>(
+                    typeof(ListIncludePlan<>),
+                    includedType,
+                    storage,
+                    member,
+                    receiver,
+                    static closed => (a, b, c) => Activator.CreateInstance(closed, a, b, c)!);
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -51,8 +61,13 @@ public partial class CollectionUsage
                 var includedType = genericArguments[0];
                 var storage = session.StorageFor(includedType);
 
-                var type = typeof(IncludePlan<>).MakeGenericType(includedType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
+                var plan = (IIncludePlan)GenericFactoryCache.BuildAs<object>(
+                    typeof(IncludePlan<>),
+                    includedType,
+                    storage,
+                    member,
+                    receiver,
+                    static closed => (a, b, c) => Activator.CreateInstance(closed, a, b, c)!);
 
                 if (expression.Arguments.Count == 3)
                 {
@@ -67,8 +82,14 @@ public partial class CollectionUsage
                 var includedType = genericArguments[1];
                 var storage = session.StorageFor(includedType);
 
-                var type = typeof(DictionaryIncludePlan<,>).MakeGenericType(includedType, idType);
-                var plan = (IIncludePlan)Activator.CreateInstance(type, storage, member, receiver)!;
+                var plan = (IIncludePlan)GenericFactoryCache.BuildAs<object>(
+                    typeof(DictionaryIncludePlan<,>),
+                    includedType,
+                    idType,
+                    storage,
+                    member,
+                    receiver,
+                    static closed => (a, b, c) => Activator.CreateInstance(closed, a, b, c)!);
 
                 if (expression.Arguments.Count == 3)
                 {

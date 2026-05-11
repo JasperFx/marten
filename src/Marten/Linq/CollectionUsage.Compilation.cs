@@ -323,16 +323,23 @@ public partial class CollectionUsage
             groupJoin.FlattenedResultSelector);
 
         // 5. Create the JoinSelectClause and final SelectorStatement
+        // 9.0 (#4308): use GenericFactoryCache's object[] overload — the
+        // 6-arg ctor doesn't fit the fixed-arity overloads, so we pay an
+        // array allocation per call in exchange for skipping MakeGenericType.
         var resultType = groupJoin.FlattenedResultSelector.ReturnType;
-        var closedJoinSelectType = typeof(JoinSelectClause<>).MakeGenericType(resultType);
-        var joinSelectClause = (ISelectClause)Activator.CreateInstance(
-            closedJoinSelectType,
-            joinParser.NewObject,
-            outerCteAlias,
-            innerCteAlias,
-            groupJoin.IsLeftJoin,
-            outerKeyLocator,
-            innerKeyLocator)!;
+        var joinSelectClause = (ISelectClause)GenericFactoryCache.BuildAs<object>(
+            typeof(JoinSelectClause<>),
+            resultType,
+            new object[]
+            {
+                joinParser.NewObject,
+                outerCteAlias,
+                innerCteAlias,
+                groupJoin.IsLeftJoin,
+                outerKeyLocator,
+                innerKeyLocator
+            },
+            static closed => args => Activator.CreateInstance(closed, args)!);
 
         var joinStatement = new SelectorStatement
         {
