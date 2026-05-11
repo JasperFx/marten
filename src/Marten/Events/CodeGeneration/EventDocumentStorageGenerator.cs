@@ -184,52 +184,11 @@ internal static class EventDocumentStorageGenerator
 
         buildConfigureCommandMethodForStreamState(graph, streamQueryHandlerType);
 
-        var sync = streamQueryHandlerType.MethodFor("Resolve");
-        var async = streamQueryHandlerType.MethodFor("ResolveAsync");
-
-
-        sync.Frames.Add(new ConstructorFrame<StreamState>(() => new StreamState()));
-        async.Frames.Add(new ConstructorFrame<StreamState>(() => new StreamState()));
-
-        if (graph.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 0, x => x.Id);
-            async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 0, x => x.Id);
-        }
-        else
-        {
-            sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 0, x => x.Key);
-            async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 0, x => x.Key);
-        }
-
-        sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 1, x => x.Version);
-        async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 1, x => x.Version);
-
-        sync.Frames.Call<StreamStateQueryHandler>(x => x.SetAggregateType(null, null, null), call =>
-        {
-            call.IsLocal = true;
-        });
-
-#pragma warning disable 4014
-        async.Frames.Call<StreamStateQueryHandler>(
-            x => x.SetAggregateTypeAsync(null, null, null, CancellationToken.None), call =>
-#pragma warning restore 4014
-            {
-                call.IsLocal = true;
-            });
-
-        sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 3, x => x.LastTimestamp);
-        async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 3, x => x.LastTimestamp);
-
-        sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 4, x => x.Created);
-        async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 4, x => x.Created);
-
-        sync.AssignMemberFromReader<StreamState>(streamQueryHandlerType, 5, x => x.IsArchived);
-        async.AssignMemberFromReaderAsync<StreamState>(streamQueryHandlerType, 5, x => x.IsArchived);
-
-        sync.Frames.Return(typeof(StreamState));
-        async.Frames.Return(typeof(StreamState));
-
+        // Row reading is no longer codegen'd here. The base StreamStateQueryHandler
+        // delegates Handle / HandleAsync to ISelector<StreamState> on IEventStorage,
+        // so the SELECT clause and the row read share a single definition site
+        // (EventDocumentStorage.StreamStateSelectSql + the explicit interface
+        // implementation alongside it). See JasperFx/marten#4347.
         return streamQueryHandlerType;
     }
 
@@ -242,10 +201,12 @@ internal static class EventDocumentStorageGenerator
         }
 
         var configureCommand = streamQueryHandlerType.MethodFor("ConfigureCommand");
-        var sql =
-            $"select id, version, type, timestamp, created as timestamp, is_archived from {graph.DatabaseSchemaName}.mt_streams where id = ";
 
-        configureCommand.Frames.AppendSql(sql);
+        // Pull the SELECT clause from the storage so the codegen and any other
+        // consumer (e.g. the IEventStore explorer surface) share one definition of
+        // "the column list that matches ISelector<StreamState>.Resolve".
+        var selectSql = BuildStreamStateSelectSql(graph);
+        configureCommand.Frames.AppendSql(selectSql + " where id = ");
 
         var idDbType = graph.StreamIdentity == StreamIdentity.AsGuid ? DbType.Guid : DbType.String;
         configureCommand.Frames.Code($"var parameter1 = builder.{nameof(CommandBuilder.AppendParameter)}(_streamId);");
@@ -258,6 +219,15 @@ internal static class EventDocumentStorageGenerator
             configureCommand.Frames.Code("parameter2.DbType = {0};", DbType.String);
         }
     }
+
+    /// <summary>
+    ///     Single source of truth for the StreamState SELECT clause. Kept as a static
+    ///     helper alongside the codegen because the column ordering is coupled to
+    ///     <see cref="EventDocumentStorage"/>'s <see cref="ISelector{StreamState}"/>
+    ///     implementation — they must be edited together.
+    /// </summary>
+    internal static string BuildStreamStateSelectSql(EventGraph graph) =>
+        $"select id, version, type, timestamp, created, is_archived from {graph.DatabaseSchemaName}.mt_streams";
 
     private static GeneratedType buildAppendEventOperation(EventGraph graph, GeneratedAssembly assembly,
         AppendMode mode)

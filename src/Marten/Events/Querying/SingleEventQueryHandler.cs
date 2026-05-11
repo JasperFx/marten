@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
+using Marten.Linq.Selectors;
 using Weasel.Postgresql;
 
 namespace Marten.Events.Querying;
@@ -31,14 +32,14 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
 
     public IEvent Handle(DbDataReader reader, IMartenSession session)
     {
-        return reader.Read() ? _selector.Resolve(reader) : null;
+        return reader.Read() ? ((ISelector<IEvent>)_selector).Resolve(reader) : null;
     }
 
     public async Task<IEvent> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {
         return await reader.ReadAsync(token).ConfigureAwait(false)
-            ? await _selector.ResolveAsync(reader, token).ConfigureAwait(false)
+            ? await ((ISelector<IEvent>)_selector).ResolveAsync(reader, token).ConfigureAwait(false)
             : null;
     }
 

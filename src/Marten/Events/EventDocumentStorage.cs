@@ -229,6 +229,68 @@ public abstract class EventDocumentStorage: IEventStorage
     public abstract IStorageOperation InsertStream(StreamAction stream);
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
+
+    public string StreamStateSelectSql => CodeGeneration.EventDocumentStorageGenerator.BuildStreamStateSelectSql(Events);
+
+    StreamState ISelector<StreamState>.Resolve(DbDataReader reader)
+    {
+        var state = new StreamState();
+        if (Events.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            state.Id = reader.GetFieldValue<Guid>(0);
+        }
+        else
+        {
+            state.Key = reader.GetFieldValue<string>(0);
+        }
+
+        state.Version = reader.GetFieldValue<long>(1);
+
+        if (!reader.IsDBNull(2))
+        {
+            var typeName = reader.GetFieldValue<string>(2);
+            if (typeName.IsNotEmpty())
+            {
+                state.AggregateType = Events.AggregateTypeFor(typeName);
+            }
+        }
+
+        state.LastTimestamp = reader.GetFieldValue<DateTimeOffset>(3);
+        state.Created = reader.GetFieldValue<DateTimeOffset>(4);
+        state.IsArchived = reader.GetFieldValue<bool>(5);
+
+        return state;
+    }
+
+    async Task<StreamState> ISelector<StreamState>.ResolveAsync(DbDataReader reader, CancellationToken token)
+    {
+        var state = new StreamState();
+        if (Events.StreamIdentity == StreamIdentity.AsGuid)
+        {
+            state.Id = await reader.GetFieldValueAsync<Guid>(0, token).ConfigureAwait(false);
+        }
+        else
+        {
+            state.Key = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+        }
+
+        state.Version = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+
+        if (!await reader.IsDBNullAsync(2, token).ConfigureAwait(false))
+        {
+            var typeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
+            if (typeName.IsNotEmpty())
+            {
+                state.AggregateType = Events.AggregateTypeFor(typeName);
+            }
+        }
+
+        state.LastTimestamp = await reader.GetFieldValueAsync<DateTimeOffset>(3, token).ConfigureAwait(false);
+        state.Created = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
+        state.IsArchived = await reader.GetFieldValueAsync<bool>(5, token).ConfigureAwait(false);
+
+        return state;
+    }
     public IStorageOperation IncrementStreamVersion(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
