@@ -61,6 +61,28 @@ internal static class StaticOnlyCodeFileLoader
             // pre-9.0 behavior under Dynamic mode without requiring every
             // consuming app to do a manual DI registration.
             var effectiveServices = services ?? RuntimeCompilerFallback.Instance;
+
+            // 9.0: under `dotnet run -- codegen write/test/preview`, the user is
+            // generating the pre-built code so their TypeLoadMode=Static
+            // preference (which applies to runtime loading, not to the act of
+            // generation) must not be honoured here. JasperFx 2.0's
+            // StaticTypeLoader silently no-ops when WithinCodegenCommand is true,
+            // assuming the codegen command will write all needed files itself.
+            // That assumption breaks for *transitive* document storage needs:
+            // compiled-query plan building (CompiledQueryCollection.BuildFiles)
+            // calls session.StorageFor<T>() for a TARGET that isn't necessarily
+            // a registered document of this store, which lands in
+            // ProviderGraph.CreateDocumentProvider<T>() -> BuildProvider<T>()
+            // and that path needs _providerType set NOW, not later. Route the
+            // call through an AutoTypeLoader explicitly so we get the
+            // try-pre-built-then-compile-on-miss behaviour during codegen.
+            // See JasperFx/marten#4360.
+            if (DynamicCodeBuilder.WithinCodegenCommand && rules.Loader is StaticTypeLoader)
+            {
+                new AutoTypeLoader().Initialize(file, rules, parent, effectiveServices);
+                return;
+            }
+
             file.InitializeSynchronously(rules, parent, effectiveServices);
             return;
         }
