@@ -9,10 +9,6 @@
     <Project Path="Marten.AspNetCore.Testing/Marten.AspNetCore.Testing.csproj" />
     <Project Path="Marten.AspNetCore/Marten.AspNetCore.csproj" />
   </Folder>
-  <Folder Name="/Attached/">
-    <Project Path="../../jasperfx/src/JasperFx.Events.SourceGenerator/JasperFx.Events.SourceGenerator.csproj" />
-    <Project Path="../../jasperfx/src/JasperFx.SourceGeneration/JasperFx.SourceGeneration.csproj" />
-  </Folder>
   <Folder Name="/CommandLine/">
     <Project Path="CommandLineRunner/CommandLineRunner.csproj" />
     <Project Path="EventPublisher/EventPublisher.csproj" />
