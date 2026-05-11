@@ -45,9 +45,9 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override Marten.Internal.Operations.OperationRole Role()
+        public override Weasel.Core.OperationRole Role()
         {
-            return Marten.Internal.Operations.OperationRole.Upsert;
+            return Weasel.Core.OperationRole.Upsert;
         }
 
 
@@ -119,9 +119,9 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override Marten.Internal.Operations.OperationRole Role()
+        public override Weasel.Core.OperationRole Role()
         {
-            return Marten.Internal.Operations.OperationRole.Insert;
+            return Weasel.Core.OperationRole.Insert;
         }
 
 
@@ -193,9 +193,9 @@ namespace Marten.Generated.DocumentStorage
         }
 
 
-        public override Marten.Internal.Operations.OperationRole Role()
+        public override Weasel.Core.OperationRole Role()
         {
-            return Marten.Internal.Operations.OperationRole.Update;
+            return Weasel.Core.OperationRole.Update;
         }
 
 
