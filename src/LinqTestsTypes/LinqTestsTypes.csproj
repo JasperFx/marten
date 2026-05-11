@@ -14,9 +14,6 @@
 
     <ItemGroup>
       <PackageReference Include="FSharp.Core" />
-      <!-- Attached: use the in-tree JasperFx so LinqTestsTypes (and the
-           LinqTests / FSharpTypes projects that depend on it) load the
-           same JasperFx.dll as Marten.csproj does after `nuke attach`. -->
-      <ProjectReference Include="..\..\..\jasperfx\src\JasperFx\JasperFx.csproj" />
+      <PackageReference Include="JasperFx" />
     </ItemGroup>
 </Project>
