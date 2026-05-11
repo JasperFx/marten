@@ -49,6 +49,15 @@ public partial class DocumentStore : IDocumentStoreUsageSource
         // Per-document-type mappings — Documents collection. Skip mappings that
         // don't emit schema (structural-typed, internal-only) so the snapshot
         // matches what an operator would see in the database.
+        //
+        // 9.0: BuildAllMappings forces materialization of every registered type
+        // builder into a concrete DocumentMapping. After #4303 made mapping
+        // materialization lazy (built on first MappingFor(type) call rather
+        // than eagerly during ApplyConfiguration), DocumentMappingsWithSchema
+        // would otherwise enumerate an empty set when called pre-session.
+        // The descriptor snapshot is exactly that "pre-session" caller.
+        Options.Storage.BuildAllMappings();
+
         foreach (var mapping in Options.Storage.DocumentMappingsWithSchema.OrderBy(x => x.Alias))
         {
             usage.Documents.Add(BuildMappingDescriptor(mapping));
