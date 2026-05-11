@@ -30,6 +30,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Postgresql.Connections;
 using IsolationLevel = System.Data.IsolationLevel;
+using Weasel.Core;
 
 namespace Marten;
 

@@ -5,6 +5,7 @@ using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Weasel.Core;
 
 namespace DocumentDbTests.Bugs;
 

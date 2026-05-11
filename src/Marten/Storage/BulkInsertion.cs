@@ -9,6 +9,7 @@ using Marten.Internal.Sessions.Rls;
 using Marten.Schema.BulkLoading;
 using Npgsql;
 using Weasel.Postgresql;
+using Weasel.Core;
 
 namespace Marten.Storage;
 
