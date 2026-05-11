@@ -13,7 +13,7 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FSharp.Core" Version="9.0.100" />
     <PackageVersion Include="FSharp.SystemTextJson" Version="1.3.13" />
-    <PackageVersion Include="JasperFx" Version="2.0.0-alpha.3" />
+    <PackageVersion Include="JasperFx" Version="2.0.0-alpha.4" />
     <PackageVersion Include="JasperFx.Events" Version="2.0.0-alpha.2" />
     <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.0.0-alpha.1">
       <PrivateAssets>all</PrivateAssets>
