@@ -3,19 +3,12 @@ using JasperFx.Events.Projections;
 
 namespace Marten.Events.Projections;
 
-public enum SnapshotLifecycle
-{
-    /// <summary>
-    ///     The snapshot will be updated in the same transaction as
-    ///     the events being captured
-    /// </summary>
-    Inline,
-
-    /// <summary>
-    ///     The snapshot will be made asynchronously within the Async Daemon
-    /// </summary>
-    Async
-}
+// SnapshotLifecycle consolidated to JasperFx.Events per the dedup audit
+// (jasperfx#220 / pillar #214). Marten previously declared its own
+// byte-identical copy; it now aliases via GlobalUsings to keep call
+// sites unchanged. The Map() extension methods below stay product-local
+// since they're projection-registration concerns, not shared event-
+// sourcing concepts.
 
 public static class SnapshotLifecycleExtensions
 {
