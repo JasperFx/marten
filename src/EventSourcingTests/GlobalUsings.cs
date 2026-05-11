@@ -1,2 +1,3 @@
 global using IStorageOperation = Marten.Internal.Operations.IStorageOperation;
-global using OperationRole = Marten.Internal.Operations.OperationRole;
+// OperationRole consolidated to Weasel.Core per the dedup audit (#4350 / pillar #214).
+global using OperationRole = Weasel.Core.OperationRole;

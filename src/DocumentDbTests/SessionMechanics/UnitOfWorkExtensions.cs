@@ -4,6 +4,8 @@ using Marten.Internal.Operations;
 using Marten.Linq.SqlGeneration;
 using Marten.Testing.Documents;
 using Shouldly;
+// OperationRole moved to Weasel.Core per the dedup audit (#4350 / pillar #214).
+using OperationRole = Weasel.Core.OperationRole;
 
 namespace DocumentDbTests.SessionMechanics;
 
