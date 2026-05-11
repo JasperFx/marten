@@ -46,4 +46,13 @@ public class building_events_and_streams_table_based_on_partitioning
 
         table.PrimaryKeyColumns.ShouldContain(IsArchivedColumn.ColumnName);
     }
+
+    [Fact]
+    public void streams_table_does_not_include_legacy_snapshot_columns()
+    {
+        var table = new StreamsTable(theGraph);
+
+        table.Columns.Any(x => x.Name == "snapshot").ShouldBeFalse();
+        table.Columns.Any(x => x.Name == "snapshot_version").ShouldBeFalse();
+    }
 }
