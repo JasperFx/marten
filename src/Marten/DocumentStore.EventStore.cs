@@ -391,6 +391,25 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 TableSuffix = registration.TableSuffix,
                 AggregateType = registration.AggregateType?.FullName,
             });
+
+            // Richer descriptor used by the event store explorer's tag-list view —
+            // carries the strong TypeDescriptor and an operator-facing description
+            // (currently null until Marten exposes a description on the registration).
+            usage.DcbTagTypes.Add(new DcbTagDescriptor(
+                registration.TagType.Name,
+                registration.SimpleType.FullName ?? registration.SimpleType.Name,
+                TypeDescriptor.For(registration.TagType),
+                Description: null));
+        }
+
+        // Configured event-type registrations — surface every event alias the store
+        // knows about so the explorer can render the registered event surface.
+        foreach (var eventMapping in Options.EventGraph.AllEvents())
+        {
+            usage.RegisteredEventTypes.Add(new EventTypeDescriptor(
+                TypeDescriptor.For(eventMapping.DocumentType),
+                eventMapping.EventTypeName,
+                Description: null));
         }
 
         // Aggregates that live outside the multi-tenant boundary in tenanted
