@@ -34,8 +34,8 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         var storage = (EventDocumentStorage)((DocumentSessionBase)session).EventStorage();
         var selectFields = storage.SelectFields();
         var conditions = _query.Conditions;
-        var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
         var schema = _store.Events.DatabaseSchemaName;
+        var isHStore = _store.Events.DcbStorageMode == DcbStorageMode.HStore;
 
         builder.Append("select ");
         for (var f = 0; f < selectFields.Length; f++)
@@ -49,51 +49,60 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         builder.Append(schema);
         builder.Append(".mt_events e");
 
-        for (var i = 0; i < distinctTagTypes.Count; i++)
+        if (!isHStore)
         {
-            var tagType = distinctTagTypes[i];
-            var registration = _store.Events.FindTagType(tagType)
-                               ?? throw new InvalidOperationException(
-                                   $"Tag type '{tagType.Name}' is not registered.");
-
-            builder.Append(" left join ");
-            builder.Append(schema);
-            builder.Append(".mt_event_tag_");
-            builder.Append(registration.TableSuffix);
-            builder.Append(" t");
-            builder.Append(i.ToString());
-            builder.Append(" on e.seq_id = t");
-            builder.Append(i.ToString());
-            builder.Append(".seq_id");
-        }
-
-        builder.Append(" where (");
-        for (var i = 0; i < conditions.Count; i++)
-        {
-            if (i > 0) builder.Append(" or ");
-
-            var condition = conditions[i];
-            var tagIndex = distinctTagTypes.IndexOf(condition.TagType);
-
-            builder.Append("(t");
-            builder.Append(tagIndex.ToString());
-            builder.Append(".value = ");
-
-            var registration = _store.Events.FindTagType(condition.TagType)!;
-            var value = registration.ExtractValue(condition.TagValue);
-            builder.AppendParameter(value);
-
-            if (condition.EventType != null)
+            var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
+            for (var i = 0; i < distinctTagTypes.Count; i++)
             {
-                builder.Append(" and e.type = ");
-                var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
-                builder.AppendParameter(eventTypeName);
+                var tagType = distinctTagTypes[i];
+                var registration = _store.Events.FindTagType(tagType)
+                                   ?? throw new InvalidOperationException(
+                                       $"Tag type '{tagType.Name}' is not registered.");
+
+                builder.Append(" left join ");
+                builder.Append(schema);
+                builder.Append(".mt_event_tag_");
+                builder.Append(registration.TableSuffix);
+                builder.Append(" t");
+                builder.Append(i.ToString());
+                builder.Append(" on e.seq_id = t");
+                builder.Append(i.ToString());
+                builder.Append(".seq_id");
+            }
+
+            builder.Append(" where (");
+            for (var i = 0; i < conditions.Count; i++)
+            {
+                if (i > 0) builder.Append(" or ");
+
+                var condition = conditions[i];
+                var tagIndex = distinctTagTypes.IndexOf(condition.TagType);
+
+                builder.Append("(t");
+                builder.Append(tagIndex.ToString());
+                builder.Append(".value = ");
+
+                var registration = _store.Events.FindTagType(condition.TagType)!;
+                var value = registration.ExtractValue(condition.TagValue);
+                builder.AppendParameter(value);
+
+                if (condition.EventType != null)
+                {
+                    builder.Append(" and e.type = ");
+                    var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
+                    builder.AppendParameter(eventTypeName);
+                }
+
+                builder.Append(")");
             }
 
             builder.Append(")");
         }
-
-        builder.Append(")");
+        else
+        {
+            builder.Append(" where ");
+            HStoreDcbQueryFragment.AppendOrPredicate(builder, _store.Events, conditions, "e");
+        }
 
         // Filter by tenant_id for conjoined tenancy
         if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)

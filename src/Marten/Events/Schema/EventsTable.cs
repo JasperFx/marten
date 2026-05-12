@@ -42,6 +42,18 @@ internal class EventsTable: Table
             AddColumn<bool>("is_skipped").DefaultValueByExpression("FALSE");
         }
 
+        // DCB HStore mode: tag key-value pairs live inline on the event row, and a
+        // single GIN index covers all tag types via the @> containment operator.
+        if (events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            AddColumn("tags", "hstore").AllowNulls();
+            Indexes.Add(new IndexDefinition("idx_mt_events_tags")
+            {
+                Method = IndexMethod.gin,
+                Columns = ["tags"]
+            });
+        }
+
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
             if (events.UseArchivedStreamPartitioning)

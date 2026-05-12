@@ -353,6 +353,62 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
 
+    private DcbStorageMode _dcbStorageMode = DcbStorageMode.TagTables;
+
+    /// <summary>
+    /// How Dynamic Consistency Boundary (DCB) tags are physically stored. Default is
+    /// <see cref="DcbStorageMode.TagTables"/> (one table per tag type, the Marten 8 behavior).
+    /// Set to <see cref="DcbStorageMode.HStore"/> to store all tags inline on
+    /// <c>mt_events.tags</c> using Postgres' <c>hstore</c> extension and avoid LEFT JOINs
+    /// on every DCB query.
+    /// </summary>
+    public DcbStorageMode DcbStorageMode
+    {
+        get => _dcbStorageMode;
+        set
+        {
+            if (_dcbStorageMode == value) return;
+            _dcbStorageMode = value;
+
+            // When switching to HStore, ensure the `hstore` extension is installed AND
+            // the Npgsql data source's type catalog is reloaded BEFORE the first user
+            // command runs. Npgsql 9 loads its type catalog the first time a physical
+            // connection opens; if that happens before `CREATE EXTENSION hstore` runs,
+            // the data source never learns about the hstore type and parameter binding
+            // for `NpgsqlDbType.Hstore` fails with "isn't present in your database".
+            //
+            // The physical-connection initializer fires on every newly-opened physical
+            // connection, but we only need the extension-create + type-reload once per
+            // data source. The captured `Interlocked.CompareExchange` flag ensures the
+            // bootstrap runs exactly once; subsequent physical connections from the
+            // same pool no-op the initializer.
+            if (value == DcbStorageMode.HStore)
+            {
+                Options.ConfigureNpgsqlDataSourceBuilder(builder =>
+                {
+                    var bootstrapped = 0;
+                    builder.UsePhysicalConnectionInitializer(
+                        connection =>
+                        {
+                            if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
+                            using var cmd = connection.CreateCommand();
+                            cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            cmd.ExecuteNonQuery();
+                            connection.ReloadTypes();
+                        },
+                        async connection =>
+                        {
+                            if (Interlocked.CompareExchange(ref bootstrapped, 1, 0) != 0) return;
+                            await using var cmd = connection.CreateCommand();
+                            cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS hstore;";
+                            await cmd.ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+                            await connection.ReloadTypesAsync(CancellationToken.None).ConfigureAwait(false);
+                        });
+                });
+            }
+        }
+    }
+
     /// <summary>
     /// Find a tag type registration by type, or null if not registered.
     /// </summary>

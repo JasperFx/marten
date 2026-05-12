@@ -116,10 +116,10 @@ internal partial class EventStore
             throw new ArgumentException("EventTagQuery must have at least one condition.");
         }
 
-        var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
         var schema = _store.Events.DatabaseSchemaName;
         var paramValues = new List<object>();
         var sb = new StringBuilder();
+        var isHStore = _store.Events.DcbStorageMode == DcbStorageMode.HStore;
 
         // SELECT with explicit columns matching EventDocumentStorage expectations
         sb.Append("select ");
@@ -134,57 +134,71 @@ internal partial class EventStore
         sb.Append(schema);
         sb.Append(".mt_events e");
 
-        // LEFT JOINs to tag tables — an event may only have tags in some of the
-        // tag tables, so inner joins would incorrectly filter out events that
-        // don't appear in every tag type table.
-        for (var i = 0; i < distinctTagTypes.Count; i++)
+        List<Type>? distinctTagTypes = null;
+        if (!isHStore)
         {
-            var tagType = distinctTagTypes[i];
-            var registration = _store.Events.FindTagType(tagType)
-                               ?? throw new InvalidOperationException(
-                                   $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
+            distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
 
-            sb.Append(" left join ");
-            sb.Append(schema);
-            sb.Append(".mt_event_tag_");
-            sb.Append(registration.TableSuffix);
-            sb.Append(" t");
-            sb.Append(i);
-            sb.Append(" on e.seq_id = t");
-            sb.Append(i);
-            sb.Append(".seq_id");
+            // LEFT JOINs to tag tables — an event may only have tags in some of the
+            // tag tables, so inner joins would incorrectly filter out events that
+            // don't appear in every tag type table.
+            for (var i = 0; i < distinctTagTypes.Count; i++)
+            {
+                var tagType = distinctTagTypes[i];
+                var registration = _store.Events.FindTagType(tagType)
+                                   ?? throw new InvalidOperationException(
+                                       $"Tag type '{tagType.Name}' is not registered. Call RegisterTagType<{tagType.Name}>() first.");
+
+                sb.Append(" left join ");
+                sb.Append(schema);
+                sb.Append(".mt_event_tag_");
+                sb.Append(registration.TableSuffix);
+                sb.Append(" t");
+                sb.Append(i);
+                sb.Append(" on e.seq_id = t");
+                sb.Append(i);
+                sb.Append(".seq_id");
+            }
         }
 
         // WHERE clause with OR conditions
-        sb.Append(" where (");
-        for (var i = 0; i < conditions.Count; i++)
+        sb.Append(" where ");
+        if (isHStore)
         {
-            if (i > 0) sb.Append(" or ");
-
-            var condition = conditions[i];
-            var tagIndex = distinctTagTypes.IndexOf(condition.TagType);
-
-            sb.Append("(t");
-            sb.Append(tagIndex);
-            sb.Append(".value = @p");
-            sb.Append(paramValues.Count);
-
-            var registration = _store.Events.FindTagType(condition.TagType)!;
-            var value = registration.ExtractValue(condition.TagValue);
-            paramValues.Add(value);
-
-            if (condition.EventType != null)
+            HStoreDcbQueryFragment.AppendOrPredicate(sb, _store.Events, conditions, "e", paramValues);
+        }
+        else
+        {
+            sb.Append('(');
+            for (var i = 0; i < conditions.Count; i++)
             {
-                sb.Append(" and e.type = @p");
+                if (i > 0) sb.Append(" or ");
+
+                var condition = conditions[i];
+                var tagIndex = distinctTagTypes!.IndexOf(condition.TagType);
+
+                sb.Append("(t");
+                sb.Append(tagIndex);
+                sb.Append(".value = @p");
                 sb.Append(paramValues.Count);
-                var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
-                paramValues.Add(eventTypeName);
+
+                var registration = _store.Events.FindTagType(condition.TagType)!;
+                var value = registration.ExtractValue(condition.TagValue);
+                paramValues.Add(value);
+
+                if (condition.EventType != null)
+                {
+                    sb.Append(" and e.type = @p");
+                    sb.Append(paramValues.Count);
+                    var eventTypeName = _store.Events.EventMappingFor(condition.EventType).EventTypeName;
+                    paramValues.Add(eventTypeName);
+                }
+
+                sb.Append(')');
             }
 
             sb.Append(')');
         }
-
-        sb.Append(')');
 
         // Filter by tenant_id for conjoined tenancy
         if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)

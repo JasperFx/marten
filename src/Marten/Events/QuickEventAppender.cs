@@ -78,11 +78,19 @@ internal class QuickEventAppender: IEventAppender
                 }
                 else
                 {
-                    // Tags are handled inside the PostgreSQL function via array parameters
+                    // Tags in TagTables mode are handled inside the PostgreSQL function via
+                    // array parameters. In HStore mode the function signature is trimmed
+                    // (no per-tag varchar[] params), so tags are written via a follow-up
+                    // UPDATE keyed on the event's id after the bulk insert completes.
                     stream.PrepareEvents(0, eventGraph, sequences, session);
                     var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
                     quickAppendEvents.Events = eventGraph;
                     session.QueueOperation(quickAppendEvents);
+
+                    if (eventGraph.DcbStorageMode == DcbStorageMode.HStore)
+                    {
+                        EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
+                    }
                 }
             }
         }

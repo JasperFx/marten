@@ -280,9 +280,15 @@ This is useful for guard clauses and validation logic in DCB workflows where you
 
 ## How It Works
 
-### Storage
+### Storage Modes
 
-Each registered tag type creates a PostgreSQL table:
+DCB tags can be stored two different ways, controlled by `opts.Events.DcbStorageMode`. The default is `DcbStorageMode.TagTables` — the behavior shipped in Marten 8. Marten 9.0 adds `DcbStorageMode.HStore` as an opt-in alternative that stores all tags inline on the event row using PostgreSQL's [hstore](https://www.postgresql.org/docs/current/hstore.html) key-value type.
+
+The mode is chosen **per database at creation time**. There is no in-place migration between modes — pick one before populating an event store and stick with it.
+
+#### `DcbStorageMode.TagTables` (default)
+
+Each registered tag type creates its own PostgreSQL table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS mt_event_tag_student (
@@ -294,9 +300,71 @@ CREATE TABLE IF NOT EXISTS mt_event_tag_student (
 );
 ```
 
+DCB queries `LEFT JOIN` across each referenced tag table. Strengths: native column types preserve `Guid`/`int`/`string`/`long`/`short` semantics, and single-tag `EventsExistAsync` checks hit a small dedicated table via its primary-key index. Trade-offs: every distinct tag type adds a table, two indexes, and a foreign key; queries spanning N tag types pay N JOINs.
+
+#### `DcbStorageMode.HStore` (opt-in)
+
+Tags are stored inline on a new `mt_events.tags hstore` column, covered by a single GIN index that handles every registered tag type. The `hstore` extension is registered automatically as part of schema creation:
+
+```csharp
+opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+```
+
+The resulting schema adds one column and one index instead of N per-type tables:
+
+```sql
+-- Single column on mt_events; tag-type suffix is the hstore key, value is text
+ALTER TABLE mt_events ADD COLUMN tags hstore;
+CREATE INDEX idx_mt_events_tags ON mt_events USING gin (tags);
+
+-- Auto-registered as part of schema-create:
+-- CREATE EXTENSION IF NOT EXISTS hstore;
+```
+
+DCB queries become single-table containment lookups using Postgres' `@>` operator — no JOINs. The same GIN index serves every tag type and every query shape (1 tag, N tags OR'd, with or without an event-type filter).
+
+```sql
+-- Single tag: e.tags @> hstore('student', 'STU-001')
+-- Two tags OR: e.tags @> hstore('student', 'STU-001') OR e.tags @> hstore('course', 'CS-101')
+```
+
+Trade-offs:
+
+- All tag values are stored as text — Npgsql automatically converts `Dictionary<string, string>` to `hstore` via `NpgsqlDbType.Hstore`, and `Guid`/`int`/`long`/`short` are stringified at the database boundary. Tag-type **registration** (`RegisterTagType<StudentId>("student")`) and **usage** (`event.WithTag(new StudentId(...))`) are unchanged — only the on-disk representation is different.
+- The `hstore` extension must be installable on the target database. Most managed Postgres providers ship it; bare-metal installations may need `CREATE EXTENSION` privileges on first run.
+- The `mt_quick_append_events` Postgres function does not take per-tag-type arrays — Marten writes the inline hstore as a follow-up `UPDATE` after the event INSERT.
+- **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key. If you call `AssignTagWhere` twice on the same event with two different values of the *same* tag type, the second value overwrites the first. The TagTables layout permits multiple values of the same tag type per event (the underlying table PK is `(value, seq_id)`); HStore does not. Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
+
+### Choosing a Storage Mode
+
+The HStore mode trades native column types and small-table primary-key lookups for index-of-one and JOIN elimination. The right choice depends on your DCB query shape.
+
+A reproducible side-by-side benchmark lives at `src/DcbLoadTest` and can be re-run with `dotnet run --project src/DcbLoadTest -c Release` against any Marten dev Postgres. Numbers below were measured against PostgreSQL 15 with 10,000 seeded tagged events and 200 iterations per scenario after a warmup pass:
+
+| Scenario                              | TagTables (ms/op) | HStore (ms/op) | HStore vs TagTables |
+| ------------------------------------- | ----------------: | -------------: | ------------------- |
+| `append`, no tags                     |             0.157 |          0.155 | 1% faster           |
+| `append`, 2 tags/event                |             0.194 |          0.137 | **29% faster**      |
+| `QueryByTagsAsync`, 1 tag             |             0.622 |          0.601 | 3% faster           |
+| `QueryByTagsAsync`, 2 tags OR         |            12.880 |          0.989 | **92% faster**      |
+| `EventsExistAsync`, 1 tag             |             0.404 |          0.910 | 125% slower         |
+| `EventsExistAsync`, 2 tags OR         |             3.164 |          0.962 | **70% faster**      |
+| `FetchForWritingByTags + commit`      |             0.931 |          0.571 | **39% faster**      |
+
+Guidance:
+
+- **Prefer HStore** when your DCB queries match on **two or more tag types** (the common case — most projection boundaries combine an aggregate-id tag with one or more domain tags). The JOIN cost on TagTables grows with each additional tag type; HStore stays flat.
+- **Prefer HStore** when your hot path is `FetchForWritingByTags` (consistency-boundary read-modify-write). Round-trip drops roughly in half because both the read and the consistency-check `EXISTS` become single-table lookups.
+- **Stay on TagTables** if your DCB workload is dominated by **single-tag `EventsExistAsync` probes**. That case is what the per-type tables are optimized for — a primary-key lookup on a small dedicated table — and HStore's GIN containment is slightly slower per probe.
+- **Either mode is fine** for append throughput. With tags, HStore is about 30% faster than TagTables because it issues one `UPDATE` per tagged event instead of one `INSERT` per `(event, tag)` pair.
+
+If you're starting a new event store on Marten 9.0 and most of your projections key off `(aggregateId, someOtherTag)`, HStore is the recommended choice. If you're upgrading from Marten 8 and already have a populated TagTables-mode store, there is no compelling reason to switch.
+
 ### Consistency Check
 
 At `SaveChangesAsync` time, Marten executes an `EXISTS` query checking for new events matching the tag query with `seq_id > lastSeenSequence`. This runs in the same transaction as the event appends, providing serializable consistency for the tagged boundary.
+
+The shape of the `EXISTS` query depends on the storage mode (multi-table `INNER JOIN` for TagTables, single-table `@>` containment for HStore), but the behavior is identical from the caller's perspective.
 
 ### Tag Routing
 

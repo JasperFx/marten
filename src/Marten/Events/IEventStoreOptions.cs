@@ -457,6 +457,14 @@ namespace Marten.Events
         /// The registered tag types for DCB support.
         /// </summary>
         IReadOnlyList<ITagTypeRegistration> TagTypes { get; }
+
+        /// <summary>
+        /// How DCB tags are physically stored. Defaults to <see cref="DcbStorageMode.TagTables"/>
+        /// (one Postgres table per tag type). Set to <see cref="DcbStorageMode.HStore"/> to
+        /// store tags inline on <c>mt_events.tags</c> using Postgres' <c>hstore</c> extension
+        /// and eliminate the per-query LEFT JOINs across tag tables.
+        /// </summary>
+        DcbStorageMode DcbStorageMode { get; set; }
     }
 }
 

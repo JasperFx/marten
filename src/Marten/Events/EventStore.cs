@@ -65,6 +65,17 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
         };
 
         var isConjoined = _store.Events.TenancyStyle == Storage.TenancyStyle.Conjoined;
+
+        if (_store.Events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            var stringValue = value?.ToString()
+                              ?? throw new InvalidOperationException(
+                                  $"Tag value for '{tagType.Name}' is null after extraction.");
+            _session.QueueOperation(new AssignTagWhereHstoreOperation(
+                schema, registration.TableSuffix, stringValue, whereFragment, isConjoined));
+            return;
+        }
+
         var op = new AssignTagWhereOperation(schema, registration, value, whereFragment, isConjoined);
         _session.QueueOperation(op);
     }

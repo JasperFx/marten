@@ -34,8 +34,26 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
             throw new ArgumentException("EventTagQuery must have at least one condition.");
         }
 
-        var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
         var schema = _store.Events.DatabaseSchemaName;
+
+        if (_store.Events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            builder.Append("select exists (select 1 from ");
+            builder.Append(schema);
+            builder.Append(".mt_events e where ");
+            HStoreDcbQueryFragment.AppendOrPredicate(builder, _store.Events, conditions, "e");
+
+            if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                builder.Append(" and e.tenant_id = ");
+                builder.AppendParameter(session.TenantId);
+            }
+
+            builder.Append(" limit 1)");
+            return;
+        }
+
+        var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
 
         builder.Append("select exists (select 1 from ");
 
