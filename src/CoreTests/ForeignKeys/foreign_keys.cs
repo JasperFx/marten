@@ -6,7 +6,7 @@ using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
-using Weasel.Postgresql;
+using Weasel.Core;
 using Xunit;
 
 namespace CoreTests.ForeignKeys;
@@ -216,7 +216,7 @@ public class foreign_keys: OneOffConfigurationsContext
     {
         StoreOptions(options =>
         {
-            options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = onDelete);
+            options.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.DeleteAction = onDelete);
         });
     }
 
@@ -363,7 +363,7 @@ public class foreign_keys: OneOffConfigurationsContext
     {
         StoreOptions(_ =>
         {
-            _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Id, fkc => fkc.OnDelete = CascadeAction.Cascade);
+            _.Schema.For<Node2>().ForeignKey<Node1>(x => x.Id, fkc => fkc.DeleteAction = CascadeAction.Cascade);
         });
 
         var node1 = new Node1 { Id = Guid.NewGuid() };
@@ -399,7 +399,7 @@ public class foreign_keys: OneOffConfigurationsContext
         {
             _.Schema.For<Node2>()
                 .Identity(x => x.NonStandardId)
-                .ForeignKey<Node1>(x => x.NonStandardId, fkc => fkc.OnDelete = CascadeAction.Cascade);
+                .ForeignKey<Node1>(x => x.NonStandardId, fkc => fkc.DeleteAction = CascadeAction.Cascade);
         });
 
         var node1 = new Node1 { Id = Guid.NewGuid() };

@@ -1,5 +1,5 @@
 ﻿using Marten.Testing.Documents;
-using Weasel.Postgresql;
+using Weasel.Core;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Testing.Examples;
@@ -47,7 +47,7 @@ public class ForeignKeyExamples
             {
                 _.Connection("some database connection");
 
-                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
+                _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.DeleteAction = CascadeAction.Cascade);
             });
         #endregion
     }

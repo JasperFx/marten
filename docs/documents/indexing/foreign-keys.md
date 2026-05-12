@@ -117,7 +117,7 @@ var store = DocumentStore
     {
         _.Connection("some database connection");
 
-        _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.OnDelete = CascadeAction.Cascade);
+        _.Schema.For<Issue>().ForeignKey<User>(x => x.AssigneeId, fkd => fkd.DeleteAction = CascadeAction.Cascade);
     });
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ForeignKeyExamples.cs#L44-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_cascade_deletes_with_config_func' title='Start of snippet'>anchor</a></sup>
