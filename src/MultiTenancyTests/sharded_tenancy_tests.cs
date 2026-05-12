@@ -460,3 +460,82 @@ public class ShardedTestEvent
 {
     public string Value { get; set; } = "";
 }
+
+/// <summary>
+/// Regression for #4366. `IDocumentStore.WaitForNonStaleProjectionDataAsync(TimeSpan)`
+/// used to throw <see cref="InvalidOperationException"/> when the store was configured
+/// with sharded multi-tenancy (or any multi-tenant DB strategy) because the no-arg
+/// overload tried to read `Storage.Database`, which is null in that mode. Test fixtures
+/// without an <c>IHost</c> (constructing <see cref="DocumentStore"/> directly) had no
+/// way to reach `IHost.ForceAllMartenDaemonActivityToCatchUpAsync()` to work around it.
+/// The fix has the no-arg overload iterate `Storage.AllDatabases()` when not running
+/// under <see cref="DefaultTenancy"/> and wait on each shard's daemon.
+/// </summary>
+[Collection("sharded-tenancy")]
+public class Bug_4366_wait_for_non_stale_under_sharded_multitenancy: IAsyncLifetime
+{
+    private readonly ShardedTenancyFixture _fixture;
+    private IDocumentStore _store = null!;
+
+    public Bug_4366_wait_for_non_stale_under_sharded_multitenancy(ShardedTenancyFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync()
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        try { await conn.DropSchemaAsync("sharded_4366"); } catch { }
+
+        foreach (var connStr in _fixture.ConnectionStrings.Values)
+        {
+            await using var tenantConn = new NpgsqlConnection(connStr);
+            await tenantConn.OpenAsync();
+            try { await tenantConn.DropSchemaAsync("tenants_4366"); } catch { }
+            await ShardedTenancyFixture.cleanMartenObjectsInPublicSchema(tenantConn);
+        }
+    }
+
+    public Task DisposeAsync()
+    {
+        _store?.Dispose();
+        return Task.CompletedTask;
+    }
+
+    [Fact]
+    public async Task wait_for_non_stale_projection_data_does_not_throw_under_sharded_multitenancy()
+    {
+        _store = DocumentStore.For(opts =>
+        {
+            opts.MultiTenantedWithShardedDatabases(x =>
+            {
+                x.ConnectionString = ConnectionSource.ConnectionString;
+                x.SchemaName = "sharded_4366";
+                x.PartitionSchemaName = "tenants_4366";
+
+                foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+                {
+                    x.AddDatabase(dbName, connStr);
+                }
+            });
+
+            opts.AutoCreateSchemaObjects = JasperFx.AutoCreate.All;
+            opts.RegisterDocumentType<Target>();
+        });
+
+        // Apply schema to every shard so daemon high-water-mark fetches don't blow up
+        // for missing event-store storage. No projections are registered, so each shard's
+        // WaitForNonStaleProjectionDataAsync(timeout) short-circuits immediately when
+        // projectionsCount == 1 (only the high-water mark).
+        var databases = await _store.Options.Tenancy.BuildDatabases();
+        foreach (var db in databases.OfType<IMartenDatabase>())
+        {
+            await db.ApplyAllConfiguredChangesToDatabaseAsync();
+        }
+
+        // Pre-fix: throws InvalidOperationException because Storage.Database is null
+        // under sharded multi-tenancy. Post-fix: iterates every shard and returns.
+        await _store.WaitForNonStaleProjectionDataAsync(TimeSpan.FromSeconds(30));
+    }
+}
