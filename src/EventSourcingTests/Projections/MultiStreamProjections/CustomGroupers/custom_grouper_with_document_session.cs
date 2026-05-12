@@ -18,7 +18,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 #region sample_view-projection-custom-grouper-with-querysession
 public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+    public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var licenseFeatureTogglesEvents = events
             .OfType<IEvent<LicenseFeatureToggled>>()

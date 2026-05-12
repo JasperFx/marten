@@ -69,7 +69,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     public class MonthlyAllocationGrouper: IAggregateGrouper<string>
     {
-        public Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<string> grouping)
+        public Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<string> grouping)
         {
             var allocations = events
                 .OfType<IEvent<EmployeeAllocated>>();
