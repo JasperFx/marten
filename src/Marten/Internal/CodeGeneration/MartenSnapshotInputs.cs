@@ -24,6 +24,15 @@ namespace Marten.Internal.CodeGeneration;
 ///     <see cref="Environment.MachineName"/>, no <see cref="DateTime.UtcNow"/>, etc.).
 ///     </para>
 ///     <para>
+///     <b>Laziness invariant.</b> Per <see href="https://github.com/JasperFx/marten/issues/4303">marten#4303</see>
+///     document mappings are materialised + validated lazily on first session use, not at
+///     <c>DocumentStore.For</c> construction. The canonical input therefore reads the
+///     registration map (<c>StorageFeatures.RegisteredDocumentTypes</c>) rather than
+///     materialised <c>AllDocumentMappings</c> — touching the latter at boot would force
+///     <c>CompileAndValidate</c> on every registered type and resurrect the eager-validation
+///     behaviour the 9.0 lazy refactor explicitly retired.
+///     </para>
+///     <para>
 ///     <b>Input scope.</b> The inputs are everything that can plausibly affect the boot-time
 ///     state a snapshot artifact would persist:
 ///     </para>
@@ -73,23 +82,23 @@ internal static class MartenSnapshotInputs
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        // Force materialisation of any pending DocumentMappingBuilder<T>
-        // registrations from opts.Schema.For<T>() before enumerating. Per
-        // marten#4303, AllDocumentMappings is lazy and only returns mappings
-        // that have been built; without this call the canonical-input misses
-        // any types registered after the last build. BuildAllMappings is
-        // idempotent — subsequent calls are no-ops.
-        options.Storage.BuildAllMappings();
-
         var sb = new StringBuilder(capacity: 1024);
 
         AppendGroup(sb, "marten-version", typeof(StoreOptions).Assembly.GetName().Version?.ToString() ?? "");
         AppendGroup(sb, "store-name", options.StoreName ?? "");
 
-        // Document types — sort by AQN for stable ordering across runs.
+        // Document types — read from the registration map (RegisteredDocumentTypes),
+        // not AllDocumentMappings. Per marten#4303 mapping materialisation +
+        // validation is deferred to first session use; calling BuildAllMappings
+        // here would surface configuration errors (e.g. missing Id property) at
+        // DocumentStore.For() time and break the documented lazy contract — see
+        // DocumentMappingTests.cannot_use_a_doc_type_with_no_id_with_store.
+        // RegisteredDocumentTypes returns every type that was queued via
+        // Schema.For<T>() (plus internal registrations like DeadLetterEvent)
+        // without triggering CompileAndValidate. Sort by AQN for run stability.
         var docTypes = options.Storage
-            .AllDocumentMappings
-            .Select(m => m.DocumentType.AssemblyQualifiedName ?? m.DocumentType.FullName ?? "")
+            .RegisteredDocumentTypes
+            .Select(t => t.AssemblyQualifiedName ?? t.FullName ?? "")
             .Where(s => s.Length > 0)
             .OrderBy(s => s, StringComparer.Ordinal)
             .ToArray();

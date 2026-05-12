@@ -63,6 +63,19 @@ public class StorageFeatures: IFeatureSchema, IDescribeMyself
     internal IEnumerable<DocumentMapping> DocumentMappingsWithSchema =>
         _documentMappings.Value.Enumerate().Where(x => !x.Value.SkipSchemaGeneration).Select(x => x.Value);
 
+    /// <summary>
+    ///     Registered document types — i.e. anything that <see cref="MartenRegistry.For{T}"/>
+    ///     queued for mapping, plus anything Marten itself registered (e.g. DeadLetterEvent).
+    ///     Reads only the registration map; does <b>not</b> trigger <see cref="DocumentMapping.CompileAndValidate"/>
+    ///     and therefore preserves the lazy-materialisation invariant from
+    ///     <see href="https://github.com/JasperFx/marten/issues/4303">marten#4303</see>
+    ///     (configuration errors must surface on first session use, not at <c>DocumentStore.For</c>).
+    ///     Order is registration order, which is not stable across runs — callers that hash
+    ///     this list must sort it.
+    /// </summary>
+    internal IEnumerable<Type> RegisteredDocumentTypes =>
+        _builders.Value.Enumerate().Select(pair => pair.Key);
+
     void IFeatureSchema.WritePermissions(Migrator rules, TextWriter writer)
     {
         // Nothing
