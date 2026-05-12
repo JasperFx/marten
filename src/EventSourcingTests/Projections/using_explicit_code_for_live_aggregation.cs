@@ -97,10 +97,10 @@ public class using_explicit_code_for_live_aggregation : OneOffConfigurationsCont
 
 #region sample_using_simple_explicit_code_for_live_aggregation
 
-public class CountedAggregate: IRevisioned
+public class CountedAggregate: Marten.Metadata.IRevisioned
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public Guid Id
     {

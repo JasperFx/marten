@@ -71,11 +71,11 @@ public class Order
 {
     public Guid Id { get; set; }
 
-    // Marking an integer as the "version"
+    // Marking a long as the "version"
     // of the document, and making Marten
     // opt this document into the numeric revisioning
     [Version]
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 #endregion
@@ -93,7 +93,7 @@ public class Reservation: IRevisioned
 
     // other properties
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 #endregion

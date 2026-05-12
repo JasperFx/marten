@@ -9,7 +9,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage.Metadata;
 
-internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
+internal class RevisionColumn: MetadataColumn<long>, ISelectableColumn
 {
     public RevisionColumn(): base(SchemaConstants.VersionColumn, x => x.CurrentRevision)
     {
@@ -31,8 +31,8 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
         var versionPosition = index; //mapping.IsHierarchy() ? 3 : 2;
 
         async.Frames.CodeAsync(
-            $"var version = await reader.GetFieldValueAsync<int>({versionPosition}, token);");
-        sync.Frames.Code($"var version = reader.GetFieldValue<int>({versionPosition});");
+            $"var version = await reader.GetFieldValueAsync<long>({versionPosition}, token);");
+        sync.Frames.Code($"var version = reader.GetFieldValue<long>({versionPosition});");
 
         if (Member != null)
         {
@@ -53,12 +53,21 @@ internal class RevisionColumn: MetadataColumn<int>, ISelectableColumn
 
     public override string AlterColumnTypeSql(Table table, TableColumn changeActual)
     {
+        // Non-destructive widening from the Marten 8 schema (integer) to Marten 9 (bigint).
+        // Existing revision values are preserved.
+        if (changeActual.Type.EqualsIgnoreCase("integer"))
+        {
+            return $"ALTER TABLE {table.Identifier.QualifiedName} ALTER COLUMN {Name} TYPE bigint;";
+        }
+
+        // Falling through here means the existing column is a Guid concurrency column (uuid)
+        // and the user is switching to numeric revisions: drop and recreate.
         return $"ALTER TABLE {table.Identifier.QualifiedName} DROP COLUMN {Name};{AddColumnSql(table)}";
     }
 
     public override bool CanAlter(TableColumn actual)
     {
-        return actual.Type.EqualsIgnoreCase("uuid");
+        return actual.Type.EqualsIgnoreCase("uuid") || actual.Type.EqualsIgnoreCase("integer");
     }
 
     public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)

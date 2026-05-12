@@ -182,7 +182,7 @@ public class Item
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public record ItemStarted(string Description);

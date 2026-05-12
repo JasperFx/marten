@@ -21,12 +21,12 @@ internal class UpdateFunction: UpsertFunction
         if (_mapping.Metadata.Revision.Enabled)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS BIGINT LANGUAGE plpgsql {
     securityDeclaration
 } AS $function$
 DECLARE
-  final_version INTEGER;
-  current_version INTEGER;
+  final_version BIGINT;
+  current_version BIGINT;
 BEGIN
   if revision <= 1 then
     SELECT mt_version FROM {_tableName.QualifiedName} into current_version WHERE id = docId {_andTenantWhereClause}{_andPartitionWhereClause};

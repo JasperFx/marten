@@ -82,10 +82,10 @@ public class when_finding_the_last_good_aggregation : IntegrationContext
 
 public record DeleteYourself;
 
-public class SimpleMaybeDeletedAggregate : IRevisioned
+public class SimpleMaybeDeletedAggregate : Marten.Metadata.IRevisioned
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public bool ShouldDelete(DeleteYourself _) => true;
 
@@ -160,7 +160,7 @@ public class SimpleMaybeDeletedAggregate : IRevisioned
     }
 }
 
-public class SimpleAsStringMaybeDeletedAggregate : IRevisioned
+public class SimpleAsStringMaybeDeletedAggregate : Marten.Metadata.IRevisioned
 {
     protected bool Equals(SimpleAsStringMaybeDeletedAggregate other)
     {
@@ -193,7 +193,7 @@ public class SimpleAsStringMaybeDeletedAggregate : IRevisioned
     }
 
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public bool ShouldDelete(DeleteYourself _) => true;
 

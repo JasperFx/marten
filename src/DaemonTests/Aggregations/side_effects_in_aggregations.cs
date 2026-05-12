@@ -400,7 +400,7 @@ public class SideEffects1: IRevisioned
     public int B { get; set; }
     public int C { get; set; }
     public int D { get; set; }
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public record WasDeleted(Guid Id);
@@ -460,7 +460,7 @@ public class SideEffects2: IRevisioned
     public int B { get; set; }
     public int C { get; set; }
     public int D { get; set; }
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public class RecordingMessageOutbox: IMessageOutbox

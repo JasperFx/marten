@@ -213,7 +213,7 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
         public Guid LastValue { get; init; }
         public long Sum { get; init; }
         [Version]
-        public int Version { get; set; }
+        public long Version { get; set; }
 
         public LoadTestInlineProjection Apply(LoadTestEvent @event, LoadTestInlineProjection current)
         {
@@ -228,7 +228,7 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
         public string StreamKey { get; init; }
         public long Count { get; init; }
         [Version]
-        public int Version { get; set; }
+        public long Version { get; set; }
 
         public LoadTestUnrelatedInlineProjection Apply(LoadTestUnrelatedEvent @event, LoadTestUnrelatedInlineProjection current)
         {

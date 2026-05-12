@@ -28,7 +28,7 @@ public class DocumentMetadata
     /// <summary>
     ///     The current version of this document in the database if using numeric revisions
     /// </summary>
-    public int CurrentRevision { get; internal set; }
+    public long CurrentRevision { get; internal set; }
 
     /// <summary>
     ///     Timestamp of the last time this document was modified

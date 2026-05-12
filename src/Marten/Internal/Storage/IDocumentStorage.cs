@@ -104,7 +104,7 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
 
     void Store(IMartenSession session, T document);
     void Store(IMartenSession session, T document, Guid? version);
-    void Store(IMartenSession session, T document, int revision);
+    void Store(IMartenSession session, T document, long revision);
 
     void Eject(IMartenSession session, T document);
 

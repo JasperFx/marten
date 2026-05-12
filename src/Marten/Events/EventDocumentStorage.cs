@@ -193,7 +193,7 @@ public abstract class EventDocumentStorage: IEventStorage
         // Nothing
     }
 
-    public void Store(IMartenSession session, IEvent document, int revision)
+    public void Store(IMartenSession session, IEvent document, long revision)
     {
         // Nothing
     }

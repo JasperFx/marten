@@ -89,7 +89,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
-    public void UpdateRevision<T>(T entity, int revision) where T : notnull
+    public void UpdateRevision<T>(T entity, long revision) where T : notnull
     {
         assertNotDisposed();
 
@@ -104,7 +104,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.Add(op);
     }
 
-    public void TryUpdateRevision<T>(T entity, int revision) where T : notnull
+    public void TryUpdateRevision<T>(T entity, long revision) where T : notnull
     {
         assertNotDisposed();
 

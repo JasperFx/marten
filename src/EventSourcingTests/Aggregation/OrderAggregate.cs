@@ -12,7 +12,7 @@ public class OrderAggregate
 
     // This would be set automatically by Marten if
     // used as the target of a SingleStreamAggregation
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public void Apply(OrderShipped shipped) => HasShipped = true;
     public bool HasShipped { get; private set; }

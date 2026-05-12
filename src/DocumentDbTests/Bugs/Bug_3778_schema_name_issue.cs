@@ -45,4 +45,4 @@ public class Bug_3778_schema_name__ending_with_d_issue: OneOffConfigurationsCont
 }
 
 public record User3778(Guid Id, string Name, DateTimeOffset D1, DateOnly D2, User3778 Manager,
-    DateTimeOffset LastModifiedOn, DateTimeOffset CreatedOn, int Version, bool IsArchived);
+    DateTimeOffset LastModifiedOn, DateTimeOffset CreatedOn, long Version, bool IsArchived);

@@ -34,7 +34,7 @@ public abstract class RevisionedDocumentSelectorWithIdentityMap<T, TId>: IDocume
     protected readonly Dictionary<TId, T> _identityMap;
     protected readonly DocumentMapping _mapping;
     protected readonly ISerializer _serializer;
-    protected readonly Dictionary<TId, int> _versions;
+    protected readonly Dictionary<TId, long> _versions;
 
     public RevisionedDocumentSelectorWithIdentityMap(IMartenSession session, DocumentMapping mapping)
     {

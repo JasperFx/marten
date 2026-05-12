@@ -44,7 +44,7 @@ public class Trip : Activity, IRevisioned
         return $"{nameof(Id)}: {Id}, {nameof(EndedOn)}: {EndedOn}, {nameof(Traveled)}: {Traveled}, {nameof(State)}: {State}, {nameof(Active)}: {Active}, {nameof(StartedOn)}: {StartedOn}";
     }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 

@@ -913,7 +913,7 @@ public class MartenRegistry
             /// <summary>
             ///     The current numeric version of this document in the database
             /// </summary>
-            public Column<int> Revision => new(_parent, m => m.Revision);
+            public Column<long> Revision => new(_parent, m => m.Revision);
 
             /// <summary>
             ///     Timestamp of the last time this document was modified

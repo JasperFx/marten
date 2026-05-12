@@ -19,7 +19,7 @@ namespace Marten.Internal.Operations;
 
 public interface IRevisionedOperation
 {
-    int Revision { get; set; }
+    long Revision { get; set; }
     bool IgnoreConcurrencyViolation { get; set; }
 }
 
@@ -40,7 +40,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     }
 
     // Using 0 as the default so that inserts "just work"
-    public int Revision { get; set; } = 0;
+    public long Revision { get; set; } = 0;
 
     public bool IgnoreConcurrencyViolation { get; set; }
 
@@ -106,7 +106,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
     protected void setCurrentRevisionParameter(IGroupedParameterBuilder builder)
     {
         var parameter = builder.AppendParameter(Revision);
-        parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+        parameter.NpgsqlDbType = NpgsqlDbType.Bigint;
     }
 
     protected bool postprocessConcurrency(DbDataReader reader, IList<Exception> exceptions)
@@ -130,7 +130,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         var success = true;
         if (reader.Read())
         {
-            var revision = reader.GetFieldValue<int>(0);
+            var revision = reader.GetFieldValue<long>(0);
             if (revision == 0)
             {
                 exceptions.Add(new ConcurrencyException(typeof(T), _id));
@@ -162,7 +162,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         var success = true;
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            var revision = await reader.GetFieldValueAsync<int>(0, token).ConfigureAwait(false);
+            var revision = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
             if (revision == 0)
             {
                 exceptions.Add(new ConcurrencyException(typeof(T), _id));

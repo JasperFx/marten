@@ -45,7 +45,7 @@ public abstract class RevisionedDocumentSelectorWithDirtyChecking<T, TId>: IDocu
     protected readonly DocumentMapping _mapping;
     protected readonly ISerializer _serializer;
     protected readonly IMartenSession _session;
-    protected readonly Dictionary<TId, int> _versions;
+    protected readonly Dictionary<TId, long> _versions;
 
     public RevisionedDocumentSelectorWithDirtyChecking(IMartenSession session, DocumentMapping mapping)
     {

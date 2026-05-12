@@ -173,7 +173,7 @@ public class Reservation: IRevisioned
 
     // other properties
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>
@@ -200,11 +200,11 @@ public class Order
 {
     public Guid Id { get; set; }
 
-    // Marking an integer as the "version"
+    // Marking a long as the "version"
     // of the document, and making Marten
     // opt this document into the numeric revisioning
     [Version]
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L68-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_order' title='Start of snippet'>anchor</a></sup>

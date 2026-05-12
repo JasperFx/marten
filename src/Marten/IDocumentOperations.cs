@@ -111,7 +111,7 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// <typeparam name="T"></typeparam>
     /// <param name="entity"></param>
     /// <param name="revision"></param>
-    void UpdateRevision<T>(T entity, int revision) where T : notnull;
+    void UpdateRevision<T>(T entity, long revision) where T : notnull;
 
     /// <summary>
     /// Explicitly marks a document as needing to be updated and supplies the
@@ -122,7 +122,7 @@ public interface IDocumentOperations: IQuerySession, IStorageOperations
     /// <param name="entity"></param>
     /// <param name="revision"></param>
     /// <typeparam name="T"></typeparam>
-    void TryUpdateRevision<T>(T entity, int revision) where T : notnull;
+    void TryUpdateRevision<T>(T entity, long revision) where T : notnull;
 
     /// <summary>
     ///     Store an enumerable of potentially mixed documents

@@ -164,5 +164,5 @@ public class VersionedGuy
     public int CCount { get; set; }
     public int DCount { get; set; }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
