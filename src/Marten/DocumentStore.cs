@@ -65,7 +65,16 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
 
         StorageFeatures.PostProcessConfiguration();
         Events.Initialize(this);
-        Options.Projections.DiscoverGeneratedEvolvers(AppDomain.CurrentDomain.GetAssemblies());
+        // #4294 Lens-1 Row 1: discovery is gated on an opt-out flag and consumes a
+        // process-wide cached assembly snapshot to keep multi-tenanted host
+        // construction off the hot path. JasperFx already caches per-assembly
+        // evolver results inside DiscoverGeneratedEvolvers; the remaining wasted
+        // work was the per-construction AppDomain.CurrentDomain.GetAssemblies()
+        // call and the per-assembly framework-filter loop.
+        if (Options.Projections.DiscoverGeneratedEvolversOnStartup)
+        {
+            Options.Projections.DiscoverGeneratedEvolvers(ProjectionOptions.CachedLoadedAssemblies);
+        }
         // Note: Natural key aggregates are discovered lazily when FetchForWriting
         // is called with a type that has [NaturalKey]. Assembly-level scanning was
         // removed because it caused spurious InvalidProjectionException failures

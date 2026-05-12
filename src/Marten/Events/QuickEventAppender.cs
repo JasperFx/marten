@@ -12,6 +12,15 @@ namespace Marten.Events;
 
 internal class QuickEventAppender: IEventAppender
 {
+    // #4294 Lens-3 Row 3: PrepareEvents takes a Queue<long> that only the Rich
+    // metadata branch (applyRichMetadata) consumes. QuickEventAppender is only
+    // reached when AppendMode == Quick, at which point PrepareEvents routes to
+    // applyQuickMetadata, which never touches the queue. Replace the per-save
+    // allocation with a process-wide unused sentinel. Static readonly so even
+    // if the invariant ever breaks the shared instance is at least obvious in
+    // diffs / crash dumps.
+    private static readonly Queue<long> _unusedSequencesSentinel = new();
+
     private static void registerOperationsForStreams(EventGraph eventGraph, DocumentSessionBase session)
     {
         var storage = session.EventStorage();
@@ -31,11 +40,10 @@ internal class QuickEventAppender: IEventAppender
             }
         }
 
-        // The quick-append path never reads from this queue (PrepareEvents calls
-        // applyQuickMetadata, not applyRichMetadata, and only the rich variant
-        // dequeues from it). Hoist a single throwaway instance out of the
-        // per-stream loop so we don't allocate one per stream on every save.
-        var sequences = new Queue<long>();
+        // See _unusedSequencesSentinel comment: the queue parameter on
+        // PrepareEvents is dead in this code path; share a single instance
+        // across all saves rather than allocating per-save.
+        var sequences = _unusedSequencesSentinel;
 
         foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
         {
