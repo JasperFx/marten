@@ -338,6 +338,106 @@ public class hstore_dcb_tag_tests: OneOffConfigurationsContext, IAsyncLifetime
     }
 
     [Fact]
+    public async Task aggregate_by_tags_returns_null_when_no_events()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var aggregate = await theSession.Events.AggregateByTagsAsync<StudentCourseEnrollment>(query);
+        aggregate.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task fetch_for_writing_with_empty_result_still_enforces_consistency()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+
+        await using var session1 = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundary = await session1.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+
+        boundary.Aggregate.ShouldBeNull();
+        boundary.Events.Count.ShouldBe(0);
+        boundary.LastSeenSequence.ShouldBe(0);
+
+        await using var session2 = theStore.LightweightSession();
+        var enrolled = session2.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        var streamId = Guid.NewGuid();
+        session2.Events.Append(streamId, enrolled);
+        await session2.SaveChangesAsync();
+
+        var e = session1.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        e.WithTag(studentId, courseId);
+        boundary.AppendOne(e);
+
+        await Should.ThrowAsync<DcbConcurrencyException>(() => session1.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task can_fetch_for_writing_by_tags_via_batch_query()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        await using var session2 = theStore.LightweightSession();
+        var batch = session2.CreateBatchQuery();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundaryTask = batch.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+        await batch.Execute();
+
+        var boundary = await boundaryTask;
+        boundary.Aggregate.ShouldNotBeNull();
+        boundary.Aggregate!.StudentName.ShouldBe("Alice");
+        boundary.Events.Count.ShouldBe(1);
+        boundary.LastSeenSequence.ShouldBeGreaterThan(0);
+
+        var assignment = session2.Events.BuildEvent(new AssignmentSubmitted("HW1", 95));
+        assignment.WithTag(studentId, courseId);
+        boundary.AppendOne(assignment);
+        await session2.SaveChangesAsync();
+    }
+
+    [Fact]
+    public async Task batch_query_fetch_for_writing_by_tags_detects_concurrency_violation()
+    {
+        var studentId = new StudentId(Guid.NewGuid());
+        var courseId = new CourseId(Guid.NewGuid());
+        var streamId = Guid.NewGuid();
+
+        var enrolled = theSession.Events.BuildEvent(new StudentEnrolled("Alice", "Math"));
+        enrolled.WithTag(studentId, courseId);
+        theSession.Events.Append(streamId, enrolled);
+        await theSession.SaveChangesAsync();
+
+        await using var session1 = theStore.LightweightSession();
+        var batch = session1.CreateBatchQuery();
+        var query = new EventTagQuery().Or<StudentId>(studentId);
+        var boundaryTask = batch.Events.FetchForWritingByTags<StudentCourseEnrollment>(query);
+        await batch.Execute();
+        var boundary = await boundaryTask;
+
+        await using var session2 = theStore.LightweightSession();
+        var conflicting = session2.Events.BuildEvent(new AssignmentSubmitted("HW-conflict", 50));
+        conflicting.WithTag(studentId, courseId);
+        session2.Events.Append(streamId, conflicting);
+        await session2.SaveChangesAsync();
+
+        var assignment = session1.Events.BuildEvent(new AssignmentSubmitted("HW1", 95));
+        assignment.WithTag(studentId, courseId);
+        boundary.AppendOne(assignment);
+
+        await Should.ThrowAsync<DcbConcurrencyException>(() => session1.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task events_table_carries_hstore_tags_column_in_hstore_mode()
     {
         // Sanity check: confirm the schema actually applied HStore mode and the per-tag

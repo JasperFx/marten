@@ -333,6 +333,7 @@ Trade-offs:
 - All tag values are stored as text — Npgsql automatically converts `Dictionary<string, string>` to `hstore` via `NpgsqlDbType.Hstore`, and `Guid`/`int`/`long`/`short` are stringified at the database boundary. Tag-type **registration** (`RegisterTagType<StudentId>("student")`) and **usage** (`event.WithTag(new StudentId(...))`) are unchanged — only the on-disk representation is different.
 - The `hstore` extension must be installable on the target database. Most managed Postgres providers ship it; bare-metal installations may need `CREATE EXTENSION` privileges on first run.
 - The `mt_quick_append_events` Postgres function does not take per-tag-type arrays — Marten writes the inline hstore as a follow-up `UPDATE` after the event INSERT.
+- **Each tag type is single-valued per event.** An hstore is a map with unique keys, and Marten uses the registered tag's table-suffix as the key. If you call `AssignTagWhere` twice on the same event with two different values of the *same* tag type, the second value overwrites the first. The TagTables layout permits multiple values of the same tag type per event (the underlying table PK is `(value, seq_id)`); HStore does not. Cross-type merging (e.g. adding a `StudentId` tag to an event that already has a `RegionId` tag) works correctly in both modes — HStore uses Postgres' `hstore || hstore` concatenation to preserve the existing keys.
 
 ### Choosing a Storage Mode
 
