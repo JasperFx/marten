@@ -117,7 +117,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
     public void Store(IMartenSession session, TDoc document, Guid? version) => Inner.Store(session, document, version);
 
-    public void Store(IMartenSession session, TDoc document, int revision) => Inner.Store(session, document, revision);
+    public void Store(IMartenSession session, TDoc document, long revision) => Inner.Store(session, document, revision);
 
     public void Eject(IMartenSession session, TDoc document) => Inner.Eject(session, document);
 

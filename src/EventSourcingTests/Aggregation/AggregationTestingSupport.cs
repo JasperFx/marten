@@ -95,7 +95,7 @@ public class MyAggregate
 
 
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
 
     public Guid Id { get; set; }

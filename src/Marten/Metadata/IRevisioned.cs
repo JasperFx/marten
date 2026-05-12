@@ -11,5 +11,5 @@ public interface IRevisioned
     /// <summary>
     ///     Marten's version for this document
     /// </summary>
-    int Version { get; set; }
+    long Version { get; set; }
 }

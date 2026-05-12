@@ -776,7 +776,7 @@ public class fetching_live_aggregates_for_writing: IntegrationContext
 public class SimpleAggregate : IRevisioned
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public Guid Id { get;
         set; }
@@ -848,7 +848,7 @@ public class SimpleAggregate : IRevisioned
 public class SimpleAggregate2
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public Guid Id { get; set; }
 
@@ -987,7 +987,7 @@ public class SomeProjection : IRevisioned
     public Guid Id { get; set; }
     public int A { get; set; }
     public void Apply(EventA e) => A++;
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public class SomeOtherProjection : IRevisioned
@@ -995,5 +995,5 @@ public class SomeOtherProjection : IRevisioned
     public Guid Id { get; set; }
     public int A { get; set; }
     public void Apply(EventA e) => A++;
-    public int Version { get; set; }
+    public long Version { get; set; }
 }

@@ -13,7 +13,7 @@ namespace DaemonTests.TeleHealth;
 public class ProviderShift(Guid boardId, Provider provider)
 {
     public Guid Id { get; set; }
-    public int Version { get; set; }
+    public long Version { get; set; }
     public Guid BoardId { get; private set; } = boardId;
     public Guid ProviderId => Provider.Id;
     public ProviderStatus Status { get; set; } = ProviderStatus.Paused;

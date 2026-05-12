@@ -81,7 +81,7 @@ public class converting_projection_from_inline_to_async : OneOffConfigurationsCo
 public class SimpleAggregate : IRevisioned
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public Guid Id { get; set; }
 

@@ -216,12 +216,12 @@ internal class UpsertFunction: Function
         if (_mapping.Metadata.Revision.Enabled)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS BIGINT LANGUAGE plpgsql {
     securityDeclaration
 } AS $function$
 DECLARE
-  final_version INTEGER;
-  current_version INTEGER;
+  final_version BIGINT;
+  current_version BIGINT;
 BEGIN
 
 SELECT {_versionColumnName} into current_version FROM {_versionSourceTable} WHERE id = docId {_andTenantVersionWhereClause}{_andPartitionWhereClause};

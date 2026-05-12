@@ -631,7 +631,7 @@ public readonly partial struct GuidId;
 public class SimpleAggregateStrongTypedGuid
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public GuidId? Id { get; set; }
 
@@ -674,7 +674,7 @@ public readonly partial struct StringId;
 public class SimpleAggregateStrongTypedString
 {
     // This will be the aggregate version
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public StringId? Id { get; set; }
 

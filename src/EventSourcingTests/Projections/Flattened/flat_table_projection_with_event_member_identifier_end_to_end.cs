@@ -52,7 +52,7 @@ public class flat_table_projection_with_event_member_identifier_end_to_end: OneO
         public int C { get; set; }
         public int D { get; set; }
         public string Status { get; set; }
-        public int Version { get; set; }
+        public long Version { get; set; }
         public Guid Guid { get; set; }
         public DateTimeOffset Time { get; set; }
     }

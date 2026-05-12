@@ -237,7 +237,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = _serializer.FromJson<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 0);
-            var version = reader.GetFieldValue<int>(1);
+            var version = reader.GetFieldValue<long>(1);
             document.Version = version;
             return document;
         }
@@ -248,7 +248,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = await _serializer.FromJsonAsync<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 0, token).ConfigureAwait(false);
-            var version = await reader.GetFieldValueAsync<int>(1, token);
+            var version = await reader.GetFieldValueAsync<long>(1, token);
             document.Version = version;
             return document;
         }
@@ -279,7 +279,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = _serializer.FromJson<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1);
-            var version = reader.GetFieldValue<int>(2);
+            var version = reader.GetFieldValue<long>(2);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             return document;
@@ -292,7 +292,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = await _serializer.FromJsonAsync<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1, token).ConfigureAwait(false);
-            var version = await reader.GetFieldValueAsync<int>(2, token);
+            var version = await reader.GetFieldValueAsync<long>(2, token);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             return document;
@@ -325,7 +325,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = _serializer.FromJson<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1);
-            var version = reader.GetFieldValue<int>(2);
+            var version = reader.GetFieldValue<long>(2);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
@@ -340,7 +340,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = await _serializer.FromJsonAsync<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1, token).ConfigureAwait(false);
-            var version = await reader.GetFieldValueAsync<int>(2, token);
+            var version = await reader.GetFieldValueAsync<long>(2, token);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
@@ -374,7 +374,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = _serializer.FromJson<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1);
-            var version = reader.GetFieldValue<int>(2);
+            var version = reader.GetFieldValue<long>(2);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
@@ -390,7 +390,7 @@ namespace Marten.Generated.DocumentStorage
 
             DocumentDbTests.Concurrency.RevisionedDoc document;
             document = await _serializer.FromJsonAsync<DocumentDbTests.Concurrency.RevisionedDoc>(reader, 1, token).ConfigureAwait(false);
-            var version = await reader.GetFieldValueAsync<int>(2, token);
+            var version = await reader.GetFieldValueAsync<long>(2, token);
             document.Version = version;
             _session.MarkAsDocumentLoaded(id, document);
             _identityMap[id] = document;
@@ -1055,7 +1055,7 @@ namespace Marten.Generated.DocumentStorage
 
         public const string OVERWRITE_WITH_VERSION_SQL = "update numeric_revisioning.mt_doc_revisioneddoc target SET data = source.data, mt_dotnet_type = source.mt_dotnet_type, mt_version = source.mt_version, mt_last_modified = transaction_timestamp() FROM mt_doc_revisioneddoc_temp source WHERE source.id = target.id and target.mt_version = source.mt_expected_version";
 
-        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_revisioneddoc_temp (like numeric_revisioning.mt_doc_revisioneddoc including defaults, \"mt_expected_version\" integer)";
+        public const string CREATE_TEMP_TABLE_FOR_COPYING_SQL = "create temporary table mt_doc_revisioneddoc_temp (like numeric_revisioning.mt_doc_revisioneddoc including defaults, \"mt_expected_version\" bigint)";
 
 
         public override string CreateTempTableForCopying()
@@ -1086,7 +1086,7 @@ namespace Marten.Generated.DocumentStorage
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
-            await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
+            await writer.WriteAsync((long)1, NpgsqlTypes.NpgsqlDbType.Bigint, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
 
@@ -1095,8 +1095,8 @@ namespace Marten.Generated.DocumentStorage
         {
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
-            writer.Write(document.Version <= 0 ? (object)System.DBNull.Value : (object)document.Version, NpgsqlTypes.NpgsqlDbType.Integer);
-            await writer.WriteAsync(1, NpgsqlTypes.NpgsqlDbType.Integer, cancellation);
+            writer.Write(document.Version <= 0 ? (object)System.DBNull.Value : (object)(long)document.Version, NpgsqlTypes.NpgsqlDbType.Bigint);
+            await writer.WriteAsync((long)1, NpgsqlTypes.NpgsqlDbType.Bigint, cancellation);
             await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
 

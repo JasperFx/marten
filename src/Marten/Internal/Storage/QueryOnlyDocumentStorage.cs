@@ -33,7 +33,7 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
     {
     }
 
-    public sealed override void Store(IMartenSession session, T document, int revision)
+    public sealed override void Store(IMartenSession session, T document, long revision)
     {
     }
 

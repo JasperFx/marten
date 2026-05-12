@@ -86,7 +86,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Store(IMartenSession session, T document, int revision)
+    public sealed override void Store(IMartenSession session, T document, long revision)
     {
         store(session, document, out var id);
 

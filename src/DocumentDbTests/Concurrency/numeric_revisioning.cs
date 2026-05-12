@@ -575,7 +575,7 @@ public class RevisionedDoc: IRevisioned
     public Guid Id { get; set; }
     public string Name { get; set; }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public class OtherRevisionedDoc
@@ -584,7 +584,7 @@ public class OtherRevisionedDoc
     public string Name { get; set; }
 
     [Version]
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public class UnconventionallyVersionedDoc
@@ -593,5 +593,5 @@ public class UnconventionallyVersionedDoc
 
     public string Name { get; set; }
 
-    public int UnconventionalVersion { get; set; }
+    public long UnconventionalVersion { get; set; }
 }

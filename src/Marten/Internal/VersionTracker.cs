@@ -8,11 +8,11 @@ public class VersionTracker
 {
     private readonly Dictionary<Type, object> _byType = new();
 
-    public Dictionary<TId, int> RevisionsFor<TDoc, TId>() where TId : notnull
+    public Dictionary<TId, long> RevisionsFor<TDoc, TId>() where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (item is Dictionary<TId, int> d)
+            if (item is Dictionary<TId, long> d)
             {
                 return d;
             }
@@ -20,7 +20,7 @@ public class VersionTracker
             throw new DocumentIdTypeMismatchException(typeof(TDoc), typeof(TId));
         }
 
-        var dict = new Dictionary<TId, int>();
+        var dict = new Dictionary<TId, long>();
         _byType[typeof(TDoc)] = dict;
 
         return dict;
@@ -62,11 +62,11 @@ public class VersionTracker
         return null;
     }
 
-    public int? RevisionFor<TDoc, TId>(TId id) where TId : notnull
+    public long? RevisionFor<TDoc, TId>(TId id) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (item is Dictionary<TId, int> dict)
+            if (item is Dictionary<TId, long> dict)
             {
                 if (dict.TryGetValue(id, out var version))
                 {
@@ -100,11 +100,11 @@ public class VersionTracker
         }
     }
 
-    public void StoreRevision<TDoc, TId>(TId id, int revision) where TId : notnull
+    public void StoreRevision<TDoc, TId>(TId id, long revision) where TId : notnull
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (item is Dictionary<TId, int> d)
+            if (item is Dictionary<TId, long> d)
             {
                 d[id] = revision;
             }
@@ -115,7 +115,7 @@ public class VersionTracker
         }
         else
         {
-            var dict = new Dictionary<TId, int> { [id] = revision };
+            var dict = new Dictionary<TId, long> { [id] = revision };
             _byType.Add(typeof(TDoc), dict);
         }
     }
@@ -135,7 +135,7 @@ public class VersionTracker
     {
         if (_byType.TryGetValue(typeof(TDoc), out var item))
         {
-            if (item is Dictionary<TId, int> dict)
+            if (item is Dictionary<TId, long> dict)
             {
                 dict.Remove(id);
             }

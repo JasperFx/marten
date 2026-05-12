@@ -14,7 +14,7 @@ internal class ExpectedVersionArgument: UpsertArgument
         Arg = "expected_version";
         Column = SchemaConstants.ExpectedVersionColumn;
         DbType = dbType;
-        PostgresType = dbType == NpgsqlDbType.Integer ? "integer" : "uuid";
+        PostgresType = dbType == NpgsqlDbType.Bigint ? "bigint" : "uuid";
     }
 
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
@@ -25,7 +25,7 @@ internal class ExpectedVersionArgument: UpsertArgument
         }
         else if (mapping.Metadata.Revision.Member != null)
         {
-            writeIntExpectedVersion(load, mapping.Metadata.Revision.Member);
+            writeLongExpectedVersion(load, mapping.Metadata.Revision.Member);
         }
         else
         {
@@ -41,11 +41,11 @@ internal class ExpectedVersionArgument: UpsertArgument
             $"writer.Write(document.{memberName} == Guid.Empty ? (object){typeof(DBNull).FullNameInCode()}.Value : (object)document.{memberName}, {dbTypeUsage});");
     }
 
-    private void writeIntExpectedVersion(GeneratedMethod load, MemberInfo member)
+    private void writeLongExpectedVersion(GeneratedMethod load, MemberInfo member)
     {
         var memberName = member.Name;
-        var dbTypeUsage = Constant.ForEnum(NpgsqlDbType.Integer).Usage;
+        var dbTypeUsage = Constant.ForEnum(NpgsqlDbType.Bigint).Usage;
         load.Frames.Code(
-            $"writer.Write(document.{memberName} <= 0 ? (object){typeof(DBNull).FullNameInCode()}.Value : (object)document.{memberName}, {dbTypeUsage});");
+            $"writer.Write(document.{memberName} <= 0 ? (object){typeof(DBNull).FullNameInCode()}.Value : (object)(long)document.{memberName}, {dbTypeUsage});");
     }
 }

@@ -272,7 +272,7 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         throw new NotSupportedException();
     }
 
-    public void Store(IMartenSession session, T document, int revision)
+    public void Store(IMartenSession session, T document, long revision)
     {
         throw new NotSupportedException();
     }

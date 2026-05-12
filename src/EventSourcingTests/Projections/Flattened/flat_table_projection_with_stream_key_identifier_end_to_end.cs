@@ -52,7 +52,7 @@ public class flat_table_projection_with_stream_key_identifier_end_to_end: OneOff
         public int C { get; set; }
         public int D { get; set; }
         public string Status { get; set; }
-        public int Version { get; set; }
+        public long Version { get; set; }
     }
 
     private async Task<Data> readData(DbDataReader reader)

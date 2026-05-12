@@ -11,8 +11,8 @@ internal class RevisionArgument: UpsertArgument
     public RevisionArgument()
     {
         Arg = "revision";
-        PostgresType = "integer";
-        DbType = NpgsqlDbType.Integer;
+        PostgresType = "bigint";
+        DbType = NpgsqlDbType.Bigint;
         Column = SchemaConstants.VersionColumn;
     }
 
@@ -26,7 +26,7 @@ internal class RevisionArgument: UpsertArgument
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
         load.Frames.CodeAsync(
-            "await writer.WriteAsync(1, {0}, {1});",
-            NpgsqlDbType.Integer, Use.Type<CancellationToken>());
+            "await writer.WriteAsync((long)1, {0}, {1});",
+            NpgsqlDbType.Bigint, Use.Type<CancellationToken>());
     }
 }

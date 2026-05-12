@@ -137,7 +137,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         _parent.Store(session, document, version);
     }
 
-    public void Store(IMartenSession session, T document, int revision)
+    public void Store(IMartenSession session, T document, long revision)
     {
         _parent.Store(session, document, revision);
     }

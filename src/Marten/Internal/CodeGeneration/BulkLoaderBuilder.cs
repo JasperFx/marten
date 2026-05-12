@@ -92,7 +92,7 @@ public class BulkLoaderBuilder
 
         if (includeExpectedVersion && needsExpectedVersion())
         {
-            var dbType = _mapping.UseNumericRevisions ? NpgsqlDbType.Integer : NpgsqlDbType.Uuid;
+            var dbType = _mapping.UseNumericRevisions ? NpgsqlDbType.Bigint : NpgsqlDbType.Uuid;
             var expectedArgument = new ExpectedVersionArgument(dbType);
             var insertIndex = arguments.FindIndex(x => x is VersionArgument || x is RevisionArgument);
             if (insertIndex < 0)
@@ -184,7 +184,7 @@ public class BulkLoaderBuilder
             return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults)";
         }
 
-        var expectedType = _mapping.UseNumericRevisions ? "integer" : "uuid";
+        var expectedType = _mapping.UseNumericRevisions ? "bigint" : "uuid";
         return $"create temporary table {_tempTable} (like {_mapping.TableName.QualifiedName} including defaults, \"{SchemaConstants.ExpectedVersionColumn}\" {expectedType})";
     }
 

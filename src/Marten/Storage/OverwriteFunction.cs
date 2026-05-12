@@ -16,12 +16,12 @@ internal class OverwriteFunction: UpsertFunction
         if (_mapping.Metadata.Revision.Enabled)
         {
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS INTEGER LANGUAGE plpgsql {
+CREATE OR REPLACE FUNCTION {Identifier.QualifiedName}({argList}) RETURNS BIGINT LANGUAGE plpgsql {
     securityDeclaration
 } AS $function$
 DECLARE
-  final_version INTEGER;
-  current_version INTEGER;
+  final_version BIGINT;
+  current_version BIGINT;
 BEGIN
 
   if revision = 0 then
