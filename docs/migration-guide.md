@@ -28,6 +28,52 @@
 
   See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
 
+### Numeric document revisions widened from `int` to `long`
+
+* The numeric document revision (the value tracked in the `mt_version` column when `UseNumericRevisions` is enabled, or on aggregate documents that derive `Version` from the stream version) is now a 64-bit `long` everywhere. This removes the 2.1B-update-per-document ceiling that `int` imposed — comfortably within reach for high-throughput inline projections and per-event-snapshotted aggregates.
+
+  **What changed on the .NET side:**
+
+  | Surface | Before | After |
+  |---|---|---|
+  | `Marten.Metadata.IRevisioned.Version` | `int` | `long` |
+  | `[Version]`-annotated numeric properties on revisioned documents | `int` | `long` |
+  | `DocumentMetadata.CurrentRevision` | `int` | `long` |
+  | `IDocumentSession.UpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
+  | `IDocumentSession.TryUpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
+  | `IRevisionedOperation.Revision` | `int` | `long` |
+  | `MartenRegistry.MetadataConfig.Revision` | `Column<int>` | `Column<long>` |
+
+  **What you have to change in your code:**
+
+  - Any class implementing `IRevisioned`: widen `Version` to `long`.
+
+    ```csharp
+    // Before (Marten 8)
+    public class Reservation : IRevisioned
+    {
+        public Guid Id { get; set; }
+        public int Version { get; set; }
+    }
+
+    // After (Marten 9)
+    public class Reservation : IRevisioned
+    {
+        public Guid Id { get; set; }
+        public long Version { get; set; }
+    }
+    ```
+
+  - Any document with a `[Version]`-annotated numeric property used with `UseNumericRevisions`: widen the property to `long`.
+  - Any `m.Revision.MapTo(x => x.SomeProperty)` configuration: the target property must be `long`. Mapping to an `int` property now throws `ArgumentOutOfRangeException` at mapping time.
+  - Any code calling `IDocumentSession.UpdateRevision` / `TryUpdateRevision` with an explicit `int` literal compiles unchanged (`int` is implicitly convertible to `long`); explicit `int` locals passed in widen with a one-character edit.
+
+  **Schema migration is automatic and non-destructive.** Existing Marten 8 deployments have an `integer` `mt_version` column. Marten 9's schema migration emits `ALTER TABLE … ALTER COLUMN mt_version TYPE bigint` and rewrites the associated `mt_upsert_*` / `mt_update_*` / `mt_overwrite_*` functions to accept and return `BIGINT`. All existing revision values are preserved — there is no data loss and no manual SQL to run.
+
+  **Bulk insert** of a revisioned document type pre-loads expected-version values as `bigint`. If you have a custom `IBulkLoader<T>` implementation (rare), you must use `NpgsqlDbType.Bigint` instead of `NpgsqlDbType.Integer` for the expected-version column.
+
+  See [#3733](https://github.com/JasperFx/marten/issues/3733) / [#4377](https://github.com/JasperFx/marten/pull/4377).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
