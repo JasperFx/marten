@@ -35,7 +35,7 @@
   **What changed on the .NET side:**
 
   | Surface | Before | After |
-  |---|---|---|
+  | --- | --- | --- |
   | `Marten.Metadata.IRevisioned.Version` | `int` | `long` |
   | `[Version]`-annotated numeric properties on revisioned documents | `int` | `long` |
   | `DocumentMetadata.CurrentRevision` | `int` | `long` |
@@ -46,7 +46,7 @@
 
   **What you have to change in your code:**
 
-  - Any class implementing `IRevisioned`: widen `Version` to `long`.
+  * Any class implementing `IRevisioned`: widen `Version` to `long`.
 
     ```csharp
     // Before (Marten 8)
@@ -64,9 +64,9 @@
     }
     ```
 
-  - Any document with a `[Version]`-annotated numeric property used with `UseNumericRevisions`: widen the property to `long`.
-  - Any `m.Revision.MapTo(x => x.SomeProperty)` configuration: the target property must be `long`. Mapping to an `int` property now throws `ArgumentOutOfRangeException` at mapping time.
-  - Any code calling `IDocumentSession.UpdateRevision` / `TryUpdateRevision` with an explicit `int` literal compiles unchanged (`int` is implicitly convertible to `long`); explicit `int` locals passed in widen with a one-character edit.
+  * Any document with a `[Version]`-annotated numeric property used with `UseNumericRevisions`: widen the property to `long`.
+  * Any `m.Revision.MapTo(x => x.SomeProperty)` configuration: the target property must be `long`. Mapping to an `int` property now throws `ArgumentOutOfRangeException` at mapping time.
+  * Any code calling `IDocumentSession.UpdateRevision` / `TryUpdateRevision` with an explicit `int` literal compiles unchanged (`int` is implicitly convertible to `long`); explicit `int` locals passed in widen with a one-character edit.
 
   **Schema migration is automatic and non-destructive.** Existing Marten 8 deployments have an `integer` `mt_version` column. Marten 9's schema migration emits `ALTER TABLE … ALTER COLUMN mt_version TYPE bigint` and rewrites the associated `mt_upsert_*` / `mt_update_*` / `mt_overwrite_*` functions to accept and return `BIGINT`. All existing revision values are preserved — there is no data loss and no manual SQL to run.
 
