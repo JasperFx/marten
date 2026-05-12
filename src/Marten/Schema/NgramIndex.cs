@@ -17,16 +17,22 @@ public class NgramIndex: IndexDefinition
 {
     public const string DefaultRegConfig = "english";
     public const string DefaultDataConfig = "data";
-    private readonly DbObjectName _table;
-    private readonly string _databaseSchemaName;
+
+    // Hold a reference to the DocumentMapping (not a snapshot of TableName or
+    // DatabaseSchemaName) so the index name we derive in deriveIndexName()
+    // tracks any post-construction mutation of the mapping's alias — most
+    // notably the `_{Version}` suffix that ProjectionVersionAliasPolicy
+    // appends to documents owned by a versioned aggregate projection (#4367).
+    // DocumentIndex / ComputedIndex follow the same lazy pattern; NgramIndex
+    // was the outlier capturing TableName at construction time.
+    private readonly DocumentMapping _parent;
 
     private string _dataConfig = null!;
     private readonly string? _indexName;
 
     public NgramIndex(DocumentMapping mapping, string? dataConfig = null, string? indexName = null)
     {
-        _databaseSchemaName = mapping.DatabaseSchemaName;
-        _table = mapping.TableName;
+        _parent = mapping;
         DataConfig = dataConfig;
         _indexName = indexName;
 
@@ -47,7 +53,7 @@ public class NgramIndex: IndexDefinition
         set => _dataConfig = value ?? DefaultDataConfig;
     }
 
-    public override string[] Columns => [$"{_databaseSchemaName}.mt_grams_vector( {_dataConfig})"];
+    public override string[] Columns => [$"{_parent.DatabaseSchemaName}.mt_grams_vector( {_dataConfig})"];
     protected override string deriveIndexName()
     {
         var lowerValue = _indexName?.ToLowerInvariant();
@@ -71,7 +77,7 @@ public class NgramIndex: IndexDefinition
             .Replace("->>", string.Empty)
             .Replace("->", string.Empty);
 
-        return $"{_table.Name}_idx_ngram_{indexFieldName}";
+        return $"{_parent.TableName.Name}_idx_ngram_{indexFieldName}";
     }
 
     private static string GetDataConfig(DocumentMapping mapping, MemberInfo[] members)
