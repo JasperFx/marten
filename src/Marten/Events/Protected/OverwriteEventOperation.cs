@@ -25,26 +25,23 @@ internal class OverwriteEventOperation : IStorageOperation
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
+        // Bind both data and headers as direct UTF-8 bytes via WriteToParameter so we
+        // skip the intermediate string allocations Serializer.ToJson would produce.
         if (_graph.MetadataConfig.HeadersEnabled)
         {
             var parameters = builder.AppendWithParameters($"update {_graph.DatabaseSchemaName}.mt_events set data = ?, headers = ? where seq_id = ?");
-            parameters[0].NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameters[0].Value = session.Serializer.ToJson(_e.Data);
-            parameters[1].NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameters[1].Value = session.Serializer.ToJson(_e.Headers);
+            session.Serializer.WriteToParameter(parameters[0], _e.Data);
+            session.Serializer.WriteToParameter(parameters[1], _e.Headers);
             parameters[2].NpgsqlDbType = NpgsqlDbType.Bigint;
             parameters[2].Value = _e.Sequence;
         }
         else
         {
             var parameters = builder.AppendWithParameters($"update {_graph.DatabaseSchemaName}.mt_events set data = ? where seq_id = ?");
-            parameters[0].NpgsqlDbType = NpgsqlDbType.Jsonb;
-            parameters[0].Value = session.Serializer.ToJson(_e.Data);
+            session.Serializer.WriteToParameter(parameters[0], _e.Data);
             parameters[1].NpgsqlDbType = NpgsqlDbType.Bigint;
             parameters[1].Value = _e.Sequence;
         }
-
-
     }
 
     public Type DocumentType => typeof(IEvent);

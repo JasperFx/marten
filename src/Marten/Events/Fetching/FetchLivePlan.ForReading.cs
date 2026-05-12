@@ -64,8 +64,13 @@ internal partial class FetchLivePlan<TDoc, TId>
         var aggregate = await FetchForReading(session, id, cancellation).ConfigureAwait(false);
         if (aggregate == null) return false;
 
-        var json = session.Serializer.ToJson(aggregate);
-        await destination.WriteAsync(Encoding.UTF8.GetBytes(json), cancellation).ConfigureAwait(false);
+        // Direct UTF-8 serialization into a pooled buffer then a single async write to
+        // the destination stream. Previously: ToJson → string → UTF-8 GetBytes → write
+        // (three allocations + a UTF-16↔UTF-8 round-trip per AspNetCore stream endpoint
+        // response). Now: one serializer pass, one snapshot, one write.
+        using var buffer = new Services.PooledByteBufferWriter();
+        session.Serializer.WriteTo(buffer, aggregate);
+        await destination.WriteAsync(buffer.WrittenMemory, cancellation).ConfigureAwait(false);
         return true;
     }
 

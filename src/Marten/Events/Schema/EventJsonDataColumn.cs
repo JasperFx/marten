@@ -28,10 +28,15 @@ internal class EventJsonDataColumn: TableColumn, IEventTableColumn
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Data)}));",
-             Use.Type<IMartenSession>(), Use.Type<IEvent>());
-
-        method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
+        // Generated equivalent of:
+        //   var parameter{i} = parameterBuilder.AppendParameter<object>(DBNull.Value);
+        //   session.Serializer.WriteToParameter(parameter{i}, evt.Data);
+        // Skips the intermediate UTF-16 string allocation that Serializer.ToJson(evt.Data)
+        // would emit, instead serializing directly to a sized UTF-8 byte[] bound to the
+        // parameter.
+        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullName}.Value);");
+        method.Frames.Code($"{{0}}.Serializer.{nameof(ISerializer.WriteToParameter)}(parameter{index}, {{1}}.{nameof(IEvent.Data)});",
+            Use.Type<IMartenSession>(), Use.Type<IEvent>());
     }
 
     public string ValueSql(EventGraph graph, AppendMode mode)

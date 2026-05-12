@@ -96,7 +96,11 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
         var ids = new Guid[count];
         var typeNames = new string[count];
         var dotNetTypeNames = new string[count];
-        var jsonBodies = new string[count];
+        // jsonBodies is byte[][] so each element is serialized directly to UTF-8 via
+        // ISerializer.WriteToParameter-style emission, skipping the intermediate UTF-16
+        // string materialization that ToJson() would do. Npgsql 9 accepts byte[][] for
+        // Array|Jsonb and writes each element's raw bytes to the wire.
+        var jsonBodies = new byte[count][];
 
         for (int i = 0; i < count; i++)
         {
@@ -104,7 +108,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             ids[i] = e.Id;
             typeNames[i] = e.EventTypeName;
             dotNetTypeNames[i] = e.DotNetTypeName;
-            jsonBodies[i] = session.Serializer.ToJson(e.Data);
+            jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
         }
 
         var param3 = builder.AppendParameter(ids);
@@ -118,6 +122,18 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
 
         var param6 = builder.AppendParameter(jsonBodies);
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+    }
+
+    /// <summary>
+    /// Serialize <paramref name="value"/> to a sized UTF-8 byte[] via the serializer's
+    /// <see cref="ISerializer.WriteTo"/> + a pooled staging buffer. Avoids the intermediate
+    /// <see cref="string"/> allocation that <see cref="ISerializer.ToJson"/> produces.
+    /// </summary>
+    private static byte[] SerializeToUtf8(ISerializer serializer, object? value)
+    {
+        using var buffer = new Services.PooledByteBufferWriter();
+        serializer.WriteTo(buffer, value);
+        return buffer.ToSizedArray();
     }
 
     protected void writeCausationIds(IGroupedParameterBuilder builder)
@@ -146,8 +162,8 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var headers = new string[count];
-        for (int i = 0; i < count; i++) headers[i] = session.Serializer.ToJson(events[i].Headers);
+        var headers = new byte[count][];
+        for (int i = 0; i < count; i++) headers[i] = SerializeToUtf8(session.Serializer, events[i].Headers);
 
         var param = builder.AppendParameter(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;

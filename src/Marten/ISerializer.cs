@@ -1,9 +1,11 @@
 #nullable enable
 using System;
+using System.Buffers;
 using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Npgsql;
 using Weasel.Core;
 
 namespace Marten;
@@ -54,6 +56,27 @@ public interface ISerializer
     /// <param name="document"></param>
     /// <returns></returns>
     string ToJson(object? document);
+
+    /// <summary>
+    ///     Serialize <paramref name="value"/> directly into the supplied buffer writer as UTF-8 JSON.
+    ///     Skips the intermediate string materialization that <see cref="ToJson"/> round-trips through —
+    ///     prefer this on append / write hot paths.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what <c>Encoding.UTF8.GetBytes(ToJson(value))</c>
+    ///     would emit, modulo whitespace/formatting decisions already baked into the serializer's options.
+    /// </remarks>
+    void WriteTo(IBufferWriter<byte> writer, object? value);
+
+    /// <summary>
+    ///     Convenience for the most common append-path use of <see cref="WriteTo"/>: serialize
+    ///     <paramref name="value"/> as UTF-8 JSON and bind the resulting bytes to <paramref name="parameter"/>
+    ///     with <c>NpgsqlDbType.Jsonb</c>. Skips the round-trip through a .NET <see cref="string"/> that
+    ///     <c>AppendParameter(ToJson(value))</c> incurs.
+    /// </summary>
+    /// <param name="parameter">The Npgsql parameter the JSON bytes will bind to.</param>
+    /// <param name="value">The value to serialize; <c>null</c> binds <see cref="DBNull"/>.</param>
+    void WriteToParameter(NpgsqlParameter parameter, object? value);
 
     /// <summary>
     ///     Deserialize a JSON string stream into an object of type T

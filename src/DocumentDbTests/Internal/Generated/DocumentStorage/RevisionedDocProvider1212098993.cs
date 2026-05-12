@@ -68,8 +68,8 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_upsert_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter0 = parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            session.Serializer.WriteToParameter(parameter0, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
@@ -132,8 +132,8 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_insert_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter0 = parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            session.Serializer.WriteToParameter(parameter0, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
@@ -202,8 +202,8 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_update_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter0 = parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            session.Serializer.WriteToParameter(parameter0, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
@@ -458,8 +458,8 @@ namespace Marten.Generated.DocumentStorage
         {
             if (document.Version > 0 && Revision == 1) Revision = document.Version;
             builder.Append("select numeric_revisioning.mt_overwrite_revisioneddoc(");
-            var parameter0 = parameterBuilder.AppendParameter(session.Serializer.ToJson(_document));
-            parameter0.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Jsonb;
+            var parameter0 = parameterBuilder.AppendParameter<object>(System.DBNull.Value);
+            session.Serializer.WriteToParameter(parameter0, _document);
             // .Net Class Type
             var parameter1 = parameterBuilder.AppendParameter(_document.GetType().FullName);
             parameter1.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Varchar;
@@ -1087,7 +1087,7 @@ namespace Marten.Generated.DocumentStorage
             await writer.WriteAsync(document.GetType().FullName, NpgsqlTypes.NpgsqlDbType.Varchar, cancellation);
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             await writer.WriteAsync((long)1, NpgsqlTypes.NpgsqlDbType.Bigint, cancellation);
-            await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
+            await writer.WriteAsync(Marten.Services.SerializerExtensions.SerializeToUtf8(serializer, document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
 
 
@@ -1097,7 +1097,7 @@ namespace Marten.Generated.DocumentStorage
             await writer.WriteAsync(((DocumentDbTests.Concurrency.RevisionedDoc)document).Id, NpgsqlTypes.NpgsqlDbType.Uuid, cancellation);
             writer.Write(document.Version <= 0 ? (object)System.DBNull.Value : (object)(long)document.Version, NpgsqlTypes.NpgsqlDbType.Bigint);
             await writer.WriteAsync((long)1, NpgsqlTypes.NpgsqlDbType.Bigint, cancellation);
-            await writer.WriteAsync(serializer.ToJson(document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
+            await writer.WriteAsync(Marten.Services.SerializerExtensions.SerializeToUtf8(serializer, document), NpgsqlTypes.NpgsqlDbType.Jsonb, cancellation);
         }
 
 

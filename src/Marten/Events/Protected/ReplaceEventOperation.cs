@@ -37,7 +37,11 @@ internal class ReplaceEventOperation<T> : IStorageOperation where T : class
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set data = ");
-        builder.AppendParameter(session.Serializer.ToJson(_eventBody), NpgsqlDbType.Jsonb);
+        using (var buffer = new Services.PooledByteBufferWriter())
+        {
+            session.Serializer.WriteTo(buffer, _eventBody);
+            builder.AppendParameter(buffer.ToSizedArray(), NpgsqlDbType.Jsonb);
+        }
         builder.Append(", timestamp = now() at time zone 'utc', type = ");
         builder.AppendParameter(_eventTypeName, NpgsqlDbType.Varchar);
         builder.Append(", mt_dotnet_type = ");

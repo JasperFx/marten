@@ -308,9 +308,9 @@ internal class BulkEventAppender
         // version
         await writer.WriteAsync(e.Version, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
 
-        // data (jsonb)
-        var json = _serializer.ToJson(e.Data);
-        await writer.WriteAsync(json, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
+        // data (jsonb) — direct UTF-8 serialization, no intermediate string allocation.
+        var dataBytes = SerializeToUtf8(_serializer, e.Data);
+        await writer.WriteAsync(dataBytes, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
 
         // type
         await writer.WriteAsync(e.EventTypeName, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
@@ -365,8 +365,8 @@ internal class BulkEventAppender
         {
             if (e.Headers != null)
             {
-                var headersJson = _serializer.ToJson(e.Headers);
-                await writer.WriteAsync(headersJson, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
+                var headersBytes = SerializeToUtf8(_serializer, e.Headers);
+                await writer.WriteAsync(headersBytes, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
             }
             else
             {
@@ -406,5 +406,17 @@ ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progre
         cmd.CommandText = sql;
         cmd.Parameters.AddWithValue("seq", maxSequence);
         await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Serialize <paramref name="value"/> to a sized UTF-8 byte[] via the serializer's
+    /// buffer-writer path. Avoids the intermediate <see cref="string"/> allocation that
+    /// <see cref="ISerializer.ToJson"/> produces — meaningful across long bulk imports.
+    /// </summary>
+    private static byte[] SerializeToUtf8(ISerializer serializer, object? value)
+    {
+        using var buffer = new Services.PooledByteBufferWriter();
+        serializer.WriteTo(buffer, value);
+        return buffer.ToSizedArray();
     }
 }

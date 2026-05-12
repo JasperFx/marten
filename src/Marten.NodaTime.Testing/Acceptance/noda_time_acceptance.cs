@@ -408,5 +408,15 @@ public class noda_time_acceptance: OneOffConfigurationsContext
         {
             throw new NotSupportedException();
         }
+
+        public void WriteTo(System.Buffers.IBufferWriter<byte> writer, object document)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void WriteToParameter(Npgsql.NpgsqlParameter parameter, object document)
+        {
+            throw new NotSupportedException();
+        }
     }
 }

@@ -1,8 +1,10 @@
+using System;
 using System.Threading;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
 using Marten.Internal;
+using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -20,8 +22,11 @@ internal class DocJsonBodyArgument: UpsertArgument
 
     public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
     {
+        // Direct UTF-8 serialization via SerializerExtensions.SerializeToUtf8 — internally
+        // a pooled buffer writer + sized byte[] snapshot. Skips the string materialization
+        // that serializer.ToJson(document) would emit on the bulk-loader hot path.
         load.Frames.CodeAsync(
-            "await writer.WriteAsync(serializer.ToJson(document), {0}, {1});",
+            $"await writer.WriteAsync({typeof(SerializerExtensions).FullName}.{nameof(SerializerExtensions.SerializeToUtf8)}(serializer, document), {{0}}, {{1}});",
             NpgsqlDbType.Jsonb, Use.Type<CancellationToken>());
     }
 
@@ -29,7 +34,9 @@ internal class DocJsonBodyArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}({{1}}.Serializer.ToJson(_document));", Use.Type<IGroupedParameterBuilder>(), Use.Type<IMartenSession>());
-        method.Frames.Code($"parameter{i}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
+        // Use Serializer.WriteToParameter for direct UTF-8 serialization into the
+        // parameter; skips the intermediate string round-trip.
+        method.Frames.Code($"var parameter{i} = {{0}}.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullName}.Value);", Use.Type<IGroupedParameterBuilder>());
+        method.Frames.Code($"{{0}}.Serializer.{nameof(ISerializer.WriteToParameter)}(parameter{i}, _document);", Use.Type<IMartenSession>());
     }
 }
