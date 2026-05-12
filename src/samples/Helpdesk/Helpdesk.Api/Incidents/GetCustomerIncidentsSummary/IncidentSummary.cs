@@ -54,7 +54,7 @@ public class CustomerIncidentsSummaryGrouper: IAggregateGrouper<Guid>
         typeof(IncidentClosed)
     };
 
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<Guid> grouping)
+    public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, ITenantSliceGroup<Guid> grouping)
     {
         var filteredEvents = events
             .Where(ev => eventTypes.Contains(ev.EventType))

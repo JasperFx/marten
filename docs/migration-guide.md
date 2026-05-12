@@ -20,6 +20,14 @@
 
   This is purely cosmetic — leaving the columns in place is harmless. New databases created by Marten 9 will not have them. See [#4316](https://github.com/JasperFx/marten/issues/4316).
 
+### `IAggregateGrouper<T>.Group` parameter type tightened
+
+* The `events` parameter on `IAggregateGrouper<T>.Group(...)` changed from `IEnumerable<IEvent>` to `IReadOnlyList<IEvent>`. Implementations frequently need two or more passes over the same batch — partition events by type first, then resolve related document IDs from the database — and the prior `IEnumerable<IEvent>` signature gave no guarantee that re-iteration was safe or cheap. Static analysers correctly flagged it as possible-multiple-enumeration, forcing every implementor to either eat the warning or do a defensive `.ToList()` at the top of `Group`.
+
+  Update the parameter type in your `Group` implementations and drop any defensive `events.ToList()` / `events as IReadOnlyCollection<IEvent>` materialization — `Count`, indexed access, and repeat iteration are first-class on `IReadOnlyList<IEvent>`. No logic change required. The same change applies to the lambda-form `CustomGrouping(Func<IQuerySession, IReadOnlyList<IEvent>, IEventGrouping<TId>, Task>)` overload; lambda call sites usually need no edit because `IReadOnlyList<IEvent>` is also an `IEnumerable<IEvent>` and type inference handles the rest.
+
+  See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.

@@ -298,7 +298,7 @@ As simpler mechanism to group events to aggregate documents is to supply a custo
 ```cs
 public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+    public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var licenseFeatureTogglesEvents = events
             .OfType<IEvent<LicenseFeatureToggled>>()
@@ -433,7 +433,7 @@ Custom grouper that resolves `CustomerId` in bulk per event range:
 ```cs
 public class ExternalAccountToCustomerGrouper: IAggregateGrouper<Guid>
 {
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+    public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
     {
         var usageEvents = events
             .Where(e => e.Data is IExternalAccountEvent)
@@ -534,7 +534,7 @@ the projection being built.
 If you must keep this shape (because you genuinely need the bounded linked-id list
 on the projected document), the grouper has to be coded defensively:
 
-1. Scan the current batch's `IEnumerable<IEvent>` for in-flight link events and seed
+1. Scan the current batch's `IReadOnlyList<IEvent>` for in-flight link events and seed
    an in-memory lookup from those first.
 2. Then query the projected document (or a dedicated lookup) to cover links committed
    by an earlier batch.
@@ -626,7 +626,7 @@ link events and usage events can appear in a single `SaveChangesAsync` batch.
 
 The idea is:
 
-1. The grouper scans the current batch's `IEnumerable<IEvent>` for in-flight link
+1. The grouper scans the current batch's `IReadOnlyList<IEvent>` for in-flight link
    events first, seeding an in-memory map from external id to aggregate id.
 2. For any usage events whose external id is not in the map, the grouper queries
    a dedicated lookup document (the same one Pattern 1 uses) to pick up links
@@ -677,15 +677,13 @@ public class BatchAwareExternalAccountGrouper: IAggregateGrouper<Guid>
 {
     private readonly ConcurrentDictionary<string, Guid> _cache = new();
 
-    public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+    public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
     {
-        var materialized = events as IReadOnlyCollection<IEvent> ?? events.ToList();
-
-        var labelEvents = materialized.OfType<IEvent<ShippingLabelCreated>>().ToList();
+        var labelEvents = events.OfType<IEvent<ShippingLabelCreated>>().ToList();
         if (labelEvents.Count == 0) return;
 
         // 1) Pick up any link events that share THIS batch.
-        foreach (var linkEvent in materialized.OfType<IEvent<CustomerLinkedToExternalAccount>>())
+        foreach (var linkEvent in events.OfType<IEvent<CustomerLinkedToExternalAccount>>())
         {
             _cache[linkEvent.Data.ExternalAccountId] = linkEvent.Data.CustomerId;
         }
@@ -1047,7 +1045,7 @@ The custom grouper, `MonthlyAllocationGrouper`, is responsible for the logic of 
 ```cs
 public class MonthlyAllocationGrouper: IAggregateGrouper<string>
 {
-    public Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<string> grouping)
+    public Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<string> grouping)
     {
         var allocations = events
             .OfType<IEvent<EmployeeAllocated>>();

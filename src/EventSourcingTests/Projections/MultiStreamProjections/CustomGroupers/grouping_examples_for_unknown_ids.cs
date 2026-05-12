@@ -56,7 +56,7 @@ public class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
 
     public class ExternalAccountToCustomerGrouper: IAggregateGrouper<Guid>
     {
-        public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+        public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
         {
             var usageEvents = events
                 .Where(e => e.Data is IExternalAccountEvent)
@@ -249,15 +249,16 @@ public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
     {
         private readonly ConcurrentDictionary<string, Guid> _cache = new();
 
-        public async Task Group(IQuerySession session, IEnumerable<IEvent> events, IEventGrouping<Guid> grouping)
+        public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
         {
-            var materialized = events as IReadOnlyCollection<IEvent> ?? events.ToList();
-
-            var labelEvents = materialized.OfType<IEvent<ShippingLabelCreated>>().ToList();
+            // events is now IReadOnlyList<IEvent> per jasperfx#201 — drop the
+            // defensive materialize-or-ToList() that used to be required when
+            // the parameter was a bare IEnumerable<IEvent>.
+            var labelEvents = events.OfType<IEvent<ShippingLabelCreated>>().ToList();
             if (labelEvents.Count == 0) return;
 
             // 1) Pick up any link events that share THIS batch.
-            foreach (var linkEvent in materialized.OfType<IEvent<CustomerLinkedToExternalAccount>>())
+            foreach (var linkEvent in events.OfType<IEvent<CustomerLinkedToExternalAccount>>())
             {
                 _cache[linkEvent.Data.ExternalAccountId] = linkEvent.Data.CustomerId;
             }
