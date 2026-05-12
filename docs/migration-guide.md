@@ -74,6 +74,34 @@
 
   See [#3733](https://github.com/JasperFx/marten/issues/3733) / [#4377](https://github.com/JasperFx/marten/pull/4377).
 
+### Optional HSTORE-backed DCB tag storage
+
+* Marten 9 adds an opt-in alternative storage layout for [DCB](events/dcb.md) tags: `DcbStorageMode.HStore`. The default (`DcbStorageMode.TagTables`) is unchanged, so **no migration is required** when upgrading from Marten 8 — existing tag tables and queries continue to work exactly as before.
+
+  ```csharp
+  // Marten 8 / Marten 9 default — one Postgres table per registered tag type
+  opts.Events.RegisterTagType<StudentId>("student");
+
+  // Marten 9 opt-in — all tags live inline on mt_events.tags (hstore)
+  // with a single GIN index covering every tag type
+  opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+  opts.Events.RegisterTagType<StudentId>("student");
+  ```
+
+  When to consider opting in:
+
+  * Your DCB queries usually match on **two or more tag types** — the JOIN-free HStore mode is ~90% faster on the common `QueryByTagsAsync(2 tags OR)` shape and ~70% faster on `EventsExistAsync(2 tags OR)`.
+  * `FetchForWritingByTags` is on your hot path — round-trip drops by roughly half.
+  * Your schema is dominated by tag tables and the proliferation is becoming a maintenance burden.
+
+  When to stay on `TagTables`:
+
+  * Your DCB workload is dominated by **single-tag `EventsExistAsync` probes** — HStore is slightly slower on that specific case.
+  * You already have a populated TagTables-mode store. The mode is chosen per database at creation time; in-place migration between modes is not provided.
+  * Your Postgres deployment doesn't allow the `hstore` extension to be installed.
+
+  The full trade-off table and measured per-op numbers live in the [DCB documentation → Choosing a Storage Mode](events/dcb.md#choosing-a-storage-mode) section. See [#4238](https://github.com/JasperFx/marten/issues/4238) / [#4379](https://github.com/JasperFx/marten/pull/4379).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
