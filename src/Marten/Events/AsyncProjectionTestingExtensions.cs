@@ -61,19 +61,40 @@ public static class TestingExtensions
 
     /// <summary>
     ///     Wait for any running async daemons to catch up to the latest event sequence at the time
-    ///     this method is invoked for all projections. This method is meant to aid in automated testing
+    ///     this method is invoked for all projections. This method is meant to aid in automated testing.
+    ///     Under multi-tenancy with separate databases (including
+    ///     <c>MultiTenantedWithShardedDatabases</c>), this iterates every database produced by
+    ///     <c>IMartenStorage.AllDatabases()</c> and waits on each shard's daemon — mirroring the
+    ///     <c>IHost.ForceAllMartenDaemonActivityToCatchUpAsync()</c> shape so test fixtures that
+    ///     construct an <see cref="IDocumentStore"/> directly (no <c>IHost</c>) can still use this
+    ///     method against sharded stores. See <a href="https://github.com/JasperFx/marten/issues/4366">#4366</a>.
     /// </summary>
     /// <param name="store"></param>
     /// <param name="timeout"></param>
-    public static Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store, TimeSpan timeout)
+    public static async Task WaitForNonStaleProjectionDataAsync(this IDocumentStore store, TimeSpan timeout)
     {
         if (store.As<DocumentStore>().Tenancy is DefaultTenancy)
         {
-            return store.Storage.Database.WaitForNonStaleProjectionDataAsync(timeout);
+            await store.Storage.Database.WaitForNonStaleProjectionDataAsync(timeout).ConfigureAwait(false);
+            return;
         }
 
-        throw new InvalidOperationException(
-            "If using multi-tenancy through any kind of separate databases per tenant, please specify a tenant id or database name");
+        // Multi-tenancy through separate databases (sharded, conjoined, single-server, etc.):
+        // there is no single "default" database to wait on. Iterate every database the store
+        // knows about and wait on each. Each call gets its own copy of the timeout because the
+        // waits run sequentially; in practice the high-water-mark check is cheap when projections
+        // are already caught up.
+        var databases = await store.Storage.AllDatabases().ConfigureAwait(false);
+        if (databases.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "The document store has no databases registered with its tenancy. Either configure a tenancy strategy that exposes databases (e.g. MultiTenantedWithShardedDatabases) or invoke a specific tenant id / database name overload.");
+        }
+
+        foreach (var database in databases)
+        {
+            await database.WaitForNonStaleProjectionDataAsync(timeout).ConfigureAwait(false);
+        }
     }
 
     /// <summary>
