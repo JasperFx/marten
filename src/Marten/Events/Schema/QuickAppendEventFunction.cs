@@ -73,27 +73,33 @@ namespace Marten.Events.Schema;
                 metadataParameters += ", timestamps timestamptz[]";
             }
 
-            // Add tag type parameters
+            // Add tag type parameters. In DcbStorageMode.HStore the function does NOT
+            // accept per-tag-table arrays — tags are written via a follow-up UPDATE
+            // (SetEventTagsHstoreByEventIdOperation) by the QuickEventAppender so the
+            // function stays mode-agnostic.
             var tagParameters = "";
             var tagInserts = "";
-            foreach (var tagType in _events.TagTypes)
+            if (_events.DcbStorageMode != DcbStorageMode.HStore)
             {
-                var paramName = $"tag_{tagType.TableSuffix}_values";
-                tagParameters += $", {paramName} varchar[]";
-
-                if (tenancyStyle == TenancyStyle.Conjoined)
+                foreach (var tagType in _events.TagTypes)
                 {
-                    tagInserts += $@"
+                    var paramName = $"tag_{tagType.TableSuffix}_values";
+                    tagParameters += $", {paramName} varchar[]";
+
+                    if (tenancyStyle == TenancyStyle.Conjoined)
+                    {
+                        tagInserts += $@"
 		IF {paramName}[index] IS NOT NULL THEN
 			INSERT INTO {databaseSchema}.mt_event_tag_{tagType.TableSuffix} (value, tenant_id, seq_id) VALUES ({paramName}[index]::{PostgresqlTypeFor(tagType.SimpleType)}, tenantid, seq) ON CONFLICT DO NOTHING;
 		END IF;";
-                }
-                else
-                {
-                    tagInserts += $@"
+                    }
+                    else
+                    {
+                        tagInserts += $@"
 		IF {paramName}[index] IS NOT NULL THEN
 			INSERT INTO {databaseSchema}.mt_event_tag_{tagType.TableSuffix} (value, seq_id) VALUES ({paramName}[index]::{PostgresqlTypeFor(tagType.SimpleType)}, seq) ON CONFLICT DO NOTHING;
 		END IF;";
+                    }
                 }
             }
 

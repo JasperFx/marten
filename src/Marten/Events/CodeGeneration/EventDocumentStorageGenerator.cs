@@ -326,7 +326,9 @@ internal static class EventDocumentStorageGenerator
             configure.Frames.Code("writeTimestamps(parameterBuilder);");
         }
 
-        if (graph.TagTypes.Count > 0)
+        // HStore mode writes tags via a follow-up UPDATE; the function signature
+        // does not include the per-tag varchar[] parameters in that case.
+        if (graph.TagTypes.Count > 0 && graph.DcbStorageMode != DcbStorageMode.HStore)
         {
             configure.Frames.Code("writeAllTagValues(parameterBuilder);");
         }
