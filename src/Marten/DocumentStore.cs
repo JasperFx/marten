@@ -23,6 +23,7 @@ using Marten.Events.Daemon;
 using Marten.Events.Projections;
 using Marten.Events.Daemon.HighWater;
 using Marten.Exceptions;
+using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
 using Marten.Services;
 using Marten.Storage;
@@ -96,6 +97,15 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
             Options.Projections.AttachLogging(Options.LogFactory);
         }
 
+        // marten#4370 Phase 2: compute the codegen snapshot verdict and log
+        // any rejection. The verdict is observed but not yet acted on —
+        // Phase 2 ships the plumbing so subsequent PRs can add concrete
+        // snapshot artifacts (event-name map, document-storage map,
+        // projection apply factories) each gated by this verdict.
+        MartenSnapshot.VerifyAtBoot(
+            Options,
+            Options.LogFactory?.CreateLogger("Marten.Snapshot"));
+
         Advanced = new AdvancedOperations(this);
 
         Diagnostics = new Diagnostics(this);
@@ -119,6 +129,12 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
 
         Identity = new(Options.StoreName.ToLowerInvariant(), "marten");
+
+        // marten#4370 Phase 2: persist the fingerprint at the end of
+        // construction so the next boot's VerifyAtBoot has a baseline
+        // to compare against. Best-effort — persistence failure must not
+        // break construction.
+        MartenSnapshot.PersistFingerprint(Options);
     }
 
     public ITenancy Tenancy => Options.Tenancy;
