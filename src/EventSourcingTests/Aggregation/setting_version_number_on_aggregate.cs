@@ -132,7 +132,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
     public class MyAggregateWithDifferentVersionProperty
     {
         [Version]
-        public int SpecialVersion { get; set; }
+        public long SpecialVersion { get; set; }
 
 
         public Guid Id { get; set; }
