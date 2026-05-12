@@ -51,6 +51,13 @@ public partial class EventGraph: IFeatureSchema
 
     private IEnumerable<ISchemaObject> createAllSchemaObjects()
     {
+        // DCB in HStore mode requires the Postgres hstore extension. Register it before
+        // any table that depends on the hstore type is created.
+        if (DcbStorageMode == DcbStorageMode.HStore && _tagTypes.Count > 0)
+        {
+            yield return new Extension("hstore");
+        }
+
         yield return new StreamsTable(this);
 
         if (EnableStrictStreamIdentityEnforcement)
@@ -109,9 +116,13 @@ public partial class EventGraph: IFeatureSchema
                 "varchar, bigint, bigint");
         }
 
-        foreach (var tagRegistration in _tagTypes)
+        // In HStore mode tags live inline on mt_events.tags; no per-type tag tables exist.
+        if (DcbStorageMode != DcbStorageMode.HStore)
         {
-            yield return new EventTagTable(this, tagRegistration);
+            foreach (var tagRegistration in _tagTypes)
+            {
+                yield return new EventTagTable(this, tagRegistration);
+            }
         }
     }
 }

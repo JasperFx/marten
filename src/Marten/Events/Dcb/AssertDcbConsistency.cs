@@ -28,11 +28,31 @@ internal class AssertDcbConsistency: IStorageOperation
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
+        var conditions = _query.Conditions;
+
+        if (_events.DcbStorageMode == DcbStorageMode.HStore)
+        {
+            builder.Append("select exists (select 1 from ");
+            builder.Append(_events.DatabaseSchemaName);
+            builder.Append(".mt_events e where e.seq_id > ");
+            builder.AppendParameter(_lastSeenSequence);
+            builder.Append(" and ");
+            HStoreDcbQueryFragment.AppendOrPredicate(builder, _events, conditions, "e");
+
+            if (_events.TenancyStyle == TenancyStyle.Conjoined)
+            {
+                builder.Append(" and e.tenant_id = ");
+                builder.AppendParameter(session.TenantId);
+            }
+
+            builder.Append(" limit 1)");
+            return;
+        }
+
         // Build EXISTS query to check if any new matching events have been appended
         // since our last seen sequence
         builder.Append("select exists (select 1 from ");
 
-        var conditions = _query.Conditions;
         var distinctTagTypes = conditions.Select(c => c.TagType).Distinct().ToList();
 
         // Start with the first tag table

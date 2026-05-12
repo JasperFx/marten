@@ -354,6 +354,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public IReadOnlyList<ITagTypeRegistration> TagTypes => _tagTypes;
 
     /// <summary>
+    /// How Dynamic Consistency Boundary (DCB) tags are physically stored. Default is
+    /// <see cref="DcbStorageMode.TagTables"/> (one table per tag type, the Marten 8 behavior).
+    /// Set to <see cref="DcbStorageMode.HStore"/> to store all tags inline on
+    /// <c>mt_events.tags</c> using Postgres' <c>hstore</c> extension and avoid LEFT JOINs
+    /// on every DCB query.
+    /// </summary>
+    public DcbStorageMode DcbStorageMode { get; set; } = DcbStorageMode.TagTables;
+
+    /// <summary>
     /// Find a tag type registration by type, or null if not registered.
     /// </summary>
     public ITagTypeRegistration? FindTagType(Type tagType)
