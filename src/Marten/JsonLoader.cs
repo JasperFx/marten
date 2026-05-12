@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ internal class JsonLoader: IJsonLoader
     {
         ArgumentNullException.ThrowIfNull(id);
 
-        var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
+        var streamer = BuildStreamer<T>(id.GetType());
         return streamer.FindByIdAsync(id, token);
     }
 
@@ -50,8 +51,30 @@ internal class JsonLoader: IJsonLoader
     {
         ArgumentNullException.ThrowIfNull(id);
 
-        var streamer = typeof(Streamer<,>).CloseAndBuildAs<IStreamer<T>>(this, typeof(T), id.GetType());
+        var streamer = BuildStreamer<T>(id.GetType());
         return streamer.StreamJsonById(id, destination, token);
+    }
+
+    // 9.0 (#4373): delegate-cached IStreamer<T> factory keyed on (T, idType). Both
+    // endpoints (FindByIdAsync, StreamById) hit the same cache, so a high-RPS
+    // AspNetCore deployment that polls a stable (doc, idType) pair pays one
+    // reflection cost at warm-up and zero per request thereafter.
+    //
+    // GenericFactoryCache doesn't ship a (2 type args, 1 ctor arg) overload yet, so
+    // we hold the small per-(T, idType) cache locally — the cache key is sized to the
+    // small set of (doc type, identity type) pairs an app actually queries by.
+    private static readonly ConcurrentDictionary<(Type Doc, Type Id), Func<JsonLoader, object>> _streamerFactories = new();
+
+    private IStreamer<T> BuildStreamer<T>(Type idType) where T : class
+    {
+        var factory = _streamerFactories.GetOrAdd(
+            (typeof(T), idType),
+            static key =>
+            {
+                var closed = typeof(Streamer<,>).MakeGenericType(key.Doc, key.Id);
+                return loader => Activator.CreateInstance(closed, loader)!;
+            });
+        return (IStreamer<T>)factory(this);
     }
 
     private interface IStreamer<T>

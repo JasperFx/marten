@@ -76,7 +76,12 @@ public abstract partial class DocumentSessionBase
 
     public void Delete<T>(object id) where T : notnull
     {
-        var deleter = typeof(ByIdDeleter<>).CloseAndBuildAs<IByIdDeleter>(this, id.GetType());
+        // 9.0 (#4373): delegate-cached factory keyed on id.GetType().
+        var deleter = GenericFactoryCache.BuildAs<IByIdDeleter>(
+            typeof(ByIdDeleter<>),
+            id.GetType(),
+            this,
+            static closed => session => (IByIdDeleter)Activator.CreateInstance(closed, session)!);
         deleter.Delete<T>(id);
     }
 
@@ -160,7 +165,11 @@ public abstract partial class DocumentSessionBase
 
         foreach (var group in documentsGroupedByType)
         {
-            var handler = typeof(DeleteHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+            // 9.0 (#4373): delegate-cached factory keyed on document type.
+            var handler = GenericFactoryCache.BuildAs<IObjectHandler>(
+                typeof(DeleteHandler<>),
+                group.Key,
+                static closed => () => (IObjectHandler)Activator.CreateInstance(closed)!);
             handler.Execute(this, group);
         }
     }
