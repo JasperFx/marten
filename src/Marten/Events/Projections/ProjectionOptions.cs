@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -55,6 +56,31 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
         get => _options.Events.UseIdentityMapForAggregates;
         set => _options.Events.UseIdentityMapForAggregates = value;
     }
+
+    /// <summary>
+    ///     Controls whether DocumentStore construction scans loaded assemblies for
+    ///     <c>[GeneratedEvolverAttribute]</c> markers emitted by Marten's source generator
+    ///     (Lens 1 cold-start optimization for #4294). Default is <see langword="true"/>;
+    ///     apps that do not use source-generated aggregate evolvers can set this to
+    ///     <see langword="false"/> to skip the discovery walk and the AppDomain
+    ///     assembly enumeration that drives it. Has no effect on runtime behavior
+    ///     (evolver dispatch is unrelated); only affects construction-time cost.
+    /// </summary>
+    public bool DiscoverGeneratedEvolversOnStartup { get; set; } = true;
+
+    // Snapshot of AppDomain.CurrentDomain.GetAssemblies() taken on first construction
+    // of any DocumentStore in the process. The audit row #4294/Lens-1/#1 calls this out
+    // as a top-fix candidate — multiple DocumentStore instances (multi-database tenancy)
+    // each pay for re-enumerating the full loaded-assembly set otherwise. Trade-off:
+    // assemblies loaded *after* the first DocumentStore construction won't be scanned
+    // for evolvers; in practice the loaded-assembly set is stable once host startup
+    // completes, so this matches typical evolver-discovery semantics. Race on first
+    // assignment is benign (both racers get a valid array; the late writer's array
+    // is discarded).
+    private static Assembly[]? _cachedLoadedAssemblies;
+
+    internal static Assembly[] CachedLoadedAssemblies =>
+        _cachedLoadedAssemblies ??= AppDomain.CurrentDomain.GetAssemblies();
 
     protected override void onAddProjection(object projection)
     {
