@@ -28,6 +28,80 @@
 
   See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
 
+### Numeric document revisions widened from `int` to `long`
+
+* The numeric document revision (the value tracked in the `mt_version` column when `UseNumericRevisions` is enabled, or on aggregate documents that derive `Version` from the stream version) is now a 64-bit `long` everywhere. This removes the 2.1B-update-per-document ceiling that `int` imposed — comfortably within reach for high-throughput inline projections and per-event-snapshotted aggregates.
+
+  **What changed on the .NET side:**
+
+  | Surface | Before | After |
+  | --- | --- | --- |
+  | `Marten.Metadata.IRevisioned.Version` | `int` | `long` |
+  | `[Version]`-annotated numeric properties on revisioned documents | `int` | `long` |
+  | `DocumentMetadata.CurrentRevision` | `int` | `long` |
+  | `IDocumentSession.UpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
+  | `IDocumentSession.TryUpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
+  | `IRevisionedOperation.Revision` | `int` | `long` |
+  | `MartenRegistry.MetadataConfig.Revision` | `Column<int>` | `Column<long>` |
+
+  **What you have to change in your code:**
+
+  * Any class implementing `IRevisioned`: widen `Version` to `long`.
+
+    ```csharp
+    // Before (Marten 8)
+    public class Reservation : IRevisioned
+    {
+        public Guid Id { get; set; }
+        public int Version { get; set; }
+    }
+
+    // After (Marten 9)
+    public class Reservation : IRevisioned
+    {
+        public Guid Id { get; set; }
+        public long Version { get; set; }
+    }
+    ```
+
+  * Any document with a `[Version]`-annotated numeric property used with `UseNumericRevisions`: widen the property to `long`.
+  * Any `m.Revision.MapTo(x => x.SomeProperty)` configuration: the target property must be `long`. Mapping to an `int` property now throws `ArgumentOutOfRangeException` at mapping time.
+  * Any code calling `IDocumentSession.UpdateRevision` / `TryUpdateRevision` with an explicit `int` literal compiles unchanged (`int` is implicitly convertible to `long`); explicit `int` locals passed in widen with a one-character edit.
+
+  **Schema migration is automatic and non-destructive.** Existing Marten 8 deployments have an `integer` `mt_version` column. Marten 9's schema migration emits `ALTER TABLE … ALTER COLUMN mt_version TYPE bigint` and rewrites the associated `mt_upsert_*` / `mt_update_*` / `mt_overwrite_*` functions to accept and return `BIGINT`. All existing revision values are preserved — there is no data loss and no manual SQL to run.
+
+  **Bulk insert** of a revisioned document type pre-loads expected-version values as `bigint`. If you have a custom `IBulkLoader<T>` implementation (rare), you must use `NpgsqlDbType.Bigint` instead of `NpgsqlDbType.Integer` for the expected-version column.
+
+  See [#3733](https://github.com/JasperFx/marten/issues/3733) / [#4377](https://github.com/JasperFx/marten/pull/4377).
+
+### Optional HSTORE-backed DCB tag storage
+
+* Marten 9 adds an opt-in alternative storage layout for [DCB](events/dcb.md) tags: `DcbStorageMode.HStore`. The default (`DcbStorageMode.TagTables`) is unchanged, so **no migration is required** when upgrading from Marten 8 — existing tag tables and queries continue to work exactly as before.
+
+  ```csharp
+  // Marten 8 / Marten 9 default — one Postgres table per registered tag type
+  opts.Events.RegisterTagType<StudentId>("student");
+
+  // Marten 9 opt-in — all tags live inline on mt_events.tags (hstore)
+  // with a single GIN index covering every tag type
+  opts.Events.DcbStorageMode = DcbStorageMode.HStore;
+  opts.Events.RegisterTagType<StudentId>("student");
+  ```
+
+  When to consider opting in:
+
+  * Your DCB queries usually match on **two or more tag types** — the JOIN-free HStore mode is ~90% faster on the common `QueryByTagsAsync(2 tags OR)` shape and ~70% faster on `EventsExistAsync(2 tags OR)`.
+  * `FetchForWritingByTags` is on your hot path — round-trip drops by roughly half.
+  * Your schema is dominated by tag tables and the proliferation is becoming a maintenance burden.
+
+  When to stay on `TagTables`:
+
+  * Your DCB workload is dominated by **single-tag `EventsExistAsync` probes** — HStore is slightly slower on that specific case.
+  * You already have a populated TagTables-mode store. The mode is chosen per database at creation time; in-place migration between modes is not provided.
+  * Your Postgres deployment doesn't allow the `hstore` extension to be installed.
+
+  The full trade-off table and measured per-op numbers live in the [DCB documentation → Choosing a Storage Mode](events/dcb.md#choosing-a-storage-mode) section. See [#4238](https://github.com/JasperFx/marten/issues/4238) / [#4379](https://github.com/JasperFx/marten/pull/4379).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
