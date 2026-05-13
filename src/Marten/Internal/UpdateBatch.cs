@@ -38,39 +38,42 @@ public class UpdateBatch: IUpdateBatch
 
     public IReadOnlyList<OperationPage> BuildPages(IMartenSession session)
     {
-        return buildPages(session).ToList();
-    }
-
-    private IEnumerable<OperationPage> buildPages(IMartenSession session)
-    {
-        if (!_operations.Any())
+        // 9.0 (#4375): single-page fast path avoids allocating the iterator state machine
+        // + intermediate List<OperationPage> for the common single-batch SaveChanges case.
+        if (_operations.Count == 0)
         {
-            yield break;
+            return Array.Empty<OperationPage>();
         }
 
         if (_operations.Count < session.Options.UpdateBatchSize)
         {
-            yield return new OperationPage(session, _operations);
+            return new[] { new OperationPage(session, _operations) };
         }
-        else
+
+        return buildMultiplePages(session);
+    }
+
+    private List<OperationPage> buildMultiplePages(IMartenSession session)
+    {
+        var batchSize = session.Options.UpdateBatchSize;
+        var pageCount = (_operations.Count + batchSize - 1) / batchSize;
+        var pages = new List<OperationPage>(pageCount);
+
+        var count = 0;
+        while (count < _operations.Count)
         {
-            var count = 0;
-            var batchSize = session.Options.UpdateBatchSize;
-
-            while (count < _operations.Count)
+            var remaining = Math.Min(batchSize, _operations.Count - count);
+            var operations = new IStorageOperation[remaining];
+            for (int i = 0; i < remaining; i++)
             {
-                var remaining = Math.Min(batchSize, _operations.Count - count);
-                var operations = new IStorageOperation[remaining];
-                for (int i = 0; i < remaining; i++)
-                {
-                    operations[i] = _operations[count + i];
-                }
-
-                var page = new OperationPage(session, operations);
-                yield return page;
-
-                count += batchSize;
+                operations[i] = _operations[count + i];
             }
+
+            pages.Add(new OperationPage(session, operations));
+
+            count += batchSize;
         }
+
+        return pages;
     }
 }
