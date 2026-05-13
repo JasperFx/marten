@@ -27,12 +27,7 @@
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
         <!-- FSharp.Core removed: F# support uses reflection via FSharpTypeHelper -->
         <PackageReference Include="JasperFx" />
-        <!-- TEMPORARY (dedupe pillar Phase 1): ProjectReference to local JFx.Events
-             worktree because the contracts merged in JasperFx/jasperfx#268 are not
-             yet published as a 2.0.0-alpha.N package. Revert to PackageReference
-             once the alpha is published. -->
-        <!-- <PackageReference Include="JasperFx.Events" /> -->
-        <ProjectReference Include="..\..\..\..\..\..\jasperfx\.claude\worktrees\sleepy-wilson-b2e793\src\JasperFx.Events\JasperFx.Events.csproj" />
+        <PackageReference Include="JasperFx.Events" />
         <PackageReference Include="JasperFx.Events.SourceGenerator">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
