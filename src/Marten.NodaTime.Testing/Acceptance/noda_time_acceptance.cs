@@ -414,6 +414,16 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             throw new NotSupportedException();
         }
 
+        public void WriteToCleanJson(System.Buffers.IBufferWriter<byte> writer, object document)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void WriteToJsonWithTypes(System.Buffers.IBufferWriter<byte> writer, object document)
+        {
+            throw new NotSupportedException();
+        }
+
         public void WriteToParameter(Npgsql.NpgsqlParameter parameter, object document)
         {
             throw new NotSupportedException();

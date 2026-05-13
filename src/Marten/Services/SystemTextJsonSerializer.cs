@@ -161,9 +161,33 @@ public class SystemTextJsonSerializer: ISerializer
         return JsonSerializer.Serialize(document, _clean);
     }
 
+    public void WriteToCleanJson(IBufferWriter<byte> writer, object? value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        using var jsonWriter = new Utf8JsonWriter(writer);
+        if (value is null)
+        {
+            jsonWriter.WriteNullValue();
+        }
+        else
+        {
+            JsonSerializer.Serialize(jsonWriter, value, value.GetType(), _clean);
+        }
+    }
+
     public string ToJsonWithTypes(object document)
     {
         return JsonSerializer.Serialize(document, _withTypes);
+    }
+
+    public void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (value is null) throw new ArgumentNullException(nameof(value));
+
+        using var jsonWriter = new Utf8JsonWriter(writer);
+        JsonSerializer.Serialize(jsonWriter, value, value.GetType(), _withTypes);
     }
 
     public ValueCasting ValueCasting => ValueCasting.Strict;

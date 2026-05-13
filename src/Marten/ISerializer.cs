@@ -128,6 +128,16 @@ public interface ISerializer
     string ToCleanJson(object? document);
 
     /// <summary>
+    ///     UTF-8 / buffer-writer counterpart to <see cref="ToCleanJson"/>. Skips the
+    ///     intermediate <see cref="string"/> allocation on the patch-emission hot path.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what
+    ///     <c>Encoding.UTF8.GetBytes(ToCleanJson(value))</c> would emit.
+    /// </remarks>
+    void WriteToCleanJson(IBufferWriter<byte> writer, object? value);
+
+    /// <summary>
     ///     Write the JSON for a document with embedded
     ///     type information. This is used inside the patching API
     ///     to handle polymorphic collections
@@ -135,6 +145,17 @@ public interface ISerializer
     /// <param name="document"></param>
     /// <returns></returns>
     string ToJsonWithTypes(object document);
+
+    /// <summary>
+    ///     UTF-8 / buffer-writer counterpart to <see cref="ToJsonWithTypes"/>. Skips the
+    ///     intermediate <see cref="string"/> allocation when emitting the polymorphic
+    ///     value payload in a patch operation.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what
+    ///     <c>Encoding.UTF8.GetBytes(ToJsonWithTypes(value))</c> would emit.
+    /// </remarks>
+    void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value);
 }
 
 #endregion
