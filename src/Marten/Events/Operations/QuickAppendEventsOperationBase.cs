@@ -10,6 +10,7 @@ using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Marten.Services;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
@@ -18,6 +19,14 @@ namespace Marten.Events.Operations;
 
 public abstract class QuickAppendEventsOperationBase : IStorageOperation
 {
+    // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
+    // Postprocess / PostprocessAsync once Npgsql has written the parameters to the wire.
+    // Capacity 12 covers writeBasicParameters (4) + writeCausationIds + writeCorrelationIds
+    // + writeHeaders + writeUserNames + writeTimestamps + up-to-N tag-type arrays without
+    // a List growth. Lazily-allocated so subclasses that override ConfigureCommand without
+    // calling any of the helpers pay nothing.
+    private List<IDisposable>? _rentals;
+
     public QuickAppendEventsOperationBase(StreamAction stream)
     {
         Stream = stream;
@@ -41,33 +50,58 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
 
     public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
+    private PooledList<T> rentColumn<T>(int count)
+    {
+        _rentals ??= new List<IDisposable>(12);
+        var list = new PooledList<T>(count);
+        _rentals.Add(list);
+        return list;
+    }
+
+    private void releaseColumnRentals()
+    {
+        if (_rentals is null) return;
+        for (var i = 0; i < _rentals.Count; i++) _rentals[i].Dispose();
+        _rentals.Clear();
+    }
+
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
-        if (reader.Read())
+        try
         {
-            var values = reader.GetFieldValue<long[]>(0);
-
-            var finalVersion = values[0];
-            var events = Stream.Events;
-            for (int i = events.Count - 1; i >= 0; i--)
+            if (reader.Read())
             {
-                events[i].Version = finalVersion;
-                finalVersion--;
-            }
+                var values = reader.GetFieldValue<long[]>(0);
 
-            // Ignore the first value
-            for (int i = 1; i < values.Length; i++)
-            {
-                // Only setting the sequence to aid in tombstone processing
-                events[i - 1].Sequence = values[i];
-            }
+                var finalVersion = values[0];
+                var events = Stream.Events;
+                for (int i = events.Count - 1; i >= 0; i--)
+                {
+                    events[i].Version = finalVersion;
+                    finalVersion--;
+                }
 
-            if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
-            {
-                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
-                    ? Stream.Id
-                    : Stream.Key);
+                // Ignore the first value
+                for (int i = 1; i < values.Length; i++)
+                {
+                    // Only setting the sequence to aid in tombstone processing
+                    events[i - 1].Sequence = values[i];
+                }
+
+                if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
+                {
+                    throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                        ? Stream.Id
+                        : Stream.Key);
+                }
             }
+        }
+        finally
+        {
+            // Always release the rentals — the parameter bytes have been on the wire since
+            // ExecuteReader returned, so they're safe to return to the pool whether
+            // Postprocess succeeded or threw.
+            releaseColumnRentals();
         }
     }
 
@@ -93,14 +127,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
 
         var events = Stream.Events;
         var count = events.Count;
-        var ids = new Guid[count];
-        var typeNames = new string[count];
-        var dotNetTypeNames = new string[count];
+        // 9.0 (#4385): rent the parallel column buffers from ArrayPool<T>.Shared via
+        // PooledList<T>, which surfaces the user-supplied length via ICollection<T>.Count
+        // so Npgsql sends exactly `count` elements (the rented array is typically longer).
         // jsonBodies is byte[][] so each element is serialized directly to UTF-8 via
-        // ISerializer.WriteToParameter-style emission, skipping the intermediate UTF-16
-        // string materialization that ToJson() would do. Npgsql 9 accepts byte[][] for
-        // Array|Jsonb and writes each element's raw bytes to the wire.
-        var jsonBodies = new byte[count][];
+        // ISerializer.WriteTo emission, skipping the intermediate UTF-16 string
+        // materialization that ToJson() would do (#4372 Phase 1).
+        var ids = rentColumn<Guid>(count);
+        var typeNames = rentColumn<string>(count);
+        var dotNetTypeNames = rentColumn<string>(count);
+        var jsonBodies = rentColumn<byte[]>(count);
 
         for (int i = 0; i < count; i++)
         {
@@ -111,16 +147,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
             jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
         }
 
-        var param3 = builder.AppendParameter(ids);
+        var param3 = builder.AppendParameter<IList<Guid>>(ids);
         param3.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Uuid;
 
-        var param4 = builder.AppendParameter(typeNames);
+        var param4 = builder.AppendParameter<IList<string>>(typeNames);
         param4.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
 
-        var param5 = builder.AppendParameter(dotNetTypeNames);
+        var param5 = builder.AppendParameter<IList<string>>(dotNetTypeNames);
         param5.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
 
-        var param6 = builder.AppendParameter(jsonBodies);
+        var param6 = builder.AppendParameter<IList<byte[]>>(jsonBodies);
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
@@ -140,10 +176,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var causationIds = new string[count];
+        var causationIds = rentColumn<string>(count);
         for (int i = 0; i < count; i++) causationIds[i] = events[i].CausationId;
 
-        var param = builder.AppendParameter(causationIds);
+        var param = builder.AppendParameter<IList<string>>(causationIds);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
@@ -151,10 +187,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var correlationIds = new string[count];
+        var correlationIds = rentColumn<string>(count);
         for (int i = 0; i < count; i++) correlationIds[i] = events[i].CorrelationId;
 
-        var param = builder.AppendParameter(correlationIds);
+        var param = builder.AppendParameter<IList<string>>(correlationIds);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
@@ -162,10 +198,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var headers = new byte[count][];
+        var headers = rentColumn<byte[]>(count);
         for (int i = 0; i < count; i++) headers[i] = SerializeToUtf8(session.Serializer, events[i].Headers);
 
-        var param = builder.AppendParameter(headers);
+        var param = builder.AppendParameter<IList<byte[]>>(headers);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
@@ -173,10 +209,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var userNames = new string[count];
+        var userNames = rentColumn<string>(count);
         for (int i = 0; i < count; i++) userNames[i] = events[i].UserName;
 
-        var param = builder.AppendParameter(userNames);
+        var param = builder.AppendParameter<IList<string>>(userNames);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
@@ -184,10 +220,10 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
     {
         var events = Stream.Events;
         var count = events.Count;
-        var timestamps = new DateTimeOffset[count];
+        var timestamps = rentColumn<DateTimeOffset>(count);
         for (int i = 0; i < count; i++) timestamps[i] = events[i].Timestamp;
 
-        var param = builder.AppendParameter(timestamps);
+        var param = builder.AppendParameter<IList<DateTimeOffset>>(timestamps);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.TimestampTz;
     }
 
@@ -199,7 +235,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
 
         foreach (var registration in tagTypes)
         {
-            var values = new string?[count];
+            var values = rentColumn<string?>(count);
             for (int i = 0; i < count; i++)
             {
                 var tags = events[i].Tags;
@@ -216,38 +252,48 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation
                 }
             }
 
-            var param = builder.AppendParameter(values);
+            var param = builder.AppendParameter<IList<string?>>(values);
             param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
         }
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        if (await reader.ReadAsync(token).ConfigureAwait(false))
+        try
         {
-            var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
-
-            var finalVersion = values[0];
-            var events = Stream.Events;
-            for (int i = events.Count - 1; i >= 0; i--)
+            if (await reader.ReadAsync(token).ConfigureAwait(false))
             {
-                events[i].Version = finalVersion;
-                finalVersion--;
-            }
+                var values = await reader.GetFieldValueAsync<long[]>(0, token).ConfigureAwait(false);
 
-            // Ignore the first value
-            for (int i = 1; i < values.Length; i++)
-            {
-                // Only setting the sequence to aid in tombstone processing
-                events[i - 1].Sequence = values[i];
-            }
+                var finalVersion = values[0];
+                var events = Stream.Events;
+                for (int i = events.Count - 1; i >= 0; i--)
+                {
+                    events[i].Version = finalVersion;
+                    finalVersion--;
+                }
 
-            if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
-            {
-                throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
-                    ? Stream.Id
-                    : Stream.Key);
+                // Ignore the first value
+                for (int i = 1; i < values.Length; i++)
+                {
+                    // Only setting the sequence to aid in tombstone processing
+                    events[i - 1].Sequence = values[i];
+                }
+
+                if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
+                {
+                    throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
+                        ? Stream.Id
+                        : Stream.Key);
+                }
             }
+        }
+        finally
+        {
+            // See Postprocess(reader, exceptions) above for the lifetime rationale —
+            // parameter bytes hit the wire before ExecuteReaderAsync returned, so the
+            // rentals are safe to release here regardless of whether the body threw.
+            releaseColumnRentals();
         }
     }
 }
