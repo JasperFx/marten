@@ -187,7 +187,7 @@ var store = DocumentStore.For(opts =>
 `RestoreV8Defaults()` reverts every setting flipped in this release:
 
 | Setting | V8 default it restores |
-|---|---|
+| --- | --- |
 | `Events.AppendMode` | `EventAppendMode.Rich` — [Event Appending](events/appending.md) |
 | `Events.EnableAdvancedAsyncTracking` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
 | `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
