@@ -226,6 +226,24 @@ public class JsonNetSerializer: ISerializer
         return writer.ToString();
     }
 
+    public void WriteToCleanJson(IBufferWriter<byte> writer, object? value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        // Mirror WriteTo's transport but use _clean instead of _serializer so the
+        // emitted bytes match ToCleanJson byte-for-byte.
+        using var stream = new BufferWriterStream(writer);
+        using var streamWriter = new StreamWriter(stream, _utf8NoBom, bufferSize: 1024, leaveOpen: true);
+        using var jsonWriter = new JsonTextWriter(streamWriter)
+        {
+            ArrayPool = _jsonArrayPool, CloseOutput = false, AutoCompleteOnClose = false
+        };
+
+        _clean.Value.Serialize(jsonWriter, value);
+        jsonWriter.Flush();
+        streamWriter.Flush();
+    }
+
     public string ToJsonWithTypes(object document)
     {
         var writer = new StringWriter();
@@ -233,6 +251,25 @@ public class JsonNetSerializer: ISerializer
         _withTypes.Value.Serialize(writer, document);
 
         return writer.ToString();
+    }
+
+    public void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+        if (value is null) throw new ArgumentNullException(nameof(value));
+
+        // Mirror WriteTo's transport but use _withTypes so the emitted bytes match
+        // ToJsonWithTypes byte-for-byte (TypeNameHandling.Objects $type metadata).
+        using var stream = new BufferWriterStream(writer);
+        using var streamWriter = new StreamWriter(stream, _utf8NoBom, bufferSize: 1024, leaveOpen: true);
+        using var jsonWriter = new JsonTextWriter(streamWriter)
+        {
+            ArrayPool = _jsonArrayPool, CloseOutput = false, AutoCompleteOnClose = false
+        };
+
+        _withTypes.Value.Serialize(jsonWriter, value);
+        jsonWriter.Flush();
+        streamWriter.Flush();
     }
 
     /// <summary>
