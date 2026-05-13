@@ -555,9 +555,9 @@ public partial class DocumentStore
         var streamIdentity = Options.EventGraph.StreamIdentity;
         var idArgType = streamIdentity == StreamIdentity.AsGuid ? typeof(Guid) : typeof(string);
 
-        var aggregateMethod = typeof(IQueryEventStore).GetMethods()
+        var aggregateMethod = typeof(JasperFx.Events.IQueryEventStore).GetMethods()
             .FirstOrDefault(m =>
-                m.Name == nameof(IQueryEventStore.AggregateStreamAsync) &&
+                m.Name == nameof(JasperFx.Events.IQueryEventStore.AggregateStreamAsync) &&
                 m.IsGenericMethodDefinition &&
                 m.GetParameters().Length >= 1 &&
                 m.GetParameters()[0].ParameterType == idArgType);

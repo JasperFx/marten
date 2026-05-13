@@ -1,34 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using JasperFx.Core.Reflection;
 using JasperFx.Events.Daemon;
-using Microsoft.Extensions.Hosting;
 
 namespace Marten.Events.Daemon.Coordination;
 
-public interface IProjectionCoordinator : IHostedService
+/// <summary>
+/// Marten's projection coordinator marker. The canonical contract lives in
+/// <see cref="JasperFx.Events.Daemon.IProjectionCoordinator"/>; this empty inheriting
+/// interface preserves source compatibility for the
+/// <c>Marten.Events.Daemon.Coordination</c> namespace.
+/// </summary>
+public interface IProjectionCoordinator : JasperFx.Events.Daemon.IProjectionCoordinator
 {
-    // TODO -- add some convenience methods to get at various shards
-    IProjectionDaemon DaemonForMainDatabase();
-    ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier);
-
-    ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync();
-
-    /// <summary>
-    /// Stops the projection coordinator's automatic restart logic and stops all running agents across all daemons. Does not release any held locks.
-    /// </summary>
-    /// <returns></returns>
-    Task PauseAsync();
-
-    /// <summary>
-    /// Resumes the projection coordinators automatic restart logic and starts all running agents across all daemons. Intended to be used after <see cref="PauseAsync"/>
-    /// </summary>
-    /// <returns></returns>
-    Task ResumeAsync();
 }
 
-public interface IProjectionCoordinator<T> : IProjectionCoordinator where T : IDocumentStore
+/// <summary>
+/// Marten-typed projection coordinator marker. Tightens the canonical
+/// <c>where T : class</c> constraint to <c>where T : IDocumentStore</c> so ancillary
+/// Marten stores can be registered as distinct services.
+/// </summary>
+public interface IProjectionCoordinator<T> : IProjectionCoordinator, JasperFx.Events.Daemon.IProjectionCoordinator<T>
+    where T : class, IDocumentStore
 {
-
 }

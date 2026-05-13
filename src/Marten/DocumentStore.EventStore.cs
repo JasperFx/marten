@@ -440,7 +440,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream {streamId}: stream not found or no aggregate type associated.");
         }
 
-        var method = typeof(IEventStoreOperations).GetMethod(nameof(IEventStoreOperations.CompactStreamAsync),
+        var method = typeof(Marten.Events.IEventStoreOperations).GetMethod(nameof(Marten.Events.IEventStoreOperations.CompactStreamAsync),
             [typeof(Guid), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
         var genericMethod = method!.MakeGenericMethod(state.AggregateType);
         await ((Task)genericMethod.Invoke(session.Events, [streamId, null])!).ConfigureAwait(false);
@@ -456,7 +456,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
                 $"Cannot compact stream '{streamKey}': stream not found or no aggregate type associated.");
         }
 
-        var method = typeof(IEventStoreOperations).GetMethod(nameof(IEventStoreOperations.CompactStreamAsync),
+        var method = typeof(Marten.Events.IEventStoreOperations).GetMethod(nameof(Marten.Events.IEventStoreOperations.CompactStreamAsync),
             [typeof(string), typeof(Action<>).MakeGenericType(typeof(StreamCompactingRequest<>).MakeGenericType(state.AggregateType))]);
         var genericMethod = method!.MakeGenericMethod(state.AggregateType);
         await ((Task)genericMethod.Invoke(session.Events, [streamKey, null])!).ConfigureAwait(false);

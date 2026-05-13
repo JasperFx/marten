@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using JasperFx.CommandLine.TextualDisplays;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
@@ -39,7 +38,7 @@ public static class TestingExtensions
     /// </summary>
     /// <param name="timeout"></param>
     /// <returns></returns>
-    public static Task WaitForNonStaleProjectionDataAsync<T>(this IHost host, TimeSpan timeout) where T : IDocumentStore
+    public static Task WaitForNonStaleProjectionDataAsync<T>(this IHost host, TimeSpan timeout) where T : class, IDocumentStore
     {
         return host.DocumentStore<T>().WaitForNonStaleProjectionDataAsync(timeout);
     }
@@ -370,7 +369,7 @@ public static class TestingExtensions
     /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
     /// <returns></returns>
     public static Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync<T>(this IHost host, CancellationToken cancellation,
-        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : IDocumentStore
+        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : class, IDocumentStore
     {
         return host.Services.ForceAllMartenDaemonActivityToCatchUpAsync<T>(cancellation, mode);
     }
@@ -384,7 +383,7 @@ public static class TestingExtensions
     /// <param name="mode">Optionally control whether the projections and subscriptions should be restarted after they have caught up</param>
     /// <returns></returns>
     public static async Task<IReadOnlyList<Exception>> ForceAllMartenDaemonActivityToCatchUpAsync<T>(this IServiceProvider services, CancellationToken cancellation,
-        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : IDocumentStore
+        CatchUpMode mode = CatchUpMode.AndResumeNormally) where T : class, IDocumentStore
     {
         var logger = services.GetService<ILogger<ProjectionDaemon>>() ?? new NullLogger<ProjectionDaemon>();
         var coordinator = services.GetRequiredService<IProjectionCoordinator<T>>();

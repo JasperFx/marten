@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 
 using Bug2281;
 
+using JasperFx.Events;
 using Marten;
 using Marten.Events;
 using Marten.Events.Projections;
