@@ -96,7 +96,7 @@ internal class EventsTable: Table
                     ColumnNames = new[] { "stream_id", "is_archived" },
                     LinkedNames = new[] { "id", "is_archived" },
                     LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams"),
-                    OnDelete = CascadeAction.Cascade
+                    DeleteAction = Weasel.Core.CascadeAction.Cascade
                 });
 
                 Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
@@ -111,7 +111,7 @@ internal class EventsTable: Table
                     ColumnNames = new[] { "stream_id" },
                     LinkedNames = new[] { "id" },
                     LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams"),
-                    OnDelete = CascadeAction.Cascade
+                    DeleteAction = Weasel.Core.CascadeAction.Cascade
                 });
 
                 Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")

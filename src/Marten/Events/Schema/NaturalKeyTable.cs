@@ -50,7 +50,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
                     ColumnNames = new[] { streamCol, TenantIdColumn.Name, "is_archived" },
                     LinkedNames = new[] { "id", TenantIdColumn.Name, "is_archived" },
                     LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
-                    OnDelete = Weasel.Postgresql.CascadeAction.Cascade
+                    DeleteAction = Weasel.Core.CascadeAction.Cascade
                 });
             }
             else
@@ -61,7 +61,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
                     ColumnNames = new[] { streamCol, "is_archived" },
                     LinkedNames = new[] { "id", "is_archived" },
                     LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
-                    OnDelete = Weasel.Postgresql.CascadeAction.Cascade
+                    DeleteAction = Weasel.Core.CascadeAction.Cascade
                 });
             }
         }
@@ -73,7 +73,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
                 ColumnNames = new[] { streamCol, TenantIdColumn.Name },
                 LinkedNames = new[] { "id", TenantIdColumn.Name },
                 LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
-                OnDelete = Weasel.Postgresql.CascadeAction.Cascade
+                DeleteAction = Weasel.Core.CascadeAction.Cascade
             });
         }
         else
@@ -84,7 +84,7 @@ internal class NaturalKeyTable: Table, ISchemaObject
                 ColumnNames = new[] { streamCol },
                 LinkedNames = new[] { "id" },
                 LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, StreamsTable.TableName),
-                OnDelete = Weasel.Postgresql.CascadeAction.Cascade
+                DeleteAction = Weasel.Core.CascadeAction.Cascade
             });
         }
 
