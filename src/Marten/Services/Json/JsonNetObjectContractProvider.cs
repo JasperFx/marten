@@ -14,20 +14,25 @@ namespace Marten.Services.Json
     {
         private static readonly Type ConstructorAttributeType = typeof(JsonConstructorAttribute);
 
-        private static readonly Ref<ImHashMap<string, JsonObjectContract>> Constructors =
-            Ref.Of(ImHashMap<string, JsonObjectContract>.Empty);
+        // 9.0 (#4374): key the JsonObjectContract cache directly on Type rather than
+        // on type.AssemblyQualifiedName. Type equality is reference equality post-load,
+        // and Type.GetHashCode falls through to RuntimeTypeHandle — both meaningfully
+        // cheaper than the AQN string allocation+hash that fired on every contract
+        // lookup. The map's key is also no longer a per-call allocation; AQN was a
+        // freshly-materialized string for every miss-path call before this change.
+        private static readonly Ref<ImHashMap<Type, JsonObjectContract>> Constructors =
+            Ref.Of(ImHashMap<Type, JsonObjectContract>.Empty);
 
         public static JsonObjectContract UsingNonDefaultConstructor(
             JsonObjectContract contract,
             Type objectType,
             Func<ConstructorInfo, JsonPropertyCollection, IList<JsonProperty>> createConstructorParameters)
         {
-            var typeName = objectType.AssemblyQualifiedName!;
-            if (Constructors.Value!.TryFind(typeName, out var value))
+            if (Constructors.Value!.TryFind(objectType, out var value))
                 return value;
 
             value = OnUsingNonDefaultConstructor(contract, objectType, createConstructorParameters);
-            Constructors.Swap(d => d.AddOrUpdate(typeName, value));
+            Constructors.Swap(d => d.AddOrUpdate(objectType, value));
 
             return value;
         }
