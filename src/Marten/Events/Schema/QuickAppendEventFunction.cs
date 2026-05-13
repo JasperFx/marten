@@ -70,7 +70,12 @@ namespace Marten.Events.Schema;
             if (_events.AppendMode == EventAppendMode.QuickWithServerTimestamps)
             {
                 timestampValue = "timestamps[index]";
-                metadataParameters += ", timestamps timestamptz[]";
+                // 9.0 (#default-flips): emit `timestamp with time zone[]` rather than
+                // `timestamptz[]` because PG normalizes function-parameter types to the
+                // canonical long form, and Weasel's schema-diff comparator is string-based
+                // — using the canonical spelling here avoids false-positive "function
+                // changed" diffs on every AssertDatabaseMatchesConfigurationAsync call.
+                metadataParameters += ", timestamps timestamp with time zone[]";
             }
 
             // Add tag type parameters. In DcbStorageMode.HStore the function does NOT
