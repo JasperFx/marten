@@ -36,7 +36,14 @@ public class ProviderGraph: IProviderGraph
     {
         var documentType = typeof(T);
 
-        if (_storage.TryFind(documentType, out var stored))
+        // 9.0 (#4374): hoist _storage into a local for the unlocked fast path. The
+        // JIT can't prove the second read sees the same ImHashMap reference as the
+        // first (it isn't volatile), so it re-emits a field load on every TryFind.
+        // Reading into a local gives the JIT a stable snapshot to work against and
+        // shortens the fast path; the locked branch re-reads _storage on purpose
+        // because Append() may have published a newer map.
+        var snapshot = _storage;
+        if (snapshot.TryFind(documentType, out var stored))
         {
             return stored.As<DocumentProvider<T>>();
         }

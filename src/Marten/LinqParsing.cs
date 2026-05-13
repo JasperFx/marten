@@ -144,20 +144,24 @@ public class LinqParsing: IReadOnlyLinqParsing
     {
         var module = expression.Method.Module;
 
+        // 9.0 (#4374): consolidate the per-module map mutation into one AddOrUpdate.
+        // The previous code stored an empty inner map under `module`, then on the
+        // very next mutation overwrote it with the parser-populated map — wasted a
+        // write and the transient empty ImHashMap instance.
         if (!_methodParsersByModule.TryFind(module, out var methodParsers))
         {
             methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
-            _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers);
         }
-
-        if (methodParsers.TryFind(expression.Method.MetadataToken, out var parser))
+        else if (methodParsers.TryFind(expression.Method.MetadataToken, out var cached))
         {
-            return parser;
+            return cached;
         }
 
-        parser = determineMethodParser(expression);
+        var parser = determineMethodParser(expression);
 
-        _methodParsersByModule = _methodParsersByModule.AddOrUpdate(module, methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser));
+        _methodParsersByModule = _methodParsersByModule.AddOrUpdate(
+            module,
+            methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser));
 
         return parser;
     }

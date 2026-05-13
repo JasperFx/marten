@@ -27,7 +27,30 @@ namespace Marten.Events;
 
 internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityStrategy<string>
 {
-    private ImHashMap<(Type, Type), object> _fetchStrategies = ImHashMap<(Type, Type), object>.Empty;
+    // 9.0 (#4374): cache fetch plans by a small readonly struct key with stable
+    // RuntimeTypeHandle-based hashing rather than a value tuple. The ImHashMap node
+    // comparison would otherwise route through ValueTuple<,>.Equals which compares
+    // Type references via object.Equals + boxes; this dedicated key uses reference
+    // equality directly and combines the two RuntimeTypeHandle hashes for the lookup.
+    private readonly struct AggregateFetchKey: IEquatable<AggregateFetchKey>
+    {
+        public readonly Type Aggregate;
+        public readonly Type Id;
+
+        public AggregateFetchKey(Type aggregate, Type id)
+        {
+            Aggregate = aggregate;
+            Id = id;
+        }
+
+        public bool Equals(AggregateFetchKey other) => Aggregate == other.Aggregate && Id == other.Id;
+        public override bool Equals(object? obj) => obj is AggregateFetchKey other && Equals(other);
+        public override int GetHashCode() =>
+            HashCode.Combine(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Aggregate),
+                System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(Id));
+    }
+
+    private ImHashMap<AggregateFetchKey, object> _fetchStrategies = ImHashMap<AggregateFetchKey, object>.Empty;
 
     async Task<IEventStorage> IEventIdentityStrategy<Guid>.EnsureEventStorageExists<T>(
         DocumentSessionBase session, CancellationToken cancellation)
@@ -244,7 +267,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
         // else: natural key type — event storage initialization deferred to the plan
 
         // Use (TDoc, TId) as cache key to support both stream id and natural key lookups
-        var cacheKey = (typeof(TDoc), typeof(TId));
+        var cacheKey = new AggregateFetchKey(typeof(TDoc), typeof(TId));
         if (_fetchStrategies.TryFind(cacheKey, out var stored))
         {
             return (IAggregateFetchPlan<TDoc, TId>)stored;
