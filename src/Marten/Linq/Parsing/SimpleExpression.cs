@@ -342,11 +342,19 @@ internal class SimpleExpression: ExpressionVisitor
             {
                 Members.Insert(0, LinqConstants.ArrayLength);
 
-                var finder = new MemberFinder();
-                finder.Visit(node.Arguments[0]);
+                // 9.0 (#4390): pooled MemberFinder via thread-static; see MemberFinder.Rent/Return.
+                var finder = MemberFinder.Rent();
+                try
+                {
+                    finder.Visit(node.Arguments[0]);
 
-                FoundParameterAtStart = finder.FoundParameterAtFront;
-                Members = finder.Members.Concat(Members).ToList();
+                    FoundParameterAtStart = finder.FoundParameterAtFront;
+                    Members = finder.Members.Concat(Members).ToList();
+                }
+                finally
+                {
+                    MemberFinder.Return(finder);
+                }
                 return null;
             }
 
