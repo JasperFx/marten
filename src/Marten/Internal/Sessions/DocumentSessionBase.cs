@@ -211,7 +211,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
         documents.Where(x => x != null).GroupBy(x => x.GetType()).Each(group =>
         {
-            var handler = typeof(InsertHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+            // 9.0 (#4373): delegate-cached factory keyed on document type.
+            var handler = GenericFactoryCache.BuildAs<IObjectHandler>(
+                typeof(InsertHandler<>),
+                group.Key,
+                static closed => () => (IObjectHandler)Activator.CreateInstance(closed)!);
             handler.Execute(this, group);
         });
     }
@@ -246,8 +250,11 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
 
         foreach (var group in documentsGroupedByType)
         {
-            // Build the right handler for the group type
-            var handler = typeof(StoreHandler<>).CloseAndBuildAs<IObjectHandler>(group.Key);
+            // 9.0 (#4373): delegate-cached factory keyed on document type.
+            var handler = GenericFactoryCache.BuildAs<IObjectHandler>(
+                typeof(StoreHandler<>),
+                group.Key,
+                static closed => () => (IObjectHandler)Activator.CreateInstance(closed)!);
             handler.Execute(this, group);
         }
     }

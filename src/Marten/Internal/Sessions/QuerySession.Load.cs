@@ -27,7 +27,13 @@ public partial class QuerySession
     {
         assertNotDisposed();
         await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
-        var loader = typeof(Loader<>).CloseAndBuildAs<ILoader>(id.GetType());
+        // 9.0 (#4373): replace per-call Activator.CreateInstance with delegate-cached
+        // factory keyed on id.GetType(). One reflection pass on first-encountered
+        // identity type; subsequent calls hit the cached factory delegate.
+        var loader = GenericFactoryCache.BuildAs<ILoader>(
+            typeof(Loader<>),
+            id.GetType(),
+            static closed => () => (ILoader)Activator.CreateInstance(closed)!);
         return await loader.LoadAsync<T>(id, this, token).ConfigureAwait(false);
     }
 

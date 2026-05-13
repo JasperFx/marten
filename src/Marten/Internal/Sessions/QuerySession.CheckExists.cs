@@ -65,7 +65,11 @@ public partial class QuerySession
     {
         assertNotDisposed();
         await Database.EnsureStorageExistsAsync(typeof(T), token).ConfigureAwait(false);
-        var loader = typeof(ExistsChecker<>).CloseAndBuildAs<IExistsChecker>(id.GetType());
+        // 9.0 (#4373): delegate-cached factory keyed on id.GetType() — see QuerySession.Load.
+        var loader = GenericFactoryCache.BuildAs<IExistsChecker>(
+            typeof(ExistsChecker<>),
+            id.GetType(),
+            static closed => () => (IExistsChecker)Activator.CreateInstance(closed)!);
         return await loader.CheckExistsAsync<T>(id, this, token).ConfigureAwait(false);
     }
 
