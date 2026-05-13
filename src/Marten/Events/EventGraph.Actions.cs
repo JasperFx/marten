@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using JasperFx.Events;
-using Marten.Exceptions;
 using Marten.Internal.Sessions;
 
 namespace Marten.Events;
@@ -17,12 +15,15 @@ public partial class EventGraph
             throw new ArgumentOutOfRangeException(nameof(stream), "Cannot use an empty Guid as the stream id");
         }
 
-        var wrapped = events.Select(o =>
+        // 9.0 (#4375): manual loop avoids the Select/iterator + per-call closure allocation
+        // (the previous lambda captured `stream` so the closure object was created per Append).
+        var wrapped = new IEvent[events.Length];
+        for (var i = 0; i < events.Length; i++)
         {
-            var e = BuildEvent(o);
+            var e = BuildEvent(events[i]);
             e.StreamId = stream;
-            return e;
-        }).ToArray();
+            wrapped[i] = e;
+        }
 
         if (session.WorkTracker.TryFindStream(stream, out var eventStream))
         {
@@ -48,12 +49,14 @@ public partial class EventGraph
             throw new ArgumentOutOfRangeException(nameof(stream), "The stream key cannot be null or empty");
         }
 
-        var wrapped = events.Select(o =>
+        // 9.0 (#4375): see EventGraph.Append(Guid …) above — manual loop, no Select/closure.
+        var wrapped = new IEvent[events.Length];
+        for (var i = 0; i < events.Length; i++)
         {
-            var e = BuildEvent(o);
+            var e = BuildEvent(events[i]);
             e.StreamKey = stream;
-            return e;
-        }).ToArray();
+            wrapped[i] = e;
+        }
 
         if (session.WorkTracker.TryFindStream(stream, out var eventStream))
         {
