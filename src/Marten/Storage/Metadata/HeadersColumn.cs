@@ -47,8 +47,12 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
 
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
     {
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}({{0}}.Serializer.ToJson({{1}}.{nameof(IEvent.Headers)}));", Use.Type<IMartenSession>(), Use.Type<IEvent>());
-        method.Frames.Code($"parameter{index}.NpgsqlDbType = {{0}};", NpgsqlDbType.Jsonb);
+        // Use Serializer.WriteToParameter to skip the intermediate UTF-16 string
+        // allocation that Serializer.ToJson(evt.Headers) would emit; the resulting
+        // sized UTF-8 byte[] binds directly to the parameter.
+        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullName}.Value);");
+        method.Frames.Code($"{{0}}.Serializer.{nameof(ISerializer.WriteToParameter)}(parameter{index}, {{1}}.{nameof(IEvent.Headers)});",
+            Use.Type<IMartenSession>(), Use.Type<IEvent>());
     }
 
     internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,

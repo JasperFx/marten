@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Buffers;
 using System.Data.Common;
 using System.IO;
 using System.Text.Json;
@@ -11,6 +12,7 @@ using JasperFx.Core.Reflection;
 using Marten.Services.Json;
 using Marten.Util;
 using Npgsql;
+using NpgsqlTypes;
 using Weasel.Core;
 
 namespace Marten.Services;
@@ -67,6 +69,38 @@ public class SystemTextJsonSerializer: ISerializer
         }
 
         return JsonSerializer.Serialize(document, document.GetType(), _options);
+    }
+
+    public void WriteTo(IBufferWriter<byte> writer, object? value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        using var jsonWriter = new Utf8JsonWriter(writer);
+        if (value is null)
+        {
+            jsonWriter.WriteNullValue();
+        }
+        else
+        {
+            JsonSerializer.Serialize(jsonWriter, value, value.GetType(), _options);
+        }
+    }
+
+    public void WriteToParameter(NpgsqlParameter parameter, object? value)
+    {
+        if (parameter is null) throw new ArgumentNullException(nameof(parameter));
+
+        parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        if (value is null)
+        {
+            parameter.Value = DBNull.Value;
+            return;
+        }
+
+        // SerializeToUtf8Bytes does the same thing the JSON-string round-trip would do
+        // but without the UTF-16 string allocation. Allocates one sized byte[] whose
+        // lifetime is owned by the Npgsql parameter — safe to keep past method scope.
+        parameter.Value = JsonSerializer.SerializeToUtf8Bytes(value, value.GetType(), _options);
     }
 
     public T FromJson<T>(Stream stream)

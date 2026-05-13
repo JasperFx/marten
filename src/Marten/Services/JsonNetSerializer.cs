@@ -3,6 +3,7 @@ using System;
 using System.Buffers;
 using System.Data.Common;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -11,6 +12,8 @@ using Marten.Util;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Linq;
+using Npgsql;
+using NpgsqlTypes;
 using Weasel.Core;
 
 namespace Marten.Services;
@@ -116,6 +119,52 @@ public class JsonNetSerializer: ISerializer
 
         return writer.ToString();
     }
+
+    public void WriteTo(IBufferWriter<byte> writer, object? value)
+    {
+        if (writer is null) throw new ArgumentNullException(nameof(writer));
+
+        // JsonTextWriter writes chars to a TextWriter — wrap the IBufferWriter<byte> in a
+        // BufferWriterStream and let a UTF-8 StreamWriter do the char→byte transcoding.
+        // The leaveOpen flag on StreamWriter doesn't matter here because the surrounding
+        // stream is a no-op on Dispose; the explicit Flush calls below guarantee bytes
+        // are pushed to the IBufferWriter before WriteTo returns.
+        using var stream = new BufferWriterStream(writer);
+        // Skip the BOM by passing a UTF8Encoding(false) — we don't want a 0xEF 0xBB 0xBF
+        // prefix in the middle of our JSON byte stream.
+        using var streamWriter = new StreamWriter(stream, _utf8NoBom, bufferSize: 1024, leaveOpen: true);
+        using var jsonWriter = new JsonTextWriter(streamWriter)
+        {
+            ArrayPool = _jsonArrayPool, CloseOutput = false, AutoCompleteOnClose = false
+        };
+
+        _serializer.Value.Serialize(jsonWriter, value);
+        jsonWriter.Flush();
+        streamWriter.Flush();
+    }
+
+    public void WriteToParameter(NpgsqlParameter parameter, object? value)
+    {
+        if (parameter is null) throw new ArgumentNullException(nameof(parameter));
+
+        parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        if (value is null)
+        {
+            parameter.Value = DBNull.Value;
+            return;
+        }
+
+        // Serialize into a pooled buffer to avoid the intermediate StringWriter+char[]
+        // path that ToJson takes, then snapshot a sized byte[] for Npgsql to retain
+        // (the pooled buffer is returned on Dispose at end of method scope).
+        using var buffer = new PooledByteBufferWriter();
+        WriteTo(buffer, value);
+        parameter.Value = buffer.ToSizedArray();
+    }
+
+    // UTF8Encoding(false) suppresses the BOM. Cached on the type because StreamWriter
+    // copies the encoding's flags but doesn't keep a reference.
+    private static readonly UTF8Encoding _utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     public T FromJson<T>(Stream stream)
     {

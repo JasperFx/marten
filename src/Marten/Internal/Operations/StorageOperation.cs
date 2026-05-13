@@ -275,15 +275,36 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     protected void setHeaderParameter(IGroupedParameterBuilder builder, IMartenSession session)
     {
-        if (session.Headers == null)
+        // Skip the intermediate JSON string. DocumentSessionBase keeps a per-session cached
+        // byte[] of the serialized headers, invalidated whenever SetHeader mutates the
+        // dictionary — so under load N storage ops in one batch reuse one serialization.
+        if (session is Sessions.DocumentSessionBase docSession)
+        {
+            var cachedBytes = docSession.GetCachedSerializedHeaders();
+            if (cachedBytes is null)
+            {
+                var parameter = builder.AppendParameter<object>(DBNull.Value);
+                parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            }
+            else
+            {
+                var parameter = builder.AppendParameter(cachedBytes);
+                parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            }
+            return;
+        }
+
+        // Fallback for any IMartenSession implementation that isn't a DocumentSessionBase
+        // (very rare — primarily test doubles): direct UTF-8 serialization via WriteToParameter.
+        if (session.Headers is null)
         {
             var parameter = builder.AppendParameter<object>(DBNull.Value);
             parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
         }
         else
         {
-            var parameter = builder.AppendParameter(session.Serializer.ToJson(session.Headers));
-            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            var parameter = builder.AppendParameter<object>(DBNull.Value);
+            session.Serializer.WriteToParameter(parameter, session.Headers);
         }
     }
 }

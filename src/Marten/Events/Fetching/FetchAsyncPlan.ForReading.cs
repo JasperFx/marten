@@ -144,8 +144,11 @@ internal partial class FetchAsyncPlan<TDoc, TId>
         if (document == null) return false;
 
         _storage.SetIdentity(document, id);
-        var json = session.Serializer.ToJson(document);
-        await destination.WriteAsync(Encoding.UTF8.GetBytes(json), cancellation).ConfigureAwait(false);
+        // Direct UTF-8 serialization into a pooled buffer, then a single async write —
+        // avoids ToJson → string → UTF-8 GetBytes → write round-trip.
+        using var buffer = new Services.PooledByteBufferWriter();
+        session.Serializer.WriteTo(buffer, document);
+        await destination.WriteAsync(buffer.WrittenMemory, cancellation).ConfigureAwait(false);
         return true;
     }
 

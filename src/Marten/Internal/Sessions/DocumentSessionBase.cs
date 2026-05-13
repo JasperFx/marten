@@ -277,11 +277,37 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         ChangeTrackers.RemoveAll(x => x.Document.GetType().CanBeCastTo(type));
     }
 
+    /// <summary>
+    /// Lazily-computed per-session cache of the JSON-encoded <see cref="Headers"/> dictionary,
+    /// invalidated whenever <see cref="SetHeader"/> mutates the contents. Storage operations
+    /// that bind the headers as a JSONB parameter use this to skip re-serializing on every
+    /// queued op in a batch — under load a single SaveChanges with N tagged operations can
+    /// otherwise serialize the same dictionary N times. See <see cref="GetCachedSerializedHeaders"/>.
+    /// </summary>
+    private byte[]? _serializedHeadersCache;
+
     public void SetHeader(string key, object value)
     {
         Headers ??= new Dictionary<string, object>();
 
         Headers[key] = value;
+        _serializedHeadersCache = null; // invalidate cached bytes
+    }
+
+    /// <summary>
+    /// Returns the JSON bytes for the session's current <see cref="Headers"/> dictionary,
+    /// computing and caching on first call. Returns <c>null</c> when there are no headers.
+    /// </summary>
+    internal byte[]? GetCachedSerializedHeaders()
+    {
+        if (Headers is null || Headers.Count == 0) return null;
+
+        if (_serializedHeadersCache is not null) return _serializedHeadersCache;
+
+        using var buffer = new Services.PooledByteBufferWriter();
+        Serializer.WriteTo(buffer, Headers);
+        _serializedHeadersCache = buffer.ToSizedArray();
+        return _serializedHeadersCache;
     }
 
     public object? GetHeader(string key)
