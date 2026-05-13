@@ -4,6 +4,7 @@ using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace DocumentDbTests.Bugs;
 

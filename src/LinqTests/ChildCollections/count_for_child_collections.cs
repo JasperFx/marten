@@ -7,6 +7,7 @@ using Marten;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten.Newtonsoft;
 namespace LinqTests.ChildCollections;
 
 public class count_for_child_collections : OneOffConfigurationsContext

@@ -12,7 +12,6 @@ using Marten.Linq.Members.Dictionaries;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.Parsing;
 using Marten.Schema.Identity;
-using Newtonsoft.Json.Linq;
 using Weasel.Postgresql;
 
 namespace Marten;
@@ -46,8 +45,11 @@ public partial class StoreOptions
 
         if (memberType == typeof(string)) return new StringMember(parent, casing, member);
 
-        // Thank you Newtonsoft. This has to be tested before the IDictionary<,> test
-        if (memberType == typeof(JObject))
+        // 9.0: opaque-container types registered via the optional Marten.Newtonsoft
+        // package land here (e.g. JObject). Must be tested before the IDictionary<,>
+        // check below because JObject implements IDictionary<string, JToken> and would
+        // otherwise be misrouted to DictionaryMember.
+        if (ChildDocumentTypes.Contains(memberType))
         {
             return new ChildDocument(this, parent, casing, member);
         }

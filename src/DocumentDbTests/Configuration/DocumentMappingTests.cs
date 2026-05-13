@@ -23,6 +23,7 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql.Tables;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace DocumentDbTests.Configuration;
 

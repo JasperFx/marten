@@ -3,6 +3,7 @@ using System;
 using EventSourcingTests.SchemaChange.MultipleVersions.V3;
 using Marten;
 using static Marten.Services.Json.Transformations.JsonNet.JsonTransformations;
+using Marten.Newtonsoft;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Lambdas;
 

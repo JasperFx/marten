@@ -7,6 +7,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace DocumentDbTests.Reading.Loading;
 

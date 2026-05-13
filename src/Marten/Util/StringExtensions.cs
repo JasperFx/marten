@@ -1,24 +1,37 @@
 #nullable enable
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 
 namespace Marten.Util;
 
 internal static class StringExtensionMethods
 {
-    private static readonly SnakeCaseNamingStrategy _snakeCaseNamingStrategy = new();
     private static readonly ConcurrentDictionary<string, Regex> _removeTableAliasRegexCache = new();
+
+    /// <summary>
+    /// Process-wide list of optional member-name resolvers. Marten core leaves this empty
+    /// and only honors <see cref="JsonPropertyNameAttribute"/> (STJ). The optional
+    /// <c>Marten.Newtonsoft</c> package registers a Newtonsoft <c>JsonPropertyAttribute</c>
+    /// resolver in its module initializer so member-name resolution under the Newtonsoft
+    /// serializer continues to honor <c>[JsonProperty]</c> attributes the way pre-9.0
+    /// behavior did.
+    /// </summary>
+    internal static readonly List<Func<MemberInfo, string?>> AdditionalMemberNameResolvers = new();
 
     public static string ToSnakeCase(this string s)
     {
-        return _snakeCaseNamingStrategy.GetPropertyName(s, false);
+        // 9.0: was Newtonsoft.Json.Serialization.SnakeCaseNamingStrategy. STJ's
+        // JsonNamingPolicy.SnakeCaseLower (added in .NET 8) produces identical output
+        // for ASCII identifiers — what Marten uses this for.
+        return JsonNamingPolicy.SnakeCaseLower.ConvertName(s);
     }
 
     public static string FormatCase(this string s, Casing casing) =>
@@ -32,9 +45,15 @@ internal static class StringExtensionMethods
     public static string ToJsonKey(this MemberInfo member, Casing casing)
     {
         var memberLocator = member.Name.FormatCase(casing);
-        if (member.TryGetAttribute<JsonPropertyAttribute>(out var newtonsoftAtt) && newtonsoftAtt.PropertyName is not null)
+
+        // Run extra resolvers first (e.g. Newtonsoft's [JsonProperty]) so that the STJ
+        // attribute below wins when both are present — preserves the pre-9.0 precedence
+        // where STJ's [JsonPropertyName] overrode Newtonsoft's [JsonProperty].
+        var extras = AdditionalMemberNameResolvers;
+        for (var i = 0; i < extras.Count; i++)
         {
-            memberLocator = newtonsoftAtt.PropertyName;
+            var resolved = extras[i](member);
+            if (resolved is not null) memberLocator = resolved;
         }
 
         if (member.TryGetAttribute<JsonPropertyNameAttribute>(out var stjAtt))

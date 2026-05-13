@@ -5,6 +5,7 @@ using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace EventSourcingTests.Json;
 

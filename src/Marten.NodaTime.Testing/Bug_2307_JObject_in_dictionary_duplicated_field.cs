@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using NodaTime;
 using Shouldly;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace DocumentDbTests.Bugs;
 

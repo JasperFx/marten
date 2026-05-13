@@ -38,9 +38,6 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" />
-        <PackageReference Include="Newtonsoft.Json" />
-        <!-- This is forced by Npgsql peer dependency -->
-        <PackageReference Include="Npgsql.Json.NET" />
         <PackageReference Include="Weasel.Postgresql" />
     </ItemGroup>
 
