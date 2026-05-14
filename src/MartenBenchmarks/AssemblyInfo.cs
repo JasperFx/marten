@@ -1,1 +1,0 @@
-[assembly: JasperFx.JasperFxAssembly]
