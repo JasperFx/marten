@@ -54,11 +54,21 @@ internal class CompiledQueryCollection
         // marked the defining assembly with [JasperFxAssembly], a handler
         // descriptor was registered at assembly load via a [ModuleInitializer].
         // Iteration 4 widened the runtime to cover all three handler shapes
-        // (Stateless, Cloned, Complex) so the source-gen path now serves any
-        // registered query type. The fallthrough below is a PoC bridge for
-        // query types whose defining assembly hasn't been opted in yet — it
-        // is deleted once the scattered tests migrate into CompiledQueryTests.
-        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
+        // (Stateless, Cloned, Complex), so the source-gen path serves most
+        // registered query types.
+        //
+        // One holdout: query plans whose parameters need an
+        // ICompiledQueryAwareFilter (string Contains/StartsWith/EndsWith,
+        // JSONB containment via .Contains() on a HashSet<>, dictionary
+        // ContainsKey, child-collection JsonPath counts). Those filters
+        // customize parameter writes through codegen-time GenerateCode hooks
+        // with no runtime equivalent — for now, plans containing them fall
+        // through to the JasperFx.RuntimeCompiler path below. Lifting that
+        // restriction (filter runtime APIs) is tracked as a follow-up to
+        // #4405; once it lands, this fallthrough is deleted and a registry
+        // miss throws.
+        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor)
+            && !PlanRequiresCodegenFilters(plan))
         {
             var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
             source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
@@ -90,18 +100,22 @@ internal class CompiledQueryCollection
     }
 
     /// <summary>
-    /// PoC iteration-3 shape gate: source-gen handles only Stateless queries —
-    /// no Include collections, no QueryStatistics, and HandlerPrototype is not a
-    /// stateful handler that needs per-session cloning. Iteration 4 widens this
-    /// to all three handler shapes.
+    /// Returns <see langword="true"/> if any parameter in the plan needs an
+    /// <see cref="Marten.Internal.CompiledQueries.ICompiledQueryAwareFilter"/>
+    /// to write its value. Those filters today only emit codegen — there's no
+    /// runtime hook for them — so the source-gen path can't fully serve such
+    /// plans. Tracked as a follow-up to #4405.
     /// </summary>
-    private static bool CanHandleWithSourceGen(CompiledQueryPlan plan)
+    private static bool PlanRequiresCodegenFilters(CompiledQueryPlan plan)
     {
-        if (plan.IncludeMembers.Count > 0) return false;
-        if (plan.StatisticsMember != null) return false;
-        if (plan.HandlerPrototype is IMaybeStatefulHandler stateful
-            && stateful.DependsOnDocumentSelector()) return false;
-        return true;
+        foreach (var command in plan.Commands)
+        {
+            foreach (var usage in command.Parameters)
+            {
+                if (usage.Filter != null) return true;
+            }
+        }
+        return false;
     }
 }
 

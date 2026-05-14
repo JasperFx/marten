@@ -1,13 +1,9 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.IO;
-using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
@@ -38,6 +34,9 @@ namespace Marten.Internal.CompiledQueries;
 ///         stateful) and wraps with <see cref="IncludeQueryHandler{T}"/> per
 ///         call (mirrors <c>ComplexCompiledQuery</c>).</item>
 /// </list>
+/// All include-reader construction + statistics lookup goes through the
+/// generator-emitted delegates on <see cref="CompiledQueryHandlerDescriptor"/>
+/// — no <c>MakeGenericMethod</c>, no reflective member reads.
 /// </remarks>
 internal abstract class SourceGeneratedCompiledQueryHandlerBase<TOut>: IQueryHandler<TOut>
 {
@@ -185,18 +184,19 @@ internal sealed class SourceGeneratedClonedHandler<TOut>: SourceGeneratedCompile
 /// Each call clones the stateful inner (if needed) and wraps it in an
 /// <see cref="IncludeQueryHandler{T}"/> built from the consumer's include
 /// targets. Equivalent to the codegen-emitted <c>ComplexCompiledQuery</c>.
+/// All Include reader construction is delegated to the generator-emitted
+/// <see cref="CompiledQueryHandlerDescriptor.AttachIncludeReaders"/> closure
+/// — typed factory calls, no <c>MakeGenericMethod</c>.
 /// </summary>
 internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompiledQueryHandlerBase<TOut>
 {
     private readonly IMaybeStatefulHandler? _statefulInner;
     private readonly IQueryHandler<TOut>? _statelessInner;
     private readonly QueryStatistics? _statistics;
-    private readonly IReadOnlyList<MemberInfo> _includeMembers;
 
     public SourceGeneratedComplexHandler(
         IQueryHandler innerPrototype,
         QueryStatistics? statistics,
-        IReadOnlyList<MemberInfo> includeMembers,
         object query,
         CompiledQueryPlan plan,
         CompiledQueryHandlerDescriptor descriptor,
@@ -204,7 +204,6 @@ internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompil
         : base(query, plan, descriptor, enumAsString)
     {
         _statistics = statistics;
-        _includeMembers = includeMembers;
 
         // Track whether we need to clone-per-call. Mirrors the
         // CompiledQuerySourceBuilder.buildHandlerMethod branch on
@@ -225,10 +224,9 @@ internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompil
             ? (IQueryHandler<TOut>)_statefulInner.CloneForSession(session, _statistics!)
             : _statelessInner!;
 
-        var readers = _includeMembers
-            .Select(member => BuildIncludeReader(session, _query, member))
-            .ToArray();
-
+        // Descriptor-driven path — the generator emits typed Include.ReaderTo*
+        // factory calls per consumer-declared include member. No reflection.
+        var readers = _descriptor.AttachIncludeReaders(session, _query);
         return new IncludeQueryHandler<TOut>(inner, readers);
     }
 
@@ -242,60 +240,6 @@ internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompil
     public override Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         => throw new NotSupportedException(
             "JSON streaming is not supported in combination with Include() operations on compiled queries.");
-
-    /// <summary>
-    /// Builds one <see cref="IIncludeReader"/> per Include member. Mirrors
-    /// <c>CompiledQuerySourceBuilder.buildIncludeReader</c> — different factory
-    /// method per member-collection shape (<c>Action&lt;T&gt;</c>,
-    /// <c>IList&lt;T&gt;</c>, <c>IDictionary&lt;TId, T&gt;</c>). Uses
-    /// <see cref="MethodInfo.MakeGenericMethod"/> for the typed factory dispatch
-    /// — runs once per session.Query call, not in the hot row-read path.
-    /// </summary>
-    /// <remarks>
-    /// PoC iteration 4 uses reflective <c>MakeGenericMethod</c> here for
-    /// simplicity. A subsequent iteration replaces this with generator-emitted
-    /// per-query include-attacher helpers so the runtime path stays AOT-clean
-    /// in non-PoC builds.
-    /// </remarks>
-    private static IIncludeReader BuildIncludeReader(IMartenSession session, object query, MemberInfo member)
-    {
-        var memberType = member.GetMemberType()!;
-        var value = ReadMember(query, member);
-
-        if (memberType.Closes(typeof(Action<>)))
-        {
-            var t = memberType.GetGenericArguments()[0];
-            var method = typeof(Include).GetMethod(nameof(Include.ReaderToAction))!.MakeGenericMethod(t);
-            return (IIncludeReader)method.Invoke(null, new[] { session, value })!;
-        }
-
-        if (memberType.Closes(typeof(IList<>)))
-        {
-            var t = memberType.GetGenericArguments()[0];
-            var method = typeof(Include).GetMethod(nameof(Include.ReaderToList))!.MakeGenericMethod(t);
-            return (IIncludeReader)method.Invoke(null, new[] { session, value })!;
-        }
-
-        if (memberType.Closes(typeof(IDictionary<,>)))
-        {
-            var idType = memberType.GetGenericArguments()[0];
-            var includeType = memberType.GetGenericArguments()[1];
-            var method = typeof(Include).GetMethod(nameof(Include.ReaderToDictionary))!
-                .MakeGenericMethod(includeType, idType);
-            return (IIncludeReader)method.Invoke(null, new[] { session, value })!;
-        }
-
-        throw new InvalidOperationException(
-            $"Unsupported Include member type {memberType.FullName} on {query.GetType().FullName}.{member.Name}.");
-    }
-
-    private static object? ReadMember(object query, MemberInfo member) => member switch
-    {
-        PropertyInfo p => p.GetValue(query),
-        FieldInfo f => f.GetValue(query),
-        _ => throw new InvalidOperationException(
-            $"Compiled query include member {query.GetType().FullName}.{member.Name} is not a field or property.")
-    };
 }
 
 /// <summary>
@@ -357,28 +301,15 @@ internal sealed class SourceGeneratedCompiledQuerySource<TOut>: ICompiledQuerySo
                 $"Cloned shape requires HandlerPrototype to implement IMaybeStatefulHandler; got " +
                 $"{_plan.HandlerPrototype?.GetType().Name ?? "null"}.");
         }
-        var statistics = ReadStatistics(query, _plan.StatisticsMember);
+        var statistics = _descriptor.ReadStatistics(query);
         return new SourceGeneratedClonedHandler<TOut>(stateful, statistics, query, _plan, _descriptor, _enumAsString);
     }
 
     private SourceGeneratedComplexHandler<TOut> BuildComplex(object query)
     {
-        var statistics = ReadStatistics(query, _plan.StatisticsMember);
+        var statistics = _descriptor.ReadStatistics(query);
         return new SourceGeneratedComplexHandler<TOut>(
-            _plan.HandlerPrototype, statistics, _plan.IncludeMembers,
-            query, _plan, _descriptor, _enumAsString);
-    }
-
-    private static QueryStatistics? ReadStatistics(object query, MemberInfo? statsMember)
-    {
-        if (statsMember is null) return null;
-        var value = statsMember switch
-        {
-            PropertyInfo p => p.GetValue(query),
-            FieldInfo f => f.GetValue(query),
-            _ => null
-        };
-        return value as QueryStatistics ?? new QueryStatistics();
+            _plan.HandlerPrototype, statistics, query, _plan, _descriptor, _enumAsString);
     }
 
     private static Shape DetermineShape(CompiledQueryPlan plan)

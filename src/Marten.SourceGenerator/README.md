@@ -1,6 +1,22 @@
-# Marten.SourceGenerator (PoC initialized — tracking issue [#4405](https://github.com/JasperFx/marten/issues/4405))
+# Marten.SourceGenerator — tracking issue [#4405](https://github.com/JasperFx/marten/issues/4405)
 
 Source generator package for Marten. Eliminates runtime code generation (no `JasperFx.RuntimeCompiler`, no `Roslyn` at runtime, no `FastExpressionCompiler`) for the constructs it covers. AOT-publishing-ready.
+
+## Consumer-facing opt-in (V9)
+
+```xml
+<ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                  OutputItemType="Analyzer"
+                  ReferenceOutputAssembly="false" />
+```
+
+Plus, in any file in your assembly:
+
+```csharp
+[assembly: JasperFx.JasperFxAssembly]
+```
+
+With both present, every `ICompiledQuery<TDoc, TOut>` declared in the assembly gets a generator-emitted handler that registers itself with `Marten.Internal.CompiledQueries.CompiledQueryHandlerRegistry` via a `[ModuleInitializer]` at assembly load. The Marten runtime dispatches matching compiled queries through that handler instead of running `JasperFx.RuntimeCompiler` at first use.
 
 ## PoC scope (current)
 
@@ -30,16 +46,23 @@ Source generator package for Marten. Eliminates runtime code generation (no `Jas
     * Cold call (first invocation, includes Marten pipeline setup): **codegen 75ms vs source-gen 3ms — 25× faster**. Source-gen skips `CompiledQuerySourceBuilder.AssembleTypes` (Roslyn emit + `Activator.CreateInstance`).
     * Steady-state per call (200 calls amortized): **codegen 710μs vs source-gen 490μs — 31% faster**. Difference dominated by fewer allocations on the source-gen hot path.
     * Both TFMs show consistent results (net10.0: cold 4ms vs 61ms, steady 490μs vs 560μs).
-* **Final ✅ — decision: continue Direction D.** The seam works for all three handler shapes, including the previously-most-codegen-heavy `Where + Include<T>` path. Source-gen is faster on both cold-start and steady-state axes by clear margins, with no correctness regressions. Direction D extends to document storage / event storage / ancillary stores as planned in #4404; the packaging-extraction alternative for compiled queries is dropped. Remaining follow-ups: scattered compiled-query tests migrate from `LinqTests/Compiled` etc. into `CompiledQueryTests`; the codegen-fallback bridge in `CompiledQueryCollection.GetCompiledQuerySourceFor` is removed (registry miss → `InvalidOperationException` directing the user to add `Marten.SourceGenerator` + `[assembly: JasperFxAssembly]`); runtime codegen artifacts under each test project's `bin/.../Internal/Generated/CompiledQueries/` go away; the `MakeGenericMethod`-based include-reader factory in `SourceGeneratedComplexHandler` is replaced with generator-emitted per-query include-attachers so the runtime path is AOT-clean.
+* **Final ✅ — decision: continue Direction D.** The seam works for all three handler shapes, including the previously-most-codegen-heavy `Where + Include<T>` path. Source-gen is faster on both cold-start and steady-state axes by clear margins, with no correctness regressions. Direction D extends to document storage / event storage / ancillary stores as planned in #4404; the packaging-extraction alternative for compiled queries is dropped.
+* **Iteration 5 — wrap-up follow-ups.** Tier 2 generator emits AOT-clean include-attachers (`AttachIncludeReaders` static method with typed `Include.ReaderTo*` factory calls) + `ReadStatistics` accessor. `SourceGeneratedComplexHandler` consumes them through new descriptor delegates — no more `MakeGenericMethod` / reflective member reads on the runtime path. All seven Marten assemblies that declare or execute `ICompiledQuery<,>` types (LinqTests, DocumentDbTests, ValueTypeTests, CommandLineRunner, MartenBenchmarks, IssueService, plus CompiledQueryTests) opted into source-gen via `[assembly: JasperFx.JasperFxAssembly]` + analyzer reference. 149/149 LinqTests compiled-query tests + 63/63 DocumentDbTests + 12/12 ValueTypeTests + 9/9 CompiledQueryTests + 19/19 generator unit tests passing on net9.0 + net10.0.
 
-## Final shipping behavior (post-PoC, V9)
+## Final shipping behavior (V9)
 
 Compiled queries require the consumer to:
 
-1. Add `<PackageReference Include="Marten.SourceGenerator" PrivateAssets="all" />` to the project defining the `ICompiledQuery<TDoc, TOut>` types.
-2. Mark the assembly with `[assembly: JasperFxAssembly]`.
+1. Add `<ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />` (or the equivalent `<PackageReference>` once the NuGet is published) to the project declaring the `ICompiledQuery<TDoc, TOut>` types.
+2. Mark the assembly with `[assembly: JasperFx.JasperFxAssembly]`.
 
-Without both, `Session.Query(myCompiledQuery)` throws `InvalidOperationException`. There is no runtime codegen fallback. Direction D treats this as an acceptable cost of eliminating `JasperFx.RuntimeCompiler` from the compiled-query path; the alternative (packaging compiled queries into a separate extension NuGet) remains available if the PoC fails.
+Without both, the source generator emits nothing and the runtime dispatches through the codegen-bridge (`JasperFx.RuntimeCompiler`). The bridge stays in V9 for three documented cases:
+
+* **Filter-driven plans.** Compiled queries whose SQL uses `string.Contains/StartsWith/EndsWith`, `HashSet<T>.Contains` with JSONB containment, `Dictionary<,>.ContainsKey`, or child-collection JsonPath counts route through `ICompiledQueryAwareFilter` implementations that customize parameter writes via codegen-time `GenerateCode` hooks. Removing this restriction needs a runtime filter API (follow-up to #4405).
+* **Generic / nested query types.** The PoC generator skips both shapes (see early-return in `CompiledQuerySourceGenerator.TryRenderHandler`). Extending discovery to handle them needs additional emit-site logic — follow-up.
+* **Assemblies without `[JasperFxAssembly]`.** Includes user assemblies that haven't opted in, plus a handful of Marten test projects that intentionally don't (e.g., `Marten.Testing.OtherAssembly` carries a generic compiled query used cross-assembly by Bug_1851). Those continue to take the codegen path.
+
+The "no fallback at ship" original target narrowed to "source-gen serves the common case, codegen bridge handles the documented edge cases." Removing the bridge entirely tracks as a follow-up issue.
 
 See [#4405](https://github.com/JasperFx/marten/issues/4405) for the full success / failure criteria and timeline.
 

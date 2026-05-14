@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -92,9 +93,14 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
 
     private static RenderedHandler RenderHandler(INamedTypeSymbol query, INamedTypeSymbol compiledQueryIface)
     {
-        var fullName = query.ToDisplayString();
-        var docType = compiledQueryIface.TypeArguments[0].ToDisplayString();
-        var outputType = compiledQueryIface.TypeArguments[1].ToDisplayString();
+        // Default ToDisplayString() returns the C# keyword form for built-in types
+        // (e.g., "bool", "int") which is invalid in `global::`-prefixed emit positions
+        // (`global::bool` won't compile). FullyQualifiedFormat returns the canonical
+        // `global::System.Boolean` form, which works uniformly for primitives and
+        // user-defined types and is what we want at every code-emit position below.
+        var fullName = Emit(query);
+        var docType = Emit(compiledQueryIface.TypeArguments[0]);
+        var outputType = Emit(compiledQueryIface.TypeArguments[1]);
         var simple = query.Name;
         var ns = query.ContainingNamespace.IsGlobalNamespace
             ? null
@@ -106,6 +112,7 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
         // Bucket members.
         var parameterNames = new List<string>();
         var includeNames = new List<string>();
+        var includeReaderCtors = new StringBuilder();
         string? statisticsName = null;
         var caseBodies = new StringBuilder();
 
@@ -118,6 +125,7 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
                     break;
                 case QueryMemberClassifier.MemberKind.Include:
                     includeNames.Add(m.Name);
+                    AppendIncludeReaderCtor(includeReaderCtors, m, fullName);
                     break;
                 case QueryMemberClassifier.MemberKind.SimpleParameter:
                 case QueryMemberClassifier.MemberKind.EnumParameter:
@@ -135,7 +143,8 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
         }
 
         var source = EmitSource(fullName, docType, outputType, simple, ns,
-            parameterNames, includeNames, statisticsName, caseBodies.ToString());
+            parameterNames, includeNames, statisticsName,
+            caseBodies.ToString(), includeReaderCtors.ToString());
 
         var hint = ns is null
             ? $"{simple}_CompiledQueryHandler.g.cs"
@@ -199,15 +208,79 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
         sb.Append("                break;\n");
     }
 
+    /// <summary>
+    /// Emits one <c>Include.ReaderTo*</c> factory invocation for a single Include
+    /// member, in the order the runtime registry's
+    /// <c>AttachIncludeReaders</c> array expects. The shape (Action / IList / IDictionary)
+    /// determines which factory + how many type arguments we close.
+    /// </summary>
+    private static void AppendIncludeReaderCtor(
+        StringBuilder sb, QueryMemberClassifier.Classified m, string queryFullName)
+    {
+        // Emit() returns the global::-prefixed canonical form, so no manual prefix needed here.
+        switch (m.IncludeShape)
+        {
+            case QueryMemberClassifier.IncludeShape.Action:
+                sb.Append("                global::Marten.Linq.Includes.Include.ReaderToAction<")
+                  .Append(Emit(m.ElementType!)).Append(">(session, query.")
+                  .Append(m.Name).Append("),\n");
+                break;
+            case QueryMemberClassifier.IncludeShape.List:
+                sb.Append("                global::Marten.Linq.Includes.Include.ReaderToList<")
+                  .Append(Emit(m.ElementType!)).Append(">(session, query.")
+                  .Append(m.Name).Append("),\n");
+                break;
+            case QueryMemberClassifier.IncludeShape.Dictionary:
+                // Include.ReaderToDictionary<T, TId> — element type is the value, key type is TId.
+                sb.Append("                global::Marten.Linq.Includes.Include.ReaderToDictionary<")
+                  .Append(Emit(m.ElementType!)).Append(", ")
+                  .Append(Emit(m.DictionaryKeyType!)).Append(">(session, query.")
+                  .Append(m.Name).Append("),\n");
+                break;
+            default:
+                throw new InvalidOperationException(
+                    $"Include member {queryFullName}.{m.Name} has IncludeShape={m.IncludeShape}; expected Action/List/Dictionary.");
+        }
+    }
+
     private static string EmitSource(
         string fullName, string docType, string outputType, string simple, string? ns,
         List<string> parameterNames, List<string> includeNames, string? statisticsName,
-        string caseBodies)
+        string caseBodies, string includeReaderCtors)
     {
         var nsBlock = ns is null ? string.Empty : $"namespace {ns};\n\n";
         var parametersLiteral = RenderStringArray(parameterNames);
         var includesLiteral = RenderStringArray(includeNames);
         var statsLiteral = statisticsName is null ? "null" : $"\"{statisticsName}\"";
+
+        // AttachIncludeReaders body — empty array literal when the query has no
+        // includes, otherwise an array initializer with one IIncludeReader per
+        // include member in declaration order.
+        string attachIncludeReadersBody;
+        if (includeNames.Count == 0)
+        {
+            attachIncludeReadersBody = "        return global::System.Array.Empty<global::Marten.Linq.Includes.IIncludeReader>();";
+        }
+        else
+        {
+            attachIncludeReadersBody =
+                "        return new global::Marten.Linq.Includes.IIncludeReader[]\n" +
+                "        {\n" +
+                includeReaderCtors.TrimEnd('\n').TrimEnd(',') + "\n" +
+                "        };";
+        }
+
+        // ReadStatistics body — returns the query's QueryStatistics member (or a
+        // fresh one if null), or null if the query type has no statistics member.
+        var readStatisticsBody = statisticsName is null
+            ? "        return null;"
+            : $"        return query.{statisticsName} ?? new global::Marten.Linq.QueryStatistics();";
+
+        // The module-init descriptor ctor always supplies both new delegates;
+        // pass-through static lambdas (zero allocation) box the typed methods.
+        // (`fullName` is already global::-prefixed via Emit() so no manual prefix here.)
+        var attachIncludeReadersArg = $"static (session, query) => {simple}_CompiledQueryHandler.AttachIncludeReaders(session, ({fullName})query)";
+        var readStatisticsArg = $"static query => {simple}_CompiledQueryHandler.ReadStatistics(({fullName})query)";
 
         return $$"""
             // <auto-generated/>
@@ -257,7 +330,7 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
                 /// </param>
                 public static void BindParameter(
                     global::Npgsql.NpgsqlParameter parameter,
-                    global::{{fullName}} query,
+                    {{fullName}} query,
                     string memberName,
                     bool enumAsString)
                 {
@@ -269,6 +342,31 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
                                 nameof(memberName), memberName,
                                 "Member is not a recognized compiled query parameter on {{fullName}}.");
                     }
+                }
+
+                /// <summary>
+                /// Builds the array of <c>IIncludeReader</c> instances for this query's
+                /// Include members, one per member in declaration order. Each reader is
+                /// constructed via the appropriate <c>Include.ReaderTo*</c> factory closed
+                /// over the consumer-declared element type — no <c>MakeGenericMethod</c>
+                /// at runtime. Returns an empty array when the query has no Include members.
+                /// </summary>
+                public static global::Marten.Linq.Includes.IIncludeReader[] AttachIncludeReaders(
+                    global::Marten.Internal.IMartenSession session,
+                    {{fullName}} query)
+                {
+            {{attachIncludeReadersBody}}
+                }
+
+                /// <summary>
+                /// Reads the <c>QueryStatistics</c> member from the query instance,
+                /// substituting a fresh empty <c>QueryStatistics</c> if the property
+                /// holds <see langword="null"/>. Returns <see langword="null"/> for query
+                /// types that have no statistics member.
+                /// </summary>
+                public static global::Marten.Linq.QueryStatistics? ReadStatistics({{fullName}} query)
+                {
+            {{readStatisticsBody}}
                 }
             }
 
@@ -284,21 +382,32 @@ public sealed class CompiledQuerySourceGenerator : IIncrementalGenerator
                 internal static void Register()
                 {
                     global::Marten.Internal.CompiledQueries.CompiledQueryHandlerRegistry.Register(
-                        typeof(global::{{fullName}}),
+                        typeof({{fullName}}),
                         new global::Marten.Internal.CompiledQueries.CompiledQueryHandlerDescriptor(
-                            queryType: typeof(global::{{fullName}}),
-                            docType: typeof(global::{{docType}}),
-                            outputType: typeof(global::{{outputType}}),
+                            queryType: typeof({{fullName}}),
+                            docType: typeof({{docType}}),
+                            outputType: typeof({{outputType}}),
                             parameterMemberNames: {{simple}}_CompiledQueryHandler.ParameterMemberNames,
                             includeMemberNames: {{simple}}_CompiledQueryHandler.IncludeMemberNames,
                             statisticsMemberName: {{simple}}_CompiledQueryHandler.StatisticsMemberName,
                             bindParameter: static (parameter, query, memberName, enumAsString)
                                 => {{simple}}_CompiledQueryHandler.BindParameter(
-                                    parameter, (global::{{fullName}})query, memberName, enumAsString)));
+                                    parameter, ({{fullName}})query, memberName, enumAsString),
+                            attachIncludeReaders: {{attachIncludeReadersArg}},
+                            readStatistics: {{readStatisticsArg}}));
                 }
             }
             """;
     }
+
+    /// <summary>
+    /// Produces a fully-qualified, <c>global::</c>-rooted type reference suitable
+    /// for emit positions. Uses Roslyn's <see cref="SymbolDisplayFormat.FullyQualifiedFormat"/>
+    /// so primitives come out as <c>global::System.Boolean</c> rather than the
+    /// C# keyword <c>bool</c> (which is illegal after <c>global::</c>).
+    /// </summary>
+    private static string Emit(ITypeSymbol type)
+        => type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
     private static string RenderStringArray(List<string> values)
     {

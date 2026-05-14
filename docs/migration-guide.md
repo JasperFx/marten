@@ -240,6 +240,38 @@ These changes are invisible to consumers but worth noting because they affect co
 * **LINQ handler factory caching now goes through `GenericFactoryCache`** so repeated LINQ queries against the same shape don't allocate a fresh handler per call ([#4308](https://github.com/JasperFx/marten/issues/4308)).
 * **`GenerationRules` is hand-cloned for projection-specific overrides** instead of mutating a shared instance — each projection's codegen sees its own rules and the others stay untouched ([#4307](https://github.com/JasperFx/marten/issues/4307)).
 
+#### **Source-generated compiled queries (`Marten.SourceGenerator`)** {#source-gen-compiled-queries}
+
+Marten 9 ships a source generator that emits the per-`ICompiledQuery<TDoc, TOut>` scaffolding at compile time instead of via `JasperFx.RuntimeCompiler` at first use. Opt-in is implicit: add the analyzer reference + the assembly attribute and every compiled query in that assembly gets a generator-emitted handler registered with the Marten runtime at module load.
+
+Add to the project that declares your `ICompiledQuery<,>` types:
+
+```xml
+<ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                  OutputItemType="Analyzer"
+                  ReferenceOutputAssembly="false" />
+```
+
+And in any file in that assembly:
+
+```csharp
+[assembly: JasperFx.JasperFxAssembly]
+```
+
+What this gets you:
+
+* **No Roslyn emit at first call.** First invocation of a registered compiled query is ~25× faster than the codegen path (measured on a Stateless shape: 3ms vs 75ms on a warm host).
+* **No `FastExpressionCompiler` for the per-query parameter binder.** Generator emits a direct property-read switch — ~31% faster steady-state per call.
+* **AOT-publishable for the common cases.** The Roslyn-emit step is fully gone for queries the source-gen path covers.
+
+The runtime falls back to the existing codegen path in three documented cases — these are bug-compatible with V8 behavior, just slower at cold start:
+
+* Plans whose SQL needs an `ICompiledQueryAwareFilter` (string `Contains`/`StartsWith`/`EndsWith`, `HashSet<T>.Contains` with JSONB containment, `Dictionary<,>.ContainsKey`, child-collection JsonPath counts).
+* Generic or nested `ICompiledQuery<,>` types.
+* Compiled queries declared in an assembly without `[JasperFxAssembly]`.
+
+Tracked at [#4405](https://github.com/JasperFx/marten/issues/4405). Removing the codegen-fallback bridge entirely is a follow-up to that issue.
+
 ### Obsolete API sweep
 
 Marten 9 retires obsolete types and members deprecated in Marten 8.x:

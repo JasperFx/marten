@@ -104,18 +104,17 @@ public class Bug_4043_include_plus_contains : BugIntegrationContext
         {
             var query = new FindByOwnerWithIncludeQuery { OwnerId = ownerId };
 
-            // This throws due to invalid code generation
-            var exception = await Assert.ThrowsAnyAsync<Exception>(async () =>
-            {
-                await session.QueryAsync(query);
-            });
-
-            // Should contain CS1002 or similar code generation error
-            Assert.True(
-                exception.Message.Contains("CS1002") ||
-                exception.Message.Contains("CS0103") ||
-                exception.Message.Contains("Compilation failures"),
-                $"Expected code generation error, got: {exception.Message}");
+            // Bug history: this combination used to throw a code-generation error
+            // (CS1002 / CS0103 / "Compilation failures") under the pre-9.0
+            // JasperFx.RuntimeCompiler codegen path. Marten 9.0's broader codegen
+            // hardening (the AOT-annotation + sweep work in #4401) fixed the
+            // underlying emit bug, so the query now runs end-to-end. Test inverted
+            // to assert the success path. Tracked alongside #4405.
+            var results = await session.QueryAsync(query);
+            Assert.Single(results);
+            Assert.Equal(document.Id, results.First().Id);
+            Assert.Single(query.RelatedDocuments);
+            Assert.Equal(relatedDoc.Id, query.RelatedDocuments.Single().Value.Id);
         }
     }
 }

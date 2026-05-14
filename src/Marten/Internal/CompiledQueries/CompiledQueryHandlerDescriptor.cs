@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using Marten.Linq;
+using Marten.Linq.Includes;
 using Npgsql;
 
 namespace Marten.Internal.CompiledQueries;
@@ -60,6 +62,21 @@ public sealed class CompiledQueryHandlerDescriptor
     /// the generator emits both branches in-line and dispatches on this flag so the
     /// handler doesn't need to be regenerated per store configuration.
     /// </param>
+    /// <param name="attachIncludeReaders">
+    /// Returns one <see cref="IIncludeReader"/> per Include member on the query
+    /// instance (or an empty array if there are none). The generator emits typed
+    /// <c>Include.ReaderToAction&lt;T&gt;</c> / <c>ReaderToList&lt;T&gt;</c> /
+    /// <c>ReaderToDictionary&lt;T, TId&gt;</c> calls closed over the consumer's
+    /// declared element types — no runtime <c>MakeGenericMethod</c>, AOT-clean.
+    /// Called once per <c>session.Query(compiledQuery)</c> invocation, not per row.
+    /// </param>
+    /// <param name="readStatistics">
+    /// Returns the <see cref="QueryStatistics"/> instance attached to the query's
+    /// statistics member (creating a fresh one if the property is null), or
+    /// <see langword="null"/> when the query type has no statistics member. Used
+    /// by the Cloned + Complex handler paths to feed
+    /// <see cref="IMaybeStatefulHandler.CloneForSession"/>.
+    /// </param>
     public CompiledQueryHandlerDescriptor(
         Type queryType,
         Type docType,
@@ -67,7 +84,9 @@ public sealed class CompiledQueryHandlerDescriptor
         string[] parameterMemberNames,
         string[] includeMemberNames,
         string? statisticsMemberName,
-        Action<NpgsqlParameter, object, string, bool> bindParameter)
+        Action<NpgsqlParameter, object, string, bool> bindParameter,
+        Func<IMartenSession, object, IIncludeReader[]> attachIncludeReaders,
+        Func<object, QueryStatistics?> readStatistics)
     {
         QueryType = queryType ?? throw new ArgumentNullException(nameof(queryType));
         DocType = docType ?? throw new ArgumentNullException(nameof(docType));
@@ -76,6 +95,8 @@ public sealed class CompiledQueryHandlerDescriptor
         IncludeMemberNames = includeMemberNames ?? throw new ArgumentNullException(nameof(includeMemberNames));
         StatisticsMemberName = statisticsMemberName;
         BindParameter = bindParameter ?? throw new ArgumentNullException(nameof(bindParameter));
+        AttachIncludeReaders = attachIncludeReaders ?? throw new ArgumentNullException(nameof(attachIncludeReaders));
+        ReadStatistics = readStatistics ?? throw new ArgumentNullException(nameof(readStatistics));
     }
 
     public Type QueryType { get; }
@@ -85,4 +106,6 @@ public sealed class CompiledQueryHandlerDescriptor
     public string[] IncludeMemberNames { get; }
     public string? StatisticsMemberName { get; }
     public Action<NpgsqlParameter, object, string, bool> BindParameter { get; }
+    public Func<IMartenSession, object, IIncludeReader[]> AttachIncludeReaders { get; }
+    public Func<object, QueryStatistics?> ReadStatistics { get; }
 }

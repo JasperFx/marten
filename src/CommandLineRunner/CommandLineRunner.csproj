@@ -9,5 +9,10 @@
     <ItemGroup>
       <ProjectReference Include="..\DaemonTests\DaemonTests.csproj" />
       <ProjectReference Include="..\Marten\Marten.csproj" />
+      <!-- Compiled queries declared in this project (FindUserByAllTheThings) require
+           the source generator to emit their handler registrations. See #4405. -->
+      <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                        OutputItemType="Analyzer"
+                        ReferenceOutputAssembly="false" />
     </ItemGroup>
 </Project>

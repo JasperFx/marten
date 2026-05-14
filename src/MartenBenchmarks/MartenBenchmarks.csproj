@@ -9,6 +9,11 @@
     <ItemGroup>
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj"/>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
+        <!-- Compiled queries declared in this project (BlueTargets, etc.) require
+             the source generator to emit their handler registrations. See #4405. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="BenchmarkDotNet"/>
