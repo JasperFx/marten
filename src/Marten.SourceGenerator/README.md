@@ -9,8 +9,13 @@ Source generator package for Marten. Eliminates runtime code generation (no `Jas
 ## Status
 
 * **PoC initialized.** Project scaffolds; one incremental generator stub fires for every `ICompiledQuery<TDoc, TOut>` implementation in assemblies marked with `[JasperFxAssembly]`. Currently emits a marker class per discovered type — proves the pipeline.
-* **Next milestone:** typed parameter binder emission. Replace the marker with a `static class {QueryType}_CompiledQueryHandler` that exposes `BindParameters(query, parameters[])` with direct property reads.
-* **Then:** runtime first-call LINQ-parse plumbing. `QueryCompiler.BuildQueryPlan` already runs codegen-free; bypass `CompiledQuerySourceBuilder.AssembleTypes` and use the source-gen scaffold to hold the SQL + parameter binder. Memoize forever.
+* **Iteration 2 — typed parameter binder emission. ✅** The generator now emits a `static class {QueryType}_CompiledQueryHandler` per discovered query type, containing:
+  * `ParameterMemberNames` / `IncludeMemberNames` / `StatisticsMemberName` — pre-classified member-name surface so the runtime planner skips reflection.
+  * `BindParameter(NpgsqlParameter, query, memberName, enumAsString)` — a switch that does direct field/property reads, mirroring the assignment pattern in `Marten.Internal.CompiledQueries.ParameterUsage.GenerateCode`.
+  * Covers BCL primitives + `Guid` / `DateTime` / `DateTimeOffset` / `TimeSpan` / `DateOnly` / `TimeOnly`, enums (both `EnumStorage` modes via the runtime `enumAsString` arg), arrays of those types, and `byte[]` → `Bytea`.
+  * Unsupported member types emit diagnostic `MTSG001` (Info) and are skipped — runtime falls back to reflective binding for those if the planner needs them.
+  * Validated by `Marten.SourceGenerator.Tests` (13 tests across net9.0 + net10.0), including a round-trip "generated source compiles against an Npgsql stub" check.
+* **Next milestone (iteration 3):** runtime first-call LINQ-parse plumbing. `QueryCompiler.BuildQueryPlan` already runs codegen-free; bypass `CompiledQuerySourceBuilder.AssembleTypes` and use the source-gen scaffold to hold the SQL + parameter binder. Memoize forever. Likely shape: a `[ModuleInitializer]` block emitted alongside the binder class registers the handler with a runtime registry keyed by query `Type`.
 * **Then:** correctness + perf gates on three representative shapes (simple `Where`, `Where + OrderBy + Take`, `Where + Include<T>`).
 * **Final:** decision — continue Direction D for the rest of Marten, or fall back to packaging extraction for compiled queries specifically.
 

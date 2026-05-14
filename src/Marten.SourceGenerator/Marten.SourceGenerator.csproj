@@ -11,6 +11,9 @@
         <Nullable>enable</Nullable>
         <IsRoslynComponent>true</IsRoslynComponent>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!-- RS2008: analyzer-release tracking. The PoC diagnostics (MTSG###) are still
+             churning; we'll opt back in once the IDs and severities are committed to. -->
+        <NoWarn>$(NoWarn);RS2008</NoWarn>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
         <DevelopmentDependency>true</DevelopmentDependency>

@@ -70,6 +70,7 @@
   <Project Path="Marten.EntityFrameworkCore/Marten.EntityFrameworkCore.csproj" />
   <Project Path="Marten.Newtonsoft/Marten.Newtonsoft.csproj" />
   <Project Path="Marten.SourceGenerator/Marten.SourceGenerator.csproj" />
+  <Project Path="Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj" />
   <Project Path="Marten/Marten.csproj" />
   <Project Path="MemoryUsageChecker/MemoryUsageChecker.csproj" />
 </Solution>
