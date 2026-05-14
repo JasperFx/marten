@@ -259,7 +259,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         }
     }
 
-    public new IEventStoreOperations Events => (IEventStoreOperations)base.Events;
+    public new Marten.Events.IEventStoreOperations Events => (Marten.Events.IEventStoreOperations)base.Events;
 
 
     public void QueueOperation(IStorageOperation storageOperation)
@@ -350,7 +350,7 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         return tenantSession;
     }
 
-    protected override IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
+    protected override Marten.Events.IQueryEventStore CreateEventStore(DocumentStore store, Tenant tenant)
     {
         return new EventStore(this, store, tenant);
     }

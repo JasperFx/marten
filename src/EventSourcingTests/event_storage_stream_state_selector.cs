@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using Marten.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq.Selectors;

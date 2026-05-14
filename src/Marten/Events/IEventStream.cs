@@ -8,44 +8,18 @@ using Marten.Internal.Sessions;
 namespace Marten.Events;
 
 /// <summary>
-/// Internal marker interface for event streams
+/// Internal marker interface for event streams.
 /// </summary>
 internal interface IEventStream
 {
     void TryFastForwardVersion();
 }
 
-public interface IEventStream<out T> where T: notnull
-{
-    T? Aggregate { get; }
-    long? StartingVersion { get; }
-    long? CurrentVersion { get; }
-
-    CancellationToken Cancellation { get; }
-
-    public Guid Id { get; }
-    public string Key { get; }
-
-    IReadOnlyList<IEvent> Events { get; }
-    void AppendOne(object @event);
-    void AppendMany(params object[] events);
-    void AppendMany(IEnumerable<object> events);
-
-    /// <summary>
-    /// If true, Marten will enforce an optimistic concurrency check on this stream even if no
-    /// events are appended at the time of calling SaveChangesAsync(). This is useful when you want
-    /// to ensure the stream version has not advanced since it was fetched, even if the command
-    /// handler decides not to emit any new events.
-    /// </summary>
-    bool AlwaysEnforceConsistency { get; set; }
-
-    /// <summary>
-    /// Try to advance the expected starting version for optimistic concurrency checks to the current version
-    /// so that you can reuse a stream object for multiple units of work. This is meant to only be used in
-    /// very specific circumstances.
-    /// </summary>
-    void TryFastForwardVersion();
-}
+// NOTE: The public IEventStream<T> contract moved to JasperFx.Events.IEventStream<T>
+// as part of the Marten 9 dedupe pillar consumption. Code that previously imported
+// Marten.Events.IEventStream<T> now resolves the unqualified `IEventStream<T>` to
+// the JasperFx.Events version via `using JasperFx.Events;`. See the migration guide
+// for the namespace move.
 
 internal class EventStream<T>: IEventStream<T>, IEventStream where T: notnull
 {
@@ -90,7 +64,7 @@ internal class EventStream<T>: IEventStream<T>, IEventStream where T: notnull
     }
 
     public Guid Id => _stream.Id;
-    public string Key => _stream.Key;
+    public string? Key => _stream.Key;
 
     public T? Aggregate { get; }
     public long? StartingVersion => _stream.ExpectedVersionOnServer;

@@ -12,6 +12,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
+// 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator interface;
+// alias to the Marten-specific one this manual-only fixture drives.
+using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 
 namespace DaemonTests.ManualOnly.Coordination;
 

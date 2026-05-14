@@ -9,7 +9,7 @@ using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Events.Dcb;
 using Marten.Events.Fetching;
-using StreamState = Marten.Events.StreamState;
+using StreamState = JasperFx.Events.StreamState;
 using Marten.Events.Querying;
 using Marten.Linq.QueryHandlers;
 

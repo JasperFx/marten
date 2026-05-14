@@ -484,8 +484,8 @@ public static class MartenServiceCollectionExtensions
             Services.ConfigureMarten<T>(opts => opts.Projections.AsyncMode = mode);
             if (mode != DaemonMode.Disabled)
             {
-                Services.AddSingleton<IProjectionCoordinator<T>, ProjectionCoordinator<T>>();
-                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<IProjectionCoordinator<T>>());
+                Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>, ProjectionCoordinator<T>>();
+                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<T>>());
             }
 
             return this;
@@ -746,8 +746,8 @@ public static class MartenServiceCollectionExtensions
 
             if (mode != DaemonMode.Disabled)
             {
-                Services.AddSingleton<IProjectionCoordinator, ProjectionCoordinator>();
-                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<IProjectionCoordinator>());
+                Services.AddSingleton<Marten.Events.Daemon.Coordination.IProjectionCoordinator, ProjectionCoordinator>();
+                Services.AddSingleton<IHostedService>(s => s.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator>());
             }
 
             return this;

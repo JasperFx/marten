@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
-using JasperFx.Events.Daemon;
+using DaemonMode = JasperFx.Events.Daemon.DaemonMode;
 using Marten.Events;
 using Marten.Events.Daemon.Coordination;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,7 +31,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <returns></returns>
-    public static Task PauseAllDaemonsAsync<T>(this IHost host) where T : IDocumentStore
+    public static Task PauseAllDaemonsAsync<T>(this IHost host) where T : class, IDocumentStore
     {
         var coordinator =  host.Services.GetRequiredService<IProjectionCoordinator<T>>();
         return coordinator.PauseAsync();
@@ -55,7 +55,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <returns></returns>
-    public static Task PauseAllDaemonsAsync<T>(this IServiceProvider services) where T : IDocumentStore
+    public static Task PauseAllDaemonsAsync<T>(this IServiceProvider services) where T : class, IDocumentStore
     {
         var coordinator =  services.GetRequiredService<IProjectionCoordinator<T>>();
         return coordinator.PauseAsync();
@@ -99,7 +99,7 @@ public static class HostExtensions
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T DocumentStore<T>(this IHost host) where T : IDocumentStore
+    public static T DocumentStore<T>(this IHost host) where T : class, IDocumentStore
     {
         return host.Services.GetRequiredService<T>();
     }
@@ -109,7 +109,7 @@ public static class HostExtensions
     /// </summary>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T DocumentStore<T>(this IServiceProvider services) where T : IDocumentStore
+    public static T DocumentStore<T>(this IServiceProvider services) where T : class, IDocumentStore
     {
         return services.GetRequiredService<T>();
     }
@@ -167,7 +167,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
-    public static async Task CleanAllMartenDataAsync<T>(this IHost host) where T : IDocumentStore
+    public static async Task CleanAllMartenDataAsync<T>(this IHost host) where T : class, IDocumentStore
     {
         var store = host.DocumentStore<T>();
         await store.Advanced.Clean.DeleteAllDocumentsAsync(CancellationToken.None).ConfigureAwait(false);
@@ -201,7 +201,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
-    public static async Task ResetAllMartenDataAsync<T>(this IHost host) where T : IDocumentStore
+    public static async Task ResetAllMartenDataAsync<T>(this IHost host) where T : class, IDocumentStore
     {
         var coordinator = host.Services.GetService<IProjectionCoordinator<T>>();
         if (coordinator != null)
@@ -234,7 +234,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
-    public static async Task CleanAllMartenDataAsync<T>(this IServiceProvider services) where T : IDocumentStore
+    public static async Task CleanAllMartenDataAsync<T>(this IServiceProvider services) where T : class, IDocumentStore
     {
         var store = services.DocumentStore<T>();
         await store.Advanced.Clean.DeleteAllDocumentsAsync(CancellationToken.None).ConfigureAwait(false);
@@ -267,7 +267,7 @@ public static class HostExtensions
     /// </summary>
     /// <param name="host"></param>
     /// <typeparam name="T"></typeparam>
-    public static async Task ResetAllMartenDataAsync<T>(this IServiceProvider services) where T : IDocumentStore
+    public static async Task ResetAllMartenDataAsync<T>(this IServiceProvider services) where T : class, IDocumentStore
     {
         var coordinator = services.GetService<IProjectionCoordinator<T>>();
         if (coordinator != null)

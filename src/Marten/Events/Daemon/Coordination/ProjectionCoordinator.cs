@@ -14,7 +14,7 @@ using Polly;
 
 namespace Marten.Events.Daemon.Coordination;
 
-public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordinator<T> where T : IDocumentStore
+public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordinator<T> where T : class, IDocumentStore
 {
     public ProjectionCoordinator(T documentStore, ILogger<ProjectionCoordinator> logger): base(documentStore, logger)
     {

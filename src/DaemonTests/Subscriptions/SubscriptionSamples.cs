@@ -12,6 +12,9 @@ using Marten;
 using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Events.Daemon.Coordination;
+// 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator interface;
+// alias to the Marten-specific one this sample actually uses.
+using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 using Marten.Events.Daemon.Internals;
 using Marten.Services;
 using Marten.Subscriptions;

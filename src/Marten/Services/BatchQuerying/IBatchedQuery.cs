@@ -8,7 +8,7 @@ using JasperFx.Events.Tags;
 using Marten.Events;
 using Marten.Events.Dcb;
 using Marten.Internal.Sessions;
-using StreamState = Marten.Events.StreamState;
+using StreamState = JasperFx.Events.StreamState;
 using Marten.Linq;
 using Marten.Linq.QueryHandlers;
 
