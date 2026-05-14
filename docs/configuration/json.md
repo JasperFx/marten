@@ -5,9 +5,18 @@ JSON serialization extensible and configurable through the native mechanisms in 
 
 ## Serializer Choice
 
-Marten ships with System.Text.Json as the default, but there is still built in support to opt into Newtonsoft.Json.
+Marten ships with System.Text.Json as the default. Newtonsoft.Json support has moved to a separate **`Marten.Newtonsoft`** NuGet package as of Marten 9.0 — Marten core no longer depends on `Newtonsoft.Json`.
 
-Configuration for both serializers hang off the `DocumentStore` `UseNewtonsoftForSerialization` and `UseSystemTextJsonForSerialization` extensions respectively:
+To use Newtonsoft serialization:
+
+1. Add the `Marten.Newtonsoft` package alongside `Marten`:
+   ```bash
+   dotnet add package Marten.Newtonsoft
+   ```
+2. Add `using Marten.Newtonsoft;` where you configure your store.
+3. Call `UseNewtonsoftForSerialization(...)` — it is now an extension method on `StoreOptions` provided by the new package.
+
+`UseSystemTextJsonForSerialization` continues to live in Marten core; `UseNewtonsoftForSerialization` lives in `Marten.Newtonsoft`:
 
 <!-- snippet: sample_customize_serializer -->
 <a id='snippet-sample_customize_serializer'></a>
@@ -27,7 +36,7 @@ var store = DocumentStore.For(_ =>
 <!-- endSnippet -->
 
 ::: info
-Previous to Marten v8, Newtonsoft.Json was the default serializer.
+Previous to Marten v8, Newtonsoft.Json was the default serializer. Starting with Marten 9.0, Newtonsoft support is shipped as the separate **`Marten.Newtonsoft`** NuGet package. Add a package reference and `using Marten.Newtonsoft;` to keep using it.
 :::
 
 ## Enum Storage

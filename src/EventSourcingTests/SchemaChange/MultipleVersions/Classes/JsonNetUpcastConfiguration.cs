@@ -5,6 +5,7 @@ using Marten;
 using Marten.Services.Json.Transformations.JsonNet;
 using Newtonsoft.Json.Linq;
 using static JasperFx.Events.EventTypeExtensions;
+using Marten.Newtonsoft;
 
 namespace EventSourcingTests.SchemaChange.MultipleVersions.Classes
 {

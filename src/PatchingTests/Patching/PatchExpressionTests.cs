@@ -15,6 +15,7 @@ using Marten.Testing.Harness;
 using NSubstitute;
 using Shouldly;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace PatchingTests.Patching;
 

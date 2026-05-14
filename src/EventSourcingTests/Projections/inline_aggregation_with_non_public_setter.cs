@@ -8,6 +8,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace EventSourcingTests.Projections;
 

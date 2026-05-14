@@ -7,6 +7,7 @@ using JasperFx.Core.TypeScanning;
 [assembly:JasperFxTool]
 [assembly:JasperFxAssembly]
 
+[assembly: InternalsVisibleTo("Marten.Newtonsoft")]
 [assembly: InternalsVisibleTo("Marten.Testing")]
 [assembly: InternalsVisibleTo("Marten.CommandLine")]
 [assembly: InternalsVisibleTo("Marten.PLv8")]

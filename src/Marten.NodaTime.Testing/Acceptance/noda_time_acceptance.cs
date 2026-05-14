@@ -12,6 +12,7 @@ using NodaTime;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
+using Marten.Newtonsoft;
 
 namespace Marten.NodaTimePlugin.Testing.Acceptance;
 

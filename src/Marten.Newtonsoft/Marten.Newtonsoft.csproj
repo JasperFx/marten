@@ -1,6 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
     <PropertyGroup>
-        <Description>NodaTime extension for Marten</Description>
+        <Description>Newtonsoft.Json serializer integration for Marten</Description>
         <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
         <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
         <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
@@ -9,18 +10,17 @@
         <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
-        <nullable>enable</nullable>
-        <RootNamespace>Marten.NodaTimePlugin</RootNamespace>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="NodaTime.Serialization.JsonNet"/>
-        <PackageReference Include="NodaTime.Serialization.SystemTextJson"/>
-        <PackageReference Include="Npgsql.NodaTime" />
-    </ItemGroup>
-    <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj"/>
-        <!-- Marten 9.0: Newtonsoft serializer + JObject converter live in the Marten.Newtonsoft package now -->
-        <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Newtonsoft.Json" />
+        <PackageReference Include="Npgsql.Json.NET" />
+    </ItemGroup>
+
+    <Import Project="../../Analysis.Build.props"/>
 </Project>

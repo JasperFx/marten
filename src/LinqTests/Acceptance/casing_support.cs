@@ -7,6 +7,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Marten.Newtonsoft;
 namespace LinqTests.Acceptance;
 
 public class casing_support: OneOffConfigurationsContext

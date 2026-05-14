@@ -29,7 +29,6 @@ using Marten.Storage.Metadata;
 using Marten.Util;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Newtonsoft.Json;
 using Npgsql;
 using Polly;
 using Weasel.Core;
@@ -101,6 +100,16 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     /// </summary>
     [IgnoreDescription]
     public List<IDocumentSessionListener> Listeners { get; } = new();
+
+    /// <summary>
+    ///     Types that should be treated as "child document" containers (JSONB) when
+    ///     resolving LINQ members. The optional <c>Marten.Newtonsoft</c> package
+    ///     adds <c>Newtonsoft.Json.Linq.JObject</c> here via its
+    ///     <c>UseNewtonsoftForSerialization</c> extension method, so users with
+    ///     <c>JObject</c> properties keep child-document behavior.
+    /// </summary>
+    [IgnoreDescription]
+    internal HashSet<Type> ChildDocumentTypes { get; } = new();
 
     /// <summary>
     /// Used to enable or disable Marten's OpenTelemetry features for just this session.
@@ -623,34 +632,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             configure(_serializer);
         }
-    }
-
-    /// <summary>
-    ///     Configure the Newtonsoft serializer settings
-    /// </summary>
-    /// <param name="enumStorage">Enum storage style</param>
-    /// <param name="casing">Casing style to be used in serialization</param>
-    /// <param name="collectionStorage">Allow to set collection storage as raw arrays (without explicit types)</param>
-    /// <param name="nonPublicMembersStorage">Allow non public members to be used during deserialization</param>
-    public void UseNewtonsoftForSerialization(
-        EnumStorage enumStorage = EnumStorage.AsInteger,
-        Casing casing = Casing.Default,
-        CollectionStorage collectionStorage = CollectionStorage.Default,
-        NonPublicMembersStorage nonPublicMembersStorage = NonPublicMembersStorage.Default,
-        Action<JsonSerializerSettings>? configure = null)
-    {
-        var serializer = new JsonNetSerializer
-        {
-            EnumStorage = enumStorage,
-            Casing = casing,
-            CollectionStorage = collectionStorage,
-            NonPublicMembersStorage = nonPublicMembersStorage
-        };
-
-        if (configure is not null)
-            serializer.Configure(configure);
-
-        Serializer(serializer);
     }
 
     /// <summary>

@@ -384,6 +384,8 @@ options.Events
 
 #### Raw JSON transformation with Json .NET:
 
+> The `UseNewtonsoftForSerialization` call below requires the **`Marten.Newtonsoft`** NuGet package (new in Marten 9.0) and a `using Marten.Newtonsoft;` directive at the call site.
+
 <!-- snippet: sample_upcast_event_lambda_with_jsonnet_jobject -->
 <a id='snippet-sample_upcast_event_lambda_with_jsonnet_jobject'></a>
 ```cs
@@ -505,6 +507,8 @@ public class ShoppingCartOpenedUpcaster:
 <!-- endSnippet -->
 
 #### Raw JSON transformation with Json .NET:
+
+> The `UseNewtonsoftForSerialization` call below requires the **`Marten.Newtonsoft`** NuGet package (new in Marten 9.0) and a `using Marten.Newtonsoft;` directive at the call site.
 
 <!-- snippet: sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject -->
 <a id='snippet-sample_upcaster_with_clr_types_and_event_type_name_from_old_type_with_jsonnet_jobject'></a>

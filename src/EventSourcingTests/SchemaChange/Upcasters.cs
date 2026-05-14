@@ -18,6 +18,7 @@ using Marten.Testing.Harness;
 using Newtonsoft.Json.Linq;
 using Xunit;
 using Shouldly;
+using Marten.Newtonsoft;
 
 namespace EventSourcingTests.SchemaChange
 {

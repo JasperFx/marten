@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Nodes;
 using Marten.Internal.Operations;
-using Newtonsoft.Json.Linq;
 
 namespace Marten.Internal.DirtyTracking;
 
@@ -30,7 +30,10 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
         }
 
         // Slow path: parse and deep-compare to handle semantically equivalent JSON
-        if (JToken.DeepEquals(JObject.Parse(_json), JObject.Parse(newJson)))
+        // (whitespace, property ordering). 9.0: this used to call
+        // Newtonsoft.Json.Linq's JToken.DeepEquals — now uses STJ's JsonNode.DeepEquals
+        // so Marten core no longer depends on Newtonsoft.Json.
+        if (JsonNode.DeepEquals(JsonNode.Parse(_json), JsonNode.Parse(newJson)))
         {
             operation = null;
             return false;

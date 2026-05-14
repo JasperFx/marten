@@ -352,6 +352,7 @@ class Build : NukeBuild
             var projects = new[]
             {
                 "./src/Marten",
+                "./src/Marten.Newtonsoft",
                 "./src/Marten.NodaTime",
                 "./src/Marten.AspNetCore",
                 "./src/Marten.EntityFrameworkCore"

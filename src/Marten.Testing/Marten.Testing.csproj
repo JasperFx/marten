@@ -15,6 +15,9 @@
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- Marten 9.0: tests cover both serializer paths so the harness pulls in
+             the optional Marten.Newtonsoft package transitively. -->
+        <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
     </ItemGroup>

@@ -5,6 +5,7 @@
     <ItemGroup>
         <ProjectReference Include="..\Marten.EntityFrameworkCore\Marten.EntityFrameworkCore.csproj" />
         <ProjectReference Include="..\Marten\Marten.csproj" />
+        <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
     </ItemGroup>
 
     <ItemGroup>
