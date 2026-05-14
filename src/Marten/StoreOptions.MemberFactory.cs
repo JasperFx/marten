@@ -16,6 +16,10 @@ using Weasel.Postgresql;
 
 namespace Marten;
 
+[UnconditionalSuppressMessage("Trimming", "IL2067",
+    Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class StoreOptions
 {
     internal IQueryableMember CreateQueryableMember(MemberInfo member, IQueryableMember parent)
@@ -140,6 +144,8 @@ public partial class StoreOptions
     }
 }
 
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class ValueTypeMemberSource: IMemberSource
 {
     public bool TryResolve(IQueryableMember parent, StoreOptions options, MemberInfo memberInfo, Type memberType,

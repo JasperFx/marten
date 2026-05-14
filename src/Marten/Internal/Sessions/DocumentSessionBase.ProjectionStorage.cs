@@ -14,9 +14,14 @@ using Marten.Internal.Storage;
 using Marten.Linq.SqlGeneration;
 using Marten.Storage;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.Sessions;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2087",
+    Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 public abstract partial class DocumentSessionBase
 {
     public async Task<IProjectionStorage<TDoc, TId>> FetchProjectionStorageAsync<TDoc, TId>(string tenantId,
@@ -39,6 +44,10 @@ public abstract partial class DocumentSessionBase
     }
 }
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2087",
+    Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
 internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where TId : notnull where TDoc : notnull
 {
     private readonly DocumentSessionBase _session;

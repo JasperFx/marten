@@ -12,9 +12,12 @@ using Marten.Schema.Indexing.Unique;
 using Marten.Storage.Metadata;
 using Marten.Util;
 using Weasel.Postgresql.Tables;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Schema;
 
+[UnconditionalSuppressMessage("Trimming", "IL2072",
+    Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
 public class ComputedIndex: IndexDefinition
 {
     public enum Casings

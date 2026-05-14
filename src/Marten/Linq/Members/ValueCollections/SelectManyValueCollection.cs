@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Members.ValueCollections;
 
@@ -10,6 +11,8 @@ namespace Marten.Linq.Members.ValueCollections;
 /// This takes the place of the ValueCollectionMember when this member
 /// is used inside of a SelectMany() clause
 /// </summary>
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SelectManyValueCollection: IValueCollectionMember
 {
     private readonly StoreOptions _options;

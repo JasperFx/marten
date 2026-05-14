@@ -7,9 +7,12 @@ using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing.Methods;
 
+[UnconditionalSuppressMessage("Trimming", "IL2067",
+    Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 internal class AllMethodParser: IMethodCallParser
 {
     public bool Matches(MethodCallExpression expression)

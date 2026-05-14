@@ -7,9 +7,14 @@ using JasperFx.Core.Reflection;
 using JasperFx.Core.TypeScanning;
 using Marten.Linq;
 using Marten.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2067",
+    Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
 public partial class StoreOptions
 {
     internal List<Type> CompiledQueryTypes => _compiledQueryTypes;

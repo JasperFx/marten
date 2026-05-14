@@ -7,6 +7,7 @@ using JasperFx.Core.Reflection;
 using Marten.Linq;
 using Marten.Linq.Members;
 using Weasel.Core;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Schema;
 
@@ -14,6 +15,8 @@ namespace Marten.Schema;
 ///     IDocumentMapping implementation for a document type that's a subclass of a parent type, and
 ///     maps to the parent storage
 /// </summary>
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public class SubClassMapping: IDocumentMapping
 {
     public SubClassMapping(Type documentType, DocumentMapping parent, StoreOptions storeOptions,

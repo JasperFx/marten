@@ -105,7 +105,8 @@
     "ngrams",
     "pgcrypto",
     "Jeremie",
-    "Chassaing"
+    "Chassaing",
+    "dedup"
   ],
   "ignoreRegExpList": [
     "\\((.*)\\)", // Markdown links

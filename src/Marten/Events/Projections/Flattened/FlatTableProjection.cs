@@ -22,12 +22,19 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using IReplayExecutor = JasperFx.Events.Daemon.IReplayExecutor;
 using Table = Weasel.Postgresql.Tables.Table;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events.Projections.Flattened;
 
 /// <summary>
 ///     Projection type that will write event data to a single database table
 /// </summary>
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2087",
+    Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class FlatTableProjection: ProjectionBase, IProjectionSource<IDocumentOperations, IQuerySession>,
     IProjectionSchemaSource, IInlineProjection<IDocumentOperations>, IJasperFxProjection<IDocumentOperations>
 {

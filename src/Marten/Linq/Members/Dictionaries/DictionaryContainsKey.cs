@@ -6,9 +6,12 @@ using JasperFx.Core.Reflection;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Members.Dictionaries;
 
+[UnconditionalSuppressMessage("Trimming", "IL2072",
+    Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
 internal class DictionaryContainsKey: IMethodCallParser
 {
     public bool Matches(MethodCallExpression expression)

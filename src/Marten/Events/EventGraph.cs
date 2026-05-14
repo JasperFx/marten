@@ -28,9 +28,18 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using static JasperFx.Events.EventTypeExtensions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2057",
+    Justification = "Class-level: Type.GetType(string) fallback for resolving aggregate / document types by .NET type name. Types preserved by registration on the caller side per the AOT publishing guide.")]
+[UnconditionalSuppressMessage("Trimming", "IL2060",
+    Justification = "Class-level: Expression.Call(Type, string, ...) on framework Queryable / Enumerable intrinsics that the trimmer preserves.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
     IAggregationSourceFactory<IQuerySession>, IDescribeMyself, ICodeFileCollection

@@ -29,9 +29,12 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using static JasperFx.Events.EventTypeExtensions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events;
 
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
 {
     protected readonly DocumentMapping _inner;

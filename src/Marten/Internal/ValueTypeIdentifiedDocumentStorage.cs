@@ -18,9 +18,12 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class ValueTypeIdentifiedIdentitySetter<TDoc, TSimple, TValueType>: IIdentitySetter<TDoc, TSimple>
 {
     private readonly Func<TSimple, TValueType> _converter;
@@ -50,6 +53,8 @@ internal interface IValueTypeStorage<TDoc, TValueType>
     IQueryHandler<IReadOnlyList<TDoc>> BuildLoadManyHandler(TValueType[] keys);
 }
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: IDocumentStorage<TDoc, TSimple>,  IValueTypeStorage<TDoc, TValueType> where TDoc : notnull where TSimple : notnull where TValueType : notnull
 {
     private readonly Func<TSimple, TValueType> _converter;

@@ -1,8 +1,11 @@
 #nullable enable
 using System.Linq.Expressions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing;
 
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public static class ConstantExpressionExtensions
 {
     public static object? UnwrapValue(this ConstantExpression constant)
