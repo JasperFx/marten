@@ -41,10 +41,13 @@ public class setting_solo_mode_in_test_support
                 services.MartenDaemonModeIsSolo();
             }).StartAsync();
 
-        host.Services.GetRequiredService<IProjectionCoordinator>().ShouldBeOfType<ExplicitProjectionCoordinator>();
-        host.Services.GetRequiredService<IProjectionCoordinator<IFirstStore>>()
+        // 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator(<T>); qualify
+        // with the full Marten namespace path to disambiguate the resolution this test
+        // asserts on.
+        host.Services.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator>().ShouldBeOfType<ExplicitProjectionCoordinator>();
+        host.Services.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<IFirstStore>>()
             .ShouldBeOfType<ExplicitProjectionCoordinator<IFirstStore>>();
-        host.Services.GetRequiredService<IProjectionCoordinator<ISecondStore>>()
+        host.Services.GetRequiredService<Marten.Events.Daemon.Coordination.IProjectionCoordinator<ISecondStore>>()
             .ShouldBeOfType<ExplicitProjectionCoordinator<ISecondStore>>();
     }
 }

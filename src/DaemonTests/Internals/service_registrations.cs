@@ -8,6 +8,9 @@ using Marten.Testing.Harness;
 using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Xunit;
+// 9.0: JFx.Events 2.0 introduced its own IProjectionCoordinator interface;
+// alias to the Marten-specific one this test fixture/sample actually uses.
+using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
 
 namespace DaemonTests.Internals;
 

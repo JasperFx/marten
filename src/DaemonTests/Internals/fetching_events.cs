@@ -8,6 +8,9 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events;
+// 9.0: JFx.Events 2.0 introduced its own IEventStoreOperations interface;
+// alias to the Marten extension this fixture actually drives.
+using IEventStoreOperations = Marten.Events.IEventStoreOperations;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
 using Marten.Testing.Harness;
