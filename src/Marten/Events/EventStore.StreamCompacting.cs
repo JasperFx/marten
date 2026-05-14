@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -7,6 +9,7 @@ using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
+using JasperFx.Events.Protected;
 using Marten.Events.Protected;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -28,6 +31,7 @@ internal partial class EventStore
     }
 
     public async Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null)
+        where T : class
     {
         var request = new StreamCompactingRequest<T>(streamKey);
         configure?.Invoke(request);
@@ -36,6 +40,7 @@ internal partial class EventStore
     }
 
     public async Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)
+        where T : class
     {
         var request = new StreamCompactingRequest<T>(streamId);
         configure?.Invoke(request);
@@ -44,67 +49,43 @@ internal partial class EventStore
     }
 }
 
-public class StreamCompactingRequest<T>
+/// <summary>
+///     Marten-side execution of <see cref="StreamCompactingRequest{T}"/> (the data
+///     shape now lives in <see cref="JasperFx.Events.Protected"/> per the dedupe
+///     pillar — see jasperfx#214 / PR #274). Each product owns its own
+///     <c>ExecuteAsync</c>; only the request shape and the
+///     <see cref="IEventsArchiver{TOperations}"/> hook are shared.
+/// </summary>
+internal static class StreamCompactingExecution
 {
-    public StreamCompactingRequest(string? streamKey)
-    {
-        StreamKey = streamKey;
-    }
-
-    public StreamCompactingRequest(Guid? streamId)
-    {
-        StreamId = streamId;
-    }
-
     /// <summary>
-    /// The identity of the stream if using string identified streams
+    ///     Drive the compaction against a Marten <see cref="DocumentSessionBase"/>:
+    ///     fetch the events to be replaced, build a <see cref="Compacted{T}"/>
+    ///     snapshot via the aggregator, optionally invoke the archiver (if the
+    ///     request's <see cref="StreamCompactingRequest{T}.Archiver"/> closes the
+    ///     generic over Marten's <see cref="IDocumentOperations"/>), then queue the
+    ///     replacement + delete operations on the session.
     /// </summary>
-    public string StreamKey { get; private set; }
-
-    /// <summary>
-    /// The identity of the stream if using Guid identified streams
-    /// </summary>
-    public Guid? StreamId { get; private set; }
-
-    /// <summary>
-    /// If specified, the version at which the stream is going to be compacted. Default 0 means
-    /// the latest
-    /// </summary>
-    public long Version { get; set; } = 0;
-
-    /// <summary>
-    /// If specified, this operation will compact the events below the timestamp
-    /// </summary>
-    public DateTimeOffset? Timestamp { get; set; }
-
-    /// <summary>
-    /// Optional mechanism to carry out an archiving step for the events before the
-    /// compacting operation is completed and these events are permanently deleted
-    /// </summary>
-    public IEventsArchiver? Archiver { get; set; }
-
-    /// <summary>
-    /// CancellationToken for just this operation. Default is None
-    /// </summary>
-    public CancellationToken CancellationToken { get; set; } = CancellationToken.None;
-
-    internal async Task ExecuteAsync(DocumentSessionBase session)
+    internal static async Task ExecuteAsync<T>(this StreamCompactingRequest<T> request, DocumentSessionBase session)
+        where T : class
     {
         var logger = session.Options.LogFactory?.CreateLogger<StreamCompactingRequest<T>>() ??
                      session.Options.DotNetLogger ?? NullLogger<StreamCompactingRequest<T>>.Instance;
 
         // 1. Find the aggregator
-        var aggregator = findAggregator(session);
+        var aggregator = FindAggregator<T>(session);
 
         // 2. Find the events
-        IReadOnlyList<IEvent> events = null;
+        IReadOnlyList<IEvent> events;
         if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            events = await session.Events.FetchStreamAsync(StreamId.Value, Version, Timestamp, token:CancellationToken).ConfigureAwait(false);
+            events = await session.Events.FetchStreamAsync(request.StreamId!.Value, request.Version,
+                request.Timestamp, token: request.CancellationToken).ConfigureAwait(false);
         }
         else
         {
-            events = await session.Events.FetchStreamAsync(StreamKey, Version, Timestamp, token:CancellationToken).ConfigureAwait(false);
+            events = await session.Events.FetchStreamAsync(request.StreamKey!, request.Version,
+                request.Timestamp, token: request.CancellationToken).ConfigureAwait(false);
         }
 
         if (!events.Any()) return;
@@ -112,39 +93,43 @@ public class StreamCompactingRequest<T>
 
         var sequences = events.Select(x => x.Sequence).Take(events.Count - 1).ToArray();
 
-        Version = events[events.Count - 1].Version;
-        Sequence = events[events.Count - 1].Sequence;
+        request.Version = events[events.Count - 1].Version;
+        request.Sequence = events[events.Count - 1].Sequence;
 
         // 3. Aggregate up to the new snapshot
-        var aggregate = await aggregator.BuildAsync(events, session, default, CancellationToken).ConfigureAwait(false);
+        var aggregate = await aggregator.BuildAsync(events, session, default, request.CancellationToken)
+            .ConfigureAwait(false);
 
-        if (Archiver != null)
+        // 4. Optional archiving. The lifted IEventsArchiver marker is non-generic
+        //    so the data class doesn't have to flow a TOperations parameter; the
+        //    product downcasts to the closed-generic at execution time. Marten's
+        //    callbacks close on IDocumentOperations.
+        if (request.Archiver is IEventsArchiver<IDocumentOperations> archiver)
         {
-            await Archiver.MaybeArchiveAsync(session, this, events, CancellationToken).ConfigureAwait(false);
+            await archiver.MaybeArchiveAsync(session, request, events, request.CancellationToken)
+                .ConfigureAwait(false);
         }
 
         if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            logger.LogInformation("Successfully archived events for Stream {Id} from Version {Version} and down", StreamId, Version);
+            logger.LogInformation("Successfully archived events for Stream {Id} from Version {Version} and down",
+                request.StreamId, request.Version);
         }
         else
         {
-            logger.LogInformation("Successfully archived events for Stream {Key} from Version {Version} and down", StreamKey, Version);
+            logger.LogInformation("Successfully archived events for Stream {Key} from Version {Version} and down",
+                request.StreamKey, request.Version);
         }
 
-        var compacted = new Compacted<T>(aggregate, StreamId.HasValue ? StreamId.Value : Guid.Empty, StreamKey);
+        var compacted = new Compacted<T>(aggregate!,
+            request.StreamId ?? Guid.Empty, request.StreamKey ?? string.Empty);
 
-        session.Events.CompletelyReplaceEvent(Sequence, compacted);
+        session.Events.CompletelyReplaceEvent(request.Sequence, compacted);
 
         session.QueueOperation(new DeleteEventsOperation(sequences));
     }
 
-    /// <summary>
-    /// The event sequence of the last event being compacted and maybe archived
-    /// </summary>
-    public long Sequence { get; private set; }
-
-    private static IAggregator<T, IQuerySession> findAggregator(DocumentSessionBase session)
+    private static IAggregator<T, IQuerySession> FindAggregator<T>(DocumentSessionBase session) where T : class
     {
         if (!session.Options.Projections.TryFindAggregate(typeof(T), out var projection))
         {
@@ -156,7 +141,8 @@ public class StreamCompactingRequest<T>
         if (aggregator == null)
         {
             throw new InvalidOperationException(
-                $"Type {projection.GetType().FullNameInCode()} does not implement interface {typeof(IAggregator<T, IDocumentOperations>).FullNameInCode()}");
+                $"Type {projection!.GetType().FullNameInCode()} does not implement interface " +
+                $"{typeof(IAggregator<T, IDocumentOperations>).FullNameInCode()}");
         }
 
         return aggregator;
@@ -166,12 +152,33 @@ public class StreamCompactingRequest<T>
 #region sample_ieventsarchiver
 
 /// <summary>
-/// Callback interface for executing event archiving
+/// Implement <see cref="IEventsArchiver{TOperations}"/> from
+/// <c>JasperFx.Events.Protected</c> with <c>TOperations</c> closed over Marten's
+/// <see cref="IDocumentOperations"/> to intercept stream-compaction events
+/// before they are permanently deleted. Wire your archiver onto the request via
+/// <c>configure.Archiver = new MyArchiver()</c> inside the
+/// <c>CompactStreamAsync&lt;T&gt;(id, configure)</c> callback.
 /// </summary>
-public interface IEventsArchiver
+/// <remarks>
+/// Pre-2026 Marten shipped its own non-generic <c>Marten.Events.IEventsArchiver</c>
+/// interface. That contract has been lifted to
+/// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
+/// per the dedupe pillar so Marten and Polecat share a single contract — Marten
+/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
+/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// </remarks>
+public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
 {
-    Task MaybeArchiveAsync<T>(IDocumentOperations operations, StreamCompactingRequest<T> request, IReadOnlyList<IEvent> events,
-        CancellationToken cancellation);
+    public Task MaybeArchiveAsync<T>(
+        IDocumentOperations operations,
+        StreamCompactingRequest<T> request,
+        IReadOnlyList<IEvent> events,
+        CancellationToken cancellation) where T : class
+    {
+        // Copy the to-be-deleted events to cold storage, emit an audit record, etc.
+        // The compactor will not proceed until this callback completes.
+        return Task.CompletedTask;
+    }
 }
 
 #endregion
@@ -205,4 +212,3 @@ internal class DeleteEventsOperation: IStorageOperation
 
     public OperationRole Role() => OperationRole.Events;
 }
-

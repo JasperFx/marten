@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Protected;
 
 namespace Marten.Events;
 
@@ -11,8 +12,9 @@ namespace Marten.Events;
 /// Marten 9 dedupe pillar: the database-agnostic Append / StartStream surface now
 /// lives in <see cref="JasperFx.Events.IEventOperations"/>. This interface adds the
 /// Marten-specific <c>CompactStreamAsync&lt;T&gt;</c> overloads — their execution
-/// depends on <see cref="StreamCompactingRequest{T}"/>, which is Marten-specific
-/// until that data class is lifted in a follow-up.
+/// depends on the lifted <see cref="StreamCompactingRequest{T}"/> data shape from
+/// <c>JasperFx.Events.Protected</c> (jasperfx#269 / PR #274), but the execution
+/// itself stays Marten-specific because it threads <c>DocumentSessionBase</c>.
 /// </remarks>
 public interface IEventOperations : JasperFx.Events.IEventOperations
 {
@@ -25,11 +27,11 @@ public interface IEventOperations : JasperFx.Events.IEventOperations
     /// <param name="configure">Configure the compacting request. Default is to compact at the latest point</param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null);
+    Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null) where T : class;
 
     /// <summary>
     /// Compact a stream by replacing its first event with a Compacted&lt;T&gt; event that establishes
     /// the snapshot.
     /// </summary>
-    Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null);
+    Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null) where T : class;
 }

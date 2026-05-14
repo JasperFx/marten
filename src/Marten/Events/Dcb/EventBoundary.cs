@@ -8,7 +8,13 @@ using Marten.Internal.Sessions;
 
 namespace Marten.Events.Dcb;
 
-internal class EventBoundary<T>: IEventBoundary<T> where T : notnull
+/// <summary>
+///     Marten's concrete implementation of the lifted
+///     <see cref="JasperFx.Events.Tags.IEventBoundary{T}"/> contract. Boundary
+///     consistency is enforced by <see cref="AssertDcbConsistency"/> at
+///     <c>SaveChangesAsync()</c> time.
+/// </summary>
+internal class EventBoundary<T>: IEventBoundary<T> where T : class
 {
     private readonly DocumentSessionBase _session;
     private readonly EventGraph _events;

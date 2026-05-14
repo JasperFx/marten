@@ -8,6 +8,7 @@ using JasperFx.Events;
 using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Protected;
 using Marten;
 using Marten.Events;
 using Marten.Events.Aggregation;
@@ -31,7 +32,7 @@ public class stream_compacting : OneOffConfigurationsContext
 
     #region sample_using_stream_compacting
 
-    public static async Task compact(IDocumentSession session, Guid equipmentId, IEventsArchiver archiver)
+    public static async Task compact(IDocumentSession session, Guid equipmentId, IEventsArchiver<IDocumentOperations> archiver)
     {
         // Maybe we have ceased to care about old movements of a piece of equipment
         // But we want to retain an accurate positioning over the past year
@@ -533,10 +534,10 @@ public class LetterCountsProjection4: SingleStreamProjection<LetterCounts, Guid>
     }
 }
 
-public class StubEventsArchiver: IEventsArchiver
+public class StubEventsArchiver: IEventsArchiver<IDocumentOperations>
 {
     public Task MaybeArchiveAsync<T>(IDocumentOperations operations, StreamCompactingRequest<T> request, IReadOnlyList<IEvent> events,
-        CancellationToken cancellation)
+        CancellationToken cancellation) where T : class
     {
         LastRequest = request;
         LastEvents = events;
