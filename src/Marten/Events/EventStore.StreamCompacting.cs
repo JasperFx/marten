@@ -149,10 +149,39 @@ internal static class StreamCompactingExecution
     }
 }
 
-// The `sample_ieventsarchiver` doc-sample region now lives upstream alongside
-// the lifted IEventsArchiver<TOperations> interface in JasperFx.Events.Protected.
-// Marten consumers implement IEventsArchiver<IDocumentOperations> from
-// JasperFx.Events.Protected directly.
+#region sample_ieventsarchiver
+
+/// <summary>
+/// Implement <see cref="IEventsArchiver{TOperations}"/> from
+/// <c>JasperFx.Events.Protected</c> with <c>TOperations</c> closed over Marten's
+/// <see cref="IDocumentOperations"/> to intercept stream-compaction events
+/// before they are permanently deleted. Wire your archiver onto the request via
+/// <c>configure.Archiver = new MyArchiver()</c> inside the
+/// <c>CompactStreamAsync&lt;T&gt;(id, configure)</c> callback.
+/// </summary>
+/// <remarks>
+/// Pre-2026 Marten shipped its own non-generic <c>Marten.Events.IEventsArchiver</c>
+/// interface. That contract has been lifted to
+/// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
+/// per the dedupe pillar so Marten and Polecat share a single contract — Marten
+/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
+/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// </remarks>
+public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
+{
+    public Task MaybeArchiveAsync<T>(
+        IDocumentOperations operations,
+        StreamCompactingRequest<T> request,
+        IReadOnlyList<IEvent> events,
+        CancellationToken cancellation) where T : class
+    {
+        // Copy the to-be-deleted events to cold storage, emit an audit record, etc.
+        // The compactor will not proceed until this callback completes.
+        return Task.CompletedTask;
+    }
+}
+
+#endregion
 
 internal class DeleteEventsOperation: IStorageOperation
 {

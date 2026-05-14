@@ -12,7 +12,7 @@ than a couple months. This is a great opportunity to employ stream compacting:
 <!-- snippet: sample_using_stream_compacting -->
 <a id='snippet-sample_using_stream_compacting'></a>
 ```cs
-public static async Task compact(IDocumentSession session, Guid equipmentId, IEventsArchiver archiver)
+public static async Task compact(IDocumentSession session, Guid equipmentId, IEventsArchiver<IDocumentOperations> archiver)
 {
     // Maybe we have ceased to care about old movements of a piece of equipment
     // But we want to retain an accurate positioning over the past year
@@ -38,7 +38,7 @@ public static async Task compact(IDocumentSession session, Guid equipmentId, IEv
     });
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/stream_compacting.cs#L32-L60' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_compacting' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/stream_compacting.cs#L33-L61' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_stream_compacting' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 What this “compacting” does is effectively create a snapshot of the stream state and
@@ -55,22 +55,44 @@ public record Compacted<T>(T Snapshot, Guid PreviousStreamId, string PreviousStr
 
 The latest, greatest Marten projection bits are always able to restart any single stream projection with the `Snapshot` data of a `Compacted<T>` event, with no additional coding on your part.
 
-There's not yet any default archiver, but we're open to suggestions about what that might be in the future. To carry out event archival, supply
-an implementation of this interface:
+There's not yet any default archiver, but we're open to suggestions about what that might be in the future. To carry out event archival, implement the
+`IEventsArchiver<TOperations>` callback interface (lifted to `JasperFx.Events.Protected` per the dedupe pillar so Marten and Polecat share one contract)
+closed over Marten's `IDocumentOperations`:
 
 <!-- snippet: sample_ieventsarchiver -->
 <a id='snippet-sample_ieventsarchiver'></a>
 ```cs
 /// <summary>
-/// Callback interface for executing event archiving
+/// Implement <see cref="IEventsArchiver{TOperations}"/> from
+/// <c>JasperFx.Events.Protected</c> with <c>TOperations</c> closed over Marten's
+/// <see cref="IDocumentOperations"/> to intercept stream-compaction events
+/// before they are permanently deleted. Wire your archiver onto the request via
+/// <c>configure.Archiver = new MyArchiver()</c> inside the
+/// <c>CompactStreamAsync&lt;T&gt;(id, configure)</c> callback.
 /// </summary>
-public interface IEventsArchiver
+/// <remarks>
+/// Pre-2026 Marten shipped its own non-generic <c>Marten.Events.IEventsArchiver</c>
+/// interface. That contract has been lifted to
+/// <see cref="IEventsArchiver{TOperations}"/> in <c>JasperFx.Events.Protected</c>
+/// per the dedupe pillar so Marten and Polecat share a single contract — Marten
+/// archivers now close the generic over <see cref="IDocumentOperations"/>; Polecat
+/// archivers close it over <c>Polecat.IDocumentOperations</c>.
+/// </remarks>
+public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOperations>
 {
-    Task MaybeArchiveAsync<T>(IDocumentOperations operations, StreamCompactingRequest<T> request, IReadOnlyList<IEvent> events,
-        CancellationToken cancellation);
+    public Task MaybeArchiveAsync<T>(
+        IDocumentOperations operations,
+        StreamCompactingRequest<T> request,
+        IReadOnlyList<IEvent> events,
+        CancellationToken cancellation) where T : class
+    {
+        // Copy the to-be-deleted events to cold storage, emit an audit record, etc.
+        // The compactor will not proceed until this callback completes.
+        return Task.CompletedTask;
+    }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L166-L177' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/Events/EventStore.StreamCompacting.cs#L152-L184' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ieventsarchiver' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By default, Marten is *not* archiving events in this operation.
