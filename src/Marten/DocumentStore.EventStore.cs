@@ -14,6 +14,7 @@ using JasperFx.Events.Aggregation;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Descriptors;
 using JasperFx.Events.Projections;
+using JasperFx.Events.Protected;
 using Marten.Events;
 using Marten.Events.Archiving;
 using Marten.Events.Daemon;

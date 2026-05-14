@@ -5,8 +5,6 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
-using JasperFx.Events.Tags;
-using Marten.Events.Dcb;
 
 namespace Marten.Events;
 
@@ -17,27 +15,16 @@ namespace Marten.Events;
 /// <remarks>
 /// Marten 9 dedupe pillar: the database-agnostic surface (FetchForWriting,
 /// WriteToAggregate, AppendOptimistic/Exclusive, FetchLatest, ProjectLatest, tag
-/// queries, natural-key fetches, etc.) now lives in
-/// <see cref="JasperFx.Events.IEventStoreOperations"/>. This interface adds the
-/// Marten-specific extras:
+/// queries, natural-key fetches, plus <c>FetchForWritingByTags&lt;T&gt;</c>) now
+/// lives in <see cref="JasperFx.Events.IEventStoreOperations"/>. This interface
+/// inherits the canonical contract and adds the Marten-specific extras:
 /// <list type="bullet">
-///   <item><c>FetchForWritingByTags&lt;T&gt;</c> — returns a Marten-specific
-///   <see cref="IEventBoundary{T}"/> for DCB workflows. Lifts to JFx.Events once
-///   Polecat reaches DCB parity (JasperFx/polecat#80).</item>
 ///   <item><c>StreamLatestJson&lt;T&gt;</c> — Marten-specific JSON-passthrough
 ///   optimization that streams raw aggregate JSON to a destination stream.</item>
 /// </list>
 /// </remarks>
 public interface IEventStoreOperations : JasperFx.Events.IEventStoreOperations, IEventOperations, IQueryEventStore
 {
-    /// <summary>
-    /// Fetch events by tag query, aggregate into T, and establish a DCB consistency boundary.
-    /// At SaveChangesAsync() time, Marten will assert no new matching events were added
-    /// since the query was executed.
-    /// </summary>
-    Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query,
-        CancellationToken cancellation = default) where T : class;
-
     /// <summary>
     ///     Stream the raw JSON of the projected aggregate T by id directly to a destination stream.
     /// This avoids any deserialization/serialization round-trip when the aggregate is stored inline or

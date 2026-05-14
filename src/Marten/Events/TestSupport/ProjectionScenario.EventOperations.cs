@@ -6,6 +6,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Protected;
 
 namespace Marten.Events.TestSupport;
 
@@ -412,11 +413,13 @@ public partial class ProjectionScenario
     }
 
     public Task CompactStreamAsync<T>(string streamKey, Action<StreamCompactingRequest<T>>? configure = null)
+        where T : class
     {
         throw new NotSupportedException();
     }
 
     public Task CompactStreamAsync<T>(Guid streamId, Action<StreamCompactingRequest<T>>? configure = null)
+        where T : class
     {
         throw new NotSupportedException();
     }
