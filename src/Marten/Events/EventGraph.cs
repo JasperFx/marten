@@ -79,6 +79,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
         AddEventType<Archived>();
 
+        // 9.0 (#default-flips): apply V9 default flips for new StoreOptions instances.
+        // Callers wanting V8 semantics call StoreOptions.RestoreV8Defaults() to revert
+        // these. Anything not listed here kept its V8 default. See docs/migration-guide.md
+        // for the per-setting rationale + the consolidated RestoreV8Defaults recipe.
+        AppendMode = EventAppendMode.QuickWithServerTimestamps;
+        EnableAdvancedAsyncTracking = true;
+        EnableEventSkippingInProjectionsOrSubscriptions = true;
+        UseIdentityMapForAggregates = true;
+        EnableBigIntEvents = true;
     }
 
     /// <summary>

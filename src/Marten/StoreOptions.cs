@@ -13,6 +13,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
+using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.MultiTenancy;
 using Marten.Events;
@@ -179,9 +180,11 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     }
 
     /// <summary>
-    /// Npgsql logging is absurdly noisy, you may want to disable the logging. Default is false
+    /// Npgsql logging is absurdly noisy. <b>Marten 9 flipped the default to <c>true</c></b> —
+    /// set this back to <c>false</c> (or call <see cref="RestoreV8Defaults"/>) to restore the
+    /// V8-era behavior of forwarding Npgsql's internal logger.
     /// </summary>
-    public bool DisableNpgsqlLogging { get; set; }
+    public bool DisableNpgsqlLogging { get; set; } = true;
 
     /// <summary>
     /// Configure and override the Polly error handling policies for this DocumentStore
@@ -676,6 +679,52 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             configuration(_serializer);
         }
+    }
+
+    /// <summary>
+    ///     Reset every <see cref="StoreOptions"/> default that Marten 9 flipped from its V8
+    ///     value back to the V8 value. Intended as a migration-path escape hatch — call
+    ///     this first and add your own overrides afterward.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///     Affected settings (see <c>docs/migration-guide.md</c> for the per-setting rationale
+    ///     and linked option documentation):
+    ///     <list type="bullet">
+    ///       <item><see cref="EventGraph.AppendMode"/> &rarr; <see cref="EventAppendMode.Rich"/></item>
+    ///       <item><see cref="EventGraph.EnableAdvancedAsyncTracking"/> &rarr; <c>false</c></item>
+    ///       <item><see cref="EventGraph.EnableEventSkippingInProjectionsOrSubscriptions"/> &rarr; <c>false</c></item>
+    ///       <item><see cref="EventGraph.UseIdentityMapForAggregates"/> &rarr; <c>false</c></item>
+    ///       <item><see cref="EventGraph.EnableBigIntEvents"/> &rarr; <c>false</c></item>
+    ///       <item><see cref="DisableNpgsqlLogging"/> &rarr; <c>false</c></item>
+    ///     </list>
+    ///     </para>
+    ///     <para>
+    ///     <b>NOT covered by this method</b> (require explicit follow-up):
+    ///     <list type="bullet">
+    ///       <item>
+    ///         <b>Serializer.</b> The V9 default is <see cref="SystemTextJsonSerializer"/>. To
+    ///         restore the V8 default, add the <c>Marten.Newtonsoft</c> NuGet package and
+    ///         call <c>opts.UseNewtonsoftForSerialization()</c> yourself.
+    ///       </item>
+    ///       <item>
+    ///         <b>Injected <c>IDocumentSession</c> default.</b> V9 defaults to lightweight
+    ///         sessions when using <c>AddMarten()</c>. Call
+    ///         <c>services.AddMarten(...).UseIdentitySessions()</c> on the DI builder to
+    ///         restore the V8 identity-map behavior; <see cref="StoreOptions"/> alone
+    ///         cannot reach the DI session factory.
+    ///       </item>
+    ///     </list>
+    ///     </para>
+    /// </remarks>
+    public void RestoreV8Defaults()
+    {
+        Events.AppendMode = EventAppendMode.Rich;
+        Events.EnableAdvancedAsyncTracking = false;
+        Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
+        Events.UseIdentityMapForAggregates = false;
+        Events.EnableBigIntEvents = false;
+        DisableNpgsqlLogging = false;
     }
 
     /// <summary>

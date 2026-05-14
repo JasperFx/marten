@@ -102,6 +102,104 @@
 
   The full trade-off table and measured per-op numbers live in the [DCB documentation → Choosing a Storage Mode](events/dcb.md#choosing-a-storage-mode) section. See [#4238](https://github.com/JasperFx/marten/issues/4238) / [#4379](https://github.com/JasperFx/marten/pull/4379).
 
+### Flipped defaults in Marten 9 — read this section
+
+Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recommended for a greenfield project in [Jeremy's "Building a Greenfield System with the Critter Stack" post](https://jeremydmiller.com/2026/02/02/building-a-greenfield-system-with-the-critter-stack/). The full set is summarized in the [Restoring V8 Defaults](#restoring-v8-defaults) section at the end — call `opts.RestoreV8Defaults()` to revert every flip in one line if you're upgrading an existing Marten 8 application and not ready to opt in piecemeal. Each individual flip is detailed below.
+
+#### **`Events.AppendMode` now defaults to `EventAppendMode.QuickWithServerTimestamps`**
+
+* **Was `EventAppendMode.Rich` in Marten 8.x.** The `Quick`/`QuickWithServerTimestamps` append path delivers roughly 50% higher throughput and reduces event-skipping under contention; `QuickWithServerTimestamps` is preferred over `Quick` because it preserves database-side timestamps that most applications rely on.
+* **Restore the V8 default:** `opts.Events.AppendMode = EventAppendMode.Rich;` (or `opts.RestoreV8Defaults();`).
+* See the [Event Appending modes](events/appending.md) and [Optimizing the Event Store](events/optimizing.md) docs.
+
+#### **`Events.EnableAdvancedAsyncTracking` now defaults to `true`**
+
+* **Was `false` in Marten 8.x.** Enabling this adds extra columns to the projection-progression table that let the async daemon and CritterWatch observability heal a system that's hit projection lag or shard failures. The schema change is non-destructive — Marten 9's automatic migration adds the columns on first boot.
+* **Restore the V8 default:** `opts.Events.EnableAdvancedAsyncTracking = false;` (or `opts.RestoreV8Defaults();`).
+* See the [Async Projection Daemon](events/projections/async-daemon.md) docs.
+
+#### **`Events.EnableEventSkippingInProjectionsOrSubscriptions` now defaults to `true`**
+
+* **Was `false` in Marten 8.x.** Enables marking individual events as "plain bad" so a stuck projection or subscription can skip them on subsequent attempts instead of jamming the shard.
+* **Restore the V8 default:** `opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false;` (or `opts.RestoreV8Defaults();`).
+* See the [Async Projection Daemon](events/projections/async-daemon.md) docs.
+
+#### **`Events.UseIdentityMapForAggregates` now defaults to `true` — read carefully**
+
+* **Was `false` in Marten 8.x.** This optimizes inline aggregate projections by keeping a session-local identity map of in-flight aggregates so multiple events in the same `SaveChangesAsync` resolve against a single aggregate instance.
+* **⚠️ Behavior change risk if your code self-mutates aggregates.** The optimization assumes you obtain aggregates via `IDocumentSession.Events.FetchForWriting()` and use the *decider pattern* (event-handler methods return events; the aggregate is rebuilt from them) rather than mutating fields directly inside the projection's `Apply` methods. If your aggregate handlers self-mutate the aggregate instance, mutations will leak across events within the same batch under the new default and you can see corrupted projections or incorrect optimistic-concurrency comparisons.
+* **What to do:** Either (a) migrate your aggregate handlers to the decider pattern + `FetchForWriting`, or (b) keep the V8 default explicitly: `opts.Events.UseIdentityMapForAggregates = false;` (or call `opts.RestoreV8Defaults();`).
+* See the [Aggregate Projections](events/projections/aggregate-projections.md) and [FetchForWriting](events/projections/aggregate-projections.md#rehydrating-aggregates-for-writes) docs.
+
+#### **`Events.EnableBigIntEvents` now defaults to `true`**
+
+* **Was `false` in Marten 8.x.** Switches the `mt_quick_append_events` and `mt_get_next_hi` PostgreSQL functions to use `bigint` (64-bit) for event version, sequence, and hi-lo return values. Eliminates the ~2.1B-events overflow ceiling that 32-bit columns imposed.
+* **⚠️ Schema impact.** Marten 9's automatic schema migration alters the relevant columns and function signatures from `integer` to `bigint`. The migration is data-preserving (all existing sequence values are kept verbatim — `bigint` is a strict superset of `integer`) and runs once on first boot. Existing rows are not rewritten.
+* **Restore the V8 default:** `opts.Events.EnableBigIntEvents = false;` (or `opts.RestoreV8Defaults();`).
+* See the [Event Store](events/index.md) docs.
+
+#### **`DisableNpgsqlLogging` now defaults to `true`**
+
+* **Was `false` in Marten 8.x.** Suppresses the (very noisy) Npgsql-internal logger that V8 forwarded to your `ILogger<Marten>`. Marten's own structured logs are unaffected.
+* **Restore the V8 default:** `opts.DisableNpgsqlLogging = false;` (or `opts.RestoreV8Defaults();`).
+* See the [StoreOptions](configuration/storeoptions.md) reference.
+
+### Default `IDocumentSession` from DI is now lightweight
+
+* When you call `services.AddMarten(...)` and inject `IDocumentSession`, Marten 9 hands you a **lightweight session** by default. Marten 8 returned an **identity-map session**.
+* **Lightweight sessions do not de-duplicate loaded documents within a session.** If your V8 code relied on `await session.LoadAsync<T>(id)` returning the same instance across repeated calls within a single session, you'll see distinct instances after upgrading. The same applies to documents loaded into queries and aggregates.
+* **What to do:** If you depend on identity-map behavior, restore it on the DI side — `RestoreV8Defaults()` on `StoreOptions` cannot reach the DI session factory:
+  ```csharp
+  services.AddMarten(opts =>
+  {
+      opts.Connection(connectionString);
+      // opts.RestoreV8Defaults();  // restores StoreOptions defaults only
+  })
+  .UseIdentitySessions();          // <-- restores the V8 DI default
+  ```
+* See [Document Sessions](documents/sessions.md) for the full session-type comparison.
+
+### Default serializer is now `System.Text.Json`
+
+* Marten 8 used `Newtonsoft.Json` by default. Marten 9 uses `System.Text.Json` by default, and the Newtonsoft integration moved to a **separate `Marten.Newtonsoft` NuGet package**. Marten core no longer depends on `Newtonsoft.Json`.
+* **What to do if you want the V8 Newtonsoft default back:**
+  1. Add the `Marten.Newtonsoft` NuGet package: `dotnet add package Marten.Newtonsoft`.
+  2. Add `using Marten.Newtonsoft;` at the call site.
+  3. Call `opts.UseNewtonsoftForSerialization(...)` (now an extension method) yourself — `RestoreV8Defaults()` does not touch the serializer, by design (it cannot reach across the package boundary).
+* See [JSON Serialization](configuration/json.md) for the full migration details and per-serializer trade-offs.
+
+### Restoring V8 defaults
+
+Migrating from Marten 8? Call `StoreOptions.RestoreV8Defaults()` first, then layer your own configuration on top:
+
+```csharp
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection(connectionString);
+
+    // Reverts every `StoreOptions` default that Marten 9 flipped.
+    opts.RestoreV8Defaults();
+
+    // ...your usual configuration, document mappings, projections...
+});
+```
+
+`RestoreV8Defaults()` reverts every setting flipped in this release:
+
+| Setting | V8 default it restores |
+| --- | --- |
+| `Events.AppendMode` | `EventAppendMode.Rich` — [Event Appending](events/appending.md) |
+| `Events.EnableAdvancedAsyncTracking` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
+| `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
+| `Events.UseIdentityMapForAggregates` | `false` — [Aggregate Projections](events/projections/aggregate-projections.md) |
+| `Events.EnableBigIntEvents` | `false` — [Event Store](events/index.md) |
+| `DisableNpgsqlLogging` | `false` — [StoreOptions](configuration/storeoptions.md) |
+
+`RestoreV8Defaults()` **does not** cover two cross-cutting V9 changes — handle them explicitly:
+
+* **Default serializer.** Add the `Marten.Newtonsoft` NuGet package, `using Marten.Newtonsoft;`, and call `opts.UseNewtonsoftForSerialization(...)`. See [JSON Serialization](configuration/json.md).
+* **Default injected `IDocumentSession`.** Chain `.UseIdentitySessions()` after `AddMarten(...)`. See [Document Sessions](documents/sessions.md).
+
 ## Key Changes in 8.0.0
 
 The V8 release was much smaller than the preceding V7 release, but there are some significant changes to be aware of.
