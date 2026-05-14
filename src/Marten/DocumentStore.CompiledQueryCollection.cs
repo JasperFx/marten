@@ -49,22 +49,23 @@ internal class CompiledQueryCollection
 
         var plan = QueryCompiler.BuildQueryPlan(session, query);
 
-        // ---- #4405 iteration 3: source-gen registry-first dispatch ----
+        // ---- #4405 iterations 3-4: source-gen registry-first dispatch ----
         // Implicit opt-in: if the consumer referenced Marten.SourceGenerator and
         // marked the defining assembly with [JasperFxAssembly], a handler
         // descriptor was registered at assembly load via a [ModuleInitializer].
-        // PoC scope is the Stateless shape only — Cloneable + Complex handlers
-        // (queries with QueryStatistics or Include members) still take the
-        // codegen path below for iteration 3, and migrate in iteration 4.
-        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor)
-            && CanHandleWithSourceGen(plan))
+        // Iteration 4 widened the runtime to cover all three handler shapes
+        // (Stateless, Cloned, Complex) so the source-gen path now serves any
+        // registered query type. The fallthrough below is a PoC bridge for
+        // query types whose defining assembly hasn't been opted in yet — it
+        // is deleted once the scattered tests migrate into CompiledQueryTests.
+        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
         {
             var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
             source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
             return source;
         }
-        // ---- /#4405 iteration 3 ----
+        // ---- /#4405 iterations 3-4 ----
 
         // PoC bridge: registry miss or non-Stateless shape falls through to the
         // existing JasperFx.RuntimeCompiler codegen path. This branch is deleted

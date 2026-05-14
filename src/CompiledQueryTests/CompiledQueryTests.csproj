@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <!-- This is the iteration-4 PoC harness for #4405. It deliberately
+             opts INTO the source-generated compiled-query path:
+             1. The Marten.SourceGenerator analyzer reference below makes the
+                generator run over this project's compile.
+             2. The [assembly: JasperFx.JasperFxAssembly] attribute in
+                Properties/AssemblyInfo.cs unlocks the generator's scanning gate.
+             3. The runtime's CompiledQueryHandlerRegistry then has a descriptor
+                registered for every ICompiledQuery<,> type declared here,
+                routing queries through the source-gen path instead of
+                JasperFx.RuntimeCompiler. -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Reuse the shared Marten test harness (User/Target document classes,
+             DefaultStoreFixture, IntegrationContext base, etc.). -->
+        <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+
+        <!-- Apply Marten.SourceGenerator as an analyzer to this compile.
+             ReferenceOutputAssembly=false: the generator's own .dll never goes
+                                            into our bin/, only its analyzer output.
+             OutputItemType=Analyzer:        Roslyn loads the dll as an analyzer
+                                            instead of a regular reference.
+             This is the same wiring an external consumer would write to enable
+             source-generated compiled queries in their own project. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>

@@ -65,4 +65,21 @@ public static class CompiledQueryHandlerRegistry
     /// the module initializers fired against a generated assembly.
     /// </summary>
     public static int Count => s_handlers.Count;
+
+    /// <summary>
+    /// Removes a registered descriptor and returns the previous descriptor (or null
+    /// if none was registered). Diagnostic/test surface only — useful for perf
+    /// A/B tests that need to flip a single query type between the source-gen and
+    /// codegen-bridge paths within a single process.
+    /// </summary>
+    /// <remarks>
+    /// Not part of the normal lifecycle. Production code paths never call this —
+    /// once a descriptor is registered by an assembly's <c>[ModuleInitializer]</c>,
+    /// it stays for the life of the process.
+    /// </remarks>
+    public static CompiledQueryHandlerDescriptor? Unregister(Type queryType)
+    {
+        if (queryType == null) throw new ArgumentNullException(nameof(queryType));
+        return s_handlers.TryRemove(queryType, out var removed) ? removed : null;
+    }
 }
