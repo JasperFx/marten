@@ -22,9 +22,12 @@ using Marten.Storage;
 using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events;
 
+[UnconditionalSuppressMessage("Trimming", "IL2090",
+    Justification = "Class-level: generic class type-argument flow on the aggregator / storage instantiation. Types preserved at the projection-registration boundary.")]
 internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityStrategy<string>
 {
     // 9.0 (#4374): cache fetch plans by a small readonly struct key with stable

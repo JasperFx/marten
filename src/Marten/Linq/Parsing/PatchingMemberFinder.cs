@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing;
 
+[UnconditionalSuppressMessage("Trimming", "IL2070",
+    Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 public sealed class PatchingMemberFinder : MemberFinder
 {
     protected override Expression VisitMethodCall(MethodCallExpression node)

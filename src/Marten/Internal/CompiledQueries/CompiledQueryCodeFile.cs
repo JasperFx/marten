@@ -5,9 +5,12 @@ using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal class CompiledQueryCodeFile: ICodeFile
 {
     private readonly Type _compiledQueryType;

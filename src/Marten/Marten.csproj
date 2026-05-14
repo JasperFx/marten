@@ -10,6 +10,11 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
+        <!-- AOT pillar (jasperfx#213). Enables IL2026/IL2070/IL2075/IL3050 analyzers so any
+             reflective public surface that isn't already annotated with
+             [RequiresDynamicCode] / [RequiresUnreferencedCode] / [DynamicallyAccessedMembers]
+             surfaces during our own build rather than downstream consumers'. -->
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
     <ItemGroup>
         <None Remove="Schema\SQL\mt_grams_array.sql" />

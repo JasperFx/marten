@@ -10,9 +10,12 @@ using Marten.Linq.SqlGeneration;
 using Marten.Util;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.Parsing;
 
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 internal class SelectParser: ExpressionVisitor
 {
     private readonly ISerializer _serializer;

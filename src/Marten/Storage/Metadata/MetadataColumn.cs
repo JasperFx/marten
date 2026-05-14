@@ -17,9 +17,12 @@ using Marten.Util;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Storage.Metadata;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 public abstract class MetadataColumn: TableColumn
 {
     protected MetadataColumn(string name, string type, Type dotNetType): base(name, type)
@@ -98,6 +101,8 @@ public abstract class MetadataColumn: TableColumn
     }
 }
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
 internal abstract class MetadataColumn<T>: MetadataColumn
 {
     private readonly string _memberName;

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NpgsqlTypes;
 using Weasel.Postgresql;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Linq.QueryHandlers;
 
@@ -14,6 +15,8 @@ namespace Marten.Linq.QueryHandlers;
 /// information to PostgreSQL. This fixes "42P08: could not determine data type of
 /// parameter" errors when a named parameter's value is null.
 /// </summary>
+[UnconditionalSuppressMessage("Trimming", "IL2070",
+    Justification = "Class-level: reflects PublicMethods/PublicProperties on a Type whose runtime instance is preserved at the StoreOptions / projection-registration boundary.")]
 internal static class NamedParameterHelper
 {
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> _propertyCache = new();

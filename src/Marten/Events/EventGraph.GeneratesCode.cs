@@ -8,10 +8,13 @@ using JasperFx.Events;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Internal.Storage;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Events;
 
 #nullable enable
+[UnconditionalSuppressMessage("Trimming", "IL2072",
+    Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
 public partial class EventGraph: ICodeFile
 {
     private readonly Type _storageType;

@@ -5,9 +5,14 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Linq.Selectors;
 using Marten.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CodeGeneration;
 
+[UnconditionalSuppressMessage("Trimming", "IL2072",
+    Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class SelectorBuilder
 {
     private readonly DocumentMapping _mapping;

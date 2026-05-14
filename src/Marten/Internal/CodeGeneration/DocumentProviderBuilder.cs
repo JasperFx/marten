@@ -11,9 +11,14 @@ using Marten.Schema.Arguments;
 using Marten.Schema.BulkLoading;
 using Npgsql;
 using CommandExtensions = Weasel.Postgresql.CommandExtensions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CodeGeneration;
 
+[UnconditionalSuppressMessage("Trimming", "IL2077",
+    Justification = "Class-level: DAM-annotated field/property assigned from a reflective lookup whose source type is preserved at the registration boundary.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public class DocumentProviderBuilder: ICodeFile
 {
     private readonly DocumentMapping _mapping;

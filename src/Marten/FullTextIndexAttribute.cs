@@ -2,10 +2,13 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Weasel.Postgresql.Tables.Indexes;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Schema;
 
 [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property | AttributeTargets.Class)]
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public class FullTextIndexAttribute: MartenAttribute
 {
     /// <summary>

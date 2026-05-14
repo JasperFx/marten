@@ -2,9 +2,12 @@
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Metadata;
 
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 internal class VersionedPolicy: IDocumentPolicy
 {
     public void Apply(DocumentMapping mapping)

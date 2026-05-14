@@ -9,9 +9,16 @@ using JasperFx.Core.Reflection;
 using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.CompiledQueries;
 
+[UnconditionalSuppressMessage("Trimming", "IL2067",
+    Justification = "Class-level: parameter receives a DAM-annotated Type from a reflective lookup whose source type is preserved at the StoreOptions / projection-registration boundary.")]
+[UnconditionalSuppressMessage("Trimming", "IL2072",
+    Justification = "Class-level: assigns the result of a reflective Type/MethodInfo lookup into a DAM-annotated target. Source types are preserved at the registration boundary.")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class CompiledQuerySourceBuilder
 {
     private readonly DocumentTracking _documentTracking;

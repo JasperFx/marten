@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+using JasperFx.Blocks;
 using JasperFx.Core;
 using Spectre.Console;
 
@@ -10,14 +10,12 @@ public class StatusBoard
 {
     private readonly LightweightCache<string, ProjectionStatus> _counts;
     private readonly StatusContext _context;
-    private readonly ActionBlock<UpdateMessage> _updater;
+    private readonly Block<UpdateMessage> _updater;
 
     public StatusBoard(Task completion)
     {
         _counts = new(name => new ProjectionStatus(name, completion));
-        _updater = new ActionBlock<UpdateMessage>(Update,
-            new ExecutionDataflowBlockOptions { MaxDegreeOfParallelism = 1, EnsureOrdered = true });
-
+        _updater = new Block<UpdateMessage>(Update);
     }
 
     public record UpdateMessage(string Name, int Count);

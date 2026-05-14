@@ -21,9 +21,14 @@ using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal.Storage;
 
+[UnconditionalSuppressMessage("AOT", "IL2055",
+    Justification = "Class-level: Type.MakeGenericType with a runtime-determined type argument — AOT consumers must pre-register the closed shape they need (see the AOT publishing guide).")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public interface IDocumentStorage: ISelectClause
 {
     Type SourceType { get; }
@@ -56,6 +61,10 @@ public interface IDocumentStorage: ISelectClause
     object RawIdentityValue(object id);
 }
 
+[UnconditionalSuppressMessage("AOT", "IL2055",
+    Justification = "Class-level: Type.MakeGenericType with a runtime-determined type argument — AOT consumers must pre-register the closed shape they need (see the AOT publishing guide).")]
+[UnconditionalSuppressMessage("AOT", "IL3050",
+    Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class CreateFromDocumentMapping: Variable
 {
     public CreateFromDocumentMapping(DocumentMapping mapping, Type openType, GeneratedType type): base(

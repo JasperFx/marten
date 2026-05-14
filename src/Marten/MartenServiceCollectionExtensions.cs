@@ -28,9 +28,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
 using Weasel.Core.Migrations;
 using Weasel.Core.MultiTenancy;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Marten;
 
+[UnconditionalSuppressMessage("Trimming", "IL2026",
+    Justification = "Class-level: consumes RUC-annotated members (ISerializer, JasperFx.Events aggregator graph, CloseAndBuildAs / GenericFactoryCache fallbacks, FastExpressionCompiler). Document/event/projection types flow in from StoreOptions / Schema.For<T>() / projection registration and are preserved per the AOT publishing guide; AOT consumers supply a source-generator-backed serializer + pre-generated codegen artifacts.")]
+[UnconditionalSuppressMessage("Trimming", "IL2087",
+    Justification = "Class-level: generic method/type argument flows reflective Type values into a DAM-annotated target. Source preserved at the registration boundary.")]
+[UnconditionalSuppressMessage("Trimming", "IL2091",
+    Justification = "Class-level: generic type argument doesn't carry the DAM annotation of its target. The argument types flow in from StoreOptions / projection-registration on the caller side and are preserved by the trimmer at that boundary.")]
 public static class MartenServiceCollectionExtensions
 {
     /// <summary>

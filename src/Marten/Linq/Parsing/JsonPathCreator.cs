@@ -11,6 +11,8 @@ using Marten.Util;
 
 namespace Marten.Linq.Parsing;
 
+[UnconditionalSuppressMessage("Trimming", "IL2075",
+    Justification = "Class-level: PublicMethods/PublicProperties access via a Type obtained from object.GetType() / GetGenericArguments. Source instance is preserved at the StoreOptions / projection-registration boundary.")]
 public sealed class JsonPathCreator(ISerializer serializer) : ExpressionVisitor
 {
     private readonly StringBuilder _jsonPathBuilder = new();
