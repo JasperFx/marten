@@ -111,6 +111,24 @@ Base classes in `src/Marten.Testing/Harness/`:
 
 GitHub Actions runs matrix builds across .NET 8/10, PostgreSQL 15/latest, and both serializers. Workflows in `.github/workflows/`. Tests run in Release config with parallelization disabled.
 
+## Documentation linting (run locally before pushing doc changes)
+
+The `Documentation PRs` workflow (`.github/workflows/docs-prs.yml`) runs **markdownlint** and **cspell** over every file under `docs/`. Both are fast and cheap to run locally — do so whenever a commit touches `docs/**/*.md` (or a source file whose comment is pulled into a `<!-- snippet: ... -->` block) **before** pushing, so the PR doesn't have to wait on CI to surface lint failures:
+
+```bash
+# markdownlint — same args CI uses
+npx --yes markdownlint-cli@latest --disable MD009 -- "docs/**/*.md"
+
+# cspell — same args CI uses (requires Node >= 22; use nvm if your default is older)
+npx --yes cspell --config ./docs/cSpell.json "docs/**/*.md"
+```
+
+Common issues to watch for:
+
+- **MD051 (link-fragments).** Heading slugs are generated from the heading text after stripping markdown but **including** trailing inline components like `<Badge type="tip" text="9.0" />`, which leaves a trailing hyphen on the slug. If you intend to link to a heading section, either drop the `<Badge>` from the heading (use a `::: tip` callout under it instead) or write the link with the trailing-hyphen slug.
+- **Snippet drift.** Snippet blocks (`<!-- snippet: sample_* -->`) are mechanically regenerated from `#region sample_*` markers in the source tree. Edit the source comment, not the doc markdown copy, or the next snippet refresh wipes the markdown change.
+- **cspell unknown words.** Add legitimate technical terms to `docs/cSpell.json`'s `words` array rather than papering over with `<!-- cspell:ignore ... -->`.
+
 ## Additional Documentation
 
 When working on specific areas, check these files for patterns and conventions:

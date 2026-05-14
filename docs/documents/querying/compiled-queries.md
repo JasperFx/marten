@@ -94,7 +94,11 @@ await batch.Execute();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L115-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-## Recommended setup: enable the source generator <Badge type="tip" text="9.0" />
+## Recommended setup: enable the source generator
+
+::: tip Marten 9.0
+The source-generated path described in this section ships in Marten 9.0 and is the preferred way to use compiled queries going forward. The legacy runtime-codegen path documented below in [How Does It Work?](#how-does-it-work) stays as a fallback for queries the generator doesn't yet cover.
+:::
 
 Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time instead of synthesizing it via Roslyn at first call. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
 
