@@ -7,6 +7,37 @@
 * **.NET 8 support was dropped.** Marten 9 targets `net9.0` and `net10.0`. Stay on Marten 8.x if you still need .NET 8.
 * The solution file format changed from `.sln` to the new XML-based `.slnx`. No action required for consumers — this is purely an internal repo change.
 
+### Critter Stack dependency adoption (JasperFx 2.0 / Weasel 9.0)
+
+Marten 9 is the Marten side of the [Critter Stack 2026](https://github.com/JasperFx/jasperfx/issues/217) release wave. The whole stack of shared dependencies bumped to new major versions in lockstep:
+
+| Package | Marten 8 | Marten 9 |
+| --- | --- | --- |
+| `JasperFx` | 1.x | 2.0.0-alpha.x |
+| `JasperFx.Events` | 1.x | 2.0.0-alpha.x |
+| `JasperFx.RuntimeCompiler` | 1.x | 2.0.0-alpha.x |
+| `Weasel.Postgresql` | 8.x | 9.0.0-alpha.x |
+| `Npgsql` | 9.x | 10.x |
+
+**For most consumers**, picking up the new packages happens transitively when you bump `Marten` — no explicit version pins are needed. If your application has explicit references to any of the packages above, bump them in lockstep.
+
+**Two structural changes ride along** that you may have to react to:
+
+* Types Marten previously owned that overlapped Weasel / JasperFx contracts have moved to those upstream libraries. See the [Schema dedup audit relocations](#schema-dedup-audit-relocations) section below.
+* Some interfaces JasperFx.Events used to leave for Marten to define were lifted upstream. If your code touched `IEventStoreOperations` or `IProjectionCoordinator` and you also `using JasperFx.Events.*`, you'll see CS0104 ambiguous-reference errors — add a `using` alias to the Marten variant in the affected file:
+
+  ```csharp
+  using IProjectionCoordinator = Marten.Events.Daemon.Coordination.IProjectionCoordinator;
+  ```
+
+### Schema dedup audit relocations
+
+Three types Marten core previously owned moved to the shared Weasel / JasperFx packages so all the Critter Stack tools could converge on a single definition. The relocated types keep their public shapes; only the fully-qualified namespace changes.
+
+* **`Marten.Internal.Operations.OperationRole` → `Weasel.Core.OperationRole`.** Third-party consumers that referenced the Marten-side type need to add `using Weasel.Core;` and drop the Marten-side `using` (or qualify inline). Tracked in [#4350](https://github.com/JasperFx/marten/issues/4350) / merged via [#4352](https://github.com/JasperFx/marten/pull/4352).
+* **`Marten.BulkInsertMode` → `Weasel.Core.BulkInsertMode`.** Same migration story — bare type name unchanged; `using` directives need to be updated. Audit row at [weasel#264](https://github.com/JasperFx/weasel/issues/264).
+* **`IStorageOperation` refactor.** Marten's `IStorageOperation` now `extends Weasel.Core.IStorageOperation` and the **synchronous `Postprocess(...)` overload has been removed** (Npgsql 10 no longer supports the synchronous path). Third-party implementers of `IStorageOperation` must drop their sync override and move that logic into `PostprocessAsync` — there is no rewrite-on-the-fly shim. Tracked in [#4351](https://github.com/JasperFx/marten/issues/4351) / PR [#4353](https://github.com/JasperFx/marten/pull/4353).
+
 ### Streams table cleanup
 
 * The `snapshot` (`jsonb`) and `snapshot_version` (`integer`) columns on `mt_streams` have been removed. They were vestigial holdovers from pre-1.0 Marten and were never written or read at runtime — the table simply carried two empty columns on every event store database.
@@ -27,6 +58,21 @@
   Update the parameter type in your `Group` implementations and drop any defensive `events.ToList()` / `events as IReadOnlyCollection<IEvent>` materialization — `Count`, indexed access, and repeat iteration are first-class on `IReadOnlyList<IEvent>`. No logic change required. The same change applies to the lambda-form `CustomGrouping(Func<IQuerySession, IReadOnlyList<IEvent>, IEventGrouping<TId>, Task>)` overload; lambda call sites usually need no edit because `IReadOnlyList<IEvent>` is also an `IEnumerable<IEvent>` and type inference handles the rest.
 
   See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
+
+### `IInlineProjection.ApplyAsync` widened to `IEnumerable<StreamAction>`
+
+* The `streams` parameter on `IInlineProjection.ApplyAsync(IDocumentSession, ..., CancellationToken)` widened from `IReadOnlyList<StreamAction>` to `IEnumerable<StreamAction>`. The internal `RichEventAppender` / `QuickEventAppender` callers now hand the inline-projection pipeline a streaming view of the unit-of-work's streams instead of materializing a list per `SaveChangesAsync`.
+* **What you have to change.** Anyone with a custom `IInlineProjection` implementation must update the signature. If you previously relied on `Count` / indexed access on the parameter, materialize once at the top of your `ApplyAsync` body:
+
+  ```csharp
+  public Task ApplyAsync(IDocumentSession session, IEnumerable<StreamAction> streams, CancellationToken ct)
+  {
+      var batch = streams as IReadOnlyCollection<StreamAction> ?? streams.ToList();
+      // ...
+  }
+  ```
+
+* See [#4306](https://github.com/JasperFx/marten/issues/4306).
 
 ### Numeric document revisions widened from `int` to `long`
 
@@ -168,6 +214,51 @@ Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recomm
   3. Call `opts.UseNewtonsoftForSerialization(...)` (now an extension method) yourself — `RestoreV8Defaults()` does not touch the serializer, by design (it cannot reach across the package boundary).
 * See [JSON Serialization](configuration/json.md) for the full migration details and per-serializer trade-offs.
 
+### AOT / codegen behavior
+
+Marten 9 takes its first real steps toward an AOT-friendly publishing flow. Three changes worth knowing about:
+
+#### **`StoreOptions.AllowRuntimeCodeGeneration` flag (default `true`)**
+
+* Marten 9 gates the runtime Roslyn compilation path behind a new opt-out flag. Set it to `false` in production to refuse to fall through to Roslyn when a pre-generated type can't be found — the boot fails fast instead of silently triggering the JIT-compilation path that's incompatible with AOT publishing.
+* The recommended **AOT-publishing flow** is:
+  1. At dev time, run `dotnet run -- codegen write` against a host that boots your `StoreOptions`. Marten writes every generated type Marten needs to your project's `Internal/Generated/` folder.
+  2. Commit the generated folder.
+  3. In production, set `opts.AllowRuntimeCodeGeneration = false;` (and keep `GeneratedCodeMode = TypeLoadMode.Static` — see below). Boot now refuses to call into Roslyn; a missing generated type throws instead of silently regenerating.
+* The default stays `true` so existing applications keep working without code changes — nothing breaks if you don't opt in. See [#4309](https://github.com/JasperFx/marten/issues/4309).
+
+#### **Lazy document-mapping materialization**
+
+* `StorageFeatures._documentMappings` is now populated **per document type, on first session that touches it**, instead of being built eagerly at host-build time. The win is significantly faster boot for applications with hundreds of registered document types where only a handful are actually used per request.
+* **Behavioral shift to know about:** validation errors that previously surfaced during `IHost.StartAsync` (bad `[Identity]` attribute placement, conflicting metadata-column policies, etc.) now surface on the **first session that touches the offending document type**. If you relied on host-build to be the canary, add an integration test that exercises every registered document type at least once, or call `store.Storage.BuildAllMappings()` eagerly at boot in production.
+* See [#4303](https://github.com/JasperFx/marten/issues/4303).
+
+#### **Internal codegen performance plumbing**
+
+These changes are invisible to consumers but worth noting because they affect cold-start traces:
+
+* **LINQ handler factory caching now goes through `GenericFactoryCache`** so repeated LINQ queries against the same shape don't allocate a fresh handler per call ([#4308](https://github.com/JasperFx/marten/issues/4308)).
+* **`GenerationRules` is hand-cloned for projection-specific overrides** instead of mutating a shared instance — each projection's codegen sees its own rules and the others stay untouched ([#4307](https://github.com/JasperFx/marten/issues/4307)).
+
+### Obsolete API sweep
+
+Marten 9 retires obsolete types and members deprecated in Marten 8.x:
+
+* **`StoreOptions.GeneratedCodeMode` is `[Obsolete]`.** Prefer the global `IServiceCollection.CritterStackDefaults()` API, which sets `GeneratedCodeMode` and `AutoCreate` per-environment (`Development` / `Production`) and applies the values across every Critter Stack tool in your application (Marten + [Wolverine](https://wolverinefx.net)) in one place:
+
+  ```csharp
+  services.CritterStackDefaults(x =>
+  {
+      x.Production.GeneratedCodeMode = TypeLoadMode.Static;
+      x.Production.ResourceAutoCreate = AutoCreate.None;
+      // x.Development.* defaults are sensible; override only if needed.
+  });
+  ```
+
+  The old per-`StoreOptions` `GeneratedCodeMode` setter still works in Marten 9 (it carries an `[Obsolete]` warning) — it will be **removed in Marten 10**. Migrate now to avoid the build-break later.
+
+* `[Obsolete]` types and members deprecated since Marten 8.x have been retired in Marten 9. If your code compiled in Marten 8.x with `[Obsolete]` warnings against any Marten type, those members are now gone in Marten 9 — fix the warnings on 8.x first, then upgrade.
+
 ### Restoring V8 defaults
 
 Migrating from Marten 8? Call `StoreOptions.RestoreV8Defaults()` first, then layer your own configuration on top:
@@ -199,6 +290,40 @@ var store = DocumentStore.For(opts =>
 
 * **Default serializer.** Add the `Marten.Newtonsoft` NuGet package, `using Marten.Newtonsoft;`, and call `opts.UseNewtonsoftForSerialization(...)`. See [JSON Serialization](configuration/json.md).
 * **Default injected `IDocumentSession`.** Chain `.UseIdentitySessions()` after `AddMarten(...)`. See [Document Sessions](documents/sessions.md).
+
+### End-to-end migration example
+
+A typical Marten 8 app that wants to upgrade with **zero behavior change** sets every V8 default back and pulls Newtonsoft + identity-map sessions back via the optional package. The full call shape looks like this:
+
+```csharp
+// 1. Update package references in your csproj:
+//    <PackageReference Include="Marten" Version="9.0.0" />
+//    <PackageReference Include="Marten.Newtonsoft" Version="9.0.0" />  <!-- new -->
+
+// 2. Update bootstrap to revert every flipped default + restore V8 wiring:
+services.AddMarten(opts =>
+    {
+        opts.Connection(configuration.GetConnectionString("Marten"));
+
+        // Revert the StoreOptions defaults Marten 9 flipped (AppendMode,
+        // EnableAdvancedAsyncTracking, EnableEventSkippingInProjectionsOrSubscriptions,
+        // UseIdentityMapForAggregates, EnableBigIntEvents, DisableNpgsqlLogging).
+        opts.RestoreV8Defaults();
+
+        // Restore V8's Newtonsoft serializer default (Marten 9 ships STJ by default
+        // and Newtonsoft moved to the optional Marten.Newtonsoft package).
+        opts.UseNewtonsoftForSerialization();   // <-- using Marten.Newtonsoft;
+
+        // ...your existing options: document mappings, projections, plugin policies...
+    })
+    // Restore V8's identity-map session default (Marten 9 ships lightweight
+    // sessions by default when you inject IDocumentSession from DI).
+    .UseIdentitySessions();
+```
+
+Once that compiles and your test suite is green, you can opt back into the V9 defaults one at a time — start with the throughput wins (`AppendMode = Quick` / `QuickWithServerTimestamps`) and the low-risk ones (`DisableNpgsqlLogging`), then move on to the behavioral ones (`UseIdentityMapForAggregates` — only after you've migrated to the decider-pattern + `FetchForWriting` flow) when you're ready.
+
+For an application that's adopting V9 fresh and wants every greenfield default, do **not** call `RestoreV8Defaults()` — Marten 9 is already configured the way the [greenfield-defaults post](https://jeremydmiller.com/2026/02/02/building-a-greenfield-system-with-the-critter-stack/) recommends.
 
 ## Key Changes in 8.0.0
 
