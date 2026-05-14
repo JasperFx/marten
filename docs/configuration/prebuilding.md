@@ -8,6 +8,17 @@ infrastructure. For the broader reference — including how `JasperFxOptions` re
 [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
 :::
 
+::: info Compiled queries — prefer the source generator <Badge type="tip" text="9.0" />
+The `StoreOptions.RegisterCompiledQueryType(...)` calls shown in the snippets
+below were necessary in Marten 8 so the `codegen` command and `TypeLoadMode.Static`
+flow could find every compiled query type up front. In Marten 9, the
+[`Marten.SourceGenerator`](/documents/querying/compiled-queries#recommended-setup-enable-the-source-generator)
+analyzer package emits and registers the per-query handler at compile time —
+no `RegisterCompiledQueryType` calls and no `codegen` step needed for the
+compiled-query path. The pre-build flow on this page remains the right
+answer for document storage, event handling, and projection codegen.
+:::
+
 Marten uses runtime code generation backed by [Roslyn runtime compilation](https://jeremydmiller.com/2018/06/04/compiling-code-at-runtime-with-lamar-part-1/) for dynamic code.
 This is both much more powerful than [source generators](https://docs.microsoft.com/en-us/dotnet/csharp/roslyn-sdk/source-generators-overview) in what it allows us to actually do, but can have
 significant memory usage and “[cold start](https://en.wikipedia.org/wiki/Cold_start_(computing))” problems (seems to depend on exact configurations, so it’s not a given that you’ll have these issues).
@@ -183,8 +194,12 @@ public static class Program
                     opts.GeneratedCodeMode = TypeLoadMode.Static;
                     opts.RegisterDocumentType<Target>();
 
-                    // If you use compiled queries, you will need to register the
-                    // compiled query types with Marten ahead of time
+                    // If you use compiled queries AND you are NOT using the
+                    // Marten.SourceGenerator package, you need to register the
+                    // compiled query types with Marten ahead of time.
+                    // With Marten.SourceGenerator (Marten 9+ and recommended),
+                    // this call is unnecessary — the generator's
+                    // [ModuleInitializer] registers handlers at assembly load.
                     opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
                 }).AddAsyncDaemon(DaemonMode.Solo);
 
@@ -215,8 +230,12 @@ public static class Program
                     opts.RegisterDocumentType<Target>();
                     opts.RegisterDocumentType<User>();
 
-                    // If you use compiled queries, you will need to register the
-                    // compiled query types with Marten ahead of time
+                    // If you use compiled queries AND you are NOT using the
+                    // Marten.SourceGenerator package, you need to register the
+                    // compiled query types with Marten ahead of time.
+                    // With Marten.SourceGenerator (Marten 9+ and recommended),
+                    // this call is unnecessary — the generator's
+                    // [ModuleInitializer] registers handlers at assembly load.
                     opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
                     // Register all event store projections ahead of time
