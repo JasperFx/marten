@@ -12,9 +12,11 @@ using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Storage;
 using System.Diagnostics.CodeAnalysis;
+using Weasel.Core;
 
 namespace Marten;
 
@@ -46,6 +48,28 @@ internal class CompiledQueryCollection
         }
 
         var plan = QueryCompiler.BuildQueryPlan(session, query);
+
+        // ---- #4405 iteration 3: source-gen registry-first dispatch ----
+        // Implicit opt-in: if the consumer referenced Marten.SourceGenerator and
+        // marked the defining assembly with [JasperFxAssembly], a handler
+        // descriptor was registered at assembly load via a [ModuleInitializer].
+        // PoC scope is the Stateless shape only — Cloneable + Complex handlers
+        // (queries with QueryStatistics or Include members) still take the
+        // codegen path below for iteration 3, and migrate in iteration 4.
+        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor)
+            && CanHandleWithSourceGen(plan))
+        {
+            var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
+            source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
+            _querySources = _querySources.AddOrUpdate(query.GetType(), source);
+            return source;
+        }
+        // ---- /#4405 iteration 3 ----
+
+        // PoC bridge: registry miss or non-Stateless shape falls through to the
+        // existing JasperFx.RuntimeCompiler codegen path. This branch is deleted
+        // once iteration 4 lands green; the final V9 behavior is "registry miss
+        // throws" (#4405 in-issue commentary 2026-05-14).
         var file = new CompiledQueryCodeFile(query.GetType(), _store, plan, _tracking);
 
         var rules = _store.Options.CreateGenerationRules();
@@ -62,6 +86,21 @@ internal class CompiledQueryCollection
         _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
         return source;
+    }
+
+    /// <summary>
+    /// PoC iteration-3 shape gate: source-gen handles only Stateless queries —
+    /// no Include collections, no QueryStatistics, and HandlerPrototype is not a
+    /// stateful handler that needs per-session cloning. Iteration 4 widens this
+    /// to all three handler shapes.
+    /// </summary>
+    private static bool CanHandleWithSourceGen(CompiledQueryPlan plan)
+    {
+        if (plan.IncludeMembers.Count > 0) return false;
+        if (plan.StatisticsMember != null) return false;
+        if (plan.HandlerPrototype is IMaybeStatefulHandler stateful
+            && stateful.DependsOnDocumentSelector()) return false;
+        return true;
     }
 }
 

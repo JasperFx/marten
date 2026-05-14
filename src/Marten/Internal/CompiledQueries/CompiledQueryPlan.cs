@@ -42,6 +42,18 @@ public class CompiledQueryPlan : ICommandBuilder
     internal List<IIncludePlan> IncludePlans { get; } = new();
 
     private readonly List<CommandPlan> _commands = new();
+
+    /// <summary>
+    /// The command plans derived by <c>LinqQueryParser</c> on first call. Each plan
+    /// holds the SQL skeleton + a list of <see cref="ParameterUsage"/> entries that
+    /// say which query-type member supplies each parameter's value. Iteration 3
+    /// of #4405 reads this list from <c>SourceGeneratedCompiledQueryHandler</c> to
+    /// replay the commands against the source-gen-emitted binder at runtime — the
+    /// AOT-safe replacement for codegen'ing <c>ConfigureCommand</c> bodies per
+    /// query type.
+    /// </summary>
+    internal IReadOnlyList<CommandPlan> Commands => _commands;
+
     public IQueryHandler HandlerPrototype { get; set; }
     public MemberInfo? StatisticsMember { get; set; }
 

@@ -1,68 +1,54 @@
 using System;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Marten.SourceGenerator;
 
 namespace Marten.SourceGenerator.Tests;
 
 /// <summary>
 /// Test harness that runs the <see cref="CompiledQuerySourceGenerator"/> over a
-/// user-supplied C# snippet plus a minimal in-memory stand-in for
-/// <c>Marten.Linq.ICompiledQuery&lt;TDoc, TOut&gt;</c> and
-/// <c>JasperFx.JasperFxAssemblyAttribute</c>.
+/// user-supplied C# snippet. The reference set is the test project's own loaded
+/// assemblies — which include the real Marten runtime via the project's
+/// <c>&lt;ProjectReference&gt;</c>. That keeps the tests honest: the generator's
+/// metadata-name checks resolve against the same canonical types
+/// (<c>Marten.Linq.ICompiledQuery&lt;,&gt;</c>, <c>Marten.Linq.QueryStatistics</c>)
+/// that the runtime planner sees.
 /// </summary>
-/// <remarks>
-/// <para>
-/// The PoC test project intentionally does <b>not</b> reference Marten itself —
-/// the generator only depends on Roslyn symbol shape, not on Marten runtime types.
-/// That keeps the generator's unit tests fast and isolated from the rest of the
-/// solution's PostgreSQL test dependencies. The contract types are reproduced here
-/// at their canonical names so the generator's metadata-name checks resolve.
-/// </para>
-/// </remarks>
 internal static class GeneratorDriverHarness
 {
-    public const string MartenContractStub = """
-        namespace System.Linq.Expressions { public class Expression<T> { } }
-        namespace Marten { public interface IMartenQueryable<T> { } public class QueryStatistics { } }
-        namespace Marten.Linq
-        {
-            public interface ICompiledQueryMarker { }
-            public interface ICompiledQuery<TDoc, TOut> : ICompiledQueryMarker where TDoc : notnull
-            {
-                System.Linq.Expressions.Expression<System.Func<Marten.IMartenQueryable<TDoc>, TOut>> QueryIs();
-            }
-        }
-        namespace JasperFx
-        {
-            [System.AttributeUsage(System.AttributeTargets.Assembly)]
-            public sealed class JasperFxAssemblyAttribute : System.Attribute { }
-        }
-        namespace Marten.Events.CodeGeneration
-        {
-            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Property)]
-            public sealed class MartenIgnoreAttribute : System.Attribute { }
-        }
-        """;
-
     public static GeneratorDriverRunResult Run(string userSource, bool addJasperFxAttribute = true)
     {
         var sources = addJasperFxAttribute
-            ? new[] { MartenContractStub, "[assembly: JasperFx.JasperFxAssembly]", userSource }
-            : new[] { MartenContractStub, userSource };
+            ? new[] { "[assembly: JasperFx.JasperFxAssembly]", userSource }
+            : new[] { userSource };
 
         var syntaxTrees = sources
             .Select(s => CSharpSyntaxTree.ParseText(s, new CSharpParseOptions(LanguageVersion.Latest)))
             .ToArray();
 
-        // Minimal reference set — just BCL. The contract stubs above provide all the
-        // Marten/JasperFx surface the generator inspects.
+        // Force-load assemblies the test sources depend on. AppDomain.GetAssemblies()
+        // only returns what's been touched so far — without these probes,
+        // Marten/JasperFx/Npgsql wouldn't be in the reference set on first use and the
+        // user source would fail to bind (CS0234 / CS0246 errors). Use Assembly.GetAssembly
+        // (which actually consults the type metadata at runtime, can't be optimized out)
+        // and stash the results in a field-like collection so the values are observable.
+        var warmup = new[]
+        {
+            typeof(Marten.Linq.IMartenQueryable<>).Assembly,
+            typeof(Marten.Linq.QueryStatistics).Assembly,
+            typeof(JasperFx.JasperFxAssemblyAttribute).Assembly,
+            typeof(Npgsql.NpgsqlParameter).Assembly,
+        };
+
+        // Build the reference set from AppDomain assemblies (BCL + xunit + Shouldly +
+        // whatever the test method has touched) plus the warm-up set (Marten + JasperFx +
+        // Npgsql), then dedup by location. Belt-and-suspenders against the
+        // "AppDomain didn't load it yet" miss that AppDomain.GetAssemblies() alone exhibits.
         var references = AppDomain.CurrentDomain.GetAssemblies()
+            .Concat(warmup)
             .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-            .Select(a => MetadataReference.CreateFromFile(a.Location))
+            .GroupBy(a => a.Location)
+            .Select(g => MetadataReference.CreateFromFile(g.Key))
             .Cast<MetadataReference>()
             .ToList();
 
@@ -71,6 +57,20 @@ internal static class GeneratorDriverHarness
             syntaxTrees: syntaxTrees,
             references: references,
             options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+
+        // Fail fast if the user-supplied source doesn't compile. Without this guard,
+        // a typo in a test source silently yields zero generator output (no syntax
+        // tree → no ICompiledQuery binding → no transform hit), and the test fails
+        // with a confusing "Sequence contains no elements" downstream.
+        var preDiagnostics = compilation.GetDiagnostics()
+            .Where(d => d.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        if (preDiagnostics.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Test source has compilation errors before the generator runs:\n  "
+                + string.Join("\n  ", preDiagnostics.Select(d => d.ToString())));
+        }
 
         var generator = new CompiledQuerySourceGenerator().AsSourceGenerator();
         var driver = CSharpGeneratorDriver.Create(generator);

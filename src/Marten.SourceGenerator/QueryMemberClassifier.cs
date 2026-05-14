@@ -62,8 +62,11 @@ internal static class QueryMemberClassifier
 
     private static Classified Classify(string name, ITypeSymbol type)
     {
-        // Statistics carrier.
-        if (type.ToDisplayString() == "Marten.QueryStatistics")
+        // Statistics carrier. The real type lives in Marten.Linq; the runtime
+        // planner matches by typeof() but the generator only has symbol info, so
+        // we match by display name. (Marten.Linq.QueryStatistics is the canonical
+        // public namespace per src/Marten/Linq/QueryStatistics.cs.)
+        if (type.ToDisplayString() == "Marten.Linq.QueryStatistics")
         {
             return new Classified(MemberKind.Statistics, name, type, null);
         }
