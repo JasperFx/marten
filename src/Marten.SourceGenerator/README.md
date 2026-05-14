@@ -16,8 +16,8 @@ Source generator package for Marten. Eliminates runtime code generation (no `Jas
   * Unsupported member types emit diagnostic `MTSG001` (Info) and are skipped — runtime falls back to reflective binding for those if the planner needs them.
   * Validated by `Marten.SourceGenerator.Tests` (13 tests across net9.0 + net10.0), including a round-trip "generated source compiles against an Npgsql stub" check.
 * **Next milestone (iteration 3):** runtime first-call LINQ-parse plumbing. `QueryCompiler.BuildQueryPlan` already runs codegen-free; bypass `CompiledQuerySourceBuilder.AssembleTypes` and use the source-gen scaffold to hold the SQL + parameter binder. Memoize forever. Likely shape: a `[ModuleInitializer]` block emitted alongside the binder class registers the handler with a runtime registry keyed by query `Type`.
-* **Then:** correctness + perf gates on three representative shapes (simple `Where`, `Where + OrderBy + Take`, `Where + Include<T>`).
-* **Final:** decision — continue Direction D for the rest of Marten, or fall back to packaging extraction for compiled queries specifically.
+* **Then (iteration 4):** correctness + perf gates on three representative shapes (simple `Where`, `Where + OrderBy + Take`, `Where + Include<T>`) inside a **new isolated test harness** (`Marten.CompiledQueries.Tests`) running both the runtime-codegen and source-gen paths side-by-side. The scattered compiled-query tests currently in `LinqTests/Compiled`, `LinqTests/Bugs`, `LinqTests/Includes`, `LinqTests/ChildCollections`, `LinqTests/Acceptance`, `DocumentDbTests`, and `CoreTests` stay on the codegen path until the PoC lands green.
+* **Final:** decision — continue Direction D for the rest of Marten, or fall back to packaging extraction for compiled queries specifically. If green, the scattered compiled-query tests migrate into the new harness as a follow-up, and the runtime codegen artifacts under each test project's `bin/.../Internal/Generated/CompiledQueries/` go away.
 
 See [#4405](https://github.com/JasperFx/marten/issues/4405) for the full success / failure criteria and timeline.
 
