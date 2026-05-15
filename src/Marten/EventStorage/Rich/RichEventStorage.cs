@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using JasperFx.Events;
+using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -43,5 +44,18 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
         => throw new NotImplementedException("UpdateStreamVersion operation lands in the next iteration.");
 
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
-        => throw new NotImplementedException("StreamStateQueryHandler lands in the next iteration.");
+    {
+        // Pick the per-call streamId — Guid streams use stream.Id; string
+        // streams use stream.Key. The base TId fixes which.
+        object streamIdentity = typeof(TId) == typeof(Guid)
+            ? stream.Id
+            : stream.Key!;
+
+        var tenantId = _descriptor.IsTenancyConjoined ? stream.TenantId : null;
+
+        return new ClosedShapeStreamStateQueryHandler<TId>(
+            _descriptor.StreamStateSelectSql,
+            (TId)streamIdentity,
+            tenantId);
+    }
 }

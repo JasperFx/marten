@@ -13,6 +13,7 @@ using Marten.Events.Archiving;
 using Marten.Events.CodeGeneration;
 using Marten.Events.Schema;
 using Marten.Services;
+using Marten.Storage;
 
 namespace Marten.EventStorage.Dialects;
 
@@ -47,7 +48,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
             serializeEventData: e => serializer.ToJson(e.Data),
-            metadataBinders: metadataBinders);
+            metadataBinders: metadataBinders)
+        {
+            IsTenancyConjoined = graph.TenancyStyle == TenancyStyle.Conjoined
+        };
     }
 
     public QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph graph, ISerializer serializer)

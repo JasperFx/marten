@@ -51,4 +51,17 @@ public sealed class RichEventStorageDescriptor
     /// parameters; no per-event dispatch worth abstracting).
     /// </summary>
     public IEventMetadataBinder[] MetadataBinders { get; }
+
+    /// <summary>
+    /// Whether the events table is conjoined-tenant — every per-stream query
+    /// (StreamState lookup, UpdateStreamVersion, etc.) needs a trailing
+    /// <c>and tenant_id = $N</c> when this is true.
+    /// </summary>
+    /// <remarks>
+    /// Init-only so the dialect sets it once at descriptor construction.
+    /// The codegen path checks <c>graph.TenancyStyle == TenancyStyle.Conjoined</c>
+    /// inline; the closed-shape path lifts that to a per-descriptor boolean
+    /// so the storage methods don't carry an <see cref="EventGraph"/> reference.
+    /// </remarks>
+    public bool IsTenancyConjoined { get; init; }
 }
