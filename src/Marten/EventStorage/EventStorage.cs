@@ -1,80 +1,80 @@
 #nullable enable
-using System.Collections.Generic;
+using System;
 using JasperFx.Events;
+using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
-using Marten.Services.BatchQuerying;
 
 namespace Marten.EventStorage;
 
 /// <summary>
 /// Closed-shape event-storage abstraction. Three concrete implementations
 /// ship — one per append-mode flavor — and exactly one is wired into a
-/// <c>DocumentStore</c> at construction time based on the
+/// <see cref="DocumentStore"/> at construction time based on the
 /// <c>StoreOptions.Events.AppendMode</c> setting. Per-call dispatch is a
 /// virtual call through this base; no runtime branching on append mode.
 /// </summary>
 /// <remarks>
 /// <para>
-/// W4 spike (#4404). The three implementations:
+/// W4 (#4410). Method set mirrors <see cref="Marten.Events.EventDocumentStorage"/>
+/// so the <c>ClosedShapeEventDocumentStorage</c> adapter can delegate
+/// straight through without reshaping calls. Each concrete subclass
+/// implements only the methods appropriate to its append mode:
 /// </para>
 /// <list type="bullet">
-///   <item><see cref="Rich.RichEventStorage{TId}"/> — full-mode per-event
-///         inserts into <c>mt_events</c>. One <c>IStorageOperation</c> per
-///         event. No RETURNING clause, no read-back into <c>IEvent</c>.
-///         Metadata column variability via
-///         <see cref="IEventMetadataBinder"/> array on the descriptor.</item>
-///   <item><see cref="Quick.QuickEventStorage{TId}"/> — batch quick-append
-///         via the <c>mt_quick_append_events</c> server function. One
-///         <c>IStorageOperation</c> per stream batch. RETURNING array
-///         carries the assigned versions + sequence numbers; the
-///         operation's <c>Postprocess</c> hand-walks the events list to
-///         write them back. Metadata binding is per-batch array
-///         parameters — no binder abstraction because the shape (one
-///         <c>NpgsqlDbType.Array</c> param per column) is uniform enough
-///         to inline in source-gen output without combinatorial explosion.</item>
+///   <item><see cref="Rich.RichEventStorage{TId}"/> — implements
+///         <see cref="AppendEvent"/> + <see cref="QuickAppendEventWithVersion"/>.
+///         <see cref="QuickAppendEvents"/> throws
+///         <see cref="NotSupportedException"/>.</item>
+///   <item><see cref="Quick.QuickEventStorage{TId}"/> — implements
+///         <see cref="QuickAppendEvents"/>. <see cref="AppendEvent"/> +
+///         <see cref="QuickAppendEventWithVersion"/> throw.</item>
 ///   <item><see cref="QuickWithServerTimestamps.QuickWithServerTimestampsEventStorage{TId}"/>
-///         — variant of Quick that asks the server for <c>now()</c>
-///         timestamps and writes them back onto the events. Same shape
-///         as Quick + one extra column.</item>
+///         — same as Quick + the server-timestamp variant in its
+///         <see cref="QuickAppendEvents"/> body.</item>
 /// </list>
 /// <para>
-/// The "completely different implementations" framing is the key W4
-/// decision over the earlier composite/binder-everywhere sketch: Rich and
-/// Quick diverge on SQL shape (row insert vs function call), on parameter
-/// shape (scalars vs arrays), and on read-back semantics (no read-back vs
-/// per-batch version+sequence assignment). Trying to unify those at one
-/// abstraction level just pushes the divergence into per-call branches.
-/// Splitting at the storage level keeps each hot path branch-free.
+/// The throwing "wrong-mode" methods aren't a runtime hazard — the
+/// adapter's pick of which subclass to instantiate is based on
+/// <c>StoreOptions.Events.AppendMode</c>, and the session code is
+/// gated by the same setting. The asymmetric API matches today's
+/// <see cref="Marten.Events.EventDocumentStorage"/> shape.
 /// </para>
 /// </remarks>
 public abstract class EventStorage<TId>
 {
     /// <summary>
-    /// Produces the operation(s) that append a stream's events. Rich
-    /// returns N operations (one per event); Quick variants return 1
-    /// (a batched call). Caller doesn't have to know which mode is in
-    /// play — the session just enqueues whatever this yields.
+    /// Per-event append for the Full mode. One <see cref="IStorageOperation"/>
+    /// per event; the session enqueues N operations for an N-event stream.
+    /// Only <see cref="Rich.RichEventStorage{TId}"/> implements this.
     /// </summary>
-    public abstract IEnumerable<IStorageOperation> AppendStreamEvents(StreamAction stream);
+    public abstract IStorageOperation AppendEvent(
+        IMartenSession session, StreamAction stream, IEvent @event);
 
     /// <summary>
-    /// Inserts the <c>mt_streams</c> row when a new stream is opened.
-    /// Same shape in all three modes; default implementation reads its
-    /// SQL from the descriptor.
+    /// Per-event append for the QuickWithVersion mode — same per-event shape
+    /// as <see cref="AppendEvent"/>, but the event's version is pre-assigned
+    /// by the caller rather than computed from a stream-state lookup. Only
+    /// <see cref="Rich.RichEventStorage{TId}"/> implements this.
     /// </summary>
+    public abstract IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent @event);
+
+    /// <summary>
+    /// Batched per-stream append. One <see cref="IStorageOperation"/> per
+    /// stream; the operation's body iterates the stream's events list and
+    /// binds them as <c>NpgsqlDbType.Array</c> parameters to the
+    /// <c>mt_quick_append_events</c> server function. Implemented by
+    /// <see cref="Quick.QuickEventStorage{TId}"/> and
+    /// <see cref="QuickWithServerTimestamps.QuickWithServerTimestampsEventStorage{TId}"/>.
+    /// </summary>
+    public abstract IStorageOperation QuickAppendEvents(StreamAction stream);
+
+    /// <summary>Inserts the <c>mt_streams</c> row when a new stream is opened.</summary>
     public abstract IStorageOperation InsertStream(StreamAction stream);
 
-    /// <summary>
-    /// Increments the <c>mt_streams</c> version with the expected-version
-    /// guard. Same shape in all three modes.
-    /// </summary>
+    /// <summary>Increments the <c>mt_streams</c> version with an expected-version guard.</summary>
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
 
-    /// <summary>
-    /// Stream-state lookup. Same shape in all three modes — included on
-    /// the storage class rather than a separate hierarchy because the
-    /// existing <c>EventDocumentStorage</c> co-locates it.
-    /// </summary>
-    public abstract IQueryHandler<StreamState?> StreamStateQueryHandler(TId streamId);
+    /// <summary>Stream-state lookup query handler.</summary>
+    public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
 }

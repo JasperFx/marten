@@ -1,26 +1,19 @@
 #nullable enable
-using System.Collections.Generic;
+using System;
 using JasperFx.Events;
+using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.EventStorage.Quick;
 
 /// <summary>
-/// <see cref="EventStorage{TId}"/> implementation for the Quick batch
-/// append flow. Yields a single <see cref="IStorageOperation"/> per
-/// <see cref="StreamAction"/> — the batched call into the
-/// <c>mt_quick_append_events</c> server function with per-column array
-/// parameters covering every event in the stream.
+/// <see cref="EventStorage{TId}"/> for <c>EventAppendMode.Quick</c> — batch
+/// append via the <c>mt_quick_append_events</c> server function with array
+/// parameters covering every event in the stream. RETURNING-array
+/// read-back assigns server-generated versions + sequences onto the
+/// events list.
 /// </summary>
-/// <remarks>
-/// Different shape from <c>RichEventStorage</c>: one batched operation
-/// instead of N per-event operations, RETURNING-array read-back to write
-/// versions + sequences onto the events list, per-batch array parameter
-/// binding instead of per-event scalars. The two storage classes share
-/// nothing on the append path — the "completely different implementations"
-/// framing in SPIKE.md is the rationale.
-/// </remarks>
 internal sealed class QuickEventStorage<TId>: EventStorage<TId>
 {
     private readonly QuickEventStorageDescriptor _descriptor;
@@ -30,18 +23,25 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
         _descriptor = descriptor;
     }
 
-    public override IEnumerable<IStorageOperation> AppendStreamEvents(StreamAction stream)
-    {
-        // Quick = one operation per stream, regardless of event count.
-        yield return new QuickAppendEventsOperation(_descriptor, stream);
-    }
+    public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
+        => throw new NotSupportedException(
+            $"{nameof(QuickEventStorage<TId>)} batches events per stream — single-event appends route through " +
+            $"{nameof(QuickAppendEvents)}.");
+
+    public override IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent @event)
+        => throw new NotSupportedException(
+            $"{nameof(QuickEventStorage<TId>)} doesn't support per-event QuickWithVersion. " +
+            $"Use AppendMode = Full + RichEventStorage for that path.");
+
+    public override IStorageOperation QuickAppendEvents(StreamAction stream)
+        => new QuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
-        => throw new System.NotImplementedException("Spike scope — InsertStream belongs to the next spike iteration.");
+        => throw new NotImplementedException("InsertStream operation lands in the next iteration.");
 
     public override IStorageOperation UpdateStreamVersion(StreamAction stream)
-        => throw new System.NotImplementedException("Spike scope — UpdateStreamVersion belongs to the next spike iteration.");
+        => throw new NotImplementedException("UpdateStreamVersion operation lands in the next iteration.");
 
-    public override IQueryHandler<StreamState?> StreamStateQueryHandler(TId streamId)
-        => throw new System.NotImplementedException("Spike scope — StreamStateQueryHandler belongs to the next spike iteration.");
+    public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
+        => throw new NotImplementedException("StreamStateQueryHandler lands in the next iteration.");
 }
