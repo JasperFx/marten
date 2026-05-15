@@ -46,7 +46,6 @@ namespace Marten.Testing.Harness
 
         internal sealed class TestCaseSkippedDueToSerializerSupport: XunitTestCase
         {
-            [Obsolete("Called by the de-serializer", true)]
             public TestCaseSkippedDueToSerializerSupport()
             {
             }

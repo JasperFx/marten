@@ -562,25 +562,6 @@ public static class MartenServiceCollectionExtensions
         }
 
         /// <summary>
-        ///     Add a projection to this application that requires IoC services. The projection itself will
-        ///     be created with the application's IoC container
-        /// </summary>
-        /// <param name="lifecycle">The projection lifecycle for Marten</param>
-        /// <param name="lifetime">
-        ///     The IoC lifecycle for the projection instance. Note that the Transient lifetime will still be
-        ///     treated as Scoped
-        /// </param>
-        /// <typeparam name="TProjection">The type of projection to add</typeparam>
-        /// <returns></returns>
-        [Obsolete("Favor the overload that uses Action<ProjectionBase>. This will be removed in Marten 9")]
-        public MartenStoreExpression<T> AddProjectionWithServices<TProjection>(ProjectionLifecycle lifecycle,
-            ServiceLifetime lifetime, string projectionName) where TProjection : class, IMartenRegistrable
-        {
-            return AddProjectionWithServices<TProjection>(lifecycle, lifetime, x => x.Name = projectionName);
-        }
-
-
-        /// <summary>
         ///     Add a subscription to this Marten store that will require resolution
         ///     from the application's IoC container in order to function correctly
         /// </summary>

@@ -92,9 +92,6 @@
         <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
             <Link>Harness\OneOffConfigurationsContext.cs</Link>
         </Compile>
-        <Compile Include="..\Marten.Testing\Harness\PgVersionTargetedFact.cs">
-            <Link>Harness\PgVersionTargetedFact.cs</Link>
-        </Compile>
         <Compile Include="..\Marten.Testing\Harness\SerializerTypeTargetedFact.cs">
             <Link>Harness\SerializerTypeTargetedFact.cs</Link>
         </Compile>

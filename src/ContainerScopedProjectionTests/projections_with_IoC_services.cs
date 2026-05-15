@@ -330,7 +330,7 @@ public class projections_with_IoC_services
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc3";
                     opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
-                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, x => x.Name = "MyProjection")
                 .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
@@ -358,7 +358,7 @@ public class projections_with_IoC_services
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "ioc2";
                     opts.ApplyChangesLockId = opts.ApplyChangesLockId + 10;
-                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, "MyProjection")
+                }).AddProjectionWithServices<ProductProjection>(ProjectionLifecycle.Async, ServiceLifetime.Scoped, x => x.Name = "MyProjection")
                     .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
@@ -384,7 +384,7 @@ public class projections_with_IoC_services
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc3";
                         opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
-                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, "MyProjection")
+                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped, x => x.Name = "MyProjection")
                     .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 
@@ -455,7 +455,7 @@ public class projections_with_IoC_services
                         opts.Connection(ConnectionSource.ConnectionString);
                         opts.DatabaseSchemaName = "ioc3";
                         opts.ApplyChangesLockId = opts.ApplyChangesLockId + 9;
-                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Singleton, "MyProjection")
+                    }).AddProjectionWithServices<ProductMultiStreamProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Singleton, x => x.Name = "MyProjection")
                     .ApplyAllDatabaseChangesOnStartup();
             }).StartAsync();
 

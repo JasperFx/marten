@@ -109,15 +109,6 @@ public partial class QuerySession
         }
     }
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public T ExecuteHandler<T>(IQueryHandler<T> handler)
-    {
-        var batch = this.BuildCommand(handler);
-
-        using var reader = ExecuteReader(batch);
-        return handler.Handle(reader, this);
-    }
-
     public void BeginTransaction()
     {
         if (_connection is IAlwaysConnectedLifetime lifetime)

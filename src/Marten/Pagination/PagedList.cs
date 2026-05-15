@@ -123,20 +123,6 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="queryable"></param>
     /// <param name="pageNumber"></param>
     /// <param name="pageSize"></param>
-    [Obsolete("This method is deprecated, use new method override with useCountQuery.", false)]
-    public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
-        CancellationToken token = default)
-    {
-        return await CreateAsync(queryable, pageNumber, pageSize, false, token).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    ///     Async static method to create a new instance of the <see cref="PagedList{T}
-    ///
-    /// </summary>
-    /// <param name="queryable"></param>
-    /// <param name="pageNumber"></param>
-    /// <param name="pageSize"></param>
     /// <param name="useCountQuery">Use a separate count query rather than using Stats.</param>
     public static async Task<PagedList<T>> CreateAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
         bool useCountQuery, CancellationToken token = default)
@@ -164,19 +150,6 @@ public class PagedList<T>: IPagedList<T>
 
         var items = query.ToList();
         ProcessResults(pageSize, items, statistics);
-    }
-
-    /// <summary>
-    ///     Initializes a new instance of the <see cref="PagedList{T}" /> class.
-    /// </summary>
-    /// <param name="queryable">Query for which data has to be fetched</param>
-    /// <param name="pageSize">Page size</param>
-    /// <param name="totalItemCount">Total count of all records</param>
-    [Obsolete("This method is deprecated, use new method override with useCountQuery.", false)]
-    public async Task InitAsync(IQueryable<T> queryable, int pageNumber, int pageSize,
-        CancellationToken token = default)
-    {
-        await InitAsync(queryable, pageNumber, pageSize, false, token).ConfigureAwait(false);
     }
 
     /// <summary>

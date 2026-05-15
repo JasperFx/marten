@@ -10,6 +10,7 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 using Marten.Internal.Sessions;
 using Marten.Metadata;
 using Marten.Schema;
@@ -18,64 +19,6 @@ using Shouldly;
 using Xunit;
 
 namespace EventSourcingTests.Aggregation;
-
-public class using_explicit_code_for_aggregations
-{
-    [Theory]
-    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Inline, true)]
-    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Async, true)]
-    [InlineData(true, EventAppendMode.Quick, ProjectionLifecycle.Live, true)]
-    [InlineData(true, EventAppendMode.Rich, ProjectionLifecycle.Inline, true)]
-    [InlineData(false, EventAppendMode.Rich, ProjectionLifecycle.Inline, false)]
-    [InlineData(false, EventAppendMode.Quick, ProjectionLifecycle.Inline, false)]
-    public void configure_mapping(bool isSingleGrouper, EventAppendMode appendMode, ProjectionLifecycle lifecycle, bool useVersionFromStream)
-    {
-        var projection = isSingleGrouper ? (IAggregateProjection)new MySingleStreamProjection() { Lifecycle = lifecycle } : new MyCustomProjection() { Lifecycle = lifecycle };
-        var mapping = DocumentMapping.For<MyAggregate>();
-        mapping.StoreOptions.Events.AppendMode = appendMode;
-
-        projection.As<IMartenAggregateProjection>().ConfigureAggregateMapping(mapping, mapping.StoreOptions);
-        mapping.UseVersionFromMatchingStream.ShouldBe(useVersionFromStream);
-    }
-
-    [Fact]
-    public void default_projection_name_is_type_name()
-    {
-        new MyCustomProjection().Name.ShouldBe(nameof(MyCustomProjection));
-    }
-
-    [Fact]
-    public void default_lifecycle_should_be_async()
-    {
-        new MyCustomProjection().Lifecycle.ShouldBe(ProjectionLifecycle.Async);
-    }
-
-    [Fact]
-    public void async_options_is_not_null()
-    {
-        new MyCustomProjection().As<IProjectionSource<IDocumentOperations, IQuerySession>>().Options.ShouldNotBeNull();
-    }
-
-    [Fact]
-    public void assert_invalid_with_no_slicer()
-    {
-        Should.Throw<InvalidProjectionException>(() =>
-        {
-            new MyCustomAggregateWithNoSlicer().AssembleAndAssertValidity();
-        });
-    }
-
-}
-
-public class EmptyCustomProjection<TDoc, TId>: CustomProjection<TDoc, TId>
-{
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<TDoc, TId> slice,
-        CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
-    {
-        throw new NotImplementedException();
-    }
-}
 
 public class custom_projection_end_to_end: OneOffConfigurationsContext
 {
@@ -250,14 +193,9 @@ public interface INumbered
     public int Number { get; }
 }
 
-public class MyCustomAggregateWithNoSlicer: CustomProjection<CustomAggregate, int>
+public class MyCustomAggregateWithNoSlicer: SingleStreamProjection<CustomAggregate, int>
 {
-    public override ValueTask ApplyChangesAsync(DocumentSessionBase session, EventSlice<CustomAggregate, int> slice,
-        CancellationToken cancellation,
-        ProjectionLifecycle lifecycle = ProjectionLifecycle.Inline)
-    {
-        throw new NotImplementedException();
-    }
+
 }
 
 public class MySingleStreamProjection: SingleStreamProjection<CustomAggregate, Guid>
@@ -342,7 +280,7 @@ public class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregat
 
 public record struct MyCustomGuidId(Guid Value);
 
-public class MyCustomProjection: CustomProjection<CustomAggregate, int>
+public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {

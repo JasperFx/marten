@@ -30,20 +30,4 @@ public class EventSequenceFetcherTests : OneOffConfigurationsContext
         }
     }
 
-    [Fact]
-    public void fetch_sequence_numbers_sync()
-    {
-        theStore.Tenancy.Default.Database.EnsureStorageExists(typeof(IEvent));
-
-        using var query = (QuerySession)theStore.QuerySession();
-
-        var handler = new EventSequenceFetcher(theStore.Events, 5);
-        var sequences = query.ExecuteHandler(handler).ToList();
-
-        sequences.Count.ShouldBe(5);
-        for (var i = 0; i < sequences.Count - 1; i++)
-        {
-            (sequences[i + 1] - sequences[i]).ShouldBe(1);
-        }
-    }
 }

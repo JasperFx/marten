@@ -195,7 +195,7 @@ public class full_text_index: OneOffConfigurationsContext
         #endregion
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_full_text_query_through_query_session()
     {
         #region sample_using_full_text_query_through_query_session
@@ -230,7 +230,7 @@ public class full_text_index: OneOffConfigurationsContext
         result.Count.ShouldBe(1);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -259,7 +259,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task plain_text_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -288,7 +288,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task phrase_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -317,7 +317,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "11.0")]
+    [Fact]
     public async Task web_search_in_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -346,7 +346,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task text_search_combined_with_other_query_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -377,7 +377,7 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task text_search_with_non_default_regConfig_sample()
     {
         StoreOptions(_ => _.RegisterDocumentType<BlogPost>());
@@ -406,19 +406,19 @@ public class full_text_index: OneOffConfigurationsContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public void should_search_with_store_options_default_configuration()
     {
         SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex());
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public void should_search_with_store_options_for_specific_members()
     {
         SearchShouldBeSuccessfulFor(_ => _.Schema.For<User>().FullTextIndex(d => d.FirstName, d => d.LastName));
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task should_search_with_store_options_with_multipleIndexes()
     {
         const string frenchRegConfig = "french";
@@ -452,7 +452,7 @@ public class full_text_index: OneOffConfigurationsContext
         frenchResults.ShouldContain(u => u.LastName == searchFilter);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task should_search_by_tenant_with_tenancy_conjoined()
     {
         StoreOptions(_ =>
@@ -508,13 +508,13 @@ public class full_text_index: OneOffConfigurationsContext
         results.ShouldContain(u => u.LastName == searchFilter);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     private void should_search_using_a_single_property_full_text_index_through_attribute_with_custom_settings()
     {
         StoreOptions(_ => _.Schema.For<UserDetails>());
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task creating_a_full_text_index_should_create_the_index_on_the_table()
     {
         StoreOptions(_ => _.Schema.For<Target>().FullTextIndex());
@@ -529,7 +529,7 @@ public class full_text_index: OneOffConfigurationsContext
         index.ToDDL(table).ShouldContain("to_tsvector");
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_custom_data_configuration_should_create_the_index_without_regConfig_in_indexname_custom_data_configuration()
     {
@@ -551,7 +551,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_should_create_the_index_with_custom_regConfig_in_indexname_custom_data_configuration()
     {
@@ -576,7 +576,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_custom_data_configuration_and_custom_regConfig_custom_indexName_should_create_the_index_with_custom_indexname_custom_data_configuration()
     {
@@ -603,7 +603,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_single_member_should_create_the_index_without_regConfig_in_indexname_and_member_selectors()
     {
@@ -619,7 +619,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_multiple_members_should_create_the_index_without_regConfig_in_indexname_and_members_selectors()
     {
@@ -636,7 +636,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_a_full_text_index_with_multiple_members_and_custom_configuration_should_create_the_index_with_custom_configuration_and_members_selectors()
     {
@@ -662,7 +662,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task
         creating_multiple_full_text_index_with_different_regConfigs_and_custom_data_config_should_create_the_indexes_with_different_recConfigs()
     {
@@ -691,7 +691,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_a_full_text_index_through_attribute_on_class_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<Book>());
@@ -710,7 +710,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_a_single_property_full_text_index_through_attribute_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<UserProfile>());
@@ -726,7 +726,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_a_single_property_full_text_index_through_attribute_with_custom_settings()
     {
         StoreOptions(_ => _.RegisterDocumentType<UserDetails>());
@@ -742,7 +742,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_multiple_properties_full_text_index_through_attribute_with_default()
     {
         StoreOptions(_ => _.RegisterDocumentType<Article>());
@@ -758,7 +758,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task using_multiple_properties_full_text_index_through_attribute_with_custom_settings()
     {
         const string frenchRegConfig = "french";
@@ -803,7 +803,7 @@ public class full_text_index: OneOffConfigurationsContext
             );
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task wholedoc_fts_index_comparison_works()
     {
         StoreOptions(_ =>
@@ -823,7 +823,7 @@ public class full_text_index: OneOffConfigurationsContext
         Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task fts_index_comparison_must_take_into_account_automatic_cast()
     {
         StoreOptions(_ =>
@@ -844,7 +844,7 @@ public class full_text_index: OneOffConfigurationsContext
         Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task multifield_fts_index_comparison_must_take_into_account_automatic_cast()
     {
         StoreOptions(_ =>
@@ -865,7 +865,7 @@ public class full_text_index: OneOffConfigurationsContext
         Assert.DoesNotContain("drop index full_text_index.mt_doc_user_idx_fts", patchSql);
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task modified_fts_index_comparison_must_generate_drop()
     {
         StoreOptions(_ =>
@@ -890,7 +890,7 @@ public class full_text_index: OneOffConfigurationsContext
         Assert.Contains("drop index if exists full_text_index.mt_doc_user_idx_fts", patch.UpdateSql());
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task migration_from_v3_to_v4_should_not_result_in_schema_difference()
     {
         // setup/simulate a full text index as in v3

@@ -69,21 +69,6 @@ public class appending_events_workflow_specs
 
     [Theory]
     [MemberData(nameof(Data))]
-    public async Task can_fetch_stream_sync(TestCase @case)
-    {
-        await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
-        await @case.StartNewStream();
-        using var query = @case.Store.QuerySession();
-
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
-        var handler = builder.QueryForStream(@case.ToEventStream());
-
-        var state = query.As<QuerySession>().ExecuteHandler(handler);
-        state.ShouldNotBeNull();
-    }
-
-    [Theory]
-    [MemberData(nameof(Data))]
     public async Task can_insert_a_new_stream(TestCase @case)
     {
         // This is just forcing the store to start the event storage
@@ -119,7 +104,7 @@ public class appending_events_workflow_specs
         await session.SaveChangesAsync();
 
         var handler = builder.QueryForStream(stream);
-        var state = session.As<QuerySession>().ExecuteHandler(handler);
+        var state = await session.As<QuerySession>().ExecuteHandlerAsync(handler, CancellationToken.None);
 
         state.Version.ShouldBe(10);
     }
