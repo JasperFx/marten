@@ -6,6 +6,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Postgresql.SqlGeneration;
+using Marten;
 
 namespace LinqTests.Acceptance;
 
@@ -24,13 +25,13 @@ public class matches_sql_queries: IntegrationContext
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().Where(x => x.MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack")).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
+        (await session.Query<User>().Where(x => x.MatchesSql("d.data ->> 'UserName' = ? or d.data ->> 'UserName' = ?", "baz", "jack")).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.MatchesSql("d.data ->> 'UserName' != ? and d.data ->> 'UserName' != ?", "foo", "bar"))
+        (await session.Query<User>().Where(x => x.UserName != "baz" && x.MatchesSql("d.data ->> 'UserName' != ? and d.data ->> 'UserName' != ?", "foo", "bar"))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("jack");
     }
@@ -52,13 +53,13 @@ public class matches_sql_queries: IntegrationContext
         whereFragment.Add(new WhereFragment("d.data ->> 'UserName' != ?", "jack"));
 
         // no where clause
-        session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
+        (await session.Query<User>().Where(x => x.MatchesSql(whereFragment)).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "foo");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "bar" && x.MatchesSql(whereFragment))
+        (await session.Query<User>().Where(x => x.UserName != "bar" && x.MatchesSql(whereFragment))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("foo");
     }

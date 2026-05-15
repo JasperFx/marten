@@ -202,8 +202,8 @@ public class enum_usage: OneOffConfigurationsContext
         theSession.Store(new Target { NullableEnum = null, Number = 5 });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
-            .ToList();
+        var results = (await theSession.Query<Target>().Where(x => x.NullableEnum.In(null, Colors.Green))
+            .ToListAsync());
 
         results.Count.ShouldBe(3);
     }
@@ -218,8 +218,8 @@ public class enum_usage: OneOffConfigurationsContext
         theSession.Store(new Target { NullableEnum = null, Number = 5 });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
-            .ToList();
+        var results = (await theSession.Query<Target>().Where(x => !x.NullableEnum.In(null, Colors.Green))
+            .ToListAsync());
 
         results.Count.ShouldBe(2);
     }

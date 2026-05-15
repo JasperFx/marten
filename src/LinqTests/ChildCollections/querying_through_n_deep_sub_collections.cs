@@ -100,7 +100,7 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     }
 
     [Fact]
-    public void query_inside_of_child_collections_collection()
+    public async Task query_inside_of_child_collections_collection()
     {
 
         var results = theSession.Query<Top>().Where(x =>
@@ -110,10 +110,10 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
     }
 
     [Fact]
-    public void query_inside_of_child_collections_collection_2()
+    public async Task query_inside_of_child_collections_collection_2()
     {
-        var results = theSession.Query<Top>().Where(x => x.Middles.Any(m => m.Bottoms.Any(b => b.Name.StartsWith("B"))))
-            .ToList();
+        var results = (await theSession.Query<Top>().Where(x => x.Middles.Any(m => m.Bottoms.Any(b => b.Name.StartsWith("B"))))
+            .ToListAsync());
 
         results.Count.ShouldBe(2);
 

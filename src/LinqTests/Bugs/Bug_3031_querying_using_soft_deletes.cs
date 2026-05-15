@@ -5,6 +5,7 @@ using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
@@ -98,10 +99,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        var result = session
+        var result = (await session
             .Query<Entity>()
             .WithArchivedState(ArchivedState.IncludeArchived)
-            .ToList();
+            .ToListAsync());
 
         result.Count.ShouldBe(1);
     }
@@ -140,10 +141,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        var result = session
+        var result = (await session
             .Query<Entity>()
             .WithArchivedStateNonGeneric(ArchivedState.IncludeArchived)
-            .ToList();
+            .ToListAsync());
 
         result.Count.ShouldBe(1);
     }
@@ -190,9 +191,9 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
         using var query = theStore.QuerySession();
 
-        var list = query.Query<Entity>()
+        var list = (await query.Query<Entity>()
             .Where(x => x.MaybeDeleted())
-            .ToList();
+            .ToListAsync());
 
         list.Count.ShouldBe(2);
         list[0].Id.ShouldBe(entity.Id);

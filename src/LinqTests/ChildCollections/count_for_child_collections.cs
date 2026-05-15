@@ -21,10 +21,10 @@ public class count_for_child_collections : OneOffConfigurationsContext
 
 
 
-        var result = theSession
+        var result = (await theSession
             .Query<Root>()
             .Where(r => r.ChildsLevel1.Count(c1 => c1.Name == "child-1.1") == 1)
-            .ToList();
+            .ToListAsync());
 
         result.ShouldHaveSingleItem();
     }

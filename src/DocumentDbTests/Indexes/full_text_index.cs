@@ -248,9 +248,9 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_search_in_query_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.Search("somefilter"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -277,9 +277,9 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_plain_search_in_query_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.PlainTextSearch("somefilter"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -306,9 +306,9 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_phrase_search_in_query_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.PhraseSearch("somefilter"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -335,9 +335,9 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_web_search_in_query_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.WebStyleSearch("somefilter"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -365,10 +365,10 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_text_search_combined_with_other_query_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.Category == "LifeStyle")
                 .Where(x => x.PhraseSearch("somefilter"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -395,9 +395,9 @@ public class full_text_index: OneOffConfigurationsContext
         {
             #region sample_text_search_with_non_default_regconfig_sample
 
-            var posts = session.Query<BlogPost>()
+            var posts = (await session.Query<BlogPost>()
                 .Where(x => x.PhraseSearch("somefilter", "italian"))
-                .ToList();
+                .ToListAsync());
 
             #endregion
 
@@ -941,16 +941,16 @@ public class full_text_index: OneOffConfigurationsContext
         using (var session = theStore.QuerySession())
         {
             // Standard Search does NOT match a partial prefix of a concatenated word
-            var noMatch = session.Query<BlogPost>()
+            var noMatch = (await session.Query<BlogPost>()
                 .Where(x => x.Search("Priced"))
-                .ToList();
+                .ToListAsync());
 
             noMatch.ShouldBeEmpty();
 
             // PrefixSearch DOES match because it uses the :* prefix operator
-            var results = session.Query<BlogPost>()
+            var results = (await session.Query<BlogPost>()
                 .Where(x => x.PrefixSearch("Priced"))
-                .ToList();
+                .ToListAsync());
 
             results.Count.ShouldBe(1);
             results[0].Id.ShouldBe(expectedId);

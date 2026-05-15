@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Marten.Linq.CreatedAt;
 using Weasel.Postgresql.Tables;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Metadata;
 
@@ -52,17 +53,17 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         var epoch = metadata.CreatedAt;
 
         // no where clause
-        session.Query<User>()
+        (await session.Query<User>()
             .Where(x => x.CreatedBefore(epoch))
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("bar", "foo");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "bar" && x.CreatedBefore(epoch))
+        (await session.Query<User>().Where(x => x.UserName != "bar" && x.CreatedBefore(epoch))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("foo");
     }
@@ -87,17 +88,17 @@ public class created_timestamp_queries: OneOffConfigurationsContext
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>()
+        (await session.Query<User>()
             .Where(x => x.CreatedSince(epoch))
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("baz", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.CreatedSince(epoch))
+        (await session.Query<User>().Where(x => x.UserName != "baz" && x.CreatedSince(epoch))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single()
             .ShouldBe("jack");

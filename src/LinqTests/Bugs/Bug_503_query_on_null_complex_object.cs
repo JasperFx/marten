@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_503_query_on_null_complex_object: IntegrationContext
@@ -21,9 +22,9 @@ public class Bug_503_query_on_null_complex_object: IntegrationContext
 
         using (var querySession = theStore.QuerySession())
         {
-            var targets = querySession.Query<Target>()
+            var targets = (await querySession.Query<Target>()
                 .Where(x => x.String == "Something" && x.Inner != null)
-                .ToList();
+                .ToListAsync());
 
             targets.Count.ShouldBe(1);
             targets.First().AnotherString.ShouldBe("first");

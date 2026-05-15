@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
@@ -31,15 +32,15 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
         using (var session = theStore.QuerySession())
         {
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => x.String == (theString))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => theString == x.String )
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
         }
@@ -58,15 +59,15 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => x.String.Equals(theString))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => theString.Equals(x.String))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
         }
@@ -88,15 +89,15 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
         await using (var session = theStore.QuerySession())
         {
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => x.String.Equals(theString, StringComparison.InvariantCultureIgnoreCase))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => theString.Equals(x.String, StringComparison.InvariantCultureIgnoreCase))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
         }
@@ -115,15 +116,15 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => x.Number.Equals(theNumber))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => theNumber.Equals(x.Number))
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
         }
@@ -142,15 +143,15 @@ public sealed class Bug_1703_Equality_Not_Symmetric: IntegrationContext
 
         await using (var session = theStore.QuerySession())
         {
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => x.Number == theNumber )
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
 
-            session.Query<Target>()
+            (await session.Query<Target>()
                 .Where(x => theNumber == x.Number)
-                .ToList()
+                .ToListAsync())
                 .Count
                 .ShouldBe(1);
         }

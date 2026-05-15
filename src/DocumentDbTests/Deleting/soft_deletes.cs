@@ -299,12 +299,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause, deleted docs should be filtered out
-        session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<User>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     #endregion
@@ -326,13 +326,13 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause, all documents are returned
-        session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+        (await session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
         // with a where clause, all documents are returned
-        session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+        (await session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
     }
@@ -356,13 +356,13 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+        (await session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+        (await session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("bar");
     }
@@ -389,8 +389,8 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         session.Delete(user4);
         await session.SaveChangesAsync();
 
-        session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("jack");
+        (await session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("jack");
     }
 
     #endregion
@@ -415,8 +415,8 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
 
         var epoch = (await session.MetadataForAsync(user4)).DeletedAt;
 
-        session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz");
+        (await session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz");
     }
 
     [Fact]
@@ -437,12 +437,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<User>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     [Fact]
@@ -463,12 +463,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<SuperUser>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     [Fact]
@@ -489,14 +489,14 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+        (await session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+        (await session.Query<SuperUser>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo");
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo");
     }
 
     [Fact]
@@ -517,14 +517,14 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+        (await session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "bar" && x.IsDeleted())
+        (await session.Query<SuperUser>().Where(x => x.UserName != "bar" && x.IsDeleted())
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz");
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz");
     }
 
     [Fact]
@@ -1001,12 +1001,12 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause, deleted docs should be filtered out
-        session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<User>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     #endregion
@@ -1028,13 +1028,13 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause, all documents are returned
-        session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+        (await session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
         // with a where clause, all documents are returned
-        session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+        (await session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
     }
@@ -1058,13 +1058,13 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+        (await session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+        (await session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("bar");
     }
@@ -1091,8 +1091,8 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         session.Delete(user4);
         await session.SaveChangesAsync();
 
-        session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("jack");
+        (await session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("jack");
     }
 
     #endregion
@@ -1117,8 +1117,8 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
 
         var epoch = (await session.MetadataForAsync(user4)).DeletedAt;
 
-        session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz");
+        (await session.Query<User>().Where(x => x.DeletedBefore(epoch.Value)).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz");
     }
 
     [Fact]
@@ -1139,12 +1139,12 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<User>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     [Fact]
@@ -1165,12 +1165,12 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+        (await session.Query<SuperUser>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "jack")
-            .ToList().Single().UserName.ShouldBe("foo");
+        (await session.Query<SuperUser>().Where(x => x.UserName != "jack")
+            .ToListAsync()).Single().UserName.ShouldBe("foo");
     }
 
     [Fact]
@@ -1191,14 +1191,14 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+        (await session.Query<SuperUser>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+        (await session.Query<SuperUser>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo");
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo");
     }
 
     [Fact]
@@ -1219,14 +1219,14 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+        (await session.Query<SuperUser>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
         // with a where clause
-        session.Query<SuperUser>().Where(x => x.UserName != "bar" && x.IsDeleted())
+        (await session.Query<SuperUser>().Where(x => x.UserName != "bar" && x.IsDeleted())
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz");
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz");
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -36,13 +37,13 @@ public class Bug_1060_invalid_cast_exception_on_doc_with_subclass: BugIntegratio
         var users = new List<User>();
         var admins = new List<AdminUser>();
 
-        var userIssues = session.Query<Issue>()
+        var userIssues = (await session.Query<Issue>()
             .Include(i => i.ReporterId, users)
-            .ToList();
+            .ToListAsync());
 
-        var adminIssues = session.Query<Issue>()
+        var adminIssues = (await session.Query<Issue>()
             .Include(i => i.ReporterId, admins)
-            .ToList();
+            .ToListAsync());
 
         // validate for parent document (base class)
         users.Count(p => p != null).ShouldBe(2);

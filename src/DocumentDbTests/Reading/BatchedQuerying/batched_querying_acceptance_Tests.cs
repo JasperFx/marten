@@ -65,7 +65,7 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         return Task.CompletedTask;
     }
 
-    public void sample_config()
+    public async Task sample_config()
     {
         #region sample_configure-hierarchy-of-types
 
@@ -84,10 +84,10 @@ public class batched_querying_acceptance_Tests: OneOffConfigurationsContext, IAs
         using (var session = store.QuerySession())
         {
             // query for all types of User and User itself
-            session.Query<User>().ToList();
+            await session.Query<User>().ToListAsync();
 
             // query for only SuperUser
-            session.Query<SuperUser>().ToList();
+            await session.Query<SuperUser>().ToListAsync();
         }
 
         #endregion

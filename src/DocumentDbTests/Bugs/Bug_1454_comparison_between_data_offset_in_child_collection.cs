@@ -4,6 +4,8 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using System.Threading.Tasks;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -14,18 +16,18 @@ public class Bug_1454_comparison_between_data_offset_in_child_collection : Integ
     }
 
     [Fact]
-    public void can_query_against_DateTime()
+    public async Task can_query_against_DateTime()
     {
-        theSession.Query<Target>().SelectMany(x => x.Children)
+        (await theSession.Query<Target>().SelectMany(x => x.Children)
             .Where(x => x.Date == DateTime.Today.AddDays(-3))
-            .ToList().ShouldNotBeNull();
+            .ToListAsync()).ShouldNotBeNull();
     }
 
     [Fact]
-    public void can_query_against_DateTimeOffset()
+    public async Task can_query_against_DateTimeOffset()
     {
-        theSession.Query<Target>().SelectMany(x => x.Children)
+        (await theSession.Query<Target>().SelectMany(x => x.Children)
             .Where(x => x.DateOffset == DateTimeOffset.UtcNow)
-            .ToList().ShouldNotBeNull();
+            .ToListAsync()).ShouldNotBeNull();
     }
 }

@@ -247,9 +247,9 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>()
+        var users = (await theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName))
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -270,9 +270,9 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>()
+        var users = (await theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName) { YearsOld = x.Age })
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(4);
 

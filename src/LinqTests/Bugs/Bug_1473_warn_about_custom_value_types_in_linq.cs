@@ -1,4 +1,6 @@
 using System.Linq;
+using System.Threading.Tasks;
+using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -12,14 +14,14 @@ public class Bug_1473_warn_about_custom_value_types_in_linq : IntegrationContext
     }
 
     [Fact]
-    public void get_a_descriptive_exception_message()
+    public async Task get_a_descriptive_exception_message()
     {
-        var ex = Should.Throw<BadLinqExpressionException>(() =>
+        var ex = await Should.ThrowAsync<BadLinqExpressionException>(async () =>
         {
-            theSession
+            await theSession
                 .Query<MyClass>()
                 .Where(x => x.CustomObject == new CustomObject())
-                .ToList();
+                .ToListAsync();
         });
 
         ex.Message.ShouldBe("Marten cannot support custom value types in Linq expression. Please query on either simple properties of the value type, or register a custom IMemberSource for this value type.");

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
@@ -36,10 +37,10 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
         {
             User expected = null;
 
-            var issues = query.Query<Issue>()
+            var issues = (await query.Query<Issue>()
                 .Include<User>(x => x.AssigneeId, i => expected = i)
                 .Where(x => x.Id == issue.Id)
-                .ToList();
+                .ToListAsync());
 
             expected.ShouldNotBeNull();
         }
@@ -74,10 +75,10 @@ public class Bug_634_include_against_soft_deleted_docs: BugIntegrationContext
         {
             User expected = null;
 
-            var issues = query.Query<Issue>()
+            var issues = (await query.Query<Issue>()
                 .Include<User>(x => x.AssigneeId, i => expected = i)
                 .Where(x => x.Id == issue.Id)
-                .ToList();
+                .ToListAsync());
 
             expected.ShouldBeNull();
         }

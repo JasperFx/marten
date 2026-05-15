@@ -383,13 +383,13 @@ public class select_many : IntegrationContext
         expected.Any().ShouldBeTrue();
 
         #region sample_using-select-many
-        var results = query.Query<Target>()
+        var results = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
             .Skip(20)
             .Take(15)
-            .ToList();
+            .ToListAsync());
         #endregion
 
         results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
@@ -406,12 +406,12 @@ public class select_many : IntegrationContext
         await using var query = theStore.LightweightSession();
         QueryStatistics stats;
 
-        var actual = query.Query<Target>()
+        var actual = (await query.Query<Target>()
             .Stats(out stats)
             .SelectMany(x => x.Children)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
-            .Take(10).ToList();
+            .Take(10).ToListAsync());
 
         var expectedCount = targets
             .SelectMany(x => x.Children)
@@ -452,10 +452,10 @@ public class select_many : IntegrationContext
 
 
 
-        var results = query.Query<Target>()
+        var results = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Include(x => x.UserId, dict)
-            .ToList();
+            .ToListAsync());
 
         dict.Count.ShouldBe(2);
 
@@ -510,11 +510,11 @@ public class select_many : IntegrationContext
         await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
-        var actual = query.Query<Target>()
+        var actual = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Green)
             .Select(x => new {Id = x.Id, Shade = x.Color})
-            .ToList();
+            .ToListAsync());
 
         var expected = targets
             .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
@@ -534,9 +534,9 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void try_n_deep_smoke_test()
+    public async Task try_n_deep_smoke_test()
     {
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var command = query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)
@@ -548,13 +548,13 @@ public class select_many : IntegrationContext
 
         command.ShouldNotBeNull();
 
-        query.Query<Target>()
+        (await query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Red)
             .SelectMany(x => x.Children)
             .OrderBy(x => x.Number)
-            .ToList().ShouldNotBeNull();
+            .ToListAsync()).ShouldNotBeNull();
     }
 
     public class TargetGroup

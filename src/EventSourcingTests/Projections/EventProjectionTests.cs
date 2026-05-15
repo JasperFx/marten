@@ -59,8 +59,8 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
@@ -86,8 +86,8 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
@@ -113,8 +113,8 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
@@ -140,8 +140,8 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
@@ -198,8 +198,8 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });

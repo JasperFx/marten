@@ -379,10 +379,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
         await buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(4);
         res[0].Long.ShouldBe(1);
@@ -428,10 +428,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
         await buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(2);
         res[0].Long.ShouldBe(1);
@@ -474,10 +474,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildAuthorData();
 
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.AuthorList.Any(s => favAuthors.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(1);
         res[0].Long.ShouldBe(5);

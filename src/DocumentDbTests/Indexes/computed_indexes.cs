@@ -59,8 +59,8 @@ public class computed_indexes: OneOffConfigurationsContext
         var cmd = session.Query<Target>().Where(x => x.Number == 3)
             .ToCommand();
 
-        session.Query<Target>().Where(x => x.Number == data.First().Number)
-            .Select(x => x.Id).ToList().ShouldContain(data.First().Id);
+        (await session.Query<Target>().Where(x => x.Number == data.First().Number)
+            .Select(x => x.Id).ToListAsync()).ShouldContain(data.First().Id);
     }
 
     [Fact]

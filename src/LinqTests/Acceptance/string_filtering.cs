@@ -164,12 +164,12 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", "hod", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("zap", "hod", StringComparison.CurrentCulture, 0)]
-    public void CanMixContainsAndNotContains(string contains, string notContains, StringComparison comparison,
+    public async Task CanMixContainsAndNotContains(string contains, string notContains, StringComparison comparison,
         int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x =>
-            !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x =>
+            !x.FirstName.Contains(notContains, comparison) && x.FirstName.Contains(contains, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x =>
@@ -180,12 +180,12 @@ public class string_filtering: IntegrationContext
     [InlineData("hod", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("HOD", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("Hod", StringComparison.CurrentCulture, 2)]
-    public void CanMixNotEndsWithWithNotIsNullOrEmpty(string search, StringComparison comparison,
+    public async Task CanMixNotEndsWithWithNotIsNullOrEmpty(string search, StringComparison comparison,
         int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>()
-            .Where(x => !x.FirstName.EndsWith(search, comparison) && !string.IsNullOrEmpty(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>()
+            .Where(x => !x.FirstName.EndsWith(search, comparison) && !string.IsNullOrEmpty(x.Nickname)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(
@@ -195,11 +195,11 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("zap", StringComparison.CurrentCulture, 0)]
-    public void CanMixStartsWithAndIsNullOrWhiteSpace(string search, StringComparison comparison, int expectedCount)
+    public async Task CanMixStartsWithAndIsNullOrWhiteSpace(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>()
-            .Where(x => x.FirstName.StartsWith(search, comparison) && string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>()
+            .Where(x => x.FirstName.StartsWith(search, comparison) && string.IsNullOrWhiteSpace(x.Nickname)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(

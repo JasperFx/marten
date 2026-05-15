@@ -303,10 +303,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         var users = new List<User>();
-        var issues = query.Query<Issue>()
+        var issues = (await query.Query<Issue>()
             .Include(x => x.AssigneeId, users)
             .Where(x => x.Tags.Any(t => requestedTags.Contains(t)))
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(1);
         users.ShouldContain(x => x.Id == user.Id);
@@ -797,10 +797,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
             var list = new List<User>();
 
-            query.Query<Group>()
+            (await query.Query<Group>()
                 .Include(x => x.Users, list)
                 .Where(x => x.Name == "Odds")
-                .ToList()
+                .ToListAsync())
                 .Single()
                 .Name.ShouldBe("Odds");
 
@@ -925,10 +925,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
             var list = new List<User>();
 
-            var groups = query.Query<Group>()
+            var groups = (await query.Query<Group>()
                 .Include(x => x.Users, list)
                 .Where(x => x.Name == "Users" || x.Name == "Empty")
-                .ToList();
+                .ToListAsync());
 
             groups.Count.ShouldBe(2);
 

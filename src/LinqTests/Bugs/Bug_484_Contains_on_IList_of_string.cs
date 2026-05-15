@@ -35,8 +35,8 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         session.Store(doc1, doc2, doc3);
         await session.SaveChangesAsync();
 
-        var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
-            .ToList();
+        var ids = (await session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+            .ToListAsync());
 
         ids.Count.ShouldBe(2);
         ids.ShouldContain(doc1.Id);
@@ -56,8 +56,8 @@ public class Bug_484_Contains_on_IList_of_string: BugIntegrationContext
         session.Store(doc1, doc2, doc3);
         await session.SaveChangesAsync();
 
-        var ids = session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
-            .ToList();
+        var ids = (await session.Query<DocWithLists>().Where(x => x.Names.Contains("Jeremy")).Select(x => x.Id)
+            .ToListAsync());
 
         ids.Count.ShouldBe(2);
         ids.ShouldContain(doc1.Id);
