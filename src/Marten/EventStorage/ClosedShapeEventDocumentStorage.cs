@@ -11,6 +11,7 @@ using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
+using Marten.Services;
 
 namespace Marten.EventStorage;
 
@@ -49,14 +50,15 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
 {
     private readonly object _storage;
     private readonly IReadOnlyList<IEventTableColumn> _readerColumns;
+    private readonly ISerializer _serializer;
 
     public ClosedShapeEventDocumentStorage(StoreOptions options): base(options)
     {
-        var serializer = options.Serializer();
+        _serializer = options.Serializer();
 
         _storage = Events.StreamIdentity == StreamIdentity.AsGuid
-            ? EventStorageBuilder.Build<Guid>(Events, serializer)
-            : EventStorageBuilder.Build<string>(Events, serializer);
+            ? EventStorageBuilder.Build<Guid>(Events, _serializer)
+            : EventStorageBuilder.Build<string>(Events, _serializer);
 
         // Read-side column list for ApplyReaderDataToEvent (#4411). Built off
         // EventsTable.SelectColumns() with positions 0/1/2 stripped — those
@@ -135,7 +137,11 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     {
         for (var i = 0; i < _readerColumns.Count; i++)
         {
-            _readerColumns[i].ReadValueSync(reader, i + 3, e);
+            // Serializer-aware overload — most columns ignore the serializer
+            // (default interface method falls through to the parameterless
+            // ReadValueSync). HeadersColumn overrides this to deserialize
+            // jsonb → Dictionary<string, object> via the session's serializer.
+            _readerColumns[i].ReadValueSync(reader, i + 3, e, _serializer);
         }
     }
 
@@ -143,7 +149,9 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     {
         for (var i = 0; i < _readerColumns.Count; i++)
         {
-            await _readerColumns[i].ReadValueAsync(reader, i + 3, e, token).ConfigureAwait(false);
+            await _readerColumns[i]
+                .ReadValueAsync(reader, i + 3, e, _serializer, token)
+                .ConfigureAwait(false);
         }
     }
 }

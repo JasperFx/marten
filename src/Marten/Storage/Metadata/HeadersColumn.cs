@@ -14,6 +14,7 @@ using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
+using Marten.Services;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -94,17 +95,26 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
         return "?";
     }
 
-    // Note: the closed-shape read path (#4411) deliberately does NOT
-    // implement IEventTableColumn.ReadValueSync / Async here. Headers
-    // deserialization needs the session's ISerializer because Npgsql can't
-    // map jsonb directly to Dictionary<string, object> — the codegen path
-    // emits `_options.Serializer().FromJson<...>(reader, index)` via an
-    // overload of AssignMemberFromReader. The closed-shape adapter doesn't
-    // yet pass a session/serializer through the IEventTableColumn read
-    // surface, so calling these methods falls through to the default
-    // throwing implementation. Tracked as a follow-up of #4411: once the
-    // adapter threads ISerializer in (likely with a small protocol bump on
-    // IEventTableColumn), this column lights up.
+    // Closed-shape read path (#4416 part 2). Headers deserialization needs
+    // the session's ISerializer because Npgsql can't map jsonb directly to
+    // Dictionary<string, object>. The closed-shape adapter threads
+    // ISerializer in via the IEventTableColumn serializer-aware
+    // ReadValueSync / Async overloads — the parameterless versions still
+    // throw (they're never called by the adapter for this column).
+
+    void IEventTableColumn.ReadValueSync(DbDataReader reader, int index, IEvent @event, ISerializer serializer)
+    {
+        if (reader.IsDBNull(index)) return;
+        @event.Headers = serializer.FromJson<Dictionary<string, object>>(reader, index);
+    }
+
+    async Task IEventTableColumn.ReadValueAsync(DbDataReader reader, int index, IEvent @event, ISerializer serializer, CancellationToken cancellation)
+    {
+        if (await reader.IsDBNullAsync(index, cancellation).ConfigureAwait(false)) return;
+        @event.Headers = await serializer
+            .FromJsonAsync<Dictionary<string, object>>(reader, index, cancellation)
+            .ConfigureAwait(false);
+    }
 }
 
 internal class HeadersArgument: UpsertArgument

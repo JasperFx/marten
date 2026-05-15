@@ -68,19 +68,12 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
     }
 
     [Fact]
-    public async Task headers_write_path_round_trips_via_codegen_read()
+    public async Task headers_round_trip_under_closed_shape_storage()
     {
-        // Write via the closed-shape HeadersColumnBinder (session.Serializer.ToJson
-        // → jsonb parameter); read via Marten's standard FetchStreamAsync. The
-        // read path here still goes through the codegen-emitted
-        // ApplyReaderDataToEvent because the closed-shape HeadersColumn
-        // read-back isn't wired yet (needs ISerializer threading on
-        // IEventTableColumn — #4416 part 2). So we toggle UseClosedShapeStorage
-        // OFF for the read step to keep this test focused on the write path.
-        //
-        // Once #4416 part 2 lands, the read in this test will use the
-        // closed-shape adapter and we can drop the two-store dance.
-
+        // Closed-shape end-to-end including Headers — both write
+        // (HeadersColumnBinder) and read (HeadersColumn.ReadValueSync via
+        // the serializer-aware IEventTableColumn overload added in
+        // #4416 part 2).
         StoreOptions(opts =>
         {
             opts.EventGraph.UseClosedShapeStorage = true;
@@ -91,7 +84,7 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
         var streamId = Guid.NewGuid();
         await using (var session = theStore.LightweightSession())
         {
-            session.SetHeader("origin", "closed-shape-write");
+            session.SetHeader("origin", "closed-shape-round-trip");
             session.SetHeader("priority", "high");
 
             session.Events.StartStream(streamId,
@@ -99,21 +92,55 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
             await session.SaveChangesAsync();
         }
 
-        // Spin up a second store pointed at the same schema with the
-        // closed-shape flag OFF so the read path uses codegen.
-        await using var readerStore = SeparateStore(opts =>
-        {
-            opts.Events.AppendMode = EventAppendMode.Rich;
-            opts.Events.MetadataConfig.HeadersEnabled = true;
-        });
-
-        await using (var query = readerStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
             var events = (await query.Events.FetchStreamAsync(streamId)).ToArray();
             events.Length.ShouldBe(1);
             events[0].Headers.ShouldNotBeNull();
-            events[0].Headers["origin"].ToString().ShouldBe("closed-shape-write");
+            events[0].Headers["origin"].ToString().ShouldBe("closed-shape-round-trip");
             events[0].Headers["priority"].ToString().ShouldBe("high");
+        }
+    }
+
+    [Fact]
+    public async Task all_metadata_binders_together_round_trip()
+    {
+        // The full matrix — every metadata flag that has a closed-shape
+        // binder wired in #4416 part 1 + part 2.
+        StoreOptions(opts =>
+        {
+            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.AppendMode = EventAppendMode.Rich;
+            opts.Events.MetadataConfig.CausationIdEnabled = true;
+            opts.Events.MetadataConfig.CorrelationIdEnabled = true;
+            opts.Events.MetadataConfig.UserNameEnabled = true;
+            opts.Events.MetadataConfig.HeadersEnabled = true;
+        });
+
+        const string causation = "cause-mix";
+        const string correlation = "corr-mix";
+        const string user = "tester-mix";
+
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.CausationId = causation;
+            session.CorrelationId = correlation;
+            session.LastModifiedBy = user;
+            session.SetHeader("ix", "1");
+
+            session.Events.StartStream(streamId, new QuestStarted { Name = "Full-mix Quest" });
+            await session.SaveChangesAsync();
+        }
+
+        await using (var query = theStore.QuerySession())
+        {
+            var @event = (await query.Events.FetchStreamAsync(streamId)).Single();
+            @event.CausationId.ShouldBe(causation);
+            @event.CorrelationId.ShouldBe(correlation);
+            @event.UserName.ShouldBe(user);
+            @event.Headers.ShouldNotBeNull();
+            @event.Headers["ix"].ToString().ShouldBe("1");
         }
     }
 }
