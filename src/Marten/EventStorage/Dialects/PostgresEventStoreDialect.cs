@@ -39,7 +39,6 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     {
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var metadataBinders = SelectRichMetadataBinders(orderedColumns);
-        var readerColumns = BuildReaderColumns(graph);
 
         return new RichEventStorageDescriptor(
             appendEventSqlPrefix: sqlPrefix,
@@ -48,28 +47,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
             serializeEventData: e => serializer.ToJson(e.Data),
-            metadataBinders: metadataBinders)
-        {
-            ReaderColumns = readerColumns
-        };
-    }
-
-    /// <summary>
-    /// Closed-shape read-path columns. Mirrors the codegen path's selector
-    /// loop in <c>EventDocumentStorageGenerator.buildResolveOperation</c>:
-    /// <see cref="EventsTable.SelectColumns"/> with positions 0/1/2 stripped
-    /// (data / type / mt_dotnet_type, handled by the base
-    /// <c>ISelector&lt;IEvent&gt;</c>). Per-column
-    /// <see cref="IEventTableColumn.ReadValueSync"/> calls drive the read
-    /// loop at runtime — see <c>ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent</c>.
-    /// </summary>
-    private static IReadOnlyList<IEventTableColumn> BuildReaderColumns(EventGraph graph)
-    {
-        var columns = new EventsTable(graph).SelectColumns();
-        // Skip ordinals 0/1/2 (data / type / mt_dotnet_type); they're handled
-        // by the base ISelector<IEvent> in EventDocumentStorage just as the
-        // codegen path skips them in Resolve.
-        return columns.Skip(3).ToArray();
+            metadataBinders: metadataBinders);
     }
 
     public QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph graph, ISerializer serializer)

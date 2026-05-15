@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -57,11 +58,15 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             ? EventStorageBuilder.Build<Guid>(Events, serializer)
             : EventStorageBuilder.Build<string>(Events, serializer);
 
-        // Cache the read-side column dispatch list (#4411). Pull from the
-        // strongly-typed base, no cast on the hot path.
-        _readerColumns = Events.StreamIdentity == StreamIdentity.AsGuid
-            ? GuidStorage.ReaderColumns
-            : StringStorage.ReaderColumns;
+        // Read-side column list for ApplyReaderDataToEvent (#4411). Built off
+        // EventsTable.SelectColumns() with positions 0/1/2 stripped — those
+        // are read by the base ISelector<IEvent>. Identical across all three
+        // append-mode variants (read shape doesn't depend on write shape) so
+        // we build it here instead of routing through EventStorage<TId>.
+        _readerColumns = new Marten.Events.Schema.EventsTable(Events)
+            .SelectColumns()
+            .Skip(3)
+            .ToArray();
     }
 
     /// <summary>

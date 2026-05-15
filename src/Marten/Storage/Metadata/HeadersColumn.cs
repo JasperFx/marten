@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Data.Common;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
@@ -22,12 +22,6 @@ namespace Marten.Storage.Metadata;
 internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEventTableColumn
 {
     public static readonly string ColumnName = "headers";
-
-    private static readonly Lazy<Action<DbDataReader, int, IEvent>> ReadSync =
-        new(() => EventColumnReaders.BuildSync(x => x.Headers));
-
-    private static readonly Lazy<Func<DbDataReader, int, IEvent, CancellationToken, Task>> ReadAsyncDelegate =
-        new(() => EventColumnReaders.BuildAsync(x => x.Headers));
 
     public HeadersColumn(): base(ColumnName, x => x.Headers)
     {
@@ -100,17 +94,17 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
         return "?";
     }
 
-    void IEventTableColumn.ReadValueSync(DbDataReader reader, int index, IEvent @event)
-    {
-        if (reader.IsDBNull(index)) return;
-        ReadSync.Value(reader, index, @event);
-    }
-
-    async Task IEventTableColumn.ReadValueAsync(DbDataReader reader, int index, IEvent @event, CancellationToken cancellation)
-    {
-        if (await reader.IsDBNullAsync(index, cancellation).ConfigureAwait(false)) return;
-        await ReadAsyncDelegate.Value(reader, index, @event, cancellation).ConfigureAwait(false);
-    }
+    // Note: the closed-shape read path (#4411) deliberately does NOT
+    // implement IEventTableColumn.ReadValueSync / Async here. Headers
+    // deserialization needs the session's ISerializer because Npgsql can't
+    // map jsonb directly to Dictionary<string, object> — the codegen path
+    // emits `_options.Serializer().FromJson<...>(reader, index)` via an
+    // overload of AssignMemberFromReader. The closed-shape adapter doesn't
+    // yet pass a session/serializer through the IEventTableColumn read
+    // surface, so calling these methods falls through to the default
+    // throwing implementation. Tracked as a follow-up of #4411: once the
+    // adapter threads ISerializer in (likely with a small protocol bump on
+    // IEventTableColumn), this column lights up.
 }
 
 internal class HeadersArgument: UpsertArgument

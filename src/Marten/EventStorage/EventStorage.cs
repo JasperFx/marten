@@ -1,8 +1,6 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using JasperFx.Events;
-using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -79,21 +77,4 @@ public abstract class EventStorage<TId>
 
     /// <summary>Stream-state lookup query handler.</summary>
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
-
-    /// <summary>
-    /// Reader columns for the closed-shape read path (#4411). The adapter
-    /// (<c>ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent</c>)
-    /// iterates this list and invokes
-    /// <see cref="IEventTableColumn.ReadValueSync"/> per row, starting at
-    /// ordinal 3 — positions 0/1/2 are read by the base
-    /// <c>ISelector&lt;IEvent&gt;</c> in <c>EventDocumentStorage</c>.
-    /// </summary>
-    /// <remarks>
-    /// Default returns an empty list. <see cref="Rich.RichEventStorage{TId}"/>
-    /// overrides to surface its descriptor's reader columns; the Quick
-    /// variants don't have a read-back path in v9 (their read-side either
-    /// goes through <c>append</c>'s RETURNING clause inside the SQL function
-    /// or doesn't apply).
-    /// </remarks>
-    internal virtual IReadOnlyList<IEventTableColumn> ReaderColumns => Array.Empty<IEventTableColumn>();
 }
