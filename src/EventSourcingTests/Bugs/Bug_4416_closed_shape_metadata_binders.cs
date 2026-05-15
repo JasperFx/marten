@@ -103,6 +103,36 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task event_skipping_flag_does_not_break_rich_closed_shape_path()
+    {
+        // EnableEventSkippingInProjectionsOrSubscriptions adds an `is_skipped`
+        // bool column to mt_events with DefaultValueByExpression("FALSE"). It's
+        // a plain TableColumn (not IEventTableColumn), so it's filtered out of
+        // EventsTable.SelectColumns() and never reaches SelectRichMetadataBinders.
+        // This test pins that contract: enabling the flag with the closed-shape
+        // adapter must NOT fail the descriptor build.
+        StoreOptions(opts =>
+        {
+            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.AppendMode = EventAppendMode.Rich;
+            opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
+        });
+
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream(streamId, new QuestStarted { Name = "Skipping-flag Quest" });
+            await session.SaveChangesAsync();
+        }
+
+        await using (var query = theStore.QuerySession())
+        {
+            var @event = (await query.Events.FetchStreamAsync(streamId)).Single();
+            @event.Data.ShouldBeOfType<QuestStarted>().Name.ShouldBe("Skipping-flag Quest");
+        }
+    }
+
+    [Fact]
     public async Task all_metadata_binders_together_round_trip()
     {
         // The full matrix — every metadata flag that has a closed-shape

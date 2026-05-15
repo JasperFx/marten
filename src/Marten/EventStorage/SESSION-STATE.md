@@ -83,10 +83,15 @@ What still throws:
   stubbed (#4414 / #4415).
 * `EnableStrictStreamIdentityEnforcement = true` — CTE variant rejects
   at descriptor-build time. Port lands as a follow-up of #4412.
-* `events.Metadata.X` for `tags` (DCB HStore) and `is_skipped`
-  (`EnableEventSkippingInProjectionsOrSubscriptions`) — remaining
-  binders for #4416. Each follows the established pattern (one Bind
-  closure + dialect switch case).
+* `tags` (DCB HStore) and `is_skipped`
+  (`EnableEventSkippingInProjectionsOrSubscriptions`) — these are plain
+  `TableColumn`s, not `IEventTableColumn`s, so they're filtered out of
+  `EventsTable.SelectColumns()` and never reach the Rich-mode binder
+  list. `is_skipped` is set to `FALSE` by default expression and updated
+  by separate projection logic. `tags` is handled by the Quick paths'
+  per-batch array binds (DCB-only) — it'll land with #4414. **Neither
+  is a #4416 follow-up; the Rich path is feature-complete for
+  IEventTableColumn-defined metadata.**
 
 Pre-existing test failures (verified by parent-commit checkout):
 * 4 cases of `archiving_events.prevent_append_*`
@@ -187,10 +192,10 @@ are sketches; the SQL is TODO-stubbed on the dialect. Approach:
 
 **Alternative work, in rough priority order:**
 
-* Finish #4416: remaining binders are `tags` (DCB HStore — Postgres-specific
-  varchar[] array bind) and `is_skipped` (single bool, gated on
-  `EnableEventSkippingInProjectionsOrSubscriptions`). Each is ~30 LOC
-  following `CausationIdColumnBinder`'s pattern + dialect switch case.
+* #4416 is **done** for Rich-mode binders. `tags` and `is_skipped`
+  aren't binder concerns (they're plain `TableColumn`s, never reach
+  `SelectRichMetadataBinders`). `tags` writes land with the Quick paths
+  (DCB tag arrays); `is_skipped` is server-default + post-hoc UPDATE.
 * #4412 follow-up: port the `EnableStrictStreamIdentityEnforcement` CTE
   variant of InsertStream. Currently rejects at descriptor-build time.
   ~50 LOC; one new closure shape in the dialect.
