@@ -38,10 +38,10 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
             $"Set StoreOptions.Events.AppendMode to Quick or QuickWithServerTimestamps to use a batched storage class.");
 
     public override IStorageOperation InsertStream(StreamAction stream)
-        => throw new NotImplementedException("InsertStream operation lands in the next iteration.");
+        => new RichInsertStreamOperation(_descriptor, stream);
 
     public override IStorageOperation UpdateStreamVersion(StreamAction stream)
-        => throw new NotImplementedException("UpdateStreamVersion operation lands in the next iteration.");
+        => new RichUpdateStreamVersionOperation(_descriptor, stream);
 
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
     {

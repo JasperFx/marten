@@ -64,4 +64,48 @@ public sealed class RichEventStorageDescriptor
     /// so the storage methods don't carry an <see cref="EventGraph"/> reference.
     /// </remarks>
     public bool IsTenancyConjoined { get; init; }
+
+    /// <summary>
+    /// Whether streams are identified by <see cref="System.Guid"/> (true) or
+    /// <see cref="string"/> (false). The Rich AppendEvent operation reads
+    /// <c>Stream.Id</c> vs <c>Stream.Key</c> based on this flag.
+    /// </summary>
+    public bool IsGuidStreamIdentity { get; init; }
+
+    /// <summary>
+    /// Configures the <c>mt_streams</c> insert command. The closure owns
+    /// the SQL shape (column list, parameter binds, tenancy/identity
+    /// variants) and the actual <see cref="IGroupedParameterBuilder"/>
+    /// dispatch.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Why a closure rather than an inlined operation subclass: InsertStream
+    /// runs once per stream — not on the per-event hot path. Source-gen
+    /// (#4413 — <see cref="RichAppendEventOperation"/>) gets its value from
+    /// the N-events-per-stream path; per-stream operations are
+    /// descriptor-driven so the variant matrix stays in the dialect.
+    /// </para>
+    /// <para>
+    /// Init-only so the dialect installs it at descriptor-build time. Throws
+    /// if invoked before a closure is installed (means the dialect hasn't
+    /// wired this codepath yet — e.g., strict-identity-enforcement variant
+    /// isn't supported in v9-alpha).
+    /// </para>
+    /// </remarks>
+    public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureInsertStreamCommand { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "RichEventStorageDescriptor.ConfigureInsertStreamCommand was not installed by the dialect. " +
+            "This indicates a Rich-mode configuration variant (e.g., strict stream-identity enforcement) " +
+            "that the closed-shape hierarchy doesn't yet cover. Track on #4412.");
+
+    /// <summary>
+    /// Configures the <c>mt_streams</c> update-version command. Symmetric
+    /// to <see cref="ConfigureInsertStreamCommand"/> — SQL shape and binds
+    /// owned by the dialect-installed closure.
+    /// </summary>
+    public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureUpdateStreamVersionCommand { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "RichEventStorageDescriptor.ConfigureUpdateStreamVersionCommand was not installed by the dialect. " +
+            "Track on #4412.");
 }

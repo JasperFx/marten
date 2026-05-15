@@ -14,6 +14,8 @@ using Marten.Events.CodeGeneration;
 using Marten.Events.Schema;
 using Marten.Services;
 using Marten.Storage;
+using NpgsqlTypes;
+using Weasel.Postgresql;
 
 namespace Marten.EventStorage.Dialects;
 
@@ -38,8 +40,23 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 {
     public RichEventStorageDescriptor BuildRichDescriptor(EventGraph graph, ISerializer serializer)
     {
+        if (graph.EnableStrictStreamIdentityEnforcement)
+        {
+            // The strict-identity CTE wraps the mt_streams insert in a
+            // modifying CTE chained with a second insert into
+            // mt_streams_identity. The CTE shape is non-trivial — its
+            // closed-shape port lives behind a separate ticket so we
+            // don't ship a half-wired variant. The codegen path still
+            // covers this configuration; closed-shape just declines.
+            throw new NotSupportedException(
+                "EnableStrictStreamIdentityEnforcement isn't yet covered by the closed-shape Rich-mode " +
+                "InsertStream operation. Disable the flag or use the codegen path for now. Track on #4412.");
+        }
+
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var metadataBinders = SelectRichMetadataBinders(orderedColumns);
+        var isConjoined = graph.TenancyStyle == TenancyStyle.Conjoined;
+        var isGuid = graph.StreamIdentity == StreamIdentity.AsGuid;
 
         return new RichEventStorageDescriptor(
             appendEventSqlPrefix: sqlPrefix,
@@ -50,7 +67,143 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             serializeEventData: e => serializer.ToJson(e.Data),
             metadataBinders: metadataBinders)
         {
-            IsTenancyConjoined = graph.TenancyStyle == TenancyStyle.Conjoined
+            IsTenancyConjoined = isConjoined,
+            IsGuidStreamIdentity = isGuid,
+            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+        };
+    }
+
+    /// <summary>
+    /// Builds the per-call closure that issues the <c>insert into mt_streams</c>
+    /// command. Mirrors <c>EventDocumentStorageGenerator.buildInsertStream</c>
+    /// for the non-strict-identity case (the strict-identity CTE variant
+    /// rejects early at descriptor-build time — see <see cref="BuildRichDescriptor"/>).
+    /// </summary>
+    /// <remarks>
+    /// Column order on the codegen path comes from
+    /// <c>StreamsTable.Columns.OfType&lt;IStreamTableColumn&gt;().Where(x => x.Writes)</c>.
+    /// For the vanilla configuration that's:
+    /// <list type="bullet">
+    ///   <item>Conjoined: <c>tenant_id, id, type, version</c></item>
+    ///   <item>Single tenant: <c>id, type, version, tenant_id</c></item>
+    /// </list>
+    /// (<c>timestamp</c> and <c>created</c> are <c>Writes=false</c>;
+    /// <c>is_archived</c> isn't an <c>IStreamTableColumn</c>.)
+    /// </remarks>
+    private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
+        EventGraph graph, bool isConjoined, bool isGuid)
+    {
+        var sqlPrefix = BuildInsertStreamSqlPrefix(graph, isConjoined);
+
+        if (isConjoined)
+        {
+            if (isGuid)
+            {
+                return (builder, stream) =>
+                {
+                    builder.Append(sqlPrefix);
+                    var pb = builder.CreateGroupedParameterBuilder(',');
+                    pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
+                    pb.AppendParameter(stream.Id, NpgsqlDbType.Uuid);
+                    pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
+                    pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
+                    builder.Append(")");
+                };
+            }
+
+            return (builder, stream) =>
+            {
+                builder.Append(sqlPrefix);
+                var pb = builder.CreateGroupedParameterBuilder(',');
+                pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
+                pb.AppendParameter(stream.Key, NpgsqlDbType.Varchar);
+                pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
+                pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
+                builder.Append(")");
+            };
+        }
+
+        if (isGuid)
+        {
+            return (builder, stream) =>
+            {
+                builder.Append(sqlPrefix);
+                var pb = builder.CreateGroupedParameterBuilder(',');
+                pb.AppendParameter(stream.Id, NpgsqlDbType.Uuid);
+                pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
+                pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
+                pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
+                builder.Append(")");
+            };
+        }
+
+        return (builder, stream) =>
+        {
+            builder.Append(sqlPrefix);
+            var pb = builder.CreateGroupedParameterBuilder(',');
+            pb.AppendParameter(stream.Key, NpgsqlDbType.Varchar);
+            pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
+            pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
+            pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
+            builder.Append(")");
+        };
+    }
+
+    /// <summary>
+    /// SQL prefix for <c>insert into {schema}.mt_streams (cols...) values (</c>
+    /// — column list matches the bind order produced by
+    /// <see cref="BuildInsertStreamCommandConfigurer"/>.
+    /// </summary>
+    private static string BuildInsertStreamSqlPrefix(EventGraph graph, bool isConjoined)
+    {
+        // Mirror StreamsTable column ordering — TenantIdColumn is PK-first
+        // for conjoined; otherwise it lands after the always-on columns.
+        var cols = isConjoined
+            ? "tenant_id, id, type, version"
+            : "id, type, version, tenant_id";
+
+        return $"insert into {graph.DatabaseSchemaName}.{StreamsTable.TableName} ({cols}) values (";
+    }
+
+    /// <summary>
+    /// Closure for <c>update mt_streams set version = $1 where id = $2 and version = $3 [and tenant_id = $4] returning version</c>.
+    /// </summary>
+    /// <remarks>
+    /// Mirrors <c>EventDocumentStorageGenerator.buildUpdateStreamVersion</c>.
+    /// The base <see cref="UpdateStreamVersion"/>.Postprocess raises
+    /// <c>EventStreamUnexpectedMaxEventIdException</c> when zero rows are
+    /// affected (the expected-version guard fired).
+    /// </remarks>
+    private static Action<ICommandBuilder, StreamAction> BuildUpdateStreamVersionCommandConfigurer(
+        EventGraph graph, bool isConjoined, bool isGuid)
+    {
+        var setVersionPrefix = $"update {graph.DatabaseSchemaName}.{StreamsTable.TableName} set version = ";
+
+        return (builder, stream) =>
+        {
+            builder.Append(setVersionPrefix);
+            // Single GroupedParameterBuilder with no separator — we
+            // interleave AppendSql between each parameter manually.
+            var pb = builder.CreateGroupedParameterBuilder();
+            pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
+
+            builder.Append(" where id = ");
+            if (isGuid)
+                pb.AppendParameter(stream.Id, NpgsqlDbType.Uuid);
+            else
+                pb.AppendParameter(stream.Key, NpgsqlDbType.Varchar);
+
+            builder.Append(" and version = ");
+            pb.AppendParameter(stream.ExpectedVersionOnServer!.Value, NpgsqlDbType.Bigint);
+
+            if (isConjoined)
+            {
+                builder.Append(" and tenant_id = ");
+                pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
+            }
+
+            builder.Append(" returning version");
         };
     }
 
@@ -157,14 +310,22 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     }
 
     /// <summary>
-    /// "Core" columns are the ones whose writes get inlined directly in the
-    /// closed-shape operation body — always present, always bound as
-    /// scalars, no configuration variance. Everything else is treated as
-    /// metadata and routes through <see cref="IEventMetadataBinder"/>.
+    /// "Core" columns are the ones whose writes get inlined directly in
+    /// <see cref="Rich.RichAppendEventOperation.ConfigureCommand"/> — always
+    /// present, always bound as scalars, no configuration variance.
+    /// Everything else is treated as metadata and routes through
+    /// <see cref="IEventMetadataBinder"/>.
     /// </summary>
+    /// <remarks>
+    /// MUST stay in lockstep with the inlined-bind list in
+    /// <see cref="Rich.RichAppendEventOperation.ConfigureCommand"/>. Adding
+    /// a column here without an inlined bind (or vice versa) leaves the
+    /// parameter count off by one against the SQL prefix's column list.
+    /// </remarks>
     private static bool IsCoreColumn(IEventTableColumn column) =>
         column.Name is "id" or "stream_id" or "stream_key" or "version"
-            or "data" or "type" or "tenant_id" or "mt_dotnet_type";
+            or "data" or "type" or "tenant_id" or "mt_dotnet_type"
+            or "timestamp";
 
     // ---- Quick / QuickWithServerTimestamps / InsertStream / UpdateStreamVersion ----
     //
