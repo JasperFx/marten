@@ -34,9 +34,11 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Landed so far (6 commits on the branch)
+## Landed so far (8 commits on the branch)
 
 ```
+6dfcd8137  [#4412] W4: closed-shape StreamStateQueryHandler for Rich mode
+1a7671daf  [#4411] W4: update SESSION-STATE for compaction-resume
 f97840458  [#4411] W4 read-side: simplify reader-columns wiring + add round-trip test
 04415a33e  [#4411] W4 read-side O2: closed-shape ApplyReaderDataToEvent
 4ac9e216b  [#4410] W4 session-state for compaction-resume
@@ -113,26 +115,41 @@ Also touched outside the new directory:
 * `Bug_4411_closed_shape_read_side` round-trip test passes on
   net9.0 + net10.0.
 
-**Next concrete unit of work:** [#4412](https://github.com/JasperFx/marten/issues/4412)
-(InsertStream / UpdateStreamVersion / QueryForStream operations + SQL
-templates). These are the cross-mode pieces — Rich and Quick both need
-them, so they're a prerequisite for #4413 (Rich-mode op hardening) and
-#4414 (Quick-mode op hardening). Approach:
+**In progress:** [#4412](https://github.com/JasperFx/marten/issues/4412).
+QueryForStream is **done** (commit `6dfcd8137`):
 
-1. Port `EventDocumentStorageGenerator.buildInsertStream` → SQL template
-   on the dialect, operation class under `EventStorage/`.
+* `ClosedShapeStreamStateQueryHandler<TId>` under
+  `EventStorage/Querying/`. Composes the descriptor's
+  `StreamStateSelectSql` with a per-call `where id = $1 [and tenant_id = $2]`.
+  Row read is inherited from the base — same `ISelector<StreamState>`
+  definition site as codegen.
+* `RichEventStorageDescriptor.IsTenancyConjoined` (init-only) so the
+  storage method doesn't need an EventGraph reference.
+* `RichEventStorage<TId>.QueryForStream` wired up.
+* Quick / QuickWithServerTimestamps still throw — they'll get the same
+  wiring once their write paths exist (#4414 / #4415); wiring them now
+  would just add unreachable code.
+
+**Still to do in #4412** — paired with the Rich AppendEventOperation
+port (#4413) because none of them are reachable end-to-end on their
+own:
+
+1. Port `EventDocumentStorageGenerator.buildInsertStream` → operation
+   under `EventStorage/Rich/RichInsertStreamOperation.cs` plus dialect
+   SQL template (replaces `BuildInsertStreamSql` TODO stub). Two SQL
+   shapes: vanilla insert vs CTE-with-identity-enforcement. Each has a
+   tenancy-conjoined variant. Per-stream parameter list driven by
+   `StreamsTable.Columns.OfType<IStreamTableColumn>().Where(x => x.Writes)`
+   — needs IStreamTableColumn.WriteValue ports analogous to #4411's
+   IEventTableColumn.ReadValueSync. Estimate: 250–400 LOC of porting +
+   per-tenancy-style integration tests.
 2. Port `EventDocumentStorageGenerator.buildUpdateStreamVersion` →
-   matching dialect SQL + operation.
-3. Port the StreamState query handler (codegen path lives in the same
-   generator); the SQL string is already on the descriptor via
-   `EventDocumentStorageGenerator.BuildStreamStateSelectSql`.
-4. Wire all three into `RichEventStorage` / `QuickEventStorage` /
-   `QuickWithServerTimestampsEventStorage` (all three share these
-   operations — the divergence is only on the per-event append).
-5. Test: green the `Bug_4411_*` test with `UseClosedShapeStorage = true`
-   at flag-flip, exercising a full insert + update-version + read-back
-   cycle. Until #4413 / #4414 land, only the Rich AppendEvent will
-   exercise the write path.
+   simpler — single SQL shape `update mt_streams set version = $1
+   where id = $2 and version = $3 [and tenant_id = $4] returning version`.
+3. Verify end-to-end by flipping `UseClosedShapeStorage = true` in a
+   new test mirroring `Bug_4411_*` and asserting a full
+   StartStream → SaveChanges → FetchStreamStateAsync → FetchStreamAsync
+   round trip works.
 
 **After #4412 lands** the natural sequence is #4413 → #4414 → #4415,
 then the metadata-binder follow-ups (#4416 — including HeadersColumn
