@@ -295,7 +295,7 @@ Async-only was the recommended path for several releases — the sync methods ha
   | `session.Query<Foo>().Single()` | `await session.Query<Foo>().SingleAsync()` |
   | `session.Query<Foo>().SingleOrDefault()` | `await session.Query<Foo>().SingleOrDefaultAsync()` |
   | `session.Query<Foo>().Count()` | `await session.Query<Foo>().CountAsync()` |
-  | `session.Query<Foo>().LongCount()` | `await session.Query<Foo>().CountLongAsync()` |
+  | `session.Query<Foo>().LongCount()` | `await session.Query<Foo>().LongCountAsync()` |
   | `session.Query<Foo>().Any()` | `await session.Query<Foo>().AnyAsync()` |
   | `session.Query<Foo>().Min(x => x.N)` | `await session.Query<Foo>().MinAsync(x => x.N)` |
   | `session.Query<Foo>().Max(x => x.N)` | `await session.Query<Foo>().MaxAsync(x => x.N)` |
@@ -304,6 +304,8 @@ Async-only was the recommended path for several releases — the sync methods ha
   | `foreach (var f in session.Query<Foo>())` | `await foreach (var f in session.Query<Foo>().ToAsyncEnumerable(ct))` |
 
 * Replace every `Load<T>`, `LoadMany<T>`, `Query<T>(sql, ...)`, `Json.*` sync call on `IQuerySession` with the corresponding `LoadAsync`, `LoadManyAsync`, `QueryAsync`, `Json.*Async` equivalent.
+
+* The sync `IQueryable<T>.ToPagedList(pageNumber, pageSize)` extension method (and the matching `PagedList<T>.Create(...)` / `PagedList<T>.Init(...)`) now throw the same `NotSupportedException` because their implementations called sync `LongCount()` / `ToList()` underneath. Switch to `await queryable.ToPagedListAsync(pageNumber, pageSize, token)` (the async variant has been there since Marten 4).
 
 * If you implement `IQueryHandler<T>` (a fairly advanced extensibility hook used by user-supplied SQL plans and custom selectors), the interface no longer has a synchronous `Handle(DbDataReader reader, IMartenSession session)` method — implement only `HandleAsync(DbDataReader, IMartenSession, CancellationToken)`. Delete any existing sync `Handle` override; it isn't satisfying anything anymore.
 
