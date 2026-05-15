@@ -1,4 +1,7 @@
+using System;
+using System.Data.Common;
 using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.CodeGeneration.Model;
@@ -18,6 +21,12 @@ namespace Marten.Storage.Metadata;
 internal class CausationIdColumn: MetadataColumn<string>, ISelectableColumn, IEventTableColumn
 {
     public static readonly string ColumnName = "causation_id";
+
+    private static readonly Lazy<Action<DbDataReader, int, IEvent>> ReadSync =
+        new(() => EventColumnReaders.BuildSync(x => x.CausationId));
+
+    private static readonly Lazy<Func<DbDataReader, int, IEvent, CancellationToken, Task>> ReadAsyncDelegate =
+        new(() => EventColumnReaders.BuildAsync(x => x.CausationId));
 
     public CausationIdColumn(): base(ColumnName, x => x.CausationId)
     {
@@ -73,6 +82,18 @@ internal class CausationIdColumn: MetadataColumn<string>, ISelectableColumn, IEv
     public string ValueSql(EventGraph graph, AppendMode mode)
     {
         return "?";
+    }
+
+    void IEventTableColumn.ReadValueSync(DbDataReader reader, int index, IEvent @event)
+    {
+        if (reader.IsDBNull(index)) return;
+        ReadSync.Value(reader, index, @event);
+    }
+
+    async Task IEventTableColumn.ReadValueAsync(DbDataReader reader, int index, IEvent @event, CancellationToken cancellation)
+    {
+        if (await reader.IsDBNullAsync(index, cancellation).ConfigureAwait(false)) return;
+        await ReadAsyncDelegate.Value(reader, index, @event, cancellation).ConfigureAwait(false);
     }
 }
 

@@ -1,4 +1,8 @@
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.CodeGeneration;
+using JasperFx.Events;
 
 namespace Marten.Events.Schema;
 
@@ -45,4 +49,29 @@ internal interface IEventTableColumn
     public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full);
 
     string ValueSql(EventGraph graph, AppendMode mode);
+
+    /// <summary>
+    ///     Runtime equivalent of <see cref="GenerateSelectorCodeSync"/> — reads this
+    ///     column's value from the given reader ordinal and assigns it onto the event.
+    ///     Used by the closed-shape event-storage hierarchy (#4410 W4) so the read
+    ///     path doesn't depend on runtime codegen.
+    /// </summary>
+    /// <remarks>
+    ///     Default implementation throws — concrete column types override. The
+    ///     codegen path (today's default) doesn't call this; only the closed-shape
+    ///     <c>ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent</c> does.
+    ///     Tracking issue: #4411.
+    /// </remarks>
+    void ReadValueSync(DbDataReader reader, int index, IEvent @event)
+        => throw new System.NotImplementedException(
+            $"Column '{Name}' ({GetType().Name}) does not implement ReadValueSync. " +
+            $"See #4411 — every concrete IEventTableColumn needs this runtime port of GenerateSelectorCodeSync.");
+
+    /// <summary>
+    ///     Asynchronous twin of <see cref="ReadValueSync"/>.
+    /// </summary>
+    Task ReadValueAsync(DbDataReader reader, int index, IEvent @event, CancellationToken cancellation)
+        => throw new System.NotImplementedException(
+            $"Column '{Name}' ({GetType().Name}) does not implement ReadValueAsync. " +
+            $"See #4411 — every concrete IEventTableColumn needs this runtime port of GenerateSelectorCodeAsync.");
 }

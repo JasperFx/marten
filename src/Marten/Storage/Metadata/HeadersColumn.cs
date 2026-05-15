@@ -23,6 +23,12 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
 {
     public static readonly string ColumnName = "headers";
 
+    private static readonly Lazy<Action<DbDataReader, int, IEvent>> ReadSync =
+        new(() => EventColumnReaders.BuildSync(x => x.Headers));
+
+    private static readonly Lazy<Func<DbDataReader, int, IEvent, CancellationToken, Task>> ReadAsyncDelegate =
+        new(() => EventColumnReaders.BuildAsync(x => x.Headers));
+
     public HeadersColumn(): base(ColumnName, x => x.Headers)
     {
         Type = "jsonb";
@@ -92,6 +98,18 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
     public string ValueSql(EventGraph graph, AppendMode mode)
     {
         return "?";
+    }
+
+    void IEventTableColumn.ReadValueSync(DbDataReader reader, int index, IEvent @event)
+    {
+        if (reader.IsDBNull(index)) return;
+        ReadSync.Value(reader, index, @event);
+    }
+
+    async Task IEventTableColumn.ReadValueAsync(DbDataReader reader, int index, IEvent @event, CancellationToken cancellation)
+    {
+        if (await reader.IsDBNullAsync(index, cancellation).ConfigureAwait(false)) return;
+        await ReadAsyncDelegate.Value(reader, index, @event, cancellation).ConfigureAwait(false);
     }
 }
 

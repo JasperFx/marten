@@ -1,10 +1,12 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -45,6 +47,7 @@ namespace Marten.EventStorage;
 internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
 {
     private readonly object _storage;
+    private readonly IReadOnlyList<IEventTableColumn> _readerColumns;
 
     public ClosedShapeEventDocumentStorage(StoreOptions options): base(options)
     {
@@ -53,6 +56,12 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
         _storage = Events.StreamIdentity == StreamIdentity.AsGuid
             ? EventStorageBuilder.Build<Guid>(Events, serializer)
             : EventStorageBuilder.Build<string>(Events, serializer);
+
+        // Cache the read-side column dispatch list (#4411). Pull from the
+        // strongly-typed base, no cast on the hot path.
+        _readerColumns = Events.StreamIdentity == StreamIdentity.AsGuid
+            ? GuidStorage.ReaderColumns
+            : StringStorage.ReaderColumns;
     }
 
     /// <summary>
@@ -106,24 +115,30 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : StringStorage.QueryForStream(stream);
     }
 
-    // Read-side: keep on codegen for v9. These two abstract methods on
-    // EventDocumentStorage get emitted bodies that read event columns out
-    // of a DbDataReader. The W4 (#4410) closed-shape hierarchy covers the
-    // write path; the read selector is W5/Marten.SourceGenerator scope.
+    // Read-side: closed-shape implementation (#4411). Iterates the descriptor's
+    // reader-column list and dispatches per column via virtual
+    // IEventTableColumn.ReadValueSync / Async. Each concrete column type
+    // wraps a compiled-delegate reader (no per-row reflection, no boxing for
+    // value-typed members) — see EventColumnReaders / EventTableColumn.
     //
-    // The implementations below throw — meaning the closed-shape adapter
-    // CANNOT yet replace the codegen path end-to-end. The wiring in
-    // EventGraph.GeneratesCode.cs keeps the codegen-emitted class available
-    // alongside this adapter and routes read-side calls there. Tracked as
-    // open question (3) on #4410.
+    // Ordinal contract: columns 0/1/2 (data / type / mt_dotnet_type) are
+    // read by the base ISelector<IEvent> in EventDocumentStorage; this loop
+    // starts at ordinal 3. The dialect's BuildReaderColumns mirrors the
+    // codegen path's `for (var i = 3; i < columns.Count; i++)` loop.
 
     public override void ApplyReaderDataToEvent(DbDataReader reader, IEvent e)
-        => throw new NotImplementedException(
-            "Read-side ApplyReaderDataToEvent is not yet covered by the closed-shape hierarchy. " +
-            "Tracked as open question (3) on #4410 (W4 — Closed-shape event storage hierarchy).");
+    {
+        for (var i = 0; i < _readerColumns.Count; i++)
+        {
+            _readerColumns[i].ReadValueSync(reader, i + 3, e);
+        }
+    }
 
-    public override Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token)
-        => throw new NotImplementedException(
-            "Read-side ApplyReaderDataToEventAsync is not yet covered by the closed-shape hierarchy. " +
-            "Tracked as open question (3) on #4410 (W4 — Closed-shape event storage hierarchy).");
+    public override async Task ApplyReaderDataToEventAsync(DbDataReader reader, IEvent e, CancellationToken token)
+    {
+        for (var i = 0; i < _readerColumns.Count; i++)
+        {
+            await _readerColumns[i].ReadValueAsync(reader, i + 3, e, token).ConfigureAwait(false);
+        }
+    }
 }

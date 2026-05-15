@@ -1,6 +1,8 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using JasperFx.Events;
+using Marten.Events.Schema;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -44,4 +46,6 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
 
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
         => throw new NotImplementedException("StreamStateQueryHandler lands in the next iteration.");
+
+    internal override IReadOnlyList<IEventTableColumn> ReaderColumns => _descriptor.ReaderColumns;
 }

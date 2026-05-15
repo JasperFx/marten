@@ -1,7 +1,9 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using JasperFx.Events;
 using Marten.Events;
+using Marten.Events.Schema;
 
 namespace Marten.EventStorage.Rich;
 
@@ -51,4 +53,20 @@ public sealed class RichEventStorageDescriptor
     /// parameters; no per-event dispatch worth abstracting).
     /// </summary>
     public IEventMetadataBinder[] MetadataBinders { get; }
+
+    /// <summary>
+    /// Reader columns for the closed-shape read path (#4411). Each column's
+    /// <see cref="IEventTableColumn.ReadValueSync"/> /
+    /// <see cref="IEventTableColumn.ReadValueAsync"/> is invoked per row in
+    /// <c>ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent</c>.
+    /// </summary>
+    /// <remarks>
+    /// Iteration starts at ordinal 3 — positions 0/1/2 (data / type /
+    /// mt_dotnet_type) are read by the base <c>ISelector&lt;IEvent&gt;</c>
+    /// implementation in <c>EventDocumentStorage</c>, mirroring the codegen
+    /// path's <c>Resolve</c> body. The dialect populates this list from
+    /// <see cref="EventsTable.SelectColumns"/> minus the first three.
+    /// Internal: <see cref="IEventTableColumn"/> is an internal seam.
+    /// </remarks>
+    internal IReadOnlyList<IEventTableColumn> ReaderColumns { get; init; } = Array.Empty<IEventTableColumn>();
 }
