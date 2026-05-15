@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Marten;
 using Marten.Linq;
 using Marten.Testing.Harness;
@@ -9,7 +10,7 @@ namespace LinqTests.Bugs;
 public class Bug_717_permutation_of_Linq_queries: IntegrationContext
 {
     [Fact]
-    public void do_not_blow_up()
+    public async Task do_not_blow_up()
     {
         var entityToStore = new MainEntity
         {
@@ -36,7 +37,7 @@ public class Bug_717_permutation_of_Linq_queries: IntegrationContext
             /*------------------------------------------------------------------*/
             //getting an Exception while trying to execute this query
 
-            var entity1 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Any());
+            var entity1 = (await session.Query<MainEntity>().Stats(out stats).FirstOrDefaultAsync(t => t.Entity1.StringValues.Any()));
 
             //Marten.MartenCommandException: 'Marten Command Failure:
             //select d.data, d.id, d.mt_version, count(1) OVER() as total_rows from public.mt_doc_mainentity as d where JSONB_ARRAY_LENGTH(COALESCE(case when data->>'Entity1'->'StringValues' is not null then data->'Entity1'->'StringValues' else '[]' end)) > 0 LIMIT 1
@@ -46,7 +47,7 @@ public class Bug_717_permutation_of_Linq_queries: IntegrationContext
             /*------------------------------------------------------------------*/
             //same issue here as well
 
-            var entity2 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity2.InnerEntities.Any());
+            var entity2 = (await session.Query<MainEntity>().Stats(out stats).FirstOrDefaultAsync(t => t.Entity2.InnerEntities.Any()));
             //Marten.MartenCommandException: 'Marten Command Failure:
             //select d.data, d.id, d.mt_version, count(1) OVER() as total_rows from public.mt_doc_mainentity as d where JSONB_ARRAY_LENGTH(COALESCE(case when data->>'Entity2'->'InnerEntities' is not null then data->'Entity2'->'InnerEntities' else '[]' end)) > 0 LIMIT 1
             //42883: operator does not exist: text -> unknown'
@@ -57,10 +58,10 @@ public class Bug_717_permutation_of_Linq_queries: IntegrationContext
             //and this two fail as well
 
             //var entity3 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Any(n => n == "item1"));
-            var entity3 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity1.StringValues.Contains("item1"));
+            var entity3 = (await session.Query<MainEntity>().Stats(out stats).FirstOrDefaultAsync(t => t.Entity1.StringValues.Contains("item1")));
             //System.NotSupportedException: 'Specified method is not supported.'
 
-            var entity4 = session.Query<MainEntity>().Stats(out stats).FirstOrDefault(t => t.Entity2.InnerEntities.Any(n => n.MyEnum == SomeEnums.TestEnum1));
+            var entity4 = (await session.Query<MainEntity>().Stats(out stats).FirstOrDefaultAsync(t => t.Entity2.InnerEntities.Any(n => n.MyEnum == SomeEnums.TestEnum1)));
             //System.NotImplementedException: 'The method or operation is not implemented.'
             /*------------------------------------------------------------------*/
         }

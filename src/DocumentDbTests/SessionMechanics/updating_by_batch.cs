@@ -21,7 +21,7 @@ public class updating_by_batch : OneOffConfigurationsContext
         session.Store(targets);
         await session.SaveChangesAsync();
 
-        session.Query<Target>().Count().ShouldBe(100);
+        (await session.Query<Target>().CountAsync()).ShouldBe(100);
     }
 
 
@@ -54,7 +54,7 @@ public class updating_by_batch : OneOffConfigurationsContext
 
         await session.SaveChangesAsync();
 
-        session.Query<Target>().Count().ShouldBe(100);
+        (await session.Query<Target>().CountAsync()).ShouldBe(100);
     }
 
     [Fact]

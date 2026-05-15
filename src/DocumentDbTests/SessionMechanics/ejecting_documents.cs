@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Xunit;
 using Shouldly;
+using Marten;
 
 namespace DocumentDbTests.SessionMechanics;
 
@@ -97,7 +98,7 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Single()
+            (await session.Query<Target>().SingleAsync())
                 .Id.ShouldBe(target1.Id);
         }
     }
@@ -119,7 +120,7 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Single()
+            (await session.Query<Target>().SingleAsync())
                 .Id.ShouldBe(target1.Id);
         }
     }
@@ -141,7 +142,7 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Single()
+            (await session.Query<Target>().SingleAsync())
                 .Id.ShouldBe(target1.Id);
         }
     }

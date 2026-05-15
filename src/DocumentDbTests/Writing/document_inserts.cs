@@ -6,6 +6,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Writing;
 
@@ -23,7 +24,7 @@ public class document_inserts: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Target>().Count().ShouldBe(99);
+            (await query.Query<Target>().CountAsync()).ShouldBe(99);
         }
     }
 
@@ -44,8 +45,8 @@ public class document_inserts: IntegrationContext
 
         await using (var query = theStore.QuerySession())
         {
-            query.Query<Target>().Count().ShouldBe(3);
-            query.Query<User>().Count().ShouldBe(4);
+            (await query.Query<Target>().CountAsync()).ShouldBe(3);
+            (await query.Query<User>().CountAsync()).ShouldBe(4);
         }
     }
 
@@ -62,7 +63,7 @@ public class document_inserts: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<RecordDocument>().ToList().Count.ShouldBe(1);
+            (await query.Query<RecordDocument>().ToListAsync()).Count.ShouldBe(1);
         }
     }
 

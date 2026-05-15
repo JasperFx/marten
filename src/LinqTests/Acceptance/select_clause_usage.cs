@@ -195,7 +195,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToList();
+        var users = (await theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -217,7 +217,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
+        var users = (await theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -326,7 +326,7 @@ public class select_clause_usage: IntegrationContext
 
         await theStore.BulkInsertAsync(targets);
 
-        var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
+        var actual = (await theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToListAsync()).Distinct();
 
         var expected = targets.Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).Distinct();
 

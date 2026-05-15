@@ -28,25 +28,25 @@ public class Bug_561_negation_of_query_on_contains: IntegrationContext
     }
 
     [Fact]
-    public void negated_contains()
+    public async Task negated_contains()
     {
         #region sample_negated-contains
-        theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
             .ShouldBe(2);
         #endregion
     }
 
     [Fact]
-    public void NotContainsInExpressionThrowsNotSupportedException()
+    public async Task NotContainsInExpressionThrowsNotSupportedException()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => x.Strings.Contains("d") && !x.Strings.Contains("c")))
             .ShouldBe(1);
     }
 
     [Fact]
-    public void ExpressionWithNotContainsReturnsCorrectResults()
+    public async Task ExpressionWithNotContainsReturnsCorrectResults()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => x.Strings.Contains("d") && !x.Strings.Contains("c")))
             .ShouldBe(1);
     }
 }
@@ -76,25 +76,25 @@ public class Bug_561_negation_of_query_on_contains_with_camel_casing: BugIntegra
     }
 
     [Fact]
-    public void negated_contains()
+    public async Task negated_contains()
     {
         #region sample_negated-contains
-        theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
             .ShouldBe(2);
         #endregion
     }
 
     [Fact]
-    public void NotContainsInExpressionThrowsNotSupportedException()
+    public async Task NotContainsInExpressionThrowsNotSupportedException()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => x.Strings.Contains("d") && !x.Strings.Contains("c")))
             .ShouldBe(1);
     }
 
     [Fact]
-    public void ExpressionWithNotContainsReturnsCorrectResults()
+    public async Task ExpressionWithNotContainsReturnsCorrectResults()
     {
-        theSession.Query<DocWithArrays>().Count(x => x.Strings.Contains("d") && !x.Strings.Contains("c"))
+        (await theSession.Query<DocWithArrays>().CountAsync(x => x.Strings.Contains("d") && !x.Strings.Contains("c")))
             .ShouldBe(1);
     }
 }

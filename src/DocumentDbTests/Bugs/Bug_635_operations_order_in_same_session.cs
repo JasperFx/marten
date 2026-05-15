@@ -6,6 +6,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -43,7 +44,7 @@ public class Bug_635_operations_order_in_same_session: IntegrationContext
 
         using (var querySession = theStore.QuerySession())
         {
-            var count = querySession.Query<User>().Count(x => x.LastName == "batch-id1");
+            var count = (await querySession.Query<User>().CountAsync(x => x.LastName == "batch-id1"));
 
             //This fails as the DeleteWhere gets executed after the Store(...) in the replaceSession
             count.ShouldBe(newBatchSize);

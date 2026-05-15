@@ -8,6 +8,7 @@ using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -31,7 +32,7 @@ public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests 
 
             await session1.SaveChangesAsync();
 
-            session1.Query<Team>().Count().ShouldBe(3);
+            (await session1.Query<Team>().CountAsync()).ShouldBe(3);
         }
 
         var store2 = SeparateStore(_ =>
@@ -41,7 +42,7 @@ public class Bug_127_do_not_recreate_a_table_with_duplicated_string_field_Tests 
 
         using (var session2 = store2.QuerySession())
         {
-            session2.Query<Team>().Count().ShouldBe(3);
+            (await session2.Query<Team>().CountAsync()).ShouldBe(3);
         }
     }
 }

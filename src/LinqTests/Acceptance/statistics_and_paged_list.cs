@@ -89,7 +89,7 @@ public class statistics_and_paged_list: IntegrationContext
     [Fact]
     public async Task can_get_the_total_from_a_compiled_query()
     {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
@@ -105,7 +105,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_use_json_streaming_with_statistics()
     {
 
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
@@ -167,7 +167,7 @@ public class statistics_and_paged_list: IntegrationContext
     [Fact]
     public async Task can_get_the_total_in_results()
     {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         // We're going to use stats as an output
@@ -312,7 +312,7 @@ public class statistics_and_paged_list: IntegrationContext
 
         var pageSize = 10;
 
-        var expectedPageCount = theSession.Query<Target>().Count()/pageSize;
+        var expectedPageCount = (await theSession.Query<Target>().CountAsync())/pageSize;
 
         var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
         pagedList.PageCount.ShouldBe(expectedPageCount);
@@ -326,7 +326,7 @@ public class statistics_and_paged_list: IntegrationContext
 
         var pageSize = 10;
 
-        var expectedTotalItemsCount = theSession.Query<Target>().Count();
+        var expectedTotalItemsCount = (await theSession.Query<Target>().CountAsync());
 
         var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
         pagedList.TotalItemCount.ShouldBe(expectedTotalItemsCount);

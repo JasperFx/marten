@@ -331,9 +331,9 @@ public class UnitOfWork_Operation_Ordering_Tests: OneOffConfigurationsContext, I
 
         using (var s = theStore.QuerySession("Bug_1229"))
         {
-            var companies = s.Query<Company>().ToList();
-            var users = s.Query<User>().ToList();
-            var issues = s.Query<Issue>().ToList();
+            var companies = (await s.Query<Company>().ToListAsync());
+            var users = (await s.Query<User>().ToListAsync());
+            var issues = (await s.Query<Issue>().ToListAsync());
 
             companies.Count.ShouldBe(expectedCompanyCount);
             users.Count.ShouldBe(expectedUserCount);

@@ -59,7 +59,7 @@ public class Bug_1061_string_enum_serialization_does_not_work_with_ginindexjsond
 
         await using (var session = store2.LightweightSession())
         {
-            var items = session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToList();
+            var items = (await session.Query<Bug_1061_Class>().Where(x => x.Enum == Bug_1061_Enum.One).ToListAsync());
             Assert.Single(items);
         }
     }

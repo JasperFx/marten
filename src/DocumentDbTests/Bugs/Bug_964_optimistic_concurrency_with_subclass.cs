@@ -8,6 +8,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
 using Xunit.Abstractions;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -73,7 +74,7 @@ public class Bug_964_optimistic_concurrency_with_subclass: BugIntegrationContext
 
         using (var session = theStore.LightweightSession())
         {
-            var discardedResult = session.Query<CloudStorageMinio>().SingleOrDefault(p => p.Id == minio1.Id);
+            var discardedResult = (await session.Query<CloudStorageMinio>().SingleOrDefaultAsync(p => p.Id == minio1.Id));
 
             // Because I have loaded the record above, all exceptions go away - even when I still expect them
 

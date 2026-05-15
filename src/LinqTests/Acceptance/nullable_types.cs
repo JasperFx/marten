@@ -20,7 +20,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.NullableNumber > 4).Count()
+        (await theSession.Query<Target>().Where(x => x.NullableNumber > 4).CountAsync())
             .ShouldBe(3);
     }
 
@@ -35,7 +35,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.NullableNumber == null).Count()
+        (await theSession.Query<Target>().Where(x => x.NullableNumber == null).CountAsync())
             .ShouldBe(3);
     }
 
@@ -50,7 +50,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => !x.NullableNumber.HasValue).Count()
+        (await theSession.Query<Target>().Where(x => !x.NullableNumber.HasValue).CountAsync())
             .ShouldBe(3);
 
     }
@@ -63,7 +63,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => !x.NullableBoolean.HasValue).Count()
+        (await theSession.Query<Target>().Where(x => !x.NullableBoolean.HasValue).CountAsync())
             .ShouldBe(1);
     }
 
@@ -120,7 +120,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => !x.NullableDateTime.HasValue || x.NullableDateTime > new DateTime(2525,1,1)).Count()
+        (await theSession.Query<Target>().Where(x => !x.NullableDateTime.HasValue || x.NullableDateTime > new DateTime(2525,1,1)).CountAsync())
             .ShouldBe(4);
     }
 
@@ -132,7 +132,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count(x => x.NullableBoolean.HasValue == false)
+        (await theSession.Query<Target>().CountAsync(x => x.NullableBoolean.HasValue == false))
             .ShouldBe(1);
     }
 
@@ -147,7 +147,7 @@ public class nullable_types : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count(x => x.NullableNumber.HasValue)
+        (await theSession.Query<Target>().CountAsync(x => x.NullableNumber.HasValue))
             .ShouldBe(2);
     }
 

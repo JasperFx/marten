@@ -247,7 +247,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         using (var session2 = theStore.LightweightSession())
         {
             // This works
-            var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
+            var o1 = (await session2.Query<Outer>().FirstAsync(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12")));
             o1.ShouldNotBeNull();
 
             var o2 = await session2.QueryAsync(new FindOuterByInner("T1", "V12"));
@@ -291,20 +291,20 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void Bug_415_can_query_when_matched_value_has_quotes()
+    public async Task Bug_415_can_query_when_matched_value_has_quotes()
     {
         using (var session = theStore.QuerySession())
         {
-            session.Query<Course>().Any(x => x.ExtIds.Contains("some'thing")).ShouldBeFalse();
+            (await session.Query<Course>().AnyAsync(x => x.ExtIds.Contains("some'thing"))).ShouldBeFalse();
         }
     }
 
     [Fact]
-    public void Bug_415_can_query_inside_of_non_primitive_collection()
+    public async Task Bug_415_can_query_inside_of_non_primitive_collection()
     {
         using (var session = theStore.QuerySession())
         {
-            session.Query<Course>().Any(x => x.Sources.Any(_ => _.Case == "some'thing"));
+            await session.Query<Course>().AnyAsync(x => x.Sources.Any(_ => _.Case == "some'thing"));
         }
     }
 
@@ -762,7 +762,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         theSession.Store(targetithchildren);
         await theSession.SaveChangesAsync();
 
-        var items = theSession.Query<Target>().Where(x => x.Children.Any()).ToList();
+        var items = (await theSession.Query<Target>().Where(x => x.Children.Any()).ToListAsync());
 
         items.Count.ShouldBe(1);
     }

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Acceptance;
 
@@ -60,7 +61,7 @@ public class date_type_usage : OneOffConfigurationsContext
 
         using (var query = theStore.QuerySession())
         {
-            var dateOffset = query.Query<Target>().Where(x => x.Id == document.Id).Select(x => x.DateOffset).Single();
+            var dateOffset = (await query.Query<Target>().Where(x => x.Id == document.Id).Select(x => x.DateOffset).SingleAsync());
 
             // be aware of the Npgsql DateTime mapping https://www.npgsql.org/doc/types/datetime.html
             dateOffset.ShouldBeEqualWithDbPrecision(document.DateOffset.ToLocalTime());

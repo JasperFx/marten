@@ -8,6 +8,7 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.SessionMechanics;
 
@@ -209,7 +210,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
 
             using (var session = store.LightweightSession())
             {
-                var users = session.Query<User>().ToList();
+                var users = (await session.Query<User>().ToListAsync());
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));
@@ -346,7 +347,7 @@ public class Using_Global_DocumentSessionListener_Tests : OneOffConfigurationsCo
 
             using (var session = store.DirtyTrackedSession())
             {
-                var users = session.Query<User>().ToList();
+                var users = (await session.Query<User>().ToListAsync());
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id, users.FirstOrDefault(where => where.Id == user1.Id));
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user2.Id, users.FirstOrDefault(where => where.Id == user2.Id));

@@ -543,12 +543,12 @@ public class soft_deletes: StoreContext<SoftDeletedFixture>, IClassFixture<SoftD
         await session.SaveChangesAsync();
 
         var users = new List<User>();
-        var files = session.Query<File>().Include(u => u.UserId, users).ToList();
+        var files = (await session.Query<File>().Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(1);
         users.Count.ShouldBe(1);
-        files = session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToList();
+        files = (await session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(2);
-        files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
+        files = (await session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(1);
     }
 
@@ -1245,12 +1245,12 @@ public class soft_deletes_with_partitioning: OneOffConfigurationsContext, IAsync
         await session.SaveChangesAsync();
 
         var users = new List<User>();
-        var files = session.Query<File>().Include(u => u.UserId, users).ToList();
+        var files = (await session.Query<File>().Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(1);
         users.Count.ShouldBe(1);
-        files = session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToList();
+        files = (await session.Query<File>().Where(f => f.MaybeDeleted()).Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(2);
-        files = session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToList();
+        files = (await session.Query<File>().Where(f => f.IsDeleted()).Include(u => u.UserId, users).ToListAsync());
         files.Count.ShouldBe(1);
     }
 

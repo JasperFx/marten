@@ -38,9 +38,9 @@ public class multi_level_is_null_querying : IntegrationContext
 
         using (var s = theStore.QuerySession())
         {
-            var notNull = s.Query<UserNested>().First(x => x.Nested.Nested.Nested != null);
-            var notNullAlso = s.Query<UserNested>().First(x => x.Nested.Nested.Nested.Nested.Nested == null);
-            var shouldBeNull = s.Query<UserNested>().FirstOrDefault(x => x.Nested.Nested.Nested == null);
+            var notNull = (await s.Query<UserNested>().FirstAsync(x => x.Nested.Nested.Nested != null));
+            var notNullAlso = (await s.Query<UserNested>().FirstAsync(x => x.Nested.Nested.Nested.Nested.Nested == null));
+            var shouldBeNull = (await s.Query<UserNested>().FirstOrDefaultAsync(x => x.Nested.Nested.Nested == null));
 
             Assert.Equal(user.Id, notNull.Id);
             Assert.Equal(user.Id, notNullAlso.Id);

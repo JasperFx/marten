@@ -58,7 +58,7 @@ public class identity_map_mechanics: IntegrationContext
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
-            var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
+            var users = (await session2.Query<User>().Where(x => x.FirstName == "James").ToListAsync());
 
             foreach (var user in users)
             {
@@ -70,7 +70,7 @@ public class identity_map_mechanics: IntegrationContext
 
         using (var session2 = theStore.IdentitySession())
         {
-            var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
+            var users = (await session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToListAsync());
 
             users.Select(x => x.LastName)
                 .ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");
@@ -94,7 +94,7 @@ public class identity_map_mechanics: IntegrationContext
 
         using (var session2 = theStore.DirtyTrackedSession())
         {
-            var users = session2.Query<User>().Where(x => x.FirstName == "James").ToList();
+            var users = (await session2.Query<User>().Where(x => x.FirstName == "James").ToListAsync());
 
             foreach (var user in users)
             {
@@ -106,7 +106,7 @@ public class identity_map_mechanics: IntegrationContext
 
         using (var session2 = theStore.IdentitySession())
         {
-            var users = session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToList();
+            var users = (await session2.Query<User>().Where(x => x.FirstName == "James").OrderBy(x => x.LastName).ToListAsync());
 
             users.Select(x => x.LastName)
                 .ShouldHaveTheSameElementsAs("Worthy 1 - updated", "Worthy 2 - updated", "Worthy 3 - updated");

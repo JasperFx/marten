@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Services;
 using Marten.Testing.Harness;
+using Marten;
 namespace LinqTests.Internals;
 
 public class BoolNotVisitorTests : OneOffConfigurationsContext
@@ -27,7 +28,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
         using var s = theStore.QuerySession();
-        var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
+        var items = (await s.Query<TestClass>().Where(x => !x.Flag).ToListAsync());
 
         Assert.Single(items);
         Assert.Equal(docWithFlagFalse.Id, items[0].Id);
@@ -52,7 +53,7 @@ public class BoolNotVisitorTests : OneOffConfigurationsContext
 
         using (var s = theStore.QuerySession())
         {
-            var items = s.Query<TestClass>().Where(x => !x.Flag).ToList();
+            var items = (await s.Query<TestClass>().Where(x => !x.Flag).ToListAsync());
 
             Assert.Single(items);
             Assert.Equal(docWithFlagFalse.Id, items[0].Id);

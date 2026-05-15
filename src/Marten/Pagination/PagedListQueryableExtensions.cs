@@ -1,7 +1,9 @@
 #nullable enable
+using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 
 namespace Marten.Pagination;
@@ -24,8 +26,7 @@ public static class PagedListQueryableExtensions
         int pageNumber,
         int pageSize)
     {
-        // return paged list
-        return PagedList<T>.Create(queryable, pageNumber, pageSize, false);
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     /// <summary>
@@ -42,8 +43,7 @@ public static class PagedListQueryableExtensions
         int pageNumber,
         int pageSize, bool useQueryCount)
     {
-        // return paged list
-        return PagedList<T>.Create(queryable, pageNumber, pageSize, useQueryCount);
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     /// <summary>

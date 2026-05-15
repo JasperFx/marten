@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Services.Json;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_1219_ordering_by_attributes : IntegrationContext
@@ -46,10 +47,10 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
     }
 
     [Fact]
-    public void smoke_test_can_order_by_not_string_values_in_dictionary()
+    public async Task smoke_test_can_order_by_not_string_values_in_dictionary()
     {
         using var query = theStore.QuerySession();
 
-        query.Query<Car>().OrderBy(x => x.Numbers[2]).ToList();
+        await query.Query<Car>().OrderBy(x => x.Numbers[2]).ToListAsync();
     }
 }

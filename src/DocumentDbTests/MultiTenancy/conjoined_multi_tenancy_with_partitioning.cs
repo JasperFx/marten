@@ -308,33 +308,33 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         using (var session = store.QuerySession("Green"))
         {
             // Query tenanted document as the tenant passed in session
-            session.Query<Target>().Count().ShouldBe(10);
+            (await session.Query<Target>().CountAsync()).ShouldBe(10);
 
             // Query non-tenanted documents
-            session.Query<User>().Count().ShouldBe(2);
+            (await session.Query<User>().CountAsync()).ShouldBe(2);
 
             // Query documents in default tenant from a session using tenant Green
-            session.Query<Issue>().Count(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId)).ShouldBe(2);
+            (await session.Query<Issue>().CountAsync(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId))).ShouldBe(2);
 
             // Query documents from tenant Red from a session using tenant Green
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
         }
 
         // create a session without passing any tenant, session will use default tenant
         using (var session = store.QuerySession())
         {
             // Query non-tenanted documents
-            session.Query<User>().Count().ShouldBe(2);
+            (await session.Query<User>().CountAsync()).ShouldBe(2);
 
             // Query documents in default tenant
             // Note that session is using default tenant
-            session.Query<Issue>().Count().ShouldBe(2);
+            (await session.Query<Issue>().CountAsync()).ShouldBe(2);
 
             // Query documents on tenant Green
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Green")).ShouldBe(10);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Green"))).ShouldBe(10);
 
             // Query documents on tenant Red
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
         }
 
         #endregion
@@ -542,17 +542,17 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         await using (var red = theStore.QuerySession("Red"))
         {
-            red.Query<Target>().Count().ShouldBe(50);
+            (await red.Query<Target>().CountAsync()).ShouldBe(50);
         }
 
         await using (var green = theStore.QuerySession("Green"))
         {
-            green.Query<Target>().Count().ShouldBe(75);
+            (await green.Query<Target>().CountAsync()).ShouldBe(75);
         }
 
         await using (var blue = theStore.QuerySession("Blue"))
         {
-            blue.Query<Target>().Count().ShouldBe(25);
+            (await blue.Query<Target>().CountAsync()).ShouldBe(25);
         }
     }
 
@@ -577,17 +577,17 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         using (var red = theStore.QuerySession("Red"))
         {
-            red.Query<Target>().Count().ShouldBe(50);
+            (await red.Query<Target>().CountAsync()).ShouldBe(50);
         }
 
         using (var green = theStore.QuerySession("Green"))
         {
-            green.Query<Target>().Count().ShouldBe(75);
+            (await green.Query<Target>().CountAsync()).ShouldBe(75);
         }
 
         using (var blue = theStore.QuerySession("Blue"))
         {
-            blue.Query<Target>().Count().ShouldBe(25);
+            (await blue.Query<Target>().CountAsync()).ShouldBe(25);
         }
     }
 

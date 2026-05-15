@@ -18,14 +18,14 @@ public class any_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Any(x => x.Number == 11)
+        (await theSession.Query<Target>().AnyAsync(x => x.Number == 11))
             .ShouldBeFalse();
     }
 
     [Fact]
-    public void naked_any_miss()
+    public async Task naked_any_miss()
     {
-        theSession.Query<Target>().Any()
+        (await theSession.Query<Target>().AnyAsync())
             .ShouldBeFalse();
     }
 
@@ -38,7 +38,7 @@ public class any_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Any().ShouldBeTrue();
+        (await theSession.Query<Target>().AnyAsync()).ShouldBeTrue();
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class any_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Any(x => x.Number == 3)
+        (await theSession.Query<Target>().AnyAsync(x => x.Number == 3))
             .ShouldBeTrue();
     }
 
@@ -75,7 +75,7 @@ public class any_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number == 2).Any()
+        (await theSession.Query<Target>().Where(x => x.Number == 2).AnyAsync())
             .ShouldBeTrue();
     }
 

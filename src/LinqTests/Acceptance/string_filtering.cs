@@ -5,6 +5,7 @@ using JasperFx.Core;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Acceptance;
 
 public class string_filtering: IntegrationContext
@@ -24,10 +25,10 @@ public class string_filtering: IntegrationContext
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("Zap", StringComparison.CurrentCulture, 1)]
     [InlineData("zap", StringComparison.CurrentCulture, 0)]
-    public void CanQueryByEquals(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByEquals(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => x.FirstName.Equals(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => x.FirstName.Equals(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => x.FirstName.Equals(search, comparison)));
@@ -37,10 +38,10 @@ public class string_filtering: IntegrationContext
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 3)]
     [InlineData("Zap", StringComparison.CurrentCulture, 3)]
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
-    public void CanQueryByNotEquals(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByNotEquals(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !x.FirstName.Equals(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !x.FirstName.Equals(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => !x.FirstName.Equals(search, comparison)));
@@ -49,10 +50,10 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
     [InlineData("zap", StringComparison.CurrentCulture, 0)]
-    public void CanQueryByContains(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByContains(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => x.FirstName.Contains(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => x.FirstName.Contains(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => x.FirstName.Contains(search, comparison)));
@@ -61,10 +62,10 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
-    public void CanQueryByNotContains(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByNotContains(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !x.FirstName.Contains(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !x.FirstName.Contains(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => !x.FirstName.Contains(search, comparison)));
@@ -73,10 +74,10 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
     [InlineData("zap", StringComparison.CurrentCulture, 0)]
-    public void CanQueryByStartsWith(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByStartsWith(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => x.FirstName.StartsWith(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => x.FirstName.StartsWith(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => x.FirstName.StartsWith(search, comparison)));
@@ -85,10 +86,10 @@ public class string_filtering: IntegrationContext
     [Theory]
     [InlineData("zap", StringComparison.OrdinalIgnoreCase, 2)]
     [InlineData("zap", StringComparison.CurrentCulture, 4)]
-    public void CanQueryByNotStartsWith(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByNotStartsWith(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !x.FirstName.StartsWith(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !x.FirstName.StartsWith(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => !x.FirstName.StartsWith(search, comparison)));
@@ -98,10 +99,10 @@ public class string_filtering: IntegrationContext
     [InlineData("hod", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("HOD", StringComparison.OrdinalIgnoreCase, 1)]
     [InlineData("Hod", StringComparison.CurrentCulture, 0)]
-    public void CanQueryByEndsWith(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByEndsWith(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => x.FirstName.EndsWith(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => x.FirstName.EndsWith(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => x.FirstName.EndsWith(search, comparison)));
@@ -111,50 +112,50 @@ public class string_filtering: IntegrationContext
     [InlineData("hod", StringComparison.OrdinalIgnoreCase, 3)]
     [InlineData("HOD", StringComparison.OrdinalIgnoreCase, 3)]
     [InlineData("Hod", StringComparison.CurrentCulture, 4)]
-    public void CanQueryByNotEndsWith(string search, StringComparison comparison, int expectedCount)
+    public async Task CanQueryByNotEndsWith(string search, StringComparison comparison, int expectedCount)
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !x.FirstName.EndsWith(search, comparison)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !x.FirstName.EndsWith(search, comparison)).ToListAsync());
 
         Assert.Equal(expectedCount, fromDb.Count);
         Assert.True(fromDb.All(x => !x.FirstName.EndsWith(search, comparison)));
     }
 
     [Fact]
-    public void CanQueryByIsNullOrEmpty()
+    public async Task CanQueryByIsNullOrEmpty()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => string.IsNullOrEmpty(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => string.IsNullOrEmpty(x.Nickname)).ToListAsync());
 
         Assert.Equal(2, fromDb.Count);
         Assert.True(fromDb.All(x => string.IsNullOrEmpty(x.Nickname)));
     }
 
     [Fact]
-    public void CanQueryByNotIsNullOrEmpty()
+    public async Task CanQueryByNotIsNullOrEmpty()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !string.IsNullOrEmpty(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !string.IsNullOrEmpty(x.Nickname)).ToListAsync());
 
         Assert.Equal(2, fromDb.Count);
         Assert.True(fromDb.All(x => !string.IsNullOrEmpty(x.Nickname)));
     }
 
     [Fact]
-    public void CanQueryByIsNullOrWhiteSpace()
+    public async Task CanQueryByIsNullOrWhiteSpace()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => string.IsNullOrWhiteSpace(x.Nickname)).ToListAsync());
 
         Assert.Equal(3, fromDb.Count);
         Assert.True(fromDb.All(x => string.IsNullOrWhiteSpace(x.Nickname)));
     }
 
     [Fact]
-    public void CanQueryByNotIsNullOrWhiteSpace()
+    public async Task CanQueryByNotIsNullOrWhiteSpace()
     {
         using var s = theStore.QuerySession();
-        var fromDb = s.Query<User>().Where(x => !string.IsNullOrWhiteSpace(x.Nickname)).ToList();
+        var fromDb = (await s.Query<User>().Where(x => !string.IsNullOrWhiteSpace(x.Nickname)).ToListAsync());
 
         Assert.Single(fromDb);
         Assert.True(fromDb.All(x => !string.IsNullOrWhiteSpace(x.Nickname)));
@@ -221,14 +222,14 @@ public class string_filtering: IntegrationContext
         {
             #region sample_sample-linq-equalsignorecase
 
-            query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
-            query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);
+            (await query.Query<User>().SingleAsync(x => x.UserName.EqualsIgnoreCase("abc"))).Id.ShouldBe(user1.Id);
+            (await query.Query<User>().SingleAsync(x => x.UserName.EqualsIgnoreCase("aBc"))).Id.ShouldBe(user1.Id);
 
             #endregion
 
-            query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("def")).Id.ShouldBe(user2.Id);
+            (await query.Query<User>().SingleAsync(x => x.UserName.EqualsIgnoreCase("def"))).Id.ShouldBe(user2.Id);
 
-            query.Query<User>().Any(x => x.UserName.EqualsIgnoreCase("abcd")).ShouldBeFalse();
+            (await query.Query<User>().AnyAsync(x => x.UserName.EqualsIgnoreCase("abcd"))).ShouldBeFalse();
         }
     }
 
@@ -245,7 +246,7 @@ public class string_filtering: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<User>().Single(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase))
+            (await query.Query<User>().SingleAsync(x => x.UserName.Equals("test_user", StringComparison.InvariantCultureIgnoreCase)))
                 .Id.ShouldBe(user.Id);
         }
     }

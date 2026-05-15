@@ -83,7 +83,7 @@ public class sub_class_hierarchies: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Smurf>().Count().ShouldBe(3);
+        (await theSession.Query<Smurf>().CountAsync()).ShouldBe(3);
     }
 }
 
@@ -126,7 +126,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        var list = theSession.Query<IPapaSmurf>().ToList();
+        var list = (await theSession.Query<IPapaSmurf>().ToListAsync());
         list.Count.ShouldBe(3);
         list.Count(s => s.Ability == "Invent").ShouldBe(1);
     }
@@ -159,7 +159,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Smurf>().Count().ShouldBe(3);
+        (await theSession.Query<Smurf>().CountAsync()).ShouldBe(3);
     }
 
     [Fact]
@@ -172,7 +172,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<PapaSmurf>().Count().ShouldBe(2);
+        (await theSession.Query<PapaSmurf>().CountAsync()).ShouldBe(2);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+        (await theSession.Query<PapaSmurf>().CountAsync(s => s.Ability == "Invent")).ShouldBe(1);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+        (await theSession.Query<PapaSmurf>().CountAsync(s => s.Ability == "Invent")).ShouldBe(1);
     }
 
 
@@ -234,7 +234,7 @@ public class query_with_inheritance: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
+        (await theSession.Query<IPapaSmurf>().CountAsync()).ShouldBe(3);
     }
 
     [Fact]

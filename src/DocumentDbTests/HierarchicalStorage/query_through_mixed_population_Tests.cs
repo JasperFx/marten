@@ -26,10 +26,10 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
         await theStore.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(AdminUser));
 
         using var session = theStore.IdentitySession();
-        session.Query<User>().Any().ShouldBeTrue();
-        session.Query<SuperUser>().Any().ShouldBeTrue();
+        (await session.Query<User>().AnyAsync()).ShouldBeTrue();
+        (await session.Query<SuperUser>().AnyAsync()).ShouldBeTrue();
 
-        session.Query<AdminUser>().Any().ShouldBeFalse();
+        (await session.Query<AdminUser>().AnyAsync()).ShouldBeFalse();
     }
 
 
@@ -138,10 +138,10 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     }
 
     [Fact]
-    public void query_for_only_a_subclass_with_where_clause()
+    public async Task query_for_only_a_subclass_with_where_clause()
     {
         using var session = theStore.IdentitySession();
-        session.Query<AdminUser>().Where(x => x.FirstName == "Eric").Single()
+        (await session.Query<AdminUser>().Where(x => x.FirstName == "Eric").SingleAsync())
             .Id.ShouldBe(admin2.Id);
     }
 }

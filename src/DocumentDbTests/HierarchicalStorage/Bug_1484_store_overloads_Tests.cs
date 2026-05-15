@@ -16,7 +16,7 @@ public class Bug_1484_store_overloads_Tests: end_to_end_document_hierarchy_usage
         session.Store(admin1);
         await session.SaveChangesAsync();
 
-        session.Query<AdminUser>().Count().ShouldBe(1);
+        (await session.Query<AdminUser>().CountAsync()).ShouldBe(1);
     }
 
     [Fact]
@@ -26,7 +26,7 @@ public class Bug_1484_store_overloads_Tests: end_to_end_document_hierarchy_usage
         session.Store(admin1, admin2);
         await session.SaveChangesAsync();
 
-        session.Query<AdminUser>().Count().ShouldBe(2);
+        (await session.Query<AdminUser>().CountAsync()).ShouldBe(2);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class Bug_1484_store_overloads_Tests: end_to_end_document_hierarchy_usage
         session.Store(new[] { admin1, admin2 });
         await session.SaveChangesAsync();
 
-        session.Query<AdminUser>().Count().ShouldBe(2);
+        (await session.Query<AdminUser>().CountAsync()).ShouldBe(2);
     }
 
     [Fact]
@@ -46,6 +46,6 @@ public class Bug_1484_store_overloads_Tests: end_to_end_document_hierarchy_usage
         session.Store(new[] { admin1, admin2 }.AsEnumerable());
         await session.SaveChangesAsync();
 
-        session.Query<AdminUser>().Count().ShouldBe(2);
+        (await session.Query<AdminUser>().CountAsync()).ShouldBe(2);
     }
 }

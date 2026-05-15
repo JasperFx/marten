@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.HierarchicalStorage;
 
@@ -65,7 +66,7 @@ public class end_to_end_document_hierarchy_with_interface_tests: OneOffConfigura
 
         using (var session = theStore.LightweightSession())
         {
-            session.Query<IPolicy>().Single(p => p.VersionId == policy.VersionId)
+            (await session.Query<IPolicy>().SingleAsync(p => p.VersionId == policy.VersionId))
                 .VersionId.ShouldBe(policy.VersionId);
         }
     }
