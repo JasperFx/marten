@@ -7,12 +7,13 @@ using Npgsql;
 using Shouldly;
 using Weasel.Core;
 using Weasel.Postgresql;
+using Xunit;
 
 namespace DocumentDbTests.Bugs
 {
     public class Bug_1982_custom_index_with_include : BugIntegrationContext
     {
-        [PgVersionTargetedFact(MinimumVersion = "11.0")]
+        [Fact]
         public async Task can_migrate_table_with_index_include_clause_from_v3_to_v4()
         {
             StoreOptions(opts =>

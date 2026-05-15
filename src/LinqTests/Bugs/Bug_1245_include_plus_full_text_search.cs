@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten;
 using Marten.Testing.Harness;
 using Shouldly;
+using Xunit;
 
 namespace LinqTests.Bugs;
 
@@ -36,7 +37,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
         }
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task can_do_include_with_full_text_search()
     {
         var term = "content";
@@ -62,7 +63,7 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
         query.ShouldNotBeNull();
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task can_do_include_with_full_text_search_async()
     {
         var term = "content";

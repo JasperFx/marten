@@ -30,7 +30,7 @@ public class Bug_2018_fts_string_list: BugIntegrationContext
             .UseOptimisticConcurrency(true));
     }
 
-    [PgVersionTargetedFact(MinimumVersion = "10.0")]
+    [Fact]
     public async Task can_do_index_with_full_text_search()
     {
         using var session = theStore.LightweightSession();
