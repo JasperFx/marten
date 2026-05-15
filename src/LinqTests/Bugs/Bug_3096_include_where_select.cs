@@ -32,14 +32,14 @@ public class Bug_3096_include_where_select : IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        var issues = query
+        var issues =(await  query
             .Query<Issue>()
             .Where(i => i.Title.Contains("ok"))
             .Include(x => x.AssigneeId, dict)
             .Select(i => new { i.Id, i.Title, })
-            .ToArray();
+            .ToListAsync());
 
-        issues.Length.ShouldBe(1);
+        issues.Count.ShouldBe(1);
 
         dict.Count.ShouldBe(1);
         dict.ContainsKey(user1.Id).ShouldBeTrue();

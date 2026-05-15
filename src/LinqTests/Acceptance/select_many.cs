@@ -593,12 +593,12 @@ public class select_many : IntegrationContext
 
 
 
-        var loaded = query.Query<TargetGroup>()
+        var loaded = (await query.Query<TargetGroup>()
             .SelectMany(x => x.Targets)
             .Where(x => x.Color == Colors.Blue)
             .SelectMany(x => x.Children)
             .OrderBy(x => x.Number)
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Id).ToArray();
 
         /*

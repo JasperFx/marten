@@ -6,6 +6,7 @@ using Marten.Testing.Harness;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -32,9 +33,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -61,9 +62,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -90,9 +91,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -119,9 +120,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -144,9 +145,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -169,9 +170,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
         }
 
         using (var session = theStore.QuerySession())
-        {
+        {(await 
             session.Query<Target>().Where(x => x.Number == 1)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1);
         }
@@ -191,9 +192,9 @@ public class Bug_1155_null_duplicate_fields: BugIntegrationContext
             }
         });
 
-        using var session = theStore.QuerySession();
+        using var session = theStore.QuerySession();(await 
         session.Query<Target>().Where(x => x.Number == 1)
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1);
     }

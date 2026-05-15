@@ -85,10 +85,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();(await 
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
@@ -175,10 +175,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();(await 
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }

@@ -123,9 +123,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         #region sample_any-query-through-child-collections
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6))
-            .ToArray();
+            .ToListAsync());
 
         #endregion
 
@@ -142,9 +142,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(c => !string.IsNullOrEmpty(c.NullableString)))
-            .ToArray();
+            .ToListAsync());
 
         results
             .Select(x => x.Id)
@@ -159,9 +159,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(c => string.IsNullOrWhiteSpace(c.NullableString)))
-            .ToArray();
+            .ToListAsync());
 
         var ids = results.Select(x => x.Id).ToArray();
 
@@ -178,10 +178,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         #region sample_any-query-through-child-collection-with-and
 
-        var results = theSession
+        var results =(await  theSession
             .Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
-            .ToArray();
+            .ToListAsync());
 
         #endregion
 

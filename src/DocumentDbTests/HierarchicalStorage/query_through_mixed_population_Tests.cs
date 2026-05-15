@@ -121,11 +121,11 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     }
 
     [Fact]
-    public void query_against_all_with_where_clause()
+    public async Task query_against_all_with_where_clause()
     {
-        using var session = theStore.IdentitySession();
-        session.Query<User>().OrderBy(x => x.FirstName).Where(x => x.UserName.StartsWith("A"))
-            .ToArray().Select(x => x.Id)
+        await using var session = theStore.IdentitySession();
+        (await session.Query<User>().OrderBy(x => x.FirstName).Where(x => x.UserName.StartsWith("A"))
+            .ToListAsync()).Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, user1.Id);
     }
 

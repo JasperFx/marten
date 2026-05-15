@@ -363,8 +363,8 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
             #region sample_any_tenant
 
             // query data across all tenants
-            var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
-                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
+                .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 
             #endregion
 
@@ -390,8 +390,8 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
 
         using (var query = theStore.QuerySession())
         {
-            var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag && x.String != null)
-                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag && x.String != null)
+                .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 
             actual.ShouldHaveTheSameElementsAs(expected);
         }

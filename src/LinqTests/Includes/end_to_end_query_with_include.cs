@@ -410,17 +410,17 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        var issues = query.Query<Issue>()
+        var issues =(await  query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, list)
             .Where(x => x.AssigneeId.HasValue)
-            .ToArray();
+            .ToListAsync());
 
         list.Count.ShouldBe(2);
 
         list.Any(x => x.Id == user1.Id).ShouldBeTrue();
         list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(3);
+        issues.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -530,15 +530,15 @@ public class end_to_end_query_with_include: IntegrationContext
 
 
 
-        var ids = query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
+        var ids =(await  query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
             .Where(x => x.Status == "Done")
-            .Select(x => x.Number).ToArray();
+            .Select(x => x.Number).ToListAsync());
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
         dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-        ids.Length.ShouldBe(2);
+        ids.Count.ShouldBe(2);
         ids.ShouldContain(1);
         ids.ShouldContain(2);
     }
@@ -562,16 +562,16 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        var issues = query
+        var issues =(await  query
             .Query<Issue>()
             .Include(x => x.AssigneeId, dict)
-            .Where(x => x.AssigneeId.HasValue).ToArray();
+            .Where(x => x.AssigneeId.HasValue).ToListAsync());
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
         dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(3);
+        issues.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -987,12 +987,12 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<string, IList<SchoolUser>>();
 
-        var classes = query
+        var classes =(await  query
             .Query<Classroom>()
             .Include(dict).On(c => c.RoomCode, u => u.HomeRoom)
-            .ToArray();
+            .ToListAsync());
 
-        classes.Length.ShouldBe(2);
+        classes.Count.ShouldBe(2);
         dict.Count.ShouldBe(2);
         dict.ContainsKey(class1.RoomCode).ShouldBeTrue();
         dict.ContainsKey(class2.RoomCode).ShouldBeTrue();

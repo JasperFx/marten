@@ -72,8 +72,8 @@ public class identity_map_mechanics: IntegrationContext
     public async Task query_runs_through_identity_map()
     {
         await using var session = await identitySessionWithData();
-        var users = session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .ToArray();
+        var users =(await  session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+            .ToListAsync());
 
         users[0].ShouldBeSameAs(user3);
         users[1].ShouldBeSameAs(user2);
