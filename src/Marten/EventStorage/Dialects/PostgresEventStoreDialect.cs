@@ -269,12 +269,10 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         // added via `events.Metadata.X` config objects, not as distinct
         // CLR types. Switching on Name is the stable contract.
         //
-        // For the v9 first cut this is intentionally narrow: SequenceColumn
-        // (always present, server-set via nextval, read-back path) is the
-        // only binder wired in. Any other non-core column on the SQL prefix
-        // throws NotSupportedException so we never silently mismatch
-        // parameter count vs column count. As each metadata axis lands its
-        // binder (#4410 follow-ups), the switch grows.
+        // As each metadata axis lands its binder (#4416), its case here flips
+        // from default-throw to a real binder. Any column name still in the
+        // default branch throws NotSupportedException so we fail loudly
+        // rather than silently mismatch parameter count vs column count.
         var binders = new List<IEventMetadataBinder>(8);
 
         foreach (var column in orderedColumns)
@@ -288,21 +286,38 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     binders.Add(new SequenceColumnBinder());
                     break;
 
-                // TODO (#4410): per-binder cases as the binders land:
+                case "causation_id":
+                    binders.Add(new CausationIdColumnBinder());
+                    break;
+
+                case "correlation_id":
+                    binders.Add(new CorrelationIdColumnBinder());
+                    break;
+
+                case "user_name":
+                    binders.Add(new UserNameColumnBinder());
+                    break;
+
+                case "headers":
+                    // Write-side is wired (HeadersColumnBinder serializes via
+                    // session.Serializer.ToJson). Read-side still throws on
+                    // HeadersColumn.ReadValueSync because the IEventTableColumn
+                    // read surface doesn't yet thread ISerializer. Tracked as
+                    // #4416 part 2.
+                    binders.Add(new HeadersColumnBinder());
+                    break;
+
+                // TODO (#4416): remaining binders:
                 //   "timestamp"     → TimestampColumnBinder (server-set via now() in some modes; read-back capable)
-                //   "headers"       → HeadersColumnBinder
-                //   "causation_id"  → CausationIdColumnBinder
-                //   "correlation_id"→ CorrelationIdColumnBinder
-                //   "user_name"     → UserNameColumnBinder
                 //   "tags"          → TagsColumnBinder (HSTORE; Postgres-specific)
                 //   "is_skipped"    → IsSkippedColumnBinder (depends on EnableEventSkippingInProjectionsOrSubscriptions)
 
                 default:
                     throw new NotSupportedException(
                         $"No closed-shape Rich-mode binder for the '{column.Name}' column. " +
-                        $"This event-store configuration (e.g., headers / causation / correlation / username / tags / event-skipping) " +
+                        $"This event-store configuration (e.g., tags / event-skipping) " +
                         $"isn't covered yet by the closed-shape hierarchy — disable the relevant " +
-                        $"StoreOptions.Events.Metadata or DcbStorageMode flag, or wait for the binder to land per #4410.");
+                        $"StoreOptions.Events.Metadata or DcbStorageMode flag, or wait for the binder to land per #4416.");
             }
         }
 
