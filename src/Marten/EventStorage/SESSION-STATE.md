@@ -34,9 +34,11 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Landed so far (8 commits on the branch)
+## Landed so far (10 commits on the branch)
 
 ```
+342806b52  [#4412 #4413] W4 Rich write-path: InsertStream + UpdateStreamVersion + AppendEvent end-to-end
+62f1dcbbe  [#4412] W4: SESSION-STATE — QueryForStream done, InsertStream/UpdateStreamVersion next
 6dfcd8137  [#4412] W4: closed-shape StreamStateQueryHandler for Rich mode
 1a7671daf  [#4411] W4: update SESSION-STATE for compaction-resume
 f97840458  [#4411] W4 read-side: simplify reader-columns wiring + add round-trip test
@@ -47,17 +49,40 @@ a8d829b1d  [#4410] W4: dialect owns descriptor construction; Rich SQL ported
 <spike commit, originally on spike/W4-event-storage-hierarchy>
 ```
 
-The build is clean (0 errors). The closed-shape **read** path is wired
-end-to-end and covered by `Bug_4411_closed_shape_read_side` (two test
-methods, green on net9.0 + net10.0). The **write** path is still stubbed
-(RichAppendEventOperation is sample-only; InsertStream / UpdateStreamVersion /
-QueryForStream throw NotImplementedException — these are #4412 / #4413 /
-#4414). The closed-shape adapter can therefore be used to read from a
-codegen-written events table, but cannot yet replace codegen end-to-end.
+The build is clean (0 errors). The closed-shape **Rich-mode write path**
+is now wired end-to-end. With:
 
-Pre-existing test failures: 4 cases of
-`EventSourcingTests.archiving_events.prevent_append_*` fail on the
-parent commit too (verified by checkout-and-rerun). Not from W4.
+```csharp
+opts.EventGraph.UseClosedShapeStorage = true;
+opts.Events.AppendMode = EventAppendMode.Rich;
+```
+
+`StartStream → SaveChangesAsync → FetchStreamStateAsync → FetchStreamAsync`
+round-trips identically to the codegen path for both Guid and string
+identity (no metadata enabled). Covered by
+`Bug_4412_closed_shape_rich_write_path` (two test methods, green on
+net9.0 + net10.0). The previous `Bug_4411_closed_shape_read_side` also
+remains green.
+
+What still throws:
+* Rich + `QuickAppendEventWithVersion` — needs a `SequenceServerSideBinder`
+  + `nextval()` SQL fragment + RETURNING read-back. Lands with #4413
+  follow-up.
+* Quick / QuickWithServerTimestamps modes — their write paths are still
+  stubbed (#4414 / #4415).
+* `EnableStrictStreamIdentityEnforcement = true` — CTE variant rejects
+  at descriptor-build time. Port lands as a follow-up of #4412.
+* Any Rich-mode `events.Metadata.X` enabled (`headers`, `causation_id`,
+  `correlation_id`, `user_name`, `tags`, `is_skipped`) — `SelectRichMetadataBinders`
+  throws NotSupportedException for those column names. #4416.
+
+Pre-existing test failures (verified by parent-commit checkout):
+* 4 cases of `archiving_events.prevent_append_*`
+* 2 cases of `Bug_4246_enable_bigint_events.{bigint_events_is_false_by_default,
+  function_uses_int_when_flag_is_false}` — test asserts a default that was
+  flipped in v9.
+
+Neither set was caused by W4.
 
 ## Files
 
@@ -72,10 +97,14 @@ src/Marten/EventStorage/
 ├── ClosedShapeEventDocumentStorage.cs          ← EventDocumentStorage adapter
 ├── Dialects/
 │   └── PostgresEventStoreDialect.cs           ← Postgres impl
+├── Querying/
+│   └── ClosedShapeStreamStateQueryHandler.cs   ← #4412 QueryForStream
 ├── Rich/
 │   ├── RichEventStorage.cs
 │   ├── RichEventStorageDescriptor.cs
-│   └── RichAppendEventOperation.cs            ← sample operation
+│   ├── RichAppendEventOperation.cs            ← #4413 hardened
+│   ├── RichInsertStreamOperation.cs           ← #4412
+│   └── RichUpdateStreamVersionOperation.cs    ← #4412
 ├── Quick/
 │   ├── QuickEventStorage.cs
 │   ├── QuickEventStorageDescriptor.cs
@@ -115,46 +144,58 @@ Also touched outside the new directory:
 * `Bug_4411_closed_shape_read_side` round-trip test passes on
   net9.0 + net10.0.
 
-**In progress:** [#4412](https://github.com/JasperFx/marten/issues/4412).
-QueryForStream is **done** (commit `6dfcd8137`):
+#4412 and #4413 (Rich-mode write path) are **landed** (commit
+`342806b52`):
 
-* `ClosedShapeStreamStateQueryHandler<TId>` under
-  `EventStorage/Querying/`. Composes the descriptor's
-  `StreamStateSelectSql` with a per-call `where id = $1 [and tenant_id = $2]`.
-  Row read is inherited from the base — same `ISelector<StreamState>`
-  definition site as codegen.
-* `RichEventStorageDescriptor.IsTenancyConjoined` (init-only) so the
-  storage method doesn't need an EventGraph reference.
-* `RichEventStorage<TId>.QueryForStream` wired up.
-* Quick / QuickWithServerTimestamps still throw — they'll get the same
-  wiring once their write paths exist (#4414 / #4415); wiring them now
-  would just add unreachable code.
+* `RichInsertStreamOperation` + `RichUpdateStreamVersionOperation` —
+  minimal `IStorageOperation` shells delegating to
+  descriptor-installed `Action<ICommandBuilder, StreamAction>` closures.
+* `PostgresEventStoreDialect.BuildInsertStreamCommandConfigurer` —
+  four-way closure (Guid/string × conjoined/single). Strict-identity
+  CTE variant rejects at descriptor-build time (follow-up).
+* `BuildUpdateStreamVersionCommandConfigurer` — single closure with
+  conditional tenant-id segment.
+* `RichAppendEventOperation` rewritten with correct column ordering
+  matching the dialect's SQL prefix; Guid + string identity supported
+  via `IsGuidStreamIdentity` descriptor flag; `timestamp` inlined as a
+  core column.
+* `SequenceColumnBinder` fixed for Rich/Full mode (binds
+  `Event.Sequence` as a parameter; the QuickWithVersion server-side
+  variant lands later).
+* `RichEventStorage<TId>.{InsertStream, UpdateStreamVersion, AppendEvent,
+  QueryForStream}` all wired.
+* `Bug_4412_closed_shape_rich_write_path` proves end-to-end round-trip
+  for both Guid and string identity.
 
-**Still to do in #4412** — paired with the Rich AppendEventOperation
-port (#4413) because none of them are reachable end-to-end on their
-own:
+**Next concrete unit of work:** [#4414 / #4415](https://github.com/JasperFx/marten/issues/4414)
+— Quick / QuickWithServerTimestamps mode hardening. Quick paths use the
+`mt_quick_append_events` Postgres function (returns a long[] of seq + version
+pairs per event) rather than per-event inserts. The hand-written sample
+ops in `EventStorage/Quick/` + `EventStorage/QuickWithServerTimestamps/`
+are sketches; the SQL is TODO-stubbed on the dialect. Approach:
 
-1. Port `EventDocumentStorageGenerator.buildInsertStream` → operation
-   under `EventStorage/Rich/RichInsertStreamOperation.cs` plus dialect
-   SQL template (replaces `BuildInsertStreamSql` TODO stub). Two SQL
-   shapes: vanilla insert vs CTE-with-identity-enforcement. Each has a
-   tenancy-conjoined variant. Per-stream parameter list driven by
-   `StreamsTable.Columns.OfType<IStreamTableColumn>().Where(x => x.Writes)`
-   — needs IStreamTableColumn.WriteValue ports analogous to #4411's
-   IEventTableColumn.ReadValueSync. Estimate: 250–400 LOC of porting +
-   per-tenancy-style integration tests.
-2. Port `EventDocumentStorageGenerator.buildUpdateStreamVersion` →
-   simpler — single SQL shape `update mt_streams set version = $1
-   where id = $2 and version = $3 [and tenant_id = $4] returning version`.
-3. Verify end-to-end by flipping `UseClosedShapeStorage = true` in a
-   new test mirroring `Bug_4411_*` and asserting a full
-   StartStream → SaveChanges → FetchStreamStateAsync → FetchStreamAsync
-   round trip works.
+1. Port `EventDocumentStorageGenerator.buildQuickAppendOperation` →
+   composes `select <schema>.mt_quick_append_events(<args>)` with a
+   configuration-aware argument list. The `serverTimestamps` flag
+   toggles inclusion of the per-batch timestamp array.
+2. Port the array-parameter binding helpers from
+   `QuickAppendEventsOperationBase` so the operation can build per-column
+   `NpgsqlParameter[]` arrays from the stream's `Events` list.
+3. Port the Postprocess loop that walks the returned long[] and assigns
+   `Sequence` + (for QuickWithServerTimestamps) `Timestamp` back onto
+   each event.
+4. Wire `InsertStream` / `UpdateStreamVersion` / `QueryForStream` into
+   `QuickEventStorage` / `QuickWithServerTimestampsEventStorage` —
+   identical SQL shape to Rich, so the dialect closures can be reused
+   (extract a shared helper).
+5. Extend `Bug_4412_closed_shape_rich_write_path` (rename, or new
+   `Bug_4414_*`) to cover Quick and QuickWithServerTimestamps modes.
 
-**After #4412 lands** the natural sequence is #4413 → #4414 → #4415,
-then the metadata-binder follow-ups (#4416 — including HeadersColumn
-serializer threading) and the configuration-matrix sweep (#4417). See
-the comment on #4410 for the full dependency graph.
+**Alternative:** if the Rich path is the priority for v9 ship, the
+metadata-binder follow-ups (#4416) — wiring `causation_id`,
+`correlation_id`, `headers`, `user_name`, `tags`, `is_skipped`, and
+threading the serializer for HeadersColumn read-back — are independent
+of the Quick paths and could land next.
 
 ## Open questions still alive
 
