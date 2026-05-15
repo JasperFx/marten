@@ -373,6 +373,21 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             Database = await Options.Tenancy.DescribeDatabasesAsync(token).ConfigureAwait(false)
         };
 
+        // MaxEventSequence is a single-valued descriptor; in multi-database setups
+        // the per-database max isn't representable here, so leave it null.
+        if (Options.Tenancy.Cardinality == DatabaseCardinality.Single)
+        {
+            try
+            {
+                var defaultDb = (MartenDatabase)Options.Tenancy.Default.Database;
+                usage.MaxEventSequence = await defaultDb.FetchMaxEventSequenceAsync(token).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // Storage may not exist yet (no events table) — leave null.
+            }
+        }
+
         Options.Projections.Describe(usage, this);
 
         foreach (var eventMapping in Options.EventGraph.AllEvents())

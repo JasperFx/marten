@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Core;
+using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Events.Daemon;
 using Marten.Testing;
@@ -141,5 +144,48 @@ public class HighWaterAgentTests: DaemonContext
             .CreateCommand($"delete from {theStore.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(:ids)")
             .With("ids", ids, NpgsqlDbType.Bigint | NpgsqlDbType.Array)
             .ExecuteNonQueryAsync();
+    }
+
+    [Fact]
+    public async Task skipped_shard_state_carries_skipped_events_count()
+    {
+        NumberOfStreams = 50;
+        await PublishSingleThreaded();
+
+        var gaps = new[] { NumberOfEvents - 20, NumberOfEvents - 8, NumberOfEvents - 3 };
+        await deleteEvents(gaps);
+
+        theStore.Options.Projections.StaleSequenceThreshold = 1.Seconds();
+
+        using var agent = await StartDaemon();
+
+        var observed = new ConcurrentBag<ShardState>();
+        using var subscription = agent.Tracker.Subscribe(new CapturingObserver(state =>
+        {
+            if (state.ShardName == ShardState.HighWaterMark && state.Action == ShardAction.Skipped)
+            {
+                observed.Add(state);
+            }
+        }));
+
+        await agent.Tracker.WaitForHighWaterMark(NumberOfEvents, 10.Seconds());
+        await agent.StopAllAsync();
+
+        observed.ShouldNotBeEmpty();
+        foreach (var state in observed)
+        {
+            state.SkippedEventsCount.HasValue.ShouldBeTrue();
+            state.SkippedEventsCount!.Value.ShouldBe(state.Sequence - state.PreviousGoodMark);
+            state.SkippedEventsCount.Value.ShouldBeGreaterThan(0);
+        }
+    }
+
+    private sealed class CapturingObserver: IObserver<ShardState>
+    {
+        private readonly Action<ShardState> _onNext;
+        public CapturingObserver(Action<ShardState> onNext) => _onNext = onNext;
+        public void OnCompleted() { }
+        public void OnError(Exception error) { }
+        public void OnNext(ShardState value) => _onNext(value);
     }
 }

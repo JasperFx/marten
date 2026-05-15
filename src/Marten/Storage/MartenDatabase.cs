@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
 using JasperFx.Events.Daemon;
+using Marten.Events.Daemon.HighWater;
 using Marten.Internal;
 using Marten.Schema;
 using Marten.Schema.Identity.Sequences;
@@ -40,6 +41,10 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
 
         Tracker = new ShardStateTracker(options.LogFactory?.CreateLogger<MartenDatabase>() ?? options.DotNetLogger ??
             NullLogger<MartenDatabase>.Instance);
+
+        // Subscribe before any downstream observer (daemon, CritterWatch) so the
+        // Skipped state's SkippedEventsCount is populated in-place before they see it.
+        Tracker.Subscribe(new SkippedEventsCountObserver());
     }
 
     public StoreOptions Options { get; }
