@@ -42,19 +42,6 @@ public abstract class MultiStreamProjection<TDoc, TId>: JasperFxMultiStreamProje
         // Nothing right now.
     }
 
-    /// <summary>
-    ///     If more than 0 (the default), this is the maximum number of aggregates
-    ///     that will be cached in a 2nd level, most recently used cache during async
-    ///     projection. Use this to potentially improve async projection throughput
-    /// </summary>
-    [Obsolete("Prefer Options.CacheLimitPerTenant. This will be removed in Marten 9")]
-    [JasperFxIgnore]
-    public int CacheLimitPerTenant
-    {
-        get => Options.CacheLimitPerTenant;
-        set => Options.CacheLimitPerTenant = value;
-    }
-
     [JasperFxIgnore]
     public IEnumerable<string> ValidateConfiguration(StoreOptions options)
     {

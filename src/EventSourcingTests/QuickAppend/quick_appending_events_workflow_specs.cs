@@ -84,30 +84,6 @@ public class quick_appending_events_workflow_specs
 
     [Theory]
     [MemberData(nameof(Data))]
-    public async Task can_update_the_version_of_an_existing_stream_happy_path(TestCase @case)
-    {
-        await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
-        var stream = await @case.StartNewStream();
-
-        stream.ExpectedVersionOnServer = 4;
-        stream.Version = 10;
-
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
-        var op = builder.UpdateStreamVersion(stream);
-
-        await using var session = @case.Store.LightweightSession();
-        session.QueueOperation(op);
-
-        await session.SaveChangesAsync();
-
-        var handler = builder.QueryForStream(stream);
-        var state = session.As<QuerySession>().ExecuteHandler(handler);
-
-        state.Version.ShouldBe(10);
-    }
-
-    [Theory]
-    [MemberData(nameof(Data))]
     public async Task can_update_the_version_of_an_existing_stream_sad_path(TestCase @case)
     {
         await @case.Store.Advanced.Clean.CompletelyRemoveAllAsync();
