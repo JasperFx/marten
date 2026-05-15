@@ -200,7 +200,7 @@ public class
         //GetAll
         using (var session = theStore.LightweightSession())
         {
-            var parties = session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToArray();
+            var parties = (await session.Events.QueryRawEventDataOnly<QuestPartyWithStringIdentifier>().ToListAsync());
             foreach (var party in parties)
             {
                 party.ShouldNotBeNull();

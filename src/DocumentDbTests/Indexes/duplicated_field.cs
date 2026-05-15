@@ -214,7 +214,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         var thirdTarget = targets.ElementAt(2);
 
-        var results = theSession.Query<Target>().Where(x => x.Inner.Number == thirdTarget.Inner.Number).ToArray();
+        var results = (await theSession.Query<Target>().Where(x => x.Inner.Number == thirdTarget.Inner.Number).ToListAsync());
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
     }
@@ -233,7 +233,7 @@ public class duplicated_field: OneOffConfigurationsContext
 
         var thirdTarget = targets.ElementAt(2);
 
-        var results = theSession.Query<Target>().Where(x => x.Inner.Color == thirdTarget.Inner.Color).ToArray();
+        var results = (await theSession.Query<Target>().Where(x => x.Inner.Color == thirdTarget.Inner.Color).ToListAsync());
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
     }

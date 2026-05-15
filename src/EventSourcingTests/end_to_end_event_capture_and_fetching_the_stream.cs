@@ -212,8 +212,8 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var parties = session.Query<QuestParty>().ToArray();
-                parties.Length.ShouldBeLessThanOrEqualTo(index);
+                var parties = (await session.Query<QuestParty>().ToListAsync());
+                parties.Count.ShouldBeLessThanOrEqualTo(index);
             }
 
             //This SaveChanges will fail with missing method (ro collection configured?)
@@ -302,7 +302,7 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
+    public async Task capture_events_to_a_non_existing_stream_and_fetch_the_events_back(TenancyStyle tenancyStyle,
         string[] tenants)
     {
         var store = InitStore(tenancyStyle);

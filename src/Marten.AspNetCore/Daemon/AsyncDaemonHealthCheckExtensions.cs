@@ -167,7 +167,7 @@ public static class AsyncDaemonHealthCheckExtensions
                 return HealthCheckResult.Healthy("Healthy");
             }
 
-            var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName)).ToArray();
+            var projectionMarks = allProgress.Where(x => !string.Equals("HighWaterMark", x.ShardName));
 
             var projectionsSequences = projectionMarks.Where(x => projectionsToCheck.Contains(x.ShardName))
                 .Select(x => new { x.ShardName, x.Sequence })

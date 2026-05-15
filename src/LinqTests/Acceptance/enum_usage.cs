@@ -27,7 +27,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -47,7 +47,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -67,7 +67,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -91,7 +91,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -115,7 +115,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -139,7 +139,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -163,7 +163,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theStore.BulkInsertAsync(targets);
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }
@@ -187,7 +187,7 @@ public class enum_usage: OneOffConfigurationsContext
 
         await theStore.BulkInsertAsync(targets);
 
-        theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Color == Colors.Blue).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 4, 7);
     }

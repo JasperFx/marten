@@ -35,14 +35,14 @@ public class Bug_1219_ordering_by_attributes : IntegrationContext
 
         using var query = theStore.QuerySession();
 
-        var cars = query.Query<Car>().OrderBy(x => x.Attributes["color"]).ToArray();
+        var cars = (await query.Query<Car>().OrderBy(x => x.Attributes["color"]).ToListAsync());
 
         cars[0].Id.ShouldBe(car3.Id);
         cars[1].Id.ShouldBe(car2.Id);
         cars[2].Id.ShouldBe(car4.Id);
         cars[3].Id.ShouldBe(car1.Id);
 
-        var cars2 = query.Query<Car>().OrderBy(x => x.Attributes["anumber"]).ToArray();
+        var cars2 = (await query.Query<Car>().OrderBy(x => x.Attributes["anumber"]).ToListAsync());
         cars2[0].Id.ShouldBe(car2.Id);
     }
 

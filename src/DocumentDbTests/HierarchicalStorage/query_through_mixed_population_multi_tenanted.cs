@@ -36,10 +36,10 @@ public class query_through_mixed_population_multi_tenanted: OneOffConfigurations
     }
 
     [Fact]
-    public void query_tenanted_data_with_any_tenant_predicate()
+    public async Task query_tenanted_data_with_any_tenant_predicate()
     {
         using var session = theStore.QuerySession();
-        var users = session.Query<AdminUser>().Where(u => LinqExtensions.AnyTenant<AdminUser>(u)).ToArray();
-        users.Length.ShouldBeGreaterThan(0);
+        var users = (await session.Query<AdminUser>().Where(u => LinqExtensions.AnyTenant<AdminUser>(u)).ToListAsync());
+        users.Count.ShouldBeGreaterThan(0);
     }
 }

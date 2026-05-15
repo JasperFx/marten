@@ -495,7 +495,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -510,7 +510,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -530,7 +530,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -549,7 +549,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -568,7 +568,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -585,7 +585,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -611,7 +611,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -628,7 +628,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -648,7 +648,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
+        (await theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
         // Or without any predicate
@@ -728,7 +728,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -745,7 +745,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 

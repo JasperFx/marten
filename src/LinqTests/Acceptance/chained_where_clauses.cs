@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Acceptance;
 
@@ -22,7 +23,7 @@ public class chained_where_clauses : IntegrationContext
         theSession.Store(target5);
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number == 1).Where(x => x.String == "Foo").ToArray()
+        (await theSession.Query<Target>().Where(x => x.Number == 1).Where(x => x.String == "Foo").ToListAsync())
             .Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(target1.Id, target4.Id);
     }
@@ -42,7 +43,7 @@ public class chained_where_clauses : IntegrationContext
         theSession.Store(target5);
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number == 1).Where(x => x.String == "Foo").Where(x => x.Long == 5).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Number == 1).Where(x => x.String == "Foo").Where(x => x.Long == 5).ToListAsync())
             .Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(target1.Id);
     }

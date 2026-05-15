@@ -121,7 +121,7 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public void capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(TenancyStyle tenancyStyle,
+    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(TenancyStyle tenancyStyle,
         string[] tenants)
     {
         var store = ConfigureStore(tenancyStyle);
@@ -197,8 +197,8 @@ public class quick_append_event_capture_and_fetching_the_stream: OneOffConfigura
         {
             using (var session = store.LightweightSession(tenantId))
             {
-                var parties = session.Query<QuestParty>().ToArray();
-                parties.Length.ShouldBeLessThanOrEqualTo(index);
+                var parties = (await session.Query<QuestParty>().ToListAsync());
+                parties.Count.ShouldBeLessThanOrEqualTo(index);
             }
 
             //This SaveChanges will fail with missing method (ro collection configured?)

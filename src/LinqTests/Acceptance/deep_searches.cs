@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Schema;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Acceptance;
 
@@ -19,7 +20,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Number == 2).ToArray().OrderBy(x => x.Inner.String)
+        (await theSession.Query<Target>().Where(x => x.Inner.Number == 2).ToListAsync()).OrderBy(x => x.Inner.String)
             .Select(x => x.Inner.String)
             .ShouldHaveTheSameElementsAs("Lindsey", "Max");
     }
@@ -34,7 +35,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Inner.Long == 1).ToArray().Select(x => x.Number)
+        (await theSession.Query<Target>().Where(x => x.Inner.Inner.Long == 1).ToListAsync()).Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 3);
     }
 
@@ -49,7 +50,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Number == 2).OrderBy(x => x.Inner.String).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Inner.Number == 2).OrderBy(x => x.Inner.String).ToListAsync())
             .Select(x => x.Inner.String)
             .ShouldHaveTheSameElementsAs("Lindsey", "Max");
     }
@@ -71,7 +72,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Number == 2).ToArray().OrderBy(x => x.Inner.String)
+        (await theSession.Query<Target>().Where(x => x.Inner.Number == 2).ToListAsync()).OrderBy(x => x.Inner.String)
             .Select(x => x.Inner.String)
             .ShouldHaveTheSameElementsAs("Lindsey", "Max");
     }
@@ -91,7 +92,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Inner.Long == 1).ToArray().Select(x => x.Number)
+        (await theSession.Query<Target>().Where(x => x.Inner.Inner.Long == 1).ToListAsync()).Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 3);
     }
 
@@ -111,7 +112,7 @@ public class deep_searches: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Inner.Number == 2).OrderBy(x => x.Inner.String).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Inner.Number == 2).OrderBy(x => x.Inner.String).ToListAsync())
             .Select(x => x.Inner.String)
             .ShouldHaveTheSameElementsAs("Lindsey", "Max");
     }

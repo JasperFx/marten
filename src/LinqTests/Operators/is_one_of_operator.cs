@@ -157,9 +157,9 @@ public class is_one_of_operator: IntegrationContext
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
-        var found = theSession.Query<Target>().Where(isOneOf(validValues)).ToArray();
+        var found = (await theSession.Query<Target>().Where(isOneOf(validValues)).ToListAsync());
 
-        found.Length.ShouldBeLessThan(100);
+        found.Count.ShouldBeLessThan(100);
 
         var expected = targets
             .Where(x => validValues.Contains(select(x)))
@@ -203,7 +203,7 @@ public class is_one_of_operator: IntegrationContext
 
         var validValues = targets.Select(select).Distinct().Take(3).ToArray();
 
-        var found = theSession.Query<Target>().Where(notIsOneOf(validValues)).ToArray();
+        var found = (await theSession.Query<Target>().Where(notIsOneOf(validValues)).ToListAsync());
 
         var expected = targets
             .Where(x => !validValues.Contains(select(x)))
@@ -242,9 +242,9 @@ public class is_one_of_operator: IntegrationContext
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 
-        var found = theSession.Query<Target>().Where(isOneOf(validValues)).ToArray();
+        var found = (await theSession.Query<Target>().Where(isOneOf(validValues)).ToListAsync());
 
-        found.Length.ShouldBeLessThan(100);
+        found.Count.ShouldBeLessThan(100);
 
         var expected = targets
             .Where(x => validValues.Contains(select(x)))
@@ -291,7 +291,7 @@ public class is_one_of_operator: IntegrationContext
 
         var validValues = targets.Select(select).Distinct().Take(3).ToList();
 
-        var found = theSession.Query<Target>().Where(notIsOneOf(validValues)).ToArray();
+        var found = (await theSession.Query<Target>().Where(notIsOneOf(validValues)).ToListAsync());
 
         var expected = targets
             .Where(x => !validValues.Contains(select(x)))

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using Marten;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -182,7 +183,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
         {
             var userList = new List<UserWithCustomType>();
 
-            var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
+            var issues = await query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToListAsync();
 
             userList.Count.ShouldBe(2);
 
@@ -190,7 +191,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
             userList.Any(x => x.Id == guyWithCustomType2.Id);
             userList.Any(x => x == null);
 
-            issues.Length.ShouldBe(3);
+            issues.Count.ShouldBe(3);
         }
 
         var secondStore = SeparateStore(_ =>
@@ -210,7 +211,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
         {
             var userList = new List<UserWithCustomType>();
 
-            var issues = query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToArray();
+            var issues = (await query.Query<IssueForUserWithCustomType>().Include<UserWithCustomType>(x => x.UserId, userList).ToListAsync());
 
             userList.Count.ShouldBe(2);
 
@@ -218,7 +219,7 @@ public class Bug_1258_cannot_derive_updates_for_objects: BugIntegrationContext
             userList.Any(x => x.Id == guyWithCustomType2.Id);
             userList.Any(x => x == null);
 
-            issues.Length.ShouldBe(3);
+            issues.Count.ShouldBe(3);
         }
     }
 

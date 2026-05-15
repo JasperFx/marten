@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
@@ -505,17 +506,17 @@ public class conjoined_multi_tenancy_with_partitioning: OneOffConfigurationsCont
         await theStore.BulkInsertAsync("Red", reds);
         await theStore.BulkInsertAsync("Green", greens);
 
-        Guid[] actualReds = null;
-        Guid[] actualGreens = null;
+        IReadOnlyList<Guid> actualReds = null;
+        IReadOnlyList<Guid> actualGreens = null;
 
         using (var query = theStore.QuerySession("Red"))
         {
-            actualReds = query.Query<Target>().Select(x => x.Id).ToArray();
+            actualReds = await query.Query<Target>().Select(x => x.Id).ToListAsync();
         }
 
         using (var query = theStore.QuerySession("Green"))
         {
-            actualGreens = query.Query<Target>().Select(x => x.Id).ToArray();
+            actualGreens = await query.Query<Target>().Select(x => x.Id).ToListAsync();
         }
 
         actualGreens.Intersect(actualReds).Any().ShouldBeFalse();

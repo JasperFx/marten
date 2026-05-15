@@ -127,10 +127,10 @@ public class LinqExamples
     #endregion
 
     #region sample_using_take_and_skip
-    public void using_take_and_skip(IDocumentSession session)
+    public async Task using_take_and_skip(IDocumentSession session)
     {
         // gets records 11-20 from the database
-        session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
+        await session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToListAsync();
     }
 
     #endregion
@@ -156,29 +156,29 @@ public class LinqExamples
     #endregion
 
     #region sample_boolean_queries
-    public void query_by_booleans(IDocumentSession session)
+    public async Task query_by_booleans(IDocumentSession session)
     {
         // Flag is a boolean property.
 
         // Where Flag is true
-        session.Query<Target>().Where(x => x.Flag).ToArray();
+        await session.Query<Target>().Where(x => x.Flag).ToListAsync();
         // or
-        session.Query<Target>().Where(x => x.Flag == true).ToArray();
+        await session.Query<Target>().Where(x => x.Flag == true).ToListAsync();
 
         // Where Flag is false
-        session.Query<Target>().Where(x => !x.Flag).ToArray();
+        await session.Query<Target>().Where(x => !x.Flag).ToListAsync();
         // or
-        session.Query<Target>().Where(x => x.Flag == false).ToArray();
+        await session.Query<Target>().Where(x => x.Flag == false).ToListAsync();
     }
 
     #endregion
 
     #region sample_query_by_nullable_types
-    public void query_by_nullable_type_nulls(IDocumentSession session)
+    public async Task query_by_nullable_type_nulls(IDocumentSession session)
     {
         // You can use Nullable<T>.HasValue in Linq queries
-        session.Query<Target>().Where(x => !x.NullableNumber.HasValue).ToArray();
-        session.Query<Target>().Where(x => x.NullableNumber.HasValue).ToArray();
+        await session.Query<Target>().Where(x => !x.NullableNumber.HasValue).ToListAsync();
+        await session.Query<Target>().Where(x => x.NullableNumber.HasValue).ToListAsync();
 
         // You can always search by field is NULL
         session.Query<Target>().Where(x => x.Inner == null);

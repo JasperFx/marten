@@ -20,7 +20,7 @@ public class date_type_usage : OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToArray()
+        (await theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 2, 3);
     }
@@ -42,7 +42,7 @@ public class date_type_usage : OneOffConfigurationsContext
         await theSession.SaveChangesAsync();
 
 
-        theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToArray()
+        (await theSession.Query<Target>().Where(x => x.DateOffset > DateTimeOffset.UtcNow).OrderBy(x => x.DateOffset).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 3, 2);
     }

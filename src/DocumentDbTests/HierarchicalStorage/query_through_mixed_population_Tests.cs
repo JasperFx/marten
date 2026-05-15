@@ -37,7 +37,7 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     public async Task identity_map_usage_from_select()
     {
         using var session = await identitySessionWithData();
-        var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
+        var users = (await session.Query<User>().OrderBy(x => x.FirstName).ToListAsync());
         users[0].ShouldBeSameAs(admin1);
         users[1].ShouldBeSameAs(super1);
         users[5].ShouldBeSameAs(user2);
@@ -107,10 +107,10 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     }
 
     [Fact]
-    public void query_against_all_with_no_where()
+    public async Task query_against_all_with_no_where()
     {
         using var session = theStore.IdentitySession();
-        var users = session.Query<User>().OrderBy(x => x.FirstName).ToArray();
+        var users = (await session.Query<User>().OrderBy(x => x.FirstName).ToListAsync());
         users
             .Select(x => x.Id)
             .ShouldHaveTheSameElementsAs(admin1.Id, super1.Id, admin2.Id, user1.Id, super2.Id, user2.Id);
@@ -130,10 +130,10 @@ public class query_through_mixed_population_Tests: end_to_end_document_hierarchy
     }
 
     [Fact]
-    public void query_for_only_a_subclass_with_no_where_clause()
+    public async Task query_for_only_a_subclass_with_no_where_clause()
     {
         using var session = theStore.IdentitySession();
-        session.Query<AdminUser>().OrderBy(x => x.FirstName).ToArray()
+        (await session.Query<AdminUser>().OrderBy(x => x.FirstName).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(admin1.Id, admin2.Id);
     }
 

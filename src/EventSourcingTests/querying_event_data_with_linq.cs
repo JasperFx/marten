@@ -44,7 +44,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
@@ -65,7 +65,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
@@ -100,7 +100,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
@@ -138,7 +138,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         await theSession.SaveChangesAsync();
 
         theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 

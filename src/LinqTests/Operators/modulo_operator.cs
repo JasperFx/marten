@@ -2,6 +2,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Operators;
 
@@ -20,7 +21,7 @@ public class query_with_modulo_Tests : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToArray()
+        (await theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(2, 4);
     }
@@ -38,7 +39,7 @@ public class query_with_modulo_Tests : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => 0 == x.Number % 2 && Colors.Green > x.Color).ToArray()
+        (await theSession.Query<Target>().Where(x => 0 == x.Number % 2 && Colors.Green > x.Color).ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(2, 4);
     }
