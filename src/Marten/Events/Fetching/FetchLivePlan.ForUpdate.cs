@@ -141,11 +141,6 @@ internal partial class FetchLivePlan<TDoc, TId>
             return _parent.ReadIntoStream((DocumentSessionBase)session, _id, token, reader, _handler);
         }
 
-        public IEventStream<TDoc> Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
-
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         {
             throw new NotSupportedException();

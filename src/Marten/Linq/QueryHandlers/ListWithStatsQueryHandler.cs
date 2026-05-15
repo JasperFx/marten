@@ -54,41 +54,9 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
         return list;
     }
 
-    IEnumerable<T> IQueryHandler<IEnumerable<T>>.Handle(DbDataReader reader, IMartenSession session)
-    {
-        return Handle(reader, session);
-    }
-
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         _statement?.Apply(builder);
-    }
-
-    public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
-    {
-        var list = new List<T>();
-
-        if (reader.Read())
-        {
-            _statistics.TotalResults = reader.GetFieldValue<int>(_countIndex);
-            var item = _selector.Resolve(reader);
-            list.Add(item);
-        }
-        else
-        {
-            // no data
-            _statistics.TotalResults = 0;
-            return list;
-        }
-
-        // Get the rest of the data
-        while (reader.Read())
-        {
-            var item = _selector.Resolve(reader);
-            list.Add(item);
-        }
-
-        return list;
     }
 
     public async Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

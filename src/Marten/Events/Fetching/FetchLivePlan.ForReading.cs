@@ -98,11 +98,6 @@ internal partial class FetchLivePlan<TDoc, TId>
             _handler.ConfigureCommand(builder, session);
         }
 
-        public TDoc? Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
-
         public async Task<TDoc?> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         {
             var events = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);

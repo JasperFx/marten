@@ -203,11 +203,6 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             return _parent.ReadIntoStream(documentSessionBase, _id, token, reader, _loadHandler, documentSessionBase.EventStorage());
         }
 
-        public IEventStream<TDoc> Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
-
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         {
             throw new NotSupportedException();

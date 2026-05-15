@@ -220,9 +220,5 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             throw new NotSupportedException();
         }
 
-        public TDoc? Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

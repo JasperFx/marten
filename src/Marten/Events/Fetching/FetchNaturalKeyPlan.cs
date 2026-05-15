@@ -642,11 +642,6 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             }
         }
 
-        public IEventStream<TDoc> Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
-
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         {
             throw new NotSupportedException();
@@ -697,11 +692,6 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
                 return await _parent.FetchDocByString(documentSession, (string)streamIdentity, token)
                     .ConfigureAwait(false);
             }
-        }
-
-        public TDoc? Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
         }
 
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

@@ -24,13 +24,6 @@ public abstract class StreamStateQueryHandler: IQueryHandler<StreamState>
 {
     public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
-    public StreamState Handle(DbDataReader reader, IMartenSession session)
-    {
-        if (!reader.Read()) return null;
-        var selector = (ISelector<StreamState>)session.EventStorage();
-        return selector.Resolve(reader);
-    }
-
     public async Task<StreamState> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false)) return null;

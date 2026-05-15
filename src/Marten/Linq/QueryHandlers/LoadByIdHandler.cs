@@ -69,12 +69,6 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
 
 
 
-    public T Handle(DbDataReader reader, IMartenSession session)
-    {
-        var selector = (ISelector<T>)storage.BuildSelector(session);
-        return reader.Read() ? selector.Resolve(reader) : default;
-    }
-
     public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         var selector = (ISelector<T>)storage.BuildSelector(session);

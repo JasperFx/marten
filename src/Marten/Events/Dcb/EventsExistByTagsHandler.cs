@@ -140,11 +140,6 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
         builder.Append(" limit 1)");
     }
 
-    public bool Handle(DbDataReader reader, IMartenSession session)
-    {
-        return reader.Read() && reader.GetBoolean(0);
-    }
-
     public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         return await reader.ReadAsync(token).ConfigureAwait(false) &&

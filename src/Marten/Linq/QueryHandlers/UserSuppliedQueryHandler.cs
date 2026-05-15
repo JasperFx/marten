@@ -91,19 +91,6 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
         }
     }
 
-    public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
-    {
-        var list = new List<T>();
-
-        while (reader.Read())
-        {
-            var item = _selector.Resolve(reader);
-            list.Add(item);
-        }
-
-        return list;
-    }
-
     public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {

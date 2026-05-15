@@ -18,7 +18,10 @@ namespace Marten.Internal.Sessions;
 public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuerySession<IQuerySession>
 {
     public const string SynchronousRemoval =
-        "All synchronous APIs that result in database calls will be removed in Marten 8.0. Please use the asynchronous equivalent";
+        "As of Marten 9.0, only asynchronous data access is supported. Please use the asynchronous equivalent.";
+
+    public const string SynchronousNotSupportedMessage =
+        "As of Marten 9.0, only asynchronous data access is supported";
 
     internal const char DefaultParameterPlaceholder = '?';
 

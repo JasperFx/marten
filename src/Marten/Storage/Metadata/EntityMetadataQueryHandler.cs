@@ -52,24 +52,6 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
         sql.AppendParameter(_id);
     }
 
-    public DocumentMetadata Handle(DbDataReader reader, IMartenSession session)
-    {
-        if (!reader.Read())
-        {
-            return null;
-        }
-
-        var id = reader.GetFieldValue<object>(0);
-        var metadata = new DocumentMetadata(id);
-
-        for (var i = 0; i < _columns.Length; i++)
-        {
-            _columns[i].Apply(session, metadata, i + 1, reader);
-        }
-
-        return metadata;
-    }
-
     public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {

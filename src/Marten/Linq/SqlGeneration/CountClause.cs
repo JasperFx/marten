@@ -36,14 +36,6 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
         _topStatement.Apply(builder);
     }
 
-    public T Handle(DbDataReader reader, IMartenSession session)
-    {
-        var hasNext = reader.Read();
-        return hasNext && !reader.IsDBNull(0)
-            ? reader.GetFieldValue<T>(0)
-            : default;
-    }
-
     public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);

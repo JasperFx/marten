@@ -26,16 +26,6 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         _topStatement.Apply(builder);
     }
 
-    public bool Handle(DbDataReader reader, IMartenSession session)
-    {
-        if (!reader.Read())
-        {
-            return false;
-        }
-
-        return !reader.IsDBNull(0) && reader.GetBoolean(0);
-    }
-
     public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);

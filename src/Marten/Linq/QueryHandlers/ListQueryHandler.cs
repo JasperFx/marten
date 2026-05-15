@@ -51,27 +51,9 @@ internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandl
         return list;
     }
 
-    IEnumerable<T> IQueryHandler<IEnumerable<T>>.Handle(DbDataReader reader, IMartenSession session)
-    {
-        return Handle(reader, session);
-    }
-
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         _statement?.Apply(builder);
-    }
-
-    public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
-    {
-        var list = new List<T>();
-
-        while (reader.Read())
-        {
-            var item = Selector.Resolve(reader);
-            list.Add(item);
-        }
-
-        return list;
     }
 
     public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)

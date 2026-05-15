@@ -272,6 +272,45 @@ The runtime falls back to the existing codegen path in three documented cases �
 
 Tracked at [#4405](https://github.com/JasperFx/marten/issues/4405). Removing the codegen-fallback bridge entirely is a follow-up to that issue.
 
+### Synchronous query APIs removed
+
+**Marten 9 fully removes the synchronous data-access path.** Every database-bound synchronous LINQ terminal operator, `IQuerySession`/`IDocumentSession` sync helper, and the `IQueryHandler<T>.Handle(DbDataReader, IMartenSession)` extensibility hook now either no longer exist or throw at runtime:
+
+```text
+NotSupportedException: As of Marten 9.0, only asynchronous data access is supported
+```
+
+Async-only was the recommended path for several releases — the sync methods have been carrying an `[Obsolete]` warning since Marten 7. They're gone now.
+
+**What you have to change:**
+
+* Replace every sync LINQ terminal operator on a Marten `IQueryable<T>` with its async equivalent (the message above will surface at runtime if you miss one):
+
+  | Before (Marten 8 — `[Obsolete]`) | After (Marten 9) |
+  | --- | --- |
+  | `session.Query<Foo>().ToList()` | `await session.Query<Foo>().ToListAsync()` |
+  | `session.Query<Foo>().ToArray()` | `(await session.Query<Foo>().ToListAsync()).ToArray()` |
+  | `session.Query<Foo>().First()` | `await session.Query<Foo>().FirstAsync()` |
+  | `session.Query<Foo>().FirstOrDefault()` | `await session.Query<Foo>().FirstOrDefaultAsync()` |
+  | `session.Query<Foo>().Single()` | `await session.Query<Foo>().SingleAsync()` |
+  | `session.Query<Foo>().SingleOrDefault()` | `await session.Query<Foo>().SingleOrDefaultAsync()` |
+  | `session.Query<Foo>().Count()` | `await session.Query<Foo>().CountAsync()` |
+  | `session.Query<Foo>().LongCount()` | `await session.Query<Foo>().CountLongAsync()` |
+  | `session.Query<Foo>().Any()` | `await session.Query<Foo>().AnyAsync()` |
+  | `session.Query<Foo>().Min(x => x.N)` | `await session.Query<Foo>().MinAsync(x => x.N)` |
+  | `session.Query<Foo>().Max(x => x.N)` | `await session.Query<Foo>().MaxAsync(x => x.N)` |
+  | `session.Query<Foo>().Sum(x => x.N)` | `await session.Query<Foo>().SumAsync(x => x.N)` |
+  | `session.Query<Foo>().Average(x => x.N)` | `await session.Query<Foo>().AverageAsync(x => x.N)` |
+  | `foreach (var f in session.Query<Foo>())` | `await foreach (var f in session.Query<Foo>().ToAsyncEnumerable(ct))` |
+
+* Replace every `Load<T>`, `LoadMany<T>`, `Query<T>(sql, ...)`, `Json.*` sync call on `IQuerySession` with the corresponding `LoadAsync`, `LoadManyAsync`, `QueryAsync`, `Json.*Async` equivalent.
+
+* If you implement `IQueryHandler<T>` (a fairly advanced extensibility hook used by user-supplied SQL plans and custom selectors), the interface no longer has a synchronous `Handle(DbDataReader reader, IMartenSession session)` method — implement only `HandleAsync(DbDataReader, IMartenSession, CancellationToken)`. Delete any existing sync `Handle` override; it isn't satisfying anything anymore.
+
+There is **no escape hatch.** The internal `QuerySession.ExecuteHandler<T>(IQueryHandler<T>)` overload remains for now to preserve the type surface but throws the same `NotSupportedException` — use `ExecuteHandlerAsync(handler, cancellationToken)` instead. If you have a code path that genuinely needs blocking execution (e.g. interop with a non-async legacy framework), wrap the async call with `.GetAwaiter().GetResult()` at your own risk.
+
+See [#4420](https://github.com/JasperFx/marten/issues/4420).
+
 ### Obsolete API sweep
 
 Marten 9 retires obsolete types and members deprecated in Marten 8.x:

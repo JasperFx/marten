@@ -23,11 +23,6 @@ internal class PreCannedQueryHandler<T>: IQueryHandler<T>
         builder.Append("select 1");
     }
 
-    public T Handle(DbDataReader reader, IMartenSession session)
-    {
-        return _value;
-    }
-
     public Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         return Task.FromResult(_value);

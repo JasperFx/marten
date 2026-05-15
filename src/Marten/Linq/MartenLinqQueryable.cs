@@ -133,12 +133,12 @@ internal class MartenLinqQueryable<T> : IOrderedQueryable<T>, IMartenQueryable<T
 
     public IEnumerator<T> GetEnumerator()
     {
-        return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return Provider.Execute<IEnumerable<T>>(Expression).GetEnumerator();
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     public Type ElementType => typeof(T);

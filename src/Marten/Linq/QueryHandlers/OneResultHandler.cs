@@ -51,29 +51,6 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
         _statement?.Apply(builder);
     }
 
-    public T Handle(DbDataReader reader, IMartenSession session)
-    {
-        var hasResult = reader.Read();
-        if (!hasResult)
-        {
-            if (_canBeNull)
-            {
-                return default;
-            }
-
-            throw new InvalidOperationException(NoElementsMessage);
-        }
-
-        var result = _selector.Resolve(reader);
-
-        if (!_canBeMultiples && reader.Read())
-        {
-            throw new InvalidOperationException(MoreThanOneElementMessage);
-        }
-
-        return result;
-    }
-
     public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {

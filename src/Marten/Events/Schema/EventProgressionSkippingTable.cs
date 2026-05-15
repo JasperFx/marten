@@ -46,11 +46,6 @@ internal class EventProgressionSkipsHandler : ISingleQueryHandler<IReadOnlyList<
         builder.AppendParameter(_limit);
     }
 
-    public IReadOnlyList<HighWaterDetectionSkip> Handle(DbDataReader reader, IMartenSession session)
-    {
-        throw new NotSupportedException();
-    }
-
     public NpgsqlCommand BuildCommand()
     {
         return new NpgsqlCommand(

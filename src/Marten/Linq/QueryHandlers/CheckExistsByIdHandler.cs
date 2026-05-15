@@ -53,11 +53,6 @@ internal class CheckExistsByIdHandler<T, TId>: IQueryHandler<bool> where T : not
         sql.Append(")");
     }
 
-    public bool Handle(DbDataReader reader, IMartenSession session)
-    {
-        return reader.Read() && reader.GetBoolean(0);
-    }
-
     public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false))

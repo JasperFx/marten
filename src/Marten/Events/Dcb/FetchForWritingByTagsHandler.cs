@@ -139,11 +139,6 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             .ToArray();
     }
 
-    public IEventBoundary<T> Handle(DbDataReader reader, IMartenSession session)
-    {
-        throw new NotSupportedException();
-    }
-
     public async Task<IEventBoundary<T>> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {
