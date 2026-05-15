@@ -520,13 +520,6 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         return database.As<MartenDatabase>().StartProjectionDaemon(this, logger);
     }
 
-    [Obsolete(
-        """
-        Opening a session without explicitly providing desired type may be dropped in next Marten version.
-        Use explicit method like `LightweightSession`, `IdentitySession` or `DirtyTrackedSession`.
-        We recommend using lightweight session by default. Read more in documentation: https://martendb.io/documents/sessions.html.
-        """
-    )]
     public async Task<IDocumentSession> OpenSerializableSessionAsync(SessionOptions options,
         CancellationToken token = default)
     {
