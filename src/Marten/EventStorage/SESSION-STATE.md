@@ -34,17 +34,28 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Foundation landed (3 commits on the branch)
+## Landed so far (6 commits on the branch)
 
 ```
+f97840458  [#4411] W4 read-side: simplify reader-columns wiring + add round-trip test
+04415a33e  [#4411] W4 read-side O2: closed-shape ApplyReaderDataToEvent
+4ac9e216b  [#4410] W4 session-state for compaction-resume
 a8d829b1d  [#4410] W4: dialect owns descriptor construction; Rich SQL ported
 5ee72bd4e  [#4410] W4 foundation: feature flag + adapter + builder
 <spike commit, originally on spike/W4-event-storage-hierarchy>
 ```
 
-The build is clean. `dotnet build src/Marten/Marten.csproj -c Debug`
-produces zero errors. No tests run yet — the storage operations are
-still stubbed.
+The build is clean (0 errors). The closed-shape **read** path is wired
+end-to-end and covered by `Bug_4411_closed_shape_read_side` (two test
+methods, green on net9.0 + net10.0). The **write** path is still stubbed
+(RichAppendEventOperation is sample-only; InsertStream / UpdateStreamVersion /
+QueryForStream throw NotImplementedException — these are #4412 / #4413 /
+#4414). The closed-shape adapter can therefore be used to read from a
+codegen-written events table, but cannot yet replace codegen end-to-end.
+
+Pre-existing test failures: 4 cases of
+`EventSourcingTests.archiving_events.prevent_append_*` fail on the
+parent commit too (verified by checkout-and-rerun). Not from W4.
 
 ## Files
 
@@ -83,34 +94,50 @@ Also touched outside the new directory:
 
 ## Where to resume
 
-**Next concrete unit of work:** [#4411](https://github.com/JasperFx/marten/issues/4411)
-(read-side O2). Self-contained, no dependencies. Approach:
+#4411 (read-side O2) is **landed**:
 
-1. Add `ReadValueSync(DbDataReader, int ordinal, IEvent @event)` and
-   `ReadValueAsync(DbDataReader, int ordinal, IEvent @event, CancellationToken) → Task`
-   to `Marten.Events.Schema.IEventTableColumn`.
-2. Implement on each concrete column type
-   (`SequenceColumn`, `EventTypeColumn`, `VersionColumn`, `StreamIdColumn`,
-   `EventTableColumn`, `EventJsonDataColumn`, `IsArchivedColumn`,
-   `DotNetTypeColumn`, `TenantIdColumn`, and the `MetadataColumn`
-   instances added via `events.Metadata.X`). Each method ports the
-   body of the existing `GenerateSelectorCodeSync` / `Async` methods
-   into direct C#.
-3. Add `IEventTableColumn[] ReaderColumns` property to
-   `RichEventStorageDescriptor` (and threadable through the Quick
-   variants when their read-back paths land).
-4. Override `ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent`
-   and `ApplyReaderDataToEventAsync` to iterate the descriptor's
-   reader column list. Start at column ordinal 3 (the first three —
-   `data` / `type` / `mt_dotnet_type` — are handled by the base
-   `ISelector<IEvent>` already; today's codegen skips them too).
-5. Add a round-trip test in `EventSourcingTests` that:
-   * Constructs a store with `UseClosedShapeStorage = true`
-   * Stores an event via the Rich path
-   * Reads it back and verifies all metadata fields are populated
+* `IEventTableColumn.ReadValueSync` / `ReadValueAsync` default-throw
+  surfaces on the interface; concrete implementations on every column
+  type that the codegen path's selector code targets (`EventTableColumn`,
+  `SequenceColumn` + `VersionColumn` via inheritance, `StreamIdColumn`,
+  `IsArchivedColumn`, `TenantIdColumn`, `CausationIdColumn`,
+  `CorrelationIdColumn`, `UserNameColumn`).
+* `ClosedShapeEventDocumentStorage.ApplyReaderDataToEvent` /
+  `ApplyReaderDataToEventAsync` iterate `EventsTable.SelectColumns().Skip(3)`
+  and dispatch per column. Reader columns are built directly on the
+  adapter (same shape across all append-mode variants).
+* `HeadersColumn` deliberately falls through to the default-throw — needs
+  ISerializer threading on the IEventTableColumn surface to deserialize
+  jsonb → Dictionary<string, object>. Follow-up of #4411 (tracked in
+  the column's source comment).
+* `Bug_4411_closed_shape_read_side` round-trip test passes on
+  net9.0 + net10.0.
 
-**After #4411 lands** the natural sequence is #4412 → #4413 → first
-draft PR. See the comment on #4410 for the full dependency graph.
+**Next concrete unit of work:** [#4412](https://github.com/JasperFx/marten/issues/4412)
+(InsertStream / UpdateStreamVersion / QueryForStream operations + SQL
+templates). These are the cross-mode pieces — Rich and Quick both need
+them, so they're a prerequisite for #4413 (Rich-mode op hardening) and
+#4414 (Quick-mode op hardening). Approach:
+
+1. Port `EventDocumentStorageGenerator.buildInsertStream` → SQL template
+   on the dialect, operation class under `EventStorage/`.
+2. Port `EventDocumentStorageGenerator.buildUpdateStreamVersion` →
+   matching dialect SQL + operation.
+3. Port the StreamState query handler (codegen path lives in the same
+   generator); the SQL string is already on the descriptor via
+   `EventDocumentStorageGenerator.BuildStreamStateSelectSql`.
+4. Wire all three into `RichEventStorage` / `QuickEventStorage` /
+   `QuickWithServerTimestampsEventStorage` (all three share these
+   operations — the divergence is only on the per-event append).
+5. Test: green the `Bug_4411_*` test with `UseClosedShapeStorage = true`
+   at flag-flip, exercising a full insert + update-version + read-back
+   cycle. Until #4413 / #4414 land, only the Rich AppendEvent will
+   exercise the write path.
+
+**After #4412 lands** the natural sequence is #4413 → #4414 → #4415,
+then the metadata-binder follow-ups (#4416 — including HeadersColumn
+serializer threading) and the configuration-matrix sweep (#4417). See
+the comment on #4410 for the full dependency graph.
 
 ## Open questions still alive
 
