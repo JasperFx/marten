@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -31,8 +32,8 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
 
         using (var query = theStore.QuerySession("Bug_854"))
         {
-            var actual = query.Query<Target>().Where(x => x.String == "Red" || x.String == "Orange")
-                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            var actual =(await  query.Query<Target>().Where(x => x.String == "Red" || x.String == "Orange")
+                .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 
             actual.ShouldHaveTheSameElementsAs(expected);
         }
@@ -60,7 +61,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
             var query = session.Query<SoftDeletedItem>()
                 .Where(x => x.Number == 1 || x.Number == 2);
 
-            var actual = query.ToList().Count;
+            var actual = (await query.ToListAsync()).Count;
             Assert.Equal(expected, actual);
         }
     }

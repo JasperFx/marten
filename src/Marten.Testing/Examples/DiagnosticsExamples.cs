@@ -49,12 +49,12 @@ public class DiagnosticsExamples: IntegrationContext
         #endregion
     }
 
-    public void use_request_count()
+    public async Task use_request_count()
     {
         #region sample_using_request_count
         using (var session = theStore.QuerySession())
         {
-            var users = session.Query<User>().ToList();
+            var users = (await session.Query<User>().ToListAsync());
             var count = session.Query<User>().Count();
             var any = session.Query<User>().Any();
 

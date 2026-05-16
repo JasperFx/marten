@@ -49,20 +49,6 @@ internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> wh
         storage.AddTenancyFilter(sql, session.TenantId);
     }
 
-    public IReadOnlyList<T> Handle(DbDataReader reader, IMartenSession session)
-    {
-        var list = new List<T>();
-
-        var selector = (ISelector<T>)storage.BuildSelector(session);
-
-        while (reader.Read())
-        {
-            list.Add(selector.Resolve(reader));
-        }
-
-        return list;
-    }
-
     public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {

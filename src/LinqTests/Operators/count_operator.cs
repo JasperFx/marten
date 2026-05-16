@@ -18,7 +18,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count().ShouldBe(4);
+        (await theSession.Query<Target>().CountAsync()).ShouldBe(4);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().LongCount().ShouldBe(4);
+        (await theSession.Query<Target>().LongCountAsync()).ShouldBe(4);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target());
         theSession.Store(new Target());
         await theSession.SaveChangesAsync();
-        theSession.Query<Target>().Count(x => x.Id == x.OtherGuid).ShouldBe(2);
+        (await theSession.Query<Target>().CountAsync(x => x.Id == x.OtherGuid)).ShouldBe(2);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target());
         theSession.Store(new Target());
         await theSession.SaveChangesAsync();
-        theSession.Query<Target>().Count(x => x.Id != x.OtherGuid).ShouldBe(2);
+        (await theSession.Query<Target>().CountAsync(x => x.Id != x.OtherGuid)).ShouldBe(2);
     }
 
     // Well, this is pretty much a redundant test (since we're testing the Linq translation) but covers #1067
@@ -107,7 +107,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 6 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().LongCount(x => x.Number > 3).ShouldBe(3);
+        (await theSession.Query<Target>().LongCountAsync(x => x.Number > 3)).ShouldBe(3);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class count_operator: IntegrationContext
         theSession.Store(new Target { Number = 6 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count(x => x.Number > 3).ShouldBe(3);
+        (await theSession.Query<Target>().CountAsync(x => x.Number > 3)).ShouldBe(3);
     }
 
     #endregion

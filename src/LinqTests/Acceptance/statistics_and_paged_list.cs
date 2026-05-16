@@ -28,18 +28,10 @@ public class ToPagedListData<T>: IEnumerable<object[]>
     private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListWithCountQueryAsync
         = (query, pageNumber, pageSize) => query.ToPagedListAsync(pageNumber, pageSize, true);
 
-    private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListSync
-        = (query, pageNumber, pageSize) => Task.FromResult(query.ToPagedList(pageNumber, pageSize));
-
-    private static readonly Func<IQueryable<T>, int, int, Task<IPagedList<T>>> ToPagedListWithCountQuerySync
-        = (query, pageNumber, pageSize) => Task.FromResult(query.ToPagedList(pageNumber, pageSize, true));
-
     public IEnumerator<object[]> GetEnumerator()
     {
         yield return [ToPagedListAsync];
         yield return [ToPagedListWithCountQueryAsync];
-        yield return [ToPagedListSync];
-        yield return [ToPagedListWithCountQuerySync];
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -89,7 +81,7 @@ public class statistics_and_paged_list: IntegrationContext
     [Fact]
     public async Task can_get_the_total_from_a_compiled_query()
     {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
@@ -105,7 +97,7 @@ public class statistics_and_paged_list: IntegrationContext
     public async Task can_use_json_streaming_with_statistics()
     {
 
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         var query = new TargetPaginationQuery(2, 5);
@@ -167,7 +159,7 @@ public class statistics_and_paged_list: IntegrationContext
     [Fact]
     public async Task can_get_the_total_in_results()
     {
-        var count = theSession.Query<Target>().Count(x => x.Number > 10);
+        var count = (await theSession.Query<Target>().CountAsync(x => x.Number > 10));
         count.ShouldBeGreaterThan(0);
 
         // We're going to use stats as an output
@@ -220,13 +212,13 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void can_return_paged_result()
+    public async Task can_return_paged_result()
     {
         #region sample_to_paged_list
         var pageNumber = 2;
         var pageSize = 10;
 
-        var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize);
+        var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize);
 
         // paged list also provides a list of helper properties to deal with pagination aspects
         var totalItems = pagedList.TotalItemCount; // get total number records
@@ -257,12 +249,12 @@ public class statistics_and_paged_list: IntegrationContext
     }
 
     [Fact]
-    public void can_return_paged_result_using_separate_count_query()
+    public async Task can_return_paged_result_using_separate_count_query()
     {
         #region sample_to_paged_list_seperate_count_query
         var pageNumber = 2;
         var pageSize = 10;
-        var pagedList = theSession.Query<Target>().ToPagedList(pageNumber, pageSize, true);
+        var pagedList = await theSession.Query<Target>().ToPagedListAsync(pageNumber, pageSize, true);
 
         // paged list also provides a list of helper properties to deal with pagination aspects
         var totalItems = pagedList.TotalItemCount; // get total number records
@@ -312,7 +304,7 @@ public class statistics_and_paged_list: IntegrationContext
 
         var pageSize = 10;
 
-        var expectedPageCount = theSession.Query<Target>().Count()/pageSize;
+        var expectedPageCount = (await theSession.Query<Target>().CountAsync())/pageSize;
 
         var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
         pagedList.PageCount.ShouldBe(expectedPageCount);
@@ -326,7 +318,7 @@ public class statistics_and_paged_list: IntegrationContext
 
         var pageSize = 10;
 
-        var expectedTotalItemsCount = theSession.Query<Target>().Count();
+        var expectedTotalItemsCount = (await theSession.Query<Target>().CountAsync());
 
         var pagedList = await toPagedList(theSession.Query<Target>(), pageNumber, pageSize);
         pagedList.TotalItemCount.ShouldBe(expectedTotalItemsCount);

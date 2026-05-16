@@ -152,19 +152,9 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             return _parent.ReadIntoStream((DocumentSessionBase)session, _id, token, reader, _handler);
         }
 
-        #region stuff we don't care about
-
         public Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         {
             throw new NotImplementedException();
         }
-
-
-        public IEventStream<TDoc> Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion
     }
 }

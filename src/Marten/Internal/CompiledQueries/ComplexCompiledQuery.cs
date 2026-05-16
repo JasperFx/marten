@@ -25,12 +25,6 @@ public abstract class ComplexCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
         return _inner.StreamJson(stream, reader, token);
     }
 
-    public TOut Handle(DbDataReader reader, IMartenSession session)
-    {
-        var inner = BuildHandler(session);
-        return inner.Handle(reader, session);
-    }
-
     public Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         var inner = BuildHandler(session);

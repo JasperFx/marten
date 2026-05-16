@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -29,8 +30,8 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
         await theStore.BulkInsertAsync(users);
 
         await using var query = theStore.LightweightSession();
-        query.Query<AdminUser>().Count().ShouldBe(1);
-        query.Query<SuperUser>().Count().ShouldBe(2);
+        (await query.Query<AdminUser>().CountAsync()).ShouldBe(1);
+        (await query.Query<SuperUser>().CountAsync()).ShouldBe(2);
     }
 
     [Fact]
@@ -54,7 +55,7 @@ public class Bug_980_bulk_insert_with_subclass: BugIntegrationContext
         await theStore.BulkInsertAsync(users);
 
         await using var query = theStore.LightweightSession();
-        query.Query<SuperUser>().Count().ShouldBe(4);
+        (await query.Query<SuperUser>().CountAsync()).ShouldBe(4);
     }
 
 }

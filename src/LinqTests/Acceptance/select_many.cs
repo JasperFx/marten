@@ -29,11 +29,11 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            var distinct = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
+            var distinct = (await query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToListAsync());
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
 
-            var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
+            var names = (await query.Query<Product>().SelectMany(x => x.Tags).ToListAsync());
             names
                 .Count.ShouldBe(9);
         }
@@ -56,11 +56,11 @@ public class select_many : IntegrationContext
         using (var query = theStore.QuerySession())
         {
 
-            query
+            (await query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
                 .Distinct()
-                .Count()
+                .CountAsync())
                 .ShouldBe(6);
         }
     }
@@ -81,11 +81,11 @@ public class select_many : IntegrationContext
         using (var query = theStore.QuerySession())
         {
 
-            query
+            (await query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
                 .Distinct()
-                .LongCount()
+                .LongCountAsync())
                 .ShouldBe(6L);
         }
     }
@@ -107,11 +107,11 @@ public class select_many : IntegrationContext
         using (var query = theStore.QuerySession())
         {
 
-            var distinct = query.Query<ProductWithList>().SelectMany(x => x.Tags).Distinct().ToList();
+            var distinct = (await query.Query<ProductWithList>().SelectMany(x => x.Tags).Distinct().ToListAsync());
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
 
-            var names = query.Query<ProductWithList>().SelectMany(x => x.Tags).ToList();
+            var names = (await query.Query<ProductWithList>().SelectMany(x => x.Tags).ToListAsync());
             names
                 .Count.ShouldBe(9);
         }
@@ -132,8 +132,8 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Product>().SelectMany(x => x.Tags)
-                .Count().ShouldBe(9);
+            (await query.Query<Product>().SelectMany(x => x.Tags)
+                .CountAsync()).ShouldBe(9);
         }
     }
 
@@ -155,7 +155,7 @@ public class select_many : IntegrationContext
             var queryable = query.Query<Product>()
                 .Where(p => p.Tags.Length == 1)
                 .SelectMany(x => x.Tags);
-            var ex = Record.Exception(() => queryable.Count());
+            var ex = await Record.ExceptionAsync(async () => await queryable.CountAsync());
             ex.ShouldBeNull();
         }
     }
@@ -219,7 +219,7 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            var list = query.Query<Target>().SelectMany(x => x.Children).ToList();
+            var list = (await query.Query<Target>().SelectMany(x => x.Children).ToListAsync());
             list.Count.ShouldBe(expectedCount);
         }
     }
@@ -239,11 +239,11 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            var distinct = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).Distinct().ToList();
+            var distinct = (await query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).Distinct().ToListAsync());
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs(1, 2, 3, 4, 5);
 
-            var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
+            var names = (await query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToListAsync());
             names
                 .Count.ShouldBe(9);
         }
@@ -268,7 +268,7 @@ public class select_many : IntegrationContext
 
             distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs(1, 2, 3, 4, 5);
 
-            var names = query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToList();
+            var names = (await query.Query<ProductWithNumbers>().SelectMany(x => x.Tags).ToListAsync());
             names
                 .Count.ShouldBe(9);
         }
@@ -293,13 +293,13 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Product>().SelectMany(x => x.Tags)
-                .Any().ShouldBeTrue();
+            (await query.Query<Product>().SelectMany(x => x.Tags)
+                .AnyAsync()).ShouldBeTrue();
 
 
 
-            query.Query<Target>().SelectMany(x => x.Children)
-                .Any().ShouldBeFalse();
+            (await query.Query<Target>().SelectMany(x => x.Children)
+                .AnyAsync()).ShouldBeFalse();
         }
     }
 
@@ -343,7 +343,7 @@ public class select_many : IntegrationContext
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
         expected.Any().ShouldBeTrue();
 
-        var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).ToList();
+        var results = (await query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).ToListAsync());
 
         results.Select(x => x.Id).OrderBy(x => x).ShouldHaveTheSameElementsAs(expected);
     }
@@ -358,7 +358,7 @@ public class select_many : IntegrationContext
         var expected = targets.SelectMany(x => x.Children).Where(x => x.Flag).Select(x => x.Id).OrderBy(x => x).ToList();
         expected.Any().ShouldBeTrue();
 
-        var results = query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).OrderBy(x => x.Id).ToList();
+        var results = (await query.Query<Target>().SelectMany(x => x.Children).Where(x => x.Flag).OrderBy(x => x.Id).ToListAsync());
 
         results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
@@ -383,13 +383,13 @@ public class select_many : IntegrationContext
         expected.Any().ShouldBeTrue();
 
         #region sample_using-select-many
-        var results = query.Query<Target>()
+        var results = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
             .Skip(20)
             .Take(15)
-            .ToList();
+            .ToListAsync());
         #endregion
 
         results.Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
@@ -406,12 +406,12 @@ public class select_many : IntegrationContext
         await using var query = theStore.LightweightSession();
         QueryStatistics stats;
 
-        var actual = query.Query<Target>()
+        var actual = (await query.Query<Target>()
             .Stats(out stats)
             .SelectMany(x => x.Children)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
-            .Take(10).ToList();
+            .Take(10).ToListAsync());
 
         var expectedCount = targets
             .SelectMany(x => x.Children)
@@ -452,10 +452,10 @@ public class select_many : IntegrationContext
 
 
 
-        var results = query.Query<Target>()
+        var results = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Include(x => x.UserId, dict)
-            .ToList();
+            .ToListAsync());
 
         dict.Count.ShouldBe(2);
 
@@ -510,11 +510,11 @@ public class select_many : IntegrationContext
         await theStore.BulkInsertAsync(targets);
 
         using var query = theStore.QuerySession();
-        var actual = query.Query<Target>()
+        var actual = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Green)
             .Select(x => new {Id = x.Id, Shade = x.Color})
-            .ToList();
+            .ToListAsync());
 
         var expected = targets
             .SelectMany(x => x.Children).Count(x => x.Color == Colors.Green);
@@ -534,9 +534,9 @@ public class select_many : IntegrationContext
     }
 
     [Fact]
-    public void try_n_deep_smoke_test()
+    public async Task try_n_deep_smoke_test()
     {
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
 
         var command = query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)
@@ -548,13 +548,13 @@ public class select_many : IntegrationContext
 
         command.ShouldNotBeNull();
 
-        query.Query<Target>()
+        (await query.Query<Target>()
             .Where(x => x.Color == Colors.Blue)
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Red)
             .SelectMany(x => x.Children)
             .OrderBy(x => x.Number)
-            .ToList().ShouldNotBeNull();
+            .ToListAsync()).ShouldNotBeNull();
     }
 
     public class TargetGroup
@@ -593,12 +593,12 @@ public class select_many : IntegrationContext
 
 
 
-        var loaded = query.Query<TargetGroup>()
+        var loaded = (await query.Query<TargetGroup>()
             .SelectMany(x => x.Targets)
             .Where(x => x.Color == Colors.Blue)
             .SelectMany(x => x.Children)
             .OrderBy(x => x.Number)
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Id).ToArray();
 
         /*

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -35,9 +36,9 @@ public class Bug_997_or_queries_with_hierarchical_docs: BugIntegrationContext
         await theStore.BulkInsertAsync(new Bug997User[] { megaUser1, megaUser2, megaUser3 });
 
         await using var session = theStore.QuerySession();
-        session.Query<MegaUser>()
+        (await session.Query<MegaUser>()
             .Where(_ => _.DisplayName == "Yann" || _.DisplayName == "Robin").OrderBy(x => x.DisplayName).Select(x => x.DisplayName)
-            .ToList()
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("Robin", "Yann");
     }
 

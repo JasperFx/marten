@@ -48,11 +48,11 @@ public class identity_map_mechanics: IntegrationContext
     public async Task single_runs_through_the_identity_map()
     {
         await using var session = await identitySessionWithData();
-        session.Query<User>()
-            .Single(x => x.FirstName == "Jeremy").ShouldBeSameAs(user1);
+        (await session.Query<User>()
+            .SingleAsync(x => x.FirstName == "Jeremy")).ShouldBeSameAs(user1);
 
-        session.Query<User>()
-            .SingleOrDefault(x => x.FirstName == user4.FirstName).ShouldBeSameAs(user4);
+        (await session.Query<User>()
+            .SingleOrDefaultAsync(x => x.FirstName == user4.FirstName)).ShouldBeSameAs(user4);
     }
 
 
@@ -60,20 +60,20 @@ public class identity_map_mechanics: IntegrationContext
     public async Task first_runs_through_the_identity_map()
     {
         await using var session = await identitySessionWithData();
-        session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .First().ShouldBeSameAs(user3);
+        (await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+            .FirstAsync()).ShouldBeSameAs(user3);
 
 
-        session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .FirstOrDefault().ShouldBeSameAs(user3);
+        (await session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+            .FirstOrDefaultAsync()).ShouldBeSameAs(user3);
     }
 
     [Fact]
     public async Task query_runs_through_identity_map()
     {
         await using var session = await identitySessionWithData();
-        var users = session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
-            .ToArray();
+        var users =(await  session.Query<User>().Where(x => x.FirstName.StartsWith("J")).OrderBy(x => x.FirstName)
+            .ToListAsync());
 
         users[0].ShouldBeSameAs(user3);
         users[1].ShouldBeSameAs(user2);

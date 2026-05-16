@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core.Reflection;
+using Marten;
 using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Testing.Harness;
@@ -55,7 +56,7 @@ public class CustomKeyGenerationTests : OneOffConfigurationsContext
 
         using (var session1 = theStore.QuerySession())
         {
-            var users = session1.Query<UserWithString>().ToArray();
+            var users = (await session1.Query<UserWithString>().ToListAsync());
             users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
         }
         #endregion

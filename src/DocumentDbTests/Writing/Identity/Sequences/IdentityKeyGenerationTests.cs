@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
@@ -21,7 +22,7 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
         await StoreUser(theStore, "User2");
         await StoreUser(theStore, "User3");
 
-        var users = GetUsers(theStore);
+        var users = await GetUsers(theStore);
 
         GetId(users, "User1").ShouldBe("userwithstring/1");
         GetId(users, "User2").ShouldBe("userwithstring/2");
@@ -52,15 +53,15 @@ public class IdentityKeyGenerationTests : OneOffConfigurationsContext
         #endregion
     }
 
-    private static string GetId(UserWithString[] users, string user1)
+    private static string GetId(IReadOnlyList<UserWithString> users, string user1)
     {
         return users.Single(user => user.LastName == user1).Id;
     }
 
-    private static UserWithString[] GetUsers(IDocumentStore documentStore)
+    private static async Task<IReadOnlyList<UserWithString>> GetUsers(IDocumentStore documentStore)
     {
-        using var session = documentStore.QuerySession();
-        return session.Query<UserWithString>().ToArray();
+        await using var session = documentStore.QuerySession();
+        return await session.Query<UserWithString>().ToListAsync();
     }
 
     private static async Task StoreUser(IDocumentStore documentStore, string lastName)

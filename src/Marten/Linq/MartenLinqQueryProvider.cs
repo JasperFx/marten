@@ -47,25 +47,12 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
     public object Execute(Expression expression)
     {
-        throw new NotSupportedException();
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     public TResult Execute<TResult>(Expression expression)
     {
-        var parser = new LinqQueryParser(this, _session, expression);
-        var handler = parser.BuildHandler<TResult>();
-
-        ensureStorageExists(parser);
-
-        return ExecuteHandler(handler)!;
-    }
-
-    private void ensureStorageExists(LinqQueryParser parser)
-    {
-        foreach (var documentType in parser.DocumentTypes())
-        {
-            _session.Database.EnsureStorageExists(documentType);
-        }
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     internal async ValueTask EnsureStorageExistsAsync(LinqQueryParser parser,
@@ -144,22 +131,9 @@ internal class MartenLinqQueryProvider: IQueryProvider
         return default;
     }
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
     public T? ExecuteHandler<T>(IQueryHandler<T> handler)
     {
-        try
-        {
-            var cmd = _session.BuildCommand(handler);
-
-            using var reader = _session.ExecuteReader(cmd);
-            return handler.Handle(reader, _session);
-        }
-        catch (Exception e)
-        {
-            MartenExceptionTransformer.WrapAndThrow(e);
-        }
-
-        return default;
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
 

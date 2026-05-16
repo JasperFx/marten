@@ -48,16 +48,16 @@ public class is_subset_of_operator : IntegrationContext
     }
 
     [Fact]
-    public void Can_query_by_array()
+    public async Task Can_query_by_array()
     {
         // given
         var tags = new[] {"c#", "mssql"};
 
         // than
-        var found = theSession
+        var found =(await  theSession
             .Query<Target>()
             .Where(x => x.TagsArray.IsSubsetOf(tags))
-            .ToArray();
+            .ToListAsync());
 
         var expected = _allTargets
             .Where(x => x.TagsArray.IsSubsetOf(tags))
@@ -66,12 +66,12 @@ public class is_subset_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Length.ShouldBe(2);
+        found.Count.ShouldBe(2);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
     [Fact]
-    public void Can_query_by_hashset()
+    public async Task Can_query_by_hashset()
     {
         // given
         var tags = new[] {"c#", "mssql"};
@@ -90,10 +90,10 @@ select d.id, d.data from public.mt_doc_target as d where CAST(d.data ->> 'TagsHa
          */
 
         // than
-        var found = theSession
+        var found =(await  theSession
             .Query<Target>()
             .Where(x => x.TagsHashSet.IsSubsetOf(tags))
-            .ToArray();
+            .ToListAsync());
 
         var expected = _allTargets
             .Where(x => x.TagsHashSet.IsSubsetOf(tags))
@@ -102,7 +102,7 @@ select d.id, d.data from public.mt_doc_target as d where CAST(d.data ->> 'TagsHa
             .Select(x => x.Id);
 
         // than
-        found.Length.ShouldBe(2);
+        found.Count.ShouldBe(2);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 }

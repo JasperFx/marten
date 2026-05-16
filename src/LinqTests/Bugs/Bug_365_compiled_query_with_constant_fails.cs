@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Marten.Linq;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -74,7 +75,7 @@ public class Bug_365_compiled_query_with_constant_fails: BugIntegrationContext
             var routes = await session.QueryAsync(new RoutesPlannedAfter(from));
             var all = session.Query<Route>();
 
-            routes.Count().ShouldBe(all.Count(route => route.Status == RouteStatus.Planned && route.Date > from));
+            routes.Count().ShouldBe((await all.CountAsync(route => route.Status == RouteStatus.Planned && route.Date > from)));
         }
     }
 

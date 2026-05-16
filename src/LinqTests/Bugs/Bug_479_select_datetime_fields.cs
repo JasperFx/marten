@@ -6,6 +6,7 @@ using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
 using Marten.Newtonsoft;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -28,7 +29,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
         session.Store(doc);
         await session.SaveChangesAsync();
 
-        var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTime }).Single();
+        var date = (await session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTime }).SingleAsync());
 
         date.Date.ShouldBe(doc.DateTime);
     }
@@ -45,7 +46,7 @@ public class Bug_479_select_datetime_fields: BugIntegrationContext
         session.Store(doc);
         await session.SaveChangesAsync();
 
-        var date = session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).Single();
+        var date = (await session.Query<DocWithDates>().Where(x => x.Id == doc.Id).Select(x => new { Date = x.DateTimeOffset }).SingleAsync());
 
         date.Date.ShouldBe(doc.DateTimeOffset);
     }

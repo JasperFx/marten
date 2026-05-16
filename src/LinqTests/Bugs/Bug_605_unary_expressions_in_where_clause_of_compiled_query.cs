@@ -8,6 +8,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -26,14 +27,14 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
         await using var query = theStore.QuerySession();
         var results = (await query.QueryAsync(new FlaggedTrueTargets())).ToList();
 
-        var expected = query.Query<Target>()
+        var expected = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Green)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
             .Skip(20)
             .Take(15)
-            .ToList();
+            .ToListAsync());
 
         // Compare against the inline LINQ query rather than a hardcoded count.
         // The point of the test is "compiled query == inline LINQ for the same
@@ -57,14 +58,14 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
         await using var query = theStore.QuerySession();
         var results = (await query.QueryAsync(new FlaggedTrueTargets())).ToList();
 
-        var expected = query.Query<Target>()
+        var expected = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Green)
             .Where(x => x.Flag)
             .OrderBy(x => x.Id)
             .Skip(20)
             .Take(15)
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(expected.Count);
 
@@ -82,14 +83,14 @@ public class Bug_605_unary_expressions_in_where_clause_of_compiled_query: BugInt
         await using var query = theStore.QuerySession();
         var results = (await query.QueryAsync(new FlaggedFalseTargets())).ToList();
 
-        var expected = query.Query<Target>()
+        var expected = (await query.Query<Target>()
             .SelectMany(x => x.Children)
             .Where(x => x.Color == Colors.Green)
             .Where(x => !x.Flag)
             .OrderBy(x => x.Id)
             .Skip(20)
             .Take(15)
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(expected.Count);
 

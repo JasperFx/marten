@@ -31,14 +31,14 @@ public class Bug_1247_query_with_include_and_document_hierarchy_Tests: end_to_en
         using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+        var issues = (await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync());
 
         list.Count.ShouldBe(2);
 
         list.Any(x => x.Id == user1.Id).ShouldBeTrue();
         list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(4);
+        issues.Count.ShouldBe(4);
     }
 
     // [Fact] flaky in CI

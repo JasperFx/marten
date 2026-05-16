@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_834_querying_inside_of_child_collections : IntegrationContext
@@ -26,10 +27,10 @@ public class Bug_834_querying_inside_of_child_collections : IntegrationContext
 
         await theStore.BulkInsertAsync(new Contact[]{c1, c2, c3});
 
-        theSession.Query<Contact>().Where(x => x.Tags.Any(t => t.StartsWith("A"))).Any()
+        (await theSession.Query<Contact>().Where(x => x.Tags.Any(t => t.StartsWith("A"))).AnyAsync())
             .ShouldBeTrue();
 
-        theSession.Query<Contact>()
-            .Count(x => x.Tags.Any(t => t.StartsWith("A"))).ShouldBe(2);
+        (await theSession.Query<Contact>()
+            .CountAsync(x => x.Tags.Any(t => t.StartsWith("A")))).ShouldBe(2);
     }
 }

@@ -20,7 +20,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().First(x => x.Number == 3).ShouldNotBeNull();
+        (await theSession.Query<Target>().FirstAsync(x => x.Number == 3)).ShouldNotBeNull();
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().FirstOrDefault(x => x.Number == 3).ShouldNotBeNull();
+        (await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 3)).ShouldNotBeNull();
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().FirstOrDefault(x => x.Number == 11).ShouldBeNull();
+        (await theSession.Query<Target>().FirstOrDefaultAsync(x => x.Number == 11)).ShouldBeNull();
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
+        (await theSession.Query<Target>().Where(x => x.Number == 2).FirstAsync()).Flag
             .ShouldBeTrue();
     }
 
@@ -71,7 +71,7 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Where(x => x.Number == 2).First().Flag
+        (await theSession.Query<Target>().Where(x => x.Number == 2).FirstAsync()).Flag
             .ShouldBeTrue();
     }
 
@@ -84,9 +84,9 @@ public class first_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Should.Throw<InvalidOperationException>(() =>
+        await Should.ThrowAsync<InvalidOperationException>(async () =>
         {
-            theSession.Query<Target>().Where(x => x.Number == 11).First();
+            await theSession.Query<Target>().Where(x => x.Number == 11).FirstAsync();
         });
     }
 

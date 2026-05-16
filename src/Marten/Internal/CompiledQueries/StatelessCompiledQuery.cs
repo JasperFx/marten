@@ -25,11 +25,6 @@ public abstract class StatelessCompiledQuery<TOut, TQuery>: IQueryHandler<TOut>
         return _inner.StreamJson(stream, reader, token);
     }
 
-    public TOut Handle(DbDataReader reader, IMartenSession session)
-    {
-        return _inner.Handle(reader, session);
-    }
-
     public Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         return _inner.HandleAsync(reader, session, token);

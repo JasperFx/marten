@@ -4,7 +4,6 @@ using System.Data.Common;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Internal.Sessions;
 using Marten.Linq;
 using Marten.Linq.Includes;
 using Marten.Linq.QueryHandlers;
@@ -100,9 +99,6 @@ internal abstract class SourceGeneratedCompiledQueryHandlerBase<TOut>: IQueryHan
         }
     }
 
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public abstract TOut Handle(DbDataReader reader, IMartenSession session);
-
     public abstract Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
 
     public abstract Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token);
@@ -127,10 +123,6 @@ internal sealed class SourceGeneratedStatelessHandler<TOut>: SourceGeneratedComp
     {
         _inner = inner;
     }
-
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public override TOut Handle(DbDataReader reader, IMartenSession session)
-        => _inner.Handle(reader, session);
 
     public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         => _inner.HandleAsync(reader, session, token);
@@ -160,13 +152,6 @@ internal sealed class SourceGeneratedClonedHandler<TOut>: SourceGeneratedCompile
     {
         _statefulInner = statefulInner;
         _statistics = statistics;
-    }
-
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public override TOut Handle(DbDataReader reader, IMartenSession session)
-    {
-        var inner = (IQueryHandler<TOut>)_statefulInner.CloneForSession(session, _statistics!);
-        return inner.Handle(reader, session);
     }
 
     public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
@@ -229,10 +214,6 @@ internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompil
         var readers = _descriptor.AttachIncludeReaders(session, _query);
         return new IncludeQueryHandler<TOut>(inner, readers);
     }
-
-    [Obsolete(QuerySession.SynchronousRemoval)]
-    public override TOut Handle(DbDataReader reader, IMartenSession session)
-        => BuildIncludingHandler(session).Handle(reader, session);
 
     public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
         => BuildIncludingHandler(session).HandleAsync(reader, session, token);

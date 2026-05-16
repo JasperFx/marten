@@ -270,7 +270,7 @@ public class working_with_initial_data : OneOffConfigurationsContext
         {
             foreach (var initialAggregate in InitialWithQueryDatasets.Aggregates)
             {
-                var aggregate = session.Query<Aggregate1495>().First(x => x.Name == initialAggregate.Name);
+                var aggregate = (await session.Query<Aggregate1495>().FirstAsync(x => x.Name == initialAggregate.Name));
                 aggregate.Name.ShouldBe(initialAggregate.Name);
             }
         }
@@ -290,7 +290,7 @@ public class InitialDataWithQuery: IInitialData
     public async Task Populate(IDocumentStore store, CancellationToken cancellation)
     {
         await using var session = store.LightweightSession();
-        if (!session.Query<Aggregate1495>().Any())
+        if (!(await session.Query<Aggregate1495>().AnyAsync()))
         {
             session.Store(_initialData);
             await session.SaveChangesAsync(cancellation);

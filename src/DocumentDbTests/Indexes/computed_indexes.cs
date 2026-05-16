@@ -18,7 +18,7 @@ namespace DocumentDbTests.Indexes;
 public class computed_indexes: OneOffConfigurationsContext
 {
     [Fact]
-    public void example()
+    public async Task example()
     {
         #region sample_using-a-simple-calculated-index
         var store = DocumentStore.For(_ =>
@@ -31,13 +31,13 @@ public class computed_indexes: OneOffConfigurationsContext
             _.Schema.For<User>().Index(x => x.UserName);
         });
 
-        using (var session = store.QuerySession())
+        await using (var session = store.QuerySession())
         {
             // Postgresql will be able to use the computed
             // index generated from above
-            var somebody = session
+            var somebody = await session
                 .Query<User>()
-                .FirstOrDefault(x => x.UserName == "somebody");
+                .FirstOrDefaultAsync(x => x.UserName == "somebody");
         }
         #endregion
 
@@ -59,8 +59,8 @@ public class computed_indexes: OneOffConfigurationsContext
         var cmd = session.Query<Target>().Where(x => x.Number == 3)
             .ToCommand();
 
-        session.Query<Target>().Where(x => x.Number == data.First().Number)
-            .Select(x => x.Id).ToList().ShouldContain(data.First().Id);
+        (await session.Query<Target>().Where(x => x.Number == data.First().Number)
+            .Select(x => x.Id).ToListAsync()).ShouldContain(data.First().Id);
     }
 
     [Fact]

@@ -26,9 +26,9 @@ public class is_empty_operator : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Target>().Where(x => x.Children.IsEmpty())
+            (await query.Query<Target>().Where(x => x.Children.IsEmpty())
                 .OrderBy(x => x.Id).Select(x => x.Id)
-                .ToList()
+                .ToListAsync())
                 .ShouldHaveTheSameElementsAs(empties);
 
 

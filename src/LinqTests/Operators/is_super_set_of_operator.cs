@@ -45,16 +45,16 @@ public class is_super_set_of_operator : IntegrationContext
     }
 
     [Fact]
-    public void Can_query_by_array()
+    public async Task Can_query_by_array()
     {
         // given
         var tags = new[] {"c#", "mssql"};
 
         // than
-        var found = theSession
+        var found =(await  theSession
             .Query<Target>()
             .Where(x => x.TagsArray.IsSupersetOf(tags))
-            .ToArray();
+            .ToListAsync());
 
         var expected = _allTargets
             .Where(x => x.TagsArray.IsSupersetOf(tags))
@@ -63,21 +63,21 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Length.ShouldBe(3);
+        found.Count.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 
     [Fact]
-    public void Can_query_by_hashset()
+    public async Task Can_query_by_hashset()
     {
         // given
         var tags = new[] { "c#", "mssql" };
 
         // than
-        var found = theSession
+        var found =(await  theSession
             .Query<Target>()
             .Where(x => x.TagsHashSet.IsSupersetOf(tags))
-            .ToArray();
+            .ToListAsync());
 
         var expected = _allTargets
             .Where(x => x.TagsHashSet.IsSupersetOf(tags))
@@ -86,7 +86,7 @@ public class is_super_set_of_operator : IntegrationContext
             .Select(x => x.Id);
 
         // than
-        found.Length.ShouldBe(3);
+        found.Count.ShouldBe(3);
         found.OrderBy(x => x.Id).Select(x => x.Id).ShouldHaveTheSameElementsAs(expected);
     }
 

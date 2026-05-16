@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -28,7 +29,7 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
         var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
         await theSession.SaveChangesAsync();
 
-        var fooInstance = theSession.Query<FooA>().Single(x => x.Id == streamId);
+        var fooInstance = await theSession.Query<FooA>().SingleAsync(x => x.Id == streamId);
 
         fooInstance.Id.ShouldBe(streamId);
         fooInstance.Description.ShouldBe(description);
@@ -42,7 +43,7 @@ public class inline_aggregation_with_subclass: OneOffConfigurationsContext
         var streamId = theSession.Events.StartStream(new FooACreated { Description = description }).Id;
         await theSession.SaveChangesAsync();
 
-        var fooInstance = theSession.Query<FooBase>().Single(x => x.Id == streamId);
+        var fooInstance = await theSession.Query<FooBase>().SingleAsync(x => x.Id == streamId);
 
         fooInstance.Id.ShouldBe(streamId);
         fooInstance.ShouldBeOfType<FooA>();

@@ -25,7 +25,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            var list = query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToList();
+            var list = (await query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToListAsync());
 
             list.Count.ShouldBe(2);
             list.Select(x => x.Id).ShouldContain(blue.Id);
@@ -50,7 +50,7 @@ public class Bug_449_IsOneOf_query_with_enum_types: BugIntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            var list = query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToList();
+            var list = (await query.Query<Target>().Where(x => x.Color.IsOneOf(Colors.Blue, Colors.Red)).ToListAsync());
 
             list.Count.ShouldBe(2);
             list.Select(x => x.Id).ShouldContain(blue.Id);

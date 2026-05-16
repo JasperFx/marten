@@ -24,7 +24,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync())
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
 
@@ -40,8 +40,8 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
-            .First().ShouldBe("Bill");
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+            .FirstAsync()).ShouldBe("Bill");
     }
 
     [Fact]
@@ -85,10 +85,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();(await 
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
@@ -105,8 +105,8 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
-            .FirstOrDefault()
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
+            .FirstOrDefaultAsync())
             ?.Name.ShouldBe("Bill");
     }
 
@@ -175,10 +175,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(new User { FirstName = "Sam" });
         theSession.Store(new User { FirstName = "Tom" });
 
-        await theSession.SaveChangesAsync();
+        await theSession.SaveChangesAsync();(await 
 
         theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Name)
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
@@ -195,7 +195,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToList();
+        var users = (await theSession.Query<User>().Select(x => new { First = x.FirstName, Last = x.LastName }).ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -217,7 +217,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
+        var users = (await theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -247,9 +247,9 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>()
+        var users = (await theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName))
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -270,9 +270,9 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        var users = theSession.Query<User>()
+        var users = (await theSession.Query<User>()
             .Select(x => new UserDto(x.FirstName, x.LastName) { YearsOld = x.Age })
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(4);
 
@@ -326,7 +326,7 @@ public class select_clause_usage: IntegrationContext
 
         await theStore.BulkInsertAsync(targets);
 
-        var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
+        var actual = (await theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToListAsync()).Distinct();
 
         var expected = targets.Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).Distinct();
 
@@ -344,10 +344,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => new { x.Id, x.Number, InnerNumber = x.Inner.Number })
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Id);
         actual.Number.ShouldBe(target.Number);
@@ -362,10 +362,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => new FlatTarget(x.Id, x.Number, x.Inner.Number))
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Id);
         actual.Number.ShouldBe(target.Number);
@@ -380,10 +380,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => x.Inner)
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Inner.Id);
         actual.Number.ShouldBe(target.Inner.Number);

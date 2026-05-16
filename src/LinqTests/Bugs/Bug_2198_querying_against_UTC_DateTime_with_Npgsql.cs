@@ -5,6 +5,7 @@ using Marten.Exceptions;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -21,11 +22,11 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
 
         await theSession.SaveChangesAsync();
 
-        Should.Throw<InvalidUtcDateTimeUsageException>(() =>
+        await Should.ThrowAsync<InvalidUtcDateTimeUsageException>(async () =>
         {
-            theSession.Query<Target>()
+            (await theSession.Query<Target>()
                 .Where(x => x.Date > DateTime.UtcNow)
-                .ToArray()
+                .ToListAsync())
                 .Select(x => x.Number)
                 .ShouldHaveTheSameElementsAs(1, 2, 3);
         });
@@ -49,11 +50,10 @@ public class Bug_2198_querying_against_UTC_DateTime_with_Npgsql : BugIntegration
 
         await theSession.SaveChangesAsync();
 
-
-        theSession.Query<Target>()
+        (await theSession.Query<Target>()
             .Where(x => x.DateOffset > DateTimeOffset.UtcNow)
             .OrderBy(x => x.DateOffset)
-            .ToArray()
+            .ToListAsync())
             .Select(x => x.Number)
             .ShouldHaveTheSameElementsAs(1, 3, 2);
     }

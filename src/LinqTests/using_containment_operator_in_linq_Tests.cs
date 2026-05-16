@@ -24,10 +24,10 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
 
         await session.SaveChangesAsync();
 
-        var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
-            .ToArray();
+        var actual =(await  session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
+            .ToListAsync());
 
-        actual.Length.ShouldBeGreaterThan(0);
+        actual.Count.ShouldBeGreaterThan(0);
 
         actual.ShouldContain(targets.ElementAt(2));
     }
@@ -46,7 +46,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
         await session.SaveChangesAsync();
 
 
-        session.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
+        (await session.Query<Target>().Where(x => x.Number == 3).SingleAsync()).Number.ShouldBe(3);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class using_containment_operator_in_linq_Tests: OneOffConfigurationsConte
 
         await session.SaveChangesAsync();
 
-        session.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
+        (await session.Query<Target>().Where(x => x.String == "Python").SingleAsync()).String.ShouldBe("Python");
     }
 }
 
@@ -87,10 +87,10 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
 
         await session.SaveChangesAsync();
 
-        var actual = session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
-            .ToArray();
+        var actual =(await  session.Query<Target>().Where(x => x.Date == targets.ElementAt(2).Date)
+            .ToListAsync());
 
-        actual.Length.ShouldBeGreaterThan(0);
+        actual.Count.ShouldBeGreaterThan(0);
 
         actual.ShouldContain(targets.ElementAt(2));
     }
@@ -109,7 +109,7 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
         await session.SaveChangesAsync();
 
 
-        session.Query<Target>().Where(x => x.Number == 3).Single().Number.ShouldBe(3);
+        (await session.Query<Target>().Where(x => x.Number == 3).SingleAsync()).Number.ShouldBe(3);
     }
 
     [Fact]
@@ -124,6 +124,6 @@ public class using_containment_operator_in_linq_with_camel_casing_Tests: OneOffC
 
         await session.SaveChangesAsync();
 
-        session.Query<Target>().Where(x => x.String == "Python").Single().String.ShouldBe("Python");
+        (await session.Query<Target>().Where(x => x.String == "Python").SingleAsync()).String.ShouldBe("Python");
     }
 }

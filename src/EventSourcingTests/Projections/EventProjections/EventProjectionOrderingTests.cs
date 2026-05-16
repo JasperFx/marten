@@ -8,6 +8,7 @@ using Marten.Events;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Xunit;
+using Marten;
 
 namespace EventSourcingTests.Projections.EventProjections;
 
@@ -34,9 +35,9 @@ public class EventProjectionOrderingTests: IntegrationContext
 
         await daemon.RebuildProjectionAsync<TestOrderingEventProjection>(CancellationToken.None);
 
-        var results = theSession.Query<OrderingTracker>()
+        var results = (await theSession.Query<OrderingTracker>()
             .Where(x => x.StreamId == firstStream || x.StreamId == secondStream)
-            .ToList();
+            .ToListAsync());
 
         results.OrderBy(x => x.Sequence).ShouldHaveTheSameElementsAs(results.OrderBy(x => x.Order));
     }

@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -22,7 +23,7 @@ public class Bug_187_not_assigning_id_in_BulkInsert_Tests: IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<IntDoc>().Count().ShouldBe(50);
+            (await session.Query<IntDoc>().CountAsync()).ShouldBe(50);
         }
     }
 

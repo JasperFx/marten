@@ -5,6 +5,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Weasel.Core;
+using Marten;
 namespace LinqTests.Operators;
 
 public class distinct_operator : IntegrationContext
@@ -24,7 +25,7 @@ public class distinct_operator : IntegrationContext
 
         var queryable = theSession.Query<Target>().Select(x => x.Number).Distinct();
 
-        queryable.ToList().Count.ShouldBe(3);
+        (await queryable.ToListAsync()).Count.ShouldBe(3);
     }
 
     #region sample_get_distinct_numbers
@@ -46,7 +47,7 @@ public class distinct_operator : IntegrationContext
             x.Decimal
         }).Distinct();
 
-        queryable.ToList().Count.ShouldBe(4);
+        (await queryable.ToListAsync()).Count.ShouldBe(4);
     }
     #endregion
 
@@ -65,7 +66,7 @@ public class distinct_operator : IntegrationContext
 
         var queryable = theSession.Query<Target>().Select(x => x.String).Distinct();
 
-        queryable.ToList().Count.ShouldBe(3);
+        (await queryable.ToListAsync()).Count.ShouldBe(3);
     }
 
     #endregion
@@ -89,7 +90,7 @@ public class distinct_operator : IntegrationContext
             x.AnotherString
         }).Distinct();
 
-        queryable.ToList().Count.ShouldBe(4);
+        (await queryable.ToListAsync()).Count.ShouldBe(4);
     }
 
     [Fact]
@@ -107,7 +108,7 @@ public class distinct_operator : IntegrationContext
 
         var queryable = theSession.Query<Target>().Select(x => x.Color).Distinct();
 
-        queryable.ToList().Count.ShouldBe(4);
+        (await queryable.ToListAsync()).Count.ShouldBe(4);
     }
 
     [Fact]
@@ -127,7 +128,7 @@ public class distinct_operator : IntegrationContext
         var queryable = theSession.Query<Target>()
             .Select(x => x.NullableEnum).Distinct();
 
-        queryable.ToList().Count.ShouldBe(5);
+        (await queryable.ToListAsync()).Count.ShouldBe(5);
     }
 
     [Fact]
@@ -151,7 +152,7 @@ public class distinct_operator : IntegrationContext
         var queryable = theSession.Query<Target>()
             .Select(x => x.NullableEnum).Distinct();
 
-        queryable.ToList().Count.ShouldBe(5);
+        (await queryable.ToListAsync()).Count.ShouldBe(5);
     }
 
     protected override async Task fixtureSetup()

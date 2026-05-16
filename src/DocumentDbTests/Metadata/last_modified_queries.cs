@@ -69,14 +69,14 @@ public class last_modified_queries: IntegrationContext
         await session.SaveChangesAsync();
 
         // no where clause
-        session.Query<User>().Where(x => x.ModifiedSince(epoch))
+        (await session.Query<User>().Where(x => x.ModifiedSince(epoch))
             .OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("baz", "jack");
+            .ToListAsync()).ShouldHaveTheSameElementsAs("baz", "jack");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(epoch))
+        (await session.Query<User>().Where(x => x.UserName != "baz" && x.ModifiedSince(epoch))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("jack");
     }
@@ -103,13 +103,13 @@ public class last_modified_queries: IntegrationContext
         var epoch = metadata.LastModified;
 
         // no where clause
-        session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList().ShouldHaveTheSameElementsAs("bar", "foo");
+        (await session.Query<User>().Where(x => x.ModifiedBefore(epoch)).OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "foo");
 
         // with a where clause
-        session.Query<User>().Where(x => x.UserName != "bar" && x.ModifiedBefore(epoch))
+        (await session.Query<User>().Where(x => x.UserName != "bar" && x.ModifiedBefore(epoch))
             .OrderBy(x => x.UserName)
-            .ToList()
+            .ToListAsync())
             .Select(x => x.UserName)
             .Single().ShouldBe("foo");
     }

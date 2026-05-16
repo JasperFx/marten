@@ -128,7 +128,7 @@ namespace DocumentDbTests.Metadata
             using (var session = theStore.LightweightSession())
             {
                 IncludedDocWithMeta loadedInclude = null;
-                var loaded = session.Query<DocWithMeta>().Include<IncludedDocWithMeta>(d => d.IncludedDocId, i => loadedInclude = i).Single(d => d.Id == doc.Id);
+                var loaded = (await session.Query<DocWithMeta>().Include<IncludedDocWithMeta>(d => d.IncludedDocId, i => loadedInclude = i).SingleAsync(d => d.Id == doc.Id));
 
                 loaded.ShouldNotBeNull();
 
@@ -199,7 +199,7 @@ namespace DocumentDbTests.Metadata
 
             await using (var session = theStore.LightweightSession(tenant))
             {
-                session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.TenantId == tenant)).ShouldBe(1);
 
                 var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
                 ShouldBeStringTestExtensions.ShouldBe(loaded.TenantId, tenant);
@@ -227,7 +227,7 @@ namespace DocumentDbTests.Metadata
             await theStore.BulkInsertAsync(tenant, new[] { doc });
 
             await using var session = theStore.QuerySession(tenant);
-            session.Query<DocWithMeta>().Count(d => d.TenantId == tenant).ShouldBe(1);
+            (await session.Query<DocWithMeta>().CountAsync(d => d.TenantId == tenant)).ShouldBe(1);
 
             var loaded = await session.Query<DocWithMeta>().Where(d => d.Id == doc.Id).FirstOrDefaultAsync();
             loaded.TenantId.ShouldBe(tenant);
@@ -264,14 +264,14 @@ namespace DocumentDbTests.Metadata
 
             using (var session = theStore.IdentitySession())
             {
-                session.Query<DocWithMeta>().Count(d => d.DocType == "BASE").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "blue_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "red_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "green_doc_with_meta").ShouldBe(1);
-                session.Query<DocWithMeta>().Count(d => d.DocType == "emerald_green_doc_with_meta").ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.DocType == "BASE")).ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.DocType == "blue_doc_with_meta")).ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.DocType == "red_doc_with_meta")).ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.DocType == "green_doc_with_meta")).ShouldBe(1);
+                (await session.Query<DocWithMeta>().CountAsync(d => d.DocType == "emerald_green_doc_with_meta")).ShouldBe(1);
 
 
-                var redDocs = session.Query<RedDocWithMeta>().ToList();
+                var redDocs = (await session.Query<RedDocWithMeta>().ToListAsync());
                 redDocs.Count.ShouldBe(1);
                 ShouldBeStringTestExtensions.ShouldBe(redDocs.First().DocType, "red_doc_with_meta");
                 session.Delete(redDocs.First());
@@ -297,7 +297,7 @@ namespace DocumentDbTests.Metadata
             }
 
             using var session = theStore.QuerySession();
-            session.Query<AttVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
+            (await session.Query<AttVersionedDoc>().CountAsync(d => d.Version != Guid.Empty)).ShouldBe(100);
         }
 
         [Fact]
@@ -317,7 +317,7 @@ namespace DocumentDbTests.Metadata
             }
 
             using var session = theStore.QuerySession();
-            session.Query<PropVersionedDoc>().Count(d => d.Version != Guid.Empty).ShouldBe(100);
+            (await session.Query<PropVersionedDoc>().CountAsync(d => d.Version != Guid.Empty)).ShouldBe(100);
         }
     }
 

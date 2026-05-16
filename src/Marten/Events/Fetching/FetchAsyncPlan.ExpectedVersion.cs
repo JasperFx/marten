@@ -164,9 +164,5 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             throw new NotSupportedException();
         }
 
-        public IEventStream<TDoc> Handle(DbDataReader reader, IMartenSession session)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

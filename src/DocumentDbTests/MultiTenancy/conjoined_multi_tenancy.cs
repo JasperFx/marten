@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -278,33 +279,33 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
         using (var session = store.QuerySession("Green"))
         {
             // Query tenanted document as the tenant passed in session
-            session.Query<Target>().Count().ShouldBe(10);
+            (await session.Query<Target>().CountAsync()).ShouldBe(10);
 
             // Query non-tenanted documents
-            session.Query<User>().Count().ShouldBe(2);
+            (await session.Query<User>().CountAsync()).ShouldBe(2);
 
             // Query documents in default tenant from a session using tenant Green
-            session.Query<Issue>().Count(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId)).ShouldBe(2);
+            (await session.Query<Issue>().CountAsync(x => x.TenantIsOneOf(StorageConstants.DefaultTenantId))).ShouldBe(2);
 
             // Query documents from tenant Red from a session using tenant Green
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
         }
 
         // create a session without passing any tenant, session will use default tenant
         using (var session = store.QuerySession())
         {
             // Query non-tenanted documents
-            session.Query<User>().Count().ShouldBe(2);
+            (await session.Query<User>().CountAsync()).ShouldBe(2);
 
             // Query documents in default tenant
             // Note that session is using default tenant
-            session.Query<Issue>().Count().ShouldBe(2);
+            (await session.Query<Issue>().CountAsync()).ShouldBe(2);
 
             // Query documents on tenant Green
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Green")).ShouldBe(10);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Green"))).ShouldBe(10);
 
             // Query documents on tenant Red
-            session.Query<Target>().Count(x => x.TenantIsOneOf("Red")).ShouldBe(11);
+            (await session.Query<Target>().CountAsync(x => x.TenantIsOneOf("Red"))).ShouldBe(11);
         }
 
         #endregion
@@ -332,8 +333,8 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
             #region sample_any_tenant
 
             // query data across all tenants
-            var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
-                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
+                .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 
             #endregion
 
@@ -359,8 +360,8 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         using (var query = theStore.QuerySession())
         {
-            var actual = query.Query<Target>().Where(x => x.AnyTenant() && x.Flag && x.String != null)
-                .OrderBy(x => x.Id).Select(x => x.Id).ToArray();
+            var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag && x.String != null)
+                .OrderBy(x => x.Id).Select(x => x.Id).ToListAsync());
 
             actual.ShouldHaveTheSameElementsAs(expected);
         }
@@ -475,17 +476,17 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
         await theStore.BulkInsertAsync("Red", reds);
         await theStore.BulkInsertAsync("Green", greens);
 
-        Guid[] actualReds = null;
-        Guid[] actualGreens = null;
+        IReadOnlyList<Guid> actualReds = null;
+        IReadOnlyList<Guid> actualGreens = null;
 
         using (var query = theStore.QuerySession("Red"))
         {
-            actualReds = query.Query<Target>().Select(x => x.Id).ToArray();
+            actualReds = await query.Query<Target>().Select(x => x.Id).ToListAsync();
         }
 
         using (var query = theStore.QuerySession("Green"))
         {
-            actualGreens = query.Query<Target>().Select(x => x.Id).ToArray();
+            actualGreens = await query.Query<Target>().Select(x => x.Id).ToListAsync();
         }
 
         actualGreens.Intersect(actualReds).Any().ShouldBeFalse();
@@ -512,17 +513,17 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         await using (var red = theStore.QuerySession("Red"))
         {
-            red.Query<Target>().Count().ShouldBe(50);
+            (await red.Query<Target>().CountAsync()).ShouldBe(50);
         }
 
         await using (var green = theStore.QuerySession("Green"))
         {
-            green.Query<Target>().Count().ShouldBe(75);
+            (await green.Query<Target>().CountAsync()).ShouldBe(75);
         }
 
         await using (var blue = theStore.QuerySession("Blue"))
         {
-            blue.Query<Target>().Count().ShouldBe(25);
+            (await blue.Query<Target>().CountAsync()).ShouldBe(25);
         }
     }
 
@@ -547,17 +548,17 @@ public class conjoined_multi_tenancy: StoreContext<MultiTenancyFixture>, IClassF
 
         using (var red = theStore.QuerySession("Red"))
         {
-            red.Query<Target>().Count().ShouldBe(50);
+            (await red.Query<Target>().CountAsync()).ShouldBe(50);
         }
 
         using (var green = theStore.QuerySession("Green"))
         {
-            green.Query<Target>().Count().ShouldBe(75);
+            (await green.Query<Target>().CountAsync()).ShouldBe(75);
         }
 
         using (var blue = theStore.QuerySession("Blue"))
         {
-            blue.Query<Target>().Count().ShouldBe(25);
+            (await blue.Query<Target>().CountAsync()).ShouldBe(25);
         }
     }
 

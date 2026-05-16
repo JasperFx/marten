@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Marten;
 using Marten.Exceptions;
 using Marten.Linq;
 using Marten.Testing.Harness;
@@ -38,11 +39,11 @@ public class equals_method_usage_validation : IntegrationContext
 
         object notInt = "not int";
 
-        Assert.Throws<BadLinqExpressionException>(() =>
+        await Assert.ThrowsAsync<BadLinqExpressionException>(async () =>
         {
-            var value = theSession
+            var value = await theSession
                 .Query<QueryTarget>()
-                .FirstOrDefault(x => x.IntProp.Equals(notInt));
+                .FirstOrDefaultAsync(x => x.IntProp.Equals(notInt));
         });
     }
 
@@ -59,11 +60,11 @@ public class equals_method_usage_validation : IntegrationContext
 
         object notInt = "not int";
 
-        Assert.Throws<BadLinqExpressionException>(() =>
+        await Assert.ThrowsAsync<BadLinqExpressionException>(async () =>
         {
-            var firstOrDefault = theSession
+            var firstOrDefault = await theSession
                 .Query<QueryTarget>()
-                .FirstOrDefault(x => !x.IntProp.Equals(notInt));
+                .FirstOrDefaultAsync(x => !x.IntProp.Equals(notInt));
         });
     }
 

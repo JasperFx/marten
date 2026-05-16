@@ -5,6 +5,7 @@ using Marten.Linq.SoftDeletes;
 using Marten.Metadata;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Bugs;
 
 public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
@@ -33,10 +34,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
             await sessionX.SaveChangesAsync();
         }
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var q = session.Query<Entity>();
         var w = AddWhere(q);
-        var result = w.Any();
+        var result = await w.AnyAsync();
 
         result.ShouldBeTrue();
     }
@@ -53,10 +54,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
             await sessionX.SaveChangesAsync();
         }
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var q = session.Query<Entity>();
         var w = AddWhereNonGeneric(q);
-        var result = w.Any();
+        var result = await w.AnyAsync();
 
         result.ShouldBeTrue();
     }
@@ -76,10 +77,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
         using var session = theStore.QuerySession();
 
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .WithArchivedState(ArchivedState.IncludeArchived)
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }
@@ -98,10 +99,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        var result = session
+        var result = (await session
             .Query<Entity>()
             .WithArchivedState(ArchivedState.IncludeArchived)
-            .ToList();
+            .ToListAsync());
 
         result.Count.ShouldBe(1);
     }
@@ -119,10 +120,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .WithArchivedStateNonGeneric(ArchivedState.IncludeArchived)
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }
@@ -140,10 +141,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        var result = session
+        var result = (await session
             .Query<Entity>()
             .WithArchivedStateNonGeneric(ArchivedState.IncludeArchived)
-            .ToList();
+            .ToListAsync());
 
         result.Count.ShouldBe(1);
     }
@@ -161,10 +162,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .Where(x => x.MaybeDeleted())
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }
@@ -190,9 +191,9 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
         using var query = theStore.QuerySession();
 
-        var list = query.Query<Entity>()
+        var list = (await query.Query<Entity>()
             .Where(x => x.MaybeDeleted())
-            .ToList();
+            .ToListAsync());
 
         list.Count.ShouldBe(2);
         list[0].Id.ShouldBe(entity.Id);

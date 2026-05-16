@@ -44,7 +44,7 @@ public class PatchExpressionTests : OneOffConfigurationsContext
             sess.Store(new Model() { Id = id, Name = "foo" });
             sess.Patch<Model>(id).Set(x => x.Name, "bar");
             await sess.SaveChangesAsync();
-            sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).Single().ShouldBe("bar");
+            (await sess.Query<Model>().Where(x => x.Id == id).Select(x => x.Name).SingleAsync()).ShouldBe("bar");
             (await sess.LoadAsync<Model>(id)).Name.ShouldBe("bar");
         }
     }

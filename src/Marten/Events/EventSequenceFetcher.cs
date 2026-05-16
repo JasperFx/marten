@@ -27,18 +27,6 @@ internal class EventSequenceFetcher: IQueryHandler<Queue<long>>
         builder.Append(_sql);
     }
 
-    public Queue<long> Handle(DbDataReader reader, IMartenSession session)
-    {
-        var queue = new Queue<long>();
-
-        while (reader.Read())
-        {
-            queue.Enqueue(reader.GetFieldValue<long>(0));
-        }
-
-        return queue;
-    }
-
     public async Task<Queue<long>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
     {
         var queue = new Queue<long>();

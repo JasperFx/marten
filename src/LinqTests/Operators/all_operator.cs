@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Operators;
 
 public class all_operator: IntegrationContext
@@ -30,9 +31,9 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.Roles.All(r => r == "R1"))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(2);
     }
@@ -49,9 +50,9 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.FirstName == "Joe" && u.Roles.All(r => r == "R1"))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(1);
     }
@@ -68,9 +69,9 @@ public class all_operator: IntegrationContext
         theSession.Store(new User { FirstName = "Joe" , Roles = [default(string), default(string)] });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.FirstName == "Jean" && u.Roles.All(r => r == "R1"))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(0);
     }
@@ -104,9 +105,9 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
 
          */
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.Roles.All(r => r == null))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(1);
     }
@@ -136,9 +137,9 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
         });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.Friends.All(f => f.Name == "F1"))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(2);
     }
@@ -168,9 +169,9 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
         });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.FirstName == "Joe" && u.Friends.All(f => f.Name == "F1"))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(1);
     }
@@ -200,9 +201,9 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
         });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.Friends.All(f => f.Name == null))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(1);
     }
@@ -232,9 +233,9 @@ select ctid, data from mt_temp_id_list1CTE as d where  true = ALL (select unnest
         });
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Query<User>()
+        var results = (await theSession.Query<User>()
             .Where(u => u.FirstName == "Bill" && u.Friends.All(f => f.Name == null))
-            .ToList();
+            .ToListAsync());
 
         results.Count.ShouldBe(0);
     }

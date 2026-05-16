@@ -59,17 +59,17 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -86,17 +86,17 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -113,17 +113,17 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -140,17 +140,17 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -198,17 +198,17 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
 
         using var query = theStore.QuerySession();
 
-        query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-            .ToList()
+        (await query.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+            .ToListAsync())
             .ShouldHaveTheSameElementsAs("one", "two");
 
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 

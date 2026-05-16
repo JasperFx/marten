@@ -43,7 +43,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         {
             await using var session = theStore.QuerySession();
 
-            var docs = session.Query<CustomerInsightsResponse>().ToList();
+            var docs = (await session.Query<CustomerInsightsResponse>().ToListAsync());
             docs.Count.ShouldBeEquivalentTo(1);
             docs.First().NewCustomers.ShouldBe(customersToCreate);
         }
@@ -61,7 +61,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
         {
             await using var session = theStore.QuerySession();
 
-            var docs = session.Query<CustomerInsightsResponse>().ToList();
+            var docs = (await session.Query<CustomerInsightsResponse>().ToListAsync());
             docs.Count.ShouldBeEquivalentTo(1);
             docs.First().NewCustomers.ShouldBe(customersToCreate - customersToDelete);
         }

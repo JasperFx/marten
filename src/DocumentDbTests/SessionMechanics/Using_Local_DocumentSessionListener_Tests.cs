@@ -200,7 +200,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
             using (var session = store.LightweightSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
-                var users = session.Query<User>().ToList();
+                var users = (await session.Query<User>().ToListAsync());
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
                     users.FirstOrDefault(where => where.Id == user1.Id));
@@ -329,7 +329,7 @@ public class Using_Local_DocumentSessionListener_Tests: OneOffConfigurationsCont
 
             using (var session = store.DirtyTrackedSession(new SessionOptions { Listeners = { stub1, stub2 } }))
             {
-                var users = session.Query<User>().ToList();
+                var users = (await session.Query<User>().ToListAsync());
 
                 stub1.LoadedDocuments.ShouldContainKeyAndValue(user1.Id,
                     users.FirstOrDefault(where => where.Id == user1.Id));

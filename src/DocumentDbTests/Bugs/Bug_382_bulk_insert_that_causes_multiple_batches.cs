@@ -24,7 +24,7 @@ public class Bug_382_bulk_insert_that_causes_multiple_batches: BugIntegrationCon
 
         await theStore.BulkInsertAsync(data, BulkInsertMode.OverwriteExisting, batchSize: 10);
 
-        theSession.Query<Target>().Count().ShouldBe(data.Length);
+        (await theSession.Query<Target>().CountAsync()).ShouldBe(data.Length);
     }
 
 

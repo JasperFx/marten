@@ -22,7 +22,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         await theStore.BulkInsertAsync(targets);
 
-        var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
+        var initialCount = (await theSession.Query<Target>().CountAsync(x => x.Double == 578));
 
         #region sample_deletewhere
         theSession.DeleteWhere<Target>(x => x.Double == 578);
@@ -30,9 +30,9 @@ public class delete_many_documents_by_query : IntegrationContext
         await theSession.SaveChangesAsync();
         #endregion
 
-        theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
+        (await theSession.Query<Target>().CountAsync()).ShouldBe(50 - initialCount);
 
-        theSession.Query<Target>().Count(x => x.Double == 578)
+        (await theSession.Query<Target>().CountAsync(x => x.Double == 578))
             .ShouldBe(0);
 
     }
@@ -74,7 +74,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count(x => x.Double == 578 && x.Number == current.Id)
+        (await theSession.Query<Target>().CountAsync(x => x.Double == 578 && x.Number == current.Id))
             .ShouldBe(0);
 
     }
@@ -93,18 +93,18 @@ public class delete_many_documents_by_query : IntegrationContext
 
         await theStore.BulkInsertAsync(targets);
 
-        var initialCount = theSession.Query<Target>().Count(x => x.Double == 578);
+        var initialCount = (await theSession.Query<Target>().CountAsync(x => x.Double == 578));
 
         theSession.Store(new User(), new User(), new User());
         theSession.DeleteWhere<Target>(x => x.Double == 578);
         await theSession.SaveChangesAsync();
 
-        theSession.Query<Target>().Count().ShouldBe(50 - initialCount);
+        (await theSession.Query<Target>().CountAsync()).ShouldBe(50 - initialCount);
 
-        theSession.Query<Target>().Count(x => x.Double == 578)
+        (await theSession.Query<Target>().CountAsync(x => x.Double == 578))
             .ShouldBe(0);
 
-        theSession.Query<User>().Count().ShouldBe(3);
+        (await theSession.Query<User>().CountAsync()).ShouldBe(3);
     }
 
     public class FailureInLife
@@ -126,7 +126,7 @@ public class delete_many_documents_by_query : IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<FailureInLife>().Count().ShouldBe(0);
+        (await theSession.Query<FailureInLife>().CountAsync()).ShouldBe(0);
 
     }
 

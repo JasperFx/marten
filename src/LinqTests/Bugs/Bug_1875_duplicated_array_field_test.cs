@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -29,7 +30,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Single(x => x.NumberArray.Contains(1))
+            (await session.Query<Target>().SingleAsync(x => x.NumberArray.Contains(1)))
                 .NumberArray[0].ShouldBe(1);
         }
     }
@@ -52,7 +53,7 @@ public class Bug_1875_duplicated_array_field_test : BugIntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().Single(x => x.GuidArray.Contains(target.GuidArray[0]))
+            (await session.Query<Target>().SingleAsync(x => x.GuidArray.Contains(target.GuidArray[0])))
                 .GuidArray[0].ShouldBe(target.GuidArray[0]);
         }
     }

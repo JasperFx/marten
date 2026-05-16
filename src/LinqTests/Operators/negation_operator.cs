@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Operators;
 
@@ -21,9 +22,9 @@ public class negation_operator : IntegrationContext
 
         using var query = theStore.QuerySession();
 
-        var players = query.Query<Player>()
+        var players =(await  query.Query<Player>()
             .Where(c => !(c.Name == "Tony" && c.Level == 10))
-            .ToArray();
+            .ToListAsync());
 
         players.Count(x => new[] { player2.Id, player3.Id, player4.Id }.Contains(x.Id)).ShouldBe(3);
     }
@@ -41,9 +42,9 @@ public class negation_operator : IntegrationContext
 
         using var query = theStore.QuerySession();
 
-        var players = query.Query<Player>()
+        var players =(await  query.Query<Player>()
             .Where(c => !(c.Name == "Tony" || c.Level == 10))
-            .ToArray();
+            .ToListAsync());
 
         players.Count(x => new[] { player2.Id, player4.Id }.Contains(x.Id)).ShouldBe(2);
     }

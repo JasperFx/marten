@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Bugs;
 
@@ -28,7 +29,7 @@ public class Bug_1256_querying_against_a_uint_type: IntegrationContext
             session.Store(doc1, doc2, doc3, doc4, doc5);
             await session.SaveChangesAsync();
 
-            session.Query<DocWithUint>().Count(x => x.Number > 3).ShouldBe(2);
+            (await session.Query<DocWithUint>().CountAsync(x => x.Number > 3)).ShouldBe(2);
         }
     }
 

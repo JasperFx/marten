@@ -81,7 +81,7 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
             linq.ToCommand().CommandText.ShouldNotContain("tenant_id");
 
-            linq.ShouldHaveTheSameElementsAs("Bill", "Jill");
+            (await linq.ToListAsync()).ShouldHaveTheSameElementsAs("Bill", "Jill");
         }
     }
 
@@ -113,21 +113,23 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
         var validRoles = new[] { "admin", "user" };
 
-        using (var query = theStore.QuerySession("tenant1"))
+        await using (var query = theStore.QuerySession("tenant1"))
         {
-            query.Query<User>()
+            (await query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)))
                 .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
+                .ToListAsync())
                 .ShouldHaveTheSameElementsAs("Bill");
         }
 
-        using (var query = theStore.QuerySession("tenant2"))
+        await using (var query = theStore.QuerySession("tenant2"))
         {
-            query.Query<User>()
+            (await query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)))
                 .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
+                .ToListAsync())
                 .ShouldHaveTheSameElementsAs("Jill");
         }
     }
@@ -160,12 +162,13 @@ public class Bug_1884_multi_tenancy_and_Any_query: BugIntegrationContext
 
         var validRoles = new[] { "admin", "user" };
 
-        using (var query = theStore.QuerySession("tenant1"))
+        await using (var query = theStore.QuerySession("tenant1"))
         {
-            query.Query<User>()
+            (await query.Query<User>()
                 .Where(x => x.Roles.Any(_ => validRoles.Contains(_)) && x.AnyTenant())
                 .OrderBy(x => x.UserName)
                 .Select(x => x.UserName)
+                .ToListAsync())
                 .ShouldHaveTheSameElementsAs("Bill", "Jill");
         }
     }

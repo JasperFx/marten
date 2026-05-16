@@ -25,8 +25,8 @@ public class custom_identity_members : OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listSystemIds)).ShouldBe(0);
-            session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);
+            (await session.Query<BaseClass>().CountAsync(x => x.Id.IsOneOf(listSystemIds))).ShouldBe(0);
+            (await session.Query<BaseClass>().CountAsync(x => x.SystemId.IsOneOf(listSystemIds))).ShouldBe(2);
         }
     }
 
@@ -46,11 +46,11 @@ public class custom_identity_members : OneOffConfigurationsContext
         {
             (await session.LoadManyAsync<BaseClass>(listSystemIds)).Count.ShouldBe(2);
 
-            session.Query<BaseClass>().Count(x => x.Id.IsOneOf(listIds)).ShouldBe(2);
-            session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf(listSystemIds)).ShouldBe(2);
+            (await session.Query<BaseClass>().CountAsync(x => x.Id.IsOneOf(listIds))).ShouldBe(2);
+            (await session.Query<BaseClass>().CountAsync(x => x.SystemId.IsOneOf(listSystemIds))).ShouldBe(2);
 
-            session.Query<BaseClass>().Count(x => x.Id.IsOneOf("123", "456")).ShouldBe(0);
-            session.Query<BaseClass>().Count(x => x.SystemId.IsOneOf("qwe", "zxc")).ShouldBe(0);
+            (await session.Query<BaseClass>().CountAsync(x => x.Id.IsOneOf("123", "456"))).ShouldBe(0);
+            (await session.Query<BaseClass>().CountAsync(x => x.SystemId.IsOneOf("qwe", "zxc"))).ShouldBe(0);
         }
     }
 

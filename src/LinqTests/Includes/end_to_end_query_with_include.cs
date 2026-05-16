@@ -96,10 +96,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
 
         User included = null;
-        var issue2 = query
+        var issue2 = (await query
             .Query<Issue>()
             .Include<User>(x => included = x).On(x => x.AssigneeId)
-            .Single(x => x.Title == issue.Title);
+            .SingleAsync(x => x.Title == issue.Title));
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -121,10 +121,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query
+        var issue2 = (await query
             .Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
-            .Single(x => x.Tags.Contains("DIY"));
+            .SingleAsync(x => x.Tags.Contains("DIY")));
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -148,10 +148,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Contains("DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -171,10 +171,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query
+        var issue2 = (await query
             .Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
-            .Single(x => x.Tags.Any<string>(t => t == "DIY"));
+            .SingleAsync(x => x.Tags.Any<string>(t => t == "DIY")));
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -197,10 +197,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Any(t => t == "DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -223,10 +223,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Any(t => t == "DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -249,10 +249,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Any(t => t == "DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -275,10 +275,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Any(t => t == "DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -303,10 +303,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         var users = new List<User>();
-        var issues = query.Query<Issue>()
+        var issues = (await query.Query<Issue>()
             .Include(x => x.AssigneeId, users)
             .Where(x => x.Tags.Any(t => requestedTags.Contains(t)))
-            .ToList();
+            .ToListAsync());
 
         users.Count.ShouldBe(1);
         users.ShouldContain(x => x.Id == user.Id);
@@ -326,17 +326,17 @@ public class end_to_end_query_with_include: IntegrationContext
         session.Store<object>(user, issue);
         await session.SaveChangesAsync();
 
-        IncludeGeneric<UserWithInterface>(user);
+        await IncludeGeneric<UserWithInterface>(user);
     }
 
-    private void IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : class, IUserWithInterface
+    private async Task IncludeGeneric<T>(UserWithInterface userToCompareAgainst) where T : class, IUserWithInterface
     {
-        using var query = theStore.QuerySession();
+        await using var query = theStore.QuerySession();
         T included = default;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<T>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Tags.Any(t => t == "DIY"))
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(userToCompareAgainst.Id);
@@ -355,10 +355,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query.Query<Issue>()
+        var issue2 = (await query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Title == issue.Title)
-            .Single();
+            .SingleAsync());
 
         included.ShouldBeNull();
 
@@ -383,7 +383,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+        var issues = (await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync());
 
         list.Count.ShouldBe(2);
 
@@ -410,17 +410,17 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        var issues = query.Query<Issue>()
+        var issues =(await  query.Query<Issue>()
             .Include<User>(x => x.AssigneeId, list)
             .Where(x => x.AssigneeId.HasValue)
-            .ToArray();
+            .ToListAsync());
 
         list.Count.ShouldBe(2);
 
         list.Any(x => x.Id == user1.Id).ShouldBeTrue();
         list.Any(x => x.Id == user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(3);
+        issues.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -442,7 +442,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var list = new List<User>();
 
-        var issues = query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToArray();
+        var issues = (await query.Query<Issue>().Include<User>(x => x.AssigneeId, list).ToListAsync());
 
         list.Count.ShouldBe(2);
 
@@ -450,7 +450,7 @@ public class end_to_end_query_with_include: IntegrationContext
         list.Any(x => x.Id == user2.Id).ShouldBeTrue();
         list.Any(x => x == null).ShouldBeFalse();
 
-        issues.Length.ShouldBe(4);
+        issues.Count.ShouldBe(4);
     }
 
     [Fact]
@@ -472,7 +472,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.IdentitySession();
         var dict = new Dictionary<Guid, User>();
 
-        query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync();
 
         (await query.LoadAsync<User>(user1.Id)).ShouldBeSameAs(dict[user1.Id]);
         (await query.LoadAsync<User>(user2.Id)).ShouldBeSameAs(dict[user2.Id]);
@@ -498,7 +498,7 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        query.Query<Issue>().Include(dict).On(x => x.AssigneeId).ToArray();
+        await query.Query<Issue>().Include(dict).On(x => x.AssigneeId).ToListAsync();
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
@@ -530,15 +530,15 @@ public class end_to_end_query_with_include: IntegrationContext
 
 
 
-        var ids = query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
+        var ids =(await  query.Query<Issue>().Include(dict).On(x => x.AssigneeId)
             .Where(x => x.Status == "Done")
-            .Select(x => x.Number).ToArray();
+            .Select(x => x.Number).ToListAsync());
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
         dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-        ids.Length.ShouldBe(2);
+        ids.Count.ShouldBe(2);
         ids.ShouldContain(1);
         ids.ShouldContain(2);
     }
@@ -562,16 +562,16 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        var issues = query
+        var issues =(await  query
             .Query<Issue>()
             .Include(x => x.AssigneeId, dict)
-            .Where(x => x.AssigneeId.HasValue).ToArray();
+            .Where(x => x.AssigneeId.HasValue).ToListAsync());
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
         dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(3);
+        issues.Count.ShouldBe(3);
     }
 
     [Fact]
@@ -593,13 +593,13 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<Guid, User>();
 
-        var issues = query.Query<Issue>().Include(x => x.AssigneeId, dict).ToArray();
+        var issues = (await query.Query<Issue>().Include(x => x.AssigneeId, dict).ToListAsync());
 
         dict.Count.ShouldBe(2);
         dict.ContainsKey(user1.Id).ShouldBeTrue();
         dict.ContainsKey(user2.Id).ShouldBeTrue();
 
-        issues.Length.ShouldBe(4);
+        issues.Count.ShouldBe(4);
     }
 
     [Fact]
@@ -755,11 +755,11 @@ public class end_to_end_query_with_include: IntegrationContext
         User reporter2 = null;
 
 
-        query
+        (await query
             .Query<Issue>()
             .Include<User>(x => assignee2 = x).On(x => x.AssigneeId)
             .Include<User>(x => reporter2 = x).On(x => x.ReporterId)
-            .Single()
+            .SingleAsync())
             .ShouldNotBeNull();
 
         assignee2.Id.ShouldBe(assignee.Id);
@@ -797,11 +797,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
             var list = new List<User>();
 
-            query.Query<Group>()
+            (await query.Query<Group>()
                 .Include(x => x.Users, list)
                 .Where(x => x.Name == "Odds")
-                .ToList()
-                .Single()
+                .SingleAsync())
                 .Name.ShouldBe("Odds");
 
             list.Count.ShouldBe(4);
@@ -824,12 +823,12 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query
+        var issue2 = (await query
             .Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
             .Where(x => x.Title == issue.Title)
             .Select(x => new IssueDTO { Id = x.Id, AssigneeId = x.AssigneeId })
-            .Single();
+            .SingleAsync());
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(user.Id);
@@ -892,10 +891,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
         using var query = theStore.QuerySession();
         User included = null;
-        var issue2 = query
+        var issue2 = (await query
             .Query<Issue>()
             .Include<User>(x => x.AssigneeId, x => included = x)
-            .SingleOrDefault(x => x.Title == "Garage Door is not busted");
+            .SingleOrDefaultAsync(x => x.Title == "Garage Door is not busted"));
 
         included.ShouldBeNull();
         issue2.ShouldBeNull();
@@ -925,10 +924,10 @@ public class end_to_end_query_with_include: IntegrationContext
 
             var list = new List<User>();
 
-            var groups = query.Query<Group>()
+            var groups = (await query.Query<Group>()
                 .Include(x => x.Users, list)
                 .Where(x => x.Name == "Users" || x.Name == "Empty")
-                .ToList();
+                .ToListAsync());
 
             groups.Count.ShouldBe(2);
 
@@ -955,10 +954,10 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         Classroom? included = null;
 
-        var user2 = query
+        var user2 = (await query
             .Query<SchoolUser>()
             .Include<Classroom>(c => included = c).On(u => u.HomeRoom, c => c.RoomCode)
-            .Single(u => u.Name == "Student #1");
+            .SingleAsync(u => u.Name == "Student #1"));
 
         included.ShouldNotBeNull();
         included.Id.ShouldBe(classroom.Id);
@@ -987,12 +986,12 @@ public class end_to_end_query_with_include: IntegrationContext
         using var query = theStore.QuerySession();
         var dict = new Dictionary<string, IList<SchoolUser>>();
 
-        var classes = query
+        var classes =(await  query
             .Query<Classroom>()
             .Include(dict).On(c => c.RoomCode, u => u.HomeRoom)
-            .ToArray();
+            .ToListAsync());
 
-        classes.Length.ShouldBe(2);
+        classes.Count.ShouldBe(2);
         dict.Count.ShouldBe(2);
         dict.ContainsKey(class1.RoomCode).ShouldBeTrue();
         dict.ContainsKey(class2.RoomCode).ShouldBeTrue();

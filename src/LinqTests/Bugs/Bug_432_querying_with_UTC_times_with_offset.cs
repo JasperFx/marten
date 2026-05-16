@@ -38,8 +38,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
             await session.SaveChangesAsync();
 
 
-            session.Query<DateClass>()
-                .Count(x => now >= x.DateTimeField).ShouldBe(2);
+            (await session.Query<DateClass>()
+                .CountAsync(x => now >= x.DateTimeField)).ShouldBe(2);
         }
     }
 
@@ -73,8 +73,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
             await session.SaveChangesAsync();
 
 
-            session.Query<DateClass>()
-                .Count(x => now >= x.DateTimeField).ShouldBe(2);
+            (await session.Query<DateClass>()
+                .CountAsync(x => now >= x.DateTimeField)).ShouldBe(2);
         }
     }
 
@@ -108,8 +108,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
             await session.SaveChangesAsync();
 
 
-            session.Query<DateClass>()
-                .Count(x => now >= x.DateTimeField).ShouldBe(2);
+            (await session.Query<DateClass>()
+                .CountAsync(x => now >= x.DateTimeField)).ShouldBe(2);
         }
     }
 
@@ -144,8 +144,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
 
 
 
-            session.Query<DateClass>()
-                .Count(x => now >= x.DateTimeField).ShouldBe(2);
+            (await session.Query<DateClass>()
+                .CountAsync(x => now >= x.DateTimeField)).ShouldBe(2);
         }
     }
 
@@ -178,8 +178,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
 
 
 
-            session.Query<DateOffsetClass>()
-                .Count(x => now >= x.DateTimeOffsetField).ShouldBe(2);
+            (await session.Query<DateOffsetClass>()
+                .CountAsync(x => now >= x.DateTimeOffsetField)).ShouldBe(2);
         }
     }
 
@@ -214,8 +214,8 @@ public class Bug_432_querying_with_UTC_times_with_offset: BugIntegrationContext
 
 
 
-            session.Query<DateOffsetClass>()
-                .Count(x => now >= x.DateTimeOffsetField).ShouldBe(2);
+            (await session.Query<DateOffsetClass>()
+                .CountAsync(x => now >= x.DateTimeOffsetField)).ShouldBe(2);
         }
     }
 

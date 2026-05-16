@@ -23,11 +23,11 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
 
         var searchNames = new[] { "Jeremy", "Josh" };
 
-        var ids = session
+        var ids = (await session
             .Query<DocWithLists>()
             .Where(x => x.Names.Any(_ => searchNames.Contains(_)))
             .Select(x => x.Id)
-            .ToList();
+            .ToListAsync());
 
         ids.Count.ShouldBe(2);
         ids.ShouldContain(doc1.Id);
@@ -49,11 +49,11 @@ public class Bug_1325_Any_with_contains_on_IList_of_string: BugIntegrationContex
 
         var searchNames = new[] { "Jeremy", "Josh" };
 
-        var ids = session
+        var ids = (await session
             .Query<DocWithLists>()
             .Where(x => x.Names.Any(_ => searchNames.Contains(_)))
             .Select(x => x.Id)
-            .ToList();
+            .ToListAsync());
 
         ids.Count.ShouldBe(2);
         ids.ShouldContain(doc1.Id);

@@ -36,7 +36,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
         await theCleaner.DeleteDocumentsByTypeAsync(typeof(Target));
 
         await using var session = theStore.QuerySession();
-        session.Query<Target>().Count().ShouldBe(0);
+        (await session.Query<Target>().CountAsync()).ShouldBe(0);
     }
 
     [Fact]
@@ -54,10 +54,10 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
         await theCleaner.DeleteAllDocumentsAsync();
 
         await using var session = theStore.QuerySession();
-        session.Query<Target>().Count().ShouldBe(0);
-        session.Query<User>().Count().ShouldBe(0);
-        session.Query<Issue>().Count().ShouldBe(0);
-        session.Query<Company>().Count().ShouldBe(0);
+        (await session.Query<Target>().CountAsync()).ShouldBe(0);
+        (await session.Query<User>().CountAsync()).ShouldBe(0);
+        (await session.Query<Issue>().CountAsync()).ShouldBe(0);
+        (await session.Query<Company>().CountAsync()).ShouldBe(0);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await theSession.Events.QueryRawEventDataOnly<QuestStarted>().ToListAsync()).ShouldBeEmpty();
         (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
     }
 
@@ -151,7 +151,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await theSession.Events.QueryRawEventDataOnly<QuestStarted>().ToListAsync()).ShouldBeEmpty();
         (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
 
         var progress = await theStore.Advanced.AllProjectionProgress();
@@ -180,12 +180,12 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await using var session = theStore.LightweightSession();
         // Not cleaned off
-        session.Query<Target>().Count().ShouldBe(2);
-        session.Query<User>().Count().ShouldBe(1);
+        (await session.Query<Target>().CountAsync()).ShouldBe(2);
+        (await session.Query<User>().CountAsync()).ShouldBe(1);
 
         // Should be cleaned off
-        session.Query<Issue>().Count().ShouldBe(0);
-        session.Query<Company>().Count().ShouldBe(0);
+        (await session.Query<Issue>().CountAsync()).ShouldBe(0);
+        (await session.Query<Company>().CountAsync()).ShouldBe(0);
     }
 
     [Fact]
@@ -204,12 +204,12 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await using var session = theStore.LightweightSession();
         // Not cleaned off
-        session.Query<Target>().Count().ShouldBe(2);
-        session.Query<User>().Count().ShouldBe(1);
+        (await session.Query<Target>().CountAsync()).ShouldBe(2);
+        (await session.Query<User>().CountAsync()).ShouldBe(1);
 
         // Should be cleaned off
-        session.Query<Issue>().Count().ShouldBe(0);
-        session.Query<Company>().Count().ShouldBe(0);
+        (await session.Query<Issue>().CountAsync()).ShouldBe(0);
+        (await session.Query<Company>().CountAsync()).ShouldBe(0);
     }
 
     [Fact]

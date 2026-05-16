@@ -64,7 +64,7 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         Thread.Sleep(4);
         await StoreUser(theStore, "User3");
 
-        var users = GetUsers(theStore);
+        var users = await GetUsers(theStore);
 
         var id1 = FormatIdAsByteArrayString(users, "User1");
         var id2 = FormatIdAsByteArrayString(users, "User2");
@@ -102,7 +102,7 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         roundtrip.ToUnixTimeMilliseconds().ShouldBe(timestamp.ToUnixTimeMilliseconds());
     }
 
-    private static string FormatIdAsByteArrayString(UserWithGuid[] users, string user1)
+    private static string FormatIdAsByteArrayString(IReadOnlyList<UserWithGuid> users, string user1)
     {
         var id = users.Single(user => user.LastName == user1).Id;
         return Format(id);
@@ -113,10 +113,10 @@ public class CombGuidIdGenerationTests: OneOffConfigurationsContext
         return id.ToString();
     }
 
-    private static UserWithGuid[] GetUsers(IDocumentStore documentStore)
+    private static async Task<IReadOnlyList<UserWithGuid>> GetUsers(IDocumentStore documentStore)
     {
-        using var session = documentStore.QuerySession();
-        return session.Query<UserWithGuid>().ToArray();
+        await using var session = documentStore.QuerySession();
+        return await session.Query<UserWithGuid>().ToListAsync();
     }
 
     private static async Task StoreUser(IDocumentStore documentStore, string lastName)

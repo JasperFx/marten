@@ -30,11 +30,6 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         sql.AppendParameter(_id);
     }
 
-    public IEvent Handle(DbDataReader reader, IMartenSession session)
-    {
-        return reader.Read() ? ((ISelector<IEvent>)_selector).Resolve(reader) : null;
-    }
-
     public async Task<IEvent> HandleAsync(DbDataReader reader, IMartenSession session,
         CancellationToken token)
     {

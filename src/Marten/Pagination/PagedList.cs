@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using Marten.Internal.Sessions;
 using Marten.Linq;
 
 namespace Marten.Pagination;
@@ -111,9 +112,7 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="pageSize"></param>
     public static PagedList<T> Create(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery = false)
     {
-        var pagedList = new PagedList<T>();
-        pagedList.Init(queryable, pageNumber, pageSize, useCountQuery);
-        return pagedList;
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     /// <summary>
@@ -141,15 +140,7 @@ public class PagedList<T>: IPagedList<T>
     /// <param name="useCountQuery">Use a separate count query rather than using Stats. Default is false and uses Stats</param>
     public void Init(IQueryable<T> queryable, int pageNumber, int pageSize, bool useCountQuery=false)
     {
-        var query = PrepareQuery(queryable, pageNumber, pageSize, useCountQuery, out var statistics);
-
-        if (useCountQuery)
-        {
-            statistics.TotalResults = queryable.LongCount();
-        }
-
-        var items = query.ToList();
-        ProcessResults(pageSize, items, statistics);
+        throw new NotSupportedException(QuerySession.SynchronousNotSupportedMessage);
     }
 
     /// <summary>

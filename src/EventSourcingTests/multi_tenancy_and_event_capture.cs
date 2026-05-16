@@ -273,7 +273,7 @@ public class multi_tenancy_and_event_capture: OneOffConfigurationsContext
 
         using (var session = theStore.QuerySession("Green"))
         {
-            var memberJoins = session.Query<MembersJoined>().ToList();
+            var memberJoins = (await session.Query<MembersJoined>().ToListAsync());
             memberJoins.Count.ShouldBe(1);
         }
     }

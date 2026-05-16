@@ -314,10 +314,8 @@ public class compiled_queries: IntegrationContext
         await theSession.SaveChangesAsync();
 
         // this should pass => Any works.
-        user.ShouldSatisfyAllConditions(
-            () => theSession.Query<User>().Any(x => x.Age == 6).ShouldBeFalse(),
-            () => theSession.Query<User>().Any(x => x.Age == 5).ShouldBeTrue()
-        );
+        (await theSession.Query<User>().AnyAsync(x => x.Age == 6)).ShouldBeFalse();
+        (await theSession.Query<User>().AnyAsync(x => x.Age == 5)).ShouldBeTrue();
 
         // this should pass => AnyAsync works, too
         var asyncR1 = await theSession.Query<User>().AnyAsync(x => x.Age == 6);

@@ -341,8 +341,8 @@ public class bootstrapping_with_service_collection_extensions
         var serviceProvider = services.BuildServiceProvider();
 
         await using var session = serviceProvider.GetService<IDocumentSession>();
-        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
-        Call(session).ShouldNotThrow();
+        Func<Task<bool>> Call(IDocumentSession s) => async () => await s.Query<Target>().AnyAsync();
+        await Call(session).ShouldNotThrowAsync();
     }
 
     [Fact]
@@ -367,8 +367,8 @@ public class bootstrapping_with_service_collection_extensions
         var serviceProvider = services.BuildServiceProvider();
 
         await using var session = serviceProvider.GetService<IDocumentSession>();
-        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
-        Call(session).ShouldNotThrow();
+        Func<Task<bool>> Call(IDocumentSession s) => async () => await s.Query<Target>().AnyAsync();
+        await Call(session).ShouldNotThrowAsync();
     }
 
 
@@ -393,8 +393,8 @@ public class bootstrapping_with_service_collection_extensions
         var serviceProvider = services.BuildServiceProvider();
 
         await using var session = serviceProvider.GetService<IDocumentSession>();
-        Func<bool> Call(IDocumentSession s) => () => s.Query<Target>().Any();
-        Call(session).ShouldNotThrow();
+        Func<Task<bool>> Call(IDocumentSession s) => async () => await s.Query<Target>().AnyAsync();
+        await Call(session).ShouldNotThrowAsync();
     }
 
     [Fact]

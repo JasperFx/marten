@@ -24,7 +24,7 @@ public class OrderedSelectComparison<T>: LinqTestCase
     {
         var expected = _selector(documents.AsQueryable()).ToArray();
 
-        var actual = (await (_selector(session.Query<Target>()).ToListAsync())).ToArray();
+        var actual = (await _selector(session.Query<Target>()).ToListAsync()).ToArray();
 
         assertSame(expected, actual);
     }

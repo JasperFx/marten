@@ -4,6 +4,7 @@ using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
+using Marten;
 
 namespace DocumentDbTests.Bugs;
 
@@ -23,7 +24,7 @@ public class Bug_621_bulk_insert_with_optimistic_concurrency: BugIntegrationCont
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Target>().Count().ShouldBe(1000);
+            (await query.Query<Target>().CountAsync()).ShouldBe(1000);
         }
     }
 

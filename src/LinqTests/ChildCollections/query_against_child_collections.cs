@@ -123,9 +123,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         #region sample_any-query-through-child-collections
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6))
-            .ToArray();
+            .ToListAsync());
 
         #endregion
 
@@ -142,9 +142,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(c => !string.IsNullOrEmpty(c.NullableString)))
-            .ToArray();
+            .ToListAsync());
 
         results
             .Select(x => x.Id)
@@ -159,9 +159,9 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        var results = theSession.Query<Target>()
+        var results =(await  theSession.Query<Target>()
             .Where(x => x.Children.Any(c => string.IsNullOrWhiteSpace(c.NullableString)))
-            .ToArray();
+            .ToListAsync());
 
         var ids = results.Select(x => x.Id).ToArray();
 
@@ -178,10 +178,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         #region sample_any-query-through-child-collection-with-and
 
-        var results = theSession
+        var results =(await  theSession
             .Query<Target>()
             .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
-            .ToArray();
+            .ToListAsync());
 
         #endregion
 
@@ -196,8 +196,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Single(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2))
+        (await theSession.Query<Target>()
+            .SingleAsync(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2)))
             .Id.ShouldBe(targets[10].Id);
     }
 
@@ -209,8 +209,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Count(x => x.Children.Any<Target>(_ => _.Color == Colors.Green))
+        (await theSession.Query<Target>()
+            .CountAsync(x => x.Children.Any<Target>(_ => _.Color == Colors.Green)))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
 
@@ -222,8 +222,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Count(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue))
+        (await theSession.Query<Target>()
+            .CountAsync(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue)))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
 
@@ -247,7 +247,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         using (var session2 = theStore.LightweightSession())
         {
             // This works
-            var o1 = session2.Query<Outer>().First(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12"));
+            var o1 = (await session2.Query<Outer>().FirstAsync(o => o.Inners.Any(i => i.Type == "T1" && i.Value == "V12")));
             o1.ShouldNotBeNull();
 
             var o2 = await session2.QueryAsync(new FindOuterByInner("T1", "V12"));
@@ -291,20 +291,20 @@ public class query_against_child_collections: OneOffConfigurationsContext
     }
 
     [Fact]
-    public void Bug_415_can_query_when_matched_value_has_quotes()
+    public async Task Bug_415_can_query_when_matched_value_has_quotes()
     {
         using (var session = theStore.QuerySession())
         {
-            session.Query<Course>().Any(x => x.ExtIds.Contains("some'thing")).ShouldBeFalse();
+            (await session.Query<Course>().AnyAsync(x => x.ExtIds.Contains("some'thing"))).ShouldBeFalse();
         }
     }
 
     [Fact]
-    public void Bug_415_can_query_inside_of_non_primitive_collection()
+    public async Task Bug_415_can_query_inside_of_non_primitive_collection()
     {
         using (var session = theStore.QuerySession())
         {
-            session.Query<Course>().Any(x => x.Sources.Any(_ => _.Case == "some'thing"));
+            await session.Query<Course>().AnyAsync(x => x.Sources.Any(_ => _.Case == "some'thing"));
         }
     }
 
@@ -379,10 +379,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
         await buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(4);
         res[0].Long.ShouldBe(1);
@@ -428,10 +428,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
         await buildAuthorData();
 
         var interests = new[] { "finance", "astrology" };
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.CategoryArray.Any(s => interests.Contains(s)) && x.Published)
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(2);
         res[0].Long.ShouldBe(1);
@@ -474,10 +474,10 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildAuthorData();
 
-        var res = theSession.Query<Article>()
+        var res = (await theSession.Query<Article>()
             .Where(x => x.AuthorList.Any(s => favAuthors.Contains(s)))
             .OrderBy(x => x.Long)
-            .ToList();
+            .ToListAsync());
 
         res.Count.ShouldBe(1);
         res[0].Long.ShouldBe(5);
@@ -495,7 +495,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -510,7 +510,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Numbers.Length == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -530,7 +530,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -549,7 +549,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Any(_ => _ == "c")).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -568,7 +568,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Length == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -585,7 +585,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Count() == 4).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc3.Id);
     }
 
@@ -611,7 +611,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToArray()
+        (await theSession.Query<DocWithArrays>().Where(x => x.Dates.Contains(DateTime.Today.AddDays(2))).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -628,7 +628,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -648,12 +648,12 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
+        (await theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
         // Or without any predicate
-        theSession.Query<DocWithLists>()
-            .Count(x => x.Numbers.Any()).ShouldBe(3);
+        (await theSession.Query<DocWithLists>()
+            .CountAsync(x => x.Numbers.Any())).ShouldBe(3);
     }
 
     #endregion
@@ -675,8 +675,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count() == 4)).Id.ShouldBe(doc3.Id);
     }
 
     #endregion
@@ -694,8 +694,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count == 4).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count == 4)).Id.ShouldBe(doc3.Id);
     }
 
     [Fact]
@@ -711,8 +711,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count > 3).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count > 3)).Id.ShouldBe(doc3.Id);
     }
 
     [Fact]
@@ -728,7 +728,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists2>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -745,7 +745,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToArray()
+        (await theSession.Query<DocWithLists3>().Where(x => x.Numbers.Contains(3)).ToListAsync())
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
     }
 
@@ -762,7 +762,7 @@ public class query_against_child_collections: OneOffConfigurationsContext
         theSession.Store(targetithchildren);
         await theSession.SaveChangesAsync();
 
-        var items = theSession.Query<Target>().Where(x => x.Children.Any()).ToList();
+        var items = (await theSession.Query<Target>().Where(x => x.Children.Any()).ToListAsync());
 
         items.Count.ShouldBe(1);
     }
