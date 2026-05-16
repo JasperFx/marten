@@ -34,9 +34,11 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Landed so far (15 commits on the branch)
+## Landed so far (17 commits on the branch)
 
 ```
+ea1c93561  [#4417 #4418] W4 suite-sweep: harness hook + 2 closed-shape fixes
+9521858c8  [#4414 #4415] W4 SESSION-STATE: all three AppendModes landed
 499c24575  [#4414 #4415] W4 Quick + QuickWithServerTimestamps write path
 0a4d7c58d  [#4416] W4: pin is_skipped contract + clarify SESSION-STATE
 cecab0229  [#4416] W4 SESSION-STATE: Rich-mode feature-complete for default + scalar metadata + headers
@@ -59,41 +61,37 @@ The build is clean (0 errors). **All three AppendModes — Rich, Quick,
 QuickWithServerTimestamps — now work end-to-end under the closed-shape
 flag.** The v9 default (`UseClosedShapeStorage = true` +
 `AppendMode = QuickWithServerTimestamps`) is a working drop-in
-configuration. With:
+configuration.
 
 ```csharp
 opts.EventGraph.UseClosedShapeStorage = true;
 // AppendMode = QuickWithServerTimestamps (v9 default), Quick, or Rich
-// optionally:
-opts.Events.MetadataConfig.CausationIdEnabled = true;
-opts.Events.MetadataConfig.CorrelationIdEnabled = true;
-opts.Events.MetadataConfig.UserNameEnabled = true;
-opts.Events.MetadataConfig.HeadersEnabled = true;
 ```
 
-`StartStream → SaveChangesAsync → FetchStreamStateAsync → FetchStreamAsync`
-round-trips identically to the codegen path for both Guid and string
-identity, with every metadata field surviving the round trip. Covered by:
-* `Bug_4411_closed_shape_read_side` (2 methods)
-* `Bug_4412_closed_shape_rich_write_path` (2 methods)
-* `Bug_4414_closed_shape_quick_write_path` (3 methods)
-* `Bug_4415_closed_shape_quick_with_server_timestamps` (2 methods)
-* `Bug_4416_closed_shape_metadata_binders` (4 methods)
+**Suite sweep results** under `MARTEN_USE_CLOSED_SHAPE_STORAGE=true`
+(net10.0):
+* Closed-shape regression (Bug_4411 / _4412 / _4414 / _4415 / _4416): **13 / 13**
+* EventSourcingTests non-Projections/Aggregation/Daemon slice: **957 / 962**
+* Projections: **169 / 169**
+* Aggregation + Daemon: **245 / 245**
+* DCB: **112 / 112**
 
-Total: **13 closed-shape tests green on net9.0 + net10.0**.
+Total: **1496 / 1501 passing (99.66%)**.
 
-What still throws / not yet wired:
-* `EnableStrictStreamIdentityEnforcement = true` — CTE variant rejects
-  at descriptor-build time in Rich path. Port lands as a follow-up of
-  #4412 (the Quick paths don't go through the strict-identity CTE; the
-  function handles identity-enforcement on the server side).
-* DCB tag arrays — Quick path's `writeAllTagValues` helper is called,
-  but the `TagTypes` collection wiring and operations aren't covered by
-  closed-shape tests yet. Likely "just works" if tag types are
-  registered; needs verification.
-* `is_skipped` — plain `TableColumn`; set to `FALSE` server-side, no
-  client-side handling needed (closed-shape regression test in
-  Bug_4416 pins this).
+The 5 remaining failures break down as:
+* 3 still-investigating cases (possibly flaky DCB concurrency from the
+  first run; not reproducible in isolation — see commit ea1c93561).
+* 2 known-deferred:
+  `strict_stream_identity_enforcement.*_throws_when_strict_enforcement_enabled(usePartitioning: True)`
+  — the `EnableStrictStreamIdentityEnforcement` CTE variant of
+  InsertStream isn't ported (open #4412 follow-up). The
+  `usePartitioning: False` cases pass through the unique-constraint path.
+
+To run the suite under the closed-shape flag yourself:
+
+```bash
+MARTEN_USE_CLOSED_SHAPE_STORAGE=true ./build.sh test-event-sourcing
+```
 
 Pre-existing test failures (verified by parent-commit checkout):
 * 4 cases of `archiving_events.prevent_append_*`
@@ -188,37 +186,48 @@ Also touched outside the new directory:
   parameter. The per-event QuickWithVersion path is identical to Quick
   (reuses `QuickAppendEventWithVersionOperation`).
 
-**Next concrete unit of work:** [#4417 / #4418](https://github.com/JasperFx/marten/issues/4417)
-— configuration matrix sweep + full event-sourcing suite under the
-closed-shape flag. The headline path works (13 closed-shape tests
-green); the question now is whether ALL existing event-sourcing tests
-pass with the flag globally flipped on. Approach:
+* **#4417 / #4418 (suite sweep)** — `Marten.Testing.Harness` gained a
+  `TestsSettings.UseClosedShapeStorage` env-var-driven flag and five
+  per-context hooks that flip `opts.EventGraph.UseClosedShapeStorage =
+  true` after the test's own configure callback when
+  `MARTEN_USE_CLOSED_SHAPE_STORAGE=true` is set. Running the full
+  event-sourcing suite under the flag surfaced two fixes:
+  - `HeadersColumnBinder`: switched from `AppendParameter(DBNull.Value,
+    NpgsqlDbType.Jsonb)` (which Npgsql refuses with typed-DBNull) to
+    `AppendParameter<object>(DBNull.Value)` + `WriteToParameter`,
+    matching codegen.
+  - `Quick*EventStorage.AppendEvent`: was throwing; now wired to
+    Full-mode per-event INSERT for the tombstone / direct-AppendEvent
+    paths that call it regardless of AppendMode. Quick descriptors
+    gained `AppendEventFullSqlSuffix` / `AppendEventFullMetadataBinders`.
 
-1. Add a "closed-shape parallel" run config — `DISABLE_TEST_PARALLELIZATION=true`
-   plus a way to set `UseClosedShapeStorage = true` for every test that
-   constructs a store. Either a new test harness flag or an environment
-   variable the harness reads.
-2. Run `./build.sh test-event-sourcing` with the flag on; triage failures.
-3. Likely failure categories: (a) DCB tag types — verify the
-   `HasTagWrites` path works; (b) `EnableStrictStreamIdentityEnforcement`
-   — currently rejects, may need the CTE variant; (c) `RichEventStorage`'s
-   `QuickAppendEventWithVersion` — still throws (only Rich's
-   non-QuickWithVersion path is wired).
+**Next concrete unit of work:** [#4419](https://github.com/JasperFx/marten/issues/4419)
+— migration guide + EventStorage README + draft PR. The closed-shape
+path is feature-complete enough to open a draft PR for review:
+
+1. Write `src/Marten/EventStorage/README.md` (renamed from SESSION-STATE;
+   strip the developer-facing per-session log, keep the design rationale
+   and the configuration / coverage matrix).
+2. Update `docs/migration-guide.md` with the v9→v10→v11 trajectory of
+   `UseClosedShapeStorage` (default off → default on → codegen removed).
+3. Open the draft PR with the suite-sweep results, known limitations,
+   and the 5 closed-shape regression tests as the headline proof points.
 
 **Alternative work, in rough priority order:**
 
-* #4413 follow-up: `RichEventStorage.QuickAppendEventWithVersion`. The
-  Quick paths now both have this; Rich still throws. The
-  `RichEventAppender` calls `AppendEvent` (not `QuickAppendEventWithVersion`)
-  per-event, so this is only needed for cases where Rich runs alongside
-  some QuickWithVersion sub-flow. Verify whether any test actually hits
-  this; might be safe to leave unimplemented.
 * #4412 follow-up: port the `EnableStrictStreamIdentityEnforcement` CTE
-  variant. Currently rejects at descriptor-build for Rich; Quick paths
-  delegate enforcement to the server function so they sidestep this.
-* #4419: migration guide, EventStorage README, draft PR. The closed-shape
-  path is now feature-complete enough that a draft PR + design-doc-style
-  README would be useful for early review.
+  variant of InsertStream. Currently rejects at descriptor-build for
+  Rich; Quick paths fall through without the CTE. Fixes the remaining
+  2 suite failures. ~80 LOC; one new closure shape in the dialect.
+* #4413 follow-up: `RichEventStorage.QuickAppendEventWithVersion` (still
+  throws). The Quick paths have this; Rich doesn't. The `RichEventAppender`
+  calls `AppendEvent` per-event, not `QuickAppendEventWithVersion`, so
+  no current test path hits this. Likely safe to leave unimplemented in
+  v9 — would only be exercised by code that interleaves Rich + Quick
+  sub-flows.
+* SPIKE.md cleanup pass: remove the "spike sample" comments now that the
+  classes are production code. The "Hot-path budget" comment in
+  `RichAppendEventOperation` is one good example to update.
 
 ## Open questions still alive
 
