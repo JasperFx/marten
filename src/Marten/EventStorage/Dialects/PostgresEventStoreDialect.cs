@@ -14,6 +14,7 @@ using Marten.Events.CodeGeneration;
 using Marten.Events.Schema;
 using Marten.Services;
 using Marten.Storage;
+using Marten.Storage.Metadata;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
@@ -209,23 +210,147 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
     public QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph graph, ISerializer serializer)
     {
+        var (isConjoined, isGuid, hasCausation, hasCorrelation, hasHeaders, hasUserName, hasTagWrites)
+            = ReadQuickFlags(graph);
+
+        var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
+        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
+        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
+
         return new QuickEventStorageDescriptor(
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
-            serializeEventData: e => serializer.ToJson(e.Data));
+            serializeEventData: e => serializer.ToJson(e.Data))
+        {
+            IsGuidStreamIdentity = isGuid,
+            IsTenancyConjoined = isConjoined,
+            HasCausationId = hasCausation,
+            HasCorrelationId = hasCorrelation,
+            HasHeaders = hasHeaders,
+            HasUserName = hasUserName,
+            HasTagWrites = hasTagWrites,
+            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+            AppendEventSqlPrefix = appendEventSqlPrefix,
+            AppendEventSqlSuffix = quickWithVersionSuffix,
+            MetadataBinders = quickMetadataBinders,
+        };
     }
 
     public QuickWithServerTimestampsEventStorageDescriptor BuildQuickWithServerTimestampsDescriptor(
         EventGraph graph, ISerializer serializer)
     {
+        var (isConjoined, isGuid, hasCausation, hasCorrelation, hasHeaders, hasUserName, hasTagWrites)
+            = ReadQuickFlags(graph);
+
+        var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
+        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
+        var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
+
         return new QuickWithServerTimestampsEventStorageDescriptor(
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
-            serializeEventData: e => serializer.ToJson(e.Data));
+            serializeEventData: e => serializer.ToJson(e.Data))
+        {
+            IsGuidStreamIdentity = isGuid,
+            IsTenancyConjoined = isConjoined,
+            HasCausationId = hasCausation,
+            HasCorrelationId = hasCorrelation,
+            HasHeaders = hasHeaders,
+            HasUserName = hasUserName,
+            HasTagWrites = hasTagWrites,
+            ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
+            ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
+            AppendEventSqlPrefix = appendEventSqlPrefix,
+            AppendEventSqlSuffix = quickWithVersionSuffix,
+            MetadataBinders = quickMetadataBinders,
+        };
+    }
+
+    /// <summary>
+    /// SQL suffix for the per-event <c>QuickWithVersion</c> path used by the
+    /// Quick appender. Carries the seq_id <c>nextval(...)</c> server-side
+    /// literal + closing paren. Mirrors
+    /// <c>SequenceColumn.ValueSql(graph, AppendMode.QuickWithVersion)</c>:
+    /// <c>nextval('{schema}.mt_events_sequence')</c>.
+    /// </summary>
+    private static string BuildAppendEventQuickWithVersionSuffix(EventGraph graph)
+        => $", nextval('{graph.DatabaseSchemaName}.mt_events_sequence'))";
+
+    /// <summary>
+    /// Picks the metadata binders for the Quick-paths' per-event
+    /// QuickWithVersion INSERT. Same shape as
+    /// <see cref="SelectRichMetadataBinders"/> EXCEPT
+    /// <c>SequenceColumnBinder</c> is excluded — seq_id comes from the
+    /// server-side <c>nextval(...)</c> literal in the SQL suffix, not a
+    /// bound parameter.
+    /// </summary>
+    private static IEventMetadataBinder[] SelectQuickModeMetadataBinders(IReadOnlyList<IEventTableColumn> orderedColumns)
+    {
+        var binders = new List<IEventMetadataBinder>(4);
+        foreach (var column in orderedColumns)
+        {
+            if (IsCoreColumn(column)) continue;
+
+            switch (column.Name)
+            {
+                // seq_id: handled by the SQL suffix (nextval literal); NO binder.
+                case "seq_id":
+                case "mt_events_sequence":
+                    continue;
+
+                case "causation_id":
+                    binders.Add(new CausationIdColumnBinder());
+                    break;
+
+                case "correlation_id":
+                    binders.Add(new CorrelationIdColumnBinder());
+                    break;
+
+                case "user_name":
+                    binders.Add(new UserNameColumnBinder());
+                    break;
+
+                case "headers":
+                    binders.Add(new HeadersColumnBinder());
+                    break;
+
+                default:
+                    throw new NotSupportedException(
+                        $"No closed-shape Quick-mode QuickWithVersion binder for the '{column.Name}' column. " +
+                        $"Disable the relevant StoreOptions.Events.Metadata or DcbStorageMode flag, " +
+                        $"or wait for the binder to land per #4416.");
+            }
+        }
+
+        return binders.ToArray();
+    }
+
+    /// <summary>
+    /// Reads the configuration flags that the Quick paths' operations care about.
+    /// Mirrors the conditional code-emit gates in
+    /// <c>EventDocumentStorageGenerator.buildQuickAppendOperation</c>:
+    /// presence of optional metadata columns, tenancy style, stream identity,
+    /// and the DCB tag-write predicate (<c>TagTypes.Count &gt; 0 &amp;&amp;
+    /// DcbStorageMode != HStore</c>; HStore mode writes tags via a follow-up
+    /// UPDATE, see <c>QuickEventAppender</c>).
+    /// </summary>
+    private static (bool IsConjoined, bool IsGuid, bool HasCausation, bool HasCorrelation,
+        bool HasHeaders, bool HasUserName, bool HasTagWrites) ReadQuickFlags(EventGraph graph)
+    {
+        var table = new EventsTable(graph);
+        return (
+            IsConjoined: graph.TenancyStyle == TenancyStyle.Conjoined,
+            IsGuid: graph.StreamIdentity == StreamIdentity.AsGuid,
+            HasCausation: table.Columns.OfType<CausationIdColumn>().Any(),
+            HasCorrelation: table.Columns.OfType<CorrelationIdColumn>().Any(),
+            HasHeaders: table.Columns.OfType<HeadersColumn>().Any(),
+            HasUserName: table.Columns.OfType<UserNameColumn>().Any(),
+            HasTagWrites: graph.TagTypes.Count > 0 && graph.DcbStorageMode != DcbStorageMode.HStore);
     }
 
     /// <summary>
@@ -342,36 +467,45 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             or "data" or "type" or "tenant_id" or "mt_dotnet_type"
             or "timestamp";
 
-    // ---- Quick / QuickWithServerTimestamps / InsertStream / UpdateStreamVersion ----
-    //
-    // Spike-era TODO stubs. The Rich path is being built out first
-    // (#4410 commit sequence). When the Quick paths are wired, these
-    // helpers port from EventDocumentStorageGenerator.buildQuickAppendOperation
-    // / buildInsertStream / buildUpdateStreamVersion. Until then the
-    // generated SQL is intentionally invalid so attempting to use them
-    // fails loudly rather than silently.
-
+    /// <summary>
+    /// Builds the SQL prefix <c>select {schema}.mt_quick_append_events(</c>.
+    /// The trailing parameter list and closing <c>)</c> are appended by the
+    /// operation's <c>ConfigureCommand</c> via <c>IGroupedParameterBuilder</c>.
+    /// </summary>
+    /// <remarks>
+    /// The function signature is generated in
+    /// <see cref="QuickAppendEventFunction.WriteCreateStatement"/> based on
+    /// the configured metadata + tag-type axes; the closed-shape operation
+    /// reads the same axes off the descriptor flags
+    /// (<see cref="QuickEventStorageDescriptor.HasCausationId"/> etc.) to
+    /// emit parameters in matching order.
+    /// </remarks>
     private static string BuildQuickAppendEventsSql(EventGraph graph, bool serverTimestamps)
     {
-        // TODO (#4410): port full implementation from
-        // EventDocumentStorageGenerator.buildQuickAppendOperation. The
-        // SQL is `select <schema>.mt_quick_append_events(<args>)` with a
-        // configuration-aware argument list. The serverTimestamps flag
-        // toggles inclusion of the per-batch timestamp array.
-        var schema = graph.DatabaseSchemaName;
-        var prefix = serverTimestamps ? "/* server-timestamps */" : string.Empty;
-        return $"-- TODO (#4410): {schema}.mt_quick_append_events(...) — Quick path not yet wired. {prefix}";
+        // serverTimestamps is implicit in the descriptor type (the operation
+        // calls writeTimestamps when on QuickWithServerTimestamps), so we
+        // don't bake the flag into the SQL prefix here — only the SQL
+        // function signature on the database needs to know, and that's the
+        // QuickAppendEventFunction's responsibility, not the dialect's.
+        _ = serverTimestamps;
+        return $"select {graph.DatabaseSchemaName}.mt_quick_append_events(";
     }
 
-    private static string BuildInsertStreamSql(EventGraph graph)
-    {
-        // TODO (#4410): port from EventDocumentStorageGenerator.buildInsertStream.
-        return $"-- TODO (#4410): insert into {graph.DatabaseSchemaName}.mt_streams (...) values (...) — not yet wired.";
-    }
+    /// <summary>
+    /// Read-only convenience for the InsertStream SQL summary used by the
+    /// descriptor's <c>InsertStreamSql</c> property. The actual SQL is
+    /// produced per-call by
+    /// <see cref="BuildInsertStreamCommandConfigurer"/>; this string is
+    /// just informational / diagnostic.
+    /// </summary>
+    private static string BuildInsertStreamSql(EventGraph graph) =>
+        $"insert into {graph.DatabaseSchemaName}.{StreamsTable.TableName} (...) values (...)";
 
-    private static string BuildUpdateStreamVersionSql(EventGraph graph)
-    {
-        // TODO (#4410): port from EventDocumentStorageGenerator.buildUpdateStreamVersion.
-        return $"-- TODO (#4410): update {graph.DatabaseSchemaName}.mt_streams set version = ... where ... — not yet wired.";
-    }
+    /// <summary>
+    /// Symmetric informational summary for UpdateStreamVersion. The
+    /// <see cref="BuildUpdateStreamVersionCommandConfigurer"/> closure
+    /// produces the actual SQL.
+    /// </summary>
+    private static string BuildUpdateStreamVersionSql(EventGraph graph) =>
+        $"update {graph.DatabaseSchemaName}.{StreamsTable.TableName} set version = ... where ... returning version";
 }

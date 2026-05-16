@@ -48,10 +48,12 @@ public sealed class QuickEventStorageDescriptor
     }
 
     /// <summary>
-    /// Complete SQL for the <c>select mt_quick_append_events(...)</c>
-    /// function call. Already includes the per-column array-parameter
-    /// placeholder list; the source-gen operation appends parameters in
-    /// order via <see cref="IGroupedParameterBuilder"/>.
+    /// Complete SQL for <c>select {schema}.mt_quick_append_events(</c> —
+    /// the operation appends parameters via <see cref="IGroupedParameterBuilder"/>
+    /// and the trailing <c>)</c> in <c>ConfigureCommand</c>. The function
+    /// signature varies by configuration; the descriptor flags below tell
+    /// the operation which protected helpers on
+    /// <c>QuickAppendEventsOperationBase</c> to call.
     /// </summary>
     public string QuickAppendEventsSql { get; }
 
@@ -59,4 +61,70 @@ public sealed class QuickEventStorageDescriptor
     public string UpdateStreamVersionSql { get; }
     public string StreamStateSelectSql { get; }
     public Func<IEvent, string> SerializeEventData { get; }
+
+    /// <summary>Guid stream identity (writeId) vs string identity (writeKey).</summary>
+    public bool IsGuidStreamIdentity { get; init; }
+
+    /// <summary>Conjoined-tenant — affects per-stream ops (InsertStream / UpdateStreamVersion / StreamState).</summary>
+    public bool IsTenancyConjoined { get; init; }
+
+    /// <summary>Whether the events table has the <c>causation_id</c> column.</summary>
+    public bool HasCausationId { get; init; }
+
+    /// <summary>Whether the events table has the <c>correlation_id</c> column.</summary>
+    public bool HasCorrelationId { get; init; }
+
+    /// <summary>Whether the events table has the <c>headers</c> jsonb column.</summary>
+    public bool HasHeaders { get; init; }
+
+    /// <summary>Whether the events table has the <c>user_name</c> column.</summary>
+    public bool HasUserName { get; init; }
+
+    /// <summary>
+    /// Whether DCB tag types are configured AND the storage mode wires them
+    /// as per-batch <c>varchar[]</c> parameters on <c>mt_quick_append_events</c>
+    /// (i.e. <c>graph.TagTypes.Count &gt; 0 &amp;&amp; DcbStorageMode != HStore</c>).
+    /// </summary>
+    public bool HasTagWrites { get; init; }
+
+    /// <summary>
+    /// SQL prefix <c>insert into mt_events (cols) values (</c> for the
+    /// per-event QuickWithVersion path. The Quick appender uses this shape
+    /// (one INSERT per event) for new streams and for existing streams
+    /// with an expected-version-on-server guard.
+    /// </summary>
+    public string AppendEventSqlPrefix { get; init; } = string.Empty;
+
+    /// <summary>
+    /// SQL suffix for the per-event QuickWithVersion path. Includes the
+    /// trailing <c>, nextval('schema.mt_events_sequence'))</c> — server-set
+    /// sequence (no client param) and closing paren.
+    /// </summary>
+    public string AppendEventSqlSuffix { get; init; } = ")";
+
+    /// <summary>
+    /// Ordered optional-metadata-column binders for the per-event
+    /// QuickWithVersion path. Same shape as
+    /// <c>RichEventStorageDescriptor.MetadataBinders</c> but WITHOUT
+    /// <c>SequenceColumnBinder</c> — seq_id is server-set via the
+    /// nextval-literal in <see cref="AppendEventSqlSuffix"/>, not a
+    /// bound parameter.
+    /// </summary>
+    public IEventMetadataBinder[] MetadataBinders { get; init; } = System.Array.Empty<IEventMetadataBinder>();
+
+    /// <summary>
+    /// Configures the <c>mt_streams</c> insert command — identical shape to
+    /// the Rich descriptor's closure. Init-only; the dialect installs it.
+    /// </summary>
+    public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureInsertStreamCommand { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "QuickEventStorageDescriptor.ConfigureInsertStreamCommand was not installed by the dialect.");
+
+    /// <summary>
+    /// Configures the <c>mt_streams</c> update-version command — identical
+    /// shape to the Rich descriptor's closure.
+    /// </summary>
+    public System.Action<Weasel.Postgresql.ICommandBuilder, StreamAction> ConfigureUpdateStreamVersionCommand { get; init; }
+        = static (_, _) => throw new System.NotSupportedException(
+            "QuickEventStorageDescriptor.ConfigureUpdateStreamVersionCommand was not installed by the dialect.");
 }

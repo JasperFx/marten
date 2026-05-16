@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using JasperFx.Events;
+using Marten.EventStorage.Querying;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -29,19 +30,35 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             $"{nameof(QuickAppendEvents)}.");
 
     public override IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent @event)
-        => throw new NotSupportedException(
-            $"{nameof(QuickEventStorage<TId>)} doesn't support per-event QuickWithVersion. " +
-            $"Use AppendMode = Full + RichEventStorage for that path.");
+        => new QuickAppendEventWithVersionOperation(
+            _descriptor.AppendEventSqlPrefix,
+            _descriptor.AppendEventSqlSuffix,
+            _descriptor.MetadataBinders,
+            _descriptor.IsGuidStreamIdentity,
+            _descriptor.SerializeEventData,
+            stream,
+            @event);
 
     public override IStorageOperation QuickAppendEvents(StreamAction stream)
         => new QuickAppendEventsOperation(_descriptor, stream);
 
     public override IStorageOperation InsertStream(StreamAction stream)
-        => throw new NotImplementedException("InsertStream operation lands in the next iteration.");
+        => new QuickInsertStreamOperation(_descriptor, stream);
 
     public override IStorageOperation UpdateStreamVersion(StreamAction stream)
-        => throw new NotImplementedException("UpdateStreamVersion operation lands in the next iteration.");
+        => new QuickUpdateStreamVersionOperation(_descriptor, stream);
 
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
-        => throw new NotImplementedException("StreamStateQueryHandler lands in the next iteration.");
+    {
+        object streamIdentity = typeof(TId) == typeof(Guid)
+            ? stream.Id
+            : stream.Key!;
+
+        var tenantId = _descriptor.IsTenancyConjoined ? stream.TenantId : null;
+
+        return new ClosedShapeStreamStateQueryHandler<TId>(
+            _descriptor.StreamStateSelectSql,
+            (TId)streamIdentity,
+            tenantId);
+    }
 }
