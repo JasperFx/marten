@@ -22,6 +22,8 @@ namespace Marten.Testing.Harness
                 opts.DatabaseSchemaName = "string_events";
                 opts.Events.StreamIdentity = StreamIdentity.AsString;
 
+                if (TestsSettings.UseClosedShapeStorage)
+                    opts.Events.UseClosedShapeStorage = true;
             });
 
             using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -40,6 +42,9 @@ namespace Marten.Testing.Harness
 
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 opts.ApplicationAssembly = GetType().Assembly;
+
+                if (TestsSettings.UseClosedShapeStorage)
+                    opts.Events.UseClosedShapeStorage = true;
             });
 
             // Do this exactly once and no more.
