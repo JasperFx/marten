@@ -2,7 +2,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
+using Marten.Events;
 using Marten.Services;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -59,6 +61,11 @@ public class capturing_event_versions_on_existing_streams_after_append: Integrat
     [Fact]
     public async Task running_synchronously()
     {
+        // Captures client-side Version on each event via the session logger — that's
+        // only available in Rich mode (Quick assigns versions server-side and the
+        // logger snapshot won't see them).
+        StoreOptions(opts => opts.Events.AppendMode = EventAppendMode.Rich);
+
         var logger = new RecordingSessionLogger();
 
         Guid streamId = Guid.NewGuid();

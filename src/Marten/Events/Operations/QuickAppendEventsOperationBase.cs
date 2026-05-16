@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Core.Exceptions;
 using JasperFx.Events;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -17,8 +18,26 @@ using Weasel.Postgresql;
 
 namespace Marten.Events.Operations;
 
-public abstract class QuickAppendEventsOperationBase : IStorageOperation
+public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExceptionTransform
 {
+    // SQLSTATE raised by mt_quick_append_events when the target stream is archived.
+    // Keep in sync with QuickAppendEventFunction.WriteCreateStatement.
+    private const string ArchivedStreamSqlState = "MT001";
+
+    public bool TryTransform(Exception original, out Exception transformed)
+    {
+        var pg = original as PostgresException ?? original.InnerException as PostgresException;
+        if (pg is { SqlState: ArchivedStreamSqlState })
+        {
+            transformed = new InvalidStreamOperationException(
+                $"Attempted to append event to archived stream with Id '{Stream.Id}'.");
+            return true;
+        }
+
+        transformed = original;
+        return false;
+    }
+
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
     // Postprocess / PostprocessAsync once Npgsql has written the parameters to the wire.
     // Capacity 12 covers writeBasicParameters (4) + writeCausationIds + writeCorrelationIds

@@ -183,6 +183,31 @@ This causes a couple side effects that **force stricter usage of Marten**:
 1. Marten will throw a `StreamTypeMissingException` exception if you call a `StartStream()` overload that doesn't include the stream type
 2. Marten will throw a `NonExistentStreamException` if you try to append events to a stream that does not already exist
 
+## `Append(streamId, expectedVersion, events)` requires Rich mode
+
+::: warning
+The overload `IEventStore.Append(streamId, expectedVersion, events)` — passing an explicit expected
+stream version to `Append()` — **requires `EventAppendMode.Rich`** (the Marten 8 default, no longer
+the Marten 9 default). Quick mode (`Quick` / `QuickWithServerTimestamps`, the Marten 9 default)
+relies on a server-side function to assign event versions and to insert the stream row, so calling
+`Append(streamId, version, ...)` against a non-existent stream fails with a foreign-key violation.
+
+If you need this pattern, opt that store back into Rich mode explicitly:
+
+```csharp
+opts.Events.AppendMode = EventAppendMode.Rich;
+```
+:::
+
+::: tip
+**Strongly recommended:** use [`FetchForWriting`](/events/projections/aggregate-projections#fetchforwriting) instead of
+hand-rolling `Append(streamId, expectedVersion, events)`. `FetchForWriting` works in both Rich and
+Quick modes, takes a single round-trip lock on the stream, and gives you the optimistic-concurrency
+guard for free — without forcing your store off the V9 throughput-optimized default. The
+`Append(..., expectedVersion, ...)` overload is preserved for backward compatibility, but new code
+should reach for `FetchForWriting`.
+:::
+
 ## Optimistic Versioned Append
 
 ::: tip

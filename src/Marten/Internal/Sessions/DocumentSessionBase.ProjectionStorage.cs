@@ -118,6 +118,15 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     {
         _storage.SetIdentity(snapshot, id);
 
+        // The aggregate may already be in the identity map from a prior SaveChangesAsync
+        // on the same session — for example, a FetchForWriting → save → StartStream
+        // sequence. In that case the projection has built a NEW snapshot instance for
+        // this save, and the duplicate-instance guard in IdentityMapDocumentStorage.store
+        // would throw before the underlying event store can surface the real conflict
+        // (ExistingStreamIdCollisionException). Evict the stale entry so the new snapshot
+        // can take its place.
+        _session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
+
         // Put it in the identity map -- if necessary
         _storage.Store(_session, snapshot);
 

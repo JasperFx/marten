@@ -480,6 +480,15 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         return false;
     }
 
+    internal void EjectAggregateFromIdentityMap<TDoc, TId>(TId id)
+        where TDoc : notnull where TId : notnull
+    {
+        if (ItemMap.TryGetValue(typeof(TDoc), out var raw) && raw is Dictionary<TId, TDoc> dict)
+        {
+            dict.Remove(id);
+        }
+    }
+
     internal interface IObjectHandler
     {
         void Execute(IDocumentSession session, IEnumerable<object> objects);

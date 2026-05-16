@@ -78,7 +78,14 @@ public class multi_stream_projections: DaemonContext
     [Fact]
     public async Task events_applied_in_sequence_across_streams()
     {
-        StoreOptions(opts => opts.Projections.Add<Projector>(ProjectionLifecycle.Inline));
+        // Projector.Apply reads IEvent.Sequence inline. Sequences are only assigned
+        // client-side under Rich mode — Quick mode assigns them server-side after the
+        // inline projection has already run, so the assertions would see 0 for every event.
+        StoreOptions(opts =>
+        {
+            opts.Events.AppendMode = EventAppendMode.Rich;
+            opts.Projections.Add<Projector>(ProjectionLifecycle.Inline);
+        });
 
         var commonId = Guid.NewGuid();
 

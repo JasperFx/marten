@@ -70,11 +70,8 @@ namespace Marten.Events.Schema;
             if (_events.AppendMode == EventAppendMode.QuickWithServerTimestamps)
             {
                 timestampValue = "timestamps[index]";
-                // 9.0 (#default-flips): emit `timestamp with time zone[]` rather than
-                // `timestamptz[]` because PG normalizes function-parameter types to the
-                // canonical long form, and Weasel's schema-diff comparator is string-based
-                // — using the canonical spelling here avoids false-positive "function
-                // changed" diffs on every AssertDatabaseMatchesConfigurationAsync call.
+                // 9.0 (#default-flips): use the PG canonical long form so Weasel's
+                // string-based schema diff doesn't false-positive on every comparison.
                 metadataParameters += ", timestamps timestamp with time zone[]";
             }
 
@@ -117,6 +114,7 @@ namespace Marten.Events.Schema;
 CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
 DECLARE
 	event_version {intType};
+	stream_is_archived boolean;
 	event_type varchar;
 	event_id uuid;
 	body jsonb;
@@ -125,11 +123,14 @@ DECLARE
     actual_tenant varchar;
 	return_value {returnType};
 BEGIN
-	select version into event_version from {databaseSchema}.mt_streams where {streamsWhere};
+	select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};
 	if event_version IS NULL then
 		event_version = 0;
 		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);
     else
+        if stream_is_archived then
+            RAISE EXCEPTION 'Attempted to append event to archived stream with Id ''%''.', stream USING ERRCODE = 'MT001';
+        end if;
         if tenantid IS NOT NULL then
             select tenant_id into actual_tenant from {databaseSchema}.mt_streams where {streamsWhere};
             if actual_tenant != tenantid then

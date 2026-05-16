@@ -25,6 +25,9 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
             // THIS IS NECESSARY FOR THIS SAMPLE!
             opts.Events.MetadataConfig.HeadersEnabled = true;
+
+            // Inline projection + auto Version tracking requires Rich mode.
+            opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
         // Setting a header value on the session, which will get tagged on each
@@ -57,6 +60,9 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
             // THIS IS NECESSARY FOR THIS SAMPLE!
             opts.Events.MetadataConfig.HeadersEnabled = true;
+
+            // Auto Version tracking on the aggregate requires Rich mode.
+            opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
         // Setting a header value on the session, which will get tagged on each
@@ -88,6 +94,9 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
             // THIS IS NECESSARY FOR THIS SAMPLE!
             opts.Events.MetadataConfig.HeadersEnabled = true;
+
+            // Auto Version tracking on the aggregate requires Rich mode.
+            opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
         // Setting a header value on the session, which will get tagged on each
@@ -119,6 +128,9 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
             // THIS IS NECESSARY FOR THIS SAMPLE!
             opts.Events.MetadataConfig.HeadersEnabled = true;
+
+            // Auto Version tracking on the aggregate requires Rich mode.
+            opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
         // Setting a header value on the session, which will get tagged on each
@@ -147,6 +159,9 @@ public class using_apply_metadata : OneOffConfigurationsContext
 
             // THIS IS NECESSARY FOR THIS SAMPLE!
             opts.Events.MetadataConfig.HeadersEnabled = true;
+
+            // Inline projection + auto Version tracking requires Rich mode.
+            opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
         // Setting a header value on the session, which will get tagged on each

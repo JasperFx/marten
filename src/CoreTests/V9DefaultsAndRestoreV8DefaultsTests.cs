@@ -25,9 +25,12 @@ public class V9DefaultsAndRestoreV8DefaultsTests
     }
 
     [Fact]
-    public void v9_default_for_enable_advanced_async_tracking_is_true()
+    public void v9_default_for_enable_advanced_async_tracking_is_still_v8_false_until_4425()
     {
-        new StoreOptions().Events.EnableAdvancedAsyncTracking.ShouldBeTrue();
+        // The EnableAdvancedAsyncTracking flip is deferred — re-enabling it caused large
+        // portions of the EventSourcing + Daemon test suites to hang. Tracked in #4425.
+        // Update this assertion when the flip lands.
+        new StoreOptions().Events.EnableAdvancedAsyncTracking.ShouldBeFalse();
     }
 
     [Fact]
@@ -65,11 +68,15 @@ public class V9DefaultsAndRestoreV8DefaultsTests
     }
 
     [Fact]
-    public void restore_v8_defaults_reverts_enable_advanced_async_tracking_to_false()
+    public void restore_v8_defaults_keeps_enable_advanced_async_tracking_at_v8_false()
     {
+        // The flip itself is deferred (#4425) so RestoreV8Defaults() doesn't need to
+        // reset EnableAdvancedAsyncTracking — it's already at the V8 default. This test
+        // documents that and locks in the contract so it gets updated alongside #4425.
         var opts = new StoreOptions();
+        opts.Events.EnableAdvancedAsyncTracking = true;
         opts.RestoreV8Defaults();
-        opts.Events.EnableAdvancedAsyncTracking.ShouldBeFalse();
+        opts.Events.EnableAdvancedAsyncTracking.ShouldBeTrue();
     }
 
     [Fact]
