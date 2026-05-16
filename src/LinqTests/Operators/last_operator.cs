@@ -18,7 +18,7 @@ public class last_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Should.Throw<InvalidOperationException>(() =>
+        Should.Throw<NotSupportedException>(() =>
         {
             theSession.Query<Target>().Last(x => x.Number == 3).ShouldNotBeNull();
         });
@@ -33,7 +33,7 @@ public class last_operator: IntegrationContext
         theSession.Store(new Target { Number = 4 });
         await theSession.SaveChangesAsync();
 
-        Should.Throw<InvalidOperationException>(() =>
+        Should.Throw<NotSupportedException>(() =>
         {
             theSession.Query<Target>().Last(x => x.Number == 3).ShouldNotBeNull();
         });

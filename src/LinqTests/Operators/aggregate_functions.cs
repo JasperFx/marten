@@ -222,9 +222,9 @@ public class aggregate_functions : IntegrationContext
         theSession.Store(new Target { NullableColor = null, Number = 4 });
 
         await theSession.SaveChangesAsync();
-        theSession.Query<Target>()
+        (await theSession.Query<Target>()
             .Where(x => x.NullableColor != null)
-            .Sum(x => x.Number)
+            .SumAsync(x => x.Number))
             .ShouldBe(6);
     }
 

@@ -28,7 +28,7 @@ public class Bug_260_Take_Skip_with_Select_Tests: IntegrationContext
 
         cmd.Parameters["p1"].Value.ShouldBe(10);
 
-        queryable.ToArray().Length.ShouldBe(10);
+        (await queryable.ToListAsync()).Count.ShouldBe(10);
     }
 
     public Bug_260_Take_Skip_with_Select_Tests(DefaultStoreFixture fixture) : base(fixture)

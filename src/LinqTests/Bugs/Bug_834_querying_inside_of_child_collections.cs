@@ -30,7 +30,7 @@ public class Bug_834_querying_inside_of_child_collections : IntegrationContext
         (await theSession.Query<Contact>().Where(x => x.Tags.Any(t => t.StartsWith("A"))).AnyAsync())
             .ShouldBeTrue();
 
-        theSession.Query<Contact>()
-            .Count(x => x.Tags.Any(t => t.StartsWith("A"))).ShouldBe(2);
+        (await theSession.Query<Contact>()
+            .CountAsync(x => x.Tags.Any(t => t.StartsWith("A")))).ShouldBe(2);
     }
 }

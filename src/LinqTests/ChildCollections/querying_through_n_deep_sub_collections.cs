@@ -106,7 +106,7 @@ public class querying_through_n_deep_sub_collections : IntegrationContext
         var results = theSession.Query<Top>().Where(x =>
             x.Middles.Any(m => m.Color == Colors.Green && m.Bottoms.Any(b => b.Name == "Bill")));
 
-        results.Single().ShouldBe(greenBill);
+        (await results.SingleAsync()).ShouldBe(greenBill);
     }
 
     [Fact]

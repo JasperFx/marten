@@ -24,7 +24,7 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync())
             .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
     }
 
@@ -40,8 +40,8 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
-            .First().ShouldBe("Bill");
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+            .FirstAsync()).ShouldBe("Bill");
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class select_clause_usage: IntegrationContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
-            .FirstOrDefault()
+        (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
+            .FirstOrDefaultAsync())
             ?.Name.ShouldBe("Bill");
     }
 
@@ -344,10 +344,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => new { x.Id, x.Number, InnerNumber = x.Inner.Number })
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Id);
         actual.Number.ShouldBe(target.Number);
@@ -362,10 +362,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => new FlatTarget(x.Id, x.Number, x.Inner.Number))
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Id);
         actual.Number.ShouldBe(target.Number);
@@ -380,10 +380,10 @@ public class select_clause_usage: IntegrationContext
         theSession.Store(target);
         await theSession.SaveChangesAsync();
 
-        var actual = theSession.Query<Target>()
+        var actual = (await theSession.Query<Target>()
             .Where(x => x.Id == target.Id)
             .Select(x => x.Inner)
-            .First();
+            .FirstAsync());
 
         actual.Id.ShouldBe(target.Inner.Id);
         actual.Number.ShouldBe(target.Inner.Number);

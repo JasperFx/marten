@@ -54,11 +54,11 @@ public class Bug_1245_include_plus_full_text_search: BugIntegrationContext
 
         await session.SaveChangesAsync();
 
-        var query = session.Query<Email>()
+        var query = await session.Query<Email>()
             .Include(x => x.UserId, userDictionary)
             //.Where(x => x.Content.PlainTextSearch(term)).ToList();
             //.Where(x => x.Content.Search(term)).ToList();
-            .Where(x => x.Content.PhraseSearch(term)).ToList();
+            .Where(x => x.Content.PhraseSearch(term)).ToListAsync();
 
         query.ShouldNotBeNull();
     }

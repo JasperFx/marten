@@ -61,7 +61,7 @@ public class Bug_854_multiple_or_expressions_softdelete_tenancy_filters_appended
             var query = session.Query<SoftDeletedItem>()
                 .Where(x => x.Number == 1 || x.Number == 2);
 
-            var actual = query.ToList().Count;
+            var actual = (await query.ToListAsync()).Count;
             Assert.Equal(expected, actual);
         }
     }

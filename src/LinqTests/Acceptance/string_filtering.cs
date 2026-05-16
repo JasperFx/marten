@@ -264,8 +264,8 @@ public class string_filtering: IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<User>()
-                .Single(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase)).Id
+            (await query.Query<User>()
+                .SingleAsync(x => x.UserName.Equals(@"domain\test_user", StringComparison.InvariantCultureIgnoreCase))).Id
                 .ShouldBe(user.Id);
         }
     }

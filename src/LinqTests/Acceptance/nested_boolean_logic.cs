@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 namespace LinqTests.Acceptance;
 
 public class nested_boolean_logic : IntegrationContext
@@ -23,7 +24,7 @@ public class nested_boolean_logic : IntegrationContext
         var query = theSession.Query<Target>().Where(item => (item.String != null && item.Date >= startDate && item.Date <= endDate)
                                                              || (item.String == null && item.Date >= startDate && item.Date <= endDate));
 
-        query.ToList().Count.ShouldBeGreaterThanOrEqualTo(2);
+        (await query.ToListAsync()).Count.ShouldBeGreaterThanOrEqualTo(2);
 
     }
 

@@ -36,7 +36,7 @@ public class query_with_order_by: IntegrationContext
                 .OrderBy(x => x.String, comparer);
 
             var sql = (await query.ExplainAsync()).Command.CommandText;
-            var result = query.ToList();
+            var result = (await query.ToListAsync());
 
             if (shouldBeCaseInsensitive)
             {
@@ -71,7 +71,7 @@ public class query_with_order_by: IntegrationContext
                 .OrderByDescending(x => x.String, comparer);
 
             var sql = (await query.ExplainAsync()).Command.CommandText;
-            var result = query.ToList();
+            var result = (await query.ToListAsync());
 
             if (shouldBeCaseInsensitive)
             {
@@ -119,7 +119,7 @@ public class query_with_order_by: IntegrationContext
                 .ThenBy(x => x.String, comparer);
 
             var sql = (await query.ExplainAsync()).Command.CommandText;
-            var result = query.ToList();
+            var result = (await query.ToListAsync());
 
             if (shouldBeCaseInsensitive)
             {
@@ -159,7 +159,7 @@ public class query_with_order_by: IntegrationContext
                 .ThenByDescending(x => x.String, comparer);
 
             var sql = (await query.ExplainAsync()).Command.CommandText;
-            var result = query.ToList();
+            var result = (await query.ToListAsync());
 
             if (shouldBeCaseInsensitive)
             {

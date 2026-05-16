@@ -34,10 +34,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
             await sessionX.SaveChangesAsync();
         }
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var q = session.Query<Entity>();
         var w = AddWhere(q);
-        var result = w.Any();
+        var result = await w.AnyAsync();
 
         result.ShouldBeTrue();
     }
@@ -54,10 +54,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
             await sessionX.SaveChangesAsync();
         }
 
-        using var session = theStore.QuerySession();
+        await using var session = theStore.QuerySession();
         var q = session.Query<Entity>();
         var w = AddWhereNonGeneric(q);
-        var result = w.Any();
+        var result = await w.AnyAsync();
 
         result.ShouldBeTrue();
     }
@@ -77,10 +77,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
 
         using var session = theStore.QuerySession();
 
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .WithArchivedState(ArchivedState.IncludeArchived)
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }
@@ -120,10 +120,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .WithArchivedStateNonGeneric(ArchivedState.IncludeArchived)
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }
@@ -162,10 +162,10 @@ public class Bug_3031_querying_using_soft_deletes : BugIntegrationContext
         }
 
         using var session = theStore.QuerySession();
-        bool result = session
+        bool result = (await session
             .Query<Entity>()
             .Where(x => x.MaybeDeleted())
-            .Any();
+            .AnyAsync());
 
         result.ShouldBeTrue();
     }

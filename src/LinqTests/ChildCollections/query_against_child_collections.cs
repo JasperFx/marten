@@ -196,8 +196,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
     {
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Single(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2))
+        (await theSession.Query<Target>()
+            .SingleAsync(x => Enumerable.Any<Target>(x.Children, _ => _.Inner.Number == -2)))
             .Id.ShouldBe(targets[10].Id);
     }
 
@@ -209,8 +209,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Count(x => x.Children.Any<Target>(_ => _.Color == Colors.Green))
+        (await theSession.Query<Target>()
+            .CountAsync(x => x.Children.Any<Target>(_ => _.Color == Colors.Green)))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
 
@@ -222,8 +222,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
         StoreOptions(_ => _.UseSystemTextJsonForSerialization(enumStorage));
         await buildUpTargetData();
 
-        theSession.Query<Target>()
-            .Count(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue))
+        (await theSession.Query<Target>()
+            .CountAsync(x => x.Children.Any<Target>(_ => _.Inner.Color == Colors.Blue)))
             .ShouldBeGreaterThanOrEqualTo(1);
     }
 
@@ -652,8 +652,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
             .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
         // Or without any predicate
-        theSession.Query<DocWithLists>()
-            .Count(x => x.Numbers.Any()).ShouldBe(3);
+        (await theSession.Query<DocWithLists>()
+            .CountAsync(x => x.Numbers.Any())).ShouldBe(3);
     }
 
     #endregion
@@ -675,8 +675,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
 
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count() == 4)).Id.ShouldBe(doc3.Id);
     }
 
     #endregion
@@ -694,8 +694,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count == 4).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count == 4)).Id.ShouldBe(doc3.Id);
     }
 
     [Fact]
@@ -711,8 +711,8 @@ public class query_against_child_collections: OneOffConfigurationsContext
 
         await theSession.SaveChangesAsync();
 
-        theSession.Query<DocWithLists>()
-            .Single(x => x.Numbers.Count > 3).Id.ShouldBe(doc3.Id);
+        (await theSession.Query<DocWithLists>()
+            .SingleAsync(x => x.Numbers.Count > 3)).Id.ShouldBe(doc3.Id);
     }
 
     [Fact]

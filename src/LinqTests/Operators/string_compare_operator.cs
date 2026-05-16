@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Shouldly;
+using Marten;
 
 namespace LinqTests.Operators;
 
@@ -19,7 +20,7 @@ public class string_compare_operator: IntegrationContext
 
         var queryable = theSession.Query<Target>().Where(x => string.Compare(x.String, "Cherry") > 0);
 
-        queryable.ToList().Count.ShouldBe(1);
+        (await queryable.ToListAsync()).Count.ShouldBe(1);
     }
 
     [Fact]
@@ -33,7 +34,7 @@ public class string_compare_operator: IntegrationContext
 
         var queryable = theSession.Query<Target>().Where(x => x.String.CompareTo("Banana") > 0);
 
-        queryable.ToList().Count.ShouldBe(2);
+        (await queryable.ToListAsync()).Count.ShouldBe(2);
     }
 
     protected override async Task fixtureSetup()

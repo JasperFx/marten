@@ -56,11 +56,11 @@ public class select_many : IntegrationContext
         using (var query = theStore.QuerySession())
         {
 
-            query
+            (await query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
                 .Distinct()
-                .Count()
+                .CountAsync())
                 .ShouldBe(6);
         }
     }
@@ -81,11 +81,11 @@ public class select_many : IntegrationContext
         using (var query = theStore.QuerySession())
         {
 
-            query
+            (await query
                 .Query<ProductWithList>()
                 .SelectMany(x => x.Tags)
                 .Distinct()
-                .LongCount()
+                .LongCountAsync())
                 .ShouldBe(6L);
         }
     }
@@ -132,8 +132,8 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Product>().SelectMany(x => x.Tags)
-                .Count().ShouldBe(9);
+            (await query.Query<Product>().SelectMany(x => x.Tags)
+                .CountAsync()).ShouldBe(9);
         }
     }
 
@@ -155,7 +155,7 @@ public class select_many : IntegrationContext
             var queryable = query.Query<Product>()
                 .Where(p => p.Tags.Length == 1)
                 .SelectMany(x => x.Tags);
-            var ex = Record.Exception(() => queryable.Count());
+            var ex = await Record.ExceptionAsync(async () => await queryable.CountAsync());
             ex.ShouldBeNull();
         }
     }
@@ -293,13 +293,13 @@ public class select_many : IntegrationContext
 
         using (var query = theStore.QuerySession())
         {
-            query.Query<Product>().SelectMany(x => x.Tags)
-                .Any().ShouldBeTrue();
+            (await query.Query<Product>().SelectMany(x => x.Tags)
+                .AnyAsync()).ShouldBeTrue();
 
 
 
-            query.Query<Target>().SelectMany(x => x.Children)
-                .Any().ShouldBeFalse();
+            (await query.Query<Target>().SelectMany(x => x.Children)
+                .AnyAsync()).ShouldBeFalse();
         }
     }
 
