@@ -34,9 +34,12 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Landed so far (13 commits on the branch)
+## Landed so far (15 commits on the branch)
 
 ```
+499c24575  [#4414 #4415] W4 Quick + QuickWithServerTimestamps write path
+0a4d7c58d  [#4416] W4: pin is_skipped contract + clarify SESSION-STATE
+cecab0229  [#4416] W4 SESSION-STATE: Rich-mode feature-complete for default + scalar metadata + headers
 3d2389599  [#4416] W4 part 2: Headers closed-shape read via ISerializer threading
 9a50df363  [#4416] W4: scalar metadata-column binders (causation_id, correlation_id, user_name, headers)
 ce6e13f25  [#4412 #4413] W4 SESSION-STATE: Rich write-path landed, Quick paths next
@@ -52,13 +55,15 @@ a8d829b1d  [#4410] W4: dialect owns descriptor construction; Rich SQL ported
 <spike commit, originally on spike/W4-event-storage-hierarchy>
 ```
 
-The build is clean (0 errors). The closed-shape **Rich-mode path is
-feature-complete for the default-config + scalar-metadata + headers
-matrix**. With:
+The build is clean (0 errors). **All three AppendModes — Rich, Quick,
+QuickWithServerTimestamps — now work end-to-end under the closed-shape
+flag.** The v9 default (`UseClosedShapeStorage = true` +
+`AppendMode = QuickWithServerTimestamps`) is a working drop-in
+configuration. With:
 
 ```csharp
 opts.EventGraph.UseClosedShapeStorage = true;
-opts.Events.AppendMode = EventAppendMode.Rich;
+// AppendMode = QuickWithServerTimestamps (v9 default), Quick, or Rich
 // optionally:
 opts.Events.MetadataConfig.CausationIdEnabled = true;
 opts.Events.MetadataConfig.CorrelationIdEnabled = true;
@@ -71,27 +76,24 @@ round-trips identically to the codegen path for both Guid and string
 identity, with every metadata field surviving the round trip. Covered by:
 * `Bug_4411_closed_shape_read_side` (2 methods)
 * `Bug_4412_closed_shape_rich_write_path` (2 methods)
-* `Bug_4416_closed_shape_metadata_binders` (3 methods)
+* `Bug_4414_closed_shape_quick_write_path` (3 methods)
+* `Bug_4415_closed_shape_quick_with_server_timestamps` (2 methods)
+* `Bug_4416_closed_shape_metadata_binders` (4 methods)
 
-Total: 7 closed-shape tests green on net9.0 + net10.0.
+Total: **13 closed-shape tests green on net9.0 + net10.0**.
 
-What still throws:
-* Rich + `QuickAppendEventWithVersion` — needs a `SequenceServerSideBinder`
-  + `nextval()` SQL fragment + RETURNING read-back. Lands with the next
-  #4413 follow-up.
-* Quick / QuickWithServerTimestamps modes — their write paths are still
-  stubbed (#4414 / #4415).
+What still throws / not yet wired:
 * `EnableStrictStreamIdentityEnforcement = true` — CTE variant rejects
-  at descriptor-build time. Port lands as a follow-up of #4412.
-* `tags` (DCB HStore) and `is_skipped`
-  (`EnableEventSkippingInProjectionsOrSubscriptions`) — these are plain
-  `TableColumn`s, not `IEventTableColumn`s, so they're filtered out of
-  `EventsTable.SelectColumns()` and never reach the Rich-mode binder
-  list. `is_skipped` is set to `FALSE` by default expression and updated
-  by separate projection logic. `tags` is handled by the Quick paths'
-  per-batch array binds (DCB-only) — it'll land with #4414. **Neither
-  is a #4416 follow-up; the Rich path is feature-complete for
-  IEventTableColumn-defined metadata.**
+  at descriptor-build time in Rich path. Port lands as a follow-up of
+  #4412 (the Quick paths don't go through the strict-identity CTE; the
+  function handles identity-enforcement on the server side).
+* DCB tag arrays — Quick path's `writeAllTagValues` helper is called,
+  but the `TagTypes` collection wiring and operations aren't covered by
+  closed-shape tests yet. Likely "just works" if tag types are
+  registered; needs verification.
+* `is_skipped` — plain `TableColumn`; set to `FALSE` server-side, no
+  client-side handling needed (closed-shape regression test in
+  Bug_4416 pins this).
 
 Pre-existing test failures (verified by parent-commit checkout):
 * 4 cases of `archiving_events.prevent_append_*`
@@ -125,11 +127,16 @@ src/Marten/EventStorage/
 ├── Quick/
 │   ├── QuickEventStorage.cs
 │   ├── QuickEventStorageDescriptor.cs
-│   └── QuickAppendEventsOperation.cs          ← sample operation
+│   ├── QuickAppendEventsOperation.cs           ← #4414 (function call)
+│   ├── QuickAppendEventWithVersionOperation.cs ← #4414 (per-event INSERT)
+│   ├── QuickInsertStreamOperation.cs           ← #4414
+│   └── QuickUpdateStreamVersionOperation.cs    ← #4414
 ├── QuickWithServerTimestamps/
 │   ├── QuickWithServerTimestampsEventStorage.cs
 │   ├── QuickWithServerTimestampsEventStorageDescriptor.cs
-│   └── QuickAppendEventsWithServerTimestampsOperation.cs
+│   ├── QuickAppendEventsWithServerTimestampsOperation.cs ← #4415
+│   ├── QuickWithServerTimestampsInsertStreamOperation.cs ← #4415
+│   └── QuickWithServerTimestampsUpdateStreamVersionOperation.cs ← #4415
 └── Metadata/
     ├── HeadersColumnBinder.cs                  ← Rich-mode binder (write)
     ├── SequenceColumnBinder.cs                 ← Rich-mode binder
@@ -166,50 +173,52 @@ Also touched outside the new directory:
   jsonb via `ISerializer.FromJson<Dictionary<string,object>>`. Adapter
   threads `_serializer` through both Apply* methods.
 
-**Next concrete unit of work:** [#4414 / #4415](https://github.com/JasperFx/marten/issues/4414)
-— Quick / QuickWithServerTimestamps mode hardening. Quick paths use the
-`mt_quick_append_events` Postgres function (returns a long[] of seq + version
-pairs per event) rather than per-event inserts. The hand-written sample
-ops in `EventStorage/Quick/` + `EventStorage/QuickWithServerTimestamps/`
-are sketches; the SQL is TODO-stubbed on the dialect. Approach:
+* **#4414 (Quick mode)** — `QuickEventStorage<TId>` now wires
+  `QuickAppendEvents` (via the `mt_quick_append_events` function call),
+  `QuickAppendEventWithVersion` (per-event INSERT with server-side
+  `nextval(...)` seq_id), `InsertStream`, `UpdateStreamVersion`,
+  `QueryForStream`. Quick descriptor gained `HasCausationId` /
+  `HasCorrelationId` / `HasHeaders` / `HasUserName` / `HasTagWrites`
+  flags + the closures shared with Rich for per-stream ops + the
+  per-event QuickWithVersion SQL prefix/suffix + filtered metadata
+  binder array (no SequenceColumnBinder — seq_id is server-set).
+* **#4415 (QuickWithServerTimestamps mode)** —
+  `QuickWithServerTimestampsEventStorage<TId>` mirrors Quick + the
+  operation calls `writeTimestamps(pb)` for the extra timestamp-array
+  parameter. The per-event QuickWithVersion path is identical to Quick
+  (reuses `QuickAppendEventWithVersionOperation`).
 
-1. Port `EventDocumentStorageGenerator.buildQuickAppendOperation` →
-   composes `select <schema>.mt_quick_append_events(<args>)` with a
-   configuration-aware argument list. The `serverTimestamps` flag
-   toggles inclusion of the per-batch timestamp array.
-2. Port the array-parameter binding helpers from
-   `QuickAppendEventsOperationBase` so the operation can build per-column
-   `NpgsqlParameter[]` arrays from the stream's `Events` list.
-3. Port the Postprocess loop that walks the returned long[] and assigns
-   `Sequence` + (for QuickWithServerTimestamps) `Timestamp` back onto
-   each event.
-4. Wire `InsertStream` / `UpdateStreamVersion` / `QueryForStream` into
-   `QuickEventStorage` / `QuickWithServerTimestampsEventStorage` —
-   identical SQL shape to Rich, so the dialect closures can be reused
-   (extract a shared helper).
-5. Extend `Bug_4412_closed_shape_rich_write_path` (rename, or new
-   `Bug_4414_*`) to cover Quick and QuickWithServerTimestamps modes.
+**Next concrete unit of work:** [#4417 / #4418](https://github.com/JasperFx/marten/issues/4417)
+— configuration matrix sweep + full event-sourcing suite under the
+closed-shape flag. The headline path works (13 closed-shape tests
+green); the question now is whether ALL existing event-sourcing tests
+pass with the flag globally flipped on. Approach:
+
+1. Add a "closed-shape parallel" run config — `DISABLE_TEST_PARALLELIZATION=true`
+   plus a way to set `UseClosedShapeStorage = true` for every test that
+   constructs a store. Either a new test harness flag or an environment
+   variable the harness reads.
+2. Run `./build.sh test-event-sourcing` with the flag on; triage failures.
+3. Likely failure categories: (a) DCB tag types — verify the
+   `HasTagWrites` path works; (b) `EnableStrictStreamIdentityEnforcement`
+   — currently rejects, may need the CTE variant; (c) `RichEventStorage`'s
+   `QuickAppendEventWithVersion` — still throws (only Rich's
+   non-QuickWithVersion path is wired).
 
 **Alternative work, in rough priority order:**
 
-* #4416 is **done** for Rich-mode binders. `tags` and `is_skipped`
-  aren't binder concerns (they're plain `TableColumn`s, never reach
-  `SelectRichMetadataBinders`). `tags` writes land with the Quick paths
-  (DCB tag arrays); `is_skipped` is server-default + post-hoc UPDATE.
+* #4413 follow-up: `RichEventStorage.QuickAppendEventWithVersion`. The
+  Quick paths now both have this; Rich still throws. The
+  `RichEventAppender` calls `AppendEvent` (not `QuickAppendEventWithVersion`)
+  per-event, so this is only needed for cases where Rich runs alongside
+  some QuickWithVersion sub-flow. Verify whether any test actually hits
+  this; might be safe to leave unimplemented.
 * #4412 follow-up: port the `EnableStrictStreamIdentityEnforcement` CTE
-  variant of InsertStream. Currently rejects at descriptor-build time.
-  ~50 LOC; one new closure shape in the dialect.
-* #4413 follow-up: `RichEventStorage.QuickAppendEventWithVersion` (still
-  throws). Needs a `SequenceServerSideBinder` (writes `nextval(...)` SQL
-  literal + reads back via RETURNING) — pairs with porting the
-  `IEventMetadataBinder.OnRead` path through the operation's Postprocess.
-* #4417: configuration matrix sweep — `EnableBigIntEvents`,
-  `UseArchivedStreamPartitioning`, tenancy variants. Each may need
-  dialect tweaks; most should "just work" once #4414 / #4415 land.
-* #4418: full event-sourcing test suite with `UseClosedShapeStorage = true`
-  globally — proves there are no remaining gaps. Likely surfaces a few
-  follow-ups.
-* #4419: migration guide, EventStorage README, draft PR.
+  variant. Currently rejects at descriptor-build for Rich; Quick paths
+  delegate enforcement to the server function so they sidestep this.
+* #4419: migration guide, EventStorage README, draft PR. The closed-shape
+  path is now feature-complete enough that a draft PR + design-doc-style
+  README would be useful for early review.
 
 ## Open questions still alive
 
