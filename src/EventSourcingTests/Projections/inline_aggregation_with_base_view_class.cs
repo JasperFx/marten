@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
+using Marten;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -66,8 +67,8 @@ public class inline_aggregation_with_base_view_class: OneOffConfigurationsContex
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
-            .Single(x => x.Id == streamId);
+        var queriedView = await theSession.Query<T>()
+            .SingleAsync(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);
         queriedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");

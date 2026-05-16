@@ -66,10 +66,10 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -93,10 +93,10 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -120,10 +120,10 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -147,10 +147,10 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 
@@ -205,10 +205,10 @@ public class EventProjectionTests: OneOffConfigurationsContext, IAsyncLifetime
         theSession.Events.Append(stream, new UserDeleted { UserName = "one" });
         await theSession.SaveChangesAsync();
 
-        query.Query<User>()
+        (await query.Query<User>()
             .OrderBy(x => x.UserName)
             .Select(x => x.UserName)
-            .Single()
+            .SingleAsync())
             .ShouldBe("two");
     }
 

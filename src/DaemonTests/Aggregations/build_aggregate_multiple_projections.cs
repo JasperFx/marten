@@ -145,8 +145,8 @@ public class build_aggregate_multiple_projections: DaemonContext
         //Assert results are latest
         await using (var session = theStore.QuerySession())
         {
-            var carName = session.Query<CarView>().FirstOrDefault()?.Name;
-            var truckName = session.Query<TruckView>().FirstOrDefault()?.Name;
+            var carName = (await session.Query<CarView>().FirstOrDefaultAsync())?.Name;
+            var truckName = (await session.Query<TruckView>().FirstOrDefaultAsync())?.Name;
 
             carName.ShouldBe("car-name-2");
             truckName.ShouldBe("truck-name-2");

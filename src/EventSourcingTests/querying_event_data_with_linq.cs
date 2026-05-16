@@ -43,13 +43,13 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().CountAsync()).ShouldBe(2);
         (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
-            .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
+        (await theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+            .SingleAsync(x => x.Members.Contains("Matt"))).Id.ShouldBe(departed2.Id);
     }
 
     #endregion
@@ -64,13 +64,13 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().CountAsync()).ShouldBe(2);
         (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
-            .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
+        (await theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+            .SingleAsync(x => x.Members.Contains("Matt"))).Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
@@ -99,19 +99,19 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().CountAsync()).ShouldBe(2);
         (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
-            .Single().Id.ShouldBe(departed2.Id);
+        (await theSession.Events.QueryRawEventDataOnly<MembersDeparted>().Where(x => x.Members.Contains("Matt"))
+            .SingleAsync()).Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
-    public void will_not_blow_up_if_searching_for_events_before_event_store_is_warmed_up()
+    public async Task will_not_blow_up_if_searching_for_events_before_event_store_is_warmed_up()
     {
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Any().ShouldBeFalse();
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().AnyAsync()).ShouldBeFalse();
     }
 
 
@@ -137,13 +137,13 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
+        (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().CountAsync()).ShouldBe(2);
         (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
             .OrderBy(x => x)
             .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-        theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
-            .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
+        (await theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+            .SingleAsync(x => x.Members.Contains("Matt"))).Id.ShouldBe(departed2.Id);
     }
 
     [Fact]
@@ -154,18 +154,18 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        var results = theSession.Events.QueryAllRawEvents().ToList();
+        var results = await theSession.Events.QueryAllRawEvents().ToListAsync();
 
         results.Count.ShouldBe(4);
     }
 
     #region sample_example_of_querying_for_event_data
-    public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
+    public async Task example_of_querying_for_event_data(IDocumentSession session, Guid stream)
     {
-        var events = session.Events.QueryAllRawEvents()
+        var events = await session.Events.QueryAllRawEvents()
             .Where(x => x.StreamId == stream)
             .OrderBy(x => x.Sequence)
-            .ToList();
+            .ToListAsync();
     }
 
     #endregion
@@ -182,7 +182,7 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         var past = now.AddSeconds(-1);
 
-        var results = theSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToList();
+        var results = await theSession.Events.QueryAllRawEvents().Where(x => x.Timestamp > past).ToListAsync();
 
         results.Count.ShouldBe(4);
     }
@@ -198,10 +198,10 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
         var dbNow = (DateTime)theSession.Connection.CreateCommand().Sql("select now();").ExecuteScalar();
         var now = new DateTimeOffset(dbNow).AddSeconds(5);
 
-        var all = theSession.Events.QueryAllRawEvents().ToList();
+        var all = await theSession.Events.QueryAllRawEvents().ToListAsync();
 
-        var results = theSession.Events.QueryAllRawEvents()
-            .Where(x => x.Timestamp < now).ToList();
+        var results = await theSession.Events.QueryAllRawEvents()
+            .Where(x => x.Timestamp < now).ToListAsync();
 
         results.Count.ShouldBe(4);
     }
@@ -214,8 +214,8 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryAllRawEvents()
-            .Count(x => x.Sequence <= 2).ShouldBe(2);
+        (await theSession.Events.QueryAllRawEvents()
+            .CountAsync(x => x.Sequence <= 2)).ShouldBe(2);
     }
 
     [Fact]
@@ -226,8 +226,8 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryAllRawEvents()
-            .Count(x => x.Version == 1).ShouldBe(2);
+        (await theSession.Events.QueryAllRawEvents()
+            .CountAsync(x => x.Version == 1)).ShouldBe(2);
     }
 
     [Fact]
@@ -238,8 +238,8 @@ public class querying_event_data_with_linq: OneOffConfigurationsContext, IAsyncL
 
         await theSession.SaveChangesAsync();
 
-        theSession.Events.QueryAllRawEvents()
-            .Count(x => x.StreamId == stream1).ShouldBe(2);
+        (await theSession.Events.QueryAllRawEvents()
+            .CountAsync(x => x.StreamId == stream1)).ShouldBe(2);
     }
 
     [Fact]

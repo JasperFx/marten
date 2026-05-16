@@ -61,8 +61,8 @@ public class inline_aggregation_with_non_public_setter: OneOffConfigurationsCont
         loadedView.Id.ShouldBe(streamId);
         loadedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");
 
-        var queriedView = theSession.Query<T>()
-            .Single(x => x.Id == streamId);
+        var queriedView = await theSession.Query<T>()
+            .SingleAsync(x => x.Id == streamId);
 
         queriedView.Id.ShouldBe(streamId);
         queriedView.Monsters.ShouldHaveTheSameElementsAs("Troll", "Dragon");

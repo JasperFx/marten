@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Events;
+using Marten;
 using Marten.Events;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -38,7 +39,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
         }
     }
@@ -70,7 +71,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
         }
     }
@@ -102,7 +103,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            var events = session.Events.QueryAllRawEvents().ToList();
+            var events = await session.Events.QueryAllRawEvents().ToListAsync();
             events.All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
         }
@@ -134,7 +135,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await using (var session = theStore.LightweightSession())
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
         }
     }
@@ -166,7 +167,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         await using (var session = theStore.LightweightSession("one"))
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamId == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamId == stream2)
                 .ShouldBeTrue();
         }
     }
@@ -201,7 +202,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamKey == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamKey == stream2)
                 .ShouldBeTrue();
         }
     }
@@ -237,7 +238,7 @@ public class delete_single_event_stream: OneOffConfigurationsContext
 
         using (var session = theStore.LightweightSession())
         {
-            session.Events.QueryAllRawEvents().ToList().All(x => x.StreamKey == stream2)
+            (await session.Events.QueryAllRawEvents().ToListAsync()).All(x => x.StreamKey == stream2)
                 .ShouldBeTrue();
         }
     }
