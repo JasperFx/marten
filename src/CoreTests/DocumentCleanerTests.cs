@@ -130,7 +130,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await theSession.Events.QueryRawEventDataOnly<QuestStarted>().ToListAsync()).ShouldBeEmpty();
         (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
     }
 
@@ -151,7 +151,7 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
 
         await theCleaner.DeleteAllEventDataAsync();
 
-        theSession.Events.QueryRawEventDataOnly<QuestStarted>().ShouldBeEmpty();
+        (await theSession.Events.QueryRawEventDataOnly<QuestStarted>().ToListAsync()).ShouldBeEmpty();
         (await theSession.Events.FetchStreamAsync(streamId)).ShouldBeEmpty();
 
         var progress = await theStore.Advanced.AllProjectionProgress();

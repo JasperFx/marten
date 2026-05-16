@@ -292,16 +292,16 @@ public class noda_time_acceptance: OneOffConfigurationsContext
             await session.SaveChangesAsync();
         }
 
-        using (var query = theStore.QuerySession())
+        await using (var query = theStore.QuerySession())
         {
-            var result = query
+            var result = await query
                 .Query<TargetWithDates>()
-                .Single(c => c.Id == testDoc.Id);
+                .SingleAsync(c => c.Id == testDoc.Id);
 
-            var resultWithSelect = query.Query<TargetWithDates>()
+            var resultWithSelect = await query.Query<TargetWithDates>()
                 .Where(c => c.Id == testDoc.Id)
                 .Select(c => new { c.Id, c.InstantUTC, c.NullableInstantUTC, c.NullInstantUTC })
-                .Single();
+                .SingleAsync();
 
             result.ShouldNotBeNull();
             result.Id.ShouldBe(testDoc.Id);

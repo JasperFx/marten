@@ -227,9 +227,9 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().ShouldBeEmpty();
-            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
-            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
+            (await session.Query<Target>().ToListAsync()).ShouldBeEmpty();
+            (await session.LoadAsync<User>(user1.Id)).ShouldNotBeNull();
+            (await session.LoadAsync<User>(user2.Id)).ShouldNotBeNull();
         }
     }
 
@@ -296,9 +296,9 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().ShouldBeEmpty();
-            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
-            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
+            (await session.Query<Target>().ToListAsync()).ShouldBeEmpty();
+            (await session.LoadAsync<User>(user1.Id)).ShouldNotBeNull();
+            (await session.LoadAsync<User>(user2.Id)).ShouldNotBeNull();
         }
     }
 
@@ -362,9 +362,9 @@ public class ejecting_documents : IntegrationContext
 
         using (var session = theStore.QuerySession())
         {
-            session.Query<Target>().ShouldBeEmpty();
-            session.LoadAsync<User>(user1.Id).ShouldNotBeNull();
-            session.LoadAsync<User>(user2.Id).ShouldNotBeNull();
+            (await session.Query<Target>().ToListAsync()).ShouldBeEmpty();
+            (await session.LoadAsync<User>(user1.Id)).ShouldNotBeNull();
+            (await session.LoadAsync<User>(user2.Id)).ShouldNotBeNull();
         }
     }
 

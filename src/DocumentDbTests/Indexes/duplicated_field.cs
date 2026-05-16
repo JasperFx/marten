@@ -253,7 +253,7 @@ public class duplicated_field: OneOffConfigurationsContext
         var thirdTarget = targets.ElementAt(2);
 
         var queryable = theSession.Query<Target>().Where(x => x.Inner.Date == thirdTarget.Inner.Date);
-        var results = queryable.ToArray();
+        var results = await queryable.ToListAsync();
         results
             .Any(x => x.Id == thirdTarget.Id).ShouldBeTrue();
 
