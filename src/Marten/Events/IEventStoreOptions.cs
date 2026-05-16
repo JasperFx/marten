@@ -104,6 +104,20 @@ namespace Marten.Events
         public bool EnableStrictStreamIdentityEnforcement { get; set; }
 
         /// <summary>
+        /// Opt into the closed-shape event-storage hierarchy added in
+        /// Marten 9 (#4404 W4). When <see langword="true"/>, the event-store
+        /// path uses hand-written closed-shape storage classes instead of
+        /// the runtime-emitted <c>EventDocumentStorageGenerator</c> output.
+        /// Default <see langword="false"/> in v9 — the flag flips to
+        /// default-on in v10 and the codegen path is removed in v11.
+        /// </summary>
+        /// <remarks>
+        /// AOT-publishing implication: when the flag is on, the event-store
+        /// slice no longer needs <c>JasperFx.RuntimeCompiler</c> at runtime.
+        /// </remarks>
+        public bool UseClosedShapeStorage { get; set; }
+
+        /// <summary>
         /// Optional extension point to receive published messages as a side effect from
         /// aggregation projections
         /// </summary>

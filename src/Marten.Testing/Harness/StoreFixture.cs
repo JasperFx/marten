@@ -31,9 +31,9 @@ namespace Marten.Testing.Harness
             {
                 if (_store == null)
                 {
-                    if (TestsSettings.UseClosedShapeStorage && !Options.EventGraph.UseClosedShapeStorage)
+                    if (TestsSettings.UseClosedShapeStorage && !Options.Events.UseClosedShapeStorage)
                     {
-                        Options.EventGraph.UseClosedShapeStorage = true;
+                        Options.Events.UseClosedShapeStorage = true;
                     }
 
                     _store = new DocumentStore(Options);

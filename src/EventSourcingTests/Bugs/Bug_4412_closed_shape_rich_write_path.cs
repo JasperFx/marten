@@ -35,11 +35,7 @@ public class Bug_4412_closed_shape_rich_write_path : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            // UseClosedShapeStorage lives on EventGraph (internal) until we
-            // promote it to the public IEventStoreOptions surface (#4419).
-            // EventSourcingTests has InternalsVisibleTo so we can poke the
-            // flag directly via opts.EventGraph.
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
@@ -105,11 +101,7 @@ public class Bug_4412_closed_shape_rich_write_path : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            // UseClosedShapeStorage lives on EventGraph (internal) until we
-            // promote it to the public IEventStoreOptions surface (#4419).
-            // EventSourcingTests has InternalsVisibleTo so we can poke the
-            // flag directly via opts.EventGraph.
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });

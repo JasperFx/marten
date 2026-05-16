@@ -30,7 +30,7 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.MetadataConfig.CausationIdEnabled = true;
             opts.Events.MetadataConfig.CorrelationIdEnabled = true;
@@ -76,7 +76,7 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
         // #4416 part 2).
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.MetadataConfig.HeadersEnabled = true;
         });
@@ -113,7 +113,7 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
         // adapter must NOT fail the descriptor build.
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = true;
         });
@@ -139,7 +139,7 @@ public class Bug_4416_closed_shape_metadata_binders : OneOffConfigurationsContex
         // binder wired in #4416 part 1 + part 2.
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.MetadataConfig.CausationIdEnabled = true;
             opts.Events.MetadataConfig.CorrelationIdEnabled = true;

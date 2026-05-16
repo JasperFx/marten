@@ -30,7 +30,7 @@ public class Bug_4415_closed_shape_quick_with_server_timestamps : OneOffConfigur
     {
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
             // AppendMode defaults to QuickWithServerTimestamps in v9, but
             // be explicit here to pin the test against the right path.
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
@@ -80,7 +80,7 @@ public class Bug_4415_closed_shape_quick_with_server_timestamps : OneOffConfigur
         // make no other config tweaks. This is the headline "drop-in" path.
         StoreOptions(opts =>
         {
-            opts.EventGraph.UseClosedShapeStorage = true;
+            opts.Events.UseClosedShapeStorage = true;
         });
 
         var streamId = Guid.NewGuid();

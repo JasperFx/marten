@@ -49,9 +49,9 @@ namespace Marten.Testing.Harness
 
             configure?.Invoke(options);
 
-            if (TestsSettings.UseClosedShapeStorage && !options.EventGraph.UseClosedShapeStorage)
+            if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
             {
-                options.EventGraph.UseClosedShapeStorage = true;
+                options.Events.UseClosedShapeStorage = true;
             }
 
             var store = new DocumentStore(options);
@@ -94,9 +94,9 @@ namespace Marten.Testing.Harness
             // Applied AFTER the test's configure callback so individual tests
             // that explicitly disable the flag (or set conflicting options)
             // win.
-            if (TestsSettings.UseClosedShapeStorage && !options.EventGraph.UseClosedShapeStorage)
+            if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
             {
-                options.EventGraph.UseClosedShapeStorage = true;
+                options.Events.UseClosedShapeStorage = true;
             }
 
             if (cleanAll)
