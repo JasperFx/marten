@@ -63,7 +63,17 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task should_check_max_event_id_on_append_with_string_identifier()
     {
-        UseStreamIdentity(StreamIdentity.AsString);
+        // Append(stream, version, events) for a non-existent stream is a Rich-mode-only
+        // pattern. Quick mode requires StartStream first to materialize the stream row.
+        // Use an isolated schema name so the migration doesn't collide with the AsGuid
+        // schema the rest of this test class uses.
+        StoreOptions(opts =>
+        {
+            opts.DatabaseSchemaName = "asserting_on_expected_event_version_on_append_strings";
+            opts.Events.StreamIdentity = StreamIdentity.AsString;
+            opts.Events.AppendMode = EventAppendMode.Rich;
+        });
+        await theStore.Advanced.Clean.DeleteAllEventDataAsync();
 
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
         var departed = new MembersDeparted { Members = new[] { "Thom" } };
@@ -118,6 +128,8 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task should_check_max_event_id_on_append_to_empty_stream()
     {
+        StoreOptions(opts => opts.Events.AppendMode = EventAppendMode.Rich);
+
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
 
         var stream = Guid.NewGuid();
@@ -132,6 +144,10 @@ public class asserting_on_expected_event_version_on_append: IntegrationContext
     [Fact]
     public async Task happy_path_on_append_to_empty_stream()
     {
+        // Append(stream, version, events) for a non-existent stream is a Rich-mode-only
+        // pattern. Quick mode requires StartStream first.
+        StoreOptions(opts => opts.Events.AppendMode = EventAppendMode.Rich);
+
         var joined = new MembersJoined { Members = new string[] { "Rand", "Matt", "Perrin", "Thom" } };
 
         var stream = Guid.NewGuid();

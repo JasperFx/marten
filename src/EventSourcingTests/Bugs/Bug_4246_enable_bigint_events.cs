@@ -24,7 +24,7 @@ public class Bug_4246_enable_bigint_events : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
-            // EnableBigIntEvents is false by default
+            opts.Events.EnableBigIntEvents = false;
         });
 
         var streamId = Guid.NewGuid();
@@ -136,10 +136,10 @@ public class Bug_4246_enable_bigint_events : OneOffConfigurationsContext
     }
 
     [Fact]
-    public void bigint_events_is_false_by_default()
+    public void bigint_events_is_true_by_default()
     {
         var opts = new StoreOptions();
-        opts.Events.EnableBigIntEvents.ShouldBeFalse();
+        opts.Events.EnableBigIntEvents.ShouldBeTrue();
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public class Bug_4246_enable_bigint_events : OneOffConfigurationsContext
         StoreOptions(opts =>
         {
             opts.Events.AppendMode = EventAppendMode.Quick;
-            // EnableBigIntEvents defaults to false
+            opts.Events.EnableBigIntEvents = false;
         });
 
         await theStore.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent), default);

@@ -388,6 +388,10 @@ public class StringIdentifiedStreamsFixture: StoreFixture
 {
     public StringIdentifiedStreamsFixture(): base("string_identified_streams")
     {
+        // ScenarioAggregateAndRepository documents an Append(streamId, version, events)
+        // pattern that requires Rich mode (Quick mode requires StartStream first to
+        // materialize the stream row).
+        Options.Events.AppendMode = EventAppendMode.Rich;
         Options.Events.StreamIdentity = StreamIdentity.AsString;
         Options.Projections.Snapshot<QuestPartyWithStringIdentifier>(SnapshotLifecycle.Inline);
 

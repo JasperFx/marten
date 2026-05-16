@@ -695,7 +695,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     and linked option documentation):
     ///     <list type="bullet">
     ///       <item><see cref="EventGraph.AppendMode"/> &rarr; <see cref="EventAppendMode.Rich"/></item>
-    ///       <item><see cref="EventGraph.EnableAdvancedAsyncTracking"/> &rarr; <c>false</c></item>
     ///       <item><see cref="EventGraph.EnableEventSkippingInProjectionsOrSubscriptions"/> &rarr; <c>false</c></item>
     ///       <item><see cref="EventGraph.UseIdentityMapForAggregates"/> &rarr; <c>false</c></item>
     ///       <item><see cref="EventGraph.EnableBigIntEvents"/> &rarr; <c>false</c></item>
@@ -723,7 +722,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public void RestoreV8Defaults()
     {
         Events.AppendMode = EventAppendMode.Rich;
-        Events.EnableAdvancedAsyncTracking = false;
+        // EnableAdvancedAsyncTracking is not flipped in 9.0 yet (#4425), so it
+        // already sits at its V8 default and is not touched here.
         Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
         Events.UseIdentityMapForAggregates = false;
         Events.EnableBigIntEvents = false;

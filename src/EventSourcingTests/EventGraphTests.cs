@@ -151,10 +151,10 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void default_append_mode_is_rich()
+    public void default_append_mode_is_quick_with_server_timestamps()
     {
-        theGraph.AppendMode.ShouldBe(EventAppendMode.Rich);
-        theGraph.EventAppender.ShouldBeOfType<RichEventAppender>();
+        theGraph.AppendMode.ShouldBe(EventAppendMode.QuickWithServerTimestamps);
+        theGraph.EventAppender.ShouldBeOfType<QuickEventAppender>();
     }
 
     [Fact]
@@ -175,9 +175,9 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void use_identity_map_for_inline_aggregates_is_false_by_default()
+    public void use_identity_map_for_inline_aggregates_is_true_by_default()
     {
-        theGraph.UseIdentityMapForAggregates.ShouldBeFalse();
+        theGraph.UseIdentityMapForAggregates.ShouldBeTrue();
     }
 
     [Fact]
@@ -196,9 +196,9 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void enable_event_skipping_should_be_disabled_by_default()
+    public void enable_event_skipping_should_be_enabled_by_default()
     {
-        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
+        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeTrue();
     }
 
     public class HouseRemodeling

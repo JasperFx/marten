@@ -62,10 +62,13 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         snapshot = await aggregator.BuildAsync(pendingEvents, session, snapshot, id, storage, cancellation)
             .ConfigureAwait(false);
 
-        // The configured inline projection itself will persist the projected
-        // document during SaveChangesAsync. Calling session.Store(snapshot) here
-        // would queue a redundant upsert at the same revision, which now surfaces
-        // as a ConcurrencyException after the mt_upsert_<doc> write-loss fix.
+        // Evict the aggregate from the identity map: for mutable aggregate types
+        // BuildAsync mutates `snapshot` in place, so the cached entry now reflects
+        // post-pending-events state. Leaving it in the cache would cause the inline
+        // projection during SaveChangesAsync to re-apply the same pending events
+        // on top of the already-mutated aggregate. The configured inline projection
+        // persists the document during SaveChangesAsync, so we don't store it here.
+        session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
 
         return snapshot;
     }
