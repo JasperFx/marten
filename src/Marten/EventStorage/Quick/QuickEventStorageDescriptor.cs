@@ -113,6 +113,22 @@ public sealed class QuickEventStorageDescriptor
     public IEventMetadataBinder[] MetadataBinders { get; init; } = System.Array.Empty<IEventMetadataBinder>();
 
     /// <summary>
+    /// SQL suffix for the Full-mode per-event INSERT used by
+    /// <c>QuickEventStorage&lt;TId&gt;.AppendEvent</c> (called by paths like
+    /// the tombstone batch regardless of <c>AppendMode</c>). Just <c>")"</c> —
+    /// no <c>nextval()</c> fragment; seq_id is a bound parameter.
+    /// </summary>
+    public string AppendEventFullSqlSuffix { get; init; } = ")";
+
+    /// <summary>
+    /// Metadata binders for the Full-mode per-event INSERT path. Mirror of
+    /// <c>RichEventStorageDescriptor.MetadataBinders</c> — includes
+    /// <c>SequenceColumnBinder</c> because seq_id is a bound parameter
+    /// here (not <c>nextval()</c>).
+    /// </summary>
+    public IEventMetadataBinder[] AppendEventFullMetadataBinders { get; init; } = System.Array.Empty<IEventMetadataBinder>();
+
+    /// <summary>
     /// Configures the <c>mt_streams</c> insert command — identical shape to
     /// the Rich descriptor's closure. Init-only; the dialect installs it.
     /// </summary>

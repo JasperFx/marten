@@ -35,5 +35,27 @@ namespace Marten.Testing.Harness
                 return serializerType.Value;
             }
         }
+
+        private static bool? useClosedShapeStorage;
+
+        /// <summary>
+        /// Reads <c>MARTEN_USE_CLOSED_SHAPE_STORAGE</c>. When <c>true</c>, the
+        /// harness contexts flip <c>StoreOptions.Events.UseClosedShapeStorage</c>
+        /// on after the test's own <c>configure</c> callback runs — so we can
+        /// run the whole event-sourcing suite under the closed-shape adapter
+        /// (#4417 / #4418) without touching the individual tests.
+        /// </summary>
+        public static bool UseClosedShapeStorage
+        {
+            get
+            {
+                if (useClosedShapeStorage.HasValue)
+                    return useClosedShapeStorage.Value;
+
+                var env = Environment.GetEnvironmentVariable("MARTEN_USE_CLOSED_SHAPE_STORAGE");
+                useClosedShapeStorage = string.Equals(env, "true", StringComparison.OrdinalIgnoreCase);
+                return useClosedShapeStorage.Value;
+            }
+        }
     }
 }

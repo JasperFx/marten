@@ -25,9 +25,16 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
     }
 
     public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
-        => throw new NotSupportedException(
-            $"{nameof(QuickWithServerTimestampsEventStorage<TId>)} batches events per stream — single-event appends route through " +
-            $"{nameof(QuickAppendEvents)}.");
+        // Full-mode per-event INSERT for the tombstone / direct-AppendEvent
+        // code paths that bypass the bulk function call.
+        => new Quick.QuickAppendEventWithVersionOperation(
+            _descriptor.AppendEventSqlPrefix,
+            _descriptor.AppendEventFullSqlSuffix,
+            _descriptor.AppendEventFullMetadataBinders,
+            _descriptor.IsGuidStreamIdentity,
+            _descriptor.SerializeEventData,
+            stream,
+            @event);
 
     public override IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent @event)
         => new Quick.QuickAppendEventWithVersionOperation(

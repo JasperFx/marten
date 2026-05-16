@@ -92,6 +92,19 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
     public IEventMetadataBinder[] MetadataBinders { get; init; } = System.Array.Empty<IEventMetadataBinder>();
 
     /// <summary>
+    /// SQL suffix <c>")"</c> for the Full-mode per-event INSERT used by
+    /// <c>QuickWithServerTimestampsEventStorage&lt;TId&gt;.AppendEvent</c>
+    /// (tombstone path + similar).
+    /// </summary>
+    public string AppendEventFullSqlSuffix { get; init; } = ")";
+
+    /// <summary>
+    /// Metadata binders for the Full-mode per-event INSERT path. Mirror of
+    /// <c>RichEventStorageDescriptor.MetadataBinders</c> — seq_id is bound.
+    /// </summary>
+    public IEventMetadataBinder[] AppendEventFullMetadataBinders { get; init; } = System.Array.Empty<IEventMetadataBinder>();
+
+    /// <summary>
     /// Configures the <c>mt_streams</c> insert command — identical shape to
     /// the Rich descriptor's closure.
     /// </summary>

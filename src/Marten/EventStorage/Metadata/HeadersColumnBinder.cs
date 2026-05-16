@@ -27,18 +27,21 @@ internal sealed class HeadersColumnBinder: IEventMetadataBinder
 
     public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
     {
-        // Reads from IEvent.Headers (Dictionary<string,object>?), serialized
-        // by the session's JSON serializer. Today's codegen path does the same
-        // thing inside the emitted ConfigureCommand body.
-        var headers = @event.Headers;
-        if (headers == null || headers.Count == 0)
-        {
-            pb.AppendParameter(System.DBNull.Value, NpgsqlDbType.Jsonb);
-            return;
-        }
-
-        var json = session.Serializer.ToJson(headers);
-        pb.AppendParameter(json, NpgsqlDbType.Jsonb);
+        // Mirrors the codegen path's emitted shape for the headers column:
+        //
+        //     var parameter = parameterBuilder.AppendParameter<object>(DBNull.Value);
+        //     session.Serializer.WriteToParameter(parameter, evt.Headers);
+        //
+        // Using AppendParameter<object> (not AppendParameter<DBNull> via the
+        // raw DBNull static type) is important — Npgsql refuses to serialize
+        // DBNull as a typed parameter, but accepts object + DBNull.Value with
+        // NpgsqlDbType.Jsonb as a NULL jsonb. WriteToParameter then either
+        // writes the actual JSON bytes (skipping intermediate string
+        // allocation via ISerializer.WriteTo) or leaves the parameter at
+        // DBNull when Headers is null.
+        var parameter = pb.AppendParameter<object>(System.DBNull.Value);
+        parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+        session.Serializer.WriteToParameter(parameter, @event.Headers);
     }
 
     // OnRead — default no-op (inherited from the interface default). Headers

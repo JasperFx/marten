@@ -216,6 +216,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
+        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns);
 
         return new QuickEventStorageDescriptor(
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
@@ -236,6 +237,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
             MetadataBinders = quickMetadataBinders,
+            AppendEventFullSqlSuffix = ")",
+            AppendEventFullMetadataBinders = fullMetadataBinders,
         };
     }
 
@@ -248,6 +251,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         var (orderedColumns, appendEventSqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
         var quickMetadataBinders = SelectQuickModeMetadataBinders(orderedColumns);
+        var fullMetadataBinders = SelectRichMetadataBinders(orderedColumns);
 
         return new QuickWithServerTimestampsEventStorageDescriptor(
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
@@ -268,6 +272,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             AppendEventSqlPrefix = appendEventSqlPrefix,
             AppendEventSqlSuffix = quickWithVersionSuffix,
             MetadataBinders = quickMetadataBinders,
+            AppendEventFullSqlSuffix = ")",
+            AppendEventFullMetadataBinders = fullMetadataBinders,
         };
     }
 
