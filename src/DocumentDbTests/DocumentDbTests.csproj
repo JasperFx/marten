@@ -9,6 +9,12 @@
         <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <!-- Compiled queries declared in this project (Bug_3464, batched_querying,
+             streaming_json_results) require the source generator to emit their
+             handler registrations. See #4405. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

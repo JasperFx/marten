@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Source generators for Marten — eliminates runtime code generation in AOT publishing scenarios. PoC scope: compiled-query handler scaffolding (Marten #4405). Document/event/ancillary-store accessor generators land in subsequent iterations.</Description>
+        <!-- Roslyn source generators must target netstandard2.0 so the analyzer host (the
+             C# compiler) can load them. This overrides the repo-wide net9/net10 TFM set
+             in Directory.Build.props on purpose. -->
+        <TargetFrameworks></TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <IsRoslynComponent>true</IsRoslynComponent>
+        <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <!-- RS2008: analyzer-release tracking. The PoC diagnostics (MTSG###) are still
+             churning; we'll opt back in once the IDs and severities are committed to. -->
+        <NoWarn>$(NoWarn);RS2008</NoWarn>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="$(OutputPath)\$(AssemblyName).dll"
+              Pack="true"
+              PackagePath="analyzers/dotnet/cs"
+              Visible="false" />
+    </ItemGroup>
+
+</Project>

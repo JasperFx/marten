@@ -12,9 +12,11 @@ using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Internal.Sessions;
 using Marten.Linq;
+using Marten.Linq.QueryHandlers;
 using Marten.Services;
 using Marten.Storage;
 using System.Diagnostics.CodeAnalysis;
+using Weasel.Core;
 
 namespace Marten;
 
@@ -46,6 +48,39 @@ internal class CompiledQueryCollection
         }
 
         var plan = QueryCompiler.BuildQueryPlan(session, query);
+
+        // ---- #4405 iterations 3-4: source-gen registry-first dispatch ----
+        // Implicit opt-in: if the consumer referenced Marten.SourceGenerator and
+        // marked the defining assembly with [JasperFxAssembly], a handler
+        // descriptor was registered at assembly load via a [ModuleInitializer].
+        // Iteration 4 widened the runtime to cover all three handler shapes
+        // (Stateless, Cloned, Complex), so the source-gen path serves most
+        // registered query types.
+        //
+        // One holdout: query plans whose parameters need an
+        // ICompiledQueryAwareFilter (string Contains/StartsWith/EndsWith,
+        // JSONB containment via .Contains() on a HashSet<>, dictionary
+        // ContainsKey, child-collection JsonPath counts). Those filters
+        // customize parameter writes through codegen-time GenerateCode hooks
+        // with no runtime equivalent — for now, plans containing them fall
+        // through to the JasperFx.RuntimeCompiler path below. Lifting that
+        // restriction (filter runtime APIs) is tracked as a follow-up to
+        // #4405; once it lands, this fallthrough is deleted and a registry
+        // miss throws.
+        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor)
+            && !PlanRequiresCodegenFilters(plan))
+        {
+            var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
+            source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
+            _querySources = _querySources.AddOrUpdate(query.GetType(), source);
+            return source;
+        }
+        // ---- /#4405 iterations 3-4 ----
+
+        // PoC bridge: registry miss or non-Stateless shape falls through to the
+        // existing JasperFx.RuntimeCompiler codegen path. This branch is deleted
+        // once iteration 4 lands green; the final V9 behavior is "registry miss
+        // throws" (#4405 in-issue commentary 2026-05-14).
         var file = new CompiledQueryCodeFile(query.GetType(), _store, plan, _tracking);
 
         var rules = _store.Options.CreateGenerationRules();
@@ -62,6 +97,25 @@ internal class CompiledQueryCollection
         _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
         return source;
+    }
+
+    /// <summary>
+    /// Returns <see langword="true"/> if any parameter in the plan needs an
+    /// <see cref="Marten.Internal.CompiledQueries.ICompiledQueryAwareFilter"/>
+    /// to write its value. Those filters today only emit codegen — there's no
+    /// runtime hook for them — so the source-gen path can't fully serve such
+    /// plans. Tracked as a follow-up to #4405.
+    /// </summary>
+    private static bool PlanRequiresCodegenFilters(CompiledQueryPlan plan)
+    {
+        foreach (var command in plan.Commands)
+        {
+            foreach (var usage in command.Parameters)
+            {
+                if (usage.Filter != null) return true;
+            }
+        }
+        return false;
     }
 }
 

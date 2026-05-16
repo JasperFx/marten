@@ -1,0 +1,90 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <!-- This is the iteration-4 PoC harness for #4405. It deliberately
+             opts INTO the source-generated compiled-query path:
+             1. The Marten.SourceGenerator analyzer reference below makes the
+                generator run over this project's compile.
+             2. The [assembly: JasperFx.JasperFxAssembly] attribute in
+                AssemblyInfo.cs unlocks the generator's scanning gate.
+             3. The runtime's CompiledQueryHandlerRegistry then has a descriptor
+                registered for every ICompiledQuery<,> type declared here,
+                routing queries through the source-gen path instead of
+                JasperFx.RuntimeCompiler. -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <!-- Used by the test assertions in CorrectnessGate / PerfGate, and by the
+             shared SpecificationExtensions.cs we pull in below. -->
+        <PackageReference Include="Shouldly" />
+        <!-- IntegrationContext.cs has a `using Microsoft.FSharp.Core;` directive
+             that the Marten.Testing project supplies via FSharp.Core. We don't
+             write any F# code here, but the include needs to resolve. -->
+        <PackageReference Include="FSharp.Core" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- Required by the included Marten.Testing.Harness.TestsSettings.cs, which
+             touches Marten.Newtonsoft to drive serializer selection during tests. -->
+        <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
+
+        <!-- Apply Marten.SourceGenerator as an analyzer to this compile.
+             ReferenceOutputAssembly=false: the generator's own .dll never goes
+                                            into our bin/, only its analyzer output.
+             OutputItemType=Analyzer:        Roslyn loads the dll as an analyzer
+                                            instead of a regular reference.
+             This is the same wiring an external consumer would write to enable
+             source-generated compiled queries in their own project. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <!-- Shared test-harness sources from Marten.Testing. Marten convention is to
+         compile these into each test assembly directly rather than ProjectReference
+         Marten.Testing — that way each assembly carries its own [CollectionDefinition]
+         classes (xunit's collection-fixture resolver is per-assembly), and individual
+         test projects pick the minimal harness slice they need. -->
+    <ItemGroup>
+        <Compile Include="..\Marten.Testing\Documents\Issue.cs">
+            <Link>Documents\Issue.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Documents\User.cs">
+            <Link>Documents\User.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\BugIntegrationContext.cs">
+            <Link>Harness\BugIntegrationContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+            <Link>Harness\ConnectionSource.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\DefaultStoreFixture.cs">
+            <Link>Harness\DefaultStoreFixture.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\IntegrationContext.cs">
+            <Link>Harness\IntegrationContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\OneOffConfigurationsContext.cs">
+            <Link>Harness\OneOffConfigurationsContext.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\SpecificationExtensions.cs">
+            <Link>Harness\SpecificationExtensions.cs</Link>
+        </Compile>
+        <Compile Include="..\Marten.Testing\Harness\TestsSettings.cs">
+            <Link>Harness\TestsSettings.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+</Project>

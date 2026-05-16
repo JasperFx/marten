@@ -94,20 +94,57 @@ await batch.Execute();
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L115-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-query-with-compiled-queries' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+## Recommended setup: enable the source generator
+
+::: tip Marten 9.0
+The source-generated path described in this section ships in Marten 9.0 and is the preferred way to use compiled queries going forward. The legacy runtime-codegen path documented below in [How Does It Work?](#how-does-it-work) stays as a fallback for queries the generator doesn't yet cover.
+:::
+
+Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time instead of synthesizing it via Roslyn at first call. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
+
+```xml
+<!-- in your .csproj -->
+<ItemGroup>
+    <PackageReference Include="Marten.SourceGenerator" PrivateAssets="all" />
+</ItemGroup>
+```
+
+```cs
+// in any file in the same assembly (e.g., AssemblyInfo.cs)
+[assembly: JasperFx.JasperFxAssembly]
+```
+
+With both present, the generator emits a typed handler for every `ICompiledQuery<TDoc, TOut>` in the assembly and registers it with the Marten runtime via a `[ModuleInitializer]` that fires at assembly load. **You do not need to call `StoreOptions.RegisterCompiledQueryType(...)`** — that API exists for the legacy runtime-codegen pre-build flow described in [Pre-Building Generated Types](/configuration/prebuilding) and is no longer required when the source generator is in play.
+
+What this gets you compared to the legacy runtime codegen:
+
+* **No Roslyn emit at first call.** First invocation of a registered compiled query is dramatically faster (PoC measurements: ~25× on a Stateless shape — 3 ms vs 75 ms on a warm host).
+* **No `FastExpressionCompiler` for the per-query parameter binder.** The generator emits a direct property-read switch — ~31% faster steady-state per call.
+* **AOT-publishable for the common cases.** The runtime Roslyn dependency disappears for queries the source-gen path covers.
+
+The runtime falls back to the legacy code-generation path in three documented cases — these are bug-compatible with Marten 8 behavior, just slower at cold start:
+
+* Plans whose SQL needs an `ICompiledQueryAwareFilter` (string `Contains`/`StartsWith`/`EndsWith`, `HashSet<T>.Contains` with JSONB containment, `Dictionary<,>.ContainsKey`, child-collection JsonPath counts).
+* Generic or nested `ICompiledQuery<,>` types — the generator skips both shapes for now.
+* Compiled queries declared in an assembly without `[JasperFxAssembly]`.
+
+The source generator is additive — adding it never breaks an existing compiled query, and removing it makes everything fall back to runtime codegen with no behavior change beyond cold-start perf. Tracking issue: [#4405](https://github.com/JasperFx/marten/issues/4405).
+
 ## How Does It Work?
 
-The first time that Marten encounters a new type of `ICompiledQuery`, it has to create a new "plan" for the compiled query by:
+The first time that Marten encounters a new type of `ICompiledQuery`, it builds a "plan" for the query by:
 
-1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members marked with `[MartenIgnore]` attribute are ignored.
-1. Marten either insures that the query object being passed in has unique values for each parameter member, or tries to create a new object of the same type and tries to set all unique values
-1. Parse the Expression returned from `QueryIs()` with the underlying Linq expression to determine the proper result handling and underlying database command with parameters
-1. Attempts to match the unique member values to the command parameter values to map query members to the database parameters by index
-1. Assuming the previous steps succeeded, Marten generates and dynamically compiles code at runtime to efficiently execute the compiled query objects at runtime and caches the dynamic query executors.
+1. Finding all public _readable_ properties or fields on the compiled query type that would be potential parameters. Members marked with the `[MartenIgnore]` attribute are skipped.
+2. Either confirming that the query object you passed in has unique values across each parameter member, or constructing a new instance of the same type and assigning unique values itself.
+3. Parsing the expression returned from `QueryIs()` to derive the SQL command + the parameter slots Marten needs to fill at execution time.
+4. Matching the unique member values back to the command's parameter values to map query members to database parameters by index.
 
-On subsequent usages, Marten will just reuse the existing SQL command and remembered handlers to execute the query.
+How Marten then dispatches the per-call hot path depends on whether the source generator is in play:
 
-TODO -- link to the docs on pre-generating types
-TODO -- talk about the diagnostic view of the source code
+* **Source-generated dispatch** (default when the `Marten.SourceGenerator` analyzer reference + `[assembly: JasperFxAssembly]` are present, see [Recommended setup](#recommended-setup-enable-the-source-generator) above). The generator emits a typed `{Query}_CompiledQueryHandler` class for every `ICompiledQuery<,>` in the assembly, plus a `[ModuleInitializer]` that registers the handler with Marten's runtime `CompiledQueryHandlerRegistry` at assembly load. When Marten sees the registered query type, it routes through the generator-emitted parameter binder (direct field/property reads — no reflection, no Roslyn emit at runtime).
+* **Runtime-codegen dispatch** (legacy fallback). When the source generator isn't opted in, or when the plan requires features the source-gen path doesn't yet cover (see the bullet list under [Recommended setup](#recommended-setup-enable-the-source-generator)), Marten falls back to the pre-9.0 behavior: dynamically generates and compiles a per-query handler with Roslyn on first call and caches it. The mechanics are documented at [Pre-Building Generated Types](/configuration/prebuilding) — that flow stays available as the AOT escape hatch when the source generator can't cover a particular shape.
+
+On subsequent calls to the same compiled query type, both paths just reuse the cached handler — the SQL command + parameter binder are remembered for the life of the `DocumentStore`.
 
 You may need to help Marten out a little bit with the compiled query support in determining unique parameter values to use
 during query planning by implementing the new `Marten.Linq.IQueryPlanning` interface on your compiled query type. Consider this

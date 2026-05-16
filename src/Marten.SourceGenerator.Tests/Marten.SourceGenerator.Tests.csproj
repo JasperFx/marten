@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- Multi-targets to match Directory.Build.props's repo-wide TFM set.
+             NOTE: setting <TargetFramework> (single) without explicitly clearing
+             <TargetFrameworks> leaves the inherited multi-TFM declaration in place,
+             which breaks `dotnet test` adapter discovery on this SDK. Use the
+             multi-TFM form to stay consistent with every other test project in the
+             solution. -->
+        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <NoWarn>$(NoWarn);xUnit1031</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <!-- VersionOverride: the analyzer-only generator project pins
+             Microsoft.CodeAnalysis.CSharp to 4.8.0 for broad analyzer-host
+             compatibility. This test project ProjectReferences Marten, which
+             transitively brings in Microsoft.CodeAnalysis.Common 4.14.0 via
+             JasperFx.RuntimeCompiler. Bumping the test project's reference to
+             match resolves the NU1107 conflict; the test project is not an
+             analyzer, so the broader-compat constraint doesn't apply here. -->
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Shouldly" />
+    </ItemGroup>
+
+    <!-- The Marten.SourceGenerator project is an analyzer-only NuGet (IncludeBuildOutput=false +
+         DevelopmentDependency=true). Referencing it as a normal ProjectReference makes
+         the test runner treat it as an analyzer and skips copying the assembly to the
+         test output. Use ReferenceOutputAssembly+PrivateAssets=all so the assembly
+         loads at compile time, then add an explicit Reference to make the public symbols
+         available to the test code. -->
+    <ItemGroup>
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj">
+            <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
+            <PrivateAssets>all</PrivateAssets>
+        </ProjectReference>
+
+        <!-- Marten itself is referenced so the iteration-3 end-to-end test can load a
+             generator-produced assembly into the test AppDomain, fire its [ModuleInitializer]
+             shims, and inspect the *real* CompiledQueryHandlerRegistry. Without this, the
+             generated assembly's module init would fail to bind to the registry type at
+             load time. -->
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -23,6 +23,11 @@
     <ItemGroup>
         <ProjectReference Include="..\FSharpTypes\FSharpTypes.fsproj" />
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+        <!-- LimitedDocQuery in linq_querying_with_value_types.cs needs the source
+             generator to emit its handler registration. See #4405. -->
+        <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

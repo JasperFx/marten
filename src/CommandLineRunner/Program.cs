@@ -56,8 +56,12 @@ public static class Program
                     opts.RegisterDocumentType<Target>();
 
 
-                    // If you use compiled queries, you will need to register the
-                    // compiled query types with Marten ahead of time
+                    // If you use compiled queries AND you are NOT using the
+                    // Marten.SourceGenerator package, you need to register the
+                    // compiled query types with Marten ahead of time.
+                    // With Marten.SourceGenerator (Marten 9+ and recommended),
+                    // this call is unnecessary — the generator's
+                    // [ModuleInitializer] registers handlers at assembly load.
                     opts.RegisterCompiledQueryType(typeof(FindUserOtherThings));
                 }).AddAsyncDaemon(DaemonMode.Solo);
 
@@ -88,8 +92,12 @@ public static class Program
                     opts.RegisterDocumentType<Target>();
                     opts.RegisterDocumentType<User>();
 
-                    // If you use compiled queries, you will need to register the
-                    // compiled query types with Marten ahead of time
+                    // If you use compiled queries AND you are NOT using the
+                    // Marten.SourceGenerator package, you need to register the
+                    // compiled query types with Marten ahead of time.
+                    // With Marten.SourceGenerator (Marten 9+ and recommended),
+                    // this call is unnecessary — the generator's
+                    // [ModuleInitializer] registers handlers at assembly load.
                     opts.RegisterCompiledQueryType(typeof(FindUserByAllTheThings));
 
                     // Register all event store projections ahead of time
