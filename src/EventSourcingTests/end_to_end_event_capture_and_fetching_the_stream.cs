@@ -132,40 +132,6 @@ public class end_to_end_event_capture_and_fetching_the_stream: OneOffConfigurati
 
     [Theory]
     [MemberData(nameof(SessionParams))]
-    public async Task capture_events_to_a_new_stream_and_fetch_the_events_back_sync_with_linq(TenancyStyle tenancyStyle,
-        string[] tenants)
-    {
-        var store = InitStore(tenancyStyle);
-
-        await When.CalledForEachAsync(tenants, async (tenantId, _) =>
-        {
-            using var session = store.LightweightSession(tenantId);
-
-            #region sample_start-stream-with-aggregate-type
-
-            var joined = new MembersJoined { Members = new[] { "Rand", "Matt", "Perrin", "Thom" } };
-            var departed = new MembersDeparted { Members = new[] { "Thom" } };
-
-            var id = session.Events.StartStream<Quest>(joined, departed).Id;
-            await session.SaveChangesAsync();
-
-            #endregion
-
-            var streamEvents = session.Events.QueryAllRawEvents()
-                .Where(x => x.StreamId == id).OrderBy(x => x.Version).ToList();
-
-            streamEvents.Count.ShouldBe(2);
-            streamEvents.ElementAt(0).Data.ShouldBeOfType<MembersJoined>();
-            streamEvents.ElementAt(0).Version.ShouldBe(1);
-            streamEvents.ElementAt(1).Data.ShouldBeOfType<MembersDeparted>();
-            streamEvents.ElementAt(1).Version.ShouldBe(2);
-
-            streamEvents.Each(e => e.Timestamp.ShouldNotBe(default(DateTimeOffset)));
-        }).ShouldSucceedAsync();
-    }
-
-    [Theory]
-    [MemberData(nameof(SessionParams))]
     public async Task live_aggregate_equals_inlined_aggregate_without_hidden_contracts(TenancyStyle tenancyStyle,
         string[] tenants)
     {

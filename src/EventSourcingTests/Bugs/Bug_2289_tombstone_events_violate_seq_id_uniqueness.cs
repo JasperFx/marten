@@ -1,3 +1,4 @@
+using Marten;
 using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -39,9 +40,9 @@ public class Bug_2289_tombstone_events_violate_seq_id_uniqueness : IntegrationCo
             await theSession.SaveChangesAsync();
         });
 
-        var firstSequence = theSession.Events.QueryAllRawEvents()
+        var firstSequence = await theSession.Events.QueryAllRawEvents()
             .OrderBy(e => e.Sequence)
-            .FirstOrDefault();
+            .FirstOrDefaultAsync();
 
         firstSequence.Sequence.ShouldNotBe(0);
     }
