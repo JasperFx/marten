@@ -91,6 +91,30 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    ///     Fetch the highest <c>seq_id</c> persisted in this database's <c>mt_events</c> table —
+    ///     the absolute physical maximum, distinct from the HighWaterMark (max-safe-to-read).
+    ///     Returns null when the table is empty.
+    /// </summary>
+    public async Task<long?> FetchMaxEventSequenceAsync(CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+        await using var conn = CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            var raw = await conn
+                .CreateCommand($"select max(seq_id) from {Options.Events.DatabaseSchemaName}.mt_events;")
+                .ExecuteScalarAsync(token).ConfigureAwait(false);
+
+            return raw is null or DBNull ? null : (long?)raw;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
 
     /// <summary>
     ///     Fetch the current size of the event store tables, including the current value
