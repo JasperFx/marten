@@ -34,9 +34,11 @@ build-out — design rationale doesn't go stale).
   `EventsTable.SelectColumns()` and dispatches per column via methods
   added to `IEventTableColumn`. Confirmed in #4411.
 
-## Landed so far (17 commits on the branch)
+## Landed so far (19 commits on the branch)
 
 ```
+4b8e033f4  [#4417] W4: pin closed-shape + DCB HStore mode regression test
+cde8f0520  [#4417 #4418] W4 SESSION-STATE: suite sweep complete (1496/1501)
 ea1c93561  [#4417 #4418] W4 suite-sweep: harness hook + 2 closed-shape fixes
 9521858c8  [#4414 #4415] W4 SESSION-STATE: all three AppendModes landed
 499c24575  [#4414 #4415] W4 Quick + QuickWithServerTimestamps write path
@@ -70,13 +72,13 @@ opts.EventGraph.UseClosedShapeStorage = true;
 
 **Suite sweep results** under `MARTEN_USE_CLOSED_SHAPE_STORAGE=true`
 (net10.0):
-* Closed-shape regression (Bug_4411 / _4412 / _4414 / _4415 / _4416): **13 / 13**
+* Closed-shape regression (Bug_4411 / _4412 / _4414 / _4415 / _4416 / _4417): **15 / 15**
 * EventSourcingTests non-Projections/Aggregation/Daemon slice: **957 / 962**
 * Projections: **169 / 169**
 * Aggregation + Daemon: **245 / 245**
-* DCB: **112 / 112**
+* DCB (incl. all 57 HStore-mode tests): **112 / 112**
 
-Total: **1496 / 1501 passing (99.66%)**.
+Total: **1498 / 1503 passing (99.67%)**.
 
 The 5 remaining failures break down as:
 * 3 still-investigating cases (possibly flaky DCB concurrency from the
