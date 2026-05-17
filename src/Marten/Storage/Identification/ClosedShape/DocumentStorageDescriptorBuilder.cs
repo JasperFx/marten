@@ -73,13 +73,17 @@ internal static class DocumentStorageDescriptorBuilder
         var readArray = readBinders.ToArray();
         var clientSide = writeArray.Where(b => !b.IsServerSide).ToArray();
 
-        var sql = BuildUpsertSql(mapping, writeArray);
+        var upsertSql = BuildUpsertSql(mapping, writeArray);
+        var insertSql = BuildInsertSql(mapping, writeArray);
+        var updateSql = BuildUpdateSql(mapping, writeArray);
 
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
             clientSideWriteBinders: clientSide,
             readBinders: readArray,
-            upsertSql: sql);
+            upsertSql: upsertSql,
+            insertSql: insertSql,
+            updateSql: updateSql);
     }
 
     private static string BuildUpsertSql<TDoc>(
@@ -109,5 +113,54 @@ internal static class DocumentStorageDescriptorBuilder
         return $"insert into {table} ({columnNames.Join(", ")}) " +
                $"values ({valueSlots.Join(", ")}) " +
                $"on conflict (id) do update set {updateAssignments.Join(", ")}";
+    }
+
+    /// <summary>
+    /// <c>"insert into … values (…) on conflict (id) do nothing returning id"</c>.
+    /// Same parameter ordering as <see cref="BuildUpsertSql"/>; only the
+    /// conflict-handling clause + RETURNING differ. RETURNING lets the
+    /// operation's Postprocess detect a conflict (no row returned).
+    /// </summary>
+    private static string BuildInsertSql<TDoc>(
+        DocumentMapping mapping,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders)
+        where TDoc : notnull
+    {
+        var table = mapping.TableName.QualifiedName;
+
+        var columnNames = new List<string>(2 + binders.Count) { "id", "data" };
+        foreach (var b in binders) columnNames.Add(b.ColumnName);
+
+        var valueSlots = new List<string>(2 + binders.Count) { "?", "?" };
+        foreach (var b in binders) valueSlots.Add(b.ValueSql);
+
+        return $"insert into {table} ({columnNames.Join(", ")}) " +
+               $"values ({valueSlots.Join(", ")}) " +
+               $"on conflict (id) do nothing returning id";
+    }
+
+    /// <summary>
+    /// <c>"update … set data = ?, mt_version = ?, … where id = ? returning id"</c>.
+    /// Parameter order: data, then each binder (client-side or server-side
+    /// literal), then id (WHERE clause). Postprocess raises
+    /// <c>NonExistentDocumentException</c> when no row comes back.
+    /// </summary>
+    private static string BuildUpdateSql<TDoc>(
+        DocumentMapping mapping,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders)
+        where TDoc : notnull
+    {
+        var table = mapping.TableName.QualifiedName;
+
+        var setAssignments = new List<string>(1 + binders.Count) { "data = ?" };
+        foreach (var b in binders)
+        {
+            setAssignments.Add($"{b.ColumnName} = {b.ValueSql}");
+        }
+
+        return $"update {table} " +
+               $"set {setAssignments.Join(", ")} " +
+               $"where id = ? " +
+               $"returning id";
     }
 }

@@ -39,18 +39,17 @@ public sealed class DirtyCheckedSequentialGuidStorage<TDoc>: DirtyCheckedDocumen
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
-        => Upsert(document, session, tenant);
+        => new ClosedShapeInsertOperation<TDoc, Guid>(document, Identity(document), _descriptor);
 
     public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
-        => Upsert(document, session, tenant);
+        => new ClosedShapeUpdateOperation<TDoc, Guid>(document, Identity(document), _descriptor);
 
     public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
         => new ClosedShapeUpsertOperation<TDoc, Guid>(document, Identity(document), _descriptor, OperationRole.Upsert);
 
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException(
-            $"{nameof(DirtyCheckedSequentialGuidStorage<TDoc>)} doesn't implement Overwrite — out of spike scope. " +
-            "Add when wiring optimistic concurrency / revisions (M3).");
+            $"{nameof(DirtyCheckedSequentialGuidStorage<TDoc>)} doesn't implement Overwrite — concurrency variants land in a later spike commit.");
 
     public override ISelector BuildSelector(IMartenSession session)
         => new ClosedShapeDirtyTrackingSelector<TDoc, Guid>(session, _descriptor);

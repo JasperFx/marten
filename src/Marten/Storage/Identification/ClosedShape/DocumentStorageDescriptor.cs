@@ -19,12 +19,16 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         IIdentification<TDoc, TId> identification,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
-        string upsertSql)
+        string upsertSql,
+        string insertSql,
+        string updateSql)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
         ReadBinders = readBinders;
         UpsertSql = upsertSql;
+        InsertSql = insertSql;
+        UpdateSql = updateSql;
     }
 
     public IIdentification<TDoc, TId> Identification { get; }
@@ -55,4 +59,24 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// <see cref="ClientSideWriteBinders"/> entry.
     /// </summary>
     public string UpsertSql { get; }
+
+    /// <summary>
+    /// SQL for the Insert path —
+    /// <c>"insert into … (id, data, …) values (?, ?, …) on conflict (id) do nothing returning id"</c>.
+    /// The trailing RETURNING is consumed by
+    /// <see cref="ClosedShapeInsertOperation{TDoc, TId}"/>.Postprocess so
+    /// a missing row (conflict) raises <c>DocumentAlreadyExistsException</c>.
+    /// Parameter order matches <see cref="UpsertSql"/>: id, data, then
+    /// each client-side binder.
+    /// </summary>
+    public string InsertSql { get; }
+
+    /// <summary>
+    /// SQL for the Update path —
+    /// <c>"update … set data = ?, mt_version = ?, … where id = ? returning id"</c>.
+    /// Parameter order: data first, then each client-side binder, then id
+    /// (the WHERE clause). Postprocess raises
+    /// <c>NonExistentDocumentException</c> when no row comes back.
+    /// </summary>
+    public string UpdateSql { get; }
 }

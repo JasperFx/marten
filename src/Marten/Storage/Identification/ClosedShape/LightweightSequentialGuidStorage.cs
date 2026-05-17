@@ -51,18 +51,17 @@ public sealed class LightweightSequentialGuidStorage<TDoc>: LightweightDocumentS
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
-        => Upsert(document, session, tenant);
+        => new ClosedShapeInsertOperation<TDoc, Guid>(document, Identity(document), _descriptor);
 
     public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
-        => Upsert(document, session, tenant);
+        => new ClosedShapeUpdateOperation<TDoc, Guid>(document, Identity(document), _descriptor);
 
     public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
         => new ClosedShapeUpsertOperation<TDoc, Guid>(document, Identity(document), _descriptor, OperationRole.Upsert);
 
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException(
-            $"{nameof(LightweightSequentialGuidStorage<TDoc>)} doesn't implement Overwrite — out of W3 spike scope. " +
-            "Add when wiring optimistic concurrency / revisions (M3).");
+            $"{nameof(LightweightSequentialGuidStorage<TDoc>)} doesn't implement Overwrite — concurrency variants land in a later spike commit.");
 
     public override ISelector BuildSelector(IMartenSession session)
         => new ClosedShapeLightweightSelector<TDoc, Guid>(session.Serializer, _descriptor);
