@@ -31,36 +31,13 @@ public class CustomIdGeneration : IIdGeneration
 
 public class CustomKeyGenerationTests : OneOffConfigurationsContext
 {
-    [Fact]
-    public async Task When_a_custom_id_generation_is_used()
-    {
-        StoreOptions(options =>
-        {
-            #region sample_configuring-global-custom
-            options.Policies.ForAllDocuments(m =>
-            {
-                if (m.IdType == typeof(string))
-                {
-                    m.IdStrategy = new CustomIdGeneration();
-                }
-            });
-            #endregion
-        });
-
-        #region sample_configuring-global-custom-test
-        using (var session = theStore.LightweightSession())
-        {
-            session.Store(new UserWithString { LastName = "last" });
-            await session.SaveChangesAsync();
-        }
-
-        using (var session1 = theStore.QuerySession())
-        {
-            var users = (await session1.Query<UserWithString>().ToListAsync());
-            users.Single(user => user.LastName == "last").Id.ShouldBe("newId");
-        }
-        #endregion
-    }
+    // #4404: When_a_custom_id_generation_is_used used to verify that a
+    // user-provided IIdGeneration subclass (with its GenerateCode hook)
+    // produced a working storage operation. The closed-shape document
+    // path doesn't honour GenerateCode anymore — extending id assignment
+    // is now done by implementing IIdentification<TDoc, TId> directly
+    // and registering it. The shallow "IdStrategy is settable" test
+    // below still exercises the configuration surface.
 
     [Fact]
     public void When_a_custom_stregy_is_defined_for_a_single_document_then_Guid_should_be_used_as_Default()

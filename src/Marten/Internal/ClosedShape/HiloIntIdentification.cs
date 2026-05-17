@@ -22,7 +22,7 @@ public sealed class HiloIntIdentification<TDoc>: IIdentification<TDoc, int>
     where TDoc : notnull
 {
     private readonly Func<TDoc, int> _getter;
-    private readonly Action<TDoc, int> _setter;
+    private readonly Action<TDoc, int>? _setter;
     private readonly Type _sequenceKey;
 
     /// <param name="idMember">
@@ -38,7 +38,7 @@ public sealed class HiloIntIdentification<TDoc>: IIdentification<TDoc, int>
     public HiloIntIdentification(MemberInfo idMember, Type sequenceKey)
     {
         _getter = LambdaBuilder.Getter<TDoc, int>(idMember);
-        _setter = LambdaBuilder.Setter<TDoc, int>(idMember)!;
+        _setter = LambdaBuilder.Setter<TDoc, int>(idMember);
         _sequenceKey = sequenceKey;
     }
 
@@ -52,8 +52,12 @@ public sealed class HiloIntIdentification<TDoc>: IIdentification<TDoc, int>
             return current;
         }
 
+        if (_setter is null) return current;
+
         var assigned = database.Sequences.SequenceFor(_sequenceKey).NextInt();
+
         _setter(document, assigned);
+
         return assigned;
     }
 }

@@ -19,13 +19,13 @@ public sealed class HiloLongIdentification<TDoc>: IIdentification<TDoc, long>
     where TDoc : notnull
 {
     private readonly Func<TDoc, long> _getter;
-    private readonly Action<TDoc, long> _setter;
+    private readonly Action<TDoc, long>? _setter;
     private readonly Type _sequenceKey;
 
     public HiloLongIdentification(MemberInfo idMember, Type sequenceKey)
     {
         _getter = LambdaBuilder.Getter<TDoc, long>(idMember);
-        _setter = LambdaBuilder.Setter<TDoc, long>(idMember)!;
+        _setter = LambdaBuilder.Setter<TDoc, long>(idMember);
         _sequenceKey = sequenceKey;
     }
 
@@ -39,8 +39,12 @@ public sealed class HiloLongIdentification<TDoc>: IIdentification<TDoc, long>
             return current;
         }
 
+        if (_setter is null) return current;
+
         var assigned = database.Sequences.SequenceFor(_sequenceKey).NextLong();
+
         _setter(document, assigned);
+
         return assigned;
     }
 }

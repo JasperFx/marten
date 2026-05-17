@@ -17,12 +17,12 @@ public sealed class GuidIdentification<TDoc>: IIdentification<TDoc, Guid>
     where TDoc : notnull
 {
     private readonly Func<TDoc, Guid> _getter;
-    private readonly Action<TDoc, Guid> _setter;
+    private readonly Action<TDoc, Guid>? _setter;
 
     public GuidIdentification(MemberInfo idMember)
     {
         _getter = LambdaBuilder.Getter<TDoc, Guid>(idMember);
-        _setter = LambdaBuilder.Setter<TDoc, Guid>(idMember)!;
+        _setter = LambdaBuilder.Setter<TDoc, Guid>(idMember);
     }
 
     public Guid Identity(TDoc document) => _getter(document);
@@ -35,8 +35,12 @@ public sealed class GuidIdentification<TDoc>: IIdentification<TDoc, Guid>
             return current;
         }
 
+        if (_setter is null) return current;
+
         var assigned = Guid.NewGuid();
+
         _setter(document, assigned);
+
         return assigned;
     }
 }

@@ -19,7 +19,7 @@ public sealed class IdentityKeyIdentification<TDoc>: IIdentification<TDoc, strin
     where TDoc : notnull
 {
     private readonly Func<TDoc, string> _getter;
-    private readonly Action<TDoc, string> _setter;
+    private readonly Action<TDoc, string>? _setter;
     private readonly string _aliasPrefix;
     private readonly Type _sequenceKey;
 
@@ -29,7 +29,7 @@ public sealed class IdentityKeyIdentification<TDoc>: IIdentification<TDoc, strin
     public IdentityKeyIdentification(MemberInfo idMember, string mappingAlias, Type sequenceKey)
     {
         _getter = LambdaBuilder.Getter<TDoc, string>(idMember);
-        _setter = LambdaBuilder.Setter<TDoc, string>(idMember)!;
+        _setter = LambdaBuilder.Setter<TDoc, string>(idMember);
         _aliasPrefix = mappingAlias + "/";
         _sequenceKey = sequenceKey;
     }
@@ -45,6 +45,7 @@ public sealed class IdentityKeyIdentification<TDoc>: IIdentification<TDoc, strin
         }
 
         var nextLong = database.Sequences.SequenceFor(_sequenceKey).NextLong();
+        if (_setter is null) return current;
         var assigned = _aliasPrefix + nextLong;
         _setter(document, assigned);
         return assigned;

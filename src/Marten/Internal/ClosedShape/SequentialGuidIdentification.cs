@@ -22,7 +22,7 @@ public sealed class SequentialGuidIdentification<TDoc>: IIdentification<TDoc, Gu
     where TDoc : notnull
 {
     private readonly Func<TDoc, Guid> _getter;
-    private readonly Action<TDoc, Guid> _setter;
+    private readonly Action<TDoc, Guid>? _setter;
 
     /// <param name="idMember">
     /// The <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> on
@@ -34,7 +34,7 @@ public sealed class SequentialGuidIdentification<TDoc>: IIdentification<TDoc, Gu
     public SequentialGuidIdentification(MemberInfo idMember)
     {
         _getter = LambdaBuilder.Getter<TDoc, Guid>(idMember);
-        _setter = LambdaBuilder.Setter<TDoc, Guid>(idMember)!;
+        _setter = LambdaBuilder.Setter<TDoc, Guid>(idMember);
     }
 
     public Guid Identity(TDoc document) => _getter(document);
@@ -43,6 +43,15 @@ public sealed class SequentialGuidIdentification<TDoc>: IIdentification<TDoc, Gu
     {
         var current = _getter(document);
         if (current != Guid.Empty)
+        {
+            return current;
+        }
+
+        // No setter on the id member (Guid Id { get; }) — the caller is
+        // managing identity themselves; bail out and let the user's empty
+        // value propagate. Matches the codegen path's `if setter != null`
+        // emit pattern.
+        if (_setter is null)
         {
             return current;
         }
