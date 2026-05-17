@@ -22,7 +22,7 @@ namespace Marten.Internal;
 public class ProviderGraph: IProviderGraph
 {
     private readonly StoreOptions _options;
-    private readonly object _storageLock = new();
+    private readonly System.Threading.Lock _storageLock = new();
     private ImHashMap<Type, object> _storage = ImHashMap<Type, object>.Empty;
 
     public ProviderGraph(StoreOptions options)

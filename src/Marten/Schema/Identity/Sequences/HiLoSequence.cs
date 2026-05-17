@@ -14,7 +14,7 @@ namespace Marten.Schema.Identity.Sequences;
 public class HiloSequence: ISequence
 {
     private readonly IMartenDatabase _database;
-    private readonly object _lock = new();
+    private readonly System.Threading.Lock _lock = new();
     private readonly StoreOptions _options;
     private readonly HiloSettings _settings;
 
