@@ -30,6 +30,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
     private const int DataColumn = 1;
     private const int FirstMetadataColumn = 2;
 
+    private readonly IMartenSession _session;
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
     private readonly Dictionary<TId, Guid>? _versions;
@@ -37,6 +38,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
 
     public ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
+        _session = session;
         _serializer = session.Serializer;
         _descriptor = descriptor;
         _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
@@ -52,6 +54,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         var doc = ReadDocument(reader);
         ApplyMetadata(reader, doc);
         CaptureVersion(reader);
+        _session.MarkAsDocumentLoaded(reader.GetFieldValue<TId>(IdColumn), doc);
         return doc;
     }
 
@@ -60,6 +63,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         var doc = await ReadDocumentAsync(reader, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
         CaptureVersion(reader);
+        _session.MarkAsDocumentLoaded(await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false), doc);
         return doc;
     }
 

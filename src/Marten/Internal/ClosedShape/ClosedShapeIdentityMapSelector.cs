@@ -34,6 +34,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
     private const int DataColumn = 1;
     private const int FirstMetadataColumn = 2;
 
+    private readonly IMartenSession _session;
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
     private readonly Dictionary<TId, T> _identityMap;
@@ -42,6 +43,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
 
     public ClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
+        _session = session;
         _serializer = session.Serializer;
         _descriptor = descriptor;
 
@@ -70,6 +72,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
         CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 
@@ -80,6 +83,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
         CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 

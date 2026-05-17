@@ -66,6 +66,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         _identityMap[id] = doc;
         _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
         CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 
@@ -77,6 +78,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         _identityMap[id] = doc;
         _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
         CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 
