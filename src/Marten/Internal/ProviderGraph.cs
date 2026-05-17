@@ -10,6 +10,7 @@ using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;
+using Marten.Storage.Identification.ClosedShape;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal;
@@ -90,6 +91,19 @@ public class ProviderGraph: IProviderGraph
         {
             case DocumentMapping m:
             {
+                // W3 spike (M6 / #4404): when the store-level flag is on
+                // and the mapping is inside the closed-shape coverage
+                // envelope, build a hand-written DocumentProvider and
+                // skip the Roslyn-emit path entirely. Anything outside the
+                // envelope (concurrency, soft delete, sub-classing, etc.)
+                // silently falls through to codegen.
+                if (_options.UseClosedShapeDocumentStorage && ClosedShapeRegistration.IsSupported(m))
+                {
+                    var closedShape = ClosedShapeRegistration.BuildSupportedProvider<T>(m);
+                    _storage = _storage.AddOrUpdate(documentType, closedShape);
+                    return closedShape;
+                }
+
                 try
                 {
                     var builder = new DocumentProviderBuilder(m, _options);
