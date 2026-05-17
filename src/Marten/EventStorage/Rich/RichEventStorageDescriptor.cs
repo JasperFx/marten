@@ -53,6 +53,31 @@ public sealed class RichEventStorageDescriptor
     public IEventMetadataBinder[] MetadataBinders { get; }
 
     /// <summary>
+    /// SQL suffix for the per-event <c>QuickWithVersion</c> path on this
+    /// Rich descriptor — same per-event INSERT shape as
+    /// <see cref="AppendEventSqlSuffix"/>, but with a server-side
+    /// <c>nextval('{schema}.mt_events_sequence')</c> literal in place of the
+    /// bound <c>seq_id</c> parameter. Used by
+    /// <see cref="RichEventStorage{TId}.QuickAppendEventWithVersion"/>, which
+    /// is invoked by <c>JasperFx.Events.EventSlice.BuildOperations</c>
+    /// during async-projection side-effect replay (raised events). The
+    /// caller pre-assigns <c>event.Version</c> but not <c>event.Sequence</c>,
+    /// so the server claims the sequence inline. Tracked in #4428.
+    /// </summary>
+    public string AppendEventQuickWithVersionSqlSuffix { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Ordered metadata-column binders for the per-event
+    /// <c>QuickWithVersion</c> path on this Rich descriptor. Identical to
+    /// <see cref="MetadataBinders"/> except <c>SequenceColumnBinder</c> is
+    /// omitted — <c>seq_id</c> is server-set via the <c>nextval(...)</c>
+    /// literal in <see cref="AppendEventQuickWithVersionSqlSuffix"/>.
+    /// Tracked in #4428.
+    /// </summary>
+    public IEventMetadataBinder[] MetadataBindersWithoutSequence { get; init; }
+        = System.Array.Empty<IEventMetadataBinder>();
+
+    /// <summary>
     /// Whether the events table is conjoined-tenant — every per-stream query
     /// (StreamState lookup, UpdateStreamVersion, etc.) needs a trailing
     /// <c>and tenant_id = $N</c> when this is true.

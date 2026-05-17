@@ -2,6 +2,7 @@
 using System;
 using JasperFx.Events;
 using Marten.EventStorage.Querying;
+using Marten.EventStorage.Quick;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Linq.QueryHandlers;
@@ -29,8 +30,22 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
     public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
         => new RichAppendEventOperation(_descriptor, stream, @event);
 
+    // #4428: invoked by JasperFx.Events EventSlice.BuildOperations during
+    // async projection side-effect replay (raised events) — the caller
+    // pre-assigns event.Version but not event.Sequence, so the per-event
+    // INSERT uses the server-side seq_id nextval() literal in the suffix.
+    // The INSERT shape is identical to QuickAppendEventWithVersionOperation
+    // in the Quick namespace, so we reuse it: descriptor SQL strings differ,
+    // operation logic doesn't.
     public override IStorageOperation QuickAppendEventWithVersion(StreamAction stream, IEvent @event)
-        => throw new NotImplementedException("RichAppendEventQuickWithVersionOperation lands in the next iteration.");
+        => new QuickAppendEventWithVersionOperation(
+            _descriptor.AppendEventSqlPrefix,
+            _descriptor.AppendEventQuickWithVersionSqlSuffix,
+            _descriptor.MetadataBindersWithoutSequence,
+            _descriptor.IsGuidStreamIdentity,
+            _descriptor.SerializeEventData,
+            stream,
+            @event);
 
     public override IStorageOperation QuickAppendEvents(StreamAction stream)
         => throw new NotSupportedException(
