@@ -140,3 +140,43 @@ reference and call through.
 [`src/CoreTests/Storage/Identification/`](../../../CoreTests/Storage/Identification/)
 exercises each strategy against an in-memory fake `IMartenDatabase` so
 the shape is testable without a Postgres roundtrip.
+
+## Companion spike: end-to-end closed-shape DocumentStorage
+
+[`ClosedShape/`](ClosedShape/) takes the next step: a hand-written
+`LightweightSequentialGuidStorage<TDoc>` that extends
+`LightweightDocumentStorage<TDoc, Guid>`, composes with
+`SequentialGuidIdentification<TDoc>`, and proves the closed-shape
+pattern drives Marten's basic document-DB features end-to-end without
+any runtime Roslyn codegen for the registered document type.
+
+Files:
+
+| File | Role |
+| --- | --- |
+| [`ClosedShape/LightweightSequentialGuidStorage.cs`](ClosedShape/LightweightSequentialGuidStorage.cs) | The storage class. One cell of the planned W3 matrix (Lightweight × Guid × no concurrency × no metadata). Inherits Store/Eject/LoadAsync/LoadManyAsync from `LightweightDocumentStorage`. |
+| [`ClosedShape/ClosedShapeUpsertOperation.cs`](ClosedShape/ClosedShapeUpsertOperation.cs) | Hand-written `IDocumentStorageOperation`. Emits raw `INSERT … ON CONFLICT (id) DO UPDATE SET data = excluded.data` — bypasses the per-document `mt_upsert_*` PostgreSQL function entirely. |
+| [`ClosedShape/ClosedShapeLightweightSelector.cs`](ClosedShape/ClosedShapeLightweightSelector.cs) | Hand-written `ISelector<T>`. Reads the data column at index 1 (the `DocumentTable.SelectColumns(Lightweight)` order is `id, data`). |
+| [`ClosedShape/ClosedShapeRegistration.cs`](ClosedShape/ClosedShapeRegistration.cs) | `theStore.UseLightweightSequentialGuidClosedShape<TDoc>()` — registers the hand-written storage with the live `ProviderGraph` before any session runs. Bypasses the codegen-emit branch for the target document type. |
+
+Integration tests exercise the full pipeline against a real Postgres:
+
+* `store_save_load_round_trip` — Store → SaveChanges → LoadAsync.
+* `store_assigns_a_sequential_guid_when_id_is_empty` — `Guid.Empty` flows through `IIdentification.AssignIfMissing` and is written back onto the document.
+* `linq_query_returns_documents_persisted_via_closed_shape_storage` — Store 3, query by `Where(x => x.Name == ...)`.
+* `delete_via_session_removes_the_row` — `Delete<TDoc>(id)` + SaveChanges.
+* `upsert_overwrites_on_second_store_of_same_id` — second Store with same id replaces the row.
+
+What this validates:
+
+* The closed-shape storage class plugs into Marten's existing session pipeline (`SaveChangesAsync`, `LoadAsync`, LINQ provider, `Delete<TDoc>(id)`) via the existing `IDocumentStorage<T, TId>` contract.
+* `IIdentification<TDoc, TId>` as a composition seam works in practice — identity reads + assignments flow cleanly through the storage class.
+* No Roslyn JIT is invoked for the registered document type at boot. The full write + read + query path uses hand-written code.
+
+Out of spike scope (mechanical to add):
+
+* Metadata columns (`mt_version`, `mt_dotnet_type`, `mt_last_modified`, soft-delete columns, tenancy column). Skipped via `Policies.DisableInformationalFields()` in the tests; production W3 needs them.
+* Optimistic concurrency + revisions (`Overwrite` throws).
+* The other 23 storage-matrix cells (IdentityMap / DirtyTracking / QueryOnly × hierarchical × concurrency × revisions).
+* Bulk insert (`IBulkLoader<T>` is stubbed at registration time).
+* Tenancy.
