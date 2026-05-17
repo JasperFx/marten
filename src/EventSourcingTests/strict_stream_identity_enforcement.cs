@@ -30,19 +30,6 @@ public class strict_stream_identity_enforcement: OneOffConfigurationsContext
     [InlineData(true)]
     public async Task guid__start_archive_start_throws_when_strict_enforcement_enabled(bool usePartitioning)
     {
-        if (usePartitioning && TestsSettings.UseClosedShapeStorage)
-        {
-            // Closed-shape InsertStream doesn't yet emit the strict-identity
-            // CTE variant that detects collisions across archive-partition
-            // boundaries. The vanilla insert's unique constraint only fires
-            // when the active + archived rows share a partition, so under
-            // partitioning the collision goes undetected. Tracked on #4427;
-            // until then, skip this combination under the closed-shape flag.
-            // The codegen path (default) still runs both InlineData variants
-            // here.
-            return;
-        }
-
         StoreOptions(opts =>
         {
             opts.Events.UseArchivedStreamPartitioning = usePartitioning;
@@ -74,13 +61,6 @@ public class strict_stream_identity_enforcement: OneOffConfigurationsContext
     [InlineData(true)]
     public async Task string_key__start_archive_start_throws_when_strict_enforcement_enabled(bool usePartitioning)
     {
-        if (usePartitioning && TestsSettings.UseClosedShapeStorage)
-        {
-            // See the Guid sibling above — strict-identity CTE port for the
-            // closed-shape path is tracked on #4427.
-            return;
-        }
-
         StoreOptions(opts =>
         {
             opts.Events.StreamIdentity = StreamIdentity.AsString;
@@ -188,6 +168,41 @@ public class strict_stream_identity_enforcement: OneOffConfigurationsContext
             session.Events.StartStream(stream, new MembersJoined());
 
             await Should.NotThrowAsync(async () => await session.SaveChangesAsync());
+        }
+    }
+
+    [Fact]
+    public async Task rich_append_mode_with_strict_identity_and_partitioning()
+    {
+        // Rich + strict-identity was previously rejected at descriptor-build
+        // time on the closed-shape path (NotSupportedException). #4427 wired
+        // the CTE variant through BuildInsertStreamCommandConfigurer so all
+        // three append modes (Rich/Quick/QuickWithServerTimestamps) emit the
+        // strict-identity CTE when the flag is on.
+        StoreOptions(opts =>
+        {
+            opts.Events.AppendMode = JasperFx.Events.EventAppendMode.Rich;
+            opts.Events.UseArchivedStreamPartitioning = true;
+            opts.Events.EnableStrictStreamIdentityEnforcement = true;
+        });
+
+        var stream = Guid.NewGuid();
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream(stream, new MembersJoined());
+            await session.SaveChangesAsync();
+
+            session.Events.ArchiveStream(stream);
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream(stream, new MembersJoined());
+
+            await Should.ThrowAsync<ExistingStreamIdCollisionException>(
+                async () => await session.SaveChangesAsync());
         }
     }
 }

@@ -41,19 +41,6 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 {
     public RichEventStorageDescriptor BuildRichDescriptor(EventGraph graph, ISerializer serializer)
     {
-        if (graph.EnableStrictStreamIdentityEnforcement)
-        {
-            // The strict-identity CTE wraps the mt_streams insert in a
-            // modifying CTE chained with a second insert into
-            // mt_streams_identity. The CTE shape is non-trivial — its
-            // closed-shape port lives behind a separate ticket so we
-            // don't ship a half-wired variant. The codegen path still
-            // covers this configuration; closed-shape just declines.
-            throw new NotSupportedException(
-                "EnableStrictStreamIdentityEnforcement isn't yet covered by the closed-shape Rich-mode " +
-                "InsertStream operation. Disable the flag or use the codegen path for now. Track on #4412.");
-        }
-
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var metadataBinders = SelectRichMetadataBinders(orderedColumns);
         // #4428: side-effect replay through EventSlice.BuildOperations calls
@@ -103,7 +90,19 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     private static Action<ICommandBuilder, StreamAction> BuildInsertStreamCommandConfigurer(
         EventGraph graph, bool isConjoined, bool isGuid)
     {
-        var sqlPrefix = BuildInsertStreamSqlPrefix(graph, isConjoined);
+        // #4427: strict-identity enforcement wraps the mt_streams insert in
+        // a modifying CTE that chains an insert into the non-partitioned
+        // mt_streams_identity tracking table. Without the CTE the codegen
+        // path's collision detection across archive-partition boundaries
+        // doesn't fire under UseArchivedStreamPartitioning, because the
+        // active partition's unique index doesn't span partitions. The
+        // resulting unique-violation surfaces with
+        // TableName = mt_streams_identity, which InsertStreamBase.matches()
+        // already translates into ExistingStreamIdCollisionException —
+        // hence "implement the CTE; do not invent a new exception path."
+        var (sqlPrefix, sqlSuffix) = graph.EnableStrictStreamIdentityEnforcement
+            ? BuildStrictIdentityInsertStreamSql(graph, isConjoined)
+            : (BuildInsertStreamSqlPrefix(graph, isConjoined), ")");
 
         if (isConjoined)
         {
@@ -117,7 +116,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                     pb.AppendParameter(stream.Id, NpgsqlDbType.Uuid);
                     pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
                     pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
-                    builder.Append(")");
+                    builder.Append(sqlSuffix);
                 };
             }
 
@@ -129,7 +128,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                 pb.AppendParameter(stream.Key, NpgsqlDbType.Varchar);
                 pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
                 pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
-                builder.Append(")");
+                builder.Append(sqlSuffix);
             };
         }
 
@@ -143,7 +142,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
                 pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
                 pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
                 pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
-                builder.Append(")");
+                builder.Append(sqlSuffix);
             };
         }
 
@@ -155,7 +154,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             pb.AppendParameter(stream.AggregateTypeName, NpgsqlDbType.Varchar);
             pb.AppendParameter(stream.Version, NpgsqlDbType.Bigint);
             pb.AppendParameter(stream.TenantId, NpgsqlDbType.Varchar);
-            builder.Append(")");
+            builder.Append(sqlSuffix);
         };
     }
 
@@ -173,6 +172,45 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             : "id, type, version, tenant_id";
 
         return $"insert into {graph.DatabaseSchemaName}.{StreamsTable.TableName} ({cols}) values (";
+    }
+
+    /// <summary>
+    /// SQL prefix + suffix pair for the strict-identity-enforcement variant
+    /// of the <c>mt_streams</c> insert (#4427). Wraps the vanilla insert in
+    /// a modifying CTE that chains an insert into
+    /// <see cref="StreamIdentityEnforcementTable"/>:
+    /// <code>
+    /// with new_stream as (insert into mt_streams (...) values (...) returning &lt;identity_cols&gt;)
+    /// insert into mt_streams_identity (&lt;identity_cols&gt;) select &lt;identity_cols&gt; from new_stream
+    /// </code>
+    /// The chained insert raises <c>UniqueViolation</c> with
+    /// <c>TableName = mt_streams_identity</c> on collision, which
+    /// <c>InsertStreamBase.matches()</c> already maps to
+    /// <c>ExistingStreamIdCollisionException</c>. No new parameters — the
+    /// CTE pipes the just-inserted identity through.
+    /// </summary>
+    /// <remarks>
+    /// Mirrors <c>EventDocumentStorageGenerator.buildInsertStream</c>'s
+    /// strict-identity branch — column order is exactly what
+    /// <see cref="BuildInsertStreamSqlPrefix"/> produces, so the
+    /// per-variant parameter-bind code is unchanged.
+    /// </remarks>
+    private static (string Prefix, string Suffix) BuildStrictIdentityInsertStreamSql(
+        EventGraph graph, bool isConjoined)
+    {
+        var identityCols = isConjoined ? "tenant_id, id" : "id";
+        var streamsCols = isConjoined
+            ? "tenant_id, id, type, version"
+            : "id, type, version, tenant_id";
+
+        var prefix = $"with new_stream as (insert into {graph.DatabaseSchemaName}.{StreamsTable.TableName} " +
+                     $"({streamsCols}) values (";
+
+        var suffix = $") returning {identityCols}) " +
+                     $"insert into {graph.DatabaseSchemaName}.{StreamIdentityEnforcementTable.TableName} ({identityCols}) " +
+                     $"select {identityCols} from new_stream";
+
+        return (prefix, suffix);
     }
 
     /// <summary>
