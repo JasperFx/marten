@@ -40,7 +40,7 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
         });
     }
 
-    [Fact(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Fact]
     public async Task start_and_append_events_to_same_stream()
     {
         await using var session = theStore.LightweightSession(tenant);
@@ -80,7 +80,7 @@ public class Bug_3310_inline_projections_with_quick_append : BugIntegrationConte
         }
     }
 
-    [Theory(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public async Task update_1_stream_with_many_events(bool appendWithExpectedVersion)

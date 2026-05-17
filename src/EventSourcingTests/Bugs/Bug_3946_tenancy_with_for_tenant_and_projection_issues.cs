@@ -18,7 +18,7 @@ namespace EventSourcingTests.Bugs;
 
 public class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegrationContext
 {
-    [Theory(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Theory(Skip = "Pre-existing master failure (codegen + closed-shape) — selecting Entity throws \"Reading as System.String is not supported for fields having DataTypeName 'bigint'\". MultiStreamProjection + conjoined tenancy select-path bug, unrelated to #4444's UseVersionFromMatchingStream gap. Needs separate triage.")]
     [InlineData(true)]
     [InlineData(false)]
     public async Task when_projection_is_multi_stream_then_tenant_is_passed_to_projection_document(bool useRebuild)

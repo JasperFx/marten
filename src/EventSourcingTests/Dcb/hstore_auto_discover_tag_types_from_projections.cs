@@ -77,7 +77,7 @@ public class hstore_auto_discover_tag_types_from_projections: OneOffConfiguratio
         registration.TableSuffix.ShouldBe("custom_hs_ticket");
     }
 
-    [Fact(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Fact(Skip = "Pre-existing master failure (codegen + closed-shape) — inline-projection save raises ConcurrencyException for HsTicketSummary. Hstore tag-based aggregation interacts badly with revision tracking on the projection target. Unrelated to #4444's UseVersionFromMatchingStream gap; needs separate triage.")]
     public async Task auto_discovered_tag_type_works_for_querying_in_hstore_mode()
     {
         StoreOptions(opts =>
@@ -102,7 +102,7 @@ public class hstore_auto_discover_tag_types_from_projections: OneOffConfiguratio
         events[0].Data.ShouldBeOfType<HsTicketOpened>();
     }
 
-    [Fact(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Fact(Skip = "Pre-existing master failure (codegen + closed-shape) — inline-projection save raises ConcurrencyException for HsTicketSummary. Hstore tag-based aggregation interacts badly with revision tracking on the projection target. Unrelated to #4444's UseVersionFromMatchingStream gap; needs separate triage.")]
     public async Task auto_discovered_tag_type_works_for_fetch_for_writing_in_hstore_mode()
     {
         StoreOptions(opts =>
