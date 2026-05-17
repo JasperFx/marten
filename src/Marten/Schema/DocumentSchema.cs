@@ -28,11 +28,12 @@ internal class DocumentSchema: IFeatureSchema
 
     public IEnumerable<Type> DependentTypes()
     {
-        // #4404: SystemFunctions had been required by the old
-        // mt_upsert_* / mt_insert_* / mt_update_* / mt_overwrite_*
-        // Postgres functions emitted by the document codegen. The
-        // closed-shape path uses raw SQL operations, so document
-        // schemas no longer depend on it.
+        // Document tables still depend on the mt_immutable_* helper
+        // functions (used by computed indexes, duplicated date fields,
+        // etc.). The old mt_upsert_* / mt_insert_* / mt_update_* /
+        // mt_overwrite_* Postgres functions are gone (#4404) but
+        // SystemFunctions is broader than just that family.
+        yield return typeof(SystemFunctions);
         foreach (var referencedType in _mapping.ReferencedTypes()) yield return referencedType;
     }
 
