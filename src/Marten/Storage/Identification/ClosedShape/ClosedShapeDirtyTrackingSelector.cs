@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -29,6 +30,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
     private readonly Dictionary<TId, T> _identityMap;
+    private readonly Dictionary<TId, Guid>? _versions;
 
     public ClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
@@ -45,6 +47,10 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
             _identityMap = new Dictionary<TId, T>();
             session.ItemMap[typeof(T)] = _identityMap;
         }
+
+        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Off
+            ? null
+            : session.Versions.ForType<T, TId>();
     }
 
     public T Resolve(DbDataReader reader)
@@ -54,6 +60,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
         _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
+        CaptureVersion(reader, id);
         return doc;
     }
 
@@ -64,6 +71,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
         _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
+        CaptureVersion(reader, id);
         return doc;
     }
 
@@ -75,5 +83,13 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
             binder.Apply(reader, ordinal, document);
             ordinal++;
         }
+    }
+
+    private void CaptureVersion(DbDataReader reader, TId id)
+    {
+        if (_versions is null) return;
+        var versionOrdinal = _descriptor.VersionReadOrdinal;
+        if (versionOrdinal < 0 || reader.IsDBNull(versionOrdinal)) return;
+        _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
     }
 }

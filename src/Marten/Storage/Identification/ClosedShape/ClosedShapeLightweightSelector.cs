@@ -1,18 +1,23 @@
 #nullable enable
+using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using Marten.Internal;
 using Marten.Linq.Selectors;
 
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M2): <see cref="ISelector{T}"/> for the
-/// <see cref="LightweightSequentialGuidStorage{TDoc}"/> path. Reads the
-/// data column at index 1 and dispatches each
-/// <see cref="IDocumentMetadataBinder{TDoc}"/>.Apply at the binder's
-/// column position (2, 3, …). Lightweight skips identity-map writes —
-/// every <c>LoadAsync</c> hits the database.
+/// W3 spike (M1+M2+M7): <see cref="ISelector{T}"/> for the lightweight
+/// closed-shape storage path. Reads the data column at index 1 and
+/// dispatches each <see cref="IDocumentMetadataBinder{TDoc}"/>.Apply at
+/// the binder's column position (2, 3, …). Lightweight skips
+/// identity-map writes — every <c>LoadAsync</c> hits the database.
+/// Under <see cref="ConcurrencyMode.Optimistic"/> the selector also
+/// captures each row's <c>mt_version</c> into <c>session.Versions</c>
+/// so subsequent updates can supply it as the expected version.
 /// </summary>
 internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
     where T : notnull
@@ -20,22 +25,28 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
 {
     // Lightweight column order from DocumentTable.SelectColumns:
     //   id (col 0), data (col 1), then ShouldSelect metadata columns.
+    private const int IdColumn = 0;
     private const int DataColumn = 1;
     private const int FirstMetadataColumn = 2;
 
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
+    private readonly Dictionary<TId, Guid>? _versions;
 
-    public ClosedShapeLightweightSelector(ISerializer serializer, DocumentStorageDescriptor<T, TId> descriptor)
+    public ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
-        _serializer = serializer;
+        _serializer = session.Serializer;
         _descriptor = descriptor;
+        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Off
+            ? null
+            : session.Versions.ForType<T, TId>();
     }
 
     public T Resolve(DbDataReader reader)
     {
         var doc = _serializer.FromJson<T>(reader, DataColumn);
         ApplyMetadata(reader, doc);
+        CaptureVersion(reader);
         return doc;
     }
 
@@ -43,6 +54,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
     {
         var doc = await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
+        CaptureVersion(reader);
         return doc;
     }
 
@@ -54,5 +66,16 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
             binder.Apply(reader, ordinal, document);
             ordinal++;
         }
+    }
+
+    private void CaptureVersion(DbDataReader reader)
+    {
+        if (_versions is null) return;
+
+        var versionOrdinal = _descriptor.VersionReadOrdinal;
+        if (versionOrdinal < 0 || reader.IsDBNull(versionOrdinal)) return;
+
+        var id = reader.GetFieldValue<TId>(IdColumn);
+        _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
     }
 }

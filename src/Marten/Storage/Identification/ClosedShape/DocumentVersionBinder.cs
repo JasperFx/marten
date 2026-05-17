@@ -59,4 +59,13 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         var version = reader.GetFieldValue<Guid>(columnOrdinal);
         _setter(document, version);
     }
+
+    /// <summary>
+    /// W3 spike (M7): write a Guid version directly onto the document's
+    /// <c>[Version]</c>-annotated member, bypassing the reader. Used from
+    /// the operation's Postprocess after it confirms the row's returned
+    /// version matches the just-written one.
+    /// </summary>
+    public void ApplyVersionTo(TDoc document, Guid version)
+        => _setter?.Invoke(document, version);
 }

@@ -40,28 +40,28 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task default_path_falls_back_to_codegen_for_optimistic_concurrency()
+    public async Task default_path_falls_back_to_codegen_for_soft_delete()
     {
-        // UseOptimisticConcurrency is outside the closed-shape envelope —
-        // the flag must NOT prevent the codegen path from kicking in for
-        // this mapping. If it does, the store will throw at the storage
-        // build because the closed-shape path doesn't implement
-        // concurrency variants yet.
+        // SoftDeleted is outside the closed-shape envelope — the flag
+        // must NOT prevent the codegen path from kicking in for this
+        // mapping. If it does, the store will throw at the storage
+        // build because the closed-shape path doesn't implement soft
+        // delete yet.
         var store = StoreOptions(opts =>
         {
             opts.UseClosedShapeDocumentStorage = true;
-            opts.Schema.For<ConcurrencyDoc>().UseOptimisticConcurrency(true);
+            opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
         });
 
         var id = Guid.NewGuid();
         await using (var session = store.LightweightSession())
         {
-            session.Store(new ConcurrencyDoc { Id = id, Name = "v1" });
+            session.Store(new SoftDeleteDoc { Id = id, Name = "v1" });
             await session.SaveChangesAsync();
         }
 
         await using var query = store.QuerySession();
-        (await query.LoadAsync<ConcurrencyDoc>(id))!.Name.ShouldBe("v1");
+        (await query.LoadAsync<SoftDeleteDoc>(id))!.Name.ShouldBe("v1");
     }
 
     [Fact]
@@ -77,15 +77,28 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.Schema.For<ConcurrencyDoc>().UseOptimisticConcurrency(true);
+            opts.Schema.For<ConcurrencyDoc>().UseNumericRevisions(true);
             opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
         });
 
-        var concurrency = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
-        ClosedShapeRegistration.IsSupported(concurrency).ShouldBeFalse();
+        var numericRevisions = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
+        ClosedShapeRegistration.IsSupported(numericRevisions).ShouldBeFalse();
 
         var softDelete = (DocumentMapping)store.Options.Storage.FindMapping(typeof(SoftDeleteDoc));
         ClosedShapeRegistration.IsSupported(softDelete).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void IsSupported_accepts_optimistic_concurrency()
+    {
+        // M7: optimistic concurrency is now inside the coverage envelope.
+        var store = StoreOptions(opts =>
+        {
+            opts.Schema.For<ConcurrencyDoc>().UseOptimisticConcurrency(true);
+        });
+
+        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
+        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
     }
 }
 

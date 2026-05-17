@@ -8,11 +8,11 @@ using Marten.Storage;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M5): builds a <see cref="DocumentStorageDescriptor{TDoc, TId}"/>
+/// W3 spike (M1+M5+M7): builds a <see cref="DocumentStorageDescriptor{TDoc, TId}"/>
 /// from a <see cref="DocumentMapping"/>. Inspects the mapping's enabled
-/// metadata columns and tenancy style and produces the binder array + SQL
-/// in lockstep — column order and parameter order must agree exactly,
-/// so the same builder owns both sides.
+/// metadata columns, tenancy style, and concurrency mode and produces
+/// the binder array + SQL in lockstep — column order and parameter order
+/// must agree exactly, so the same builder owns both sides.
 /// </summary>
 internal static class DocumentStorageDescriptorBuilder
 {
@@ -31,15 +31,21 @@ internal static class DocumentStorageDescriptorBuilder
         var writeBinders = new List<IDocumentMetadataBinder<TDoc>>(4);
         var readBinders = new List<IDocumentMetadataBinder<TDoc>>(4);
 
+        DocumentVersionBinder<TDoc>? versionBinder = null;
+        var versionReadOrdinal = -1;
+
         if (mapping.Metadata.Version.Enabled)
         {
-            var binder = new DocumentVersionBinder<TDoc>(mapping.Metadata.Version.Member);
-            writeBinders.Add(binder);
+            versionBinder = new DocumentVersionBinder<TDoc>(mapping.Metadata.Version.Member);
+            writeBinders.Add(versionBinder);
 
             // VersionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseOptimisticConcurrency)
             if (mapping.Metadata.Version.Member is not null || mapping.UseOptimisticConcurrency)
             {
-                readBinders.Add(binder);
+                // Column ordinal inside the SELECT projection: id (0),
+                // data (1), then read binders in append order starting at 2.
+                versionReadOrdinal = 2 + readBinders.Count;
+                readBinders.Add(versionBinder);
             }
         }
 
@@ -68,10 +74,14 @@ internal static class DocumentStorageDescriptorBuilder
         var clientSide = writeArray.Where(b => !b.IsServerSide).ToArray();
 
         var isConjoined = mapping.TenancyStyle == TenancyStyle.Conjoined;
+        var concurrencyMode = mapping.UseOptimisticConcurrency
+            ? ConcurrencyMode.Optimistic
+            : ConcurrencyMode.Off;
 
-        var upsertSql = BuildUpsertSql(mapping, writeArray, isConjoined);
-        var insertSql = BuildInsertSql(mapping, writeArray, isConjoined);
-        var updateSql = BuildUpdateSql(mapping, writeArray, isConjoined);
+        var upsertSql = BuildUpsertSql(mapping, writeArray, isConjoined, concurrencyMode);
+        var insertSql = BuildInsertSql(mapping, writeArray, isConjoined, concurrencyMode);
+        var updateSql = BuildUpdateSql(mapping, writeArray, isConjoined, concurrencyMode);
+        var overwriteSql = BuildOverwriteSql(mapping, writeArray, isConjoined, concurrencyMode);
 
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
@@ -80,7 +90,11 @@ internal static class DocumentStorageDescriptorBuilder
             upsertSql: upsertSql,
             insertSql: insertSql,
             updateSql: updateSql,
-            isConjoined: isConjoined);
+            overwriteSql: overwriteSql,
+            isConjoined: isConjoined,
+            concurrencyMode: concurrencyMode,
+            versionBinder: versionBinder,
+            versionReadOrdinal: versionReadOrdinal);
     }
 
     /// <summary>
@@ -114,10 +128,30 @@ internal static class DocumentStorageDescriptorBuilder
         return (columns, values);
     }
 
+    /// <summary>
+    /// What the operation returns from <c>RETURNING</c> — <c>id</c> when
+    /// no concurrency tracking, <c>mt_version</c> when optimistic so the
+    /// operation can validate + write back the version.
+    /// </summary>
+    private static string ReturningColumn(ConcurrencyMode mode)
+        => mode == ConcurrencyMode.Optimistic
+            ? Marten.Schema.SchemaConstants.VersionColumn
+            : "id";
+
     private static string BuildUpsertSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
-        bool isConjoined)
+        bool isConjoined,
+        ConcurrencyMode mode)
+        where TDoc : notnull
+        => BuildUpsertOrOverwriteSql(mapping, binders, isConjoined, mode, includeVersionWhere: mode == ConcurrencyMode.Optimistic);
+
+    private static string BuildUpsertOrOverwriteSql<TDoc>(
+        DocumentMapping mapping,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        bool isConjoined,
+        ConcurrencyMode mode,
+        bool includeVersionWhere)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
@@ -132,18 +166,29 @@ internal static class DocumentStorageDescriptorBuilder
             updateAssignments.Add($"{b.ColumnName} = excluded.{b.ColumnName}");
         }
 
+        // Optimistic: the ON CONFLICT DO UPDATE only fires when the row's
+        // current mt_version equals the expected version supplied by the
+        // caller (sourced from session.Versions). If no match, no rows
+        // updated → no RETURNING → ConcurrencyException at postprocess.
+        // Overwrite drops this filter so the write always wins.
+        var conflictWhere = includeVersionWhere
+            ? $" where {table}.{Marten.Schema.SchemaConstants.VersionColumn} = ?"
+            : string.Empty;
+
         return $"insert into {table} ({columns.Join(", ")}) " +
                $"values ({values.Join(", ")}) " +
-               $"on conflict {conflictKey} do update set {updateAssignments.Join(", ")}";
+               $"on conflict {conflictKey} do update set {updateAssignments.Join(", ")}{conflictWhere} " +
+               $"returning {ReturningColumn(mode)}";
     }
 
     /// <summary>
-    /// <c>"insert into … values (…) on conflict (…) do nothing returning id"</c>.
+    /// <c>"insert into … values (…) on conflict (…) do nothing returning {id|mt_version}"</c>.
     /// </summary>
     private static string BuildInsertSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
-        bool isConjoined)
+        bool isConjoined,
+        ConcurrencyMode mode)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
@@ -152,18 +197,19 @@ internal static class DocumentStorageDescriptorBuilder
 
         return $"insert into {table} ({columns.Join(", ")}) " +
                $"values ({values.Join(", ")}) " +
-               $"on conflict {conflictKey} do nothing returning id";
+               $"on conflict {conflictKey} do nothing returning {ReturningColumn(mode)}";
     }
 
     /// <summary>
-    /// <c>"update … set data = ?, mt_version = ?, … where id = ? [and tenant_id = ?] returning id"</c>.
+    /// <c>"update … set data = ?, mt_version = ?, … where id = ? [and tenant_id = ?] [and mt_version = ?] returning {id|mt_version}"</c>.
     /// Parameter order: data, then each binder, then id, then tenant_id
-    /// (when conjoined).
+    /// (when conjoined), then expected version (when optimistic).
     /// </summary>
     private static string BuildUpdateSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
-        bool isConjoined)
+        bool isConjoined,
+        ConcurrencyMode mode)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
@@ -174,13 +220,35 @@ internal static class DocumentStorageDescriptorBuilder
             setAssignments.Add($"{b.ColumnName} = {b.ValueSql}");
         }
 
-        var whereClause = isConjoined
-            ? $"where id = ? and {Marten.Storage.Metadata.TenantIdColumn.Name} = ?"
-            : "where id = ?";
+        var whereClauses = new List<string>(3) { "id = ?" };
+        if (isConjoined)
+        {
+            whereClauses.Add($"{Marten.Storage.Metadata.TenantIdColumn.Name} = ?");
+        }
+        if (mode == ConcurrencyMode.Optimistic)
+        {
+            whereClauses.Add($"{Marten.Schema.SchemaConstants.VersionColumn} = ?");
+        }
 
         return $"update {table} " +
                $"set {setAssignments.Join(", ")} " +
-               $"{whereClause} " +
-               $"returning id";
+               $"where {whereClauses.Join(" and ")} " +
+               $"returning {ReturningColumn(mode)}";
     }
+
+    /// <summary>
+    /// Overwrite is "upsert without the optimistic version guard."
+    /// Same SQL as upsert except the trailing <c>where mt_version = ?</c>
+    /// is dropped. When <see cref="ConcurrencyMode"/> is <c>Off</c>,
+    /// overwrite SQL is byte-identical to upsert SQL (kept separate to
+    /// preserve a clean 1:1 mapping with the codegen path's
+    /// <c>OverwriteFunction</c>).
+    /// </summary>
+    private static string BuildOverwriteSql<TDoc>(
+        DocumentMapping mapping,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        bool isConjoined,
+        ConcurrencyMode mode)
+        where TDoc : notnull
+        => BuildUpsertOrOverwriteSql(mapping, binders, isConjoined, mode, includeVersionWhere: false);
 }

@@ -64,12 +64,16 @@ public class closed_shape_storage_metadata_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task version_changes_on_overwrite()
+    public async Task version_changes_on_each_write()
     {
         theStore.UseLightweightSequentialGuidClosedShape<VersionedDoc>();
 
         var id = Guid.NewGuid();
 
+        // [Version] turns on optimistic concurrency — second-and-later
+        // writes must come after a Load so the session knows the
+        // expected version. Without that the WHERE filter on
+        // mt_version rejects the update.
         Guid firstVersion;
         await using (var session = theStore.LightweightSession())
         {
@@ -83,7 +87,9 @@ public class closed_shape_storage_metadata_tests: BugIntegrationContext
         Guid secondVersion;
         await using (var session = theStore.LightweightSession())
         {
-            var doc = new VersionedDoc { Id = id, Name = "v2" };
+            var doc = await session.LoadAsync<VersionedDoc>(id);
+            doc.ShouldNotBeNull();
+            doc.Name = "v2";
             session.Store(doc);
             await session.SaveChangesAsync();
             secondVersion = doc.Version;

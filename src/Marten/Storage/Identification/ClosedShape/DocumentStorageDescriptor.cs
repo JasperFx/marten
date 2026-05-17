@@ -4,6 +4,29 @@ using Marten.Schema;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
+/// W3 spike (M7): which concurrency model the document mapping uses.
+/// Drives WHERE-clause additions on UPDATE/UPSERT, RETURNING column
+/// choice, and Postprocess exception type. Encoded once on the
+/// descriptor so the operation classes can switch on it without
+/// reading mapping state per call.
+/// </summary>
+public enum ConcurrencyMode
+{
+    /// <summary>No optimistic concurrency. Updates use plain WHERE id = ?.</summary>
+    Off,
+
+    /// <summary>
+    /// Guid-based optimistic concurrency. Each write generates a fresh
+    /// Guid version; UPDATE / UPSERT add <c>and mt_version = ?</c> to
+    /// the predicate and RETURN the new version for postprocess
+    /// validation. A miss (no row returned) raises
+    /// <c>ConcurrencyException</c> instead of
+    /// <c>NonExistentDocumentException</c>.
+    /// </summary>
+    Optimistic
+}
+
+/// <summary>
 /// W3 spike (M1): per-mapping descriptor that the closed-shape document
 /// storage class composes with at construction. Holds the pre-built SQL
 /// strings + the ordered metadata-binder arrays. Built once per
@@ -15,14 +38,18 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     where TDoc : notnull
     where TId : notnull
 {
-    public DocumentStorageDescriptor(
+    internal DocumentStorageDescriptor(
         IIdentification<TDoc, TId> identification,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
         string upsertSql,
         string insertSql,
         string updateSql,
-        bool isConjoined)
+        string overwriteSql,
+        bool isConjoined,
+        ConcurrencyMode concurrencyMode,
+        DocumentVersionBinder<TDoc>? versionBinder,
+        int versionReadOrdinal)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
@@ -30,7 +57,11 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         UpsertSql = upsertSql;
         InsertSql = insertSql;
         UpdateSql = updateSql;
+        OverwriteSql = overwriteSql;
         IsConjoined = isConjoined;
+        ConcurrencyMode = concurrencyMode;
+        VersionBinder = versionBinder;
+        VersionReadOrdinal = versionReadOrdinal;
     }
 
     public IIdentification<TDoc, TId> Identification { get; }
@@ -83,6 +114,15 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     public string UpdateSql { get; }
 
     /// <summary>
+    /// SQL for the Overwrite path — identical to <see cref="UpsertSql"/>
+    /// when <see cref="ConcurrencyMode"/> is <c>Off</c>; under optimistic
+    /// concurrency the trailing WHERE filter on <c>mt_version</c> is
+    /// stripped so the write always wins. Used by
+    /// <c>session.Store(doc, ignoreConcurrencyCheck: true)</c>.
+    /// </summary>
+    public string OverwriteSql { get; }
+
+    /// <summary>
     /// When <c>true</c>, the document table is conjoined-multi-tenanted:
     /// <c>tenant_id</c> is part of the primary key, INSERT carries it as
     /// the first parameter, UPDATE has <c>and tenant_id = ?</c> appended
@@ -92,4 +132,32 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// the codegen path uses today.
     /// </summary>
     public bool IsConjoined { get; }
+
+    /// <summary>
+    /// W3 spike (M7): which concurrency model the mapping uses. <c>Off</c>
+    /// retains pre-M7 behavior; <c>Optimistic</c> turns on Guid-version
+    /// WHERE filters + version writeback. <see cref="UpsertSql"/> /
+    /// <see cref="UpdateSql"/> are already baked for the selected mode;
+    /// operation classes only read this property to decide their
+    /// postprocess branch and what extra parameter to bind.
+    /// </summary>
+    public ConcurrencyMode ConcurrencyMode { get; }
+
+    /// <summary>
+    /// W3 spike (M7): the version binder, present whenever
+    /// <see cref="ConcurrencyMode"/> is non-<c>Off</c> or the mapping has
+    /// a <c>[Version]</c>-annotated member. Operations use it from
+    /// <c>Postprocess</c> to write the new version back onto the document
+    /// without needing to re-walk <see cref="ReadBinders"/>.
+    /// </summary>
+    internal DocumentVersionBinder<TDoc>? VersionBinder { get; }
+
+    /// <summary>
+    /// W3 spike (M7): zero-based ordinal of the <c>mt_version</c> column
+    /// inside the document SELECT projection, or <c>-1</c> when version
+    /// isn't in the read set. Used by selectors to capture the version
+    /// into <c>session.Versions</c> on load so subsequent updates can
+    /// supply it as the expected-version parameter.
+    /// </summary>
+    public int VersionReadOrdinal { get; }
 }

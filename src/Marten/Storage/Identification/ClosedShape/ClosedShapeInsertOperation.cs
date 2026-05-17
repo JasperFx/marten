@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
@@ -14,14 +15,21 @@ using Weasel.Postgresql;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M3): hand-written Insert operation. Emits
-/// <c>INSERT … ON CONFLICT (id) DO NOTHING RETURNING id</c>. Parameter
-/// ordering matches <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/>:
+/// W3 spike (M3+M7): hand-written Insert operation. Emits
+/// <c>INSERT … ON CONFLICT (id) DO NOTHING RETURNING {id|mt_version}</c>.
+/// Parameter ordering matches <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/>:
 /// id, data, then each client-side metadata binder. RETURNING lets
 /// <see cref="Postprocess"/> distinguish "row inserted" from "row already
 /// existed" and raise <see cref="DocumentAlreadyExistsException"/> in the
 /// latter case.
 /// </summary>
+/// <remarks>
+/// Under <see cref="ConcurrencyMode.Optimistic"/> the operation generates
+/// the new Guid version client-side at construction time, binds it via
+/// the version binder, and writes the value back onto the document +
+/// session.Versions in postprocess so subsequent updates can supply it
+/// as the expected version.
+/// </remarks>
 internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOperation
     where TDoc : notnull
     where TId : notnull
@@ -30,17 +38,25 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
     private readonly TId _id;
     private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
+    private readonly Dictionary<TId, Guid>? _versions;
+    private readonly Guid _newVersion;
 
     public ClosedShapeInsertOperation(
         TDoc document,
         TId id,
         string tenantId,
-        DocumentStorageDescriptor<TDoc, TId> descriptor)
+        DocumentStorageDescriptor<TDoc, TId> descriptor,
+        Dictionary<TId, Guid>? versions)
     {
         _document = document;
         _id = id;
         _tenantId = tenantId;
         _descriptor = descriptor;
+        _versions = versions;
+        if (descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
+        {
+            _newVersion = CombGuidIdGeneration.NewGuid();
+        }
     }
 
     public Type DocumentType => typeof(TDoc);
@@ -76,19 +92,39 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
-            binder.BindParameter(parameters[slot], _document, session);
+            if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
+                ReferenceEquals(binder, _descriptor.VersionBinder))
+            {
+                // Use the version generated at construction time so
+                // postprocess can validate the row returned the same
+                // value we wrote.
+                parameters[slot].Value = _newVersion;
+                parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+                _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
+            }
+            else
+            {
+                binder.BindParameter(parameters[slot], _document, session);
+            }
             slot++;
         }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
-        // RETURNING id — if no row, ON CONFLICT DO NOTHING fired and the
-        // row already exists. Surface as DocumentAlreadyExistsException
-        // matching the codegen path's behavior.
+        // RETURNING — if no row came back, ON CONFLICT DO NOTHING fired
+        // and the row already exists. Surface as
+        // DocumentAlreadyExistsException matching the codegen path's
+        // behavior.
         if (!reader.Read())
         {
             exceptions.Add(new DocumentAlreadyExistsException(null, typeof(TDoc), _id));
+            return;
+        }
+
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
+        {
+            _versions![_id] = _newVersion;
         }
     }
 
@@ -97,6 +133,12 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         if (!await reader.ReadAsync(token).ConfigureAwait(false))
         {
             exceptions.Add(new DocumentAlreadyExistsException(null, typeof(TDoc), _id));
+            return;
+        }
+
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
+        {
+            _versions![_id] = _newVersion;
         }
     }
 }

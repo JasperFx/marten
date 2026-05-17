@@ -4,9 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx;
 using JasperFx.Core;
-using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using NpgsqlTypes;
@@ -16,18 +14,15 @@ using Weasel.Postgresql;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M7): hand-written upsert operation that consumes the
-/// descriptor's pre-built SQL + client-side binder array.
+/// W3 spike (M7): hand-written Overwrite operation. Same shape as
+/// <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/> except the
+/// trailing <c>where mt_version = ?</c> filter is dropped — the
+/// caller has explicitly asked to bypass the optimistic-concurrency
+/// check (today's <c>session.Store(doc, ignoreConcurrencyCheck: true)</c>).
+/// When <see cref="ConcurrencyMode"/> is <c>Off</c>, overwrite is
+/// functionally identical to upsert.
 /// </summary>
-/// <remarks>
-/// Under <see cref="ConcurrencyMode.Optimistic"/> the descriptor's
-/// upsert SQL gets an extra WHERE filter inside the ON CONFLICT DO
-/// UPDATE so the update only fires when the row's current
-/// <c>mt_version</c> matches the caller-supplied expected version
-/// (sourced from <c>session.Versions</c>). A mismatch produces no
-/// RETURNING row and surfaces as <see cref="ConcurrencyException"/>.
-/// </remarks>
-internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation
+internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorageOperation
     where TDoc : notnull
     where TId : notnull
 {
@@ -35,23 +30,20 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
     private readonly TId _id;
     private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
-    private readonly OperationRole _role;
     private readonly Dictionary<TId, Guid>? _versions;
     private readonly Guid _newVersion;
 
-    public ClosedShapeUpsertOperation(
+    public ClosedShapeOverwriteOperation(
         TDoc document,
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        OperationRole role,
         Dictionary<TId, Guid>? versions)
     {
         _document = document;
         _id = id;
         _tenantId = tenantId;
         _descriptor = descriptor;
-        _role = role;
         _versions = versions;
         if (descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
         {
@@ -66,15 +58,11 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
     public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IMartenSession session)
         => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
 
-    public OperationRole Role() => _role;
+    public OperationRole Role() => OperationRole.Update;
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        // Closed-shape ConfigureCommand: hand the descriptor's pre-built
-        // SQL to AppendWithParameters. Parameter ordering:
-        //   non-conjoined: id, data, client-side binders, [expected version]
-        //   conjoined:     tenant_id, id, data, binders, [expected version]
-        var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
+        var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
 
         var slot = 0;
         if (_descriptor.IsConjoined)
@@ -106,44 +94,22 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
             }
             slot++;
         }
-
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
-        {
-            // Expected version for the ON CONFLICT DO UPDATE … WHERE
-            // mt_version = ? filter. Absent → DBNull → filter false →
-            // no update → no RETURNING row → ConcurrencyException.
-            // Note: when the row doesn't exist yet, the INSERT path runs
-            // (not the DO UPDATE), the WHERE filter doesn't apply, and
-            // RETURNING gives us the inserted row's new version.
-            if (_versions!.TryGetValue(_id, out var expected))
-            {
-                parameters[slot].Value = expected;
-            }
-            else
-            {
-                parameters[slot].Value = DBNull.Value;
-            }
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
-        }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
         if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
         {
-            // Mode Off Upsert is fire-and-forget today — RETURNING id is
-            // there for symmetry with Insert/Update but the result isn't
-            // inspected.
             return;
         }
 
-        if (!reader.Read())
+        // No version WHERE filter → the write always happens, so a
+        // returned row is guaranteed. Capture the new version for
+        // subsequent updates.
+        if (reader.Read())
         {
-            exceptions.Add(new ConcurrencyException(typeof(TDoc), _id));
-            return;
+            _versions![_id] = _newVersion;
         }
-
-        _versions![_id] = _newVersion;
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -153,12 +119,9 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
             return;
         }
 
-        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            exceptions.Add(new ConcurrencyException(typeof(TDoc), _id));
-            return;
+            _versions![_id] = _newVersion;
         }
-
-        _versions![_id] = _newVersion;
     }
 }
