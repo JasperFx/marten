@@ -56,6 +56,12 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
         var (orderedColumns, sqlPrefix) = BuildAppendEventFullColumnsAndPrefix(graph);
         var metadataBinders = SelectRichMetadataBinders(orderedColumns);
+        // #4428: side-effect replay through EventSlice.BuildOperations calls
+        // QuickAppendEventWithVersion on the Rich storage. That path uses the
+        // same per-event INSERT shape but with a server-side seq_id nextval()
+        // literal and no SequenceColumnBinder.
+        var metadataBindersWithoutSequence = SelectQuickModeMetadataBinders(orderedColumns);
+        var quickWithVersionSuffix = BuildAppendEventQuickWithVersionSuffix(graph);
         var isConjoined = graph.TenancyStyle == TenancyStyle.Conjoined;
         var isGuid = graph.StreamIdentity == StreamIdentity.AsGuid;
 
@@ -70,6 +76,8 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         {
             IsTenancyConjoined = isConjoined,
             IsGuidStreamIdentity = isGuid,
+            AppendEventQuickWithVersionSqlSuffix = quickWithVersionSuffix,
+            MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
             ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
             ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
         };
