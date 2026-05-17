@@ -6,7 +6,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
-using Marten.Schema;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -14,36 +13,29 @@ using Weasel.Postgresql;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike: hand-written upsert operation for documents with the minimal
-/// table shape <c>(id, data)</c> — no metadata columns. Emits plain
-/// <c>INSERT … ON CONFLICT (id) DO UPDATE SET data = excluded.data</c>
-/// instead of calling a per-document <c>mt_upsert_*</c> PostgreSQL function.
-/// The codegen-emitted operation classes the closed-shape hierarchy
-/// replaces ultimately drive the same kind of parameter binding; this
-/// spike proves the pattern works end-to-end without Roslyn JIT.
+/// W3 spike (M1): hand-written upsert operation that consumes the
+/// descriptor's pre-built SQL + client-side binder array. Mirrors what
+/// the codegen path emits per document-mapping configuration; here a
+/// single class drives any configuration via the descriptor.
 /// </summary>
-/// <remarks>
-/// Scoped tightly for the spike — requires
-/// <c>mapping.Metadata.DisableInformationalFields()</c> at registration
-/// time so the actual table doesn't carry <c>mt_version</c> /
-/// <c>mt_dotnet_type</c> / <c>mt_last_modified</c> columns. Adding those
-/// is mechanical; left out so the spike's diff stays minimal.
-/// </remarks>
-internal sealed class ClosedShapeUpsertOperation<TDoc>: IDocumentStorageOperation
+internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation
     where TDoc : notnull
+    where TId : notnull
 {
     private readonly TDoc _document;
-    private readonly Guid _id;
-    private readonly string _sqlPrefix;
-    private readonly string _sqlSuffix;
+    private readonly TId _id;
+    private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
     private readonly OperationRole _role;
 
-    public ClosedShapeUpsertOperation(TDoc document, Guid id, string sqlPrefix, string sqlSuffix, OperationRole role)
+    public ClosedShapeUpsertOperation(
+        TDoc document,
+        TId id,
+        DocumentStorageDescriptor<TDoc, TId> descriptor,
+        OperationRole role)
     {
         _document = document;
         _id = id;
-        _sqlPrefix = sqlPrefix;
-        _sqlSuffix = sqlSuffix;
+        _descriptor = descriptor;
         _role = role;
     }
 
@@ -58,24 +50,34 @@ internal sealed class ClosedShapeUpsertOperation<TDoc>: IDocumentStorageOperatio
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        // Closed-shape ConfigureCommand: prefix + 2 grouped params + suffix.
-        // Mirrors what codegen emits but as a constant-shape method body —
-        // no per-call branching on AppendMode / metadata-column flags.
-        builder.Append(_sqlPrefix);
+        // Closed-shape ConfigureCommand: hand the descriptor's pre-built
+        // SQL (with `?` placeholders for client-side params and inline
+        // literals for server-side ones) to AppendWithParameters. The
+        // returned array has one entry per `?`, in order: id, data, then
+        // each client-side binder.
+        var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
 
-        var pb = builder.CreateGroupedParameterBuilder(',');
-        var idParam = pb.AppendParameter(_id);
-        idParam.NpgsqlDbType = NpgsqlDbType.Uuid;
+        // id (slot 0)
+        parameters[0].Value = _id;
+        parameters[0].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
 
-        var dataParam = pb.AppendParameter<object>(DBNull.Value);
-        session.Serializer.WriteToParameter(dataParam, _document);
+        // data (slot 1) — serializer writes directly into the parameter
+        // (UTF-8 byte array, no intermediate string).
+        session.Serializer.WriteToParameter(parameters[1], _document);
 
-        builder.Append(_sqlSuffix);
+        // Metadata binders fill the remaining slots in order.
+        var slot = 2;
+        foreach (var binder in _descriptor.ClientSideWriteBinders)
+        {
+            binder.BindParameter(parameters[slot], _document, session);
+            slot++;
+        }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
-        // No metadata writeback (no Version / Revision columns).
+        // No RETURNING clause on the spike's upsert SQL yet — concurrency
+        // / revision variants (M3) add it.
     }
 
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)

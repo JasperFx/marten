@@ -7,28 +7,49 @@ using Marten.Linq.Selectors;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike: <see cref="ISelector{T}"/> for the lightweight closed-shape
-/// document storage. Reads the data column at index 1 — the
-/// <c>DocumentTable.SelectColumns(StorageStyle.Lightweight)</c> column
-/// order is <c>id, data</c>, so col 0 is the Guid id and col 1 is the
-/// jsonb document body. Equivalent to what the existing codegen-emitted
-/// <c>DocumentSelectorWithOnlySerializer</c> subclass produces for a
-/// Lightweight + no-metadata document mapping.
+/// W3 spike (M1): <see cref="ISelector{T}"/> for the lightweight
+/// closed-shape document storage. Reads the data column at
+/// <c>descriptor.DataColumnIndex</c> and dispatches each
+/// <see cref="IDocumentMetadataBinder{TDoc}"/>.Apply at the binder's
+/// column position. Equivalent to what the codegen-emitted
+/// <c>DocumentSelectorWithOnlySerializer</c> + <c>DocumentSelectorWithVersions</c>
+/// subclasses produce for a Lightweight document mapping.
 /// </summary>
-internal sealed class ClosedShapeLightweightSelector<T>: ISelector<T>
+internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
+    where T : notnull
+    where TId : notnull
 {
-    private const int DataColumnIndex = 1;
-
     private readonly ISerializer _serializer;
+    private readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
-    public ClosedShapeLightweightSelector(ISerializer serializer)
+    public ClosedShapeLightweightSelector(ISerializer serializer, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _serializer = serializer;
+        _descriptor = descriptor;
     }
 
     public T Resolve(DbDataReader reader)
-        => _serializer.FromJson<T>(reader, DataColumnIndex);
+    {
+        var doc = _serializer.FromJson<T>(reader, _descriptor.DataColumnIndex);
+        ApplyMetadata(reader, doc);
+        return doc;
+    }
 
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
-        => await _serializer.FromJsonAsync<T>(reader, DataColumnIndex, token).ConfigureAwait(false);
+    {
+        var doc = await _serializer.FromJsonAsync<T>(reader, _descriptor.DataColumnIndex, token).ConfigureAwait(false);
+        ApplyMetadata(reader, doc);
+        return doc;
+    }
+
+    private void ApplyMetadata(DbDataReader reader, T document)
+    {
+        // Metadata columns sit immediately after the data column.
+        var ordinal = _descriptor.DataColumnIndex + 1;
+        foreach (var binder in _descriptor.ReadBinders)
+        {
+            binder.Apply(reader, ordinal, document);
+            ordinal++;
+        }
+    }
 }

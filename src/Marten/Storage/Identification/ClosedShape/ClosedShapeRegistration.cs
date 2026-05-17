@@ -8,7 +8,7 @@ using Marten.Schema;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike: convenience hook for registering a hand-written closed-shape
+/// W3 spike: hook for registering a hand-written closed-shape
 /// <see cref="DocumentStorage{T, TId}"/> with a live <see cref="DocumentStore"/>
 /// instance. Bypasses <c>ProviderGraph</c>'s codegen-emit path for the
 /// registered document type.
@@ -36,12 +36,12 @@ public static class ClosedShapeRegistration
         }
 
         var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember);
-        var storage = new LightweightSequentialGuidStorage<TDoc>(mapping, identification);
+        var descriptor = DocumentStorageDescriptorBuilder.Build<TDoc, Guid>(mapping, identification);
+        var storage = new LightweightSequentialGuidStorage<TDoc>(mapping, descriptor);
 
         // All four tracking modes resolve to the same closed-shape storage
-        // for the spike — IdentityMap / DirtyTracking layering isn't part
-        // of the proof. The QueryOnly slot is the same instance too; in
-        // production W3 those become separate hand-written subclasses.
+        // for the spike. M2 splits this into QueryOnly / IdentityMap /
+        // DirtyTracking variants.
         var bulkLoader = new SpikeNotImplementedBulkLoader<TDoc>();
         var provider = new DocumentProvider<TDoc>(
             bulkLoader,

@@ -1,8 +1,5 @@
 #nullable enable
 using System;
-using System.Threading;
-using System.Threading.Tasks;
-using JasperFx.Core;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -12,54 +9,46 @@ using Marten.Schema;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike: a hand-written, closed-shape <see cref="DocumentStorage{T, TId}"/>
+/// W3 spike: hand-written, closed-shape <see cref="DocumentStorage{T, TId}"/>
 /// subclass that proves the closed-shape pattern can be driven end-to-end
-/// without runtime Roslyn codegen. Composes with
-/// <see cref="IIdentification{TDoc, TId}"/> for the identity surface and
-/// returns hand-written <see cref="ClosedShapeUpsertOperation{TDoc}"/>
-/// instances for write operations.
+/// without runtime Roslyn codegen.
 /// </summary>
 /// <remarks>
 /// <para>
-/// This is ONE cell of the planned W3 matrix: Lightweight + Guid + no
-/// concurrency + no revisions + no tenancy + no hierarchical + minimal
-/// metadata. Demonstrates the pattern; production hand-write covers ~24
-/// cells (StorageStyle × Concurrency × Hierarchical).
+/// One cell of the planned W3 matrix: Lightweight + Guid + no
+/// concurrency + no revisions + no tenancy + no hierarchical. M1 adds
+/// metadata-column support (<c>mt_version</c>, <c>mt_dotnet_type</c>,
+/// <c>mt_last_modified</c>) via the
+/// <see cref="DocumentStorageDescriptor{TDoc, TId}"/> seam — the same
+/// storage class drives any subset of those columns based on the
+/// document mapping's metadata flags.
 /// </para>
 /// <para>
 /// Inheriting <see cref="LightweightDocumentStorage{T, TId}"/> picks up
-/// the Store / Eject / LoadAsync / LoadManyAsync plumbing for free. What
-/// we hand-write here: Identity / AssignIdentity (via IIdentification),
-/// Insert / Update / Upsert (return ClosedShapeUpsertOperation), Overwrite
-/// (throws — out of scope), and BuildSelector (returns the existing
-/// <see cref="SerializationSelector{T}"/>).
+/// Store / Eject / LoadAsync / LoadManyAsync. What we hand-write here:
+/// Identity / AssignIdentity (via the descriptor's
+/// <see cref="IIdentification{TDoc, TId}"/>), Insert / Update / Upsert
+/// (return <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/>),
+/// Overwrite (throws — out of M1 scope), and BuildSelector (returns
+/// <see cref="ClosedShapeLightweightSelector{T, TId}"/>).
 /// </para>
 /// </remarks>
 public sealed class LightweightSequentialGuidStorage<TDoc>: LightweightDocumentStorage<TDoc, Guid>
     where TDoc : notnull
 {
-    private readonly IIdentification<TDoc, Guid> _identification;
-    private readonly string _upsertSqlPrefix;
-    private readonly string _upsertSqlSuffix;
+    private readonly DocumentStorageDescriptor<TDoc, Guid> _descriptor;
 
-    public LightweightSequentialGuidStorage(DocumentMapping mapping, IIdentification<TDoc, Guid> identification)
+    public LightweightSequentialGuidStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, Guid> descriptor)
         : base(mapping)
     {
-        _identification = identification;
-
-        // Pre-built once at construction — closed-shape SQL strings are
-        // readonly fields on the storage instance, not concatenated per
-        // call. Matches W3's "minimize per-call string concatenation"
-        // constraint.
-        _upsertSqlPrefix = $"insert into {mapping.TableName.QualifiedName} (id, data) values (";
-        _upsertSqlSuffix = ") on conflict (id) do update set data = excluded.data";
+        _descriptor = descriptor;
     }
 
     public override Guid Identity(TDoc document)
-        => _identification.Identity(document);
+        => _descriptor.Identification.Identity(document);
 
     public override Guid AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
-        => _identification.AssignIfMissing(document, database);
+        => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
         => Upsert(document, session, tenant);
@@ -68,14 +57,13 @@ public sealed class LightweightSequentialGuidStorage<TDoc>: LightweightDocumentS
         => Upsert(document, session, tenant);
 
     public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpsertOperation<TDoc>(
-            document, Identity(document), _upsertSqlPrefix, _upsertSqlSuffix, OperationRole.Upsert);
+        => new ClosedShapeUpsertOperation<TDoc, Guid>(document, Identity(document), _descriptor, OperationRole.Upsert);
 
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException(
             $"{nameof(LightweightSequentialGuidStorage<TDoc>)} doesn't implement Overwrite — out of W3 spike scope. " +
-            "Add when wiring optimistic concurrency / revisions.");
+            "Add when wiring optimistic concurrency / revisions (M3).");
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new ClosedShapeLightweightSelector<TDoc>(session.Serializer);
+        => new ClosedShapeLightweightSelector<TDoc, Guid>(session.Serializer, _descriptor);
 }
