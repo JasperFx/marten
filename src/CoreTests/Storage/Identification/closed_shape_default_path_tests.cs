@@ -40,28 +40,26 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task default_path_falls_back_to_codegen_for_duplicated_fields()
+    public async Task default_path_falls_back_to_codegen_for_hierarchies()
     {
-        // Duplicated fields are outside the closed-shape envelope — the
-        // flag must NOT prevent the codegen path from kicking in for
-        // this mapping. If it does, the store will throw at storage
-        // build because the closed-shape path doesn't implement
-        // duplicated fields yet.
+        // Hierarchical sub-classing is outside the closed-shape envelope
+        // — the flag must NOT prevent the codegen path from kicking in
+        // for this mapping.
         var store = StoreOptions(opts =>
         {
             opts.UseClosedShapeDocumentStorage = true;
-            opts.Schema.For<DuplicatedFieldDoc>().Duplicate(x => x.Name);
+            opts.Schema.For<HierarchyDoc>().AddSubClass<HierarchyDocSub>();
         });
 
         var id = Guid.NewGuid();
         await using (var session = store.LightweightSession())
         {
-            session.Store(new DuplicatedFieldDoc { Id = id, Name = "v1" });
+            session.Store(new HierarchyDoc { Id = id, Name = "v1" });
             await session.SaveChangesAsync();
         }
 
         await using var query = store.QuerySession();
-        (await query.LoadAsync<DuplicatedFieldDoc>(id))!.Name.ShouldBe("v1");
+        (await query.LoadAsync<HierarchyDoc>(id))!.Name.ShouldBe("v1");
     }
 
     [Fact]
@@ -77,11 +75,11 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.Schema.For<DuplicatedFieldDoc>().Duplicate(x => x.Name);
+            opts.Schema.For<HierarchyDoc>().AddSubClass<HierarchyDocSub>();
         });
 
-        var dup = (DocumentMapping)store.Options.Storage.FindMapping(typeof(DuplicatedFieldDoc));
-        ClosedShapeRegistration.IsSupported(dup).ShouldBeFalse();
+        var hierarchy = (DocumentMapping)store.Options.Storage.FindMapping(typeof(HierarchyDoc));
+        ClosedShapeRegistration.IsSupported(hierarchy).ShouldBeFalse();
     }
 
     [Fact]
@@ -146,4 +144,15 @@ public class DuplicatedFieldDoc
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
+}
+
+public class HierarchyDoc
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class HierarchyDocSub: HierarchyDoc
+{
+    public string Extra { get; set; } = string.Empty;
 }

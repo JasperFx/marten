@@ -86,6 +86,21 @@ internal static class DocumentStorageDescriptorBuilder
             }
         }
 
+        // M10: duplicated fields contribute write-only columns to the
+        // table (they're not ISelectableColumn — the canonical value is
+        // deserialized from the data JSON column). Append before
+        // soft-delete columns since DocumentTable.AddColumn orders
+        // duplicated fields before mt_deleted / mt_deleted_at.
+        if (mapping.DuplicatedFields.Count > 0)
+        {
+            var enumStorage = mapping.StoreOptions.Advanced.DuplicatedFieldEnumStorage;
+            foreach (var field in mapping.DuplicatedFields)
+            {
+                if (field.OnlyForSearching) continue;
+                writeBinders.Add(new DocumentDuplicatedFieldBinder<TDoc>(field, enumStorage));
+            }
+        }
+
         // M9: soft delete adds two columns to the table. Each save writes
         // the defaults (false, null) so re-saving a soft-deleted document
         // undeletes it — same observable behavior as the codegen path's

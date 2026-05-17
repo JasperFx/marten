@@ -101,7 +101,6 @@ public static class ClosedShapeRegistration
     public static bool IsSupported(DocumentMapping mapping)
     {
         if (mapping.SubClasses.Any()) return false;
-        if (mapping.DuplicatedFields.Count > 0) return false;
         if (mapping.IsHierarchy()) return false;
 
         if (mapping.IdType == typeof(Guid) && mapping.IdStrategy is SequentialGuidIdGeneration)
