@@ -63,12 +63,14 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         DocumentRevisionBinder<TDoc>? revisionBinder,
         int versionReadIndex,
         Marten.Schema.DocumentMapping? hierarchyMapping,
-        int docTypeReadIndex)
+        int docTypeReadIndex,
+        string tableName)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
         WriteBinders = writeBinders;
         ReadBinders = readBinders;
+        TableName = tableName;
         UpsertSql = upsertSql;
         InsertSql = insertSql;
         UpdateSql = updateSql;
@@ -102,6 +104,15 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// emitting <c>transaction_timestamp()</c>.
     /// </summary>
     internal IDocumentMetadataBinder<TDoc>[] WriteBinders { get; }
+
+    /// <summary>
+    /// Unqualified table name (without schema prefix) — used by the
+    /// exception-transform path to detect when a Postgres
+    /// unique-constraint violation belongs to this document type's
+    /// table so it can be surfaced as
+    /// <see cref="Marten.Exceptions.DocumentAlreadyExistsException"/>.
+    /// </summary>
+    internal string TableName { get; }
 
     /// <summary>
     /// All metadata binders applied on the read path, in column order

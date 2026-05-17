@@ -171,7 +171,8 @@ internal static class DocumentStorageDescriptorBuilder
             revisionBinder: revisionBinder,
             versionReadIndex: versionReadIndex,
             hierarchyMapping: hierarchyMapping,
-            docTypeReadIndex: docTypeReadIndex);
+            docTypeReadIndex: docTypeReadIndex,
+            tableName: mapping.TableName.Name);
     }
 
     /// <summary>

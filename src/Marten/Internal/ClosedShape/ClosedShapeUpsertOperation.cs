@@ -34,7 +34,7 @@ namespace Marten.Internal.ClosedShape;
 /// set.</item>
 /// </list>
 /// </remarks>
-internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation
+internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
@@ -216,4 +216,7 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
                 break;
         }
     }
+    public bool TryTransform(System.Exception original, out System.Exception? transformed)
+        => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);
+
 }

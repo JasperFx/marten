@@ -29,7 +29,7 @@ namespace Marten.Internal.ClosedShape;
 /// <see cref="IRevisionedOperation.IgnoreConcurrencyViolation"/> is set.</item>
 /// </list>
 /// </remarks>
-internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation
+internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
@@ -197,4 +197,7 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
                 break;
         }
     }
+    public bool TryTransform(System.Exception original, out System.Exception? transformed)
+        => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);
+
 }
