@@ -61,6 +61,13 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
     public T Resolve(DbDataReader reader)
     {
         var id = reader.GetFieldValue<TId>(IdColumn);
+
+        if (_identityMap.TryGetValue(id, out var cached))
+        {
+            CaptureVersion(reader, id);
+            return cached;
+        }
+
         var doc = ReadDocument(reader);
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
@@ -73,6 +80,13 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
         var id = await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false);
+
+        if (_identityMap.TryGetValue(id, out var cached))
+        {
+            CaptureVersion(reader, id);
+            return cached;
+        }
+
         var doc = await ReadDocumentAsync(reader, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
         _identityMap[id] = doc;
@@ -107,7 +121,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
-            binder.Apply(reader, ordinal, document);
+            binder.Apply(reader, ordinal, document, _session);
             ordinal++;
         }
     }

@@ -59,5 +59,5 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
         => throw new NotSupportedException("QueryOnly storage doesn't support Overwrite.");
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new ClosedShapeQueryOnlySelector<TDoc, TId>(session.Serializer, _descriptor);
+        => new ClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor);
 }

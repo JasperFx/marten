@@ -41,7 +41,7 @@ internal sealed class DocumentLastModifiedBinder<TDoc>: IDocumentMetadataBinder<
         // in its write loop. The SQL literal in ValueSql does the work.
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

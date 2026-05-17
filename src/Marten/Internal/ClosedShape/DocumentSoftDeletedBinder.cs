@@ -47,7 +47,7 @@ internal sealed class DocumentSoftDeletedBinder<TDoc>: IDocumentMetadataBinder<T
         parameter.NpgsqlDbType = NpgsqlDbType.Boolean;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

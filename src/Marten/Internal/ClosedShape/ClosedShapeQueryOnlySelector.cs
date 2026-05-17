@@ -21,12 +21,14 @@ internal sealed class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
     private const int DataColumn = 0;
     private const int FirstMetadataColumn = 1;
 
+    private readonly IMartenSession _session;
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
-    public ClosedShapeQueryOnlySelector(ISerializer serializer, DocumentStorageDescriptor<T, TId> descriptor)
+    public ClosedShapeQueryOnlySelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
-        _serializer = serializer;
+        _session = session;
+        _serializer = session.Serializer;
         _descriptor = descriptor;
     }
 
@@ -69,7 +71,7 @@ internal sealed class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
-            binder.Apply(reader, ordinal, document);
+            binder.Apply(reader, ordinal, document, _session);
             ordinal++;
         }
     }

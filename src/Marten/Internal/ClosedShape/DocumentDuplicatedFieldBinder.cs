@@ -80,7 +80,7 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
         parameter.Value = current;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
     {
         // No-op — duplicated columns aren't in the document SELECT.
         // The canonical value is deserialized from the data column.

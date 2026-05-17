@@ -67,6 +67,17 @@ public interface IDocumentMetadataBinder<TDoc>
     void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session);
 
     /// <summary>
+    /// Optional pre-serialization hook. Called once per write before the
+    /// document body is serialized into the <c>data</c> parameter — gives
+    /// session-derived binders (Correlation/Causation/LastModifiedBy/
+    /// Headers) a chance to project the session value onto the document's
+    /// mapped member so the value flows into the JSON data column too.
+    /// Default no-op; binders whose value isn't session-derived (Version,
+    /// LastModified, soft-delete, etc.) don't override.
+    /// </summary>
+    void ApplyToDocument(TDoc document, IMartenSession session) { }
+
+    /// <summary>
     /// Per-row read hook on the SELECT path. Called from the selector
     /// after the document body has been deserialized, with the metadata
     /// column's position in the result row. Binders for columns whose
@@ -74,8 +85,11 @@ public interface IDocumentMetadataBinder<TDoc>
     /// member, LastModified → <c>[LastModified]</c> member) write through
     /// to the doc's annotated member; binders whose stored values are
     /// purely informational (DotNetType in non-hierarchical case) no-op.
+    /// The <paramref name="session"/> is threaded through for binders that
+    /// need to deserialize JSON values (e.g. Headers) via the configured
+    /// <see cref="ISerializer"/>.
     /// </summary>
-    void Apply(DbDataReader reader, int columnOrdinal, TDoc document);
+    void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session);
 
     /// <summary>
     /// W3 spike (M16): per-row write hook on the COPY (bulk) path. Each

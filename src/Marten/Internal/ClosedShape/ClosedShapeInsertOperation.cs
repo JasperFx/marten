@@ -98,6 +98,15 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
         slot++;
 
+        // Project session-derived metadata (Correlation/Causation/
+        // Headers/LastModifiedBy) onto the document BEFORE serialization
+        // so the values flow into the JSON data column too. Mirrors the
+        // codegen path's GenerateCodeToModifyDocument frames.
+        foreach (var binder in _descriptor.WriteBinders)
+        {
+            binder.ApplyToDocument(_document, session);
+        }
+
         session.Serializer.WriteToParameter(parameters[slot], _document);
         slot++;
 

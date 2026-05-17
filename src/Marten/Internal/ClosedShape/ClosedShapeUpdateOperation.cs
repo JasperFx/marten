@@ -82,6 +82,13 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
         // more slots for the same Revision value.
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
 
+        // Project session-derived metadata onto the document BEFORE
+        // serialization so the values flow into the JSON data column.
+        foreach (var binder in _descriptor.WriteBinders)
+        {
+            binder.ApplyToDocument(_document, session);
+        }
+
         session.Serializer.WriteToParameter(parameters[0], _document);
 
         var slot = 1;

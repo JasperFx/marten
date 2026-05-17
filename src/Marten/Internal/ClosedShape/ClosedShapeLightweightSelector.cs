@@ -92,7 +92,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
-            binder.Apply(reader, ordinal, document);
+            binder.Apply(reader, ordinal, document, _session);
             ordinal++;
         }
     }

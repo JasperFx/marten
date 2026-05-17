@@ -48,7 +48,7 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
     {
         // No-op — the alias is read directly by the selector to dispatch
         // deserialization to the right subclass type, not projected onto

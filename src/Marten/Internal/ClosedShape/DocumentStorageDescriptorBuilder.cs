@@ -89,6 +89,20 @@ internal static class DocumentStorageDescriptorBuilder
             writeBinders.Add(binder);
         }
 
+        // tenant_id column. Conjoined mappings carry the column in the
+        // table and DocumentTable.SelectColumns surfaces it for read when
+        // Member != null. The column position in the SELECT lands
+        // immediately after id/data/doc_type/version (it's the first
+        // column in Columns natural order after id/data are stripped),
+        // so the binder goes BEFORE last_modified in readBinders. The
+        // write side is bound directly inline by the storage operation,
+        // so it does NOT participate in writeBinders.
+        if (mapping.TenancyStyle == TenancyStyle.Conjoined
+            && mapping.Metadata.TenantId.Member is not null)
+        {
+            readBinders.Add(new DocumentTenantIdBinder<TDoc>(mapping.Metadata.TenantId.Member));
+        }
+
         if (mapping.Metadata.LastModified.Enabled)
         {
             // LastModifiedColumn.ShouldSelect: Member != null.
@@ -98,6 +112,54 @@ internal static class DocumentStorageDescriptorBuilder
             {
                 readBinders.Add(binder);
             }
+        }
+
+        // Session-derived metadata columns: correlation_id, causation_id,
+        // last_modified_by, headers. Each column gets a write slot when
+        // enabled (the value comes from IMartenSession on every write,
+        // not from the document) and a read slot only when the mapping
+        // has a member to project onto (ShouldSelect=EnabledWithMember()
+        // on the underlying MetadataColumn).
+        if (mapping.Metadata.CorrelationId.Enabled)
+        {
+            var binder = new DocumentCorrelationIdBinder<TDoc>(mapping.Metadata.CorrelationId.Member);
+            writeBinders.Add(binder);
+            if (mapping.Metadata.CorrelationId.Member is not null)
+            {
+                readBinders.Add(binder);
+            }
+        }
+
+        if (mapping.Metadata.CausationId.Enabled)
+        {
+            var binder = new DocumentCausationIdBinder<TDoc>(mapping.Metadata.CausationId.Member);
+            writeBinders.Add(binder);
+            if (mapping.Metadata.CausationId.Member is not null)
+            {
+                readBinders.Add(binder);
+            }
+        }
+
+        if (mapping.Metadata.LastModifiedBy.Enabled)
+        {
+            var binder = new DocumentLastModifiedByBinder<TDoc>(mapping.Metadata.LastModifiedBy.Member);
+            writeBinders.Add(binder);
+            if (mapping.Metadata.LastModifiedBy.Member is not null)
+            {
+                readBinders.Add(binder);
+            }
+        }
+
+        if (mapping.Metadata.Headers.Enabled)
+        {
+            // HeadersColumn is NOT ISelectableColumn — the column exists
+            // for MetadataForAsync but is excluded from the document
+            // SELECT projection. The Headers member gets its value from
+            // the JSON data column instead (ApplyToDocument projects the
+            // session's Headers dict onto the document before
+            // serialization). Hence write-only here.
+            var binder = new DocumentHeadersBinder<TDoc>(mapping.Metadata.Headers.Member);
+            writeBinders.Add(binder);
         }
 
         // M10: duplicated fields contribute write-only columns to the
