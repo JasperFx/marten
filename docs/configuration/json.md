@@ -32,7 +32,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(); // [!code ++]
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L81-L92' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L82-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_serializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: info
@@ -55,7 +55,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(enumStorage: EnumStorage.AsString);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L122-L132' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L123-L133' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_enum_storage_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Field Names Casing
@@ -81,7 +81,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(casing: Casing.CamelCase);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L137-L147' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L138-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_camelcase_casing_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Non Public Members Storage
@@ -99,7 +99,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(nonPublicMembersStorage: NonPublicMembersStorage.NonPublicSetters);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L165-L172' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L166-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_nonpublicsetters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also use other options of `NonPublicMembersStorage`:
@@ -162,7 +162,7 @@ var store = DocumentStore.For(_ =>
     _.UseNewtonsoftForSerialization(collectionStorage: CollectionStorage.AsArray);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L152-L160' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L153-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_snakecase_collectionstorage' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Configuration
@@ -190,7 +190,7 @@ var store = DocumentStore.For(_ =>
         });
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L177-L195' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L178-L196' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_advanced' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: warning WARNING
@@ -229,7 +229,7 @@ var store = DocumentStore.For(_ =>
     _.Serializer(serializer);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L97-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L98-L118' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_customize_json_net_serialization' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Integrating a Custom serializer
@@ -289,6 +289,27 @@ public interface ISerializer
     string ToJson(object? document);
 
     /// <summary>
+    ///     Serialize <paramref name="value"/> directly into the supplied buffer writer as UTF-8 JSON.
+    ///     Skips the intermediate string materialization that <see cref="ToJson"/> round-trips through —
+    ///     prefer this on append / write hot paths.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what <c>Encoding.UTF8.GetBytes(ToJson(value))</c>
+    ///     would emit, modulo whitespace/formatting decisions already baked into the serializer's options.
+    /// </remarks>
+    void WriteTo(IBufferWriter<byte> writer, object? value);
+
+    /// <summary>
+    ///     Convenience for the most common append-path use of <see cref="WriteTo"/>: serialize
+    ///     <paramref name="value"/> as UTF-8 JSON and bind the resulting bytes to <paramref name="parameter"/>
+    ///     with <c>NpgsqlDbType.Jsonb</c>. Skips the round-trip through a .NET <see cref="string"/> that
+    ///     <c>AppendParameter(ToJson(value))</c> incurs.
+    /// </summary>
+    /// <param name="parameter">The Npgsql parameter the JSON bytes will bind to.</param>
+    /// <param name="value">The value to serialize; <c>null</c> binds <see cref="DBNull"/>.</param>
+    void WriteToParameter(NpgsqlParameter parameter, object? value);
+
+    /// <summary>
     ///     Deserialize a JSON string stream into an object of type T
     /// </summary>
     T FromJson<T>(Stream stream);
@@ -338,6 +359,16 @@ public interface ISerializer
     string ToCleanJson(object? document);
 
     /// <summary>
+    ///     UTF-8 / buffer-writer counterpart to <see cref="ToCleanJson"/>. Skips the
+    ///     intermediate <see cref="string"/> allocation on the patch-emission hot path.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what
+    ///     <c>Encoding.UTF8.GetBytes(ToCleanJson(value))</c> would emit.
+    /// </remarks>
+    void WriteToCleanJson(IBufferWriter<byte> writer, object? value);
+
+    /// <summary>
     ///     Write the JSON for a document with embedded
     ///     type information. This is used inside the patching API
     ///     to handle polymorphic collections
@@ -345,9 +376,20 @@ public interface ISerializer
     /// <param name="document"></param>
     /// <returns></returns>
     string ToJsonWithTypes(object document);
+
+    /// <summary>
+    ///     UTF-8 / buffer-writer counterpart to <see cref="ToJsonWithTypes"/>. Skips the
+    ///     intermediate <see cref="string"/> allocation when emitting the polymorphic
+    ///     value payload in a patch operation.
+    /// </summary>
+    /// <remarks>
+    ///     Implementations must produce identical bytes to what
+    ///     <c>Encoding.UTF8.GetBytes(ToJsonWithTypes(value))</c> would emit.
+    /// </remarks>
+    void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L11-L117' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/ISerializer.cs#L13-L161' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iserializer' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 To support a new serialization library or customize the JSON serialization options, you can write a new version of `ISerializer` and plug it

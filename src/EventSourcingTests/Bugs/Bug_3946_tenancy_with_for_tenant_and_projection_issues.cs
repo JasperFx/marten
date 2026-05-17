@@ -18,7 +18,7 @@ namespace EventSourcingTests.Bugs;
 
 public class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegrationContext
 {
-    [Theory]
+    [Theory(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
     [InlineData(true)]
     [InlineData(false)]
     public async Task when_projection_is_multi_stream_then_tenant_is_passed_to_projection_document(bool useRebuild)

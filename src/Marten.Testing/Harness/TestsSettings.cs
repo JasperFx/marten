@@ -57,5 +57,6 @@ namespace Marten.Testing.Harness
                 return useClosedShapeStorage.Value;
             }
         }
+
     }
 }

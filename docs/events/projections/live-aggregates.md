@@ -243,7 +243,7 @@ await theSession.Events.AggregateStreamAsync(
     fromVersion: baseStateVersion
 );
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L140-L148' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-default' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L141-L149' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-default' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 It can be helpful, for instance, in snapshotting. Snapshot is a state of the stream at a specific point of time (version). It is a performance optimization that shouldn't be your first choice, but it's an option to consider for performance-critical computations. As you're optimizing your processing, you usually don't want to store a snapshot after each event not to increase the number of writes. Usually, you'd like to do a snapshot on the specific interval or specific event type.
@@ -316,7 +316,7 @@ public class FinancialAccount
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L13-L78' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-definition' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L14-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-definition' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For the daily operations, you don't need to know its whole history. It's enough to have information about the current accounting period, e.g. month. It might be worth doing a snapshot of the current state at opening accounting and then loading the following events with the transactions. We could do it by defining such a wrapper class:
@@ -372,7 +372,7 @@ public class CashRegisterRepository
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L80-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-wrapper' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L81-L131' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-wrapper' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Then append event and store snapshot on opening accounting month:
@@ -402,7 +402,7 @@ var repository = new CashRegisterRepository(theSession);
 
 await repository.Store(openedCashierShift, cashierShiftOpened);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L182-L206' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L183-L207' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and read snapshot and following event with:
@@ -412,7 +412,7 @@ and read snapshot and following event with:
 ```cs
 var currentState = await repository.Get(financialAccountId);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L222-L226' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/aggregate_stream_into_samples.cs#L223-L227' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregate-stream-into-state-get' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Live Aggregation from Linq Queries

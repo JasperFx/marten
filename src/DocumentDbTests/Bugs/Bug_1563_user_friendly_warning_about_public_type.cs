@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.Core.Reflection;
 using Marten.Schema;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -17,18 +16,22 @@ public class Bug_1563_user_friendly_warning_about_public_type: BugIntegrationCon
     }
 
     [Fact]
-    public async Task good_error_on_non_public_type()
+    public async Task internal_document_types_round_trip()
     {
-        var expectedMessage =
-            $"Requested document type '{typeof(InternalDoc).FullNameInCode()}' must be scoped as 'public'";
+        // Pre-#4404 Marten's Roslyn-emit document storage refused to
+        // operate on non-public document types — the codegen had to
+        // `Activator.CreateInstance` them from an external assembly.
+        // This bug was originally about raising a friendly error in
+        // that case. The closed-shape path uses generics + the
+        // serializer, so internal types work transparently — verify the
+        // round-trip succeeds where it used to throw.
+        var doc = new InternalDoc { Id = Guid.NewGuid() };
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
 
-        var ex = await Should.ThrowAsync<InvalidOperationException>(async () =>
-        {
-            var doc = new InternalDoc();
-            theSession.Store(doc);
-            await theSession.SaveChangesAsync();
-        });
-
-        ex.Message.ShouldContain(expectedMessage, Case.Insensitive);
+        await using var query = theStore.QuerySession();
+        var loaded = await query.LoadAsync<InternalDoc>(doc.Id);
+        loaded.ShouldNotBeNull();
+        loaded.Id.ShouldBe(doc.Id);
     }
 }

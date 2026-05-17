@@ -68,10 +68,6 @@ public interface IDocumentType
     IList<IndexDefinition> Indexes { get; }
     IList<ForeignKey> ForeignKeys { get; }
     SubClasses SubClasses { get; }
-    DbObjectName UpsertFunction { get; }
-    DbObjectName InsertFunction { get; }
-    DbObjectName UpdateFunction { get; }
-    DbObjectName OverwriteFunction { get; }
     string DatabaseSchemaName { get; set; }
     EnumStorage EnumStorage { get; }
     Casing Casing { get; }
@@ -296,18 +292,6 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
     public SubClasses SubClasses { get; }
 
     public string SubClassTypes => SubClasses.Any() ? SubClasses.Select(x => x.DocumentType.FullNameInCode()).Join(", ") : "None";
-
-    public DbObjectName UpsertFunction =>
-        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpsertPrefix}{_alias}");
-
-    public DbObjectName InsertFunction =>
-        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.InsertPrefix}{_alias}");
-
-    public DbObjectName UpdateFunction =>
-        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.UpdatePrefix}{_alias}");
-
-    public DbObjectName OverwriteFunction =>
-        new PostgresqlObjectName(DatabaseSchemaName, $"{SchemaConstants.OverwritePrefix}{_alias}");
 
     public string DatabaseSchemaName
     {

@@ -64,12 +64,12 @@ using the `&&` operator:
 <!-- snippet: sample_any-query-through-child-collection-with-and -->
 <a id='snippet-sample_any-query-through-child-collection-with-and'></a>
 ```cs
-var results = theSession
+var results =(await  theSession
     .Query<Target>()
     .Where(x => x.Children.Any(_ => _.Number == 6 && _.Double == -1))
-    .ToArray();
+    .ToListAsync());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L173-L180' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L179-L186' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_any-query-through-child-collection-with-and' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Finally, you can query for child collections that do **not** contain a value:
@@ -77,13 +77,13 @@ Finally, you can query for child collections that do **not** contain a value:
 <!-- snippet: sample_negated-contains -->
 <a id='snippet-sample_negated-contains'></a>
 ```cs
-theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+(await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
     .ShouldBe(2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L33-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains' title='Start of snippet'>anchor</a></sup>
 <a id='snippet-sample_negated-contains-1'></a>
 ```cs
-theSession.Query<DocWithArrays>().Count(x => !x.Strings.Contains("c"))
+(await theSession.Query<DocWithArrays>().CountAsync(x => !x.Strings.Contains("c")))
     .ShouldBe(2);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Bugs/Bug_561_negation_of_query_on_contains.cs#L81-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_negated-contains-1' title='Start of snippet'>anchor</a></sup>
@@ -108,11 +108,11 @@ public async Task query_against_string_array()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToArray()
+    (await theSession.Query<DocWithArrays>().Where(x => x.Strings.Contains("c")).ToListAsync())
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L513-L531' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L519-L537' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten also allows you to query over IEnumerables using the Any method for equality (similar to Contains):
@@ -132,15 +132,15 @@ public async Task query_against_number_list_with_any()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToArray()
+    (await theSession.Query<DocWithLists>().Where(x => x.Numbers.Any(_ => _ == 3)).ToListAsync())
         .Select(x => x.Id).ShouldHaveTheSameElementsAs(doc1.Id, doc2.Id);
 
     // Or without any predicate
-    theSession.Query<DocWithLists>()
-        .Count(x => x.Numbers.Any()).ShouldBe(3);
+    (await theSession.Query<DocWithLists>()
+        .CountAsync(x => x.Numbers.Any())).ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L629-L653' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L635-L659' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_any_string_array' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As of 1.2, you can also query against the `Count()` or `Length` of a child collection with the normal comparison
@@ -162,11 +162,11 @@ public async Task query_against_number_list_with_count_method()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<DocWithLists>()
-        .Single(x => x.Numbers.Count() == 4).Id.ShouldBe(doc3.Id);
+    (await theSession.Query<DocWithLists>()
+        .SingleAsync(x => x.Numbers.Count() == 4)).Id.ShouldBe(doc3.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L655-L676' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/ChildCollections/query_against_child_collections.cs#L661-L682' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_against_number_list_with_count_method' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## IsOneOf

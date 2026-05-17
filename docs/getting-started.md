@@ -160,7 +160,7 @@ In some scenarios you may wish to create a document store outside of the generic
 var store = DocumentStore
     .For("host=localhost;database=marten_testing;password=mypassword;username=someuser");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L35-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L36-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_start_a_store' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Please also check our [tutorials](/tutorials/) which introduces you to Marten through a real-world use case of building a freight and delivery management system using documents and event sourcing.

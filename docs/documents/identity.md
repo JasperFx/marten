@@ -225,7 +225,7 @@ public class DocumentWithStringId
     public string Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L31-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L32-L39' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_documentwithstringid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can use the "identity key" option for identity generation that would create string values of the pattern `[type alias]/[sequence]` where the type alias is typically the document class name in all lower case and the sequence is a _HiLo_ sequence number.
@@ -243,10 +243,14 @@ var store = DocumentStore.For(opts =>
         .DocumentAlias("doc");
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L42-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/IdentityKeyGenerationTests.cs#L43-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_identitykey' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Custom Identity Strategies
+
+::: warning
+As of Marten 9.0 the document storage hierarchy no longer runtime-generates `IDocumentStorage<T, TId>` (see [#4404](https://github.com/JasperFx/marten/issues/4404)). The `IIdGeneration.GenerateCode` hook below is therefore no longer honored on the write path — the value lives on `DocumentMapping.IdStrategy` for configuration-surface compatibility, but it does not influence id assignment. Extending id assignment is now done by implementing `Marten.Internal.ClosedShape.IIdentification<TDoc, TId>` and registering the strategy directly. A standalone documentation page covering the new extension point is planned for a follow-up; in the meantime the existing in-tree strategies (`GuidIdentification`, `IdentityKeyIdentification`, `HiloIntIdentification`, `HiloLongIdentification`, `ValueTypeIdentification`) under `src/Marten/Internal/ClosedShape/` are good worked examples.
+:::
 
 A custom ID generator strategy should implement [IIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/IIdGeneration.cs).
 
@@ -265,17 +269,15 @@ public class CustomIdGeneration : IIdGeneration
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L17-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L18-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
 
 For more advances examples you can have a look at existing ID generator: [HiloIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/HiloIdGeneration.cs), [CombGuidGenerator](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs) and the [IdentityKeyGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/IdentityKeyGeneration.cs),
 
-To use custom id generation you should enable it when configuring the document store. This defines that the strategy will be used for all the documents types.
+To use custom id generation you should enable it when configuring the document store. This defines that the strategy will be used for all the documents types. The example below illustrates the legacy `IIdGeneration` configuration surface; under Marten 9.0 the strategy is preserved in the mapping but is no longer evaluated on the write path (see the warning above).
 
-<!-- snippet: sample_configuring-global-custom -->
-<a id='snippet-sample_configuring-global-custom'></a>
 ```cs
 options.Policies.ForAllDocuments(m =>
 {
@@ -285,8 +287,6 @@ options.Policies.ForAllDocuments(m =>
     }
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L38-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-global-custom' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 It is also possible define a custom id generation algorithm for a specific document type.
 
@@ -295,7 +295,7 @@ It is also possible define a custom id generation algorithm for a specific docum
 ```cs
 options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L69-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L47-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Strong Typed Identifiers <Badge type="tip" text="7.20" />

@@ -27,10 +27,10 @@ var store = DocumentStore.For(_ =>
 using (var session = store.QuerySession())
 {
     // query for all types of User and User itself
-    session.Query<User>().ToList();
+    await session.Query<User>().ToListAsync();
 
     // query for only SuperUser
-    session.Query<SuperUser>().ToList();
+    await session.Query<SuperUser>().ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/BatchedQuerying/batched_querying_acceptance_Tests.cs#L70-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configure-hierarchy-of-types' title='Start of snippet'>anchor</a></sup>
@@ -165,7 +165,7 @@ public async Task get_all_subclasses_of_a_subclass()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<Smurf>().Count().ShouldBe(3);
+    (await theSession.Query<Smurf>().CountAsync()).ShouldBe(3);
 }
 
 [Fact]
@@ -178,7 +178,7 @@ public async Task get_all_subclasses_of_a_subclass2()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<PapaSmurf>().Count().ShouldBe(2);
+    (await theSession.Query<PapaSmurf>().CountAsync()).ShouldBe(2);
 }
 
 [Fact]
@@ -191,7 +191,7 @@ public async Task get_all_subclasses_of_a_subclass_with_where()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+    (await theSession.Query<PapaSmurf>().CountAsync(s => s.Ability == "Invent")).ShouldBe(1);
 }
 
 [Fact]
@@ -224,7 +224,7 @@ public async Task get_all_subclasses_of_a_subclass_with_where_with_camel_casing(
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<PapaSmurf>().Count(s => s.Ability == "Invent").ShouldBe(1);
+    (await theSession.Query<PapaSmurf>().CountAsync(s => s.Ability == "Invent")).ShouldBe(1);
 }
 
 [Fact]
@@ -238,7 +238,7 @@ public async Task get_all_subclasses_of_an_interface()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<IPapaSmurf>().Count().ShouldBe(3);
+    (await theSession.Query<IPapaSmurf>().CountAsync()).ShouldBe(3);
 }
 
 [Fact]

@@ -17,7 +17,7 @@ public async Task use_select_in_query_for_one_field()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName)
+    (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => x.FirstName).ToListAsync())
         .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 }
 ```
@@ -39,7 +39,7 @@ public async Task use_select_with_multiple_fields_to_other_type()
 
     await theSession.SaveChangesAsync();
 
-    var users = theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToList();
+    var users = (await theSession.Query<User>().Select(x => new User2 { First = x.FirstName, Last = x.LastName }).ToListAsync());
 
     users.Count.ShouldBe(4);
 
@@ -66,10 +66,10 @@ public async Task use_select_to_transform_to_an_anonymous_type()
     theSession.Store(new User { FirstName = "Sam" });
     theSession.Store(new User { FirstName = "Tom" });
 
-    await theSession.SaveChangesAsync();
+    await theSession.SaveChangesAsync();(await 
 
     theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new { Name = x.FirstName })
-        .ToArray()
+        .ToListAsync())
         .Select(x => x.Name)
         .ShouldHaveTheSameElementsAs("Bill", "Hank", "Sam", "Tom");
 }
@@ -89,7 +89,7 @@ public async Task transform_with_deep_properties()
 
     await theStore.BulkInsertAsync(targets);
 
-    var actual = theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToList().Distinct();
+    var actual = (await theSession.Query<Target>().Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).ToListAsync()).Distinct();
 
     var expected = targets.Where(x => x.Number == targets[0].Number).Select(x => x.Inner.Number).Distinct();
 
@@ -116,8 +116,8 @@ public async Task use_select_to_another_type_with_first()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
-        .FirstOrDefault()
+    (await theSession.Query<User>().OrderBy(x => x.FirstName).Select(x => new UserName { Name = x.FirstName })
+        .FirstOrDefaultAsync())
         ?.Name.ShouldBe("Bill");
 }
 ```
@@ -152,11 +152,11 @@ public async Task can_do_simple_select_many_against_simple_array()
 
     using (var query = theStore.QuerySession())
     {
-        var distinct = query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToList();
+        var distinct = (await query.Query<Product>().SelectMany(x => x.Tags).Distinct().ToListAsync());
 
         distinct.OrderBy(x => x).ShouldHaveTheSameElementsAs("a", "b", "c", "d", "e", "f");
 
-        var names = query.Query<Product>().SelectMany(x => x.Tags).ToList();
+        var names = (await query.Query<Product>().SelectMany(x => x.Tags).ToListAsync());
         names
             .Count.ShouldBe(9);
     }
@@ -170,13 +170,13 @@ Or against collections of child documents:
 <!-- snippet: sample_using-select-many -->
 <a id='snippet-sample_using-select-many'></a>
 ```cs
-var results = query.Query<Target>()
+var results = (await query.Query<Target>()
     .SelectMany(x => x.Children)
     .Where(x => x.Flag)
     .OrderBy(x => x.Id)
     .Skip(20)
     .Take(15)
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/select_many.cs#L385-L393' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-select-many' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

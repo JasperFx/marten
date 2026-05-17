@@ -206,10 +206,10 @@ Marten has been successfully tested with these [partition operators](https://doc
 <!-- snippet: sample_using_take_and_skip -->
 <a id='snippet-sample_using_take_and_skip'></a>
 ```cs
-public void using_take_and_skip(IDocumentSession session)
+public async Task using_take_and_skip(IDocumentSession session)
 {
     // gets records 11-20 from the database
-    session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToArray();
+    await session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L129-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
@@ -311,10 +311,10 @@ public async Task get_distinct_string()
 
     var queryable = theSession.Query<Target>().Select(x => x.String).Distinct();
 
-    queryable.ToList().Count.ShouldBe(3);
+    (await queryable.ToListAsync()).Count.ShouldBe(3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L53-L71' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L54-L72' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_strings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that the `Distinct()` keyword can be used with `Select()` transforms as well:
@@ -340,10 +340,10 @@ public async Task get_distinct_numbers()
         x.Decimal
     }).Distinct();
 
-    queryable.ToList().Count.ShouldBe(4);
+    (await queryable.ToListAsync()).Count.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L30-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L31-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Modulo Queries
@@ -365,10 +365,10 @@ public async Task use_modulo()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToArray()
+    (await theSession.Query<Target>().Where(x => x.Number % 2 == 0 && x.Color < Colors.Green).ToListAsync())
         .Select(x => x.Number)
         .ShouldHaveTheSameElementsAs(2, 4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/modulo_operator.cs#L10-L27' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/modulo_operator.cs#L11-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying-with-modulo' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

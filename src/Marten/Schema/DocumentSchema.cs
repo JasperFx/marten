@@ -22,29 +22,17 @@ internal class DocumentSchema: IFeatureSchema
 
         foreach (var metadataColumn in Table.Columns.OfType<MetadataColumn>())
             metadataColumn.RegisterForLinqSearching(mapping);
-
-        Upsert = new UpsertFunction(_mapping);
-        Insert = new InsertFunction(_mapping);
-        Update = new UpdateFunction(_mapping);
-
-        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
-        {
-            Overwrite = new OverwriteFunction(_mapping);
-        }
     }
-
-    public OverwriteFunction Overwrite { get; }
-
-    public UpdateFunction Update { get; }
-
-    public InsertFunction Insert { get; }
-
-    public UpsertFunction Upsert { get; }
 
     public DocumentTable Table { get; }
 
     public IEnumerable<Type> DependentTypes()
     {
+        // Document tables still depend on the mt_immutable_* helper
+        // functions (used by computed indexes, duplicated date fields,
+        // etc.). The old mt_upsert_* / mt_insert_* / mt_update_* /
+        // mt_overwrite_* Postgres functions are gone (#4404) but
+        // SystemFunctions is broader than just that family.
         yield return typeof(SystemFunctions);
         foreach (var referencedType in _mapping.ReferencedTypes()) yield return referencedType;
     }
@@ -61,11 +49,6 @@ internal class DocumentSchema: IFeatureSchema
             : rules.Templates["default"];
 
         Table.WriteTemplate(template, writer);
-
-        Upsert.WriteTemplate(rules, template, writer);
-        Update.WriteTemplate(rules, template, writer);
-        Insert.WriteTemplate(rules, template, writer);
-        Overwrite?.WriteTemplate(rules, template, writer);
     }
 
     public bool IsActive(StoreOptions options)
@@ -76,14 +59,6 @@ internal class DocumentSchema: IFeatureSchema
     private IEnumerable<ISchemaObject> toSchemaObjects()
     {
         yield return Table;
-        yield return Upsert;
-        yield return Insert;
-        yield return Update;
-
-        if (Overwrite != null)
-        {
-            yield return Overwrite;
-        }
 
         if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
         {

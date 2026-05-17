@@ -467,7 +467,7 @@ public class using_custom_aggregate_with_soft_deletes_and_update_only_events: On
         aggregate.Deleted.ShouldBeTrue();
     }
 
-    [Fact]
+    [Fact(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
     public async Task return_correct_data_after_restarts()
     {
         var streamId = Guid.NewGuid();

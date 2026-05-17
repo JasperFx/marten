@@ -52,11 +52,13 @@ public partial class StoreOptions: ICodeFileCollection
 
     public IReadOnlyList<ICodeFile> BuildFiles()
     {
+        // #4404: the document-storage path no longer emits Roslyn code;
+        // the closed-shape hierarchy is built reflectively at runtime.
+        // BuildFiles() exists for the event-storage codegen (pre-flag)
+        // and other ICodeFileCollection participants — document storage
+        // contributes nothing here anymore.
         Storage.BuildAllMappings();
-        return Storage
-            .AllDocumentMappings
-            .Select(x => new DocumentProviderBuilder(x, this))
-            .ToList();
+        return System.Array.Empty<ICodeFile>();
     }
 
     [IgnoreDescription]

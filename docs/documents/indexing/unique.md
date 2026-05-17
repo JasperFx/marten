@@ -24,7 +24,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.UserName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L71-L80' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_computed_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L73-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_computed_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 - multiple properties
@@ -41,7 +41,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().UniqueIndex(UniqueIndexType.Computed, x => x.FirstName, x => x.FullName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L101-L110' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_computed_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L103-L112' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_computed_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -64,7 +64,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.UserName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L86-L95' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_duplicate_field_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L88-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_duplicate_field_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 - multiple properties
@@ -81,7 +81,7 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().UniqueIndex(UniqueIndexType.DuplicatedField, x => x.FirstName, x => x.FullName);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L116-L125' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L118-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_duplicate_field_unique_index_through_store_options' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Defining Unique Index through Attribute
@@ -103,7 +103,7 @@ public class Account
     public string Number { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L14-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_computed_unique_index_through_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L16-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_computed_unique_index_through_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 - multiple properties
@@ -124,7 +124,7 @@ public class Address
     public string Number { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L36-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_computed_unique_index_through_store_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L38-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_computed_unique_index_through_store_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -146,7 +146,7 @@ public class Client
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L25-L34' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L27-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_single_property_duplicate_field_unique_index_through_store_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 - multiple properties
@@ -167,7 +167,7 @@ public class Person
     public string SecondName { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L52-L66' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L54-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_a_multiple_properties_duplicate_field_unique_index_through_attribute' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip INFO
@@ -291,5 +291,5 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<Client>().MultiTenanted().UniqueIndex(UniqueIndexType.Computed, "index_name", TenancyScope.PerTenant, x => x.Name);
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L131-L143' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_per-tenant-unique-index' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/unique_indexes.cs#L133-L145' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_per-tenant-unique-index' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

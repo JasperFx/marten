@@ -206,7 +206,7 @@ like this:
 public class ProviderShift(Guid boardId, Provider provider)
 {
     public Guid Id { get; set; }
-    public int Version { get; set; }
+    public long Version { get; set; }
     public Guid BoardId { get; private set; } = boardId;
     public Guid ProviderId => Provider.Id;
     public ProviderStatus Status { get; set; } = ProviderStatus.Paused;
@@ -435,6 +435,23 @@ one `References<TEntity>` synthetic event per resolved id. Missing ids are silen
 as `IdentityStep` already does for unresolved single ids.
 
 <!-- snippet: sample_for_entity_ids_fan_out -->
+<a id='snippet-sample_for_entity_ids_fan_out'></a>
+```cs
+public override async Task EnrichEventsAsync(SliceGroup<OrderSummary, Guid> group,
+    IQuerySession querySession, CancellationToken cancellation)
+{
+    // OrderPlacedWithLineItems carries an array of ProductIds. ForEntityIds fans out
+    // a single event to one References<Product> per resolved id, regardless of how
+    // small the upstream's CacheLimitPerTenant is — JasperFx.Events 1.35.0 keeps
+    // upstream caches at full size for the duration of the composite batch.
+    await group
+        .EnrichWith<Product>()
+        .ForEvent<OrderPlacedWithLineItems>()
+        .ForEntityIds(e => e.ProductIds)
+        .AddReferences();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/Bug_4329_fan_out_and_cache_limit.cs#L84-L100' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_for_entity_ids_fan_out' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In the projection's `Evolve()`, treat the synthetic events the same way you would for the 1-to-1

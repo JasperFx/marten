@@ -274,13 +274,13 @@ public async Task can_query_against_event_type()
 
     await theSession.SaveChangesAsync();
 
-    theSession.Events.QueryRawEventDataOnly<MembersJoined>().Count().ShouldBe(2);
-    theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToArray().SelectMany(x => x.Members).Distinct()
+    (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().CountAsync()).ShouldBe(2);
+    (await theSession.Events.QueryRawEventDataOnly<MembersJoined>().ToListAsync()).SelectMany(x => x.Members).Distinct()
         .OrderBy(x => x)
         .ShouldHaveTheSameElementsAs("Egwene", "Matt", "Nynaeve", "Perrin", "Rand", "Thom");
 
-    theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
-        .Single(x => x.Members.Contains("Matt")).Id.ShouldBe(departed2.Id);
+    (await theSession.Events.QueryRawEventDataOnly<MembersDeparted>()
+        .SingleAsync(x => x.Members.Contains("Matt"))).Id.ShouldBe(departed2.Id);
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L37-L55' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query-against-event-data' title='Start of snippet'>anchor</a></sup>
@@ -293,12 +293,12 @@ You can issue queries with Marten's full Linq support against the raw event data
 <!-- snippet: sample_example_of_querying_for_event_data -->
 <a id='snippet-sample_example_of_querying_for_event_data'></a>
 ```cs
-public void example_of_querying_for_event_data(IDocumentSession session, Guid stream)
+public async Task example_of_querying_for_event_data(IDocumentSession session, Guid stream)
 {
-    var events = session.Events.QueryAllRawEvents()
+    var events = await session.Events.QueryAllRawEvents()
         .Where(x => x.StreamId == stream)
         .OrderBy(x => x.Sequence)
-        .ToList();
+        .ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/querying_event_data_with_linq.cs#L162-L171' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_example_of_querying_for_event_data' title='Start of snippet'>anchor</a></sup>

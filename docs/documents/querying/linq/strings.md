@@ -42,10 +42,10 @@ A shorthand for case-insensitive string matching is provided through `EqualsIgno
 <!-- snippet: sample_sample-linq-equalsignorecase -->
 <a id='snippet-sample_sample-linq-equalsignorecase'></a>
 ```cs
-query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("abc")).Id.ShouldBe(user1.Id);
-query.Query<User>().Single(x => x.UserName.EqualsIgnoreCase("aBc")).Id.ShouldBe(user1.Id);
+(await query.Query<User>().SingleAsync(x => x.UserName.EqualsIgnoreCase("abc"))).Id.ShouldBe(user1.Id);
+(await query.Query<User>().SingleAsync(x => x.UserName.EqualsIgnoreCase("aBc"))).Id.ShouldBe(user1.Id);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/string_filtering.cs#L222-L227' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-linq-equalsignorecase' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/string_filtering.cs#L223-L228' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-linq-equalsignorecase' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This defaults to `String.Equals` with `StringComparison.CurrentCultureIgnoreCase` as comparison type.

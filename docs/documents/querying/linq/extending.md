@@ -93,7 +93,7 @@ public async Task query_with_custom_parser()
     await store.BulkInsertAsync(targets.ToArray());
 
     using var session = store.QuerySession();
-    session.Query<ColorTarget>().Count(x => x.Color.IsBlue())
+    (await session.Query<ColorTarget>().CountAsync(x => x.Color.IsBlue()))
         .ShouldBe(count);
 }
 ```

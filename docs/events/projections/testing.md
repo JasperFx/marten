@@ -38,7 +38,7 @@ public class Invoice
         };
     }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public decimal Amount { get; set; }
     public string Description { get; set; }

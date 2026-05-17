@@ -269,7 +269,7 @@ public interface IConfigureMarten
     void Configure(IServiceProvider services, StoreOptions options);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L999-L1010' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L993-L1004' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You could alternatively implement a custom `IConfigureMarten` (or `IConfigureMarten<T> where T : IDocumentStore` if you're working with multiple databases class like so:
@@ -333,7 +333,7 @@ public interface IAsyncConfigureMarten
     ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1012-L1024' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten/MartenServiceCollectionExtensions.cs#L1006-L1018' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iasyncconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 As an example from the tests, here's a custom version that uses the Feature Management service:

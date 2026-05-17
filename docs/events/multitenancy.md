@@ -14,7 +14,7 @@ var store = DocumentStore.For(opts =>
     opts.Events.TenancyStyle = TenancyStyle.Conjoined;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L235-L245' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/ConfiguringDocumentStore.cs#L236-L246' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_making_the_events_multi_tenanted' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Global Streams & Projections Within Multi-Tenancy <Badge type="tip" text="8.5" />

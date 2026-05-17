@@ -10,6 +10,7 @@ using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;
+using Marten.Internal.ClosedShape;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal;
@@ -90,21 +91,14 @@ public class ProviderGraph: IProviderGraph
         {
             case DocumentMapping m:
             {
+                // W3 (#4404): the closed-shape DocumentProvider is now the
+                // only document-storage path — the Roslyn-emitted
+                // DocumentProviderBuilder route has been removed.
                 try
                 {
-                    var builder = new DocumentProviderBuilder(m, _options);
-
-                    var rules = _options.CreateGenerationRules();
-                    rules.ReferenceTypes(m.DocumentType);
-                    // 9.0 (#4309): same AOT-friendly gate as the IEvent path above.
-                    StaticOnlyCodeFileLoader.Initialize(
-                        builder, rules, _options, null,
-                        _options.AllowRuntimeCodeGeneration);
-                    var slot = builder.BuildProvider<T>();
-
-                    _storage = _storage.AddOrUpdate(documentType, slot);
-
-                    return slot;
+                    var closedShape = ClosedShapeRegistration.BuildSupportedProvider<T>(m);
+                    _storage = _storage.AddOrUpdate(documentType, closedShape);
+                    return closedShape;
                 }
                 catch (Exception e)
                 {
