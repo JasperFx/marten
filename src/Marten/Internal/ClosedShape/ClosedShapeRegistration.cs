@@ -125,7 +125,11 @@ public static class ClosedShapeRegistration
             return BuildProvider<TDoc, long>(mapping, identification);
         }
 
-        throw new InvalidOperationException(
+        // Use InvalidDocumentException so the live-aggregation path in
+        // QuerySession.TryGetStorageForLiveAggregation can catch it and
+        // register the type as identity-less (the codegen path threw
+        // the same kind for aggregates with no Id member).
+        throw new Marten.Exceptions.InvalidDocumentException(
             $"No closed-shape id strategy is registered for {typeof(TDoc).FullName} (id type {mapping.IdType?.FullName}, strategy {mapping.IdStrategy?.GetType().FullName}).");
     }
 

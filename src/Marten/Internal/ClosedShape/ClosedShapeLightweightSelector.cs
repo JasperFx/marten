@@ -54,7 +54,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         var doc = ReadDocument(reader);
         ApplyMetadata(reader, doc);
         CaptureVersion(reader);
-        _session.MarkAsDocumentLoaded(reader.GetFieldValue<TId>(IdColumn), doc);
+        _session.MarkAsDocumentLoaded(_descriptor.Identification.ReadIdFromReader(reader, IdColumn), doc);
         return doc;
     }
 
@@ -63,7 +63,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         var doc = await ReadDocumentAsync(reader, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
         CaptureVersion(reader);
-        _session.MarkAsDocumentLoaded(await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false), doc);
+        _session.MarkAsDocumentLoaded(_descriptor.Identification.ReadIdFromReader(reader, IdColumn), doc);
         return doc;
     }
 
@@ -106,12 +106,12 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
 
         if (_versions is not null)
         {
-            var id = reader.GetFieldValue<TId>(IdColumn);
+            var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
             _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
         }
         else if (_revisions is not null)
         {
-            var id = reader.GetFieldValue<TId>(IdColumn);
+            var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
             _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
         }
     }

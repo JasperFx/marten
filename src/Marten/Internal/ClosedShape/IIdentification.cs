@@ -75,4 +75,15 @@ public interface IIdentification<TDoc, TId>
     /// instead of looking it up from <c>typeof(TId)</c>.
     /// </summary>
     System.Type RawSqlType => typeof(TId);
+
+    /// <summary>
+    /// Read an id from a result-row column at <paramref name="columnOrdinal"/>.
+    /// For primitive id types this is a simple
+    /// <c>reader.GetFieldValue&lt;TId&gt;</c>. Strong-typed wrappers
+    /// (<see cref="ValueTypeIdentification{TDoc, TWrapper, TInner}"/>)
+    /// read the inner primitive and wrap it — Npgsql can't materialize
+    /// the wrapper type directly.
+    /// </summary>
+    TId ReadIdFromReader(System.Data.Common.DbDataReader reader, int columnOrdinal)
+        => reader.GetFieldValue<TId>(columnOrdinal);
 }

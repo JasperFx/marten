@@ -67,7 +67,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
 
     public T Resolve(DbDataReader reader)
     {
-        var id = reader.GetFieldValue<TId>(IdColumn);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
 
         // Identity-map cache hit: return the previously loaded instance
         // instead of deserializing again. Subsequent Load<T>(id) calls
@@ -90,7 +90,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
 
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
-        var id = await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
 
         if (_identityMap.TryGetValue(id, out var cached))
         {

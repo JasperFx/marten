@@ -60,7 +60,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
 
     public T Resolve(DbDataReader reader)
     {
-        var id = reader.GetFieldValue<TId>(IdColumn);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
 
         if (_identityMap.TryGetValue(id, out var cached))
         {
@@ -79,7 +79,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
 
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
-        var id = await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
 
         if (_identityMap.TryGetValue(id, out var cached))
         {

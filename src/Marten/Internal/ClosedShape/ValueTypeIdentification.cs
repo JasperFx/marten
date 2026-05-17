@@ -48,6 +48,16 @@ public sealed class ValueTypeIdentification<TDoc, TWrapper, TInner>: IIdentifica
 
     public System.Type RawSqlType => typeof(TInner);
 
+    public TWrapper ReadIdFromReader(System.Data.Common.DbDataReader reader, int columnOrdinal)
+    {
+        // Npgsql can't unbox a uuid / int / long / varchar column
+        // directly into the wrapper type — read the inner primitive and
+        // call the cached wrap delegate. Matches how the codegen path
+        // emitted strong-typed id reads.
+        var inner = reader.GetFieldValue<TInner>(columnOrdinal);
+        return _wrap(inner);
+    }
+
     public TWrapper AssignIfMissing(TDoc document, IMartenDatabase database)
     {
         var current = _getter(document);
