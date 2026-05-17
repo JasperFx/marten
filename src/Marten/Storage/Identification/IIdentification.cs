@@ -57,4 +57,22 @@ public interface IIdentification<TDoc, TId>
     /// don't (sequential GUID, externally-assigned string keys) ignore it.
     /// </param>
     TId AssignIfMissing(TDoc document, IMartenDatabase database);
+
+    /// <summary>
+    /// Convert an id to the value Postgres should bind — for primitive
+    /// id types this is the id itself; strong-typed wrappers return the
+    /// inner primitive (matching <c>DocumentStorage.RawIdentityValue</c>
+    /// emit in the codegen path). Default implementation just boxes
+    /// <paramref name="id"/> through <see cref="object"/>.
+    /// </summary>
+    object ToRawSqlValue(TId id) => id!;
+
+    /// <summary>
+    /// The Postgres parameter type matching <see cref="ToRawSqlValue"/>.
+    /// For primitives this is the same as <typeparamref name="TId"/>;
+    /// strong-typed wrappers return the inner primitive type. Operations
+    /// use this to set <see cref="Npgsql.NpgsqlParameter.NpgsqlDbType"/>
+    /// instead of looking it up from <c>typeof(TId)</c>.
+    /// </summary>
+    System.Type RawSqlType => typeof(TId);
 }

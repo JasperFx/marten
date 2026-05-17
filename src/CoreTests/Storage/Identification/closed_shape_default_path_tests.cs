@@ -40,11 +40,10 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task default_path_falls_back_to_codegen_for_int_id_strategy()
+    public async Task default_path_round_trips_int_id_doc_via_HiLo()
     {
-        // int id (HiLo) is outside the closed-shape envelope. The flag
-        // must NOT prevent the codegen path from kicking in for this
-        // mapping.
+        // M12: int id with HiLo lands inside the closed-shape envelope.
+        // Verifies the default path picks up the HiLo identification.
         var store = StoreOptions(opts =>
         {
             opts.UseClosedShapeDocumentStorage = true;
@@ -66,16 +65,6 @@ public class closed_shape_default_path_tests: BugIntegrationContext
         var store = StoreOptions(_ => { });
         var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(DefaultPathDoc));
         ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsSupported_rejects_unsupported_id_strategies()
-    {
-        // int id defaults to HiloIdGeneration, which the spike doesn't
-        // implement yet. Should fall back to codegen.
-        var store = StoreOptions(_ => { });
-        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(IntIdDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeFalse();
     }
 
     [Fact]

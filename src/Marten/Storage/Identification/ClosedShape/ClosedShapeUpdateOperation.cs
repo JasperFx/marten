@@ -90,8 +90,8 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
             slot = BindBinder(parameters, slot, binder, session);
         }
 
-        parameters[slot].Value = _id;
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
+        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
         slot++;
 
         if (_descriptor.IsConjoined)

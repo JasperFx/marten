@@ -6,6 +6,7 @@ using Marten.Internal;
 using Marten.Internal.Storage;
 using Marten.Schema;
 using Marten.Schema.Identity;
+using Marten.Schema.Identity.Sequences;
 
 namespace Marten.Storage.Identification.ClosedShape;
 
@@ -100,13 +101,38 @@ public static class ClosedShapeRegistration
     /// </remarks>
     public static bool IsSupported(DocumentMapping mapping)
     {
-        if (mapping.IdType == typeof(Guid) && mapping.IdStrategy is SequentialGuidIdGeneration)
+        // Guid ids: sequential (CombGuid) is the default for Guid; the
+        // simple GuidIdGeneration is the random-GUID variant (M14).
+        if (mapping.IdType == typeof(Guid) &&
+            (mapping.IdStrategy is SequentialGuidIdGeneration || mapping.IdStrategy is GuidIdGeneration))
         {
             return true;
         }
 
+        // String ids: caller-assigned (StringIdGeneration / NoOpIdGeneration)
+        // and Marten's IdentityKey ("alias/sequence" composite — M13).
         if (mapping.IdType == typeof(string) &&
-            (mapping.IdStrategy is StringIdGeneration || mapping.IdStrategy is NoOpIdGeneration))
+            (mapping.IdStrategy is StringIdGeneration
+             || mapping.IdStrategy is NoOpIdGeneration
+             || mapping.IdStrategy is IdentityKeyGeneration))
+        {
+            return true;
+        }
+
+        // int / long ids with HiLo (the default for those types) — M12.
+        if ((mapping.IdType == typeof(int) || mapping.IdType == typeof(long))
+            && mapping.IdStrategy is HiloIdGeneration)
+        {
+            return true;
+        }
+
+        // Strong-typed IDs — M15. The wrapper unwraps to an int / long /
+        // Guid / string handled above.
+        if (mapping.IdStrategy is ValueTypeIdGeneration vt &&
+            (vt.SimpleType == typeof(Guid)
+             || vt.SimpleType == typeof(int)
+             || vt.SimpleType == typeof(long)
+             || vt.SimpleType == typeof(string)))
         {
             return true;
         }
@@ -123,20 +149,66 @@ public static class ClosedShapeRegistration
     internal static DocumentProvider<TDoc> BuildSupportedProvider<TDoc>(DocumentMapping mapping)
         where TDoc : notnull
     {
+        if (mapping.IdStrategy is ValueTypeIdGeneration vt)
+        {
+            return BuildValueTypeProvider<TDoc>(mapping, vt);
+        }
+
         if (mapping.IdType == typeof(Guid))
         {
-            var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember);
+            IIdentification<TDoc, Guid> identification = mapping.IdStrategy is GuidIdGeneration
+                ? new GuidIdentification<TDoc>(mapping.IdMember)
+                : new SequentialGuidIdentification<TDoc>(mapping.IdMember);
             return BuildProvider<TDoc, Guid>(mapping, identification);
         }
 
         if (mapping.IdType == typeof(string))
         {
-            var identification = new StringIdentification<TDoc>(mapping.IdMember);
+            IIdentification<TDoc, string> identification = mapping.IdStrategy is IdentityKeyGeneration
+                ? new IdentityKeyIdentification<TDoc>(mapping.IdMember, mapping.Alias, mapping.DocumentType)
+                : new StringIdentification<TDoc>(mapping.IdMember);
             return BuildProvider<TDoc, string>(mapping, identification);
+        }
+
+        if (mapping.IdType == typeof(int))
+        {
+            var identification = new HiloIntIdentification<TDoc>(mapping.IdMember, mapping.DocumentType);
+            return BuildProvider<TDoc, int>(mapping, identification);
+        }
+
+        if (mapping.IdType == typeof(long))
+        {
+            var identification = new HiloLongIdentification<TDoc>(mapping.IdMember, mapping.DocumentType);
+            return BuildProvider<TDoc, long>(mapping, identification);
         }
 
         throw new InvalidOperationException(
             $"Mapping for {typeof(TDoc).FullName} is outside the closed-shape coverage envelope — call IsSupported first.");
+    }
+
+    /// <summary>
+    /// W3 spike (M15): build a closed-shape provider for a strong-typed
+    /// id whose wrapper type isn't known at compile time. Constructs the
+    /// per-wrapper <see cref="ValueTypeIdentification{TDoc, TWrapper, TInner}"/>
+    /// via <c>CloseAndBuildAs</c> and hands the closed-shape descriptor
+    /// the wrapper type as TId.
+    /// </summary>
+    private static DocumentProvider<TDoc> BuildValueTypeProvider<TDoc>(DocumentMapping mapping, ValueTypeIdGeneration vt)
+        where TDoc : notnull
+    {
+        var wrapperType = vt.OuterType;
+        var innerType = vt.SimpleType;
+
+        var identification = typeof(ValueTypeIdentification<,,>)
+            .CloseAndBuildAs<object>(
+                mapping.IdMember, vt, (object)mapping.DocumentType,
+                typeof(TDoc), wrapperType, innerType);
+
+        var buildProvider = typeof(ClosedShapeRegistration)
+            .GetMethod(nameof(BuildProvider), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .MakeGenericMethod(typeof(TDoc), wrapperType);
+
+        return (DocumentProvider<TDoc>)buildProvider.Invoke(null, new object?[] { mapping, identification })!;
     }
 
     private static DocumentProvider<TDoc> BuildProvider<TDoc, TId>(

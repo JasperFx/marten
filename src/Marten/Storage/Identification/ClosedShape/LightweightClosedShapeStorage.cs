@@ -49,6 +49,14 @@ public sealed class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocumen
     public override TId AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
         => _descriptor.Identification.AssignIfMissing(document, database);
 
+    // M15: strong-typed wrappers need to bind the inner primitive
+    // (Guid / int / long / string) rather than the wrapper struct.
+    public override object RawIdentityValue(TId id)
+        => _descriptor.Identification.ToRawSqlValue(id);
+
+    public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
+        => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
+
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
         => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
 

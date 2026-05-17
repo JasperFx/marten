@@ -39,6 +39,12 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override TId AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
         => _descriptor.Identification.AssignIfMissing(document, database);
 
+    public override object RawIdentityValue(TId id)
+        => _descriptor.Identification.ToRawSqlValue(id);
+
+    public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
+        => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
+
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Insert.");
 

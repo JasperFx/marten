@@ -94,8 +94,8 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
             slot++;
         }
 
-        parameters[slot].Value = _id;
-        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
+        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
         slot++;
 
         session.Serializer.WriteToParameter(parameters[slot], _document);
