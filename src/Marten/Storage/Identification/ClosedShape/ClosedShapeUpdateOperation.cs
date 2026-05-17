@@ -29,15 +29,18 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
 {
     private readonly TDoc _document;
     private readonly TId _id;
+    private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
 
     public ClosedShapeUpdateOperation(
         TDoc document,
         TId id,
+        string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor)
     {
         _document = document;
         _id = id;
+        _tenantId = tenantId;
         _descriptor = descriptor;
     }
 
@@ -52,8 +55,9 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        // Update SQL ordering: SET data first (slot 0), then each
-        // client-side binder, then WHERE id at the final slot.
+        // Update SQL ordering:
+        //   non-conjoined: data (0), binders (1+), id (last)
+        //   conjoined:     data (0), binders (1+), id (n-1), tenant_id (n)
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
 
         session.Serializer.WriteToParameter(parameters[0], _document);
@@ -67,6 +71,13 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
 
         parameters[slot].Value = _id;
         parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        slot++;
+
+        if (_descriptor.IsConjoined)
+        {
+            parameters[slot].Value = _tenantId;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+        }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)

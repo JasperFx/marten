@@ -33,13 +33,13 @@ public sealed class IdentityMapClosedShapeStorage<TDoc, TId>: IdentityMapDocumen
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), _descriptor);
+        => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), _descriptor);
+        => new ClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), _descriptor, OperationRole.Upsert);
+        => new ClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert);
 
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException(

@@ -24,17 +24,20 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
 {
     private readonly TDoc _document;
     private readonly TId _id;
+    private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
     private readonly OperationRole _role;
 
     public ClosedShapeUpsertOperation(
         TDoc document,
         TId id,
+        string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         OperationRole role)
     {
         _document = document;
         _id = id;
+        _tenantId = tenantId;
         _descriptor = descriptor;
         _role = role;
     }
@@ -51,22 +54,26 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
         // Closed-shape ConfigureCommand: hand the descriptor's pre-built
-        // SQL (with `?` placeholders for client-side params and inline
-        // literals for server-side ones) to AppendWithParameters. The
-        // returned array has one entry per `?`, in order: id, data, then
-        // each client-side binder.
+        // SQL to AppendWithParameters. Parameter ordering:
+        //   non-conjoined: id, data, client-side binders
+        //   conjoined:     tenant_id, id, data, client-side binders
         var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
 
-        // id (slot 0)
-        parameters[0].Value = _id;
-        parameters[0].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        var slot = 0;
+        if (_descriptor.IsConjoined)
+        {
+            parameters[slot].Value = _tenantId;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            slot++;
+        }
 
-        // data (slot 1) — serializer writes directly into the parameter
-        // (UTF-8 byte array, no intermediate string).
-        session.Serializer.WriteToParameter(parameters[1], _document);
+        parameters[slot].Value = _id;
+        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        slot++;
 
-        // Metadata binders fill the remaining slots in order.
-        var slot = 2;
+        session.Serializer.WriteToParameter(parameters[slot], _document);
+        slot++;
+
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
             binder.BindParameter(parameters[slot], _document, session);

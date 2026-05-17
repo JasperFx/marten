@@ -21,7 +21,8 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         IDocumentMetadataBinder<TDoc>[] readBinders,
         string upsertSql,
         string insertSql,
-        string updateSql)
+        string updateSql,
+        bool isConjoined)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
@@ -29,6 +30,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         UpsertSql = upsertSql;
         InsertSql = insertSql;
         UpdateSql = updateSql;
+        IsConjoined = isConjoined;
     }
 
     public IIdentification<TDoc, TId> Identification { get; }
@@ -79,4 +81,15 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// <c>NonExistentDocumentException</c> when no row comes back.
     /// </summary>
     public string UpdateSql { get; }
+
+    /// <summary>
+    /// When <c>true</c>, the document table is conjoined-multi-tenanted:
+    /// <c>tenant_id</c> is part of the primary key, INSERT carries it as
+    /// the first parameter, UPDATE has <c>and tenant_id = ?</c> appended
+    /// to the WHERE clause, and ON CONFLICT references <c>(tenant_id, id)</c>.
+    /// The operations bind the tenant id directly from the
+    /// <c>tenant</c> argument the storage class receives — same source
+    /// the codegen path uses today.
+    /// </summary>
+    public bool IsConjoined { get; }
 }

@@ -28,15 +28,18 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
 {
     private readonly TDoc _document;
     private readonly TId _id;
+    private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
 
     public ClosedShapeInsertOperation(
         TDoc document,
         TId id,
+        string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor)
     {
         _document = document;
         _id = id;
+        _tenantId = tenantId;
         _descriptor = descriptor;
     }
 
@@ -51,17 +54,26 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
-        // Same parameter ordering as upsert: id at slot 0, data at slot 1,
-        // then client-side binders. ON CONFLICT DO NOTHING + RETURNING
-        // are pre-baked into _descriptor.InsertSql.
+        // Parameter ordering matches the descriptor's SQL:
+        //   non-conjoined: id (0), data (1), client-side binders (2+)
+        //   conjoined:     tenant_id (0), id (1), data (2), binders (3+)
         var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
 
-        parameters[0].Value = _id;
-        parameters[0].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        var slot = 0;
+        if (_descriptor.IsConjoined)
+        {
+            parameters[slot].Value = _tenantId;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            slot++;
+        }
 
-        session.Serializer.WriteToParameter(parameters[1], _document);
+        parameters[slot].Value = _id;
+        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
+        slot++;
 
-        var slot = 2;
+        session.Serializer.WriteToParameter(parameters[slot], _document);
+        slot++;
+
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
             binder.BindParameter(parameters[slot], _document, session);

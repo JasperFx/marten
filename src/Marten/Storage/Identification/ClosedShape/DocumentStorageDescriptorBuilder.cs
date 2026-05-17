@@ -3,23 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using JasperFx.Core;
 using Marten.Schema;
+using Marten.Storage;
 
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1): builds a <see cref="DocumentStorageDescriptor{TDoc, TId}"/>
+/// W3 spike (M1+M5): builds a <see cref="DocumentStorageDescriptor{TDoc, TId}"/>
 /// from a <see cref="DocumentMapping"/>. Inspects the mapping's enabled
-/// metadata columns and produces the binder array + SQL in lockstep —
-/// column order and parameter order must agree exactly, so the same
-/// builder owns both sides.
+/// metadata columns and tenancy style and produces the binder array + SQL
+/// in lockstep — column order and parameter order must agree exactly,
+/// so the same builder owns both sides.
 /// </summary>
-/// <remarks>
-/// Closed-shape equivalent of <c>PostgresEventStoreDialect.BuildRichDescriptor</c>
-/// from W4. The M1 spike scope: <c>mt_version</c>, <c>mt_dotnet_type</c>,
-/// <c>mt_last_modified</c>. Other metadata columns (tenant, soft delete,
-/// headers, causation/correlation/username, duplicated fields) land in
-/// subsequent milestones.
-/// </remarks>
 internal static class DocumentStorageDescriptorBuilder
 {
     public static DocumentStorageDescriptor<TDoc, TId> Build<TDoc, TId>(
@@ -73,9 +67,11 @@ internal static class DocumentStorageDescriptorBuilder
         var readArray = readBinders.ToArray();
         var clientSide = writeArray.Where(b => !b.IsServerSide).ToArray();
 
-        var upsertSql = BuildUpsertSql(mapping, writeArray);
-        var insertSql = BuildInsertSql(mapping, writeArray);
-        var updateSql = BuildUpdateSql(mapping, writeArray);
+        var isConjoined = mapping.TenancyStyle == TenancyStyle.Conjoined;
+
+        var upsertSql = BuildUpsertSql(mapping, writeArray, isConjoined);
+        var insertSql = BuildInsertSql(mapping, writeArray, isConjoined);
+        var updateSql = BuildUpdateSql(mapping, writeArray, isConjoined);
 
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
@@ -83,71 +79,91 @@ internal static class DocumentStorageDescriptorBuilder
             readBinders: readArray,
             upsertSql: upsertSql,
             insertSql: insertSql,
-            updateSql: updateSql);
+            updateSql: updateSql,
+            isConjoined: isConjoined);
+    }
+
+    /// <summary>
+    /// Builds the core column + value lists. For conjoined the tenant id
+    /// is prepended as the first column / parameter slot.
+    /// </summary>
+    private static (List<string> Columns, List<string> Values) BuildCoreColumns<TDoc>(
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders, bool isConjoined)
+        where TDoc : notnull
+    {
+        var capacity = (isConjoined ? 3 : 2) + binders.Count;
+        var columns = new List<string>(capacity);
+        var values = new List<string>(capacity);
+
+        if (isConjoined)
+        {
+            columns.Add(Marten.Storage.Metadata.TenantIdColumn.Name);
+            values.Add("?");
+        }
+        columns.Add("id");
+        values.Add("?");
+        columns.Add("data");
+        values.Add("?");
+
+        foreach (var b in binders)
+        {
+            columns.Add(b.ColumnName);
+            values.Add(b.ValueSql);
+        }
+
+        return (columns, values);
     }
 
     private static string BuildUpsertSql<TDoc>(
         DocumentMapping mapping,
-        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders)
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        bool isConjoined)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
+        var (columns, values) = BuildCoreColumns(binders, isConjoined);
 
-        // Column list: id, data, then each binder's ColumnName in order.
-        var columnNames = new List<string>(2 + binders.Count) { "id", "data" };
-        foreach (var b in binders) columnNames.Add(b.ColumnName);
+        // ON CONFLICT key: (tenant_id, id) when conjoined, (id) otherwise.
+        var conflictKey = isConjoined ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)" : "(id)";
 
-        // VALUES list: ?, ? for id+data, then either ? (client-side) or
-        // the binder's ValueSql literal (server-side).
-        var valueSlots = new List<string>(2 + binders.Count) { "?", "?" };
-        foreach (var b in binders) valueSlots.Add(b.ValueSql);
-
-        // ON CONFLICT UPDATE clause: refresh data + every binder's column
-        // from EXCLUDED.
         var updateAssignments = new List<string>(1 + binders.Count) { "data = excluded.data" };
         foreach (var b in binders)
         {
             updateAssignments.Add($"{b.ColumnName} = excluded.{b.ColumnName}");
         }
 
-        return $"insert into {table} ({columnNames.Join(", ")}) " +
-               $"values ({valueSlots.Join(", ")}) " +
-               $"on conflict (id) do update set {updateAssignments.Join(", ")}";
+        return $"insert into {table} ({columns.Join(", ")}) " +
+               $"values ({values.Join(", ")}) " +
+               $"on conflict {conflictKey} do update set {updateAssignments.Join(", ")}";
     }
 
     /// <summary>
-    /// <c>"insert into … values (…) on conflict (id) do nothing returning id"</c>.
-    /// Same parameter ordering as <see cref="BuildUpsertSql"/>; only the
-    /// conflict-handling clause + RETURNING differ. RETURNING lets the
-    /// operation's Postprocess detect a conflict (no row returned).
+    /// <c>"insert into … values (…) on conflict (…) do nothing returning id"</c>.
     /// </summary>
     private static string BuildInsertSql<TDoc>(
         DocumentMapping mapping,
-        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders)
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        bool isConjoined)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
+        var (columns, values) = BuildCoreColumns(binders, isConjoined);
+        var conflictKey = isConjoined ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)" : "(id)";
 
-        var columnNames = new List<string>(2 + binders.Count) { "id", "data" };
-        foreach (var b in binders) columnNames.Add(b.ColumnName);
-
-        var valueSlots = new List<string>(2 + binders.Count) { "?", "?" };
-        foreach (var b in binders) valueSlots.Add(b.ValueSql);
-
-        return $"insert into {table} ({columnNames.Join(", ")}) " +
-               $"values ({valueSlots.Join(", ")}) " +
-               $"on conflict (id) do nothing returning id";
+        return $"insert into {table} ({columns.Join(", ")}) " +
+               $"values ({values.Join(", ")}) " +
+               $"on conflict {conflictKey} do nothing returning id";
     }
 
     /// <summary>
-    /// <c>"update … set data = ?, mt_version = ?, … where id = ? returning id"</c>.
-    /// Parameter order: data, then each binder (client-side or server-side
-    /// literal), then id (WHERE clause). Postprocess raises
-    /// <c>NonExistentDocumentException</c> when no row comes back.
+    /// <c>"update … set data = ?, mt_version = ?, … where id = ? [and tenant_id = ?] returning id"</c>.
+    /// Parameter order: data, then each binder, then id, then tenant_id
+    /// (when conjoined).
     /// </summary>
     private static string BuildUpdateSql<TDoc>(
         DocumentMapping mapping,
-        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders)
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        bool isConjoined)
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
@@ -158,9 +174,13 @@ internal static class DocumentStorageDescriptorBuilder
             setAssignments.Add($"{b.ColumnName} = {b.ValueSql}");
         }
 
+        var whereClause = isConjoined
+            ? $"where id = ? and {Marten.Storage.Metadata.TenantIdColumn.Name} = ?"
+            : "where id = ?";
+
         return $"update {table} " +
                $"set {setAssignments.Join(", ")} " +
-               $"where id = ? " +
+               $"{whereClause} " +
                $"returning id";
     }
 }
