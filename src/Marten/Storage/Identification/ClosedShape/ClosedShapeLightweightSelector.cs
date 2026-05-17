@@ -32,14 +32,18 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
     private readonly Dictionary<TId, Guid>? _versions;
+    private readonly Dictionary<TId, long>? _revisions;
 
     public ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _serializer = session.Serializer;
         _descriptor = descriptor;
-        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Off
-            ? null
-            : session.Versions.ForType<T, TId>();
+        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
+            ? session.Versions.ForType<T, TId>()
+            : null;
+        _revisions = descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
+            ? session.Versions.RevisionsFor<T, TId>()
+            : null;
     }
 
     public T Resolve(DbDataReader reader)
@@ -70,12 +74,18 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
 
     private void CaptureVersion(DbDataReader reader)
     {
-        if (_versions is null) return;
-
         var versionOrdinal = _descriptor.VersionReadOrdinal;
         if (versionOrdinal < 0 || reader.IsDBNull(versionOrdinal)) return;
 
-        var id = reader.GetFieldValue<TId>(IdColumn);
-        _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
+        if (_versions is not null)
+        {
+            var id = reader.GetFieldValue<TId>(IdColumn);
+            _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
+        }
+        else if (_revisions is not null)
+        {
+            var id = reader.GetFieldValue<TId>(IdColumn);
+            _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
+        }
     }
 }

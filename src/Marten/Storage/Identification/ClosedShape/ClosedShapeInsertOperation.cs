@@ -8,6 +8,7 @@ using JasperFx.Core;
 using Marten.Exceptions;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -15,7 +16,7 @@ using Weasel.Postgresql;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M3+M7): hand-written Insert operation. Emits
+/// W3 spike (M3+M7+M8): hand-written Insert operation. Emits
 /// <c>INSERT … ON CONFLICT (id) DO NOTHING RETURNING {id|mt_version}</c>.
 /// Parameter ordering matches <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/>:
 /// id, data, then each client-side metadata binder. RETURNING lets
@@ -25,12 +26,13 @@ namespace Marten.Storage.Identification.ClosedShape;
 /// </summary>
 /// <remarks>
 /// Under <see cref="ConcurrencyMode.Optimistic"/> the operation generates
-/// the new Guid version client-side at construction time, binds it via
-/// the version binder, and writes the value back onto the document +
-/// session.Versions in postprocess so subsequent updates can supply it
-/// as the expected version.
+/// the new Guid version client-side at construction time; under
+/// <see cref="ConcurrencyMode.Numeric"/> it binds the caller-supplied
+/// (or default <c>0</c> = auto-increment to <c>1</c>) <c>Revision</c>.
+/// Either way the new value is written back onto the document +
+/// session.Versions in postprocess.
 /// </remarks>
-internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOperation
+internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation
     where TDoc : notnull
     where TId : notnull
 {
@@ -39,6 +41,7 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
     private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
     private readonly Dictionary<TId, Guid>? _versions;
+    private readonly Dictionary<TId, long>? _revisions;
     private readonly Guid _newVersion;
 
     public ClosedShapeInsertOperation(
@@ -46,18 +49,24 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        Dictionary<TId, Guid>? versions)
+        Dictionary<TId, Guid>? versions,
+        Dictionary<TId, long>? revisions)
     {
         _document = document;
         _id = id;
         _tenantId = tenantId;
         _descriptor = descriptor;
         _versions = versions;
+        _revisions = revisions;
         if (descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
         {
             _newVersion = CombGuidIdGeneration.NewGuid();
         }
     }
+
+    public long Revision { get; set; }
+
+    public bool IgnoreConcurrencyViolation { get; set; }
 
     public Type DocumentType => typeof(TDoc);
 
@@ -73,6 +82,8 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         // Parameter ordering matches the descriptor's SQL:
         //   non-conjoined: id (0), data (1), client-side binders (2+)
         //   conjoined:     tenant_id (0), id (1), data (2), binders (3+)
+        // Under Numeric mode, the revision binder consumes TWO ? slots
+        // (the CASE WHEN ? = 0 THEN 1 ELSE ? END expression).
         var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
 
         var slot = 0;
@@ -92,40 +103,19 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
-            if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
-                ReferenceEquals(binder, _descriptor.VersionBinder))
-            {
-                // Use the version generated at construction time so
-                // postprocess can validate the row returned the same
-                // value we wrote.
-                parameters[slot].Value = _newVersion;
-                parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
-                _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
-            }
-            else
-            {
-                binder.BindParameter(parameters[slot], _document, session);
-            }
-            slot++;
+            slot = BindBinder(parameters, slot, binder, session);
         }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
-        // RETURNING — if no row came back, ON CONFLICT DO NOTHING fired
-        // and the row already exists. Surface as
-        // DocumentAlreadyExistsException matching the codegen path's
-        // behavior.
         if (!reader.Read())
         {
             exceptions.Add(new DocumentAlreadyExistsException(null, typeof(TDoc), _id));
             return;
         }
 
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
-        {
-            _versions![_id] = _newVersion;
-        }
+        ApplyConcurrencyResult(reader);
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
@@ -136,9 +126,48 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
             return;
         }
 
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
+        ApplyConcurrencyResult(reader);
+    }
+
+    private int BindBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    {
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
+            ReferenceEquals(binder, _descriptor.VersionBinder))
         {
-            _versions![_id] = _newVersion;
+            parameters[slot].Value = _newVersion;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+            _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
+            return slot + 1;
+        }
+
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric &&
+            ReferenceEquals(binder, _descriptor.RevisionBinder))
+        {
+            // CASE WHEN ? = 0 THEN 1 ELSE ? END — bind raw Revision to
+            // both slots.
+            parameters[slot].Value = Revision;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            parameters[slot + 1].Value = Revision;
+            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
+            return slot + 2;
+        }
+
+        binder.BindParameter(parameters[slot], _document, session);
+        return slot + 1;
+    }
+
+    private void ApplyConcurrencyResult(DbDataReader reader)
+    {
+        switch (_descriptor.ConcurrencyMode)
+        {
+            case ConcurrencyMode.Optimistic:
+                _versions![_id] = _newVersion;
+                break;
+            case ConcurrencyMode.Numeric:
+                var newRevision = reader.GetFieldValue<long>(0);
+                _revisions![_id] = newRevision;
+                _descriptor.RevisionBinder?.ApplyRevisionTo(_document, newRevision);
+                break;
         }
     }
 }

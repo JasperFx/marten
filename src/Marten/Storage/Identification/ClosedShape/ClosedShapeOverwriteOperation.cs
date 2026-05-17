@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using JasperFx.Core;
 using Marten.Internal;
 using Marten.Internal.Operations;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
@@ -14,15 +15,16 @@ using Weasel.Postgresql;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M7): hand-written Overwrite operation. Same shape as
+/// W3 spike (M7+M8): hand-written Overwrite operation. Same shape as
 /// <see cref="ClosedShapeUpsertOperation{TDoc, TId}"/> except the
-/// trailing <c>where mt_version = ?</c> filter is dropped — the
-/// caller has explicitly asked to bypass the optimistic-concurrency
-/// check (today's <c>session.Store(doc, ignoreConcurrencyCheck: true)</c>).
-/// When <see cref="ConcurrencyMode"/> is <c>Off</c>, overwrite is
+/// trailing concurrency guard is dropped — the caller has explicitly
+/// asked to bypass the optimistic / numeric check
+/// (<c>session.Store(doc, ignoreConcurrencyCheck: true)</c> or
+/// <see cref="Marten.Services.ConcurrencyChecks.Disabled"/> session
+/// option). Under <see cref="ConcurrencyMode.Off"/> overwrite is
 /// functionally identical to upsert.
 /// </summary>
-internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorageOperation
+internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation
     where TDoc : notnull
     where TId : notnull
 {
@@ -31,6 +33,7 @@ internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorage
     private readonly string _tenantId;
     private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
     private readonly Dictionary<TId, Guid>? _versions;
+    private readonly Dictionary<TId, long>? _revisions;
     private readonly Guid _newVersion;
 
     public ClosedShapeOverwriteOperation(
@@ -38,18 +41,24 @@ internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorage
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        Dictionary<TId, Guid>? versions)
+        Dictionary<TId, Guid>? versions,
+        Dictionary<TId, long>? revisions)
     {
         _document = document;
         _id = id;
         _tenantId = tenantId;
         _descriptor = descriptor;
         _versions = versions;
+        _revisions = revisions;
         if (descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
         {
             _newVersion = CombGuidIdGeneration.NewGuid();
         }
     }
+
+    public long Revision { get; set; }
+
+    public bool IgnoreConcurrencyViolation { get; set; }
 
     public Type DocumentType => typeof(TDoc);
 
@@ -81,47 +90,77 @@ internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorage
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
-            if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
-                ReferenceEquals(binder, _descriptor.VersionBinder))
-            {
-                parameters[slot].Value = _newVersion;
-                parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
-                _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
-            }
-            else
-            {
-                binder.BindParameter(parameters[slot], _document, session);
-            }
-            slot++;
+            slot = BindBinder(parameters, slot, binder, session);
+        }
+
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric)
+        {
+            // DO UPDATE SET mt_version = CASE WHEN ? = 0 THEN current+1 ELSE ? END
+            // No WHERE guard — Overwrite always wins.
+            parameters[slot].Value = Revision;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            parameters[slot + 1].Value = Revision;
+            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
         }
     }
 
     public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
     {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
-        {
-            return;
-        }
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off) return;
 
-        // No version WHERE filter → the write always happens, so a
-        // returned row is guaranteed. Capture the new version for
-        // subsequent updates.
         if (reader.Read())
         {
-            _versions![_id] = _newVersion;
+            ApplyConcurrencyResult(reader);
         }
     }
 
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
-        {
-            return;
-        }
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off) return;
 
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {
-            _versions![_id] = _newVersion;
+            ApplyConcurrencyResult(reader);
+        }
+    }
+
+    private int BindBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    {
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
+            ReferenceEquals(binder, _descriptor.VersionBinder))
+        {
+            parameters[slot].Value = _newVersion;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
+            _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
+            return slot + 1;
+        }
+
+        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric &&
+            ReferenceEquals(binder, _descriptor.RevisionBinder))
+        {
+            parameters[slot].Value = Revision;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            parameters[slot + 1].Value = Revision;
+            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
+            return slot + 2;
+        }
+
+        binder.BindParameter(parameters[slot], _document, session);
+        return slot + 1;
+    }
+
+    private void ApplyConcurrencyResult(DbDataReader reader)
+    {
+        switch (_descriptor.ConcurrencyMode)
+        {
+            case ConcurrencyMode.Optimistic:
+                _versions![_id] = _newVersion;
+                break;
+            case ConcurrencyMode.Numeric:
+                var newRevision = reader.GetFieldValue<long>(0);
+                _revisions![_id] = newRevision;
+                _descriptor.RevisionBinder?.ApplyRevisionTo(_document, newRevision);
+                break;
         }
     }
 }

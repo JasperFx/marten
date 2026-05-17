@@ -23,7 +23,17 @@ public enum ConcurrencyMode
     /// <c>ConcurrencyException</c> instead of
     /// <c>NonExistentDocumentException</c>.
     /// </summary>
-    Optimistic
+    Optimistic,
+
+    /// <summary>
+    /// Monotonic-bigint revisions (Marten's <c>UseNumericRevisions</c>).
+    /// Each write either auto-increments (caller passes
+    /// <c>Revision = 0</c>) or supplies an explicit revision that must
+    /// be strictly greater than the current row's
+    /// <c>mt_version</c>. Mirrors codegen
+    /// <c>UpsertFunction</c> with <c>RevisionArgument</c>.
+    /// </summary>
+    Numeric
 }
 
 /// <summary>
@@ -49,6 +59,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         bool isConjoined,
         ConcurrencyMode concurrencyMode,
         DocumentVersionBinder<TDoc>? versionBinder,
+        DocumentRevisionBinder<TDoc>? revisionBinder,
         int versionReadOrdinal)
     {
         Identification = identification;
@@ -61,6 +72,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         IsConjoined = isConjoined;
         ConcurrencyMode = concurrencyMode;
         VersionBinder = versionBinder;
+        RevisionBinder = revisionBinder;
         VersionReadOrdinal = versionReadOrdinal;
     }
 
@@ -153,11 +165,21 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     internal DocumentVersionBinder<TDoc>? VersionBinder { get; }
 
     /// <summary>
-    /// W3 spike (M7): zero-based ordinal of the <c>mt_version</c> column
-    /// inside the document SELECT projection, or <c>-1</c> when version
-    /// isn't in the read set. Used by selectors to capture the version
-    /// into <c>session.Versions</c> on load so subsequent updates can
-    /// supply it as the expected-version parameter.
+    /// W3 spike (M8): the bigint revision binder, present when
+    /// <see cref="ConcurrencyMode"/> is <see cref="ConcurrencyMode.Numeric"/>
+    /// or the mapping has a <c>[Version]</c>-annotated long member.
+    /// Operations use it from <c>Postprocess</c> to write the new
+    /// revision back onto the document.
+    /// </summary>
+    internal DocumentRevisionBinder<TDoc>? RevisionBinder { get; }
+
+    /// <summary>
+    /// W3 spike (M7+M8): zero-based ordinal of the <c>mt_version</c>
+    /// column inside the document SELECT projection, or <c>-1</c> when
+    /// version isn't in the read set. Used by selectors to capture the
+    /// version into <c>session.Versions</c> on load so subsequent
+    /// updates can supply it as the expected-version parameter (Guid)
+    /// or the prior revision (long).
     /// </summary>
     public int VersionReadOrdinal { get; }
 }

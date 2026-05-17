@@ -77,12 +77,8 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.Schema.For<ConcurrencyDoc>().UseNumericRevisions(true);
             opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
         });
-
-        var numericRevisions = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
-        ClosedShapeRegistration.IsSupported(numericRevisions).ShouldBeFalse();
 
         var softDelete = (DocumentMapping)store.Options.Storage.FindMapping(typeof(SoftDeleteDoc));
         ClosedShapeRegistration.IsSupported(softDelete).ShouldBeFalse();
@@ -91,10 +87,23 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     [Fact]
     public void IsSupported_accepts_optimistic_concurrency()
     {
-        // M7: optimistic concurrency is now inside the coverage envelope.
+        // M7: optimistic concurrency is inside the coverage envelope.
         var store = StoreOptions(opts =>
         {
             opts.Schema.For<ConcurrencyDoc>().UseOptimisticConcurrency(true);
+        });
+
+        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
+        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void IsSupported_accepts_numeric_revisions()
+    {
+        // M8: numeric revisions is inside the coverage envelope.
+        var store = StoreOptions(opts =>
+        {
+            opts.Schema.For<ConcurrencyDoc>().UseNumericRevisions(true);
         });
 
         var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));

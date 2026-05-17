@@ -37,6 +37,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
     private readonly Dictionary<TId, T> _identityMap;
     private readonly Dictionary<TId, Guid>? _versions;
+    private readonly Dictionary<TId, long>? _revisions;
 
     public ClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
@@ -53,9 +54,12 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>
             session.ItemMap[typeof(T)] = _identityMap;
         }
 
-        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Off
-            ? null
-            : session.Versions.ForType<T, TId>();
+        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
+            ? session.Versions.ForType<T, TId>()
+            : null;
+        _revisions = descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
+            ? session.Versions.RevisionsFor<T, TId>()
+            : null;
     }
 
     public T Resolve(DbDataReader reader)
@@ -90,9 +94,16 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>
 
     private void CaptureVersion(DbDataReader reader, TId id)
     {
-        if (_versions is null) return;
         var versionOrdinal = _descriptor.VersionReadOrdinal;
         if (versionOrdinal < 0 || reader.IsDBNull(versionOrdinal)) return;
-        _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
+
+        if (_versions is not null)
+        {
+            _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
+        }
+        else if (_revisions is not null)
+        {
+            _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
+        }
     }
 }

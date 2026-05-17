@@ -32,22 +32,27 @@ public sealed class IdentityMapClosedShapeStorage<TDoc, TId>: IdentityMapDocumen
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session));
+        => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
 
     public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session));
+        => new ClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
 
     public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, VersionsFor(session));
+        => new ClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, VersionsFor(session), RevisionsFor(session));
 
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session));
+        => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
 
     public override ISelector BuildSelector(IMartenSession session)
         => new ClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor);
 
     private System.Collections.Generic.Dictionary<TId, System.Guid>? VersionsFor(IMartenSession session)
-        => _descriptor.ConcurrencyMode == ConcurrencyMode.Off
-            ? null
-            : session.Versions.ForType<TDoc, TId>();
+        => _descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
+            ? session.Versions.ForType<TDoc, TId>()
+            : null;
+
+    private System.Collections.Generic.Dictionary<TId, long>? RevisionsFor(IMartenSession session)
+        => _descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
+            ? session.Versions.RevisionsFor<TDoc, TId>()
+            : null;
 }
