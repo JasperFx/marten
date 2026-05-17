@@ -146,14 +146,18 @@ public class identification_strategy_tests
 
     // ─────────────────────────── helpers ───────────────────────────
 
+    // Accessor delegates inside each strategy are built via JasperFx's
+    // LambdaBuilder (FEC-compiled). Spike tests pass the MemberInfo
+    // directly — exactly the way DocumentStorage<T, TId> wires it today.
+
     private static SequentialGuidIdentification<GuidDoc> NewSequentialGuid()
-        => new(d => d.Id, (d, v) => d.Id = v);
+        => new(typeof(GuidDoc).GetProperty(nameof(GuidDoc.Id))!);
 
     private static HiloIntIdentification<IntDoc> NewHiloInt()
-        => new(d => d.Id, (d, v) => d.Id = v, typeof(IntDoc));
+        => new(typeof(IntDoc).GetProperty(nameof(IntDoc.Id))!, typeof(IntDoc));
 
     private static HiloLongIdentification<LongDoc> NewHiloLong()
-        => new(d => d.Id, (d, v) => d.Id = v, typeof(LongDoc));
+        => new(typeof(LongDoc).GetProperty(nameof(LongDoc.Id))!, typeof(LongDoc));
 
     private static (IMartenDatabase Database, ISequence Sequence) NewDatabaseWithSequence(Type docType)
     {

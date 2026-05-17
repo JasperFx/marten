@@ -1,6 +1,8 @@
 #nullable enable
 using System;
+using System.Reflection;
 using JasperFx.Core;
+using JasperFx.Core.Reflection;
 using Marten.Storage;
 
 namespace Marten.Storage.Identification;
@@ -22,10 +24,17 @@ public sealed class SequentialGuidIdentification<TDoc>: IIdentification<TDoc, Gu
     private readonly Func<TDoc, Guid> _getter;
     private readonly Action<TDoc, Guid> _setter;
 
-    public SequentialGuidIdentification(Func<TDoc, Guid> getter, Action<TDoc, Guid> setter)
+    /// <param name="idMember">
+    /// The <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> on
+    /// <typeparamref name="TDoc"/> that holds the document's id. Used to build
+    /// FEC-compiled getter + setter delegates via
+    /// <see cref="LambdaBuilder"/> — the same mechanism the existing
+    /// <c>DocumentStorage&lt;T, TId&gt;</c> uses for its accessor.
+    /// </param>
+    public SequentialGuidIdentification(MemberInfo idMember)
     {
-        _getter = getter;
-        _setter = setter;
+        _getter = LambdaBuilder.Getter<TDoc, Guid>(idMember);
+        _setter = LambdaBuilder.Setter<TDoc, Guid>(idMember)!;
     }
 
     public Guid Identity(TDoc document) => _getter(document);

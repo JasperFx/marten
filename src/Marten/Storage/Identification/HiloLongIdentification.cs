@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Storage;
 
 namespace Marten.Storage.Identification;
@@ -11,6 +13,7 @@ namespace Marten.Storage.Identification;
 /// <see cref="HiloIntIdentification{TDoc}"/> — differs only in the
 /// <see cref="Marten.Schema.Identity.Sequences.ISequence.NextLong"/>
 /// call vs <see cref="Marten.Schema.Identity.Sequences.ISequence.NextInt"/>.
+/// Accessor delegates are built via <see cref="LambdaBuilder"/> (FEC-compiled).
 /// </summary>
 public sealed class HiloLongIdentification<TDoc>: IIdentification<TDoc, long>
     where TDoc : notnull
@@ -19,10 +22,10 @@ public sealed class HiloLongIdentification<TDoc>: IIdentification<TDoc, long>
     private readonly Action<TDoc, long> _setter;
     private readonly Type _sequenceKey;
 
-    public HiloLongIdentification(Func<TDoc, long> getter, Action<TDoc, long> setter, Type sequenceKey)
+    public HiloLongIdentification(MemberInfo idMember, Type sequenceKey)
     {
-        _getter = getter;
-        _setter = setter;
+        _getter = LambdaBuilder.Getter<TDoc, long>(idMember);
+        _setter = LambdaBuilder.Setter<TDoc, long>(idMember)!;
         _sequenceKey = sequenceKey;
     }
 

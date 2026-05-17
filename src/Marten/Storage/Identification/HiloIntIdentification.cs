@@ -1,5 +1,7 @@
 #nullable enable
 using System;
+using System.Reflection;
+using JasperFx.Core.Reflection;
 using Marten.Storage;
 
 namespace Marten.Storage.Identification;
@@ -14,8 +16,7 @@ namespace Marten.Storage.Identification;
 /// <see cref="Marten.Schema.Identity.Sequences.ISequence"/> exposed via
 /// <see cref="IMartenDatabase.Sequences"/>. Equivalent to the current
 /// <c>HiloIdGeneration.GenerateCode</c> emit for the int branch.
-/// The <c>sequenceKey</c> argument is the document <see cref="Type"/> —
-/// matches today's <c>SequenceFor(mapping.DocumentType)</c>.
+/// Accessor delegates are built via <see cref="LambdaBuilder"/> (FEC-compiled).
 /// </remarks>
 public sealed class HiloIntIdentification<TDoc>: IIdentification<TDoc, int>
     where TDoc : notnull
@@ -24,10 +25,20 @@ public sealed class HiloIntIdentification<TDoc>: IIdentification<TDoc, int>
     private readonly Action<TDoc, int> _setter;
     private readonly Type _sequenceKey;
 
-    public HiloIntIdentification(Func<TDoc, int> getter, Action<TDoc, int> setter, Type sequenceKey)
+    /// <param name="idMember">
+    /// The <see cref="PropertyInfo"/> or <see cref="FieldInfo"/> on
+    /// <typeparamref name="TDoc"/> that holds the document's id.
+    /// </param>
+    /// <param name="sequenceKey">
+    /// The <see cref="Type"/> used as the cache key for
+    /// <see cref="Marten.Schema.Identity.Sequences.ISequences.SequenceFor"/>.
+    /// Matches today's <c>SequenceFor(mapping.DocumentType)</c>. Held as a
+    /// field rather than recomputed per call.
+    /// </param>
+    public HiloIntIdentification(MemberInfo idMember, Type sequenceKey)
     {
-        _getter = getter;
-        _setter = setter;
+        _getter = LambdaBuilder.Getter<TDoc, int>(idMember);
+        _setter = LambdaBuilder.Setter<TDoc, int>(idMember)!;
         _sequenceKey = sequenceKey;
     }
 

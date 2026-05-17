@@ -37,8 +37,8 @@ branch on identity strategy after startup.
 | File | Role |
 | --- | --- |
 | [`IIdentification.cs`](IIdentification.cs) | The contract — `Identity(TDoc)` + `AssignIfMissing(TDoc, IMartenDatabase)`. |
-| [`SequentialGuidIdentification.cs`](SequentialGuidIdentification.cs) | `Guid` id, no DB round-trip — uses `CombGuidIdGeneration.NewGuid()`. Replaces `IIdGeneration` codegen for the `SequentialGuidIdGeneration` strategy. |
-| [`HiloIntIdentification.cs`](HiloIntIdentification.cs) | `int` id from `IMartenDatabase.Sequences.SequenceFor(documentType).NextInt()`. Replaces `IIdGeneration` codegen for the `HiloIdGeneration` `int` branch. |
+| [`SequentialGuidIdentification.cs`](SequentialGuidIdentification.cs) | `Guid` id, no DB round-trip — uses `CombGuidIdGeneration.NewGuid()`. Replaces `IIdGeneration` codegen for the `SequentialGuidIdGeneration` strategy. Accessor delegates from `LambdaBuilder` (FEC). |
+| [`HiloIntIdentification.cs`](HiloIntIdentification.cs) | `int` id from `IMartenDatabase.Sequences.SequenceFor(documentType).NextInt()`. Replaces `IIdGeneration` codegen for the `HiloIdGeneration` `int` branch. Accessor delegates from `LambdaBuilder` (FEC). |
 | [`HiloLongIdentification.cs`](HiloLongIdentification.cs) | `long` sibling of the above. |
 
 What's not in here yet, but the design accommodates:
@@ -58,30 +58,30 @@ What's not in here yet, but the design accommodates:
 
 ## Where the getter/setter delegates come from
 
-The strategy implementations take `Func<TDoc, TId>` getter +
-`Action<TDoc, TId>` setter at construction. In the source-gen-output
-world (W5), those come from a generator-emitted
-`IDocumentAccessor<TDoc, TId>` type:
-
-```csharp
-// What the source generator will emit (sketch)
-public sealed class OrderDocumentAccessor : IDocumentAccessor<Order, Guid>
-{
-    public Guid Read(Order doc) => doc.Id;
-    public void Write(Order doc, Guid id) => doc.Id = id;
-}
-```
-
-The storage subclass picks the accessor at construction:
+Each strategy takes a `MemberInfo` (the document's id property or field)
+at construction and builds its own getter + setter via JasperFx's
+[`LambdaBuilder`](https://github.com/JasperFx/jasperfx/blob/master/src/JasperFx/Core/Reflection/LambdaBuilder.cs)
+— FEC-compiled delegates, the same mechanism the existing
+`DocumentStorage<T, TId>` already uses for its `_setter` field today
+([`DocumentStorage.cs:98`](../../Internal/Storage/DocumentStorage.cs)).
 
 ```csharp
 new SequentialGuidIdentification<Order>(
-    accessor.Read,
-    accessor.Write);
+    typeof(Order).GetProperty(nameof(Order.Id))!);
 ```
 
-In the spike's tests, callers supply hand-written lambdas instead — the
-strategy classes don't care which.
+The accessor is built once per `(TDoc, TId)` at startup and cached on
+the strategy instance — per-call cost is one delegate invocation.
+
+**Why FEC delegates rather than source-gen-emitted accessor classes:**
+the strategic direction is to eliminate Marten's Roslyn-emitted runtime
+codegen (today's `EventDocumentStorageGenerator` /
+`GeneratedEventDocumentStorage` / etc.) — that's the heavyweight path
+that builds an assembly per document type at boot. FEC-compiled lambdas
+are the lightweight per-delegate alternative that stays in the codebase
+once the Roslyn JIT path is gone. The W3 hand-write replaces the
+Roslyn-emitted *storage classes*; `LambdaBuilder` keeps doing what it
+already does for the *accessor delegates*.
 
 ## How it slots into the planned W3 storage class
 
