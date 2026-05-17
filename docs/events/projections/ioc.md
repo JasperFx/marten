@@ -42,7 +42,7 @@ public class ProductProjection: SingleStreamProjection<Product, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L478-L506' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L509-L537' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_productprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Now, we *want* to use this projection at runtime within Marten, and need to register the projection
@@ -126,6 +126,7 @@ internal class ProductProjectionRegistration: IConfigureMarten
     }
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L570-L595' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_iconfiguremarten_with_di_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The module's `IServiceCollection` extension wires both the dependency *and* the `IConfigureMarten`
@@ -153,6 +154,7 @@ public static class ProductModuleExtensions
     }
 }
 ```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ContainerScopedProjectionTests/projections_with_IoC_services.cs#L597-L618' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addproductmodule_with_iconfiguremarten' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The host then composes the modules:

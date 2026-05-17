@@ -20,13 +20,13 @@ var store = DocumentStore.For(_ =>
     _.Schema.For<User>().Index(x => x.UserName);
 });
 
-using (var session = store.QuerySession())
+await using (var session = store.QuerySession())
 {
     // Postgresql will be able to use the computed
     // index generated from above
-    var somebody = session
+    var somebody = await session
         .Query<User>()
-        .FirstOrDefault(x => x.UserName == "somebody");
+        .FirstOrDefaultAsync(x => x.UserName == "somebody");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/computed_indexes.cs#L23-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using-a-simple-calculated-index' title='Start of snippet'>anchor</a></sup>

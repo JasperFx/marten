@@ -237,9 +237,9 @@ Currently four types of full Text Search functions are supported:
 <!-- snippet: sample_search_in_query_sample -->
 <a id='snippet-sample_search_in_query_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.Search("somefilter"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L249-L255' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -249,9 +249,9 @@ var posts = session.Query<BlogPost>()
 <!-- snippet: sample_plain_search_in_query_sample -->
 <a id='snippet-sample_plain_search_in_query_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.PlainTextSearch("somefilter"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L278-L284' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plain_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -261,9 +261,9 @@ var posts = session.Query<BlogPost>()
 <!-- snippet: sample_phrase_search_in_query_sample -->
 <a id='snippet-sample_phrase_search_in_query_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.PhraseSearch("somefilter"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L307-L313' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_phrase_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -273,9 +273,9 @@ var posts = session.Query<BlogPost>()
 <!-- snippet: sample_web_search_in_query_sample -->
 <a id='snippet-sample_web_search_in_query_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.WebStyleSearch("somefilter"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L336-L342' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_web_search_in_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -285,10 +285,10 @@ All types of Text Searches can be combined with other Linq queries
 <!-- snippet: sample_text_search_combined_with_other_query_sample -->
 <a id='snippet-sample_text_search_combined_with_other_query_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.Category == "LifeStyle")
     .Where(x => x.PhraseSearch("somefilter"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L366-L373' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_combined_with_other_query_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -298,9 +298,9 @@ They allow also to specify language (regConfig) of the text search query (by def
 <!-- snippet: sample_text_search_with_non_default_regconfig_sample -->
 <a id='snippet-sample_text_search_with_non_default_regconfig_sample'></a>
 ```cs
-var posts = session.Query<BlogPost>()
+var posts = (await session.Query<BlogPost>()
     .Where(x => x.PhraseSearch("somefilter", "italian"))
-    .ToList();
+    .ToListAsync());
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Indexes/full_text_index.cs#L396-L402' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_text_search_with_non_default_regconfig_sample' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

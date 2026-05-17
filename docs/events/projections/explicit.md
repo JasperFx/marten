@@ -107,7 +107,7 @@ public override ValueTask<LetterCounts> EvolveAsync(LetterCounts snapshot, Guid 
     return new ValueTask<LetterCounts>(snapshot);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/stream_compacting.cs#L445-L472' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_evolveasync' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/stream_compacting.cs#L446-L473' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_evolveasync' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `Evolve` and `EvolveAsync` work by taking in a the current snapshot of the projected document and a single event, then
@@ -191,7 +191,7 @@ public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregat
 
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L615-L684' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/explicit_code_for_aggregation_logic.cs#L553-L622' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom_aggregate_with_start_and_stop' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 and another example:

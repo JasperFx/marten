@@ -5,11 +5,11 @@ Regardless of your feelings about _NULL_, they do exist in databases and Marten 
 <!-- snippet: sample_query_by_nullable_types -->
 <a id='snippet-sample_query_by_nullable_types'></a>
 ```cs
-public void query_by_nullable_type_nulls(IDocumentSession session)
+public async Task query_by_nullable_type_nulls(IDocumentSession session)
 {
     // You can use Nullable<T>.HasValue in Linq queries
-    session.Query<Target>().Where(x => !x.NullableNumber.HasValue).ToArray();
-    session.Query<Target>().Where(x => x.NullableNumber.HasValue).ToArray();
+    await session.Query<Target>().Where(x => !x.NullableNumber.HasValue).ToListAsync();
+    await session.Query<Target>().Where(x => x.NullableNumber.HasValue).ToListAsync();
 
     // You can always search by field is NULL
     session.Query<Target>().Where(x => x.Inner == null);

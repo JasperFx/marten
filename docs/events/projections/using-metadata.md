@@ -23,7 +23,7 @@ public class OrderAggregate
 
     // This would be set automatically by Marten if
     // used as the target of a SingleStreamAggregation
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public void Apply(OrderShipped shipped) => HasShipped = true;
     public bool HasShipped { get; private set; }
@@ -160,7 +160,7 @@ public class Item
     public string LastModifiedBy { get; set; }
     public DateTimeOffset? LastModified { get; set; }
 
-    public int Version { get; set; }
+    public long Version { get; set; }
 }
 
 public record ItemStarted(string Description);
@@ -200,7 +200,7 @@ public class ItemProjection: SingleStreamProjection<Item, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L173-L225' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L188-L240' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_applymetadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the same projection in usage in a unit test to see how it's all put together:
@@ -217,6 +217,9 @@ public async Task apply_metadata()
 
         // THIS IS NECESSARY FOR THIS SAMPLE!
         opts.Events.MetadataConfig.HeadersEnabled = true;
+
+        // Inline projection + auto Version tracking requires Rich mode.
+        opts.Events.AppendMode = EventAppendMode.Rich;
     });
 
     // Setting a header value on the session, which will get tagged on each
@@ -236,5 +239,5 @@ public async Task apply_metadata()
     item.Version.ShouldBe(4);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L18-L46' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Aggregation/using_apply_metadata.cs#L18-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_apply_metadata' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

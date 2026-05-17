@@ -95,7 +95,7 @@ public class ConsoleSubscription: ISubscription
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L25-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolesubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L28-L51' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And to register that with our Marten store:
@@ -133,7 +133,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L136-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Here's a slightly more complicated sample that publishes events to a configured Kafka topic:
@@ -199,7 +199,7 @@ public class KafkaProducerConfig
     public string? Topic { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L294-L354' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 This time, it's requiring IoC services injected through its constructor, so we're going to use this mechanism
@@ -230,7 +230,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L173-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Registering Subscriptions
@@ -283,7 +283,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L133-L165' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L136-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_consolesubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 But, if you need to utilize services from your IoC container within your subscription -- and you very likely do --
@@ -314,7 +314,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L170-L194' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L173-L197' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Starting Position of Subscriptions
@@ -357,7 +357,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L199-L232' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_starting_position_of_subscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L202-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_starting_position_of_subscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you specify starting rules for a certain database, that rule will only apply to that database. Other databases will
@@ -400,7 +400,7 @@ builder.Services.AddMarten(opts =>
 using var host = builder.Build();
 await host.StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L258-L287' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_subscription_filters' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L261-L290' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_subscription_filters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that all filters are applied with a SQL `OR` operator in the underlying data fetching. 
@@ -472,7 +472,7 @@ public class KafkaProducerConfig
     public string? Topic { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L291-L351' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L294-L354' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_kafkasubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Rewinding or Replaying Subscriptions
@@ -505,7 +505,7 @@ public static async Task rewinding_subscription(IProjectionCoordinator coordinat
     await daemon.RewindSubscriptionAsync("Kafka",  CancellationToken.None, timestamp:DateTimeOffset.UtcNow.Subtract(1.Days()));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L235-L254' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rewinding_subscriptions' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L238-L257' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_rewinding_subscriptions' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Error Handling
@@ -602,5 +602,5 @@ public class ReallyBadException: Exception
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L50-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_errorhandlingsubscription' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Subscriptions/SubscriptionSamples.cs#L53-L130' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_errorhandlingsubscription' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

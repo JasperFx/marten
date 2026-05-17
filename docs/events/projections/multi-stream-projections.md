@@ -679,6 +679,9 @@ public class BatchAwareExternalAccountGrouper: IAggregateGrouper<Guid>
 
     public async Task Group(IQuerySession session, IReadOnlyList<IEvent> events, IEventGrouping<Guid> grouping)
     {
+        // events is now IReadOnlyList<IEvent> per jasperfx#201 — drop the
+        // defensive materialize-or-ToList() that used to be required when
+        // the parameter was a bare IEnumerable<IEvent>.
         var labelEvents = events.OfType<IEvent<ShippingLabelCreated>>().ToList();
         if (labelEvents.Count == 0) return;
 
@@ -732,7 +735,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
     public void Apply(CustomerBillingMetrics view, ShippingLabelCreated _) => view.ShippingLabels++;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L220-L309' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-aware-grouper' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L220-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_batch-aware-grouper' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Register the lookup projection inline and the multi-stream projection async, exactly
@@ -776,7 +779,7 @@ public record ShipmentCompleted;
 
 public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L314-L328' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L315-L329' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Live aggregate state:
@@ -798,7 +801,7 @@ public class Shipment
     public void Apply(ItemScanned e) => Items.Add(e.ItemId);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L330-L346' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L331-L347' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Derived event that is projection friendly (includes `CustomerId` again):
@@ -808,7 +811,7 @@ Derived event that is projection friendly (includes `CustomerId` again):
 ```cs
 public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L322-L326' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-billed' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L323-L327' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-billed' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Command endpoint using the aggregate handler workflow, Wolverine loads the aggregate for you, you return the event, Wolverine appends it to the same stream:
@@ -855,7 +858,7 @@ public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMet
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L348-L374' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Projections/MultiStreamProjections/CustomGroupers/grouping_examples_for_unknown_ids.cs#L349-L375' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_shipment-events-multi-stream-projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -994,7 +997,7 @@ public class DayProjection: MultiStreamProjection<Day, int>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Aggregations/multi_stream_projections.cs#L250-L320' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Aggregations/multi_stream_projections.cs#L257-L327' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_showing_fanout_rules' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Using Custom Grouper with Fan Out Feature for Event Projections

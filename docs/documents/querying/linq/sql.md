@@ -13,7 +13,7 @@ public async Task query_with_matches_sql()
     session.Store(u);
     await session.SaveChangesAsync();
 
-    var user = session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).Single();
+    var user = (await session.Query<User>().Where(x => x.MatchesSql("data->> 'FirstName' = ?", "Eric")).SingleAsync());
     user.LastName.ShouldBe("Smith");
     user.Id.ShouldBe(u.Id);
 }

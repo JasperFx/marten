@@ -497,6 +497,35 @@ that is being projected in the same batch — call `group.TryFindUpstreamCache<T
 captured `SliceGroup` to reach into the upstream stage's in-memory aggregate cache.
 
 <!-- snippet: sample_try_find_upstream_cache -->
+<a id='snippet-sample_try_find_upstream_cache'></a>
+```cs
+public override Task EnrichEventsAsync(SliceGroup<OrderShippingNotification, Guid> group,
+    IQuerySession querySession, CancellationToken cancellation)
+{
+    // Ask the upstream OrderProjection (running earlier in the same composite stage)
+    // for its in-memory aggregate cache. A SQL query for Order in this same batch
+    // would return nothing — those writes are still queued on the shared
+    // IProjectionBatch and have not been committed to PostgreSQL yet.
+    if (!group.TryFindUpstreamCache<Guid, Order>(out var upstreamOrders))
+    {
+        // No upstream stage in this composite is producing Order documents.
+        return Task.CompletedTask;
+    }
+
+    foreach (var slice in group.Slices)
+    {
+        if (upstreamOrders.TryFind(slice.Id, out var order))
+        {
+            // Stamp a synthetic References<Order> event onto the slice so that
+            // the Evolve method can read the upstream entity's data.
+            slice.Reference(order);
+        }
+    }
+
+    return Task.CompletedTask;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/Composites/Bug_4329_try_find_upstream_cache.cs#L71-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_try_find_upstream_cache' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 `TryFindUpstreamCache` returns `false` when no upstream stage of this composite is registered as

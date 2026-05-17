@@ -53,7 +53,7 @@ public class Order
 
     // This is important, by Marten convention this would
     // be the
-    public int Version { get; set; }
+    public long Version { get; set; }
 
     public Order(OrderCreated created)
     {

@@ -185,7 +185,7 @@ using (var session = theStore.QuerySession())
     (await session.LoadAsync<Target>(target2.Id)).ShouldBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L15-L42' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/SessionMechanics/ejecting_documents.cs#L16-L43' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ejecting_a_document' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ejecting all pending changes from a Session

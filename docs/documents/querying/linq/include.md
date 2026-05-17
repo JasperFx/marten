@@ -25,10 +25,10 @@ public async Task simple_include_for_a_single_document()
     using var query = theStore.QuerySession();
 
     User included = null;
-    var issue2 = query
+    var issue2 = (await query
         .Query<Issue>()
         .Include<User>(x => included = x).On(x => x.AssigneeId)
-        .Single(x => x.Title == issue.Title);
+        .SingleAsync(x => x.Title == issue.Title));
 
     included.ShouldNotBeNull();
     included.Id.ShouldBe(user.Id);
@@ -70,7 +70,7 @@ public async Task include_to_dictionary()
     using var query = theStore.QuerySession();
     var dict = new Dictionary<Guid, User>();
 
-    query.Query<Issue>().Include(dict).On(x => x.AssigneeId).ToArray();
+    await query.Query<Issue>().Include(dict).On(x => x.AssigneeId).ToListAsync();
 
     dict.Count.ShouldBe(2);
     dict.ContainsKey(user1.Id).ShouldBeTrue();
@@ -136,11 +136,11 @@ public async Task multiple_includes()
     User assignee2 = null;
     User reporter2 = null;
 
-    query
+    (await query
         .Query<Issue>()
         .Include<User>(x => assignee2 = x).On(x => x.AssigneeId)
         .Include<User>(x => reporter2 = x).On(x => x.ReporterId)
-        .Single()
+        .SingleAsync())
         .ShouldNotBeNull();
 
     assignee2.Id.ShouldBe(assignee.Id);
@@ -170,17 +170,17 @@ public async Task include_using_custom_map()
     using var query = theStore.QuerySession();
     Classroom? included = null;
 
-    var user2 = query
+    var user2 = (await query
         .Query<SchoolUser>()
         .Include<Classroom>(c => included = c).On(u => u.HomeRoom, c => c.RoomCode)
-        .Single(u => u.Name == "Student #1");
+        .SingleAsync(u => u.Name == "Student #1"));
 
     included.ShouldNotBeNull();
     included.Id.ShouldBe(classroom.Id);
     user2.ShouldNotBeNull();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L943-L968' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L942-L967' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_using_custom_map' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 By joining on a value other than the document id, this opens up the possibility of one-to-many joins, with potentially many related documents matching the queried document. Using a list as described above will allow for all matching records to be returned.  Alternatively you can also use a dictionary of lists, where the key is the Id type and the value is an `IList` of a type corresponding to the Document type:
@@ -206,12 +206,12 @@ public async Task include_to_dictionary_list()
     using var query = theStore.QuerySession();
     var dict = new Dictionary<string, IList<SchoolUser>>();
 
-    var classes = query
+    var classes =(await  query
         .Query<Classroom>()
         .Include(dict).On(c => c.RoomCode, u => u.HomeRoom)
-        .ToArray();
+        .ToListAsync());
 
-    classes.Length.ShouldBe(2);
+    classes.Count.ShouldBe(2);
     dict.Count.ShouldBe(2);
     dict.ContainsKey(class1.RoomCode).ShouldBeTrue();
     dict.ContainsKey(class2.RoomCode).ShouldBeTrue();
@@ -219,7 +219,7 @@ public async Task include_to_dictionary_list()
     dict[class2.RoomCode].Count.ShouldBe(2);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L970-L1003' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Includes/end_to_end_query_with_include.cs#L969-L1002' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_dictionary_list_include' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Batched query Support

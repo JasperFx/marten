@@ -235,7 +235,7 @@ public class UsersByFirstName: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L589-L602' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L587-L600' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usersbyfirstname-query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you do want to use a `Select()` transform, use this interface:
@@ -267,7 +267,7 @@ public class UserNamesForFirstName: ICompiledListQuery<User, string>
     public string FirstName { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L614-L628' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L612-L626' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_usernamesforfirstname' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Related Documents with Include()
@@ -451,7 +451,7 @@ public class TargetPaginationQuery: ICompiledListQuery<Target>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L64-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled-query-statistics' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Acceptance/statistics_and_paged_list.cs#L56-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiled-query-statistics' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the way to get the `QueryStatistics` out is done by having a property on the query, which we specify in the `Stats()` method, similarly to the way
@@ -491,7 +491,7 @@ public class FindUserByAllTheThings: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L377-L394' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L375-L392' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_finduserbyallthethings' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Querying for Multiple Results as JSON
@@ -513,7 +513,7 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L411-L425' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 If you wish to do it asynchronously, you can use the `ToJsonArrayAsync()` method.
@@ -535,7 +535,7 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L411-L425' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
@@ -558,7 +558,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L396-L409' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L394-L407' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And an example:
@@ -577,7 +577,7 @@ public class FindJsonUserByUsername: ICompiledQuery<User>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L396-L409' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L394-L407' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledasjson' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 (our `ToJson()` method simply returns a string representation of the `User` instance in Json notation)
@@ -608,7 +608,7 @@ public class TargetsInOrder: ICompiledListQuery<Target>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L525-L543' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L523-L541' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_targetsinorder' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And when used in the actual test:

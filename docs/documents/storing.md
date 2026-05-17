@@ -81,7 +81,7 @@ using (var session = theStore.LightweightSession())
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L77-L85' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L78-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Bulk Loading
@@ -99,7 +99,7 @@ var data = Target.GenerateRandomData(100).ToArray();
 await theStore.BulkInsertAsync(data, batchSize: 500);
 
 // And just checking that the data is actually there;)
-theSession.Query<Target>().Count().ShouldBe(data.Length);
+(await theSession.Query<Target>().CountAsync()).ShouldBe(data.Length);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
@@ -124,7 +124,7 @@ var data = Target.GenerateRandomData(100).ToArray();
 await theStore.BulkInsertAsync(data, batchSize: 500);
 
 // And just checking that the data is actually there;)
-theSession.Query<Target>().Count().ShouldBe(data.Length);
+(await theSession.Query<Target>().CountAsync()).ShouldBe(data.Length);
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L252-L262' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

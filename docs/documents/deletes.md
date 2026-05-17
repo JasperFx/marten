@@ -195,12 +195,12 @@ public async Task query_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause, deleted docs should be filtered out
-    session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+    (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
     // with a where clause
-    session.Query<User>().Where(x => x.UserName != "jack")
-        .ToList().Single().UserName.ShouldBe("foo");
+    (await session.Query<User>().Where(x => x.UserName != "jack")
+        .ToListAsync()).Single().UserName.ShouldBe("foo");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L284-L310' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs' title='Start of snippet'>anchor</a></sup>
@@ -223,12 +223,12 @@ public async Task query_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause, deleted docs should be filtered out
-    session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("foo", "jack");
+    (await session.Query<User>().OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("foo", "jack");
 
     // with a where clause
-    session.Query<User>().Where(x => x.UserName != "jack")
-        .ToList().Single().UserName.ShouldBe("foo");
+    (await session.Query<User>().Where(x => x.UserName != "jack")
+        .ToListAsync()).Single().UserName.ShouldBe("foo");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L986-L1012' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_docs-1' title='Start of snippet'>anchor</a></sup>
@@ -264,13 +264,13 @@ public async Task query_maybe_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause, all documents are returned
-    session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+    (await session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
     // with a where clause, all documents are returned
-    session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+    (await session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
         .OrderBy(x => x.UserName)
-        .ToList()
+        .ToListAsync())
         .Select(x => x.UserName)
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
@@ -294,13 +294,13 @@ public async Task query_maybe_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause, all documents are returned
-    session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
+    (await session.Query<User>().Where(x => x.MaybeDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz", "foo", "jack");
 
     // with a where clause, all documents are returned
-    session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
+    (await session.Query<User>().Where(x => x.UserName != "jack" && x.MaybeDeleted())
         .OrderBy(x => x.UserName)
-        .ToList()
+        .ToListAsync())
         .Select(x => x.UserName)
         .ShouldHaveTheSameElementsAs("bar", "baz", "foo");
 }
@@ -378,13 +378,13 @@ public async Task query_is_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause
-    session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+    (await session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
     // with a where clause
-    session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+    (await session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
         .OrderBy(x => x.UserName)
-        .ToList()
+        .ToListAsync())
         .Select(x => x.UserName)
         .Single().ShouldBe("bar");
 }
@@ -408,13 +408,13 @@ public async Task query_is_soft_deleted_docs()
     await session.SaveChangesAsync();
 
     // no where clause
-    session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("bar", "baz");
+    (await session.Query<User>().Where(x => x.IsDeleted()).OrderBy(x => x.UserName).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("bar", "baz");
 
     // with a where clause
-    session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
+    (await session.Query<User>().Where(x => x.UserName != "baz" && x.IsDeleted())
         .OrderBy(x => x.UserName)
-        .ToList()
+        .ToListAsync())
         .Select(x => x.UserName)
         .Single().ShouldBe("bar");
 }
@@ -449,8 +449,8 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user4);
     await session.SaveChangesAsync();
 
-    session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("jack");
+    (await session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("jack");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L372-L396' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since' title='Start of snippet'>anchor</a></sup>
@@ -475,8 +475,8 @@ public async Task query_is_soft_deleted_since_docs()
     session.Delete(user4);
     await session.SaveChangesAsync();
 
-    session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
-        .ToList().ShouldHaveTheSameElementsAs("jack");
+    (await session.Query<User>().Where(x => x.DeletedSince(epoch.Value)).Select(x => x.UserName)
+        .ToListAsync()).ShouldHaveTheSameElementsAs("jack");
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1074-L1098' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>

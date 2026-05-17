@@ -5,19 +5,19 @@ Linq queries against boolean properties can use shorthand mechanisms in `Where()
 <!-- snippet: sample_boolean_queries -->
 <a id='snippet-sample_boolean_queries'></a>
 ```cs
-public void query_by_booleans(IDocumentSession session)
+public async Task query_by_booleans(IDocumentSession session)
 {
     // Flag is a boolean property.
 
     // Where Flag is true
-    session.Query<Target>().Where(x => x.Flag).ToArray();
+    await session.Query<Target>().Where(x => x.Flag).ToListAsync();
     // or
-    session.Query<Target>().Where(x => x.Flag == true).ToArray();
+    await session.Query<Target>().Where(x => x.Flag == true).ToListAsync();
 
     // Where Flag is false
-    session.Query<Target>().Where(x => !x.Flag).ToArray();
+    await session.Query<Target>().Where(x => !x.Flag).ToListAsync();
     // or
-    session.Query<Target>().Where(x => x.Flag == false).ToArray();
+    await session.Query<Target>().Where(x => x.Flag == false).ToListAsync();
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L158-L174' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boolean_queries' title='Start of snippet'>anchor</a></sup>
