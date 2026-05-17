@@ -235,7 +235,12 @@ internal class UnitOfWork: ISessionWorkTracker
 
     public void PurgeOperations<T, TId>(TId id) where T : notnull where TId : notnull
     {
-        _operations.RemoveAll(op => op is StorageOperation<T, TId> storage && storage.Id.Equals(id));
+        // Match both the codegen-style StorageOperation<T, TId> base (still
+        // used by some non-document operations) and the closed-shape
+        // operations that expose their id via IIdentifiedOperation<T, TId>.
+        _operations.RemoveAll(op =>
+            (op is StorageOperation<T, TId> storage && storage.Id.Equals(id))
+            || (op is IIdentifiedOperation<T, TId> typed && typed.Id.Equals(id)));
     }
 
     public bool TryFindStream(string streamKey, [NotNullWhen(true)]out StreamAction? stream)

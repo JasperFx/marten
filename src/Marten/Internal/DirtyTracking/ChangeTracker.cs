@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
 using Marten.Internal.Operations;
+using Marten.Services;
 
 namespace Marten.Internal.DirtyTracking;
 
@@ -39,11 +40,16 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
             return false;
         }
 
-        operation = session
-            .Database
-            .Providers.StorageFor<T>()
-            .DirtyTracking
-            .Upsert(_document, session, session.TenantId);
+        // When the session opts out of concurrency checks (Concurrency=Disabled)
+        // and the document uses optimistic versioning, route through Overwrite
+        // so the SQL drops the WHERE mt_version = ? guard — otherwise a stale
+        // version on the dirty-tracking copy turns into a no-op UPDATE and
+        // SaveChanges raises ConcurrencyException despite the opt-out.
+        var storage = session.Database.Providers.StorageFor<T>().DirtyTracking;
+        operation = session.Concurrency == ConcurrencyChecks.Disabled
+                    && (storage.UseOptimisticConcurrency || storage.UseNumericRevisions)
+            ? storage.Overwrite(_document, session, session.TenantId)
+            : storage.Upsert(_document, session, session.TenantId);
 
         return true;
     }

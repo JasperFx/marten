@@ -64,7 +64,8 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         int versionReadIndex,
         Marten.Schema.DocumentMapping? hierarchyMapping,
         int docTypeReadIndex,
-        string tableName)
+        string tableName,
+        IDocumentMetadataBinder<TDoc>[]? partitionPkBinders = null)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
@@ -82,7 +83,19 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         VersionReadIndex = versionReadIndex;
         HierarchyMapping = hierarchyMapping;
         DocTypeReadIndex = docTypeReadIndex;
+        PartitionPkBinders = partitionPkBinders ?? System.Array.Empty<IDocumentMetadataBinder<TDoc>>();
     }
+
+    /// <summary>
+    /// Writers that bind the partition PK columns. For Update/Upsert on
+    /// partitioned tables whose PK includes the partition column (e.g.
+    /// list-partitioned by mt_deleted, range-partitioned by a duplicated
+    /// date field) the WHERE clause needs to filter on those columns too
+    /// — otherwise UPDATE … WHERE id = ? targets every partition row
+    /// with that id and produces a PK violation when the new value moves
+    /// it back into another row's slot. Order matches the SQL emit.
+    /// </summary>
+    internal IDocumentMetadataBinder<TDoc>[] PartitionPkBinders { get; }
 
     public IIdentification<TDoc, TId> Identification { get; }
 

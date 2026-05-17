@@ -34,10 +34,12 @@ namespace Marten.Internal.ClosedShape;
 /// set.</item>
 /// </list>
 /// </remarks>
-internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
+internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
+    public TId Id => _id;
+
     private readonly TDoc _document;
     private readonly TId _id;
     private readonly string _tenantId;

@@ -112,10 +112,22 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
     }
 
     private static object? GetMemberValue(MemberInfo member, object instance)
-        => member switch
+    {
+        // Hierarchical mappings can declare a duplicated field on a
+        // subclass / sub-interface (e.g. Duplicate<IPapaSmurf>(x => x.IsVillageLeader))
+        // but rows in the same table can also be the parent class
+        // (Smurf) which doesn't carry that member. Treat a type mismatch
+        // as "no value for this row" rather than throwing.
+        if (member.DeclaringType is { } declaring && !declaring.IsInstanceOfType(instance))
+        {
+            return null;
+        }
+
+        return member switch
         {
             PropertyInfo p => p.GetValue(instance),
             FieldInfo f => f.GetValue(instance),
             _ => null
         };
+    }
 }

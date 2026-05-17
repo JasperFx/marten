@@ -213,10 +213,25 @@ internal static class DocumentStorageDescriptorBuilder
                 ? ConcurrencyMode.Optimistic
                 : ConcurrencyMode.Off;
 
-        var upsertSql = BuildUpsertSql(mapping, writeArray, isConjoined, concurrencyMode);
+        // Partition PK columns — anything in the table's PK that isn't id
+        // or tenant_id (those are bound inline by the operation). Match
+        // by column name to a write binder so the operation can rebind
+        // it for the WHERE clause. Order matches the table's column order.
+        var partitionPkColumns = mapping.Schema.Table.Columns
+            .Where(c => c.IsPrimaryKey)
+            .Select(c => c.Name)
+            .Where(name => name != "id" && name != Marten.Storage.Metadata.TenantIdColumn.Name)
+            .ToArray();
+        var partitionPkBinders = partitionPkColumns
+            .Select(name => clientSide.FirstOrDefault(b => b.ColumnName == name))
+            .Where(b => b is not null)
+            .Select(b => b!)
+            .ToArray();
+
+        var upsertSql = BuildUpsertSql(mapping, writeArray, partitionPkBinders, isConjoined, concurrencyMode);
         var insertSql = BuildInsertSql(mapping, writeArray, isConjoined, concurrencyMode);
-        var updateSql = BuildUpdateSql(mapping, writeArray, isConjoined, concurrencyMode);
-        var overwriteSql = BuildOverwriteSql(mapping, writeArray, isConjoined, concurrencyMode);
+        var updateSql = BuildUpdateSql(mapping, writeArray, partitionPkBinders, isConjoined, concurrencyMode);
+        var overwriteSql = BuildOverwriteSql(mapping, writeArray, partitionPkBinders, isConjoined, concurrencyMode);
 
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
@@ -234,7 +249,8 @@ internal static class DocumentStorageDescriptorBuilder
             versionReadIndex: versionReadIndex,
             hierarchyMapping: hierarchyMapping,
             docTypeReadIndex: docTypeReadIndex,
-            tableName: mapping.TableName.Name);
+            tableName: mapping.TableName.Name,
+            partitionPkBinders: partitionPkBinders);
     }
 
     /// <summary>
@@ -295,14 +311,16 @@ internal static class DocumentStorageDescriptorBuilder
     private static string BuildUpsertSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> partitionPkBinders,
         bool isConjoined,
         ConcurrencyMode mode)
         where TDoc : notnull
-        => BuildUpsertOrOverwriteSql(mapping, binders, isConjoined, mode, includeConcurrencyGuard: mode != ConcurrencyMode.Off);
+        => BuildUpsertOrOverwriteSql(mapping, binders, partitionPkBinders, isConjoined, mode, includeConcurrencyGuard: mode != ConcurrencyMode.Off);
 
     private static string BuildUpsertOrOverwriteSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> partitionPkBinders,
         bool isConjoined,
         ConcurrencyMode mode,
         bool includeConcurrencyGuard)
@@ -398,6 +416,7 @@ internal static class DocumentStorageDescriptorBuilder
     private static string BuildUpdateSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> partitionPkBinders,
         bool isConjoined,
         ConcurrencyMode mode)
         where TDoc : notnull
@@ -419,10 +438,19 @@ internal static class DocumentStorageDescriptorBuilder
             }
         }
 
-        var whereClauses = new List<string>(3) { "id = ?" };
+        var whereClauses = new List<string>(3 + partitionPkBinders.Count) { "id = ?" };
         if (isConjoined)
         {
             whereClauses.Add($"{Marten.Storage.Metadata.TenantIdColumn.Name} = ?");
+        }
+        // Bug #4223: partitioned tables that include the partition column
+        // in the PK need WHERE filters on those columns too — otherwise
+        // UPDATE ... WHERE id = ? targets every partition row for that id
+        // and the SET clause produces a PK violation as the second row
+        // collides with the first.
+        foreach (var pk in partitionPkBinders)
+        {
+            whereClauses.Add($"{pk.ColumnName} = ?");
         }
         if (mode == ConcurrencyMode.Optimistic)
         {
@@ -450,8 +478,9 @@ internal static class DocumentStorageDescriptorBuilder
     private static string BuildOverwriteSql<TDoc>(
         DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
+        IReadOnlyList<IDocumentMetadataBinder<TDoc>> partitionPkBinders,
         bool isConjoined,
         ConcurrencyMode mode)
         where TDoc : notnull
-        => BuildUpsertOrOverwriteSql(mapping, binders, isConjoined, mode, includeConcurrencyGuard: false);
+        => BuildUpsertOrOverwriteSql(mapping, binders, partitionPkBinders, isConjoined, mode, includeConcurrencyGuard: false);
 }

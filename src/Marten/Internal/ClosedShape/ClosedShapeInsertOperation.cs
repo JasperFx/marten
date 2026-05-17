@@ -32,10 +32,12 @@ namespace Marten.Internal.ClosedShape;
 /// Either way the new value is written back onto the document +
 /// session.Versions in postprocess.
 /// </remarks>
-internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
+internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
+    public TId Id => _id;
+
     private readonly TDoc _document;
     private readonly TId _id;
     private readonly string _tenantId;

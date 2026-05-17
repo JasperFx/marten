@@ -24,10 +24,12 @@ namespace Marten.Internal.ClosedShape;
 /// option). Under <see cref="ConcurrencyMode.Off"/> overwrite is
 /// functionally identical to upsert.
 /// </summary>
-internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
+internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
+    public TId Id => _id;
+
     private readonly TDoc _document;
     private readonly TId _id;
     private readonly string _tenantId;

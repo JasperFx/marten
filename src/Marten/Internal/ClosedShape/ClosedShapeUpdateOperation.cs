@@ -29,10 +29,12 @@ namespace Marten.Internal.ClosedShape;
 /// <see cref="IRevisionedOperation.IgnoreConcurrencyViolation"/> is set.</item>
 /// </list>
 /// </remarks>
-internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, JasperFx.Core.Exceptions.IExceptionTransform
+internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
+    public TId Id => _id;
+
     private readonly TDoc _document;
     private readonly TId _id;
     private readonly string _tenantId;
@@ -105,6 +107,16 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
         {
             parameters[slot].Value = _tenantId;
             parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+            slot++;
+        }
+
+        // Bug #4223: partitioned tables include the partition column in
+        // the PK; the Update WHERE clause adds a `<col> = ?` slot per
+        // partition column so we update exactly the right row, not
+        // every row matching `id = ?`.
+        foreach (var pk in _descriptor.PartitionPkBinders)
+        {
+            pk.BindParameter(parameters[slot], _document, session);
             slot++;
         }
 
