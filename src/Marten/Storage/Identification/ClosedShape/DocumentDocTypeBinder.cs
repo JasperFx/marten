@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Schema;
 using Npgsql;
@@ -51,5 +53,12 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         // No-op — the alias is read directly by the selector to dispatch
         // deserialization to the right subclass type, not projected onto
         // the document.
+    }
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+    {
+        var alias = _aliasCache.GetOrAdd(document.GetType(), t => _mapping.AliasFor(t));
+        return writer.WriteAsync(alias, NpgsqlDbType.Varchar, cancellation);
     }
 }

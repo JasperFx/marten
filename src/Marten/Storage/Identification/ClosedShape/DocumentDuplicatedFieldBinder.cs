@@ -2,6 +2,8 @@
 using System;
 using System.Data.Common;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Linq.Members;
@@ -82,6 +84,31 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
     {
         // No-op — duplicated columns aren't in the document SELECT.
         // The canonical value is deserialized from the data column.
+    }
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+    {
+        object? current = document;
+        foreach (var member in _members)
+        {
+            if (current is null) break;
+            current = GetMemberValue(member, current);
+        }
+
+        if (current is null)
+        {
+            return writer.WriteNullAsync(cancellation);
+        }
+
+        if (_isEnum)
+        {
+            current = _enumStorage == EnumStorage.AsString
+                ? current.ToString()!
+                : Convert.ToInt32(current);
+        }
+
+        return writer.WriteAsync(current, _field.DbType, cancellation);
     }
 
     private static object? GetMemberValue(MemberInfo member, object instance)

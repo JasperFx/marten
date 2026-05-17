@@ -1,5 +1,7 @@
 #nullable enable
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal;
 using Npgsql;
 using NpgsqlTypes;
@@ -39,4 +41,8 @@ internal sealed class DocumentDotNetTypeBinder<TDoc>: IDocumentMetadataBinder<TD
         // No-op for the non-hierarchical case. Hierarchical dispatch lives
         // at M5.
     }
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+        => writer.WriteAsync(_typeName, NpgsqlDbType.Varchar, cancellation);
 }

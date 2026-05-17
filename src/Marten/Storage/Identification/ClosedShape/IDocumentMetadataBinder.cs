@@ -1,5 +1,7 @@
 #nullable enable
 using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal;
 using Npgsql;
 
@@ -74,4 +76,17 @@ public interface IDocumentMetadataBinder<TDoc>
     /// purely informational (DotNetType in non-hierarchical case) no-op.
     /// </summary>
     void Apply(DbDataReader reader, int columnOrdinal, TDoc document);
+
+    /// <summary>
+    /// W3 spike (M16): per-row write hook on the COPY (bulk) path. Each
+    /// binder produces a value + NpgsqlDbType and writes both to the
+    /// <see cref="NpgsqlBinaryImporter"/> in COPY column order. Unlike
+    /// <see cref="BindParameter"/>, server-side binders (e.g.
+    /// <c>transaction_timestamp()</c>) must compute a client-side value
+    /// here since COPY doesn't honor inline SQL literals — the override
+    /// produces <see cref="System.DateTimeOffset.UtcNow"/> for the
+    /// LastModified case.
+    /// </summary>
+    Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation);
 }

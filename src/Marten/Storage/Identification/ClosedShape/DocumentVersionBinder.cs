@@ -2,6 +2,8 @@
 using System;
 using System.Data.Common;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
@@ -68,4 +70,12 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
     /// </summary>
     public void ApplyVersionTo(TDoc document, Guid version)
         => _setter?.Invoke(document, version);
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+    {
+        var newVersion = CombGuidIdGeneration.NewGuid();
+        _setter?.Invoke(document, newVersion);
+        return writer.WriteAsync(newVersion, NpgsqlDbType.Uuid, cancellation);
+    }
 }

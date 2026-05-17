@@ -224,7 +224,11 @@ public static class ClosedShapeRegistration
         var identityMap = new IdentityMapClosedShapeStorage<TDoc, TId>(mapping, descriptor);
         var dirtyTracking = new DirtyCheckedClosedShapeStorage<TDoc, TId>(mapping, descriptor);
 
-        var bulkLoader = new SpikeNotImplementedBulkLoader<TDoc>();
+        // M16: real bulk loader, COPY-based, built from the descriptor's
+        // column list. Lightweight is fine to use as the storage backing
+        // here since BulkLoader<T, TId> only calls IDocumentStorage's
+        // AssignIdentity / Identity through it.
+        var bulkLoader = new ClosedShapeBulkLoader<TDoc, TId>(lightweight, descriptor, mapping);
         return new DocumentProvider<TDoc>(
             bulkLoader,
             queryOnly: queryOnly,

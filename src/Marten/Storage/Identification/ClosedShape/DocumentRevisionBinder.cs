@@ -2,6 +2,8 @@
 using System;
 using System.Data.Common;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Npgsql;
@@ -62,4 +64,14 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     /// </summary>
     public void ApplyRevisionTo(TDoc document, long revision)
         => _setter?.Invoke(document, revision);
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+    {
+        // Bulk path defaults to revision 1 — matches the codegen
+        // BulkLoader.GenerateBulkWriterCodeAsync's hard-coded "write
+        // (long)1" for RevisionArgument.
+        _setter?.Invoke(document, 1L);
+        return writer.WriteAsync(1L, NpgsqlDbType.Bigint, cancellation);
+    }
 }

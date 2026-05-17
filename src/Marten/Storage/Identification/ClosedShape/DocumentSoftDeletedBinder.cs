@@ -2,6 +2,8 @@
 using System;
 using System.Data.Common;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Npgsql;
@@ -53,4 +55,8 @@ internal sealed class DocumentSoftDeletedBinder<TDoc>: IDocumentMetadataBinder<T
         var value = reader.GetFieldValue<bool>(columnOrdinal);
         _setter(document, value);
     }
+
+    public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
+        ISerializer serializer, CancellationToken cancellation)
+        => writer.WriteAsync(false, NpgsqlDbType.Boolean, cancellation);
 }
