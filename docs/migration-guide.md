@@ -59,6 +59,15 @@ Three types Marten core previously owned moved to the shared Weasel / JasperFx p
 
   See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
 
+### Composite projections now expose a single bundled `ShardName`
+
+* Composite projections (`opts.Projections.CompositeProjectionFor("Trips", x => x.Add<A>().Add<B>().Add<C>())`) used to surface one `ShardName` per sub-projection through `ISubscriptionSource.ShardNames()`. In Marten 9 / JasperFx.Events 2.0 they collapse to a single bundled name shaped `<projection-name>/all/v<Version>` — e.g. `trips/all/v2` for a versioned composite with three sub-projections at version 2.
+* **Why.** The composite is a coordination boundary: its stages run sequentially against a shared `IProjectionBatch`, so the daemon must hold the whole composite on one node. Per-sub-projection shard names invited two separate nodes to race on the same composite's state under HotCold distribution.
+* **Visible impact.** Any code that iterates `usage.Subscriptions.SelectMany(x => x.ShardNames)` to build agent URIs / per-shard tasks (Wolverine 5's `EventSubscriptionAgentFamily` is the canonical example) now sees `N → 1` per composite. Test expectations that count `subscription.ShardNames.Count == subProjectionCount` need to flip to `1`. Downstream distribution code that needs the per-sub-projection list should walk `CompositeProjection.AllProjections()` instead of fanning out via `ShardNames`.
+* **Restore the V8 fan-out?** No — there's no `RestoreV8Defaults()` toggle for this. Composite shards stay collapsed; the per-sub-projection view is exposed structurally via `AllProjections()`.
+
+See [#4440](https://github.com/JasperFx/marten/issues/4440).
+
 ### `IInlineProjection.ApplyAsync` widened to `IEnumerable<StreamAction>`
 
 * The `streams` parameter on `IInlineProjection.ApplyAsync(IDocumentSession, ..., CancellationToken)` widened from `IReadOnlyList<StreamAction>` to `IEnumerable<StreamAction>`. The internal `RichEventAppender` / `QuickEventAppender` callers now hand the inline-projection pipeline a streaming view of the unit-of-work's streams instead of materializing a list per `SaveChangesAsync`.
