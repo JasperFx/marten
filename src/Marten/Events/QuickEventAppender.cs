@@ -48,9 +48,14 @@ internal class QuickEventAppender: IEventAppender
         foreach (var stream in session.WorkTracker.Streams.Where(x => x.Events.Any()))
         {
             stream.TenantId ??= session.TenantId;
+            // #4424: see TenantPropagation. Pass a metadata context whose
+            // TenantId matches the stream so applyQuickMetadata stamps events
+            // with the stream's tenant instead of the session's.
+            var metadataContext = TenantPropagation.MetadataContextFor(session, stream);
+
             if (stream.ActionType == StreamActionType.Start)
             {
-                stream.PrepareEvents(0, eventGraph, sequences, session);
+                stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
                 session.QueueOperation(storage.InsertStream(stream));
 
                 foreach (var @event in stream.Events)
@@ -66,7 +71,7 @@ internal class QuickEventAppender: IEventAppender
                 if (stream.ExpectedVersionOnServer.HasValue)
                 {
                     // We can supply the version to the events going in
-                    stream.PrepareEvents(stream.ExpectedVersionOnServer.Value, eventGraph, sequences, session);
+                    stream.PrepareEvents(stream.ExpectedVersionOnServer.Value, eventGraph, sequences, metadataContext);
                     session.QueueOperation(storage.UpdateStreamVersion(stream));
                     foreach (var @event in stream.Events)
                     {
@@ -82,7 +87,7 @@ internal class QuickEventAppender: IEventAppender
                     // array parameters. In HStore mode the function signature is trimmed
                     // (no per-tag varchar[] params), so tags are written via a follow-up
                     // UPDATE keyed on the event's id after the bulk insert completes.
-                    stream.PrepareEvents(0, eventGraph, sequences, session);
+                    stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
                     var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
                     quickAppendEvents.Events = eventGraph;
                     session.QueueOperation(quickAppendEvents);
