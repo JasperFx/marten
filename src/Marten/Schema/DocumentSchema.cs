@@ -22,30 +22,17 @@ internal class DocumentSchema: IFeatureSchema
 
         foreach (var metadataColumn in Table.Columns.OfType<MetadataColumn>())
             metadataColumn.RegisterForLinqSearching(mapping);
-
-        Upsert = new UpsertFunction(_mapping);
-        Insert = new InsertFunction(_mapping);
-        Update = new UpdateFunction(_mapping);
-
-        if (_mapping.UseOptimisticConcurrency || _mapping.UseNumericRevisions)
-        {
-            Overwrite = new OverwriteFunction(_mapping);
-        }
     }
-
-    public OverwriteFunction Overwrite { get; }
-
-    public UpdateFunction Update { get; }
-
-    public InsertFunction Insert { get; }
-
-    public UpsertFunction Upsert { get; }
 
     public DocumentTable Table { get; }
 
     public IEnumerable<Type> DependentTypes()
     {
-        yield return typeof(SystemFunctions);
+        // #4404: SystemFunctions had been required by the old
+        // mt_upsert_* / mt_insert_* / mt_update_* / mt_overwrite_*
+        // Postgres functions emitted by the document codegen. The
+        // closed-shape path uses raw SQL operations, so document
+        // schemas no longer depend on it.
         foreach (var referencedType in _mapping.ReferencedTypes()) yield return referencedType;
     }
 
@@ -61,11 +48,6 @@ internal class DocumentSchema: IFeatureSchema
             : rules.Templates["default"];
 
         Table.WriteTemplate(template, writer);
-
-        Upsert.WriteTemplate(rules, template, writer);
-        Update.WriteTemplate(rules, template, writer);
-        Insert.WriteTemplate(rules, template, writer);
-        Overwrite?.WriteTemplate(rules, template, writer);
     }
 
     public bool IsActive(StoreOptions options)
@@ -76,14 +58,6 @@ internal class DocumentSchema: IFeatureSchema
     private IEnumerable<ISchemaObject> toSchemaObjects()
     {
         yield return Table;
-        yield return Upsert;
-        yield return Insert;
-        yield return Update;
-
-        if (Overwrite != null)
-        {
-            yield return Overwrite;
-        }
 
         if (_mapping.TenancyStyle == TenancyStyle.Conjoined)
         {

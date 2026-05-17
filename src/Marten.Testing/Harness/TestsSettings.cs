@@ -58,26 +58,5 @@ namespace Marten.Testing.Harness
             }
         }
 
-        private static bool? useClosedShapeDocumentStorage;
-
-        /// <summary>
-        /// Reads <c>MARTEN_USE_CLOSED_SHAPE_DOC_STORAGE</c>. When <c>true</c>, the
-        /// harness flips <see cref="StoreOptions.UseClosedShapeDocumentStorage"/>
-        /// on after the test's own <c>configure</c> callback runs — used for
-        /// the W3 (#4404) dry-run to surface regressions before flipping
-        /// the default permanently.
-        /// </summary>
-        public static bool UseClosedShapeDocumentStorage
-        {
-            get
-            {
-                if (useClosedShapeDocumentStorage.HasValue)
-                    return useClosedShapeDocumentStorage.Value;
-
-                var env = Environment.GetEnvironmentVariable("MARTEN_USE_CLOSED_SHAPE_DOC_STORAGE");
-                useClosedShapeDocumentStorage = string.Equals(env, "true", StringComparison.OrdinalIgnoreCase);
-                return useClosedShapeDocumentStorage.Value;
-            }
-        }
     }
 }

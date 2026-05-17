@@ -23,7 +23,6 @@ public class closed_shape_streaming_tests: BugIntegrationContext
     private DocumentStore ClosedShapeStore()
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
         });
 
     [Fact]

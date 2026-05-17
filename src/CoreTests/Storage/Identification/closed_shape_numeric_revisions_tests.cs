@@ -23,7 +23,6 @@ public class closed_shape_numeric_revisions_tests: BugIntegrationContext
     private DocumentStore RevisionedStore()
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<RevDoc>().UseNumericRevisions(true);
         });
 

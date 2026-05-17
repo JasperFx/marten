@@ -24,7 +24,6 @@ public class closed_shape_soft_delete_tests: BugIntegrationContext
     private DocumentStore SoftDeleteStore()
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<SdDoc>().SoftDeleted();
         });
 

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.DirtyTracking;
 using Marten.Linq.Selectors;
+using Marten.Internal.CodeGeneration;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -18,7 +19,7 @@ namespace Marten.Internal.ClosedShape;
 /// every loaded document — gives <c>SaveChangesAsync</c> a baseline to
 /// compare against when dirty-checking which loaded docs were modified.
 /// </summary>
-internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
+internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {

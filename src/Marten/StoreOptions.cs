@@ -331,25 +331,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public bool AllowRuntimeCodeGeneration { get; set; } = true;
 
     /// <summary>
-    /// W3 spike (#4404): opt the document-storage path into the
-    /// closed-shape hierarchy. When <c>true</c>, <see cref="ProviderGraph"/>
-    /// routes supported document types through hand-written closed-shape
-    /// storage instead of Roslyn-emitted codegen. Mirrors the event-side
-    /// <see cref="EventGraph.UseClosedShapeStorage"/> flag.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Spike coverage today: documents with a <see cref="Guid"/> or
-    /// <see cref="string"/> id, no optimistic concurrency, no numeric
-    /// revisions, no soft delete, no hierarchical sub-classing, no
-    /// duplicated fields. Mappings outside that envelope automatically
-    /// fall back to the codegen path so existing configurations keep
-    /// working.
-    /// </para>
-    /// </remarks>
-    public bool UseClosedShapeDocumentStorage { get; set; } = false;
-
-    /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
     /// </summary>
     [ChildDescription]

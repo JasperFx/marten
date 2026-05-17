@@ -23,7 +23,6 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
         });
 
         var id = Guid.NewGuid();
@@ -46,7 +45,6 @@ public class closed_shape_default_path_tests: BugIntegrationContext
         // Verifies the default path picks up the HiLo identification.
         var store = StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
         });
 
         await using (var session = store.LightweightSession())
@@ -59,52 +57,6 @@ public class closed_shape_default_path_tests: BugIntegrationContext
         (await query.Query<IntIdDoc>().FirstAsync()).Name.ShouldBe("v1");
     }
 
-    [Fact]
-    public void IsSupported_recognises_the_supported_envelope()
-    {
-        var store = StoreOptions(_ => { });
-        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(DefaultPathDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsSupported_accepts_optimistic_concurrency()
-    {
-        // M7: optimistic concurrency is inside the coverage envelope.
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<ConcurrencyDoc>().UseOptimisticConcurrency(true);
-        });
-
-        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsSupported_accepts_numeric_revisions()
-    {
-        // M8: numeric revisions is inside the coverage envelope.
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<ConcurrencyDoc>().UseNumericRevisions(true);
-        });
-
-        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsSupported_accepts_soft_delete()
-    {
-        // M9: soft delete is inside the coverage envelope.
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
-        });
-
-        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(SoftDeleteDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
 }
 
 public class DefaultPathDoc

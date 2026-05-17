@@ -76,9 +76,6 @@ namespace Marten.Testing.Harness
 
                 if (TestsSettings.UseClosedShapeStorage)
                     opts.Events.UseClosedShapeStorage = true;
-
-                if (TestsSettings.UseClosedShapeDocumentStorage)
-                    opts.UseClosedShapeDocumentStorage = true;
             });
         }
 
@@ -137,11 +134,6 @@ namespace Marten.Testing.Harness
             if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
             {
                 options.Events.UseClosedShapeStorage = true;
-            }
-
-            if (TestsSettings.UseClosedShapeDocumentStorage && !options.UseClosedShapeDocumentStorage)
-            {
-                options.UseClosedShapeDocumentStorage = true;
             }
 
             _store = new DocumentStore(options);

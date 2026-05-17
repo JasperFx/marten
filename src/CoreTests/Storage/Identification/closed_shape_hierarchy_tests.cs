@@ -21,7 +21,6 @@ public class closed_shape_hierarchy_tests: BugIntegrationContext
     private DocumentStore HierarchyStore()
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<HierShop>().AddSubClass<HierCoffeeShop>();
         });
 
@@ -111,17 +110,6 @@ public class closed_shape_hierarchy_tests: BugIntegrationContext
         ((HierCoffeeShop)byName["sub"]).Roast.ShouldBe("espresso");
     }
 
-    [Fact]
-    public void IsSupported_accepts_hierarchical_root_mapping()
-    {
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<HierShop>().AddSubClass<HierCoffeeShop>();
-        });
-
-        var rootMapping = (Marten.Schema.DocumentMapping)store.Options.Storage.FindMapping(typeof(HierShop));
-        ClosedShapeRegistration.IsSupported(rootMapping).ShouldBeTrue();
-    }
 }
 
 public class HierShop

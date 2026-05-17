@@ -129,27 +129,6 @@ public class DocumentMappingTests
         mapping.TableName.QualifiedName.ShouldBe("public.mt_doc_user");
     }
 
-    [Fact]
-    public void default_upsert_name()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.UpsertFunction.Name.ShouldBe("mt_upsert_user");
-    }
-
-    [Fact]
-    public void default_upsert_name_with_different_schema()
-    {
-        var mapping = DocumentMapping.For<User>("other");
-        mapping.UpsertFunction.QualifiedName.ShouldBe("other.mt_upsert_user");
-    }
-
-    [Fact]
-    public void default_upsert_name_with_schema()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.UpsertFunction.QualifiedName.ShouldBe("public.mt_upsert_user");
-    }
-
     [Theory]
     [InlineData(EnumStorage.AsInteger)]
     [InlineData(EnumStorage.AsString)]
@@ -293,7 +272,6 @@ public class DocumentMappingTests
         mapping.Alias = "users";
 
         mapping.TableName.Name.ShouldBe("mt_doc_users");
-        mapping.UpsertFunction.Name.ShouldBe("mt_upsert_users");
     }
 
     [Fact]
@@ -330,33 +308,6 @@ public class DocumentMappingTests
         mapping.Alias = "Users";
 
         mapping.TableName.QualifiedName.ShouldBe("public.mt_doc_users");
-    }
-
-    [Fact]
-    public void override_the_alias_converts_upsertname_to_lowercase()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.Alias = "Users";
-
-        mapping.UpsertFunction.Name.ShouldBe("mt_upsert_users");
-    }
-
-    [Fact]
-    public void override_the_alias_converts_upsertname_with_different_schema_to_lowercase()
-    {
-        var mapping = DocumentMapping.For<User>("OTHER");
-        mapping.Alias = "Users";
-
-        mapping.UpsertFunction.QualifiedName.ShouldBe("other.mt_upsert_users");
-    }
-
-    [Fact]
-    public void override_the_alias_converts_upsertname_with_schema_to_lowercase()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.Alias = "Users";
-
-        mapping.UpsertFunction.QualifiedName.ShouldBe("public.mt_upsert_users");
     }
 
     [Fact]
@@ -496,79 +447,10 @@ public class DocumentMappingTests
     }
 
     [Fact]
-    public void to_upsert_baseline()
-    {
-        var mapping = DocumentMapping.For<Squad>();
-        var function = new UpsertFunction(mapping);
-
-        function.Arguments.Select(x => x.Column)
-            .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.VersionColumn,
-                SchemaConstants.DotNetTypeColumn);
-    }
-
-    [Fact]
-    public void to_upsert_with_duplicated_fields()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.DuplicateField(nameof(User.FirstName));
-        mapping.DuplicateField(nameof(User.LastName));
-
-        var function = new UpsertFunction(mapping);
-
-        var args = function.Arguments.Select(x => x.Column).ToArray();
-        args.ShouldContain("first_name");
-        args.ShouldContain("last_name");
-    }
-
-    [Fact]
-    public void to_upsert_with_subclasses()
-    {
-        var mapping = DocumentMapping.For<Squad>();
-        mapping.SubClasses.Add(typeof(BaseballTeam));
-
-        var function = new UpsertFunction(mapping);
-
-        function.Arguments.Select(x => x.Column)
-            .ShouldHaveTheSameElementsAs("id", "data", SchemaConstants.VersionColumn,
-                SchemaConstants.DotNetTypeColumn, SchemaConstants.DocumentTypeColumn);
-    }
-
-    [Fact]
     public void trying_to_replace_the_hilo_settings_when_not_using_hilo_for_the_sequence_throws()
     {
         Should.Throw<InvalidOperationException>(
             () => { DocumentMapping.For<StringId>().HiloSettings = new HiloSettings(); });
-    }
-
-    [Fact]
-    public void upsert_name_for_document_type()
-    {
-        DocumentMapping.For<MySpecialDocument>().UpsertFunction.Name
-            .ShouldBe("mt_upsert_documentmappingtests_myspecialdocument");
-    }
-
-    [Fact]
-    public void upsert_name_with_schema_for_document_type()
-    {
-        DocumentMapping.For<MySpecialDocument>().UpsertFunction.QualifiedName
-            .ShouldBe("public.mt_upsert_documentmappingtests_myspecialdocument");
-    }
-
-    [Fact]
-    public void upsert_name_with_schema_for_document_type_on_other_schema()
-    {
-        DocumentMapping.For<MySpecialDocument>("other").UpsertFunction.QualifiedName
-            .ShouldBe("other.mt_upsert_documentmappingtests_myspecialdocument");
-    }
-
-    [Fact]
-    public void upsert_name_with_schema_for_document_type_on_overriden_schema()
-    {
-        var documentMapping = DocumentMapping.For<MySpecialDocument>("other");
-        documentMapping.DatabaseSchemaName = "overriden";
-
-        documentMapping.UpsertFunction.QualifiedName
-            .ShouldBe("overriden.mt_upsert_documentmappingtests_myspecialdocument");
     }
 
     [Fact]
@@ -693,28 +575,6 @@ public class DocumentMappingTests
         var table = new DocumentTable(mapping);
         table.Columns.Any(x => x is TenantIdColumn).ShouldBeTrue();
         table.Indexes.Single(x => x.Columns.Length == 1 && x.Columns[0] == TenantIdColumn.Name).ShouldNotBeNull();
-    }
-
-    [Fact]
-    public void no_overwrite_function_if_no_optimistic_concurrency()
-    {
-        var mapping = DocumentMapping.For<User>();
-        var objects = mapping.Schema.Objects;
-
-        objects.Length.ShouldBe(4);
-        objects.Single(x => x.GetType() == typeof(UpsertFunction)).Identifier.ShouldBe(mapping.UpsertFunction);
-    }
-
-    [Fact]
-    public void add_overwrite_function_if_optimistic_concurrency()
-    {
-        var mapping = DocumentMapping.For<User>();
-        mapping.UseOptimisticConcurrency = true;
-
-        var objects = mapping.Schema.Objects;
-
-        objects.Length.ShouldBe(5);
-        objects.OfType<OverwriteFunction>().Any().ShouldBeTrue();
     }
 
     [Fact]

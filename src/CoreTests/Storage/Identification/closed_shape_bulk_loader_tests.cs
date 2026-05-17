@@ -22,7 +22,6 @@ public class closed_shape_bulk_loader_tests: BugIntegrationContext
     private DocumentStore ClosedShapeStore(Action<StoreOptions>? extra = null)
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             extra?.Invoke(opts);
         });
 

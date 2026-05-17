@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq.Selectors;
+using Marten.Internal.CodeGeneration;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -19,7 +20,7 @@ namespace Marten.Internal.ClosedShape;
 /// captures each row's <c>mt_version</c> into <c>session.Versions</c>
 /// so subsequent updates can supply it as the expected version.
 /// </summary>
-internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
+internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {

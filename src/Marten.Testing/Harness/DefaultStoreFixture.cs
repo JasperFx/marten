@@ -24,9 +24,6 @@ namespace Marten.Testing.Harness
 
                 if (TestsSettings.UseClosedShapeStorage)
                     opts.Events.UseClosedShapeStorage = true;
-
-                if (TestsSettings.UseClosedShapeDocumentStorage)
-                    opts.UseClosedShapeDocumentStorage = true;
             });
 
             using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
@@ -48,9 +45,6 @@ namespace Marten.Testing.Harness
 
                 if (TestsSettings.UseClosedShapeStorage)
                     opts.Events.UseClosedShapeStorage = true;
-
-                if (TestsSettings.UseClosedShapeDocumentStorage)
-                    opts.UseClosedShapeDocumentStorage = true;
             });
 
             // Do this exactly once and no more.

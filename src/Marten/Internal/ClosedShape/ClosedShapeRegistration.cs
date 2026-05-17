@@ -85,66 +85,9 @@ public static class ClosedShapeRegistration
     }
 
     /// <summary>
-    /// W3 spike (M6): is this mapping inside the closed-shape coverage
-    /// envelope today? Used by <see cref="ProviderGraph"/> when
-    /// <see cref="StoreOptions.UseClosedShapeDocumentStorage"/> is on to
-    /// route eligible types through the closed-shape path and let the
-    /// rest fall back to codegen.
-    /// </summary>
-    /// <remarks>
-    /// Coverage as of this commit: Guid id with sequential-GUID generation
-    /// or string id with externally-assigned keys; no optimistic
-    /// concurrency, no numeric revisions, no soft delete, no
-    /// hierarchical sub-classing, no duplicated fields. Tenancy
-    /// (Single + Conjoined) is supported. Anything outside this envelope
-    /// returns false.
-    /// </remarks>
-    public static bool IsSupported(DocumentMapping mapping)
-    {
-        // Guid ids: sequential (CombGuid) is the default for Guid; the
-        // simple GuidIdGeneration is the random-GUID variant (M14).
-        if (mapping.IdType == typeof(Guid) &&
-            (mapping.IdStrategy is SequentialGuidIdGeneration || mapping.IdStrategy is GuidIdGeneration))
-        {
-            return true;
-        }
-
-        // String ids: caller-assigned (StringIdGeneration / NoOpIdGeneration)
-        // and Marten's IdentityKey ("alias/sequence" composite — M13).
-        if (mapping.IdType == typeof(string) &&
-            (mapping.IdStrategy is StringIdGeneration
-             || mapping.IdStrategy is NoOpIdGeneration
-             || mapping.IdStrategy is IdentityKeyGeneration))
-        {
-            return true;
-        }
-
-        // int / long ids with HiLo (the default for those types) — M12.
-        if ((mapping.IdType == typeof(int) || mapping.IdType == typeof(long))
-            && mapping.IdStrategy is HiloIdGeneration)
-        {
-            return true;
-        }
-
-        // Strong-typed IDs — M15. The wrapper unwraps to an int / long /
-        // Guid / string handled above.
-        if (mapping.IdStrategy is ValueTypeIdGeneration vt &&
-            (vt.SimpleType == typeof(Guid)
-             || vt.SimpleType == typeof(int)
-             || vt.SimpleType == typeof(long)
-             || vt.SimpleType == typeof(string)))
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// W3 spike (M6): build a closed-shape <see cref="DocumentProvider{TDoc}"/>
-    /// for a mapping that has already passed <see cref="IsSupported"/>.
-    /// Called by <see cref="ProviderGraph"/> on the default path when the
-    /// store-level flag is on.
+    /// Build a closed-shape <see cref="DocumentProvider{TDoc}"/> for any
+    /// supported document mapping — the only document-storage path now
+    /// that the Roslyn-emit codegen has been retired (#4404).
     /// </summary>
     internal static DocumentProvider<TDoc> BuildSupportedProvider<TDoc>(DocumentMapping mapping)
         where TDoc : notnull
@@ -183,7 +126,7 @@ public static class ClosedShapeRegistration
         }
 
         throw new InvalidOperationException(
-            $"Mapping for {typeof(TDoc).FullName} is outside the closed-shape coverage envelope — call IsSupported first.");
+            $"No closed-shape id strategy is registered for {typeof(TDoc).FullName} (id type {mapping.IdType?.FullName}, strategy {mapping.IdStrategy?.GetType().FullName}).");
     }
 
     /// <summary>

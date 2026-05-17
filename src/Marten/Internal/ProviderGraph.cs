@@ -91,34 +91,14 @@ public class ProviderGraph: IProviderGraph
         {
             case DocumentMapping m:
             {
-                // W3 spike (M6 / #4404): when the store-level flag is on
-                // and the mapping is inside the closed-shape coverage
-                // envelope, build a hand-written DocumentProvider and
-                // skip the Roslyn-emit path entirely. Anything outside the
-                // envelope (concurrency, soft delete, sub-classing, etc.)
-                // silently falls through to codegen.
-                if (_options.UseClosedShapeDocumentStorage && ClosedShapeRegistration.IsSupported(m))
+                // W3 (#4404): the closed-shape DocumentProvider is now the
+                // only document-storage path — the Roslyn-emitted
+                // DocumentProviderBuilder route has been removed.
+                try
                 {
                     var closedShape = ClosedShapeRegistration.BuildSupportedProvider<T>(m);
                     _storage = _storage.AddOrUpdate(documentType, closedShape);
                     return closedShape;
-                }
-
-                try
-                {
-                    var builder = new DocumentProviderBuilder(m, _options);
-
-                    var rules = _options.CreateGenerationRules();
-                    rules.ReferenceTypes(m.DocumentType);
-                    // 9.0 (#4309): same AOT-friendly gate as the IEvent path above.
-                    StaticOnlyCodeFileLoader.Initialize(
-                        builder, rules, _options, null,
-                        _options.AllowRuntimeCodeGeneration);
-                    var slot = builder.BuildProvider<T>();
-
-                    _storage = _storage.AddOrUpdate(documentType, slot);
-
-                    return slot;
                 }
                 catch (Exception e)
                 {

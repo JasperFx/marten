@@ -81,25 +81,6 @@ public class DocumentCleanerTests: OneOffConfigurationsContext
     }
 
     [Fact]
-    public async Task completely_remove_document_removes_the_upsert_command_too()
-    {
-        theSession.Store(new Target { Number = 1 });
-        theSession.Store(new Target { Number = 2 });
-
-        await theSession.SaveChangesAsync();
-
-        var upsertName = theStore.StorageFeatures.MappingFor(typeof(Target)).As<DocumentMapping>().UpsertFunction;
-
-        (await theStore.Tenancy.Default.Database.Functions()).ShouldContain(upsertName);
-
-        await theCleaner.CompletelyRemoveAsync(typeof(Target));
-
-        (await theStore.Tenancy.Default.Database.Functions()).ShouldNotContain(upsertName);
-
-        Console.WriteLine("foo");
-    }
-
-    [Fact]
     public async Task completely_remove_everything()
     {
         theSession.Store(new Target { Number = 1 });

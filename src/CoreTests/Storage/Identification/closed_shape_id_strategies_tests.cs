@@ -20,7 +20,6 @@ public class closed_shape_id_strategies_tests: BugIntegrationContext
     private DocumentStore ClosedShapeStore(Action<StoreOptions>? extra = null)
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             extra?.Invoke(opts);
         });
 
@@ -156,29 +155,6 @@ public class closed_shape_id_strategies_tests: BugIntegrationContext
         first.Id.Value.ShouldNotBe(second.Id.Value);
     }
 
-    // ----- IsSupported predicate coverage -----
-
-    [Fact]
-    public void IsSupported_accepts_each_id_strategy()
-    {
-        var store = ClosedShapeStore(opts =>
-        {
-            opts.Schema.For<RandomGuidDoc>().IdStrategy(new Marten.Schema.Identity.GuidIdGeneration());
-            opts.Schema.For<IdentityKeyDoc>().IdStrategy(
-                new Marten.Schema.Identity.Sequences.IdentityKeyGeneration(
-                    (DocumentMapping)null!, new Marten.Schema.Identity.Sequences.HiloSettings()));
-            opts.RegisterValueType(typeof(StrongGuidId));
-        });
-
-        bool sup(Type t) => ClosedShapeRegistration.IsSupported(
-            (DocumentMapping)store.Options.Storage.FindMapping(t));
-
-        sup(typeof(HiloIntDoc)).ShouldBeTrue();
-        sup(typeof(HiloLongDoc)).ShouldBeTrue();
-        sup(typeof(IdentityKeyDoc)).ShouldBeTrue();
-        sup(typeof(RandomGuidDoc)).ShouldBeTrue();
-        sup(typeof(StrongGuidIdDoc)).ShouldBeTrue();
-    }
 }
 
 public class HiloIntDoc

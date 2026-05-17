@@ -25,7 +25,6 @@ public class closed_shape_optimistic_concurrency_tests: BugIntegrationContext
     private DocumentStore OptimisticStore()
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<OcDoc>().UseOptimisticConcurrency(true);
         });
 

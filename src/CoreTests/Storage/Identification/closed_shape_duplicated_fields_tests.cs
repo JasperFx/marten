@@ -23,7 +23,6 @@ public class closed_shape_duplicated_fields_tests: BugIntegrationContext
     private DocumentStore DuplicatedStore(Action<StoreOptions>? extra = null)
         => StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<DfDoc>().Duplicate(x => x.Name);
             extra?.Invoke(opts);
         });
@@ -92,7 +91,6 @@ public class closed_shape_duplicated_fields_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Advanced.DuplicatedFieldEnumStorage = EnumStorage.AsString;
             opts.Schema.For<DfEnumDoc>().Duplicate(x => x.Color);
         });
@@ -119,7 +117,6 @@ public class closed_shape_duplicated_fields_tests: BugIntegrationContext
         // parameter slot.
         var store = StoreOptions(opts =>
         {
-            opts.UseClosedShapeDocumentStorage = true;
             opts.Schema.For<DfDoc>().Index(x => x.Name);
         });
 
@@ -136,17 +133,6 @@ public class closed_shape_duplicated_fields_tests: BugIntegrationContext
         loaded.Name.ShouldBe("indexed");
     }
 
-    [Fact]
-    public void IsSupported_accepts_duplicated_fields()
-    {
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<DfDoc>().Duplicate(x => x.Name);
-        });
-
-        var mapping = (Marten.Schema.DocumentMapping)store.Options.Storage.FindMapping(typeof(DfDoc));
-        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
-    }
 }
 
 public class DfDoc

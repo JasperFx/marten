@@ -54,14 +54,6 @@ namespace Marten.Testing.Harness
                 options.Events.UseClosedShapeStorage = true;
             }
 
-            // #4404: same pattern for the document-storage flag — used
-            // to run the existing suites against the closed-shape path
-            // before flipping the default.
-            if (TestsSettings.UseClosedShapeDocumentStorage && !options.UseClosedShapeDocumentStorage)
-            {
-                options.UseClosedShapeDocumentStorage = true;
-            }
-
             var store = new DocumentStore(options);
 
             _disposables.Add(store);
@@ -105,14 +97,6 @@ namespace Marten.Testing.Harness
             if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
             {
                 options.Events.UseClosedShapeStorage = true;
-            }
-
-            // #4404: same pattern for the document-storage flag — used
-            // to run the existing suites against the closed-shape path
-            // before flipping the default.
-            if (TestsSettings.UseClosedShapeDocumentStorage && !options.UseClosedShapeDocumentStorage)
-            {
-                options.UseClosedShapeDocumentStorage = true;
             }
 
             if (cleanAll)

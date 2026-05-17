@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Linq.Selectors;
+using Marten.Internal.CodeGeneration;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -23,7 +24,7 @@ namespace Marten.Internal.ClosedShape;
 /// Mirrors what the codegen-emitted <c>DocumentSelectorWithIdentityMap</c>
 /// subclass does today.
 /// </remarks>
-internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>
+internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {
