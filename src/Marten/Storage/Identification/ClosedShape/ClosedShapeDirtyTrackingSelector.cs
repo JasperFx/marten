@@ -1,0 +1,79 @@
+#nullable enable
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
+using Marten.Internal;
+using Marten.Internal.DirtyTracking;
+using Marten.Linq.Selectors;
+
+namespace Marten.Storage.Identification.ClosedShape;
+
+/// <summary>
+/// W3 spike (M2): <see cref="ISelector{T}"/> for the
+/// <see cref="DirtyCheckedSequentialGuidStorage{TDoc}"/> path.
+/// Identity-map writes (like <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>)
+/// plus a <see cref="ChangeTracker{T}"/> registered on the session for
+/// every loaded document — gives <c>SaveChangesAsync</c> a baseline to
+/// compare against when dirty-checking which loaded docs were modified.
+/// </summary>
+internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>
+    where T : notnull
+    where TId : notnull
+{
+    private const int IdColumn = 0;
+    private const int DataColumn = 1;
+    private const int FirstMetadataColumn = 2;
+
+    private readonly IMartenSession _session;
+    private readonly ISerializer _serializer;
+    private readonly DocumentStorageDescriptor<T, TId> _descriptor;
+    private readonly Dictionary<TId, T> _identityMap;
+
+    public ClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    {
+        _session = session;
+        _serializer = session.Serializer;
+        _descriptor = descriptor;
+
+        if (session.ItemMap.TryGetValue(typeof(T), out var existing))
+        {
+            _identityMap = (Dictionary<TId, T>)existing;
+        }
+        else
+        {
+            _identityMap = new Dictionary<TId, T>();
+            session.ItemMap[typeof(T)] = _identityMap;
+        }
+    }
+
+    public T Resolve(DbDataReader reader)
+    {
+        var id = reader.GetFieldValue<TId>(IdColumn);
+        var doc = _serializer.FromJson<T>(reader, DataColumn);
+        ApplyMetadata(reader, doc);
+        _identityMap[id] = doc;
+        _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
+        return doc;
+    }
+
+    public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
+    {
+        var id = await reader.GetFieldValueAsync<TId>(IdColumn, token).ConfigureAwait(false);
+        var doc = await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
+        ApplyMetadata(reader, doc);
+        _identityMap[id] = doc;
+        _session.ChangeTrackers.Add(new ChangeTracker<T>(_session, doc));
+        return doc;
+    }
+
+    private void ApplyMetadata(DbDataReader reader, T document)
+    {
+        var ordinal = FirstMetadataColumn;
+        foreach (var binder in _descriptor.ReadBinders)
+        {
+            binder.Apply(reader, ordinal, document);
+            ordinal++;
+        }
+    }
+}

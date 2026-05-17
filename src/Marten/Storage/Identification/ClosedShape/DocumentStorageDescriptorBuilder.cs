@@ -79,8 +79,7 @@ internal static class DocumentStorageDescriptorBuilder
             identification,
             clientSideWriteBinders: clientSide,
             readBinders: readArray,
-            upsertSql: sql,
-            dataColumnIndex: 1);
+            upsertSql: sql);
     }
 
     private static string BuildUpsertSql<TDoc>(

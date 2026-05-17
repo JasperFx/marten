@@ -37,18 +37,22 @@ public static class ClosedShapeRegistration
 
         var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember);
         var descriptor = DocumentStorageDescriptorBuilder.Build<TDoc, Guid>(mapping, identification);
-        var storage = new LightweightSequentialGuidStorage<TDoc>(mapping, descriptor);
 
-        // All four tracking modes resolve to the same closed-shape storage
-        // for the spike. M2 splits this into QueryOnly / IdentityMap /
-        // DirtyTracking variants.
+        // M2: one concrete storage class per StorageStyle, all composing
+        // the same descriptor + identification. The 4-class fanout is the
+        // first axis of the W3 matrix.
+        var queryOnly = new QueryOnlySequentialGuidStorage<TDoc>(mapping, descriptor);
+        var lightweight = new LightweightSequentialGuidStorage<TDoc>(mapping, descriptor);
+        var identityMap = new IdentityMapSequentialGuidStorage<TDoc>(mapping, descriptor);
+        var dirtyTracking = new DirtyCheckedSequentialGuidStorage<TDoc>(mapping, descriptor);
+
         var bulkLoader = new SpikeNotImplementedBulkLoader<TDoc>();
         var provider = new DocumentProvider<TDoc>(
             bulkLoader,
-            queryOnly: storage,
-            lightweight: storage,
-            identityMap: storage,
-            dirtyTracking: storage);
+            queryOnly: queryOnly,
+            lightweight: lightweight,
+            identityMap: identityMap,
+            dirtyTracking: dirtyTracking);
 
         ((ProviderGraph)options.Providers).Append(provider);
     }

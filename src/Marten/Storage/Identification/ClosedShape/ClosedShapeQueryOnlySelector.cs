@@ -7,26 +7,24 @@ using Marten.Linq.Selectors;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M2): <see cref="ISelector{T}"/> for the
-/// <see cref="LightweightSequentialGuidStorage{TDoc}"/> path. Reads the
-/// data column at index 1 and dispatches each
-/// <see cref="IDocumentMetadataBinder{TDoc}"/>.Apply at the binder's
-/// column position (2, 3, …). Lightweight skips identity-map writes —
-/// every <c>LoadAsync</c> hits the database.
+/// W3 spike (M2): <see cref="ISelector{T}"/> for the
+/// <see cref="QueryOnlySequentialGuidStorage{TDoc}"/> path. QueryOnly
+/// storage excludes the id column from its SELECT projection (see
+/// <c>IdColumn.ShouldSelect</c> — false for QueryOnly), so the data
+/// column sits at index 0 and metadata starts at 1. No identity-map
+/// writes — QueryOnly sessions don't track loaded docs.
 /// </summary>
-internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>
+internal sealed class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
     where T : notnull
     where TId : notnull
 {
-    // Lightweight column order from DocumentTable.SelectColumns:
-    //   id (col 0), data (col 1), then ShouldSelect metadata columns.
-    private const int DataColumn = 1;
-    private const int FirstMetadataColumn = 2;
+    private const int DataColumn = 0;
+    private const int FirstMetadataColumn = 1;
 
     private readonly ISerializer _serializer;
     private readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
-    public ClosedShapeLightweightSelector(ISerializer serializer, DocumentStorageDescriptor<T, TId> descriptor)
+    public ClosedShapeQueryOnlySelector(ISerializer serializer, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _serializer = serializer;
         _descriptor = descriptor;

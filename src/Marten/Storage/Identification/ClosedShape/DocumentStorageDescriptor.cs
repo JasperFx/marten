@@ -19,14 +19,12 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         IIdentification<TDoc, TId> identification,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
-        string upsertSql,
-        int dataColumnIndex)
+        string upsertSql)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
         ReadBinders = readBinders;
         UpsertSql = upsertSql;
-        DataColumnIndex = dataColumnIndex;
     }
 
     public IIdentification<TDoc, TId> Identification { get; }
@@ -57,11 +55,4 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// <see cref="ClientSideWriteBinders"/> entry.
     /// </summary>
     public string UpsertSql { get; }
-
-    /// <summary>
-    /// Position of the <c>data</c> column in the SELECT projection. For
-    /// Lightweight style the column order is <c>id, data, ...metadata</c>,
-    /// so <see cref="DataColumnIndex"/> is 1 and metadata starts at 2.
-    /// </summary>
-    public int DataColumnIndex { get; }
 }
