@@ -32,16 +32,36 @@ internal sealed class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
 
     public T Resolve(DbDataReader reader)
     {
-        var doc = _serializer.FromJson<T>(reader, DataColumn);
+        var doc = ReadDocument(reader);
         ApplyMetadata(reader, doc);
         return doc;
     }
 
     public async Task<T> ResolveAsync(DbDataReader reader, CancellationToken token)
     {
-        var doc = await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
+        var doc = await ReadDocumentAsync(reader, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
         return doc;
+    }
+
+    private T ReadDocument(DbDataReader reader)
+    {
+        if (_descriptor.HierarchyMapping is { } hierarchy)
+        {
+            var alias = reader.GetFieldValue<string>(FirstMetadataColumn + _descriptor.DocTypeReadIndex);
+            return (T)_serializer.FromJson(hierarchy.TypeFor(alias), reader, DataColumn);
+        }
+        return _serializer.FromJson<T>(reader, DataColumn);
+    }
+
+    private async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
+    {
+        if (_descriptor.HierarchyMapping is { } hierarchy)
+        {
+            var alias = await reader.GetFieldValueAsync<string>(FirstMetadataColumn + _descriptor.DocTypeReadIndex, token).ConfigureAwait(false);
+            return (T)await _serializer.FromJsonAsync(hierarchy.TypeFor(alias), reader, DataColumn, token).ConfigureAwait(false);
+        }
+        return await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
     }
 
     private void ApplyMetadata(DbDataReader reader, T document)

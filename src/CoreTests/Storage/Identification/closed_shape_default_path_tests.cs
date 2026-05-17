@@ -40,26 +40,24 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task default_path_falls_back_to_codegen_for_hierarchies()
+    public async Task default_path_falls_back_to_codegen_for_int_id_strategy()
     {
-        // Hierarchical sub-classing is outside the closed-shape envelope
-        // — the flag must NOT prevent the codegen path from kicking in
-        // for this mapping.
+        // int id (HiLo) is outside the closed-shape envelope. The flag
+        // must NOT prevent the codegen path from kicking in for this
+        // mapping.
         var store = StoreOptions(opts =>
         {
             opts.UseClosedShapeDocumentStorage = true;
-            opts.Schema.For<HierarchyDoc>().AddSubClass<HierarchyDocSub>();
         });
 
-        var id = Guid.NewGuid();
         await using (var session = store.LightweightSession())
         {
-            session.Store(new HierarchyDoc { Id = id, Name = "v1" });
+            session.Store(new IntIdDoc { Name = "v1" });
             await session.SaveChangesAsync();
         }
 
         await using var query = store.QuerySession();
-        (await query.LoadAsync<HierarchyDoc>(id))!.Name.ShouldBe("v1");
+        (await query.Query<IntIdDoc>().FirstAsync()).Name.ShouldBe("v1");
     }
 
     [Fact]
@@ -71,15 +69,13 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public void IsSupported_rejects_unsupported_features()
+    public void IsSupported_rejects_unsupported_id_strategies()
     {
-        var store = StoreOptions(opts =>
-        {
-            opts.Schema.For<HierarchyDoc>().AddSubClass<HierarchyDocSub>();
-        });
-
-        var hierarchy = (DocumentMapping)store.Options.Storage.FindMapping(typeof(HierarchyDoc));
-        ClosedShapeRegistration.IsSupported(hierarchy).ShouldBeFalse();
+        // int id defaults to HiloIdGeneration, which the spike doesn't
+        // implement yet. Should fall back to codegen.
+        var store = StoreOptions(_ => { });
+        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(IntIdDoc));
+        ClosedShapeRegistration.IsSupported(mapping).ShouldBeFalse();
     }
 
     [Fact]
@@ -155,4 +151,10 @@ public class HierarchyDoc
 public class HierarchyDocSub: HierarchyDoc
 {
     public string Extra { get; set; } = string.Empty;
+}
+
+public class IntIdDoc
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

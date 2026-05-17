@@ -28,12 +28,28 @@ internal static class DocumentStorageDescriptorBuilder
         // result, which excludes columns whose only purpose is unused
         // storage — e.g. a Version column on a mapping with no
         // [Version]-annotated member and no UseOptimisticConcurrency).
+        // Order matches DocumentTable.SelectColumns: doc_type (if
+        // hierarchical), version, then the rest.
         var writeBinders = new List<IDocumentMetadataBinder<TDoc>>(4);
         var readBinders = new List<IDocumentMetadataBinder<TDoc>>(4);
 
         DocumentVersionBinder<TDoc>? versionBinder = null;
         DocumentRevisionBinder<TDoc>? revisionBinder = null;
-        var versionReadOrdinal = -1;
+        var versionReadIndex = -1;
+        var docTypeReadIndex = -1;
+        DocumentMapping? hierarchyMapping = null;
+
+        // M11: hierarchical mappings carry mt_doc_type — the discriminator
+        // SubClassDocumentStorage filters on and the selector reads to
+        // dispatch deserialization to the right subclass type.
+        if (mapping.IsHierarchy())
+        {
+            hierarchyMapping = mapping;
+            var docTypeBinder = new DocumentDocTypeBinder<TDoc>(mapping);
+            writeBinders.Add(docTypeBinder);
+            docTypeReadIndex = readBinders.Count;
+            readBinders.Add(docTypeBinder);
+        }
 
         if (mapping.Metadata.Revision.Enabled)
         {
@@ -47,7 +63,7 @@ internal static class DocumentStorageDescriptorBuilder
             // RevisionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseNumericRevisions)
             if (mapping.Metadata.Revision.Member is not null || mapping.UseNumericRevisions)
             {
-                versionReadOrdinal = 2 + readBinders.Count;
+                versionReadIndex = readBinders.Count;
                 readBinders.Add(revisionBinder);
             }
         }
@@ -59,9 +75,7 @@ internal static class DocumentStorageDescriptorBuilder
             // VersionColumn.ShouldSelect: Member != null OR (!QueryOnly && UseOptimisticConcurrency)
             if (mapping.Metadata.Version.Member is not null || mapping.UseOptimisticConcurrency)
             {
-                // Column ordinal inside the SELECT projection: id (0),
-                // data (1), then read binders in append order starting at 2.
-                versionReadOrdinal = 2 + readBinders.Count;
+                versionReadIndex = readBinders.Count;
                 readBinders.Add(versionBinder);
             }
         }
@@ -154,7 +168,9 @@ internal static class DocumentStorageDescriptorBuilder
             concurrencyMode: concurrencyMode,
             versionBinder: versionBinder,
             revisionBinder: revisionBinder,
-            versionReadOrdinal: versionReadOrdinal);
+            versionReadIndex: versionReadIndex,
+            hierarchyMapping: hierarchyMapping,
+            docTypeReadIndex: docTypeReadIndex);
     }
 
     /// <summary>

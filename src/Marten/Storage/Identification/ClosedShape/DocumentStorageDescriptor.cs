@@ -60,7 +60,9 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         ConcurrencyMode concurrencyMode,
         DocumentVersionBinder<TDoc>? versionBinder,
         DocumentRevisionBinder<TDoc>? revisionBinder,
-        int versionReadOrdinal)
+        int versionReadIndex,
+        Marten.Schema.DocumentMapping? hierarchyMapping,
+        int docTypeReadIndex)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
@@ -73,7 +75,9 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         ConcurrencyMode = concurrencyMode;
         VersionBinder = versionBinder;
         RevisionBinder = revisionBinder;
-        VersionReadOrdinal = versionReadOrdinal;
+        VersionReadIndex = versionReadIndex;
+        HierarchyMapping = hierarchyMapping;
+        DocTypeReadIndex = docTypeReadIndex;
     }
 
     public IIdentification<TDoc, TId> Identification { get; }
@@ -174,12 +178,27 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     internal DocumentRevisionBinder<TDoc>? RevisionBinder { get; }
 
     /// <summary>
-    /// W3 spike (M7+M8): zero-based ordinal of the <c>mt_version</c>
-    /// column inside the document SELECT projection, or <c>-1</c> when
-    /// version isn't in the read set. Used by selectors to capture the
-    /// version into <c>session.Versions</c> on load so subsequent
-    /// updates can supply it as the expected-version parameter (Guid)
-    /// or the prior revision (long).
+    /// W3 spike (M7+M8): zero-based index of the <c>mt_version</c> binder
+    /// inside <see cref="ReadBinders"/>, or <c>-1</c> when version isn't
+    /// in the read set. Each selector adds its own first-metadata-column
+    /// offset (1 for QueryOnly, 2 for the rest) to get the actual
+    /// reader column ordinal.
     /// </summary>
-    public int VersionReadOrdinal { get; }
+    public int VersionReadIndex { get; }
+
+    /// <summary>
+    /// W3 spike (M11): the root <see cref="Marten.Schema.DocumentMapping"/>
+    /// when the mapping is hierarchical, otherwise <c>null</c>. Selectors
+    /// use it to resolve the <c>mt_doc_type</c> alias back to a .NET
+    /// <see cref="Type"/> for polymorphic deserialization.
+    /// </summary>
+    internal Marten.Schema.DocumentMapping? HierarchyMapping { get; }
+
+    /// <summary>
+    /// W3 spike (M11): zero-based index of the <c>mt_doc_type</c> binder
+    /// inside <see cref="ReadBinders"/>, or <c>-1</c> when the mapping
+    /// isn't hierarchical. Selectors translate it to a column ordinal
+    /// the same way as <see cref="VersionReadIndex"/>.
+    /// </summary>
+    public int DocTypeReadIndex { get; }
 }
