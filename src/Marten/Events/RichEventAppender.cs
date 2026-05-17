@@ -46,7 +46,11 @@ internal class RichEventAppender: IEventAppender
 
             if (stream.ActionType == StreamActionType.Start)
             {
-                stream.PrepareEvents(0, eventGraph, sequences, session);
+                // #4424: pass a metadata context whose TenantId matches the
+                // stream so applyRichMetadata stamps events with the stream's
+                // tenant instead of the session's. See TenantPropagation.
+                stream.PrepareEvents(0, eventGraph, sequences,
+                    TenantPropagation.MetadataContextFor(session, stream));
                 session.QueueOperation(storage.InsertStream(stream));
             }
             else if (eventGraph.UseMandatoryStreamTypeDeclaration && stream.IsStarting())
@@ -108,9 +112,13 @@ internal class RichStreamAppendingStep: IEventAppendingStep
     {
         var state = await _fetcher.ConfigureAwait(false);
 
+        _stream.TenantId ??= session.TenantId;
+        // #4424: see RichEventAppender — use stream-tenant metadata context.
+        var metadataContext = TenantPropagation.MetadataContextFor(session, _stream);
+
         if (state == null)
         {
-            _stream.PrepareEvents(0, eventGraph, sequences, session);
+            _stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
             session.QueueOperation(storage.InsertStream(_stream));
         }
         else
@@ -121,7 +129,7 @@ internal class RichStreamAppendingStep: IEventAppendingStep
                     $"Attempted to append event to archived stream with Id '{state.Id}'.");
             }
 
-            _stream.PrepareEvents(state.Version, eventGraph, sequences, session);
+            _stream.PrepareEvents(state.Version, eventGraph, sequences, metadataContext);
             session.QueueOperation(storage.UpdateStreamVersion(_stream));
         }
     }
