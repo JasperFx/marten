@@ -51,6 +51,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     internal DocumentStorageDescriptor(
         IIdentification<TDoc, TId> identification,
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
+        IDocumentMetadataBinder<TDoc>[] writeBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
         string upsertSql,
         string insertSql,
@@ -66,6 +67,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
+        WriteBinders = writeBinders;
         ReadBinders = readBinders;
         UpsertSql = upsertSql;
         InsertSql = insertSql;
@@ -89,6 +91,17 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// excluded — their literal SQL is baked into <see cref="UpsertSql"/>.
     /// </summary>
     public IDocumentMetadataBinder<TDoc>[] ClientSideWriteBinders { get; }
+
+    /// <summary>
+    /// W3 spike (M16): all write binders — client-side <em>and</em>
+    /// server-side. The COPY path uses this because the binary protocol
+    /// can't run inline SQL literals (<c>transaction_timestamp()</c>),
+    /// so each binder writes a client-computed value via
+    /// <see cref="IDocumentMetadataBinder{TDoc}.WriteToBulkAsync"/> —
+    /// including LastModified, which computes <c>UtcNow</c> instead of
+    /// emitting <c>transaction_timestamp()</c>.
+    /// </summary>
+    internal IDocumentMetadataBinder<TDoc>[] WriteBinders { get; }
 
     /// <summary>
     /// All metadata binders applied on the read path, in column order

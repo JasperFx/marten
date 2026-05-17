@@ -1,4 +1,5 @@
 #nullable enable
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -50,31 +51,36 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
         => $"create temporary table {_tempTableName} as select * from {_mapping.TableName.QualifiedName} limit 0;";
 
     public override string CopyNewDocumentsFromTempTable()
-    {
-        var pkCols = _descriptor.IsConjoined
-            ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)"
-            : "(id)";
-        return
-            $"insert into {_mapping.TableName.QualifiedName} (select * from {_tempTableName}) " +
-            $"on conflict {pkCols} do nothing";
-    }
+        => $"insert into {_mapping.TableName.QualifiedName} (select * from {_tempTableName}) " +
+           $"on conflict {ConflictKey()} do nothing";
 
     public override string OverwriteDuplicatesFromTempTable()
     {
-        var pkCols = _descriptor.IsConjoined
-            ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)"
-            : "(id)";
-
-        // SET data, plus every write binder's column.
+        // SET data, plus every write binder's column — including
+        // server-side ones (LastModified) since the COPY path carries
+        // client-computed values for them through the temp table.
         var assignments = new System.Collections.Generic.List<string>(8) { "data = excluded.data" };
-        foreach (var b in _descriptor.ClientSideWriteBinders)
+        foreach (var b in _descriptor.WriteBinders)
         {
             assignments.Add($"{b.ColumnName} = excluded.{b.ColumnName}");
         }
 
         return
             $"insert into {_mapping.TableName.QualifiedName} (select * from {_tempTableName}) " +
-            $"on conflict {pkCols} do update set {assignments.Join(", ")}";
+            $"on conflict {ConflictKey()} do update set {assignments.Join(", ")}";
+    }
+
+    private string ConflictKey()
+    {
+        // Mirrors the partition-aware key in
+        // DocumentStorageDescriptorBuilder.BuildConflictKey — uses the
+        // table's actual primary key so list-partitioned mappings (PK
+        // includes mt_deleted etc.) work too.
+        var pkColumns = _mapping.Schema.Table.Columns
+            .Where(c => c.IsPrimaryKey)
+            .Select(c => c.Name)
+            .ToArray();
+        return $"({pkColumns.Join(", ")})";
     }
 
     public override async Task LoadRowAsync(NpgsqlBinaryImporter writer, TDoc document, Tenant tenant,
@@ -96,7 +102,7 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
         await writer.WriteAsync(json, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
 
         // Each metadata binder writes its column value.
-        foreach (var binder in _descriptor.ClientSideWriteBinders)
+        foreach (var binder in _descriptor.WriteBinders)
         {
             await binder.WriteToBulkAsync(writer, document, serializer, cancellation).ConfigureAwait(false);
         }
@@ -104,14 +110,14 @@ internal sealed class ClosedShapeBulkLoader<TDoc, TId>: BulkLoader<TDoc, TId>
 
     private string ColumnList()
     {
-        var columns = new System.Collections.Generic.List<string>(4 + _descriptor.ClientSideWriteBinders.Length);
+        var columns = new System.Collections.Generic.List<string>(4 + _descriptor.WriteBinders.Length);
         if (_descriptor.IsConjoined)
         {
             columns.Add($"\"{Marten.Storage.Metadata.TenantIdColumn.Name}\"");
         }
         columns.Add("\"id\"");
         columns.Add("\"data\"");
-        foreach (var b in _descriptor.ClientSideWriteBinders)
+        foreach (var b in _descriptor.WriteBinders)
         {
             columns.Add($"\"{b.ColumnName}\"");
         }

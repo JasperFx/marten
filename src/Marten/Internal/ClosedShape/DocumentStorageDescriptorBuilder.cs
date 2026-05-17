@@ -159,6 +159,7 @@ internal static class DocumentStorageDescriptorBuilder
         return new DocumentStorageDescriptor<TDoc, TId>(
             identification,
             clientSideWriteBinders: clientSide,
+            writeBinders: writeArray,
             readBinders: readArray,
             upsertSql: upsertSql,
             insertSql: insertSql,
