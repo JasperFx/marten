@@ -40,28 +40,28 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     }
 
     [Fact]
-    public async Task default_path_falls_back_to_codegen_for_soft_delete()
+    public async Task default_path_falls_back_to_codegen_for_duplicated_fields()
     {
-        // SoftDeleted is outside the closed-shape envelope — the flag
-        // must NOT prevent the codegen path from kicking in for this
-        // mapping. If it does, the store will throw at the storage
-        // build because the closed-shape path doesn't implement soft
-        // delete yet.
+        // Duplicated fields are outside the closed-shape envelope — the
+        // flag must NOT prevent the codegen path from kicking in for
+        // this mapping. If it does, the store will throw at storage
+        // build because the closed-shape path doesn't implement
+        // duplicated fields yet.
         var store = StoreOptions(opts =>
         {
             opts.UseClosedShapeDocumentStorage = true;
-            opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
+            opts.Schema.For<DuplicatedFieldDoc>().Duplicate(x => x.Name);
         });
 
         var id = Guid.NewGuid();
         await using (var session = store.LightweightSession())
         {
-            session.Store(new SoftDeleteDoc { Id = id, Name = "v1" });
+            session.Store(new DuplicatedFieldDoc { Id = id, Name = "v1" });
             await session.SaveChangesAsync();
         }
 
         await using var query = store.QuerySession();
-        (await query.LoadAsync<SoftDeleteDoc>(id))!.Name.ShouldBe("v1");
+        (await query.LoadAsync<DuplicatedFieldDoc>(id))!.Name.ShouldBe("v1");
     }
 
     [Fact]
@@ -77,11 +77,11 @@ public class closed_shape_default_path_tests: BugIntegrationContext
     {
         var store = StoreOptions(opts =>
         {
-            opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
+            opts.Schema.For<DuplicatedFieldDoc>().Duplicate(x => x.Name);
         });
 
-        var softDelete = (DocumentMapping)store.Options.Storage.FindMapping(typeof(SoftDeleteDoc));
-        ClosedShapeRegistration.IsSupported(softDelete).ShouldBeFalse();
+        var dup = (DocumentMapping)store.Options.Storage.FindMapping(typeof(DuplicatedFieldDoc));
+        ClosedShapeRegistration.IsSupported(dup).ShouldBeFalse();
     }
 
     [Fact]
@@ -109,6 +109,19 @@ public class closed_shape_default_path_tests: BugIntegrationContext
         var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(ConcurrencyDoc));
         ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
     }
+
+    [Fact]
+    public void IsSupported_accepts_soft_delete()
+    {
+        // M9: soft delete is inside the coverage envelope.
+        var store = StoreOptions(opts =>
+        {
+            opts.Schema.For<SoftDeleteDoc>().SoftDeleted();
+        });
+
+        var mapping = (DocumentMapping)store.Options.Storage.FindMapping(typeof(SoftDeleteDoc));
+        ClosedShapeRegistration.IsSupported(mapping).ShouldBeTrue();
+    }
 }
 
 public class DefaultPathDoc
@@ -124,6 +137,12 @@ public class ConcurrencyDoc
 }
 
 public class SoftDeleteDoc
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class DuplicatedFieldDoc
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;

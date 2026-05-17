@@ -86,6 +86,31 @@ internal static class DocumentStorageDescriptorBuilder
             }
         }
 
+        // M9: soft delete adds two columns to the table. Each save writes
+        // the defaults (false, null) so re-saving a soft-deleted document
+        // undeletes it — same observable behavior as the codegen path's
+        // UpsertFunction. The actual soft-delete operation lives in the
+        // inherited DocumentStorage<T, TId>.DeleteFragment.
+        // Gate on DeleteStyle, not Metadata.IsSoftDeleted.Enabled —
+        // MetadataColumn<T>.Enabled defaults to true regardless of the
+        // mapping's delete style.
+        if (mapping.DeleteStyle == DeleteStyle.SoftDelete)
+        {
+            var isDeleted = new DocumentSoftDeletedBinder<TDoc>(mapping.Metadata.IsSoftDeleted.Member);
+            writeBinders.Add(isDeleted);
+            if (mapping.Metadata.IsSoftDeleted.Member is not null)
+            {
+                readBinders.Add(isDeleted);
+            }
+
+            var deletedAt = new DocumentSoftDeletedAtBinder<TDoc>(mapping.Metadata.SoftDeletedAt.Member);
+            writeBinders.Add(deletedAt);
+            if (mapping.Metadata.SoftDeletedAt.Member is not null)
+            {
+                readBinders.Add(deletedAt);
+            }
+        }
+
         var writeArray = writeBinders.ToArray();
         var readArray = readBinders.ToArray();
         var clientSide = writeArray.Where(b => !b.IsServerSide).ToArray();

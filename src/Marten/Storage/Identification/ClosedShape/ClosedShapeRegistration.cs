@@ -100,7 +100,6 @@ public static class ClosedShapeRegistration
     /// </remarks>
     public static bool IsSupported(DocumentMapping mapping)
     {
-        if (mapping.DeleteStyle == DeleteStyle.SoftDelete) return false;
         if (mapping.SubClasses.Any()) return false;
         if (mapping.DuplicatedFields.Count > 0) return false;
         if (mapping.IsHierarchy()) return false;
