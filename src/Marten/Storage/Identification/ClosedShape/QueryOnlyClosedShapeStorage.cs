@@ -9,9 +9,9 @@ using Marten.Schema;
 namespace Marten.Storage.Identification.ClosedShape;
 
 /// <summary>
-/// W3 spike (M2): hand-written, closed-shape
-/// <see cref="QueryOnlyDocumentStorage{T, TId}"/> for Guid-id documents
-/// with sequential-GUID identity. QueryOnly is the read-only tracking
+/// W3 spike (M2+M4): hand-written, closed-shape
+/// <see cref="QueryOnlyDocumentStorage{T, TId}"/> for any
+/// <typeparamref name="TId"/>. QueryOnly is the read-only tracking
 /// mode — sessions opened as <c>IQuerySession</c> get this storage.
 /// </summary>
 /// <remarks>
@@ -21,21 +21,22 @@ namespace Marten.Storage.Identification.ClosedShape;
 /// against a query session, but we still have to provide bodies. We
 /// throw if anyone reaches them.
 /// </remarks>
-public sealed class QueryOnlySequentialGuidStorage<TDoc>: QueryOnlyDocumentStorage<TDoc, Guid>
+public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentStorage<TDoc, TId>
     where TDoc : notnull
+    where TId : notnull
 {
-    private readonly DocumentStorageDescriptor<TDoc, Guid> _descriptor;
+    private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
 
-    public QueryOnlySequentialGuidStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, Guid> descriptor)
+    public QueryOnlyClosedShapeStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, TId> descriptor)
         : base(mapping)
     {
         _descriptor = descriptor;
     }
 
-    public override Guid Identity(TDoc document)
+    public override TId Identity(TDoc document)
         => _descriptor.Identification.Identity(document);
 
-    public override Guid AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
+    public override TId AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
         => _descriptor.Identification.AssignIfMissing(document, database);
 
     public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
@@ -51,5 +52,5 @@ public sealed class QueryOnlySequentialGuidStorage<TDoc>: QueryOnlyDocumentStora
         => throw new NotSupportedException("QueryOnly storage doesn't support Overwrite.");
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new ClosedShapeQueryOnlySelector<TDoc, Guid>(session.Serializer, _descriptor);
+        => new ClosedShapeQueryOnlySelector<TDoc, TId>(session.Serializer, _descriptor);
 }

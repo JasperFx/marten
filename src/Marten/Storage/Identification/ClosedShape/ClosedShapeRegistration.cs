@@ -21,30 +21,68 @@ namespace Marten.Storage.Identification.ClosedShape;
 /// </remarks>
 public static class ClosedShapeRegistration
 {
+    /// <summary>
+    /// Register the closed-shape document storage for a <typeparamref name="TDoc"/>
+    /// with a <see cref="Guid"/> id (uses sequential-GUID identity strategy
+    /// — equivalent to Marten's default <c>SequentialGuidIdGeneration</c>).
+    /// </summary>
     public static void UseLightweightSequentialGuidClosedShape<TDoc>(this IDocumentStore store)
         where TDoc : class
     {
         var documentStore = (DocumentStore)store;
         var options = documentStore.Options;
-
         var mapping = options.Storage.FindMapping(typeof(TDoc)).As<DocumentMapping>();
 
         if (mapping.IdType != typeof(Guid))
         {
             throw new InvalidOperationException(
-                $"{typeof(TDoc).Name} must use a Guid id for the closed-shape spike — found {mapping.IdType.Name}.");
+                $"{typeof(TDoc).Name} must use a Guid id to register with sequential-GUID identity — found {mapping.IdType.Name}.");
         }
 
         var identification = new SequentialGuidIdentification<TDoc>(mapping.IdMember);
-        var descriptor = DocumentStorageDescriptorBuilder.Build<TDoc, Guid>(mapping, identification);
+        RegisterClosedShape<TDoc, Guid>(documentStore, mapping, identification);
+    }
 
-        // M2: one concrete storage class per StorageStyle, all composing
-        // the same descriptor + identification. The 4-class fanout is the
-        // first axis of the W3 matrix.
-        var queryOnly = new QueryOnlySequentialGuidStorage<TDoc>(mapping, descriptor);
-        var lightweight = new LightweightSequentialGuidStorage<TDoc>(mapping, descriptor);
-        var identityMap = new IdentityMapSequentialGuidStorage<TDoc>(mapping, descriptor);
-        var dirtyTracking = new DirtyCheckedSequentialGuidStorage<TDoc>(mapping, descriptor);
+    /// <summary>
+    /// Register the closed-shape document storage for a <typeparamref name="TDoc"/>
+    /// with a <see cref="string"/> id, using externally-assigned keys
+    /// (callers set the id themselves; the strategy refuses to auto-generate).
+    /// </summary>
+    public static void UseExternallyAssignedStringClosedShape<TDoc>(this IDocumentStore store)
+        where TDoc : class
+    {
+        var documentStore = (DocumentStore)store;
+        var options = documentStore.Options;
+        var mapping = options.Storage.FindMapping(typeof(TDoc)).As<DocumentMapping>();
+
+        if (mapping.IdType != typeof(string))
+        {
+            throw new InvalidOperationException(
+                $"{typeof(TDoc).Name} must use a string id for externally-assigned identity — found {mapping.IdType.Name}.");
+        }
+
+        var identification = new StringIdentification<TDoc>(mapping.IdMember);
+        RegisterClosedShape<TDoc, string>(documentStore, mapping, identification);
+    }
+
+    /// <summary>
+    /// Shared registration plumbing: builds the descriptor + 4 storage
+    /// instances (one per StorageStyle) and appends them as a
+    /// <see cref="DocumentProvider{T}"/> to the live ProviderGraph.
+    /// </summary>
+    private static void RegisterClosedShape<TDoc, TId>(
+        DocumentStore documentStore,
+        DocumentMapping mapping,
+        IIdentification<TDoc, TId> identification)
+        where TDoc : class
+        where TId : notnull
+    {
+        var descriptor = DocumentStorageDescriptorBuilder.Build<TDoc, TId>(mapping, identification);
+
+        var queryOnly = new QueryOnlyClosedShapeStorage<TDoc, TId>(mapping, descriptor);
+        var lightweight = new LightweightClosedShapeStorage<TDoc, TId>(mapping, descriptor);
+        var identityMap = new IdentityMapClosedShapeStorage<TDoc, TId>(mapping, descriptor);
+        var dirtyTracking = new DirtyCheckedClosedShapeStorage<TDoc, TId>(mapping, descriptor);
 
         var bulkLoader = new SpikeNotImplementedBulkLoader<TDoc>();
         var provider = new DocumentProvider<TDoc>(
@@ -54,6 +92,6 @@ public static class ClosedShapeRegistration
             identityMap: identityMap,
             dirtyTracking: dirtyTracking);
 
-        ((ProviderGraph)options.Providers).Append(provider);
+        ((ProviderGraph)documentStore.Options.Providers).Append(provider);
     }
 }
