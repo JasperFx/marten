@@ -43,6 +43,16 @@ All of the functionality in this section was added as part of Marten v0.8
 
 Marten has a facility for listening and even intercepting document persistence events with the `IDocumentSessionListener` interface:
 
+::: warning IEvent.Sequence / IEvent.Version under "Quick" append mode
+`BeforeSaveChangesAsync` (and `IChangeListener.BeforeCommitAsync`) fires **before** the database INSERT runs. Under the Marten 9 default `Events.AppendMode = EventAppendMode.QuickWithServerTimestamps` (or `EventAppendMode.Quick`), event sequences and versions are assigned **server-side** inside that INSERT via `nextval('mt_events_sequence')`, so iterating `session.PendingChanges.GetEvents()` from a pre-commit listener returns events with `Sequence = 0` and `Version = 0`. If your listener forwards events that consumers key off `Sequence` / `Version` (for example Wolverine's `UseFastEventForwarding = true` + `SubscribeToEvent<T>().TransformedTo(e => new SomeMessage(e.Sequence, e.Version))`), opt the affected store into Rich mode so those values are assigned before the listener fires:
+
+```csharp
+opts.Events.AppendMode = EventAppendMode.Rich;
+```
+
+See [Event Appending modes](events/appending.md) for the full performance / metadata trade-off.
+:::
+
 <!-- snippet: sample_idocumentsessionlistener -->
 <a id='snippet-sample_idocumentsessionlistener'></a>
 ```cs

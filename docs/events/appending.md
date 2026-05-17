@@ -60,6 +60,8 @@ numbers at the time that the inline projections are created.
 If you are using `Inline` projections with the "Quick" mode, just be aware that you will not have access to the final
 event sequence or stream version at the time the projections are built. Marten _is_ able to set the stream version into
 a single stream projection document built `Inline`, but that's done on the server side. Just be warned.
+
+The same caveat applies to pre-commit `IDocumentSessionListener.BeforeSaveChangesAsync` / `IChangeListener.BeforeCommitAsync` hooks: under `Quick` / `QuickWithServerTimestamps`, events surfaced via `session.PendingChanges.GetEvents()` from those hooks carry `Sequence = 0` and `Version = 0` because assignment happens server-side during the INSERT that runs _after_ the hook returns. Listeners that forward events to downstream consumers keyed on those values (e.g. Wolverine's `UseFastEventForwarding = true` path) need `EventAppendMode.Rich` on the relevant store. See the listener docs at [Diagnostics — Listening for Document Store Events](../diagnostics.md#listening-for-document-store-events) for the matching note.
 :::
 
 The newer `Quick` mode eschews version and sequence metadata in favor of performing the event append and stream creation
