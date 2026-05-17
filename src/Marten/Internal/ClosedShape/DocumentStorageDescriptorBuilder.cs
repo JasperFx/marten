@@ -247,9 +247,7 @@ internal static class DocumentStorageDescriptorBuilder
         var table = mapping.TableName.QualifiedName;
         var (columns, values) = BuildCoreColumns(binders, isConjoined, mode);
         var versionColumn = Marten.Schema.SchemaConstants.VersionColumn;
-
-        // ON CONFLICT key: (tenant_id, id) when conjoined, (id) otherwise.
-        var conflictKey = isConjoined ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)" : "(id)";
+        var conflictKey = BuildConflictKey(mapping);
 
         var updateAssignments = new List<string>(1 + binders.Count) { "data = excluded.data" };
         foreach (var b in binders)
@@ -302,11 +300,29 @@ internal static class DocumentStorageDescriptorBuilder
     {
         var table = mapping.TableName.QualifiedName;
         var (columns, values) = BuildCoreColumns(binders, isConjoined, mode);
-        var conflictKey = isConjoined ? $"({Marten.Storage.Metadata.TenantIdColumn.Name}, id)" : "(id)";
+        var conflictKey = BuildConflictKey(mapping);
 
         return $"insert into {table} ({columns.Join(", ")}) " +
                $"values ({values.Join(", ")}) " +
                $"on conflict {conflictKey} do nothing returning {ReturningColumn(mode)}";
+    }
+
+    /// <summary>
+    /// ON CONFLICT key — matches the document table's actual primary
+    /// key. For unpartitioned tables that's <c>(id)</c> or
+    /// <c>(tenant_id, id)</c> for conjoined; partitioned tables (e.g.
+    /// list-partitioned by <c>mt_deleted</c>) add the partition columns
+    /// to the PK and the conflict key has to follow. Mirrors the
+    /// <c>_primaryKeyFields = table.Columns.Where(IsPrimaryKey).Select(Name)</c>
+    /// derivation that the codegen <c>UpsertFunction</c> used.
+    /// </summary>
+    private static string BuildConflictKey(DocumentMapping mapping)
+    {
+        var pkColumns = mapping.Schema.Table.Columns
+            .Where(c => c.IsPrimaryKey)
+            .Select(c => c.Name)
+            .ToArray();
+        return $"({pkColumns.Join(", ")})";
     }
 
     /// <summary>
