@@ -1,7 +1,7 @@
 using System;
 using Marten.Schema.Identity.Sequences;
 using Marten.Storage;
-using Marten.Storage.Identification;
+using Marten.Internal.ClosedShape;
 using NSubstitute;
 using Shouldly;
 using Xunit;

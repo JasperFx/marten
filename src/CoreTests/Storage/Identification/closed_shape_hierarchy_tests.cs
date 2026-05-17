@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
-using Marten.Storage.Identification.ClosedShape;
+using Marten.Internal.ClosedShape;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;

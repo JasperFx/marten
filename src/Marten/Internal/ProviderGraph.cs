@@ -10,7 +10,7 @@ using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
 using Marten.Schema;
-using Marten.Storage.Identification.ClosedShape;
+using Marten.Internal.ClosedShape;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Internal;
