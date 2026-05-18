@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -7,6 +8,7 @@ using JasperFx.CodeGeneration;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -96,6 +98,25 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         top.ReadDictionary(_dict, _usages);
 
         method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, top));
+    }
+
+    public Action<NpgsqlParameter, object> BuildSetter()
+    {
+        // Apply() may not have been invoked yet at the time MatchParameters calls
+        // BuildSetter (Apply runs when Marten renders the SQL command, plan matching
+        // runs at session.Query time — opposite order). Snapshot what we have now;
+        // the dict + usages list are filled by Apply / TryMatchValue and shared by
+        // reference, so the captured locals see the post-Apply state at invocation.
+        var dictRef = new System.Func<Dictionary<string, object>?>(() => _dict);
+        var usagesRef = new System.Func<List<DictionaryValueUsage>?>(() => _usages);
+        var serializer = _serializer;
+        return (parameter, query) =>
+        {
+            var payload = Marten.Linq.SqlGeneration.Filters.CompiledQueryDictionaryBuilder.Build(
+                dictRef(), usagesRef(), query, default);
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            parameter.Value = payload is null ? System.DBNull.Value : (object)serializer.ToCleanJson(payload);
+        };
     }
 
     public string ParameterName { get; private set; }

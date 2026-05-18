@@ -84,6 +84,17 @@ internal abstract class SourceGeneratedCompiledQueryHandlerBase<TOut>: IQueryHan
                     continue;
                 }
 
+                if (usage.Setter is { } setter)
+                {
+                    // Filter-driven runtime setter — wraps / serializes the raw
+                    // value (e.g. LIKE escaping, JSONB containment). Built once
+                    // per (filter, query-member) pair when the plan was matched;
+                    // takes precedence over the descriptor's direct read because
+                    // a Contains-style query needs `%X%` rather than the raw `X`.
+                    setter(parameter, _query);
+                    continue;
+                }
+
                 if (usage.Member?.Member is { } memberInfo)
                 {
                     // Source-gen binder path — direct property/field read inside

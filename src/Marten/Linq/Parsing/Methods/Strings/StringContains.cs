@@ -6,6 +6,7 @@ using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -81,6 +82,17 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
 {parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
 {parametersVariableName}[{parameterIndex}].Value = {maskedValue};
 ", NpgsqlDbType.Varchar);
+    }
+
+    public Action<NpgsqlParameter, object> BuildSetter()
+    {
+        var member = _queryMember;
+        return (parameter, query) =>
+        {
+            var raw = (string?)CompiledQueryMemberReader.Read(member, query) ?? string.Empty;
+            parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+            parameter.Value = $"%{StringComparisonParser.EscapeValue(raw)}%";
+        };
     }
 
     public string ParameterName { get; private set; }

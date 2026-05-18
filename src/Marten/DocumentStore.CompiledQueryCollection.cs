@@ -57,18 +57,12 @@ internal class CompiledQueryCollection
         // (Stateless, Cloned, Complex), so the source-gen path serves most
         // registered query types.
         //
-        // One holdout: query plans whose parameters need an
-        // ICompiledQueryAwareFilter (string Contains/StartsWith/EndsWith,
-        // JSONB containment via .Contains() on a HashSet<>, dictionary
-        // ContainsKey, child-collection JsonPath counts). Those filters
-        // customize parameter writes through codegen-time GenerateCode hooks
-        // with no runtime equivalent — for now, plans containing them fall
-        // through to the JasperFx.RuntimeCompiler path below. Lifting that
-        // restriction (filter runtime APIs) is tracked as a follow-up to
-        // #4405; once it lands, this fallthrough is deleted and a registry
-        // miss throws.
-        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor)
-            && !PlanRequiresCodegenFilters(plan))
+        // #4454 Phase 1A+B: ICompiledQueryAwareFilter now exposes a runtime
+        // BuildSetter() hook that the source-gen path consumes alongside the
+        // descriptor's typed BindParameter. Containment / JsonPath / Contains-
+        // style queries are therefore source-gen-eligible too — the prior
+        // PlanRequiresCodegenFilters gate is gone.
+        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
         {
             var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
             source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
@@ -97,25 +91,6 @@ internal class CompiledQueryCollection
         _querySources = _querySources.AddOrUpdate(query.GetType(), source);
 
         return source;
-    }
-
-    /// <summary>
-    /// Returns <see langword="true"/> if any parameter in the plan needs an
-    /// <see cref="Marten.Internal.CompiledQueries.ICompiledQueryAwareFilter"/>
-    /// to write its value. Those filters today only emit codegen — there's no
-    /// runtime hook for them — so the source-gen path can't fully serve such
-    /// plans. Tracked as a follow-up to #4405.
-    /// </summary>
-    private static bool PlanRequiresCodegenFilters(CompiledQueryPlan plan)
-    {
-        foreach (var command in plan.Commands)
-        {
-            foreach (var usage in command.Parameters)
-            {
-                if (usage.Filter != null) return true;
-            }
-        }
-        return false;
     }
 }
 
