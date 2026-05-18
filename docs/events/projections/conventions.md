@@ -118,6 +118,10 @@ The `Create()` method has to return either the aggregate document type or `Task<
 Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
 :::
 
+::: warning Removed in Marten 9.0
+The inline-lambda registration APIs — `ProjectEvent<T>(...)`, `ProjectEventAsync<T>(...)`, `CreateEvent<T>(...)`, `DeleteEvent<T>(...)`, `DeleteEventAsync<T>(...)` — are removed in Marten 9.0 alongside the JasperFx 2.0 line (see [JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Replace them with `Apply` / `Create` / `ShouldDelete` method-convention overloads on a `partial` projection class so `JasperFx.Events.SourceGenerator` can emit a `[GeneratedEvolver]` dispatcher at compile time. See [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
+:::
+
 To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the overloads of `ProjectEvent()`:
 
 <!-- snippet: sample_using_projectevent_in_aggregate_projection -->
@@ -207,6 +211,10 @@ The valid return types are:
 1. `Task<T>` where `T` is the aggregate type. This allows you to use immutable aggregate types while also using external data read through `IQuerySession`
 
 ## Deleting the Aggregate Document
+
+::: warning Removed in Marten 9.0
+The `DeleteEvent<T>(...)` / `DeleteEventAsync<T>(...)` constructor-registration helpers are removed in Marten 9.0. Use the `ShouldDelete` method convention on a `partial` projection class instead — see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal). The conditional-delete and async-delete shapes both have direct method-convention equivalents.
+:::
 
 In asynchronous or inline projections, receiving a certain event may signal that the projected document is now obsolete and should be deleted from
 document storage. If a certain event type always signals a deletion to the aggregated view, you can use this mechanism inside of the constructor function of your

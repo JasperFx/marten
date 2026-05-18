@@ -292,6 +292,69 @@ The hand-written event-storage hierarchy is the only event-store write path in 9
 
 Architecture overview lives in [`src/Marten/EventStorage/README.md`](https://github.com/JasperFx/marten/tree/master/src/Marten/EventStorage) for contributors adding new metadata binders or dialects.
 
+### Inline-lambda projection registration removed {#inline-lambda-projection-removal}
+
+Coordinates with [JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286). The inline-lambda registration APIs on the projection / aggregator base classes still rely on FastExpressionCompiler-compiled delegates because the source generator cannot statically discover handlers that are passed as runtime values. Those APIs are gone in the JasperFx 2.0 line that Marten 9 picks up:
+
+| Removed | Replacement |
+| --- | --- |
+| `SingleStreamProjection<T, TId>.ProjectEvent<TEvent>(...)` (all 7 overloads) | `Apply` / `Evolve` method convention on the projection class |
+| `SingleStreamProjection<T, TId>.CreateEvent<TEvent>(...)` | `Create` method convention |
+| `SingleStreamProjection<T, TId>.DeleteEvent<TEvent>(...)` (all overloads) | `ShouldDelete` method convention, or `Evolve` returning `null` |
+| `EventProjection.Project<TEvent>(action)` | `Project` method convention on the projection class |
+| `EventProjection.ProjectAsync<TEvent>(action)` | `ProjectAsync` method convention on the projection class |
+
+The replacement pattern is to convert the inline-lambda body into a conventional method on a `partial` projection class. `JasperFx.Events.SourceGenerator` discovers the methods at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection — the same path Marten already uses for projections registered the conventional way today.
+
+**Before — inline lambdas:**
+
+```csharp
+public class OrderProjection : SingleStreamProjection<Order, Guid>
+{
+    public OrderProjection()
+    {
+        ProjectEvent<OrderPlaced>((order, e) => order.Apply(e));
+        ProjectEvent<OrderShipped>((order, e) => order.Shipped = e.ShippedAt);
+        DeleteEvent<OrderCancelled>();
+        DeleteEvent<OrderArchived>((order, _) => order.Status == "Closed");
+    }
+}
+```
+
+**After — convention methods on a partial class:**
+
+```csharp
+public partial class OrderProjection : SingleStreamProjection<Order, Guid>
+{
+    public Order Apply(OrderPlaced e, Order order) => order.Apply(e);
+
+    public void Apply(OrderShipped e, Order order) => order.Shipped = e.ShippedAt;
+
+    public bool ShouldDelete(OrderCancelled e) => true;
+
+    public bool ShouldDelete(OrderArchived e, Order order) => order.Status == "Closed";
+}
+```
+
+The same shape applies to `EventProjection` — replace `Project<TEvent>(action)` / `ProjectAsync<TEvent>(action)` with `Project` / `ProjectAsync` method-convention overloads on a `partial` projection class.
+
+The `partial` keyword on the class is what lets the source generator emit a sibling partial declaration with the `[GeneratedEvolver]` dispatcher. Existing convention-based projections that don't currently use `partial` keep working without it (Marten falls back to runtime evolver lookup for those); adding `partial` is what enables the AOT-clean and trim-clean dispatcher path. See [Runtime code generation removed](#runtime-code-generation-removed) for the broader context on Marten 9's source-generated dispatch model.
+
+If you need to delete the aggregate based on async work (the equivalent of the removed `DeleteEventAsync` overload), implement an `async`-returning `ShouldDelete` method that takes an `IQuerySession`:
+
+```csharp
+public async Task<bool> ShouldDelete(Breakdown e, Trip trip, IQuerySession session)
+{
+    var anyRepairShopsInState = await session.Query<RepairShop>()
+        .Where(x => x.State == trip.State)
+        .AnyAsync();
+
+    return !anyRepairShopsInState;
+}
+```
+
+The doc pages that previously showed the inline-lambda examples ([`/events/projections/conventions`](/events/projections/conventions), [`/events/projections/single-stream-projections`](/events/projections/single-stream-projections), [`/events/projections/event-projections`](/events/projections/event-projections), [`/events/projections/flat`](/events/projections/flat)) carry warning callouts pointing back here. The samples in those pages still reference the old API today — they will be migrated when the JasperFx 2.0 GA cut lands and the API is physically removed.
+
 ### Synchronous query APIs removed
 
 **Marten 9 fully removes the synchronous data-access path.** Every database-bound synchronous LINQ terminal operator, `IQuerySession`/`IDocumentSession` sync helper, and the `IQueryHandler<T>.Handle(DbDataReader, IMartenSession)` extensibility hook now either no longer exist or throw at runtime:
