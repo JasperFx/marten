@@ -62,35 +62,26 @@ internal class CompiledQueryCollection
         // descriptor's typed BindParameter. Containment / JsonPath / Contains-
         // style queries are therefore source-gen-eligible too — the prior
         // PlanRequiresCodegenFilters gate is gone.
-        if (CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
+        if (!CompiledQueryHandlerRegistry.TryGet(query.GetType(), out var descriptor))
+        {
+            // #4454 Phase 1D — FEC fallback. When no source-gen [ModuleInitializer]
+            // registered a descriptor for this query type (consumer assembly missing
+            // the [JasperFxAssembly] marker, or a query type registered at runtime via
+            // reflection) we build the descriptor reflectively from the freshly-walked
+            // CompiledQueryPlan and cache it in the registry. Subsequent calls hit the
+            // fast registry path. Replaces the previous fallthrough to
+            // CompiledQuerySourceBuilder / JasperFx.RuntimeCompiler.
+            descriptor = RuntimeCompiledQueryDescriptorFactory.Build(plan);
+            CompiledQueryHandlerRegistry.Register(query.GetType(), descriptor);
+        }
+        // ---- /#4405 iterations 3-4 ----
+
         {
             var enumAsString = _store.Options.Serializer().EnumStorage == EnumStorage.AsString;
             source = new SourceGeneratedCompiledQuerySource<TOut>(plan, descriptor, enumAsString);
             _querySources = _querySources.AddOrUpdate(query.GetType(), source);
             return source;
         }
-        // ---- /#4405 iterations 3-4 ----
-
-        // PoC bridge: registry miss or non-Stateless shape falls through to the
-        // existing JasperFx.RuntimeCompiler codegen path. This branch is deleted
-        // once iteration 4 lands green; the final V9 behavior is "registry miss
-        // throws" (#4405 in-issue commentary 2026-05-14).
-        var file = new CompiledQueryCodeFile(query.GetType(), _store, plan, _tracking);
-
-        var rules = _store.Options.CreateGenerationRules();
-        rules.ReferenceTypes(typeof(TDoc), typeof(TOut), query.GetType());
-
-        // 9.0 (#4309): route through the AllowRuntimeCodeGeneration gate so
-        // AOT-friendly hosts can opt out of Roslyn — compiled queries that
-        // weren't pre-generated will throw with a descriptive message rather
-        // than silently invoke the runtime compiler.
-        Marten.Internal.CodeGeneration.StaticOnlyCodeFileLoader.Initialize(
-            file, rules, _store, null, _store.Options.AllowRuntimeCodeGeneration);
-
-        source = file.Build(rules);
-        _querySources = _querySources.AddOrUpdate(query.GetType(), source);
-
-        return source;
     }
 }
 
