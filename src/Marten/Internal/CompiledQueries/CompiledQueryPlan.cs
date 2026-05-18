@@ -397,6 +397,15 @@ public class CompiledQueryPlan : ICommandBuilder
                         {
                             usage.Member = queryMember;
                             usage.Filter = filter;
+                            // Build the runtime setter once per (filter, query-member)
+                            // pair so the AOT/source-gen path can write the parameter
+                            // without going back through the codegen-emit hook. The
+                            // codegen path is unaffected — it still drives off
+                            // ParameterUsage.GenerateCode until Phase 1E.
+                            if (filter is not null)
+                            {
+                                usage.Setter = filter.BuildSetter();
+                            }
                             break;
                         }
                     }

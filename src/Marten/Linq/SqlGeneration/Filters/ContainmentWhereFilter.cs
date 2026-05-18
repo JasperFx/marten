@@ -9,6 +9,7 @@ using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
 using Marten.Linq.Members.Dictionaries;
+using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -200,6 +201,27 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         var part = Usage == ContainmentUsage.Singular ? (IDictionaryPart)top : new ArrayContainer(top);
 
         method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, part));
+    }
+
+    public Action<NpgsqlParameter, object> BuildSetter()
+    {
+        // Snapshot the per-filter state at plan-construction time. The captured
+        // _data tree references DictionaryValueUsage entries whose QueryMember
+        // was assigned during the matching TryMatchValue call; the setter walks
+        // the tree per session.Query(...) invocation and substitutes each leaf
+        // value with the corresponding member read off the user's query
+        // instance. AOT-clean: no reflection emit, no Expression compile.
+        var data = _data;
+        var usages = _usages;
+        var serializer = _serializer;
+        var wrapInArray = Usage == ContainmentUsage.Collection;
+        return (parameter, query) =>
+        {
+            var dict = CompiledQueryDictionaryBuilder.Build(data, usages, query);
+            var payload = wrapInArray ? (object)new object[] { dict } : dict;
+            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            parameter.Value = serializer.ToCleanJson(payload);
+        };
     }
 
     public string ParameterName { get; private set; }

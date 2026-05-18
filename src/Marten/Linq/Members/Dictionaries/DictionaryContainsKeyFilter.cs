@@ -53,5 +53,10 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
         throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
     }
 
+    public Action<Npgsql.NpgsqlParameter, object> BuildSetter()
+    {
+        throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
+    }
+
     public string ParameterName { get; } = "NONE";
 }
