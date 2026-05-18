@@ -67,6 +67,7 @@
   </Folder>
   <Project Path="../build/build.csproj" />
   <Project Path="EventAppenderPerfTester/EventAppenderPerfTester.csproj" />
+  <Project Path="Marten.AotSmoke/Marten.AotSmoke.csproj" />
   <Project Path="Marten.EntityFrameworkCore.Tests/Marten.EntityFrameworkCore.Tests.csproj" />
   <Project Path="Marten.EntityFrameworkCore/Marten.EntityFrameworkCore.csproj" />
   <Project Path="Marten.Newtonsoft/Marten.Newtonsoft.csproj" />
