@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -17,7 +18,22 @@ namespace Marten.EntityFrameworkCore;
 /// <see cref="DbContextTransactionParticipant{TDbContext}.BeforeCommitAsync"/>
 /// swaps to Marten's connection and calls SaveChangesAsync.
 /// </summary>
-internal class EfCoreProjectionStorage<TDoc, TId, TDbContext> : IProjectionStorage<TDoc, TId>
+/// <remarks>
+/// AOT: TDoc carries the full DAM flag set required by
+/// <c>DbContext.Find&lt;TEntity&gt;</c> / <c>FindAsync&lt;TEntity&gt;</c> and
+/// <c>IModel.FindEntityType(Type)</c> on the EF Core API surface. The trim
+/// requirement propagates to consumers — callers that close TDoc with a
+/// concrete entity type satisfy it implicitly.
+/// </remarks>
+internal class EfCoreProjectionStorage<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+        | DynamicallyAccessedMemberTypes.NonPublicConstructors
+        | DynamicallyAccessedMemberTypes.PublicFields
+        | DynamicallyAccessedMemberTypes.NonPublicFields
+        | DynamicallyAccessedMemberTypes.PublicProperties
+        | DynamicallyAccessedMemberTypes.NonPublicProperties
+        | DynamicallyAccessedMemberTypes.Interfaces)]
+    TDoc, TId, TDbContext> : IProjectionStorage<TDoc, TId>
     where TDoc : class where TId : notnull where TDbContext : DbContext
 {
     public TDbContext DbContext { get; }
