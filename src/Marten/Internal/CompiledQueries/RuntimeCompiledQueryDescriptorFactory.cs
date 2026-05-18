@@ -227,28 +227,37 @@ internal static class RuntimeCompiledQueryDescriptorFactory
             var def = memberType.GetGenericTypeDefinition();
             var args = memberType.GetGenericArguments();
 
-            if (def == typeof(Action<>))
+            // Dispatch first by arity so IList<>.MakeGenericType isn't called with
+            // a 2-element type-arg array when the member is Dictionary<TId, TDoc>.
+            if (args.Length == 1)
             {
-                var method = typeof(Include).GetMethod(nameof(Include.ReaderToAction))!.MakeGenericMethod(args[0]);
-                return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
-            }
+                if (def == typeof(Action<>))
+                {
+                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToAction))!.MakeGenericMethod(args[0]);
+                    return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
+                }
 
-            if (typeof(IList<>).MakeGenericType(args).IsAssignableFrom(memberType)
-                || def == typeof(List<>)
-                || def == typeof(IList<>))
-            {
-                var method = typeof(Include).GetMethod(nameof(Include.ReaderToList))!.MakeGenericMethod(args[0]);
-                return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
+                if (def == typeof(List<>)
+                    || def == typeof(IList<>)
+                    || typeof(IList<>).MakeGenericType(args).IsAssignableFrom(memberType))
+                {
+                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToList))!.MakeGenericMethod(args[0]);
+                    return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
+                }
             }
-
-            if (def == typeof(Dictionary<,>) || def == typeof(IDictionary<,>))
+            else if (args.Length == 2)
             {
-                // Include.ReaderToDictionary<T, TId>(session, IDictionary<TId, T>) —
-                // args[0] = TId (the dictionary's key, the doc id type),
-                // args[1] = T (the dictionary's value, the doc type).
-                var method = typeof(Include).GetMethod(nameof(Include.ReaderToDictionary))!
-                    .MakeGenericMethod(args[1], args[0]);
-                return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
+                if (def == typeof(Dictionary<,>)
+                    || def == typeof(IDictionary<,>)
+                    || typeof(IDictionary<,>).MakeGenericType(args).IsAssignableFrom(memberType))
+                {
+                    // Include.ReaderToDictionary<T, TId>(session, IDictionary<TId, T>) —
+                    // args[0] = TId (the dictionary's key, the doc id type),
+                    // args[1] = T (the dictionary's value, the doc type).
+                    var method = typeof(Include).GetMethod(nameof(Include.ReaderToDictionary))!
+                        .MakeGenericMethod(args[1], args[0]);
+                    return (IIncludeReader)method.Invoke(null, new object[] { session, value })!;
+                }
             }
         }
 
