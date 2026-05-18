@@ -294,8 +294,6 @@ public static class MartenServiceCollectionExtensions
         services.AddJasperFx();
         services.AddSingleton<IDocumentStoreSource, DocumentStoreSource<T>>();
 
-        services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
-
         services.AddSingleton<ISystemPart, MartenSystemPart<T>>();
 
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
@@ -310,13 +308,6 @@ public static class MartenServiceCollectionExtensions
         {
             stores = new SecondaryDocumentStores();
             services.AddSingleton(stores);
-            // I'm not proud of this, but you need the IServiceProvider in order to
-            // build the generation rules
-            services.AddSingleton<ICodeFileCollection>(s =>
-            {
-                stores.Services = s;
-                return stores;
-            });
         }
 
         services.AddSingleton<IDatabaseSource>(s => s.GetRequiredService<T>().As<DocumentStore>().Tenancy);
@@ -337,16 +328,6 @@ public static class MartenServiceCollectionExtensions
         });
 
         services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<T>());
-
-
-        services.AddSingleton<ICodeFileCollection>(s =>
-        {
-            var options = config.BuildStoreOptions(s);
-            return new DocumentStore(options);
-        });
-
-        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s).EventGraph);
-        services.AddSingleton<ICodeFileCollection>(s => config.BuildStoreOptions(s));
 
         return new MartenStoreExpression<T>(services);
     }
