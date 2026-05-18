@@ -18,8 +18,8 @@ namespace Marten.EventStorage;
 /// <summary>
 /// Non-codegen <see cref="EventDocumentStorage"/> subclass that delegates
 /// the write-path methods to a closed-shape <see cref="EventStorage{TId}"/>
-/// instance. Constructed by <see cref="EventGraph"/> when
-/// <c>StoreOptions.Events.UseClosedShapeStorage</c> is on.
+/// instance. Constructed by <see cref="EventGraph"/> as the sole event
+/// storage adapter in v9.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -36,14 +36,12 @@ namespace Marten.EventStorage;
 /// chosen via <see cref="EventGraph.StreamIdentity"/>.
 /// </para>
 /// <para>
-/// <b>Read-side note:</b> <see cref="ApplyReaderDataToEvent"/> and
-/// <see cref="ApplyReaderDataToEventAsync"/> are still codegen-emitted
-/// in v9 even with the closed-shape flag on. The closed-shape work in
-/// W4 covers the write path; the read-side equivalent lives with W5
-/// (Marten.SourceGenerator) — the read-side method body needs per-event
-/// type info that source-gen will provide. Until then, the codegen
-/// path is still required for the read selector — see open question (3)
-/// on #4410.
+/// Read-side <see cref="ApplyReaderDataToEvent"/> /
+/// <see cref="ApplyReaderDataToEventAsync"/> walk
+/// <see cref="IEventTableColumn.ReadValueSync"/> /
+/// <see cref="IEventTableColumn.ReadValueAsync"/> over a column list
+/// derived from <see cref="EventsTable.SelectColumns"/>; no codegen is
+/// involved on either the read or the write path.
 /// </para>
 /// </remarks>
 internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage

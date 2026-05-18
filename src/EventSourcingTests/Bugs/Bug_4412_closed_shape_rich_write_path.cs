@@ -12,10 +12,7 @@ namespace EventSourcingTests.Bugs;
 
 /// <summary>
 /// End-to-end smoke test for the closed-shape Rich-mode write path
-/// (#4412 + #4413): flips <c>UseClosedShapeStorage = true</c>, sets
-/// <c>AppendMode = Rich</c> (the closed-shape adapter currently only wires
-/// the Rich path's write operations — Quick / QuickWithServerTimestamps
-/// land in #4414 / #4415), and exercises:
+/// (#4412 + #4413): sets <c>AppendMode = Rich</c> and exercises:
 /// </summary>
 /// <list type="number">
 ///   <item><see cref="ClosedShapeEventDocumentStorage.AppendEvent"/> via
@@ -35,7 +32,6 @@ public class Bug_4412_closed_shape_rich_write_path : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
         });
 
@@ -101,7 +97,6 @@ public class Bug_4412_closed_shape_rich_write_path : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });

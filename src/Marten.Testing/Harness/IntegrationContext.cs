@@ -73,9 +73,6 @@ namespace Marten.Testing.Harness
 
                 opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 opts.ApplicationAssembly = GetType().Assembly;
-
-                if (TestsSettings.UseClosedShapeStorage)
-                    opts.Events.UseClosedShapeStorage = true;
             });
         }
 
@@ -127,14 +124,6 @@ namespace Marten.Testing.Harness
             options.DisableNpgsqlLogging = true;
 
             configure(options);
-
-            // #4417 / #4418: opt-in suite sweep under the closed-shape adapter.
-            // Applied AFTER the test's configure so an individual test that
-            // explicitly turns it off wins.
-            if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
-            {
-                options.Events.UseClosedShapeStorage = true;
-            }
 
             _store = new DocumentStore(options);
             Disposables.Add(_store);

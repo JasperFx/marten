@@ -230,7 +230,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
 
-    public string StreamStateSelectSql => CodeGeneration.EventDocumentStorageGenerator.BuildStreamStateSelectSql(Events);
+    public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
 
     StreamState ISelector<StreamState>.Resolve(DbDataReader reader)
     {
