@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core.Reflection;
 using Marten.Events.CodeGeneration;
 using Marten.Exceptions;
@@ -414,34 +412,4 @@ public class CompiledQueryPlan : ICommandBuilder
         }
     }
 
-    public void GenerateCode(GeneratedMethod method, StoreOptions storeOptions)
-    {
-        int number = 1;
-        foreach (var command in _commands)
-        {
-            if (number != 1)
-            {
-                method.Frames.Code($"{{0}}.{nameof(ICommandBuilder.StartNewCommand)}();", Use.Type<ICommandBuilder>());
-            }
-
-            var parameters = $"parameters{number}";
-
-            if (command.Parameters.Any())
-            {
-                method.Frames.Code($"var {parameters} = {{0}}.{nameof(CommandBuilder.AppendWithParameters)}(@{{1}}, '{ParameterPlaceholder}');",
-                    Use.Type<ICommandBuilder>(), command.CommandText);
-
-                foreach (var usage in command.Parameters)
-                {
-                    usage.GenerateCode(method, parameters, storeOptions);
-                }
-            }
-            else
-            {
-                method.Frames.Code($"{{0}}.Append({{1}});", Use.Type<ICommandBuilder>(), command.CommandText);
-            }
-
-            number++;
-        }
-    }
 }

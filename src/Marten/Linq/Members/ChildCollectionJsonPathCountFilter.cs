@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Parsing;
 using Marten.Linq.SqlGeneration.Filters;
@@ -82,23 +81,7 @@ internal class ChildCollectionJsonPathCountFilter: ISqlFragment, ICompiledQueryA
         return false;
     }
 
-    private bool _hasGenerated;
     private Dictionary<string, object> _dict;
-
-    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
-    {
-        if (_hasGenerated)
-        {
-            return;
-        }
-
-        _hasGenerated = true;
-
-        var top = new DictionaryDeclaration();
-        top.ReadDictionary(_dict, _usages);
-
-        method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, top));
-    }
 
     public Action<NpgsqlParameter, object> BuildSetter()
     {

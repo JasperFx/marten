@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
@@ -182,25 +181,6 @@ public class ContainmentWhereFilter: ICollectionAwareFilter, ICollectionAware, I
         }
 
         return false;
-    }
-
-    private bool _hasGenerated;
-
-    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
-    {
-        if (_hasGenerated)
-        {
-            return;
-        }
-
-        _hasGenerated = true;
-
-        var top = new DictionaryDeclaration();
-        top.ReadDictionary(_data, _usages);
-
-        var part = Usage == ContainmentUsage.Singular ? (IDictionaryPart)top : new ArrayContainer(top);
-
-        method.Frames.Add(new WriteSerializedJsonParameterFrame(parametersVariableName, parameterIndex, part));
     }
 
     public Action<NpgsqlParameter, object> BuildSetter()

@@ -2,7 +2,6 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
@@ -72,16 +71,6 @@ internal class StringContainsFilter: ISqlFragment, ICompiledQueryAwareFilter
         }
 
         return false;
-    }
-
-    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
-    {
-        var maskedValue = $"ContainsString(_query.{_queryMember.Name})";
-
-        method.Frames.Code($@"
-{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
-{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
-", NpgsqlDbType.Varchar);
     }
 
     public Action<NpgsqlParameter, object> BuildSetter()
