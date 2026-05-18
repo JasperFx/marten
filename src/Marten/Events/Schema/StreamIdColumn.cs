@@ -2,7 +2,6 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using Marten.Internal.CodeGeneration;
 using Weasel.Postgresql.Tables;
@@ -34,42 +33,6 @@ internal class StreamIdColumn: TableColumn, IEventTableColumn
             _streamIdentity == StreamIdentity.AsGuid
                 ? EventColumnReaders.BuildAsync(x => x.StreamId)
                 : EventColumnReaders.BuildAsync(x => x.StreamKey));
-    }
-
-    public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        if (graph.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            method.AssignMemberFromReader<IEvent>(null, index, x => x.StreamId);
-        }
-        else
-        {
-            method.AssignMemberFromReader<IEvent>(null, index, x => x.StreamKey);
-        }
-    }
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        if (graph.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.StreamId);
-        }
-        else
-        {
-            method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.StreamKey);
-        }
-    }
-
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
-    {
-        if (graph.StreamIdentity == StreamIdentity.AsGuid)
-        {
-            method.SetParameterFromMember<StreamAction>(index, x => x.Id);
-        }
-        else
-        {
-            method.SetParameterFromMember<StreamAction>(index, x => x.Key);
-        }
     }
 
     public string ValueSql(EventGraph graph, AppendMode mode)

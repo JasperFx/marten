@@ -9,8 +9,7 @@ namespace Marten.EventStorage.Metadata;
 /// <summary>
 /// <see cref="IEventMetadataBinder"/> for the optional <c>causation_id</c>
 /// varchar column. Binds <see cref="IEvent.CausationId"/> as a string
-/// parameter — mirrors <c>CausationIdColumn.GenerateAppendCode</c> on the
-/// codegen path. Included in the descriptor's binder array iff
+/// parameter. Included in the descriptor's binder array iff
 /// <c>StoreOptions.Events.MetadataConfig.CausationIdEnabled</c> is on.
 /// </summary>
 /// <remarks>

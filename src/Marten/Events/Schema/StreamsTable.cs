@@ -2,9 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using Marten.Events.Archiving;
-using Marten.Internal.CodeGeneration;
 using Marten.Linq.Parsing;
 using Marten.Storage;
 using Marten.Storage.Metadata;
@@ -76,10 +74,6 @@ internal interface IStreamTableColumn
     bool Writes { get; }
 
     string Name { get; }
-    void GenerateAppendCode(GeneratedMethod method, int index);
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, int index);
-    public void GenerateSelectorCodeSync(GeneratedMethod method, int index);
 }
 
 internal class StreamTableColumn: TableColumn, IStreamTableColumn
@@ -101,19 +95,4 @@ internal class StreamTableColumn: TableColumn, IStreamTableColumn
 
     public bool Reads { get; set; } = true;
     public bool Writes { get; set; } = true;
-
-    public void GenerateAppendCode(GeneratedMethod method, int index)
-    {
-        method.SetParameterFromMember(index, _memberExpression);
-    }
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, int index)
-    {
-        method.AssignMemberFromReader(null, index, typeof(StreamAction), _member.Name);
-    }
-
-    public void GenerateSelectorCodeSync(GeneratedMethod method, int index)
-    {
-        method.AssignMemberFromReaderAsync(null, index, typeof(StreamAction), _member.Name);
-    }
 }

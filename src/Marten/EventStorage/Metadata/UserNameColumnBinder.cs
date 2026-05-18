@@ -8,14 +8,13 @@ namespace Marten.EventStorage.Metadata;
 
 /// <summary>
 /// <see cref="IEventMetadataBinder"/> for the optional <c>user_name</c>
-/// varchar column. Binds <see cref="IEvent.UserName"/> — mirrors
-/// <c>UserNameColumn.GenerateAppendCode</c> on the codegen path.
+/// varchar column. Binds <see cref="IEvent.UserName"/> as a string parameter.
 /// </summary>
 /// <remarks>
-/// The session-level "user name" lives on <see cref="IMartenSession.LastModifiedBy"/>
-/// but the codegen path binds the per-event <see cref="IEvent.UserName"/>
-/// (which the event appender plumbs in from the session before queuing
-/// the operation). We match that — bind off the event, not the session.
+/// The session-level "user name" lives on <see cref="IMartenSession.LastModifiedBy"/>,
+/// but the event appender plumbs that into the per-event
+/// <see cref="IEvent.UserName"/> before queuing the operation, and we bind
+/// off the event so the SQL stays self-contained.
 /// </remarks>
 internal sealed class UserNameColumnBinder: IEventMetadataBinder
 {
