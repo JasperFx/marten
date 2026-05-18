@@ -15,11 +15,13 @@ Marten 9 is the Marten side of the [Critter Stack 2026](https://github.com/Jaspe
 | --- | --- | --- |
 | `JasperFx` | 1.x | 2.0.0-alpha.x |
 | `JasperFx.Events` | 1.x | 2.0.0-alpha.x |
-| `JasperFx.RuntimeCompiler` | 1.x | 2.0.0-alpha.x |
+| `JasperFx.RuntimeCompiler` | 1.x | *retired* |
 | `Weasel.Postgresql` | 8.x | 9.0.0-alpha.x |
 | `Npgsql` | 9.x | 10.x |
 
 **For most consumers**, picking up the new packages happens transitively when you bump `Marten` — no explicit version pins are needed. If your application has explicit references to any of the packages above, bump them in lockstep.
+
+`JasperFx.RuntimeCompiler` (the Roslyn-driven runtime code-generation engine) is no longer a Marten dependency. See [Runtime code generation removed](#runtime-code-generation-removed) below for what replaced each surface and what (if anything) you need to do.
 
 **Two structural changes ride along** that you may have to react to:
 
@@ -224,18 +226,26 @@ Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recomm
   3. Call `opts.UseNewtonsoftForSerialization(...)` (now an extension method) yourself — `RestoreV8Defaults()` does not touch the serializer, by design (it cannot reach across the package boundary).
 * See [JSON Serialization](configuration/json.md) for the full migration details and per-serializer trade-offs.
 
-### AOT / codegen behavior
+### Runtime code generation removed {#runtime-code-generation-removed}
 
-Marten 9 takes its first real steps toward an AOT-friendly publishing flow. Three changes worth knowing about:
+Marten 9.0 retires the `JasperFx.RuntimeCompiler` (Roslyn) dependency and all the surfaces that used to compile C# at first use. Every replacement is in place by 9.0.0; the path is not opt-in.
 
-#### **`StoreOptions.AllowRuntimeCodeGeneration` flag (default `true`)**
+What was replaced:
 
-* Marten 9 gates the runtime Roslyn compilation path behind a new opt-out flag. Set it to `false` in production to refuse to fall through to Roslyn when a pre-generated type can't be found — the boot fails fast instead of silently triggering the JIT-compilation path that's incompatible with AOT publishing.
-* The recommended **AOT-publishing flow** is:
-  1. At dev time, run `dotnet run -- codegen write` against a host that boots your `StoreOptions`. Marten writes every generated type Marten needs to your project's `Internal/Generated/` folder.
-  2. Commit the generated folder.
-  3. In production, set `opts.AllowRuntimeCodeGeneration = false;` (and keep `GeneratedCodeMode = TypeLoadMode.Static` — see below). Boot now refuses to call into Roslyn; a missing generated type throws instead of silently regenerating.
-* The default stays `true` so existing applications keep working without code changes — nothing breaks if you don't opt in. See [#4309](https://github.com/JasperFx/marten/issues/4309).
+| Surface | Pre-9.0 | Marten 9 |
+| --- | --- | --- |
+| `IDocumentStorage<T, TId>` | Roslyn-emitted subclass per document type, one per `StorageStyle` | Hand-written closed-shape hierarchy in `Marten.Internal.ClosedShape`, parameterized by a reflection-built `IIdentification<TDoc, TId>` ([#4404](https://github.com/JasperFx/marten/issues/4404)) |
+| `IEventStorage` write path | Roslyn-emitted `GeneratedEventDocumentStorage` | Hand-written `RichEventStorage<TId>` / `QuickEventStorage<TId>` / `QuickEventWithServerTimestampsStorage<TId>` adapted by `ClosedShapeEventDocumentStorage` ([#4410](https://github.com/JasperFx/marten/issues/4410)) |
+| `IEventStorage` read path (`ApplyReaderDataToEvent`) | Roslyn-emitted selector | `IEventTableColumn.ReadValueSync/Async` runtime delegates ([#4411](https://github.com/JasperFx/marten/issues/4411)) |
+| Compiled queries | Roslyn-emit at first use, with optional `dotnet run -- codegen write` pre-generation | `Marten.SourceGenerator` (compile-time) + a `FastExpressionCompiler`-built descriptor as the runtime fallback ([#4405](https://github.com/JasperFx/marten/issues/4405)) |
+| `AddMartenStore<T>()` secondary stores | Roslyn-emitted `class TImplementation : DocumentStore, T` | `System.Reflection.Emit` proxy in `SecondaryStoreProxyFactory` |
+| `JasperFx.RuntimeCompiler` `PackageReference` | required | **deleted** from `Marten.csproj` |
+
+What that means for application code:
+
+* **No more `dotnet run -- codegen write` step.** Pre-built `Internal/Generated/` folders are obsolete — delete them from your project and `.gitignore`. The closed-shape paths build their descriptors at first use (cheap) and cache them; there is no compile-on-cold-start.
+* **The `[Obsolete]` knobs stay on the surface as no-ops** so existing bootstrapping compiles unchanged: `StoreOptions.GeneratedCodeMode`, `StoreOptions.ApplicationAssembly`, `StoreOptions.SourceCodeWritingEnabled`, `StoreOptions.GeneratedCodeOutputPath`, `StoreOptions.AllowRuntimeCodeGeneration`, and `opts.Events.UseClosedShapeStorage` (which was an opt-in flag in 9.0-alpha; the closed-shape path is now the only path). None of them do anything at runtime — remove them at your convenience.
+* **The `Pre-Building Generated Types` documentation page has been retired.** Anything that linked to `/configuration/prebuilding` now 404s. The closest equivalent for "I want to ship without dynamic codegen" is reading the [compiled queries source-generator section](#source-gen-compiled-queries) below — the source generator covers the AOT-clean cases the pre-build flow used to.
 
 #### **Lazy document-mapping materialization**
 
@@ -243,23 +253,14 @@ Marten 9 takes its first real steps toward an AOT-friendly publishing flow. Thre
 * **Behavioral shift to know about:** validation errors that previously surfaced during `IHost.StartAsync` (bad `[Identity]` attribute placement, conflicting metadata-column policies, etc.) now surface on the **first session that touches the offending document type**. If you relied on host-build to be the canary, add an integration test that exercises every registered document type at least once, or call `store.Storage.BuildAllMappings()` eagerly at boot in production.
 * See [#4303](https://github.com/JasperFx/marten/issues/4303).
 
-#### **Internal codegen performance plumbing**
-
-These changes are invisible to consumers but worth noting because they affect cold-start traces:
-
-* **LINQ handler factory caching now goes through `GenericFactoryCache`** so repeated LINQ queries against the same shape don't allocate a fresh handler per call ([#4308](https://github.com/JasperFx/marten/issues/4308)).
-* **`GenerationRules` is hand-cloned for projection-specific overrides** instead of mutating a shared instance — each projection's codegen sees its own rules and the others stay untouched ([#4307](https://github.com/JasperFx/marten/issues/4307)).
-
 #### **Source-generated compiled queries (`Marten.SourceGenerator`)** {#source-gen-compiled-queries}
 
-Marten 9 ships a source generator that emits the per-`ICompiledQuery<TDoc, TOut>` scaffolding at compile time instead of via `JasperFx.RuntimeCompiler` at first use. Opt-in is implicit: add the analyzer reference + the assembly attribute and every compiled query in that assembly gets a generator-emitted handler registered with the Marten runtime at module load.
+The compile-time path is the supported way to use compiled queries in Marten 9. Opt-in is implicit: add the analyzer reference + the assembly attribute and every compiled query in that assembly gets a generator-emitted handler registered with the Marten runtime at module load.
 
 Add to the project that declares your `ICompiledQuery<,>` types:
 
 ```xml
-<ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"
-                  OutputItemType="Analyzer"
-                  ReferenceOutputAssembly="false" />
+<PackageReference Include="Marten.SourceGenerator" PrivateAssets="all" />
 ```
 
 And in any file in that assembly:
@@ -270,48 +271,26 @@ And in any file in that assembly:
 
 What this gets you:
 
-* **No Roslyn emit at first call.** First invocation of a registered compiled query is ~25× faster than the codegen path (measured on a Stateless shape: 3ms vs 75ms on a warm host).
-* **No `FastExpressionCompiler` for the per-query parameter binder.** Generator emits a direct property-read switch — ~31% faster steady-state per call.
-* **AOT-publishable for the common cases.** The Roslyn-emit step is fully gone for queries the source-gen path covers.
+* **No reflection at the per-call hot path.** Generator emits a direct property-read switch — ~31% faster steady-state per call than the runtime fallback.
+* **AOT-publishable for the common cases.** No dynamic-codegen surface for queries the generator covers.
 
-The runtime falls back to the existing codegen path in three documented cases — these are bug-compatible with V8 behavior, just slower at cold start:
+Queries the generator can't see at build time fall through to a reflection + `FastExpressionCompiler`-built descriptor cached in the same `CompiledQueryHandlerRegistry`. The fallback covers:
 
 * Plans whose SQL needs an `ICompiledQueryAwareFilter` (string `Contains`/`StartsWith`/`EndsWith`, `HashSet<T>.Contains` with JSONB containment, `Dictionary<,>.ContainsKey`, child-collection JsonPath counts).
 * Generic or nested `ICompiledQuery<,>` types.
 * Compiled queries declared in an assembly without `[JasperFxAssembly]`.
 
-Tracked at [#4405](https://github.com/JasperFx/marten/issues/4405). Removing the codegen-fallback bridge entirely is a follow-up to that issue.
+The fallback is reflective, not Roslyn — there's no per-query compilation; it's a one-shot `FastExpressionCompiler` setup at first call. Tracked at [#4405](https://github.com/JasperFx/marten/issues/4405).
 
-#### **Closed-shape event storage (`UseClosedShapeStorage`)** {#closed-shape-event-storage}
+#### **Closed-shape event storage** {#closed-shape-event-storage}
 
-Marten 9 ships a hand-written event-storage hierarchy that replaces the runtime-emitted `GeneratedEventDocumentStorage` for the write path. Opt-in flag — off by default in 9.0 so existing applications keep their current behavior bit-for-bit:
+The hand-written event-storage hierarchy is the only event-store write path in 9.0:
 
-```csharp
-services.AddMarten(opts =>
-{
-    opts.Events.UseClosedShapeStorage = true;
-});
-```
+* The append / insert-stream / update-stream-version / stream-state-query operations are concrete hand-written classes parameterized by per-`EventGraph` descriptors built once at `DocumentStore` construction. The runtime never branches on `AppendMode` after startup.
+* Adding a new metadata column is now an `IEventMetadataBinder` implementation plus a dialect-method case; no codegen template-tweaking.
+* The `MARTEN_USE_CLOSED_SHAPE_STORAGE` env-var sweep that ran in 9.0-alpha is gone — closed-shape is the default.
 
-What you get:
-
-* **No Roslyn emit for the event-store write path at boot.** The append / insert-stream / update-stream-version / stream-state-query operations are concrete hand-written classes parameterized by per-`EventGraph` descriptors built once at `DocumentStore` construction. The runtime never branches on `AppendMode` after startup.
-* **AOT-publishable for the event-store write path.** Combined with `AllowRuntimeCodeGeneration = false` and the source-generated compiled queries above, every Marten 9 write-path codepath is reachable without Roslyn.
-* **A cleaner extension seam.** Adding a new metadata column (e.g. a custom event-table column) is now an `IEventMetadataBinder` implementation plus a dialect-method case; the codegen template-tweaking exercise is gone.
-
-**Read-path note.** `ApplyReaderDataToEvent` (per-column event-row reader) is still codegen-emitted in 9.0 even with the flag on — the read-path closed-shape work tracks on the Marten.SourceGenerator stream ([#4405](https://github.com/JasperFx/marten/issues/4405) follow-ups). The flag covers the entire write path; the read path lights up incrementally.
-
-**Known limitations in 9.0:**
-
-* The Polecat (SQL Server) dialect for closed-shape storage ships after `JasperFx.Storage` (W2) cuts. Marten 9's `IEventStoreSqlDialect` interface is sealed `internal`; users on Polecat continue to use the codegen path until Polecat picks the closed-shape dialect up.
-
-**v9 / v10 / v11 transition plan:**
-
-* **v9** (this release) — flag is opt-in, default `false`. Codegen path remains the production default. Use the flag to validate the closed-shape behavior in your environment.
-* **v10** — the planned flip point. Default to `true`; the codegen path stays as an opt-out for one release while we shake out edge cases in the wild.
-* **v11** — remove the codegen path entirely. The `UseClosedShapeStorage` flag goes obsolete (always-on) and the legacy `EventDocumentStorageGenerator` is deleted.
-
-Tracked at [#4410](https://github.com/JasperFx/marten/issues/4410) (completed). Architecture overview lives in [`src/Marten/EventStorage/README.md`](https://github.com/JasperFx/marten/tree/master/src/Marten/EventStorage) for contributors adding new metadata binders or dialects.
+Architecture overview lives in [`src/Marten/EventStorage/README.md`](https://github.com/JasperFx/marten/tree/master/src/Marten/EventStorage) for contributors adding new metadata binders or dialects.
 
 ### Synchronous query APIs removed
 
@@ -602,7 +581,7 @@ V5 was a much smaller release for Marten than V4, and should require much less e
 * `IInitialData` services are executed within IHost bootstrapping. See [Initial Baseline Data](/documents/initial-data).
 * New facility to [apply all detected database changes on application startup](/schema/migrations.html#apply-all-outstanding-changes-upfront).
 * Ability to [register multiple Marten document stores in one .Net IHost](/configuration/hostbuilder.html#working-with-multiple-marten-databases)
-* The ["pre-built code generation" feature](/configuration/prebuilding) has a new, easier to use option in V5
+* The "pre-built code generation" feature had a new, easier to use option in V5 (retired in 9.0 — see [Runtime code generation removed](#runtime-code-generation-removed))
 * New ["Optimized Artifact Workflow"](/configuration/optimized_artifact_workflow) option
 * Some administrative or diagnostic methods that were previously on `IDocumentStore.Advanced` migrated to database specific access [as shown here](/configuration/multitenancy.html#administering-multiple-databases).
 
@@ -620,7 +599,7 @@ Other key, breaking changes:
 * The [async daemon](/events/projections/async-daemon) was completely rewritten, and is now about to run in application clusters and handle multi-tenancy
 * A few diagnostic methods moved within the API
 * Document types need to be public now, and Marten will alert you if document types are not public
-* The dynamic code in Marten moved to a runtime code generation model. If this is causing you any issues with cold start times or memory usage due to Roslyn misbehaving (this is **not** consistent), there is the new ["generate ahead model"](/configuration/prebuilding) as a workaround.
+* The dynamic code in Marten moved to a runtime code generation model. (Marten 9.0 retired that path entirely — see [Runtime code generation removed](#runtime-code-generation-removed).)
 * If an application bootstraps Marten through the `IServiceCollection.AddMarten()` extension methods, the default logging in Marten is through the standard
   `ILogger` of the application
 * In order to support more LINQ query permutations, LINQ queries are temporarily not using the GIN indexable operators on documents that have `GinIndexJsonData()` set. Support for this can be tracked [in this GitHub issue](https://github.com/JasperFx/marten/issues/2051)

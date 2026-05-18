@@ -129,25 +129,18 @@ dotnet run -- db-dump -d Marten ./marten.sql
 
 ### Codegen
 
-You can use the CLI to preview, generate, write, or test the code generation:
+::: warning Marten 9.0
+Marten 9.0 retired the Roslyn-driven runtime code-generation pipeline (`JasperFx.RuntimeCompiler`).
+The `codegen` family of subcommands is still exposed by the shared JasperFx CLI for other
+Critter-Stack tools, but it has no Marten artifacts to write or compare against — every
+document-storage, event-storage, compiled-query, and secondary-store surface ships as
+hand-written, closed-shape code or as `Marten.SourceGenerator`-emitted output under `obj/`.
 
-To Test Codegen:
-
-```bash
-dotnet run -- codegen test
-```
-
-To preview codegen:
-
-```bash
-dotnet run -- codegen preview
-```
-
-To write the codegen to your project (in the `internal/codegen` directory):
-
-```bash
-dotnet run -- codegen write
-```
+Existing applications that committed an `Internal/Generated/` folder pre-9.0 should delete it
+and remove it from `.gitignore`; nothing reads or writes those files anymore. See
+[Runtime code generation removed](/migration-guide#runtime-code-generation-removed) for the
+full migration story.
+:::
 
 ## Outside the Dotnet CLI
 

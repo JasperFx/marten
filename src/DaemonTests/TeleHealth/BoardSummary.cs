@@ -8,7 +8,6 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Grouping;
 using Marten;
 using Marten.Events.Projections;
-using Microsoft.CodeAnalysis.Options;
 
 namespace DaemonTests.TeleHealth;
 

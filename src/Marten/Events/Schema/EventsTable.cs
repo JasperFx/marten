@@ -3,7 +3,6 @@ using System.Linq;
 using Marten.Events.Archiving;
 using Marten.Storage;
 using Marten.Storage.Metadata;
-using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
 

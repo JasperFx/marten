@@ -18,31 +18,36 @@ var store = DocumentStore.For("connection string");
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L231-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-In the configuration above, as needed, behind the scenes Marten is:
+In the configuration above, as needed, behind the scenes Marten is checking the
+underlying database to see whether the existing database schema matches the
+in-memory configuration for each document type and the event sourcing, then
+applying any necessary database migrations at runtime.
 
-1. Checking the underlying database to check if the existing database
-   schema matches the in memory configuration for each document type
-   and the event sourcing, then applies any necessary database migrations
-   at runtime
-2. Generating and compiling dynamic code at runtime for each document type,
-   compiled query type, the event sourcing, and some types of event projections
+That's great at development time! However, the automatic database migrations
+may be undesirable in production as it requires significant rights from the
+application to the underlying PostgreSQL database. Additionally, the automatic
+database migrations require a little bit of in-memory locking in the Marten
+code that has been problematic for folks using Marten from Blazor.
 
-And that's (mostly) great at development time! However, the dynamic code compilation
-comes with a nontrivial cold start drag that's unsuitable for serverless architectures
-and some unnecessary sluggishness in automated testing sometimes. The automatic
-database migrations may be undesirable in production as it requires significant
-rights from the application to the underlying Postgresql database. Additionally,
-the automatic database migrations does require a little bit of in memory locking
-in the Marten code that has been problematic for folks using Marten from Blazor.
+::: tip Marten 9.0
+The Roslyn runtime code-generation path and the `TypeLoadMode` switch that
+controlled it were retired in Marten 9.0. The closed-shape document storage
+hierarchy, the source generator for compiled queries (with a reflection-built
+fallback), and a small `System.Reflection.Emit` shim for secondary stores
+replace what `JasperFx.RuntimeCompiler` used to handle. `StoreOptions.GeneratedCodeMode`,
+`StoreOptions.ApplicationAssembly`, `StoreOptions.SourceCodeWritingEnabled`, and
+`StoreOptions.GeneratedCodeOutputPath` are still on the surface for source-
+compatibility but are no-ops. `CritterStackDefaults` still controls the
+`ResourceAutoCreate` half of the per-environment workflow.
+:::
 
 To allow for maximum developer productivity while using more efficient production
 options, use this option in Marten bootstrapping:
 
 ::: tip
-`CritterStackDefaults` is defined in the shared JasperFx infrastructure that Marten and Wolverine
-both consume. For the full reference of the per-environment options, how `ResourceAutoCreate` and
-`GeneratedCodeMode` are resolved from `JasperFxOptions`, and how to override them programmatically
-or from configuration, see the
+`CritterStackDefaults` is defined in the shared JasperFx infrastructure that
+Marten and Wolverine both consume. For the full reference of the per-environment
+options and how `ResourceAutoCreate` is resolved from `JasperFxOptions`, see the
 [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
 :::
 
@@ -66,15 +71,9 @@ using var host = await Host.CreateDefaultBuilder()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L77-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-When using this option, if `IHostEnvironment.IsDevelopment()` as it would be on a local developer box, Marten is using:
+The `GeneratedCodeMode` line in that sample is a no-op in Marten 9.0 — it's
+retained only so existing application bootstrapping compiles unchanged. The
+effective behavior per environment is now driven entirely by `ResourceAutoCreate`:
 
-* `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply database schema migrations as needed.
-* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Dynamic` to generate dynamic code if necessary, or use pre-built types when they exist. This optimizes the development workflow to avoid unnecessary code compilations when the Marten configuration isn't changed.
-
-At production time, that changes to:
-
-* `StoreOptions.AutoCreateSchemaObjects = AutoCreate.None` to short circuit any kind
-  of automatic database change detection and migration at runtime. This is also a minor performance
-  optimization that sidesteps potential locking issues.
-* `StoreOptions.GeneratedCodeMode = TypeLoadMode.Static` to only try to load pre-built types from
-  what Marten thinks is the application assembly.
+* In `Development`: `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply database schema migrations as needed.
+* In `Production`: `StoreOptions.AutoCreateSchemaObjects = AutoCreate.None` to short-circuit any kind of automatic database change detection and migration at runtime. This is also a minor performance optimization that sidesteps potential locking issues.
