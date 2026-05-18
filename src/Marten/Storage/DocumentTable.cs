@@ -184,7 +184,19 @@ internal class DocumentTable: Table
         var id = columns.OfType<IdColumn>().SingleOrDefault();
         var data = columns.OfType<DataColumn>().Single();
         var type = columns.OfType<DocumentTypeColumn>().SingleOrDefault();
-        var version = columns.OfType<VersionColumn>().SingleOrDefault();
+        // mt_version sits in either VersionColumn (Optimistic / [Version] Guid) or
+        // RevisionColumn (Numeric / [Version] long); both occupy the same physical
+        // mt_version column on the table and should land at the same canonical slot
+        // in the SELECT projection. Without pulling RevisionColumn out here it falls
+        // into the unstable trailing-rest list, which scrambles the column<->binder
+        // pairing on conjoined-tenancy aggregates whose raw column order is
+        // tenant_id, id, data, …, mt_version: the SELECT emits
+        // (id, data, tenant_id, mt_version) but the closed-shape descriptor expects
+        // (id, data, mt_version, tenant_id) and tenantIdBinder ends up reading bigint
+        // as varchar — surfaced by build_aggregate_projection.simple_scenario and
+        // Bug_3946 against MultiStreamProjection + conjoined tenancy.
+        ISelectableColumn? version = columns.OfType<VersionColumn>().SingleOrDefault();
+        version ??= columns.OfType<RevisionColumn>().SingleOrDefault();
 
         var answer = new List<ISelectableColumn>();
 
