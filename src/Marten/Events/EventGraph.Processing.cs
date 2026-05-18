@@ -51,6 +51,11 @@ public partial class EventGraph
         }
 
         await EventAppender.ProcessEventsAsync(this, session, _inlineProjections.Value, token).ConfigureAwait(false);
+
+        if (UseListenNotifyForEventAppends)
+        {
+            session.QueueOperation(new NotifyEventAppendedOperation());
+        }
     }
 
     internal bool TryCreateTombstoneBatch(DocumentSessionBase session, [NotNullWhen(true)]out UpdateBatch? batch)
