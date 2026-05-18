@@ -81,7 +81,7 @@ public class Bug_4441_force_catch_up_with_outbox
         exceptions.ShouldBeEmpty();
     }
 
-    [Fact(Timeout = 30000, Skip = "Flaky in CI under timing pressure — see https://github.com/JasperFx/marten/issues/4462. Passes locally 3-for-3 but CI's Polly retry pipeline cancels the daemon catch-up socket I/O before it completes, surfacing an OperationCanceledException in the returned exceptions list.")]
+    [Fact(Timeout = 60000)]
     public async Task force_catch_up_invokes_message_batch_lifecycle_with_custom_outbox()
     {
         var outbox = new RecordingOutbox();
@@ -108,7 +108,11 @@ public class Bug_4441_force_catch_up_with_outbox
             await session.SaveChangesAsync();
         }
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        // Wider CT than `force_catch_up_returns_for_async_daemon_without_side_effects`
+        // because the custom-outbox lifecycle path adds extra hops (CreateBatch →
+        // BeforeCommit → AfterCommit per shard) on top of the catch-up loop —
+        // see #4462 for the timing context.
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
         var exceptions = await host.ForceAllMartenDaemonActivityToCatchUpAsync(cts.Token);
         exceptions.ShouldBeEmpty();
 
