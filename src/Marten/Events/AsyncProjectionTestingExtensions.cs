@@ -345,7 +345,7 @@ public static class TestingExtensions
 
                 logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in the main Marten store", daemon);
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            catch (Exception e) when (cancellation.IsCancellationRequested && IsCallerCancellation(e))
             {
                 // Caller-initiated cancellation — propagate as a normal cancellation
                 // signal rather than reporting it as a daemon error. Without this,
@@ -353,8 +353,10 @@ public static class TestingExtensions
                 // catch-up pipeline (Polly-wrapped per-shard execution) is mid-
                 // flight would see the propagated OperationCanceledException
                 // surface as a fake "exceptions list is non-empty" assertion
-                // failure — see #4462.
-                throw;
+                // failure. See #4462 (initial fix) + the AggregateException
+                // unwrap added here for the case where JasperFxAsyncDaemon
+                // bundles per-shard cancellation exceptions before throwing.
+                throw new OperationCanceledException(cancellation);
             }
             catch (Exception e)
             {
@@ -370,6 +372,15 @@ public static class TestingExtensions
 
         return list;
     }
+
+    private static bool IsCallerCancellation(Exception e) =>
+        e switch
+        {
+            OperationCanceledException => true,
+            AggregateException agg => agg.InnerExceptions.Count > 0
+                                      && agg.InnerExceptions.All(IsCallerCancellation),
+            _ => false
+        };
 
         /// <summary>
     /// Force any Marten async daemons for an ancillary Marten store to immediately advance to the latest changes. This is strictly
@@ -416,12 +427,14 @@ public static class TestingExtensions
 
                 logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in Marten store {StoreType}", daemon, typeof(T).FullNameInCode());
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            catch (Exception e) when (cancellation.IsCancellationRequested && IsCallerCancellation(e))
             {
                 // Caller-initiated cancellation — propagate, do not classify as
                 // a daemon error. See #4462 + matching guard on the main-store
-                // variant above.
-                throw;
+                // variant above. The IsCallerCancellation helper unwraps the
+                // AggregateException JasperFxAsyncDaemon wraps per-shard
+                // cancellations in.
+                throw new OperationCanceledException(cancellation);
             }
             catch (Exception e)
             {
