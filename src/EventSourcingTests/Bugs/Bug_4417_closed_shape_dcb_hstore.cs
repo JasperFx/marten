@@ -42,7 +42,6 @@ public class Bug_4417_closed_shape_dcb_hstore : OneOffConfigurationsContext
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
 
             opts.Events.AddEventType<StudentEnrolled>();
             opts.Events.AddEventType<AssignmentSubmitted>();
@@ -101,7 +100,6 @@ public class Bug_4417_closed_shape_dcb_hstore : OneOffConfigurationsContext
         // code paths.)
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Quick;
 
             opts.Events.AddEventType<StudentEnrolled>();

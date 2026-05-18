@@ -249,32 +249,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public bool EnableUniqueIndexOnEventId { get; set; } = false;
 
-    /// <summary>
-    /// Opt into the closed-shape event-storage hierarchy added in Marten 9
-    /// (#4404 W4 / #4410). When <see langword="true"/>, the event-store
-    /// path uses hand-written closed-shape <see cref="Marten.EventStorage.EventStorage{TId}"/>
-    /// subclasses instead of the <see cref="Marten.Events.CodeGeneration.EventDocumentStorageGenerator"/>
-    /// Roslyn-emitted classes. Default <see langword="false"/> in v9 — flag
-    /// flips to default-on in v10 and the codegen path is removed in v11.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Three-mode coverage: Rich (Full + QuickWithVersion) /
-    /// Quick / QuickWithServerTimestamps. The mode is picked from
-    /// <see cref="AppendMode"/> at <c>DocumentStore</c> construction; no
-    /// runtime branching on append mode after startup.
-    /// </para>
-    /// <para>
-    /// AOT publishing implication: when the flag is on, the event-store
-    /// path no longer needs <see cref="JasperFx.RuntimeCompiler"/> at
-    /// runtime. Today's <c>StoreOptions.AllowRuntimeCodeGeneration</c>
-    /// gate still applies to the rest of the codegen surface (document
-    /// storage, projections); only the event-store slice migrates with
-    /// this flag.
-    /// </para>
-    /// </remarks>
-    public bool UseClosedShapeStorage { get; set; } = false;
-
     private readonly List<string> _ignoredIndexes = new();
 
     public IReadOnlyList<string> IgnoredIndexes => _ignoredIndexes;

@@ -57,7 +57,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             appendEventSqlSuffix: ")",
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
+            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             serializeEventData: e => serializer.ToJson(e.Data),
             metadataBinders: metadataBinders)
         {
@@ -268,7 +268,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             quickAppendEventsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: false),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
+            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             serializeEventData: e => serializer.ToJson(e.Data))
         {
             IsGuidStreamIdentity = isGuid,
@@ -303,7 +303,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             quickAppendEventsWithServerTimestampsSql: BuildQuickAppendEventsSql(graph, serverTimestamps: true),
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
-            streamStateSelectSql: EventDocumentStorageGenerator.BuildStreamStateSelectSql(graph),
+            streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
             serializeEventData: e => serializer.ToJson(e.Data))
         {
             IsGuidStreamIdentity = isGuid,

@@ -10,7 +10,7 @@ using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten;
 using Marten.Events;
-using Marten.Events.CodeGeneration;
+using Marten.EventStorage;
 using Marten.Events.Operations;
 using Marten.Exceptions;
 using Marten.Internal;
@@ -57,7 +57,7 @@ public class quick_appending_events_workflow_specs
         await @case.StartNewStream();
         await using var query = @case.Store.QuerySession();
 
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+        var builder = new ClosedShapeEventDocumentStorage(@case.Store.Options);
         var handler = builder.QueryForStream(@case.ToEventStream());
 
         var state = await query.As<QuerySession>().ExecuteHandlerAsync(handler, CancellationToken.None);
@@ -73,7 +73,7 @@ public class quick_appending_events_workflow_specs
         @case.StartNewStream();
 
         var stream = @case.CreateNewStream();
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+        var builder = new ClosedShapeEventDocumentStorage(@case.Store.Options);
         var op = builder.InsertStream(stream);
 
         await using var session = @case.Store.LightweightSession();
@@ -92,7 +92,7 @@ public class quick_appending_events_workflow_specs
         stream.ExpectedVersionOnServer = 3; // it's actually 4, so this should fail
         stream.Version = 10;
 
-        var builder = EventDocumentStorageGenerator.GenerateStorage(@case.Store.Options);
+        var builder = new ClosedShapeEventDocumentStorage(@case.Store.Options);
         var op = builder.UpdateStreamVersion(stream);
 
         await using var session = @case.Store.LightweightSession();

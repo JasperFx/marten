@@ -17,8 +17,7 @@ namespace DaemonTests.Bugs;
 /// <summary>
 /// Regression for jasperfx/marten#4428.
 ///
-/// When <c>StoreOptions.Events.UseClosedShapeStorage = true</c> and
-/// <c>AppendMode = EventAppendMode.Rich</c>, the async-projection
+/// Under <c>AppendMode = EventAppendMode.Rich</c>, the async-projection
 /// side-effect replay path (JasperFx.Events <c>EventSlice.BuildOperations</c>
 /// → <c>IProjectionBatch.QuickAppendEventWithVersion</c> →
 /// Marten <c>ProjectionBatch.QuickAppendEventWithVersion</c> →
@@ -27,8 +26,8 @@ namespace DaemonTests.Bugs;
 /// <c>NotImplementedException</c>. The closed-shape Rich implementation was
 /// stubbed out and the assumption "the Rich appender only calls AppendEvent"
 /// missed the daemon's side-effect replay path. This test asserts the
-/// raised side-effect event lands in <c>mt_events</c> when running the rebuild
-/// under <c>UseClosedShapeStorage = true</c> + Rich.
+/// raised side-effect event lands in <c>mt_events</c> when running a Rich-mode
+/// rebuild.
 /// </summary>
 public class Bug_4428_rich_storage_side_effect_events: OneOffConfigurationsContext
 {
@@ -37,10 +36,6 @@ public class Bug_4428_rich_storage_side_effect_events: OneOffConfigurationsConte
     {
         StoreOptions(opts =>
         {
-            // Force the closed-shape Rich path explicitly so the test reproduces
-            // #4428 regardless of the suite-wide env flag (which only affects
-            // UseClosedShapeStorage, not AppendMode).
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Rich;
             opts.Projections.Add<Bug4428CounterProjection>(ProjectionLifecycle.Async);
         });

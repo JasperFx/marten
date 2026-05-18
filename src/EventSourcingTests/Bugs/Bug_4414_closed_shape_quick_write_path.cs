@@ -25,7 +25,6 @@ public class Bug_4414_closed_shape_quick_write_path : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Quick;
         });
 
@@ -72,7 +71,6 @@ public class Bug_4414_closed_shape_quick_write_path : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Quick;
             opts.Events.StreamIdentity = StreamIdentity.AsString;
         });
@@ -113,7 +111,6 @@ public class Bug_4414_closed_shape_quick_write_path : OneOffConfigurationsContex
     {
         StoreOptions(opts =>
         {
-            opts.Events.UseClosedShapeStorage = true;
             opts.Events.AppendMode = EventAppendMode.Quick;
             opts.Events.MetadataConfig.CausationIdEnabled = true;
             opts.Events.MetadataConfig.CorrelationIdEnabled = true;

@@ -24,11 +24,12 @@ namespace EventSourcingTests.Bugs;
 /// </summary>
 /// <remarks>
 /// <para>
-/// We can't yet flip <c>UseClosedShapeStorage</c> on end-to-end because
-/// the closed-shape write path is still stubbed (#4413 / #4414). So the
-/// test uses the codegen path to <i>append</i> events, then constructs a
-/// <see cref="ClosedShapeEventDocumentStorage"/> directly and runs the same
-/// select-from-mt_events query against it, comparing the resolved
+/// Originally written before the closed-shape write path was wired
+/// (when only the read side could be exercised), the test still pins
+/// the read-side adapter behavior: it uses the standard append path to
+/// insert events, then constructs a
+/// <see cref="ClosedShapeEventDocumentStorage"/> directly and runs the
+/// same select-from-mt_events query against it, comparing the resolved
 /// <c>IEvent</c>s field-by-field.
 /// </para>
 /// </remarks>

@@ -49,11 +49,6 @@ namespace Marten.Testing.Harness
 
             configure?.Invoke(options);
 
-            if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
-            {
-                options.Events.UseClosedShapeStorage = true;
-            }
-
             var store = new DocumentStore(options);
 
             _disposables.Add(store);
@@ -88,16 +83,6 @@ namespace Marten.Testing.Harness
             options.DatabaseSchemaName = _schemaName;
 
             configure(options);
-
-            // #4417 / #4418: run the whole event-sourcing suite under the
-            // closed-shape adapter when MARTEN_USE_CLOSED_SHAPE_STORAGE=true.
-            // Applied AFTER the test's configure callback so individual tests
-            // that explicitly disable the flag (or set conflicting options)
-            // win.
-            if (TestsSettings.UseClosedShapeStorage && !options.Events.UseClosedShapeStorage)
-            {
-                options.Events.UseClosedShapeStorage = true;
-            }
 
             if (cleanAll)
             {
