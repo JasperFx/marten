@@ -2,7 +2,6 @@
 using System;
 using System.Linq.Expressions;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using Marten.Exceptions;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Parsing;
@@ -44,11 +43,6 @@ internal class DictionaryContainsKeyFilter: ISqlFragment, ICompiledQueryAwareFil
     }
 
     public bool TryMatchValue(object value, MemberInfo member)
-    {
-        throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
-    }
-
-    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
     {
         throw new BadLinqExpressionException("Marten does not (yet) support Dictionary.ContainsKey() in compiled queries");
     }

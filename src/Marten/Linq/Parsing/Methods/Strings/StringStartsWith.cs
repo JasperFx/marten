@@ -1,7 +1,6 @@
 #nullable enable
 using System;
 using System.Reflection;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal.CompiledQueries;
 using Marten.Linq.Members;
@@ -61,16 +60,6 @@ internal class StringStartsWithFilter: ISqlFragment, ICompiledQueryAwareFilter
 
         _queryMember = member;
         return true;
-    }
-
-    public void GenerateCode(GeneratedMethod method, int parameterIndex, string parametersVariableName)
-    {
-        var maskedValue = $"StartsWith(_query.{_queryMember.Name})";
-
-        method.Frames.Code($@"
-{parametersVariableName}[{parameterIndex}].NpgsqlDbType = {{0}};
-{parametersVariableName}[{parameterIndex}].Value = {maskedValue};
-", NpgsqlDbType.Varchar);
     }
 
     public Action<NpgsqlParameter, object> BuildSetter()

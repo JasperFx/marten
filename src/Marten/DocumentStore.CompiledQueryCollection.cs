@@ -96,34 +96,14 @@ public partial class DocumentStore: ICodeFileCollection
 
     IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
     {
-        var tenant = new Tenant(StorageConstants.DefaultTenantId, new StandinDatabase(Options));
-        using var lightweight =
-            (QuerySession)LightweightSession(
-                new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
-
-        using var identityMap = (QuerySession)IdentitySession(
-            new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
-        using var dirty = (QuerySession)DirtyTrackedSession(
-            new SessionOptions { AllowAnyTenant = true, Tenant = tenant });
-
-
-        var options = new SessionOptions { AllowAnyTenant = true, Tenant = tenant };
-
-        var connection = options.Initialize(this, CommandRunnerMode.ReadOnly, Options.OpenTelemetry);
-
-        using var readOnly = new QuerySession(this, options, connection);
-
-        return Options.CompiledQueryTypes.SelectMany(x => new ICodeFile[]
-        {
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(lightweight, x, Options),
-                DocumentTracking.None),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(identityMap, x, Options),
-                DocumentTracking.IdentityOnly),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(dirty, x, Options),
-                DocumentTracking.DirtyTracking),
-            new CompiledQueryCodeFile(x, this, QueryCompiler.BuildQueryPlan(readOnly, x, Options),
-                DocumentTracking.QueryOnly)
-        }).ToList();
+        // #4454 Phase 1E: compiled queries no longer emit ICodeFile entries —
+        // dispatch runs through CompiledQueryHandlerRegistry / source-gen +
+        // RuntimeCompiledQueryDescriptorFactory. The codegen path (and the
+        // `dotnet marten codegen` CLI surface that consumed it) is retired
+        // entirely in Phase 5. Returning an empty list keeps DocumentStore's
+        // ICodeFileCollection contract intact for non-compiled-query consumers
+        // until then.
+        return Array.Empty<ICodeFile>();
     }
 
     string ICodeFileCollection.ChildNamespace { get; } = "CompiledQueries";
