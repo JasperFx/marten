@@ -23,7 +23,7 @@ public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordin
 
 public class ProjectionCoordinator: IProjectionCoordinator
 {
-    private readonly object _daemonLock = new();
+    private readonly System.Threading.Lock _daemonLock = new();
     private readonly ILogger<ProjectionCoordinator> _logger;
     private readonly StoreOptions _options;
 

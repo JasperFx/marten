@@ -73,7 +73,7 @@ public partial class StoreOptions: ICodeFileCollection
     // the mutation stays scoped to their compile and doesn't accumulate
     // on the cached base.
     private GenerationRules? _cachedBaseRules;
-    private readonly object _cachedRulesLock = new();
+    private readonly System.Threading.Lock _cachedRulesLock = new();
 
     internal GenerationRules CreateGenerationRules()
     {

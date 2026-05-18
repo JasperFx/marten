@@ -23,7 +23,7 @@ public class ExplicitProjectionCoordinator<T>: ExplicitProjectionCoordinator, IP
 
 public class ExplicitProjectionCoordinator: IProjectionCoordinator
 {
-    private readonly object _daemonLock = new();
+    private readonly System.Threading.Lock _daemonLock = new();
     private readonly ILogger _logger;
 
 
