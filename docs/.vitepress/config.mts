@@ -141,6 +141,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Resiliency Policies', link: '/configuration/retries' },
             { text: 'Command Line Tooling', link: '/configuration/cli' },
             { text: 'Optimized Development Workflow', link: '/configuration/optimized_artifact_workflow' },
+            { text: 'Publishing with Native AOT', link: '/configuration/aot-publishing' },
             { text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy' },
             { text: 'Environment Checks', link: '/configuration/environment-checks' },
             { text: 'Custom IoC Integration', link: '/configuration/ioc' },
