@@ -117,7 +117,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
         }
     }
 
-    [Fact(Skip = "Closed-shape upsert needs UseVersionFromMatchingStream port. Tracked at https://github.com/JasperFx/marten/issues/4444.")]
+    [Fact]
     public async Task set_version_on_aggregate_with_explicit_Version_attribute()
     {
         StoreOptions(opts => opts.Projections.Snapshot<MyAggregateWithDifferentVersionProperty>(SnapshotLifecycle.Inline));

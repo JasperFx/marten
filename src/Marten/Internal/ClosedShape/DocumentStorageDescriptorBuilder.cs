@@ -250,7 +250,8 @@ internal static class DocumentStorageDescriptorBuilder
             hierarchyMapping: hierarchyMapping,
             docTypeReadIndex: docTypeReadIndex,
             tableName: mapping.TableName.Name,
-            partitionPkBinders: partitionPkBinders);
+            partitionPkBinders: partitionPkBinders,
+            useVersionFromMatchingStream: mapping.UseVersionFromMatchingStream && concurrencyMode == ConcurrencyMode.Numeric);
     }
 
     /// <summary>
@@ -260,8 +261,17 @@ internal static class DocumentStorageDescriptorBuilder
     /// <c>CASE WHEN ? = 0 THEN 1 ELSE ? END</c> expression so a caller
     /// passing <c>Revision = 0</c> ends up inserting <c>1</c> (the
     /// initial revision) rather than literal zero.
+    /// When <see cref="DocumentMapping.UseVersionFromMatchingStream"/> is
+    /// set (inline single-stream projections), the auto branch is replaced
+    /// by a correlated lookup of the stream's current version from
+    /// <c>{events_schema}.mt_streams</c> — see <see cref="StreamVersionSubquery"/>.
+    /// That subquery references the row's id (and tenant_id under
+    /// conjoined tenancy), which need separate ? slots in INSERT VALUES
+    /// since one VALUES expression can't reference another at the same
+    /// statement level.
     /// </summary>
     private static (List<string> Columns, List<string> Values) BuildCoreColumns<TDoc>(
+        DocumentMapping mapping,
         IReadOnlyList<IDocumentMetadataBinder<TDoc>> binders,
         bool isConjoined,
         ConcurrencyMode mode)
@@ -286,8 +296,24 @@ internal static class DocumentStorageDescriptorBuilder
             columns.Add(b.ColumnName);
             if (mode == ConcurrencyMode.Numeric && b is DocumentRevisionBinder<TDoc>)
             {
-                // Two ? slots — the operation binds Revision to both.
-                values.Add("CASE WHEN ? = 0 THEN 1 ELSE ? END");
+                if (mapping.UseVersionFromMatchingStream)
+                {
+                    // INSERT VALUES — when Revision=0 (auto), pull the version
+                    // from mt_streams; rebind id (+ tenant_id when conjoined)
+                    // in the subquery's WHERE clause, since the row's id slot
+                    // earlier in the VALUES list isn't referenceable here.
+                    var streamLookup = StreamVersionSubquery(
+                        mapping,
+                        idExpr: "?",
+                        tenantIdExpr: isConjoined ? "?" : null,
+                        fallback: "1");
+                    values.Add($"CASE WHEN ? = 0 THEN {streamLookup} ELSE ? END");
+                }
+                else
+                {
+                    // Two ? slots — the operation binds Revision to both.
+                    values.Add("CASE WHEN ? = 0 THEN 1 ELSE ? END");
+                }
             }
             else
             {
@@ -296,6 +322,27 @@ internal static class DocumentStorageDescriptorBuilder
         }
 
         return (columns, values);
+    }
+
+    /// <summary>
+    /// Correlated lookup against <c>{events_schema}.mt_streams</c> used
+    /// by the <see cref="DocumentMapping.UseVersionFromMatchingStream"/>
+    /// path. Wrapped in <c>COALESCE(..., {fallback})</c> so a missing
+    /// stream falls back to a sensible default (initial revision <c>1</c>
+    /// on INSERT VALUES; <c>{table}.mt_version + 1</c> on ON CONFLICT DO
+    /// UPDATE so a doc with no surviving stream still increments).
+    /// </summary>
+    private static string StreamVersionSubquery(
+        DocumentMapping mapping,
+        string idExpr,
+        string? tenantIdExpr,
+        string fallback)
+    {
+        var streamsTable = $"{mapping.StoreOptions.Events.DatabaseSchemaName}.mt_streams";
+        var tenantClause = tenantIdExpr is null
+            ? string.Empty
+            : $" and {streamsTable}.{Marten.Storage.Metadata.TenantIdColumn.Name} = {tenantIdExpr}";
+        return $"COALESCE((select version from {streamsTable} where {streamsTable}.id = {idExpr}{tenantClause}), {fallback})";
     }
 
     /// <summary>
@@ -327,9 +374,18 @@ internal static class DocumentStorageDescriptorBuilder
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
-        var (columns, values) = BuildCoreColumns(binders, isConjoined, mode);
+        var (columns, values) = BuildCoreColumns(mapping, binders, isConjoined, mode);
         var versionColumn = Marten.Schema.SchemaConstants.VersionColumn;
         var conflictKey = BuildConflictKey(mapping);
+
+        // The ON CONFLICT branch reads existing-row columns directly via
+        // {table}.id / {table}.tenant_id, so when UseVersionFromMatchingStream
+        // is set we wire the stream subquery to those qualified names rather
+        // than rebinding new ? slots.
+        var streamIdExpr = $"{table}.id";
+        var streamTenantExpr = isConjoined
+            ? $"{table}.{Marten.Storage.Metadata.TenantIdColumn.Name}"
+            : null;
 
         var updateAssignments = new List<string>(1 + binders.Count) { "data = excluded.data" };
         foreach (var b in binders)
@@ -341,7 +397,10 @@ internal static class DocumentStorageDescriptorBuilder
                 // raw Revision into 2 fresh ? slots — the CASE in the
                 // INSERT VALUES already clobbered excluded.mt_version
                 // so we can't read the raw value from there anymore.
-                updateAssignments.Add($"{versionColumn} = CASE WHEN ? = 0 THEN {table}.{versionColumn} + 1 ELSE ? END");
+                var autoExpr = mapping.UseVersionFromMatchingStream
+                    ? StreamVersionSubquery(mapping, streamIdExpr, streamTenantExpr, fallback: $"{table}.{versionColumn} + 1")
+                    : $"{table}.{versionColumn} + 1";
+                updateAssignments.Add($"{versionColumn} = CASE WHEN ? = 0 THEN {autoExpr} ELSE ? END");
             }
             else
             {
@@ -353,12 +412,19 @@ internal static class DocumentStorageDescriptorBuilder
         //   Optimistic: table.mt_version (uuid) = expected (bound)
         //   Numeric:    auto-increment (? = 0) always wins; explicit
         //               revisions only when > current.
+        //   Numeric + UseVersionFromMatchingStream: explicit revisions
+        //               only when >= the current stream version (i.e.
+        //               reject when stream is strictly ahead of the
+        //               caller). Matches the codegen UpsertFunction
+        //               which used the looser ">" guard for this case.
         string conflictWhere = string.Empty;
         if (includeConcurrencyGuard)
         {
             conflictWhere = mode switch
             {
                 ConcurrencyMode.Optimistic => $" where {table}.{versionColumn} = ?",
+                ConcurrencyMode.Numeric when mapping.UseVersionFromMatchingStream
+                    => $" where ? = 0 or {StreamVersionSubquery(mapping, streamIdExpr, streamTenantExpr, fallback: "0")} <= ?",
                 ConcurrencyMode.Numeric => $" where ? = 0 or {table}.{versionColumn} < ?",
                 _ => string.Empty
             };
@@ -381,7 +447,7 @@ internal static class DocumentStorageDescriptorBuilder
         where TDoc : notnull
     {
         var table = mapping.TableName.QualifiedName;
-        var (columns, values) = BuildCoreColumns(binders, isConjoined, mode);
+        var (columns, values) = BuildCoreColumns(mapping, binders, isConjoined, mode);
         var conflictKey = BuildConflictKey(mapping);
 
         return $"insert into {table} ({columns.Join(", ")}) " +
@@ -424,13 +490,24 @@ internal static class DocumentStorageDescriptorBuilder
         var table = mapping.TableName.QualifiedName;
         var versionColumn = Marten.Schema.SchemaConstants.VersionColumn;
 
+        // UPDATE operates on the existing row; reference its id / tenant_id
+        // by qualified column name when we need them in the stream-version
+        // subquery, no extra ? slots needed.
+        var streamIdExpr = $"{table}.id";
+        var streamTenantExpr = isConjoined
+            ? $"{table}.{Marten.Storage.Metadata.TenantIdColumn.Name}"
+            : null;
+
         var setAssignments = new List<string>(1 + binders.Count) { "data = ?" };
         foreach (var b in binders)
         {
             if (mode == ConcurrencyMode.Numeric && b is DocumentRevisionBinder<TDoc>)
             {
-                // CASE WHEN ? = 0 THEN mt_version + 1 ELSE ? END
-                setAssignments.Add($"{versionColumn} = CASE WHEN ? = 0 THEN {table}.{versionColumn} + 1 ELSE ? END");
+                // CASE WHEN ? = 0 THEN <auto> ELSE ? END
+                var autoExpr = mapping.UseVersionFromMatchingStream
+                    ? StreamVersionSubquery(mapping, streamIdExpr, streamTenantExpr, fallback: $"{table}.{versionColumn} + 1")
+                    : $"{table}.{versionColumn} + 1";
+                setAssignments.Add($"{versionColumn} = CASE WHEN ? = 0 THEN {autoExpr} ELSE ? END");
             }
             else
             {
@@ -458,9 +535,19 @@ internal static class DocumentStorageDescriptorBuilder
         }
         else if (mode == ConcurrencyMode.Numeric)
         {
-            // Auto-increment (?  = 0) always wins; explicit revisions
-            // only when strictly greater than the current value.
-            whereClauses.Add($"(? = 0 or {table}.{versionColumn} < ?)");
+            if (mapping.UseVersionFromMatchingStream)
+            {
+                // Looser guard mirroring the codegen UpsertFunction for the
+                // stream-version-source case: reject only when the stream is
+                // strictly ahead of the caller's revision.
+                whereClauses.Add($"(? = 0 or {StreamVersionSubquery(mapping, streamIdExpr, streamTenantExpr, fallback: "0")} <= ?)");
+            }
+            else
+            {
+                // Auto-increment (?  = 0) always wins; explicit revisions
+                // only when strictly greater than the current value.
+                whereClauses.Add($"(? = 0 or {table}.{versionColumn} < ?)");
+            }
         }
 
         return $"update {table} " +

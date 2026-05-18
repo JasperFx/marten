@@ -154,13 +154,33 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric &&
             ReferenceEquals(binder, _descriptor.RevisionBinder))
         {
-            // CASE WHEN ? = 0 THEN 1 ELSE ? END — bind raw Revision to
-            // both slots.
+            // Numeric path. Two layouts depending on UseVersionFromMatchingStream:
+            //   Default:                CASE WHEN ? = 0 THEN 1 ELSE ? END (2 slots)
+            //   UseVersionFromMatchingStream (non-conjoined): CASE WHEN ? = 0
+            //       THEN COALESCE((select version from <events>.mt_streams where id = ?), 1)
+            //       ELSE ? END (3 slots: ?=0 check, subquery id, explicit revision)
+            //   UseVersionFromMatchingStream + conjoined: same with extra ? for tenant_id (4 slots)
             parameters[slot].Value = Revision;
             parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[slot + 1].Value = Revision;
-            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
-            return slot + 2;
+            slot++;
+
+            if (_descriptor.UseVersionFromMatchingStream)
+            {
+                parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
+                parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+                slot++;
+
+                if (_descriptor.IsConjoined)
+                {
+                    parameters[slot].Value = _tenantId;
+                    parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
+                    slot++;
+                }
+            }
+
+            parameters[slot].Value = Revision;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            return slot + 1;
         }
 
         binder.BindParameter(parameters[slot], _document, session);

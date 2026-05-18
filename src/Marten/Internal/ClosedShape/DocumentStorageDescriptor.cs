@@ -65,7 +65,8 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         Marten.Schema.DocumentMapping? hierarchyMapping,
         int docTypeReadIndex,
         string tableName,
-        IDocumentMetadataBinder<TDoc>[]? partitionPkBinders = null)
+        IDocumentMetadataBinder<TDoc>[]? partitionPkBinders = null,
+        bool useVersionFromMatchingStream = false)
     {
         Identification = identification;
         ClientSideWriteBinders = clientSideWriteBinders;
@@ -84,7 +85,19 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         HierarchyMapping = hierarchyMapping;
         DocTypeReadIndex = docTypeReadIndex;
         PartitionPkBinders = partitionPkBinders ?? System.Array.Empty<IDocumentMetadataBinder<TDoc>>();
+        UseVersionFromMatchingStream = useVersionFromMatchingStream;
     }
+
+    /// <summary>
+    /// Mirrors <see cref="Marten.Schema.DocumentMapping.UseVersionFromMatchingStream"/>.
+    /// When set, the closed-shape SQL pulls the revision from the matching
+    /// row in <c>{events_schema}.mt_streams</c> (used by inline single-stream
+    /// projections under <c>EventAppendMode.Quick</c>, where the in-memory
+    /// <c>lastEvent.Version</c> hasn't been assigned yet). The Insert /
+    /// Upsert operations consult this flag to bind extra ? slots for the
+    /// stream-lookup subquery's id (and tenant_id under conjoined tenancy).
+    /// </summary>
+    internal bool UseVersionFromMatchingStream { get; }
 
     /// <summary>
     /// Writers that bind the partition PK columns. For Update/Upsert on
