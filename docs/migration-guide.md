@@ -59,6 +59,15 @@ Three types Marten core previously owned moved to the shared Weasel / JasperFx p
 
   See [jasperfx#201](https://github.com/JasperFx/jasperfx/issues/201) / [jasperfx#202](https://github.com/JasperFx/jasperfx/pull/202).
 
+### Composite projections now expose a single bundled `ShardName`
+
+* Composite projections (`opts.Projections.CompositeProjectionFor("Trips", x => x.Add<A>().Add<B>().Add<C>())`) used to surface one `ShardName` per sub-projection through `ISubscriptionSource.ShardNames()`. In Marten 9 / JasperFx.Events 2.0 they collapse to a single bundled name shaped `<projection-name>/all/v<Version>` — e.g. `trips/all/v2` for a versioned composite with three sub-projections at version 2.
+* **Why.** The composite is a coordination boundary: its stages run sequentially against a shared `IProjectionBatch`, so the daemon must hold the whole composite on one node. Per-sub-projection shard names invited two separate nodes to race on the same composite's state under HotCold distribution.
+* **Visible impact.** Any code that iterates `usage.Subscriptions.SelectMany(x => x.ShardNames)` to build agent URIs / per-shard tasks (Wolverine 5's `EventSubscriptionAgentFamily` is the canonical example) now sees `N → 1` per composite. Test expectations that count `subscription.ShardNames.Count == subProjectionCount` need to flip to `1`. Downstream distribution code that needs the per-sub-projection list should walk `CompositeProjection.AllProjections()` instead of fanning out via `ShardNames`.
+* **Restore the V8 fan-out?** No — there's no `RestoreV8Defaults()` toggle for this. Composite shards stay collapsed; the per-sub-projection view is exposed structurally via `AllProjections()`.
+
+See [#4440](https://github.com/JasperFx/marten/issues/4440).
+
 ### `IInlineProjection.ApplyAsync` widened to `IEnumerable<StreamAction>`
 
 * The `streams` parameter on `IInlineProjection.ApplyAsync(IDocumentSession, ..., CancellationToken)` widened from `IReadOnlyList<StreamAction>` to `IEnumerable<StreamAction>`. The internal `RichEventAppender` / `QuickEventAppender` callers now hand the inline-projection pipeline a streaming view of the unit-of-work's streams instead of materializing a list per `SaveChangesAsync`.
@@ -174,6 +183,7 @@ Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recomm
 
 * **Was `false` in Marten 8.x.** This optimizes inline aggregate projections by keeping a session-local identity map of in-flight aggregates so multiple events in the same `SaveChangesAsync` resolve against a single aggregate instance.
 * **⚠️ Behavior change risk if your code self-mutates aggregates.** The optimization assumes you obtain aggregates via `IDocumentSession.Events.FetchForWriting()` and use the *decider pattern* (event-handler methods return events; the aggregate is rebuilt from them) rather than mutating fields directly inside the projection's `Apply` methods. If your aggregate handlers self-mutate the aggregate instance, mutations will leak across events within the same batch under the new default and you can see corrupted projections or incorrect optimistic-concurrency comparisons.
+* **Concrete failure mode (Wolverine `[AggregateHandler]` pattern, [#4439](https://github.com/JasperFx/marten/issues/4439)):** a handler that bumps `aggregate.ACount` to compute a `Response` and then returns `new AEvent()` ends up persisting `ACount + 2` (mutation **plus** the event's `ACount++` apply) instead of `ACount + 1`. The mutation flows through the identity-map cache that `FetchForWriting` populates, so the inline projection's next apply loop starts from the mutated value instead of the database snapshot. Returning events without touching the fetched aggregate (the decider pattern), or setting this flag to `false`, both restore the V8 contract.
 * **What to do:** Either (a) migrate your aggregate handlers to the decider pattern + `FetchForWriting`, or (b) keep the V8 default explicitly: `opts.Events.UseIdentityMapForAggregates = false;` (or call `opts.RestoreV8Defaults();`).
 * See the [Aggregate Projections](events/projections/aggregate-projections.md) and [FetchForWriting](events/projections/aggregate-projections.md#rehydrating-aggregates-for-writes) docs.
 

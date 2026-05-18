@@ -175,7 +175,15 @@ builder.Services.AddMarten(opts =>
 
 It's pretty involved, but the key takeaway is that _if_ you are using lightweight sessions for a performance optimization
 -- and you probably should even though that's not a Marten default! -- and _also_ using `FetchForWriting<T>()` with `Inline` projections, this optimizes your system to make fewer network round trips to the database and reuse the data
-you already fetched when applying the `Inline` projection. This is an _opt in_ setting because it can be harmful to existing code that might be modifying the aggregate document fetched by `FetchForWriting()` outside of Marten itself.
+you already fetched when applying the `Inline` projection. **Marten 9 ships this flag at `true` by default** (see the [Marten 9 defaults section in the migration guide](../migration-guide.md#flipped-defaults-in-marten-9--read-this-section)) — the prior V8 default was `false`.
+
+::: warning Aggregate mutations leak under `UseIdentityMapForAggregates = true`
+This optimization assumes the **decider pattern**: your handler returns events, the inline projection rebuilds aggregate state from those events on save, and you do _not_ mutate fields on the `stream.Aggregate` instance returned by `FetchForWriting()`. The optimization works by stashing the fetched aggregate in the session's identity map and re-reading it from there when the inline projection applies the new events.
+
+If your handler mutates the aggregate locally — e.g. Wolverine's `[AggregateHandler]` pattern that mutates fields to compute a response object before returning the events — those mutations sit in the identity-mapped reference and become the starting state for the inline projection's apply loop. The persisted snapshot ends up reflecting the mutation **plus** the events, so a field bumped by `aggregate.ACount++` immediately before `AppendOne(new AEvent())` is double-counted on next reload. Tracked at [#4439](https://github.com/JasperFx/marten/issues/4439).
+
+If your handlers self-mutate aggregates from `FetchForWriting()`, set `opts.Events.UseIdentityMapForAggregates = false;` (or call `opts.RestoreV8Defaults()`) so each save round-trips through the database and the in-memory mutation stays ephemeral.
+:::
 
 ## Explicit Optimistic Concurrency
 
