@@ -8,7 +8,7 @@ using JasperFx.Core.Reflection;
 using Marten.Internal;
 using Marten.Internal.CodeGeneration;
 using Marten.Linq.Selectors;
-using Marten.Util;
+using Marten.Services;
 using Npgsql;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
@@ -92,8 +92,7 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
 
         var ordinal = reader.FieldCount == 1 ? 0 : reader.GetOrdinal("data");
 
-        var source = await npgsqlReader.GetStreamAsync(ordinal, token).ConfigureAwait(false);
-        await source.CopyStreamSkippingSOHAsync(stream, token).ConfigureAwait(false);
+        await npgsqlReader.WriteJsonValueAsync(ordinal, stream, token).ConfigureAwait(false);
 
         if (_canBeMultiples)
         {
