@@ -1,11 +1,8 @@
 #nullable enable
 using System;
 using ImTools;
-using JasperFx.CodeGeneration;
-using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
-using JasperFx.RuntimeCompiler;
 using Marten.Events;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Storage;
@@ -71,18 +68,16 @@ public class ProviderGraph: IProviderGraph
 
         if (documentType == typeof(IEvent))
         {
-            var rules = _options.CreateGenerationRules();
-            // 9.0 (#4309): route through the AllowRuntimeCodeGeneration gate
-            // so users can opt into AOT-friendly mode by setting the flag to
-            // false (in which case missing pre-generated types throw rather
-            // than silently triggering Roslyn).
-            StaticOnlyCodeFileLoader.Initialize(
-                _options.EventGraph, rules, _options.EventGraph, null,
-                _options.AllowRuntimeCodeGeneration);
+            // Phase 4 (#4454): closed-shape event storage is the only path —
+            // no codegen, no AllowRuntimeCodeGeneration gate to honor here.
+            // EventGraph.AttachTypesSynchronously builds
+            // ClosedShapeEventDocumentStorage directly.
+            _options.EventGraph.AttachTypesSynchronously(
+                rules: null!, assembly: null!, services: null, containingNamespace: string.Empty);
 
-            _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider);
+            _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider!);
 
-            return _options.EventGraph.Provider.As<DocumentProvider<T>>();
+            return _options.EventGraph.Provider!.As<DocumentProvider<T>>();
         }
 
         var mapping = _options.Storage.FindMapping(documentType);

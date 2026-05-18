@@ -30,32 +30,6 @@ internal class HeadersColumn: MetadataColumn<Dictionary<string, object>>, IEvent
         Enabled = false;
     }
 
-    public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.IfDbReaderValueIsNotNull(index, () =>
-        {
-            method.AssignMemberFromReader<IEvent>(null, index, x => x.Headers);
-        });
-    }
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.IfDbReaderValueIsNotNullAsync(index, () =>
-        {
-            method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.Headers);
-        });
-    }
-
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
-    {
-        // Use Serializer.WriteToParameter to skip the intermediate UTF-16 string
-        // allocation that Serializer.ToJson(evt.Headers) would emit; the resulting
-        // sized UTF-8 byte[] binds directly to the parameter.
-        method.Frames.Code($"var parameter{index} = parameterBuilder.{nameof(IGroupedParameterBuilder.AppendParameter)}<object>({typeof(DBNull).FullName}.Value);");
-        method.Frames.Code($"{{0}}.Serializer.{nameof(ISerializer.WriteToParameter)}(parameter{index}, {{1}}.{nameof(IEvent.Headers)});",
-            Use.Type<IMartenSession>(), Use.Type<IEvent>());
-    }
-
     internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
         DbDataReader reader, CancellationToken token)
     {

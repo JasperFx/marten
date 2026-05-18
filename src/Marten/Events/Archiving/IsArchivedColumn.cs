@@ -2,7 +2,6 @@ using System;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using Marten.Events.Schema;
 using Marten.Internal.CodeGeneration;
@@ -23,21 +22,6 @@ internal class IsArchivedColumn: TableColumn, IEventTableColumn
     public IsArchivedColumn(): base(ColumnName, "bool")
     {
         DefaultExpression = "FALSE";
-    }
-
-    public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.AssignMemberFromReader<IEvent>(null, index, x => x.IsArchived);
-    }
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.IsArchived);
-    }
-
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
-    {
-        throw new NotSupportedException();
     }
 
     public string ValueSql(EventGraph graph, AppendMode mode)

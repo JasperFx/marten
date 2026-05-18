@@ -34,27 +34,6 @@ internal class UserNameColumn: MetadataColumn<string>, ISelectableColumn, IEvent
         ShouldUpdatePartials = true;
     }
 
-    public void GenerateSelectorCodeSync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.IfDbReaderValueIsNotNull(index, () =>
-        {
-            method.AssignMemberFromReader<IEvent>(null, index, x => x.UserName);
-        });
-    }
-
-    public void GenerateSelectorCodeAsync(GeneratedMethod method, EventGraph graph, int index)
-    {
-        method.IfDbReaderValueIsNotNullAsync(index, () =>
-        {
-            method.AssignMemberFromReaderAsync<IEvent>(null, index, x => x.UserName);
-        });
-    }
-
-    public void GenerateAppendCode(GeneratedMethod method, EventGraph graph, int index, AppendMode full)
-    {
-        method.SetParameterFromMember<IEvent>(index, x => x.UserName);
-    }
-
     public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
         GeneratedMethod sync,
         int index, DocumentMapping mapping)
