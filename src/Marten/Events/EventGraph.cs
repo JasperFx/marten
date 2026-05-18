@@ -231,6 +231,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableExtendedProgressionTracking { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
+    public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
     /// Opt into a global, partition-spanning unique constraint on stream identity by

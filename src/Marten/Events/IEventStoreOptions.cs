@@ -149,6 +149,14 @@ namespace Marten.Events
         public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
         /// <summary>
+        /// When enabled, uses PostgreSQL LISTEN/NOTIFY to wake the async projection daemon
+        /// immediately when new events are appended, instead of relying solely on polling.
+        /// This provides near-instant projection updates while still falling back to polling
+        /// as a safety net. Default is false.
+        /// </summary>
+        public bool UseListenNotifyForEventAppends { get; set; }
+
+        /// <summary>
         ///     Directs the schema migration functionality to ignore the presence of the named index
         ///     on the event-store tables (<c>mt_events</c>, <c>mt_streams</c>, <c>mt_event_progression</c>).
         ///     Use this when an external mechanism (e.g. a custom <c>IFeatureSchema</c>) declares an index
