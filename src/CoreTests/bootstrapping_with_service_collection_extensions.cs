@@ -28,6 +28,13 @@ using Xunit;
 
 namespace CoreTests;
 
+// Several tests in this class spin up their own DocumentStore against the
+// shared `public` schema with the Target document mapping + AutoCreate.All,
+// which races with sibling tests in other CoreTests classes that touch the
+// same `public.mt_doc_target` (concurrent DDL: e.g. one drops the PK
+// constraint while another tries to re-add it). Serializing the whole
+// class into the OneOffs collection keeps the schema mutations sequential.
+[Collection("OneOffs")]
 public class bootstrapping_with_service_collection_extensions
 {
     // Using Lamar for testing this because of its diagnostics
