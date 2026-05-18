@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -23,7 +24,23 @@ namespace Marten.EntityFrameworkCore;
 /// <typeparam name="TDoc">The aggregate document type persisted by EF Core</typeparam>
 /// <typeparam name="TId">The stream identity type</typeparam>
 /// <typeparam name="TDbContext">The EF Core DbContext type to use</typeparam>
-public abstract class EfCoreSingleStreamProjection<TDoc, TId, TDbContext>
+/// <remarks>
+/// AOT: TDoc carries the DAM flag set required by the wrapped
+/// <see cref="EfCoreProjectionStorage{TDoc, TId, TDbContext}"/> — propagating
+/// the EF Core <c>FindEntityType</c> / <c>Find&lt;TEntity&gt;</c> trim contract
+/// up to consumers.
+/// </remarks>
+public abstract class EfCoreSingleStreamProjection<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+        | DynamicallyAccessedMemberTypes.NonPublicConstructors
+        | DynamicallyAccessedMemberTypes.PublicFields
+        | DynamicallyAccessedMemberTypes.NonPublicFields
+        | DynamicallyAccessedMemberTypes.PublicProperties
+        | DynamicallyAccessedMemberTypes.NonPublicProperties
+        | DynamicallyAccessedMemberTypes.Interfaces)]
+    TDoc, TId,
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    TDbContext>
     : SingleStreamProjection<TDoc, TId>, IValidatedProjection<StoreOptions>
     where TDoc : class where TId : notnull where TDbContext : DbContext
 {

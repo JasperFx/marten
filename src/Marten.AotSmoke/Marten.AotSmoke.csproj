@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+
+        <!--
+        AOT smoke test (marten#4349 / JasperFx/jasperfx#213). Builds in CI and
+        verifies that a consumer of Marten through the AOT-clean surfaces
+        (AddMarten + document mapping + event registration + projection
+        registration + DI resolution of IDocumentStore) compiles with no
+        IL2026 / IL2046 / IL2055 / IL2065 / IL2067 / IL2070 / IL2072 / IL2075
+        / IL2090 / IL2091 / IL2111 / IL3050 / IL3051 warnings.
+
+        If a previously-AOT-clean API in Marten later gains a
+        [RequiresUnreferencedCode] / [RequiresDynamicCode] annotation, this
+        project's build fails in CI and the regression is caught before
+        downstream consumers see it. New IL warnings introduced by edits to
+        Program.cs are equally caught.
+
+        Pattern mirrors src/JasperFx.AotSmoke/ in JasperFx/jasperfx
+        (commit d4077d8) and src/Weasel.Core.AotSmoke/ in JasperFx/weasel
+        (PR #283 / commit 5844c9f).
+
+        Deliberately NOT a test project — no xUnit, no test discovery, no
+        dotnet test. It's a build-time consumer that exits cleanly when the
+        smoke surface analyzes clean under the AOT rule set.
+
+        Static TypeLoadMode consumer — no JasperFx.RuntimeCompiler reference,
+        no services.AddRuntimeCompilation() call. Marten 9 retired the
+        runtime-codegen path entirely; this project is the regression guard
+        that Marten itself stays AOT-clean under that contract.
+        -->
+        <IsAotCompatible>true</IsAotCompatible>
+        <TrimMode>full</TrimMode>
+        <WarningsAsErrors>IL2026;IL2046;IL2055;IL2065;IL2067;IL2070;IL2072;IL2075;IL2090;IL2091;IL2111;IL3050;IL3051</WarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
+</Project>

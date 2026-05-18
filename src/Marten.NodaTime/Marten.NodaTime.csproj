@@ -11,6 +11,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <nullable>enable</nullable>
         <RootNamespace>Marten.NodaTimePlugin</RootNamespace>
+        <IsAotCompatible>true</IsAotCompatible>
     </PropertyGroup>
 
     <ItemGroup>

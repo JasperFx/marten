@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using JasperFx.Events.Projections;
 using Marten.Events.Projections;
@@ -20,7 +21,17 @@ public static class EfCoreProjectionExtensions
     /// Automatically sets up EF Core-based aggregate persistence and Weasel schema migration
     /// for all entity types in the DbContext.
     /// </summary>
-    public static void Add<TDoc, TId, TDbContext>(this StoreOptions options,
+    public static void Add<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+            | DynamicallyAccessedMemberTypes.NonPublicConstructors
+            | DynamicallyAccessedMemberTypes.PublicFields
+            | DynamicallyAccessedMemberTypes.NonPublicFields
+            | DynamicallyAccessedMemberTypes.PublicProperties
+            | DynamicallyAccessedMemberTypes.NonPublicProperties
+            | DynamicallyAccessedMemberTypes.Interfaces)]
+        TDoc, TId,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(this StoreOptions options,
         EfCoreSingleStreamProjection<TDoc, TId, TDbContext> projection,
         ProjectionLifecycle lifecycle)
         where TDoc : class where TId : notnull where TDbContext : DbContext
@@ -35,7 +46,17 @@ public static class EfCoreProjectionExtensions
     /// Automatically sets up EF Core-based aggregate persistence and Weasel schema migration
     /// for all entity types in the DbContext.
     /// </summary>
-    public static void Add<TDoc, TId, TDbContext>(this StoreOptions options,
+    public static void Add<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+            | DynamicallyAccessedMemberTypes.NonPublicConstructors
+            | DynamicallyAccessedMemberTypes.PublicFields
+            | DynamicallyAccessedMemberTypes.NonPublicFields
+            | DynamicallyAccessedMemberTypes.PublicProperties
+            | DynamicallyAccessedMemberTypes.NonPublicProperties
+            | DynamicallyAccessedMemberTypes.Interfaces)]
+        TDoc, TId,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(this StoreOptions options,
         EfCoreMultiStreamProjection<TDoc, TId, TDbContext> projection,
         ProjectionLifecycle lifecycle)
         where TDoc : class where TId : notnull where TDbContext : DbContext
@@ -49,7 +70,17 @@ public static class EfCoreProjectionExtensions
     /// Add an <see cref="EfCoreMultiStreamProjection{TDoc,TId,TDbContext}"/> to a composite projection.
     /// Registers EF Core-based aggregate persistence and Weasel schema migration.
     /// </summary>
-    public static void Add<TDoc, TId, TDbContext>(this CompositeProjection composite,
+    public static void Add<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+            | DynamicallyAccessedMemberTypes.NonPublicConstructors
+            | DynamicallyAccessedMemberTypes.PublicFields
+            | DynamicallyAccessedMemberTypes.NonPublicFields
+            | DynamicallyAccessedMemberTypes.PublicProperties
+            | DynamicallyAccessedMemberTypes.NonPublicProperties
+            | DynamicallyAccessedMemberTypes.Interfaces)]
+        TDoc, TId,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(this CompositeProjection composite,
         StoreOptions options,
         EfCoreMultiStreamProjection<TDoc, TId, TDbContext> projection,
         int stageNumber = 1)
@@ -64,7 +95,17 @@ public static class EfCoreProjectionExtensions
     /// Add an <see cref="EfCoreSingleStreamProjection{TDoc,TId,TDbContext}"/> to a composite projection.
     /// Registers EF Core-based aggregate persistence and Weasel schema migration.
     /// </summary>
-    public static void Add<TDoc, TId, TDbContext>(this CompositeProjection composite,
+    public static void Add<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors
+            | DynamicallyAccessedMemberTypes.NonPublicConstructors
+            | DynamicallyAccessedMemberTypes.PublicFields
+            | DynamicallyAccessedMemberTypes.NonPublicFields
+            | DynamicallyAccessedMemberTypes.PublicProperties
+            | DynamicallyAccessedMemberTypes.NonPublicProperties
+            | DynamicallyAccessedMemberTypes.Interfaces)]
+        TDoc, TId,
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(this CompositeProjection composite,
         StoreOptions options,
         EfCoreSingleStreamProjection<TDoc, TId, TDbContext> projection,
         int stageNumber = 1)
@@ -80,7 +121,9 @@ public static class EfCoreProjectionExtensions
     /// Weasel migration pipeline. Tables defined in the DbContext's model will be created
     /// and migrated automatically alongside Marten's own schema objects.
     /// </summary>
-    public static void AddEntityTablesFromDbContext<TDbContext>(this StoreOptions options,
+    public static void AddEntityTablesFromDbContext<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(this StoreOptions options,
         Action<DbContextOptionsBuilder<TDbContext>>? configure = null)
         where TDbContext : DbContext
     {

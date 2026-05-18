@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events;
@@ -15,7 +16,9 @@ namespace Marten.EntityFrameworkCore;
 /// in the same database transaction.
 /// </summary>
 /// <typeparam name="TDbContext">The EF Core DbContext type to use</typeparam>
-public abstract class EfCoreEventProjection<TDbContext>: IProjection
+public abstract class EfCoreEventProjection<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+    TDbContext>: IProjection
     where TDbContext : DbContext
 {
     /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -13,7 +14,9 @@ namespace Marten.EntityFrameworkCore;
 /// </summary>
 internal static class EfCoreDbContextFactory
 {
-    public static (TDbContext DbContext, NpgsqlConnection InitialConnection) Create<TDbContext>(
+    public static (TDbContext DbContext, NpgsqlConnection InitialConnection) Create<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)]
+        TDbContext>(
         this Storage.IMartenDatabase database,
         Action<DbContextOptionsBuilder<TDbContext>>? configure = null,
         string? schemaName = null)

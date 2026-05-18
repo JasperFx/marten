@@ -11,6 +11,33 @@
         <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
+
+        <!--
+        AOT (marten#4349 audit): IsAotCompatible is intentionally OFF.
+
+        Marten.Newtonsoft wraps Newtonsoft.Json, which has no AOT story —
+        its IContractResolver / JsonConvert pipeline reflects over the
+        full member surface of every serialized type without any
+        DynamicallyAccessedMembers annotations. Our own
+        JsonNetObjectContractProvider.GetAttributeConstructor /
+        GetTheMostSpecificConstructor methods touch Type.GetConstructors
+        with the Type argument flowing from Newtonsoft's IContractResolver
+        callback site — annotating our wrappers can't satisfy the
+        analyzer because the inbound Type comes unannotated from
+        Newtonsoft itself.
+
+        Per the AOT publishing guide, AOT consumers should use the
+        System.Text.Json-based serializer that ships in Marten core
+        (UseSystemTextJsonForSerialization). Marten.Newtonsoft stays
+        available for non-AOT consumers that still want Newtonsoft.Json
+        semantics.
+
+        Pattern matches weasel#283's per-provider audit outcome for
+        upstream packages that are themselves AOT-hostile (none of the
+        Weasel providers landed in this bucket because Npgsql etc. are
+        AOT-clean; Newtonsoft.Json is the only Marten extension in this
+        bucket).
+        -->
     </PropertyGroup>
 
     <ItemGroup>
