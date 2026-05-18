@@ -90,6 +90,10 @@ If you don't like putting the conventional methods directly on the projected typ
 more advanced settings for projections, you can move those `Apply` or `Create` methods to a separate type that
 inherits from the `SingleStreamProjection<TDoc, TId>` base type like this:
 
+::: warning Removed in Marten 9.0
+The `DeleteEvent<T>(...)` calls inside the constructor in the sample below are removed in Marten 9.0 alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Migrate them to a `ShouldDelete` method-convention overload on the projection class — see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal). The `Apply` / `Create` method-convention overloads in the same sample are unchanged.
+:::
+
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs

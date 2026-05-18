@@ -44,6 +44,10 @@ Or you can use the pre-V8 conventions as well:
 
 With conventional method usage, the `EventProjection` recipe does the pattern matching for you.
 
+::: warning Removed in Marten 9.0
+The inline-lambda `Project<TEvent>(action)` / `ProjectAsync<TEvent>(action)` calls in the constructors below are removed in Marten 9.0 alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Replace them with `Project` / `ProjectAsync` method-convention overloads on the `partial` projection class so `JasperFx.Events.SourceGenerator` can emit a `[GeneratedEvolver]` dispatcher. See [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
+:::
+
 To show off what `EventProjection` does, here's a sample that uses most features that `EventProjection` supports:
 
 <!-- snippet: sample_sampleeventprojection -->
