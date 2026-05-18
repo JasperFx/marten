@@ -345,6 +345,17 @@ public static class TestingExtensions
 
                 logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in the main Marten store", daemon);
             }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+                // Caller-initiated cancellation — propagate as a normal cancellation
+                // signal rather than reporting it as a daemon error. Without this,
+                // a test that supplies a CTS that fires while the daemon's
+                // catch-up pipeline (Polly-wrapped per-shard execution) is mid-
+                // flight would see the propagated OperationCanceledException
+                // surface as a fake "exceptions list is non-empty" assertion
+                // failure — see #4462.
+                throw;
+            }
             catch (Exception e)
             {
                 logger.LogError(e, "Error trying to execute a CatchUp on {Daemon} in the main Marten store", daemon);
@@ -404,6 +415,13 @@ public static class TestingExtensions
                 }
 
                 logger.LogDebug("Executed a ProjectionDaemon.CatchUp() against {Daemon} in Marten store {StoreType}", daemon, typeof(T).FullNameInCode());
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+                // Caller-initiated cancellation — propagate, do not classify as
+                // a daemon error. See #4462 + matching guard on the main-store
+                // variant above.
+                throw;
             }
             catch (Exception e)
             {
