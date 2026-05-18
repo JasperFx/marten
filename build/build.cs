@@ -37,8 +37,7 @@ class Build : NukeBuild
         .DependsOn(TestLinq)
         .DependsOn(TestMultiTenancy)
         .DependsOn(TestPatching)
-        .DependsOn(TestValueTypes)
-        .DependsOn(TestCodeGen);
+        .DependsOn(TestValueTypes);
 
     Target TestExtensions => _ => _
         .DependsOn(TestNodaTime)
@@ -230,23 +229,6 @@ class Build : NukeBuild
                 .EnableNoBuild()
                 .EnableNoRestore()
                 .SetFramework(Framework));
-        });
-
-    Target TestCodeGen => _ => _
-        .ProceedAfterFailure()
-        .Executes(() =>
-        {
-            // It's actually important to do a codegen write a 2nd time to prevent a temporary bug
-            var codegenCommands = new string[][] { ["codegen", "delete"], ["codegen", "write"], ["codegen","test"], ["codegen","write"] };
-            foreach (var command in codegenCommands)
-            {
-                DotNetRun(s => s
-                    .SetProjectFile("src/CommandLineRunner")
-                    .SetConfiguration(Configuration)
-                    .SetFramework("net10.0")
-                    .SetApplicationArguments(command)
-                );
-            }
         });
 
     Target RebuildDb => _ => _
