@@ -100,10 +100,13 @@ public class using_multiple_document_stores_in_same_host : IDisposable
     }
 
     [Fact]
-    public void should_have_a_single_ICodeFileCollection_registration_for_secondary_stores()
+    public void should_have_a_single_SecondaryDocumentStores_registration()
     {
-        theContainer.GetAllInstances<ICodeFileCollection>().OfType<SecondaryDocumentStores>()
-            .Count().ShouldBe(1);
+        // Phase 3 (#4454) retired SecondaryDocumentStores' ICodeFileCollection
+        // role — it's no longer part of the JasperFx codegen-write pipeline.
+        // The invariant we still need: a single shared SecondaryDocumentStores
+        // catalog per host, not one per AddMartenStore<T> call.
+        theContainer.GetAllInstances<SecondaryDocumentStores>().Count().ShouldBe(1);
     }
 
     [Fact]
