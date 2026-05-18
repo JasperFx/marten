@@ -97,10 +97,10 @@ await batch.Execute();
 ## Recommended setup: enable the source generator
 
 ::: tip Marten 9.0
-The source-generated path described in this section ships in Marten 9.0 and is the preferred way to use compiled queries going forward. The legacy runtime-codegen path documented below in [How Does It Work?](#how-does-it-work) stays as a fallback for queries the generator doesn't yet cover.
+The source-generated path described in this section ships in Marten 9.0 and is the supported way to use compiled queries. Queries the generator can't see at build time (no `[JasperFxAssembly]` marker, or shapes the generator skips) fall through to a reflection + `FastExpressionCompiler`-built descriptor at first use — no Roslyn, no pre-built artifacts.
 :::
 
-Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time instead of synthesizing it via Roslyn at first call. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
+Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits the per-`ICompiledQuery<,>` scaffolding at compile time. Opt-in is implicit — add two things to the project that declares your compiled query types and the runtime picks the source-generated path automatically:
 
 ```xml
 <!-- in your .csproj -->
@@ -114,21 +114,20 @@ Marten 9 ships a Roslyn source generator (`Marten.SourceGenerator`) that emits t
 [assembly: JasperFx.JasperFxAssembly]
 ```
 
-With both present, the generator emits a typed handler for every `ICompiledQuery<TDoc, TOut>` in the assembly and registers it with the Marten runtime via a `[ModuleInitializer]` that fires at assembly load. **You do not need to call `StoreOptions.RegisterCompiledQueryType(...)`** — that API exists for the legacy runtime-codegen pre-build flow described in [Pre-Building Generated Types](/configuration/prebuilding) and is no longer required when the source generator is in play.
+With both present, the generator emits a typed handler for every `ICompiledQuery<TDoc, TOut>` in the assembly and registers it with the Marten runtime via a `[ModuleInitializer]` that fires at assembly load.
 
-What this gets you compared to the legacy runtime codegen:
+What this gets you compared to the reflection-built fallback:
 
-* **No Roslyn emit at first call.** First invocation of a registered compiled query is dramatically faster (PoC measurements: ~25× on a Stateless shape — 3 ms vs 75 ms on a warm host).
 * **No `FastExpressionCompiler` for the per-query parameter binder.** The generator emits a direct property-read switch — ~31% faster steady-state per call.
-* **AOT-publishable for the common cases.** The runtime Roslyn dependency disappears for queries the source-gen path covers.
+* **AOT-publishable for the common cases.** No dynamic-codegen surface for queries the source-gen path covers.
 
-The runtime falls back to the legacy code-generation path in three documented cases — these are bug-compatible with Marten 8 behavior, just slower at cold start:
+The runtime builds the descriptor reflectively (no Roslyn — `FastExpressionCompiler` + a manual fallback inside `RuntimeCompiledQueryDescriptorFactory`) in three documented cases:
 
 * Plans whose SQL needs an `ICompiledQueryAwareFilter` (string `Contains`/`StartsWith`/`EndsWith`, `HashSet<T>.Contains` with JSONB containment, `Dictionary<,>.ContainsKey`, child-collection JsonPath counts).
 * Generic or nested `ICompiledQuery<,>` types — the generator skips both shapes for now.
 * Compiled queries declared in an assembly without `[JasperFxAssembly]`.
 
-The source generator is additive — adding it never breaks an existing compiled query, and removing it makes everything fall back to runtime codegen with no behavior change beyond cold-start perf. Tracking issue: [#4405](https://github.com/JasperFx/marten/issues/4405).
+The source generator is additive — adding it never breaks an existing compiled query; removing it just shifts that query to the reflection-built fallback at first use. Tracking issue: [#4405](https://github.com/JasperFx/marten/issues/4405).
 
 ## How Does It Work?
 
@@ -141,8 +140,8 @@ The first time that Marten encounters a new type of `ICompiledQuery`, it builds 
 
 How Marten then dispatches the per-call hot path depends on whether the source generator is in play:
 
-* **Source-generated dispatch** (default when the `Marten.SourceGenerator` analyzer reference + `[assembly: JasperFxAssembly]` are present, see [Recommended setup](#recommended-setup-enable-the-source-generator) above). The generator emits a typed `{Query}_CompiledQueryHandler` class for every `ICompiledQuery<,>` in the assembly, plus a `[ModuleInitializer]` that registers the handler with Marten's runtime `CompiledQueryHandlerRegistry` at assembly load. When Marten sees the registered query type, it routes through the generator-emitted parameter binder (direct field/property reads — no reflection, no Roslyn emit at runtime).
-* **Runtime-codegen dispatch** (legacy fallback). When the source generator isn't opted in, or when the plan requires features the source-gen path doesn't yet cover (see the bullet list under [Recommended setup](#recommended-setup-enable-the-source-generator)), Marten falls back to the pre-9.0 behavior: dynamically generates and compiles a per-query handler with Roslyn on first call and caches it. The mechanics are documented at [Pre-Building Generated Types](/configuration/prebuilding) — that flow stays available as the AOT escape hatch when the source generator can't cover a particular shape.
+* **Source-generated dispatch** (default when the `Marten.SourceGenerator` analyzer reference + `[assembly: JasperFxAssembly]` are present, see [Recommended setup](#recommended-setup-enable-the-source-generator) above). The generator emits a typed `{Query}_CompiledQueryHandler` class for every `ICompiledQuery<,>` in the assembly, plus a `[ModuleInitializer]` that registers the handler with Marten's runtime `CompiledQueryHandlerRegistry` at assembly load. When Marten sees the registered query type, it routes through the generator-emitted parameter binder (direct field/property reads — no reflection at runtime).
+* **Reflection-built fallback.** When the source generator hasn't registered a descriptor for the query type — assembly without `[JasperFxAssembly]`, shape the generator skips, or runtime-registered query — Marten walks the freshly-built plan reflectively, compiles a per-query parameter binder via `FastExpressionCompiler`, and caches the resulting descriptor in the same registry. No Roslyn, no pre-built artifacts.
 
 On subsequent calls to the same compiled query type, both paths just reuse the cached handler — the SQL command + parameter binder are remembered for the life of the `DocumentStore`.
 

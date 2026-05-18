@@ -2,10 +2,8 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
-using JasperFx.RuntimeCompiler;
 using Marten;
 using Marten.Schema;
 using Marten.Storage;
@@ -26,7 +24,6 @@ public class MartenHost
             .ConfigureServices((c, services) =>
             {
                 configure(services);
-                services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
             })
             .StartAsync();
     }

@@ -13,7 +13,6 @@ using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using JasperFx.Events.Subscriptions;
-using JasperFx.RuntimeCompiler;
 using Marten.Events.Daemon.Coordination;
 using Marten.Events.Projections;
 using Marten.Internal;
@@ -176,7 +175,6 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
-        services.AddSingleton<IAssemblyGenerator, AssemblyGenerator>();
         services.AddSingleton(s =>
         {
             var options = optionSource(s);
