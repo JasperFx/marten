@@ -260,16 +260,9 @@ A custom ID generator strategy should implement [IIdGeneration](https://github.c
 public class CustomIdGeneration : IIdGeneration
 {
     public bool IsNumeric { get; } = false;
-    public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
-    {
-        var document = new Use(mapping.DocumentType);
-        assign.Frames.Code($"_setter({{0}}, \"newId\");", document);
-        assign.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
-    }
-
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L18-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
@@ -295,7 +288,7 @@ It is also possible define a custom id generation algorithm for a specific docum
 ```cs
 options.Schema.For<UserWithString>().IdStrategy(new CustomIdGeneration());
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L47-L49' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L33-L35' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring-mapping-specific-custom' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Strong Typed Identifiers <Badge type="tip" text="7.20" />
@@ -337,7 +330,7 @@ public readonly struct Task2Id
     public static Task2Id From(Guid value) => new Task2Id(value);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L33-L54' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/TestingTypes.cs#L32-L53' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_valid_strong_typed_identifiers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 In _all_ cases, the type name will have to be suffixed with "Id" (and it's case sensitive) to be considered by Marten to be
@@ -367,7 +360,7 @@ public class Invoice
     public string Name { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L287-L300' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L281-L294' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_invoice_with_vogen_id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The usage of our `Invoice` document is essentially the same as a document type with the primitive identifier types:
@@ -394,7 +387,7 @@ public async Task update_a_document_smoke_test()
     loaded.Name.ShouldBeNull("updated");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L84-L105' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/VogenIds/guid_based_document_operations.cs#L78-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_insert_the_load_by_strong_typed_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ::: tip
@@ -515,7 +508,7 @@ public async Task include_a_single_reference()
     list.Single().Id.ShouldBe(teacher.Id);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L43-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/ValueTypeTests/include_usage.cs#L37-L64' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_include_a_single_reference_with_strong_identifier' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 * Within LINQ `Where()` clauses

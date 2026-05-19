@@ -48,7 +48,7 @@ public abstract class AggregateBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L233-L267' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-base' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L239-L273' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-base' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the first piece of infrastructure implemented, two events to capture state changes of an invoice are introduced. Namely, creation of an invoice, accompanied by an invoice number, and addition of lines to an invoice:
@@ -80,7 +80,7 @@ public sealed class LineItemAdded
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L205-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L211-L237' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the events in place to present the deltas of an invoice, an aggregate is implemented, using the infrastructure presented above, to create and replay state from the described events.
@@ -107,7 +107,11 @@ public sealed class Invoice: AggregateBase
         AddUncommittedEvent(@event);
     }
 
-    private Invoice()
+    // Public parameterless ctor for Marten's event-store replay. Pre-9.0
+    // Marten could call a private parameterless ctor reflectively; the
+    // source-generated dispatch path in 9.0 emits direct calls instead,
+    // which require public visibility. See the 9.0 migration guide.
+    public Invoice()
     {
     }
 
@@ -138,8 +142,11 @@ public sealed class Invoice: AggregateBase
 
     private readonly List<Tuple<string, decimal, decimal>> lines = new List<Tuple<string, decimal, decimal>>();
 
-    // Apply the deltas to mutate our state
-    private void Apply(InvoiceCreated @event)
+    // Apply methods need to be `public` for the source-generated dispatcher
+    // to invoke them — pre-9.0 Marten reflected over private members; the
+    // SG-emitted dispatch path in 9.0 emits direct method calls. See the
+    // 9.0 migration guide.
+    public void Apply(InvoiceCreated @event)
     {
         Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);
 
@@ -147,8 +154,7 @@ public sealed class Invoice: AggregateBase
         Version++;
     }
 
-    // Apply the deltas to mutate our state
-    private void Apply(LineItemAdded @event)
+    public void Apply(LineItemAdded @event)
     {
         var price = @event.Price * (1 + @event.Vat / 100);
         Total += price;
@@ -159,7 +165,7 @@ public sealed class Invoice: AggregateBase
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L130-L203' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-invoice' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L130-L209' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-invoice' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The implemented invoice protects its state by not exposing mutable data, while enforcing its contracts through argument validation. Once an applicable state modification is introduced, either through the constructor (which numbers our invoice and captures that in an event) or the `Invoice.AddLine` method, a respective event capturing that data is recorded.
@@ -201,7 +207,7 @@ public sealed class AggregateRepository
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L269-L303' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-repository' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/ScenarioAggregateAndRepository.cs#L275-L309' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_scenario-aggregate-repository' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 With the last infrastructure component in place, versioned invoices can now be created, persisted and hydrated through Marten. For this purpose, first an invoice is created:

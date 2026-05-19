@@ -19,7 +19,7 @@ through only the event data:
 <!-- snippet: sample_appointmentprojection -->
 <a id='snippet-sample_appointmentprojection'></a>
 ```cs
-public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
+public partial class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 {
     public AppointmentProjection()
     {
@@ -124,7 +124,7 @@ data (because users have absolutely wanted to do that over the years):
 <!-- snippet: sample_custom_aggregate_with_start_and_stop -->
 <a id='snippet-sample_custom_aggregate_with_start_and_stop'></a>
 ```cs
-public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
+public partial class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {
@@ -199,7 +199,7 @@ and another example:
 <!-- snippet: sample_harddeletedstartandstopprojection -->
 <a id='snippet-sample_harddeletedstartandstopprojection'></a>
 ```cs
-public class HardDeletedStartAndStopProjection: SingleStreamProjection<HardDeletedStartAndStopAggregate, Guid>
+public partial class HardDeletedStartAndStopProjection: SingleStreamProjection<HardDeletedStartAndStopAggregate, Guid>
 {
     public HardDeletedStartAndStopProjection()
     {

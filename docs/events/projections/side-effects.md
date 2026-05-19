@@ -26,7 +26,7 @@ Here's an example of that method overridden in a projection:
 <!-- snippet: sample_aggregation_using_event_metadata -->
 <a id='snippet-sample_aggregation_using_event_metadata'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     // Access event metadata through IEvent<T>
     public Trip Create(IEvent<TripStarted> @event)

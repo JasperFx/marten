@@ -10,7 +10,7 @@ For example, if we have this projection:
 <!-- snippet: sample_rebuild-shop_projection -->
 <a id='snippet-sample_rebuild-shop_projection'></a>
 ```cs
-public class ShopProjection: SingleStreamProjection<Guid, Shop>
+public partial class ShopProjection: SingleStreamProjection<Guid, Shop>
 {
     public ShopProjection()
     {

@@ -103,7 +103,7 @@ as a way of wringing more performance and scalability out of your Marten usage! 
 <!-- snippet: snippet_usertaskprojection -->
 <a id='snippet-snippet_usertaskprojection'></a>
 ```cs
-public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
+public partial class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 {
     // This is where you have a hook to "enrich" event data *after* slicing,
     // but before processing

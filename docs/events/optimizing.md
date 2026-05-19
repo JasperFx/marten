@@ -62,7 +62,7 @@ like so:
 <!-- snippet: sample_showing_fanout_rules -->
 <a id='snippet-sample_showing_fanout_rules'></a>
 ```cs
-public class DayProjection: MultiStreamProjection<Day, int>
+public partial class DayProjection: MultiStreamProjection<Day, int>
 {
     public DayProjection()
     {

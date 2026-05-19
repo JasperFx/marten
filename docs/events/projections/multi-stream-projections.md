@@ -170,7 +170,7 @@ Here's a simple example of creating an aggregated view by user id:
 <!-- snippet: sample_view-projection-simple -->
 <a id='snippet-sample_view-projection-simple'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
+public partial class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -198,7 +198,7 @@ we care about and use this:
 <!-- snippet: sample_view-projection-simple-2 -->
 <a id='snippet-sample_view-projection-simple-2'></a>
 ```cs
-public class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAssignment, Guid>
+public partial class UserGroupsAssignmentProjection2: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection2()
     {
@@ -227,7 +227,7 @@ As of Marten V7, you can also use `IEvent` metadata as part of creating the iden
 <!-- snippet: sample_using_ievent_for_document_identity_in_projections -->
 <a id='snippet-sample_using_ievent_for_document_identity_in_projections'></a>
 ```cs
-public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
+public partial class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
 {
 
     public CustomerInsightsProjection()
@@ -258,7 +258,7 @@ shown below:
 <!-- snippet: sample_view-projection-simple-with-one-to-many -->
 <a id='snippet-sample_view-projection-simple-with-one-to-many'></a>
 ```cs
-public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
+public partial class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {
@@ -329,7 +329,7 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 }
 
 // projection with documentsession
-public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
+public partial class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
 {
     public UserFeatureTogglesProjection()
     {
@@ -414,7 +414,7 @@ public class ExternalAccountLink
     public required Guid CustomerId { get; set; }
 }
 
-public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+public partial class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
 {
     public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
     {
@@ -479,7 +479,7 @@ public class CustomerBillingMetrics
     public HashSet<string> ModesSeen { get; set; } = [];
 }
 
-public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
 {
     public CustomerBillingProjection()
     {
@@ -565,7 +565,7 @@ public class CustomerBillingMetrics
     public int ShippingLabels { get; set; }
 }
 
-public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
 {
     public CustomerBillingProjection()
     {
@@ -659,7 +659,7 @@ public class ExternalAccountLink
     public required Guid CustomerId { get; set; }
 }
 
-public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+public partial class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
 {
     public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
     {
@@ -722,7 +722,7 @@ public class BatchAwareExternalAccountGrouper: IAggregateGrouper<Guid>
     }
 }
 
-public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
 {
     public CustomerBillingProjection()
     {
@@ -841,7 +841,7 @@ public class CustomerBillingMetrics
     public required int Items { get; set; }
 }
 
-public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
 {
     public CustomerBillingProjection()
     {
@@ -880,7 +880,7 @@ tenant id and make that the identity of the projected document. That usage is sh
 <!-- snippet: sample_rollup_projection_by_tenant_id -->
 <a id='snippet-sample_rollup_projection_by_tenant_id'></a>
 ```cs
-public class RollupProjection: MultiStreamProjection<Rollup, string>
+public partial class RollupProjection: MultiStreamProjection<Rollup, string>
 {
     public RollupProjection()
     {
@@ -929,7 +929,7 @@ In a sample `ViewProjection`, we do a "fan out" of the `Travel.Movements` member
 <!-- snippet: sample_showing_fanout_rules -->
 <a id='snippet-sample_showing_fanout_rules'></a>
 ```cs
-public class DayProjection: MultiStreamProjection<Day, int>
+public partial class DayProjection: MultiStreamProjection<Day, int>
 {
     public DayProjection()
     {
@@ -1015,7 +1015,7 @@ The `MonthlyAllocationProjection` class uses a custom grouper for this transform
 <!-- snippet: sample_view-custom-grouper-with-transformation-projection -->
 <a id='snippet-sample_view-custom-grouper-with-transformation-projection'></a>
 ```cs
-public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
+public partial class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
 {
     public MonthlyAllocationProjection()
     {
@@ -1173,7 +1173,7 @@ The key technique is `Identity<IEvent<T>>()` which gives you access to both the 
 <!-- snippet: sample_monthly_account_activity_projection -->
 <a id='snippet-sample_monthly_account_activity_projection'></a>
 ```cs
-public class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAccountActivity, string>
+public partial class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAccountActivity, string>
 {
     public MonthlyAccountActivityProjection()
     {
