@@ -122,9 +122,14 @@ internal class UpsertFunction: Function
             var partitionClauses = new List<string>();
             foreach (var colName in table.Partitioning.Columns)
             {
-                // Find the matching argument for this partition column
+                // Find the matching argument for this partition column. Some
+                // UpsertArguments (notably CurrentVersionArgument when
+                // optimistic concurrency is enabled) deliberately set Column
+                // to null because they don't correspond to a stored column;
+                // use string.Equals which is null-safe rather than calling
+                // .Equals on a possibly-null Column. See marten#4493.
                 var arg = Arguments.FirstOrDefault(a =>
-                    a.Column.Equals(colName, StringComparison.OrdinalIgnoreCase));
+                    string.Equals(a.Column, colName, StringComparison.OrdinalIgnoreCase));
                 if (arg != null)
                 {
                     partitionClauses.Add($"{colName} = {arg.Arg}");
