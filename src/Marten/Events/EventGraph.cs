@@ -91,14 +91,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // Callers wanting V8 semantics call StoreOptions.RestoreV8Defaults() to revert
         // these. Anything not listed here kept its V8 default. See docs/migration-guide.md
         // for the per-setting rationale + the consolidated RestoreV8Defaults recipe.
-        //
-        // EnableAdvancedAsyncTracking is deferred — flipping it to true causes large
-        // portions of the EventSourcing + Daemon test suites to hang. Tracked for the
-        // 9.0 milestone in #4425; re-enable once root cause is fixed.
         AppendMode = EventAppendMode.QuickWithServerTimestamps;
         EnableEventSkippingInProjectionsOrSubscriptions = true;
         UseIdentityMapForAggregates = true;
         EnableBigIntEvents = true;
+        EnableAdvancedAsyncTracking = true;
     }
 
     /// <summary>

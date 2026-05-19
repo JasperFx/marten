@@ -67,10 +67,18 @@ public class advanced_async_tracking : OneOffConfigurationsContext, IAsyncLifeti
     }
 
     [Fact]
-    public async Task try_mark_from_nothing_would_be_0()
+    public async Task try_mark_from_nothing_bootstraps_the_row_and_records_the_skip()
     {
+        // #4425: the null-row branch used to return 0 unconditionally, which left
+        // HighWaterAgent.CheckNowAsync polling forever waiting for the mark to advance.
+        // The function now bootstraps the high-water row at the ending sequence and
+        // records the implicit 0->ending skip so callers can observe forward progress.
         var final = await theDetector.TryMarkHighWaterSkippingAsync(1000, 100, CancellationToken.None);
-        final.ShouldBe(0);
+        final.ShouldBe(1000);
+
+        var skips = await theDetector.FetchLastProgressionSkipsAsync(100, CancellationToken.None);
+        skips[0].Ending.ShouldBe(1000);
+        skips[0].Starting.ShouldBe(100);
     }
 
     [Fact]
