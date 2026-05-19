@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
@@ -387,13 +386,6 @@ public class numeric_revisioning: OneOffConfigurationsContext
     [Fact]
     public async Task optimistic_concurrency_failure_with_update_revision_when_revision_number_equal_in_new_doc_and_db()
     {
-        StoreOptions(opts =>
-        {
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory()
-                .ParentDirectory().AppendPath("Internal", "Generated");
-        });
-
         var doc1 = new RevisionedDoc { Name = "Tim" };
         theSession.Store(doc1);
         await theSession.SaveChangesAsync();

@@ -1,8 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Util;
 using JasperFx.Events;
 using Marten.Events;
 using Npgsql;
@@ -36,9 +34,6 @@ namespace Marten.Testing.Harness
             {
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
-
-                opts.GeneratedCodeMode = TypeLoadMode.Auto;
-                opts.ApplicationAssembly = GetType().Assembly;
             });
 
             // Do this exactly once and no more.

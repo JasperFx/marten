@@ -90,7 +90,7 @@ First, let's just look at the simple `ProviderShiftProjection`:
 <!-- snippet: sample_providershiftprojection -->
 <a id='snippet-sample_providershiftprojection'></a>
 ```cs
-public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
+public partial class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
 {
     public ProviderShiftProjection()
     {
@@ -169,7 +169,7 @@ ultimately need to use the build products of all three upstream projections:
 <!-- snippet: sample_appointmentdetailsprojection -->
 <a id='snippet-sample_appointmentdetailsprojection'></a>
 ```cs
-public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
+public partial class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
 {
     public AppointmentDetailsProjection()
     {
@@ -367,7 +367,7 @@ And also the definition for the downstream `BoardSummary` view:
 <!-- snippet: sample_boardsummaryprojection -->
 <a id='snippet-sample_boardsummaryprojection'></a>
 ```cs
-public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
+public partial class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
 {
     public BoardSummaryProjection()
     {

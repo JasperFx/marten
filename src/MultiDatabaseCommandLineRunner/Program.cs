@@ -2,7 +2,6 @@
 using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten;
@@ -30,7 +29,6 @@ public class Program
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.RegisterDocumentType<Target>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
                 });
 
                 services.AddMarten(opts =>
@@ -42,10 +40,6 @@ public class Program
                         ConnectionSource.ConnectionString,
                         t => t.WithTenants("chiefs", "chargers", "broncos", "raiders")
                     );
-
-                    // This is important, setting this option tells Marten to
-                    // *try* to use pre-generated code at runtime
-                    opts.GeneratedCodeMode = TypeLoadMode.Auto;
 
                     // You have to register all persisted document types ahead of time
                     // RegisterDocumentType<T>() is the equivalent of saying Schema.For<T>()

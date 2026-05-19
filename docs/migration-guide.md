@@ -243,8 +243,8 @@ What was replaced:
 
 What that means for application code:
 
-* **No more `dotnet run -- codegen write` step.** Pre-built `Internal/Generated/` folders are obsolete — delete them from your project and `.gitignore`. The closed-shape paths build their descriptors at first use (cheap) and cache them; there is no compile-on-cold-start.
-* **The `[Obsolete]` knobs stay on the surface as no-ops** so existing bootstrapping compiles unchanged: `StoreOptions.GeneratedCodeMode`, `StoreOptions.ApplicationAssembly`, `StoreOptions.SourceCodeWritingEnabled`, `StoreOptions.GeneratedCodeOutputPath`, `StoreOptions.AllowRuntimeCodeGeneration`, and `opts.Events.UseClosedShapeStorage` (which was an opt-in flag in 9.0-alpha; the closed-shape path is now the only path). None of them do anything at runtime — remove them at your convenience.
+* **No more `dotnet run -- codegen write` step for Marten.** Pre-built `Internal/Generated/` folders are obsolete — delete them from your project and `.gitignore`. The closed-shape paths build their descriptors at first use (cheap) and cache them; there is no compile-on-cold-start. If your host also runs Wolverine or another JasperFx-family tool, those still ship their own codegen and may still require the `codegen write` step in your Dockerfile — only the Marten portion of the step is now redundant.
+* **The codegen-config knobs have been deleted.** `StoreOptions.GeneratedCodeMode`, `StoreOptions.SourceCodeWritingEnabled`, `StoreOptions.GeneratedCodeOutputPath`, and `StoreOptions.AllowRuntimeCodeGeneration` are gone — references to them will fail to compile against Marten 9.0. Remove them from your bootstrapping. `StoreOptions.ApplicationAssembly` is kept (legitimately used by `AutoRegister` and `TryUseSourceGeneratedDiscovery` as a scan hint).
 * **The `Pre-Building Generated Types` documentation page has been retired.** Anything that linked to `/configuration/prebuilding` now 404s. The closest equivalent for "I want to ship without dynamic codegen" is reading the [compiled queries source-generator section](#source-gen-compiled-queries) below — the source generator covers the AOT-clean cases the pre-build flow used to.
 
 #### **Lazy document-mapping materialization**
@@ -495,18 +495,15 @@ See [#4420](https://github.com/JasperFx/marten/issues/4420).
 
 Marten 9 retires obsolete types and members deprecated in Marten 8.x:
 
-* **`StoreOptions.GeneratedCodeMode` is `[Obsolete]`.** Prefer the global `IServiceCollection.CritterStackDefaults()` API, which sets `GeneratedCodeMode` and `AutoCreate` per-environment (`Development` / `Production`) and applies the values across every Critter Stack tool in your application (Marten + [Wolverine](https://wolverinefx.net)) in one place:
+* **`StoreOptions.GeneratedCodeMode` and the codegen-config family have been deleted** (see [Runtime code generation removed](#runtime-code-generation-removed)). The `x.Production.GeneratedCodeMode = TypeLoadMode.Static;` line that appeared in 8.x `CritterStackDefaults` samples is no longer relevant to Marten — drop it from your bootstrapping. The `ResourceAutoCreate` half of `CritterStackDefaults` is unchanged:
 
   ```csharp
   services.CritterStackDefaults(x =>
   {
-      x.Production.GeneratedCodeMode = TypeLoadMode.Static;
       x.Production.ResourceAutoCreate = AutoCreate.None;
       // x.Development.* defaults are sensible; override only if needed.
   });
   ```
-
-  The old per-`StoreOptions` `GeneratedCodeMode` setter still works in Marten 9 (it carries an `[Obsolete]` warning) — it will be **removed in Marten 10**. Migrate now to avoid the build-break later.
 
 * `[Obsolete]` types and members deprecated since Marten 8.x have been retired in Marten 9. If your code compiled in Marten 8.x with `[Obsolete]` warnings against any Marten type, those members are now gone in Marten 9 — fix the warnings on 8.x first, then upgrade.
 
@@ -667,11 +664,10 @@ services.AddMarten(opts =>
 // automatic database migrations and dynamic code generation
 services.CritterStackDefaults(x =>
 {
-    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
     x.Production.ResourceAutoCreate = AutoCreate.None;
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L56-L75' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/AspNetCoreWithMarten/Samples/ConfiguringSessionCreation/Startup.cs#L55-L73' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_addmartenwithcustomsessioncreation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note the usage of `CritterStackDefaults()` above. This will allow you to specify separate behavior for `Development` time vs

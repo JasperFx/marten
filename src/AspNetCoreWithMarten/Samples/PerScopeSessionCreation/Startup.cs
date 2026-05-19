@@ -1,7 +1,6 @@
 using System;
 using System.Data;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Services;
 using Microsoft.Extensions.Configuration;
@@ -139,7 +138,6 @@ public class Startup
 
         services.CritterStackDefaults(x =>
         {
-            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
             x.Production.ResourceAutoCreate = AutoCreate.None;
         });
 

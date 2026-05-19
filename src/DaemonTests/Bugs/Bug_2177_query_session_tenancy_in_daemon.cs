@@ -7,7 +7,6 @@ using Marten.Storage;
 using Marten.Testing.Harness;
 using Xunit;
 using Bug2177;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -29,7 +28,6 @@ namespace DaemonTests.Bugs
                 options.Events.MetadataConfig.EnableAll();
 
                 options.Projections.Add<TicketProjection>(ProjectionLifecycle.Async);
-                options.GeneratedCodeMode = TypeLoadMode.Auto;
 
                 options.Schema.For<User>().MultiTenanted();
             });

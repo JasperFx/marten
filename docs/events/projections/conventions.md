@@ -64,7 +64,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L120-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L118-L168' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -96,14 +96,12 @@ public partial class TripProjection: SingleStreamProjection<Trip, Guid>
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
 
-    // ShouldDelete method-convention overloads — replace the pre-9.0
-    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
     public bool ShouldDelete(TripAborted _) => true;
     public bool ShouldDelete(Breakdown e) => e.IsCritical;
     public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `IEvent<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
@@ -144,14 +142,12 @@ public partial class TripProjection: SingleStreamProjection<Trip, Guid>
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
 
-    // ShouldDelete method-convention overloads — replace the pre-9.0
-    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
     public bool ShouldDelete(TripAborted _) => true;
     public bool ShouldDelete(Breakdown e) => e.IsCritical;
     public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Apply()` methods can accept any combination of these arguments:
@@ -182,7 +178,7 @@ aggregate projection type:
 <!-- snippet: sample_deleting_aggregate_by_event_type -->
 <a id='snippet-sample_deleting_aggregate_by_event_type'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     public TripProjection()
     {
@@ -201,7 +197,7 @@ and maybe even other document state in your Marten database, you can use the `Sh
 <!-- snippet: sample_deleting_aggregate_by_event_type_and_func_with_convention -->
 <a id='snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     // The current Trip aggregate would be deleted if
     // the Breakdown event is "critical"

@@ -10,13 +10,9 @@ let developers just get things done without having to spend a lot of time fiddli
 scripts or ORM configuration. To that end, the default configuration for Marten is optimized for
 immediate developer productivity:
 
-<!-- snippet: sample_simplest_possible_setup -->
-<a id='snippet-sample_simplest_possible_setup'></a>
 ```cs
 var store = DocumentStore.For("connection string");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L231-L235' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_simplest_possible_setup' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 In the configuration above, as needed, behind the scenes Marten is checking the
 underlying database to see whether the existing database schema matches the
@@ -30,15 +26,7 @@ database migrations require a little bit of in-memory locking in the Marten
 code that has been problematic for folks using Marten from Blazor.
 
 ::: tip Marten 9.0
-The Roslyn runtime code-generation path and the `TypeLoadMode` switch that
-controlled it were retired in Marten 9.0. The closed-shape document storage
-hierarchy, the source generator for compiled queries (with a reflection-built
-fallback), and a small `System.Reflection.Emit` shim for secondary stores
-replace what `JasperFx.RuntimeCompiler` used to handle. `StoreOptions.GeneratedCodeMode`,
-`StoreOptions.ApplicationAssembly`, `StoreOptions.SourceCodeWritingEnabled`, and
-`StoreOptions.GeneratedCodeOutputPath` are still on the surface for source-
-compatibility but are no-ops. `CritterStackDefaults` still controls the
-`ResourceAutoCreate` half of the per-environment workflow.
+The Roslyn runtime code-generation path was completely removed in Marten 9.0 (PR [#4461](https://github.com/JasperFx/marten/pull/4461)). The `StoreOptions.GeneratedCodeMode`, `StoreOptions.SourceCodeWritingEnabled`, `StoreOptions.GeneratedCodeOutputPath`, and `StoreOptions.AllowRuntimeCodeGeneration` properties have been **deleted** — remove any references to them from your bootstrapping. If you have an `Internal/Generated/` folder committed from a pre-9.0 Marten app, delete it and remove it from `.gitignore` — nothing reads or writes those files anymore. `CritterStackDefaults` still controls the `ResourceAutoCreate` half of the per-environment workflow, which is the remaining concern this page covers.
 :::
 
 To allow for maximum developer productivity while using more efficient production
@@ -51,8 +39,6 @@ options and how `ResourceAutoCreate` is resolved from `JasperFxOptions`, see the
 [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
 :::
 
-<!-- snippet: sample_using_optimized_artifact_workflow -->
-<a id='snippet-sample_using_optimized_artifact_workflow'></a>
 ```cs
 using var host = await Host.CreateDefaultBuilder()
     .ConfigureServices(services =>
@@ -60,20 +46,15 @@ using var host = await Host.CreateDefaultBuilder()
         services.AddMarten("connection string");
 
         // In a "Production" environment, we're turning off the
-        // automatic database migrations and dynamic code generation
+        // automatic database migrations.
         services.CritterStackDefaults(x =>
         {
-            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
             x.Production.ResourceAutoCreate = AutoCreate.None;
         });
     }).StartAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/reading_configuration_from_jasperfxoptions.cs#L77-L93' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_optimized_artifact_workflow' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
-The `GeneratedCodeMode` line in that sample is a no-op in Marten 9.0 — it's
-retained only so existing application bootstrapping compiles unchanged. The
-effective behavior per environment is now driven entirely by `ResourceAutoCreate`:
+The effective behavior per environment is driven entirely by `ResourceAutoCreate`:
 
 * In `Development`: `StoreOptions.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate` to detect and apply database schema migrations as needed.
 * In `Production`: `StoreOptions.AutoCreateSchemaObjects = AutoCreate.None` to short-circuit any kind of automatic database change detection and migration at runtime. This is also a minor performance optimization that sidesteps potential locking issues.

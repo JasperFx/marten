@@ -31,7 +31,7 @@ Let's start with a possible implementation of a single stream projection:
 <!-- snippet: sample_specialcounterprojection -->
 <a id='snippet-sample_specialcounterprojection'></a>
 ```cs
-public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
+public partial class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
 {
     public void Apply(SpecialCounter c, SpecialA _) => c.ACount++;
     public void Apply(SpecialCounter c, SpecialB _) => c.BCount++;
@@ -48,7 +48,7 @@ Or this equivalent, but see how I'm explicitly registering event types, because 
 <!-- snippet: sample_specialcounterprojection2 -->
 <a id='snippet-sample_specialcounterprojection2'></a>
 ```cs
-public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
+public partial class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
 {
     public SpecialCounterProjection2()
     {

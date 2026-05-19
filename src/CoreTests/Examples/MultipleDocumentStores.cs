@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Events.Daemon;
 using Marten;
 using Marten.Schema;
@@ -40,10 +39,9 @@ public class MultipleDocumentStores
                     .InitializeWith(new DefaultDataSet());
 
                 // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
+                // automatic database migrations
                 services.CritterStackDefaults(x =>
                 {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
                     x.Production.ResourceAutoCreate = AutoCreate.None;
                 });
             }).StartAsync();

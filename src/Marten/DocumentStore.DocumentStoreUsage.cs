@@ -33,19 +33,6 @@ public partial class DocumentStore : IDocumentStoreUsageSource
             EnumStorage = Options.EnumStorage.ToString(),
         };
 
-        // Code-generation snapshot — wrapped as a child descriptor (rather than
-        // flattened) so the four obsolete-on-StoreOptions properties stay
-        // cohesive even after they ride out the deprecation window.
-#pragma warning disable CS0618 // intentional: building a diagnostic snapshot of obsolete settings
-        usage.CodeGeneration = new CodeGenerationDescriptor
-        {
-            ApplicationAssembly = Options.ApplicationAssembly?.GetName().FullName,
-            SourceCodeWritingEnabled = Options.SourceCodeWritingEnabled,
-            GeneratedCodeOutputPath = Options.GeneratedCodeOutputPath,
-            GeneratedCodeMode = Options.GeneratedCodeMode.ToString(),
-        };
-#pragma warning restore CS0618
-
         // Per-document-type mappings — Documents collection. Skip mappings that
         // don't emit schema (structural-typed, internal-only) so the snapshot
         // matches what an operator would see in the database.

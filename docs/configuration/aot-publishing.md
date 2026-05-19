@@ -42,7 +42,7 @@ Marten's storage / projection / compiled-query surfaces all build their dispatch
 
 - **No `dotnet run -- codegen write` step.** If you have an `Internal/Generated/` folder committed from a pre-9.0 Marten app, delete it and remove it from `.gitignore`. Nothing reads or writes those files.
 - **No `services.AddRuntimeCompilation()` call.** PR [#4461](https://github.com/JasperFx/marten/pull/4461) ripped out the runtime-codegen seam entirely. Don't add it back.
-- **`StoreOptions.GeneratedCodeMode`, `AllowRuntimeCodeGeneration`, `SourceCodeWritingEnabled`, `GeneratedCodeOutputPath`** are kept on the API surface as `[Obsolete]` no-ops so existing bootstrapping compiles unchanged. Setting them has no effect in Marten 9 — they're documented for source-compatibility only.
+- **`StoreOptions.GeneratedCodeMode`, `AllowRuntimeCodeGeneration`, `SourceCodeWritingEnabled`, `GeneratedCodeOutputPath`** have been deleted entirely — references to them will fail to compile against Marten 9.0. Remove any leftover assignments from your bootstrapping. `StoreOptions.ApplicationAssembly` survives because `AutoRegister` and `TryUseSourceGeneratedDiscovery` still use it as a scan hint.
 
 If you have a Wolverine app sitting next to your Marten app in the same composition root, the Wolverine side **does** still use the JasperFx two-phase model — Wolverine retains runtime codegen as an opt-in seam ([per the 2026 plan](https://github.com/JasperFx/jasperfx/issues/217)). The JasperFx guide is the authoritative reference for the Wolverine half of that story.
 

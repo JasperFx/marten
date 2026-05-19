@@ -69,11 +69,9 @@ public class ProviderGraph: IProviderGraph
         if (documentType == typeof(IEvent))
         {
             // Phase 4 (#4454): closed-shape event storage is the only path —
-            // no codegen, no AllowRuntimeCodeGeneration gate to honor here.
-            // EventGraph.AttachTypesSynchronously builds
+            // no codegen. EventGraph.AttachTypesSynchronously builds
             // ClosedShapeEventDocumentStorage directly.
-            _options.EventGraph.AttachTypesSynchronously(
-                rules: null!, assembly: null!, services: null, containingNamespace: string.Empty);
+            _options.EventGraph.AttachTypesSynchronously();
 
             _storage = _storage.AddOrUpdate(documentType, _options.EventGraph.Provider!);
 

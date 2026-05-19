@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Aggregation;
@@ -32,19 +31,12 @@ public class AggregationContext : IntegrationContext
     public void UsingDefinition<T>() where T : SingleStreamProjection<MyAggregate, Guid>, new()
     {
         _projection = new T();
-
-        var rules = theStore.Options.CreateGenerationRules();
-        rules.TypeLoadMode = TypeLoadMode.Dynamic;
     }
 
     public void UsingDefinition(Action<SingleStreamProjection<MyAggregate, Guid>> configure)
     {
         _projection = new SingleStreamProjection<MyAggregate, Guid>();
         configure(_projection);
-
-
-        var rules = theStore.Options.CreateGenerationRules();
-        rules.TypeLoadMode = TypeLoadMode.Dynamic;
     }
 
 

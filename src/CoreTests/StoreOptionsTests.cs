@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten;
@@ -312,13 +311,6 @@ public class StoreOptionsTests
         storeOptions.EnumStorage.ShouldBe(EnumStorage.AsString);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldNotBe(storeOptions.EnumStorage);
         storeOptions.Advanced.DuplicatedFieldEnumStorage.ShouldBe(EnumStorage.AsInteger);
-    }
-
-    [Fact]
-    public void default_code_generation_is_dynamic()
-    {
-        var storeOptions = new StoreOptions();
-        storeOptions.GeneratedCodeMode.ShouldBe(TypeLoadMode.Dynamic);
     }
 
     public void set_the_maximum_name_length()

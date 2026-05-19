@@ -15,18 +15,18 @@ public partial class StoreOptions
 {
     /// <summary>
     ///     Attempt to use a source-generated type manifest from the given assembly
-    ///     (or the ApplicationAssembly if not specified) to register document types,
+    ///     (or the entry assembly if not specified) to register document types,
     ///     projection types, and event types at startup without runtime assembly scanning.
     ///     This is an opt-in feature that requires the Marten.SourceGeneration analyzer
     ///     package to be referenced in the consuming project.
     /// </summary>
     /// <param name="assembly">
-    ///     The assembly to search for the generated manifest. Defaults to ApplicationAssembly.
+    ///     The assembly to search for the generated manifest. Defaults to the entry assembly.
     /// </param>
     /// <returns>True if a source-generated manifest was found and applied; false otherwise.</returns>
     public bool TryUseSourceGeneratedDiscovery(Assembly? assembly = null)
     {
-        assembly ??= ApplicationAssembly;
+        assembly ??= ApplicationAssembly ?? Assembly.GetEntryAssembly();
         if (assembly == null) return false;
 
         var manifestType = assembly.GetType("Marten.Generated.DiscoveredMartenTypes");

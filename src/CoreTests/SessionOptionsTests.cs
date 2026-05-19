@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Internal.OpenTelemetry;
@@ -157,7 +156,6 @@ public class SessionOptionsTests: OneOffConfigurationsContext
         {
             var connectionString = ConnectionSource.ConnectionString.Replace(";Command Timeout=5", "");
             opts.Connection(connectionString);
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
         });
 
         var options = new SessionOptions();

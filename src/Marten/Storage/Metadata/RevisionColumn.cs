@@ -1,4 +1,3 @@
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
@@ -22,23 +21,6 @@ internal class RevisionColumn: MetadataColumn<long>, ISelectableColumn
     internal override UpsertArgument ToArgument()
     {
         return new RevisionArgument();
-    }
-
-    public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
-        GeneratedMethod sync, int index,
-        DocumentMapping mapping)
-    {
-        var versionPosition = index; //mapping.IsHierarchy() ? 3 : 2;
-
-        async.Frames.CodeAsync(
-            $"var version = await reader.GetFieldValueAsync<long>({versionPosition}, token);");
-        sync.Frames.Code($"var version = reader.GetFieldValue<long>({versionPosition});");
-
-        if (Member != null)
-        {
-            sync.Frames.SetMemberValue(Member, "version", mapping.DocumentType, generatedType);
-            async.Frames.SetMemberValue(Member, "version", mapping.DocumentType, generatedType);
-        }
     }
 
     public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)

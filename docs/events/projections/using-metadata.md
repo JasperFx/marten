@@ -64,7 +64,7 @@ Below is a small example of accessing event metadata during aggregation:
 <!-- snippet: sample_aggregation_using_event_metadata -->
 <a id='snippet-sample_aggregation_using_event_metadata'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
     // Access event metadata through IEvent<T>
     public Trip Create(IEvent<TripStarted> @event)
@@ -169,7 +169,7 @@ public record ItemWorked;
 
 public record ItemFinished;
 
-public class ItemProjection: SingleStreamProjection<Item, Guid>
+public partial class ItemProjection: SingleStreamProjection<Item, Guid>
 {
     public void Apply(Item item, ItemStarted started)
     {

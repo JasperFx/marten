@@ -144,7 +144,7 @@ session.Events.Append(id, joined, departed);
 
 await session.SaveChangesAsync();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L457-L466' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/end_to_end_event_capture_and_fetching_the_stream.cs#L456-L465' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_append-events' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Mandatory Stream Types <Badge type="tip" text="7.30" />

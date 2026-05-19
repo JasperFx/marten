@@ -4,7 +4,6 @@ using DaemonTests.Aggregations;
 using DaemonTests.EventProjections;
 using DaemonTests.TestingSupport;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -46,13 +45,11 @@ public static class Program
                     opts.RegisterDocumentType<Thing>();
                     opts.RegisterDocumentType<Thing2>();
                     opts.RegisterDocumentType<Thing3>();
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
                 });
 
                 services.AddMartenStore<IOtherStore>(opts =>
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
-                    opts.GeneratedCodeMode = TypeLoadMode.Static;
                     opts.RegisterDocumentType<Target>();
 
 
@@ -68,7 +65,6 @@ public static class Program
                 services.AddMarten(opts =>
                 {
                     opts.Events.AppendMode = EventAppendMode.Quick;
-                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
                     opts.AutoCreateSchemaObjects = AutoCreate.All;
                     opts.DatabaseSchemaName = "cli";
                     opts.DisableNpgsqlLogging = true;
@@ -79,10 +75,6 @@ public static class Program
                         ConnectionSource.ConnectionString,
                         t => t.WithTenants("tenant1", "tenant2", "tenant3")
                     );
-
-                    // This is important, setting this option tells Marten to
-                    // *try* to use pre-generated code at runtime
-                    //opts.GeneratedCodeMode = TypeLoadMode.Static;
 
                     //opts.Schema.For<Activity>().AddSubClass<DaemonTests.TestingSupport.Trip>();
 

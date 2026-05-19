@@ -4,7 +4,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Lamar;
@@ -51,7 +50,7 @@ public class bootstrapping_with_service_collection_extensions
     }
 
     [Fact]
-    public async Task use_jasper_fx_defaults_for_type_load_and_auto_create()
+    public async Task use_jasper_fx_defaults_for_auto_create()
     {
         using var host = await Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
@@ -61,19 +60,12 @@ public class bootstrapping_with_service_collection_extensions
                 services.AddJasperFx(opts =>
                 {
                     opts.Development.ResourceAutoCreate = AutoCreate.None;
-                    opts.GeneratedCodeOutputPath = "/";
-                    opts.Development.GeneratedCodeMode = TypeLoadMode.Static;
-
-                    // Default is true
-                    opts.Development.SourceCodeWritingEnabled = false;
                 });
             })
             .UseEnvironment("Development").StartAsync();
 
         var store = (DocumentStore)host.DocumentStore();
         store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
-        store.Options.SourceCodeWritingEnabled.ShouldBeFalse();
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Static);
     }
 
     [Fact]
@@ -118,49 +110,6 @@ public class bootstrapping_with_service_collection_extensions
         ShouldHaveAllTheExpectedRegistrations(container);
     }
 
-    [Fact]
-    public void picks_up_application_assembly_and_content_directory_from_IHostEnvironment()
-    {
-        var environment = new MartenHostEnvironment();
-
-        using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(ConnectionSource.ConnectionString);
-
-                services.AddSingleton<IHostEnvironment>(environment);
-            }).Build();
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
-        var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
-        var expectedGeneratedCodeOutputPath = projectPath.ToFullPath().AppendPath("Internal", "Generated");
-        store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
-
-        var rules = store.Options.CreateGenerationRules();
-        rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
-        rules.GeneratedCodeOutputPath.ShouldBe(store.Options.GeneratedCodeOutputPath);
-    }
-
-    [Fact]
-    public void application_assembly_and_content_directory_from_StoreOptions()
-    {
-        using var host = Host.CreateDefaultBuilder(Array.Empty<string>())
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(opts =>
-                {
-                    opts.Connection(ConnectionSource.ConnectionString);
-                    opts.SetApplicationProject(GetType().Assembly);
-                });
-            }).Build();
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
-        var projectPath = AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory();
-        var expectedGeneratedCodeOutputPath = projectPath.ToFullPath().AppendPath("Internal", "Generated");
-        store.Options.GeneratedCodeOutputPath.ShouldBe(expectedGeneratedCodeOutputPath);
-    }
 
     [Fact]
     public void no_error_if_IHostEnvironment_does_not_exist()
@@ -171,13 +120,7 @@ public class bootstrapping_with_service_collection_extensions
                 services.AddMarten(ConnectionSource.ConnectionString);
             }).Build();
 
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-        store.Options.ApplicationAssembly.ShouldBe(GetType().Assembly);
-        store.Options.GeneratedCodeOutputPath.TrimEnd(Path.DirectorySeparatorChar).ShouldBe(AppContext.BaseDirectory
-            .AppendPath("Internal", "Generated").TrimEnd(Path.DirectorySeparatorChar));
-
-        var rules = store.Options.CreateGenerationRules();
-        rules.ApplicationAssembly.ShouldBe(store.Options.ApplicationAssembly);
+        host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>().ShouldNotBeNull();
     }
 
     [Fact]
@@ -629,8 +572,6 @@ public class bootstrapping_with_service_collection_extensions
         container.GetInstance<IQuerySession>().ShouldNotBeNull();
 
         container.GetInstance<IDatabaseSource>().ShouldBeSameAs(store.As<DocumentStore>().Tenancy);
-
-        container.GetAllInstances<ICodeFileCollection>().OfType<EventGraph>().Count().ShouldBe(1);
 
         container.Model.For<IOptions<JasperFxOptions>>().Default.ShouldNotBeNull();
 

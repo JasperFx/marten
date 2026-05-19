@@ -5,10 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
-using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
 using Marten.Schema;
@@ -73,26 +71,6 @@ public abstract class MetadataColumn: TableColumn
             PostgresType = Type,
             Members = new[] { Member }
         };
-    }
-
-    protected void setMemberFromReader(GeneratedType generatedType, GeneratedMethod async, GeneratedMethod sync,
-        int index,
-        DocumentMapping mapping)
-    {
-        if (Member == null)
-        {
-            return;
-        }
-
-        sync.IfDbReaderValueIsNotNull(index, () =>
-        {
-            sync.AssignMemberFromReader(generatedType, index, mapping.DocumentType, Member.Name);
-        });
-
-        async.IfDbReaderValueIsNotNullAsync(index, () =>
-        {
-            async.AssignMemberFromReaderAsync(generatedType, index, mapping.DocumentType, Member.Name);
-        });
     }
 
     public virtual void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)

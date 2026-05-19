@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
-using JasperFx.Core.Reflection;
-using Marten.Schema;
 using Marten.Schema.Identity;
 
 namespace Marten.Testing.OtherAssembly;
@@ -18,14 +13,5 @@ public class ShortGuid
 
 public class String2IdGeneration: IIdGeneration
 {
-    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
-    {
-        var use = new Use(mapping.DocumentType);
-        method.Frames.Code(
-            "if ({0}." + mapping.IdMember.Name + " == null) _setter({0}, global::" +
-            typeof(ShortGuid).FullNameInCode() + ".NewGuid());", use);
-        method.Frames.Code("return {0}." + mapping.IdMember.Name + ";", use);
-    }
-
     public bool IsNumeric => false;
 }

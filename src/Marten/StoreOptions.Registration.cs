@@ -98,7 +98,7 @@ public class MartenAssemblyScanner
     private readonly List<Func<Type, bool>> _eventMatchers = new();
 
     /// <summary>
-    /// Which assemblies in addition to the StoreOptions.ApplicationAssembly should
+    /// Which assemblies in addition to the entry assembly should
     /// be scanned for potential Marten registrations?
     /// </summary>
     /// <param name="assembly"></param>

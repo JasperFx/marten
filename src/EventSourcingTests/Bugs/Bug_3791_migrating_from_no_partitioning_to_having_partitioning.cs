@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using Marten;
 using Marten.Testing.Harness;
@@ -18,7 +17,6 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
             //o.Events.UseArchivedStreamPartitioning = true;
             o.DisableNpgsqlLogging = true;
             o.Events.UseOptimizedProjectionRebuilds = true;
-            o.GeneratedCodeMode = TypeLoadMode.Auto;
             o.Events.AppendMode = EventAppendMode.Quick;
             o.Events.UseIdentityMapForAggregates = true;
             o.DatabaseSchemaName = "some_custom_schema";
@@ -35,7 +33,6 @@ public class Bug_3791_migrating_from_no_partitioning_to_having_partitioning : Bu
             o.Events.UseArchivedStreamPartitioning = true;
             o.DisableNpgsqlLogging = true;
             o.Events.UseOptimizedProjectionRebuilds = true;
-            o.GeneratedCodeMode = TypeLoadMode.Auto;
             o.Events.AppendMode = EventAppendMode.Quick;
             o.Events.UseIdentityMapForAggregates = true;
             o.DatabaseSchemaName = "some_custom_schema";

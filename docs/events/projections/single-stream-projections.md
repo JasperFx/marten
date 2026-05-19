@@ -121,14 +121,12 @@ public partial class TripProjection: SingleStreamProjection<Trip, Guid>
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
 
-    // ShouldDelete method-convention overloads — replace the pre-9.0
-    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
     public bool ShouldDelete(TripAborted _) => true;
     public bool ShouldDelete(Breakdown e) => e.IsCritical;
     public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And register that projection like this:
@@ -171,7 +169,7 @@ Here's a simple example of explicit code in projections:
 <!-- snippet: sample_appointmentprojection -->
 <a id='snippet-sample_appointmentprojection'></a>
 ```cs
-public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
+public partial class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 {
     public AppointmentProjection()
     {
@@ -234,7 +232,7 @@ the possibility of soft deleting and later "un-deleting" the projected document 
 <!-- snippet: sample_custom_aggregate_with_start_and_stop -->
 <a id='snippet-sample_custom_aggregate_with_start_and_stop'></a>
 ```cs
-public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
+public partial class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
@@ -21,11 +20,6 @@ public class duplicated_value_type_field_operations : IDisposable, IAsyncDisposa
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "duplicated_value_type_field1";
-
-            opts.ApplicationAssembly = GetType().Assembly;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath =
-                AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
 
             opts.RegisterValueType<DuplicateValueType>();
             opts.Schema.For<DuplicateValueTypeDoc>().Duplicate(x => x.DuplicateValueType);

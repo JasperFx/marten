@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
@@ -67,9 +66,8 @@ internal class CompiledQueryCollection
             // registered a descriptor for this query type (consumer assembly missing
             // the [JasperFxAssembly] marker, or a query type registered at runtime via
             // reflection) we build the descriptor reflectively from the freshly-walked
-            // CompiledQueryPlan and cache it in the registry. Subsequent calls hit the
-            // fast registry path. Replaces the previous fallthrough to
-            // CompiledQuerySourceBuilder / JasperFx.RuntimeCompiler.
+            // CompiledQueryPlan and cache it in the registry. Subsequent calls hit
+            // the fast registry path.
             descriptor = RuntimeCompiledQueryDescriptorFactory.Build(plan);
             CompiledQueryHandlerRegistry.Register(query.GetType(), descriptor);
         }
@@ -84,28 +82,12 @@ internal class CompiledQueryCollection
     }
 }
 
-public partial class DocumentStore: ICodeFileCollection
+public partial class DocumentStore
 {
     private readonly CompiledQueryCollection _dirtyTrackedCompiledQueries;
     private readonly CompiledQueryCollection _identityMapCompiledQueries;
     private readonly CompiledQueryCollection _lightweightCompiledQueries;
     private readonly CompiledQueryCollection _queryOnlyCompiledQueries;
-
-    public GenerationRules Rules => Options.CreateGenerationRules();
-
-    IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
-    {
-        // #4454 Phase 1E: compiled queries no longer emit ICodeFile entries —
-        // dispatch runs through CompiledQueryHandlerRegistry / source-gen +
-        // RuntimeCompiledQueryDescriptorFactory. The codegen path (and the
-        // `dotnet marten codegen` CLI surface that consumed it) is retired
-        // entirely in Phase 5. Returning an empty list keeps DocumentStore's
-        // ICodeFileCollection contract intact for non-compiled-query consumers
-        // until then.
-        return Array.Empty<ICodeFile>();
-    }
-
-    string ICodeFileCollection.ChildNamespace { get; } = "CompiledQueries";
 
     internal ICompiledQuerySource GetCompiledQuerySourceFor<TDoc, TOut>(ICompiledQuery<TDoc, TOut> query,
         QuerySession session) where TDoc : notnull

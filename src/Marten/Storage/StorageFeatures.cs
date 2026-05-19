@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using ImTools;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;

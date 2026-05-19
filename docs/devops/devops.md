@@ -78,14 +78,16 @@ Of course, it is fully up to you how you want to configure grate or if you want 
 
 ## Application project set-up
 
-How you set-up your csproj is all up to you, but for this example you'll need to opt into the JasperFx command line execution that is bundled 
-with Marten so we can export migrations to the migration project in a later step and pre generate code. To that end, the latest line in your `program.cs` needs to be:
+How you set-up your csproj is all up to you, but for this example you'll need to opt into the JasperFx command line execution that is bundled
+with Marten so we can export migrations to the migration project in a later step. To that end, the latest line in your `program.cs` needs to be:
 
 ```cs
 return await app.RunJasperFxCommands(args);
 ```
 
-The dockerfile will include a step that writes the generated code by executing `dotnet run -- codegen write`. 
+::: tip Marten 9.0
+Pre-Marten-9.0 versions of this guide ran `dotnet run -- codegen write` inside the build stage to pre-generate runtime code. Marten 9.0 removed its Roslyn runtime code-generation pipeline entirely (PR [#4461](https://github.com/JasperFx/marten/pull/4461)), so the step is no longer needed for Marten. If you still use Wolverine or another JasperFx-family tool that ships its own codegen, see the equivalent guidance in those projects' DevOps docs.
+:::
 
 ```dockerfile
 FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
@@ -99,7 +101,6 @@ COPY ["Application/Application.csproj", "Application/"]
 COPY . .
 WORKDIR "/src/Application"
 
-RUN dotnet run -- codegen write
 RUN dotnet publish "Application.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime

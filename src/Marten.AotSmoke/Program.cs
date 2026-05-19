@@ -37,8 +37,6 @@
 //     (The build itself doesn't catch a missing emission — the SG silently
 //     skips when its preconditions don't hold; the runtime check is the
 //     sentinel.)
-//   - StoreOptions.GeneratedCodeMode = TypeLoadMode.Static — pins the
-//     consumer profile that AOT-publishing apps would set.
 //   - Host.CreateApplicationBuilder + Build + DI resolution of
 //     IDocumentStore — the boot path consumers actually hit.
 //
@@ -55,7 +53,6 @@
 //     libraries — the static inventory at audit/projections-inventory.md
 //     covers that. This program is the regression sentinel.
 
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
@@ -72,11 +69,8 @@ builder.Services.AddMarten(opts =>
 {
     opts.Connection(placeholderConnectionString);
 
-    // Pin the consumer profile an AOT-publishing app would set. Marten 9
-    // retired the runtime-codegen path entirely, so this setting is a
-    // documented no-op kept for source-compatibility — exercising it here
-    // pins that compile-time contract.
-    opts.GeneratedCodeMode = TypeLoadMode.Static;
+    // Marten 9 retired the runtime-codegen path entirely — there's nothing
+    // to pin here for AOT consumers, the closed-shape adapter is always used.
 
     // Exercise the document-mapping surface — registers the closed-shape
     // IDocumentStorage path (#4404). DocumentMapping infers the Id member

@@ -1,22 +1,15 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Data.Common;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
-using JasperFx.CodeGeneration.Model;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
 using Marten.Internal;
-using Marten.Internal.CodeGeneration;
 using Marten.Schema;
 using Marten.Schema.Arguments;
 using Marten.Services;
 using NpgsqlTypes;
-using Weasel.Postgresql;
 
 namespace Marten.Storage.Metadata;
 
@@ -99,30 +92,5 @@ internal class HeadersArgument: UpsertArgument
         Column = HeadersColumn.ColumnName;
         PostgresType = "jsonb";
         DbType = NpgsqlDbType.Jsonb;
-    }
-
-    public override void GenerateCodeToModifyDocument(GeneratedMethod method, GeneratedType type, int i,
-        Argument parameters,
-        DocumentMapping mapping, StoreOptions options)
-    {
-        if (mapping.Metadata.Headers.Member != null)
-        {
-            method.Frames.Code($"var headers = {{0}}.{nameof(IMartenSession.Headers)};",
-                Use.Type<IMartenSession>());
-            method.Frames.SetMemberValue(mapping.Metadata.Headers.Member, "headers", mapping.DocumentType, type);
-        }
-    }
-
-    public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i,
-        Argument parameters,
-        DocumentMapping mapping, StoreOptions options)
-    {
-        method.Frames.Code($"setHeaderParameter({parameters.Usage}, {{0}});", Use.Type<IMartenSession>());
-    }
-
-    public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.CodeAsync($"await writer.WriteAsync({typeof(DBNull).FullNameInCode()}.Value, {{0}}, {{1}});",
-            DbType, Use.Type<CancellationToken>());
     }
 }

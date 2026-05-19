@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
 using JasperFx.Blocks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -42,7 +41,7 @@ namespace Marten.Events;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
-    IAggregationSourceFactory<IQuerySession>, IDescribeMyself, ICodeFileCollection
+    IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -777,13 +776,19 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         }
     }
 
-    IReadOnlyList<ICodeFile> ICodeFileCollection.BuildFiles()
-    {
-        return [this];
-    }
-
-    string ICodeFileCollection.ChildNamespace => "EventStore";
-
-    GenerationRules ICodeFileCollection.Rules => Options.CreateGenerationRules();
     public List<Type> GlobalAggregates { get; } = new();
+
+    internal Marten.Internal.Storage.DocumentProvider<IEvent>? Provider { get; private set; }
+
+    /// <summary>
+    ///     Constructs the closed-shape event document storage adapter for this
+    ///     EventGraph and caches it as <see cref="Provider"/>. The closed-shape
+    ///     adapter is built reflectively at runtime — no codegen is involved.
+    ///     ProviderGraph invokes this on the first IEvent storage request.
+    /// </summary>
+    internal void AttachTypesSynchronously()
+    {
+        var closedShape = new Marten.EventStorage.ClosedShapeEventDocumentStorage(Options);
+        Provider = new Marten.Internal.Storage.DocumentProvider<IEvent>(null!, closedShape, closedShape, closedShape, closedShape);
+    }
 }
