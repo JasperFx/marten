@@ -34,7 +34,7 @@ namespace DaemonTests.TestingSupport
         }
     }
 
-    public class TripProjectionWithCustomName: TripProjection
+    public partial class TripProjectionWithCustomName: TripProjection
     {
         public TripProjectionWithCustomName()
         {
@@ -47,17 +47,8 @@ namespace DaemonTests.TestingSupport
 
     #region sample_tripprojection_aggregate
 
-    public class TripProjection: SingleStreamProjection<Trip, Guid>
+    public partial class TripProjection: SingleStreamProjection<Trip, Guid>
     {
-        public TripProjection()
-        {
-            DeleteEvent<TripAborted>();
-
-            DeleteEvent<Breakdown>(x => x.IsCritical);
-
-            DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-        }
-
         // These methods can be either public, internal, or private but there's
         // a small performance gain to making them public
         public void Apply(Arrival e, Trip trip) => trip.State = e.State;
@@ -79,6 +70,10 @@ namespace DaemonTests.TestingSupport
         {
             return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
         }
+
+        public bool ShouldDelete(TripAborted _) => true;
+        public bool ShouldDelete(Breakdown e) => e.IsCritical;
+        public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
     }
 
     #endregion
@@ -174,32 +169,3 @@ namespace TripProjection.StreamAggregation
 }
 
 
-namespace TripProjection.UsingLambdas
-{
-    #region sample_using_projectevent_in_aggregate_projection
-
-    public class TripProjection: SingleStreamProjection<Trip, Guid>
-    {
-        public TripProjection()
-        {
-            ProjectEvent<Arrival>((trip, e) => trip.State = e.State);
-            ProjectEvent<Travel>((trip, e) => trip.Traveled += e.TotalDistance());
-            ProjectEvent<TripEnded>((trip, e) =>
-            {
-                trip.Active = false;
-                trip.EndedOn = e.Day;
-            });
-
-            ProjectEventAsync<Breakdown>(async (session, trip, e) =>
-            {
-                var repairShop = await session.Query<RepairShop>()
-                    .Where(x => x.State == trip.State)
-                    .FirstOrDefaultAsync();
-
-                trip.RepairShopId = repairShop?.Id;
-            });
-        }
-    }
-
-    #endregion
-}

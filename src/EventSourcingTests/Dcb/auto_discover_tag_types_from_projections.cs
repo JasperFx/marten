@@ -32,7 +32,7 @@ public class TicketSummary
 }
 
 // Projection with strong-typed ID — auto-discovery should detect TicketId from TId
-public class TicketSummaryProjection: SingleStreamProjection<TicketSummary, TicketId>
+public partial class TicketSummaryProjection: SingleStreamProjection<TicketSummary, TicketId>
 {
 }
 

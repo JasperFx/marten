@@ -18,7 +18,7 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationContext
+public partial class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationContext
 {
     [Fact]
     public async Task CanUseIEventAsSourceForIdentity()
@@ -68,7 +68,7 @@ public class Bug_2883_ievent_not_working_as_identity_source : BugIntegrationCont
     }
 
     #region sample_using_ievent_for_document_identity_in_projections
-public class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
+public partial class CustomerInsightsProjection : MultiStreamProjection<CustomerInsightsResponse, string>
 {
 
 

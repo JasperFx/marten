@@ -10,7 +10,7 @@ public record Shop(Guid Id, List<string> Items);
 public record ShopCreated(Guid Id, List<string> Items);
 
 #region sample_rebuild-shop_projection
-public class ShopProjection: SingleStreamProjection<Guid, Shop>
+public partial class ShopProjection: SingleStreamProjection<Guid, Shop>
 {
     public ShopProjection()
     {

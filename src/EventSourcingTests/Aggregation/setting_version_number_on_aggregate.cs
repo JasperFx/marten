@@ -12,7 +12,7 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class setting_version_number_on_aggregate : OneOffConfigurationsContext
+public partial class setting_version_number_on_aggregate : OneOffConfigurationsContext
 {
     [Fact]
     public async Task set_on_live_aggregation()
@@ -58,7 +58,7 @@ public class setting_version_number_on_aggregate : OneOffConfigurationsContext
 
 
 
-    public class SampleSingleStream : SingleStreamProjection<MyAggregate, Guid>
+    public partial class SampleSingleStream : SingleStreamProjection<MyAggregate, Guid>
     {
         public SampleSingleStream ()
         {

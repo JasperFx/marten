@@ -63,7 +63,7 @@ public class StartAndStopAggregate2
     }
 }
 
-public class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProjection<StartAndStopAggregate2, Guid>
+public partial class StartAndStopIteratingAwaitablesSlicedProjection: MultiStreamProjection<StartAndStopAggregate2, Guid>
 {
     public StartAndStopIteratingAwaitablesSlicedProjection()
     {

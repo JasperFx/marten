@@ -133,7 +133,7 @@ public interface INumbered
 }
 
 
-public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
+public partial class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {

@@ -45,12 +45,9 @@ public class nulls_in_event_name_cache : BugIntegrationContext
 
 public record MemberJoinedOnly(Guid Id);
 
-public sealed class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly, Guid>
+public sealed partial class MemberJoinedProjection: SingleStreamProjection<MemberJoinedOnly, Guid>
 {
-    public MemberJoinedProjection()
-    {
-        CreateEvent<MembersJoined>(x => new MemberJoinedOnly(x.QuestId));
-    }
+    public MemberJoinedOnly Create(MembersJoined x) => new MemberJoinedOnly(x.QuestId);
 }
 
 public class CustomProjection: IProjection

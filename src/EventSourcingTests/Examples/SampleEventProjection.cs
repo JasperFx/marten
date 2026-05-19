@@ -74,33 +74,14 @@ public class Document2
 
 public partial class SampleEventProjection : EventProjection
 {
-    public SampleEventProjection()
-    {
-        // Inline document operations
-        Project<Event1>((e, ops) =>
-        {
-            // I'm creating a single new document, but
-            // I can do as many operations as I want
-            ops.Store(new Document1
-            {
-                Id = e.Id
-            });
-        });
+    // JasperFx.Events 2.0 (JasperFx/jasperfx#276 / #286) removed the
+    // EventProjection.Project<TEvent>(action) / ProjectAsync<TEvent>(action)
+    // inline-lambda registration helpers. Method-convention overloads on a
+    // `partial` projection class are the supported replacement —
+    // JasperFx.Events.SourceGenerator picks up each method below at compile
+    // time and emits the dispatch.
 
-        Project<StopEvent1>((e, ops) =>
-        {
-            ops.Delete<Document1>(e.Id);
-        });
-
-        ProjectAsync<Event3>(async (e, ops, _) =>
-        {
-            var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
-            // now use the lookup document and the event to carry
-            // out other document operations against the ops parameter
-        });
-    }
-
-    // This is the conventional method equivalents to the inline calls above
+    // Equivalent to the removed `Project<Event1>(e => ops.Store(new Document1 { Id = e.Id }))`.
     public Document1 Create(Event1 e) => new Document1 {Id = e.Id};
 
     // Or with event metadata

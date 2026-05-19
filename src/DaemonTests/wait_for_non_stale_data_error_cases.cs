@@ -81,7 +81,7 @@ public class wait_for_non_stale_data_error_cases : OneOffConfigurationsContext
 
 public record ThrowError(bool ShouldThrow);
 
-public class SometimesFailingLetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
+public partial class SometimesFailingLetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
 {
     public override LetterCounts Evolve(LetterCounts snapshot, Guid id, IEvent e)
     {
@@ -112,7 +112,7 @@ public class SometimesFailingLetterCountsProjection: SingleStreamProjection<Lett
 public record FailsOnSave(Guid Id, string ShouldNotBeNull);
 public record FailsOnSaveEventA;
 
-public class FailsOnSaveProjection: SingleStreamProjection<FailsOnSave, Guid>
+public partial class FailsOnSaveProjection: SingleStreamProjection<FailsOnSave, Guid>
 {
     public static FailsOnSave Create(IEvent<FailsOnSaveEventA> @event) => new(@event.StreamId, null!);
 }

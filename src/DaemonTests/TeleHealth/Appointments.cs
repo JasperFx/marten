@@ -42,7 +42,7 @@ public class Appointment
 
 #region sample_appointmentprojection
 
-public class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
+public partial class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
 {
     public AppointmentProjection()
     {

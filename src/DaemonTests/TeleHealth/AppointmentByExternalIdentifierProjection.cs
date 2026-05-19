@@ -9,7 +9,7 @@ using Marten.Schema;
 
 namespace DaemonTests.TeleHealth;
 
-public class AppointmentByExternalIdentifierProjection : MultiStreamProjection<AppointmentByExternalIdentifier, Guid>
+public partial class AppointmentByExternalIdentifierProjection : MultiStreamProjection<AppointmentByExternalIdentifier, Guid>
 {
     public AppointmentByExternalIdentifierProjection()
     {

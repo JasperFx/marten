@@ -42,7 +42,7 @@ public class Bug_4441_force_catch_up_with_outbox
 
     // Plain SingleStreamProjection — no RaiseSideEffects override (the exact
     // shape that triggered the original Wolverine hang).
-    public class LetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
+    public partial class LetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
     {
         public override LetterCounts Evolve(LetterCounts? snapshot, Guid id, IEvent e)
         {

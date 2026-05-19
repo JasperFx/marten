@@ -776,7 +776,7 @@ namespace EventSourcingTests.SchemaChange
             }
         }
 
-        public class ShoppingCartProjection: SingleStreamProjection<ShoppingCartDetails, Guid>
+        public partial class ShoppingCartProjection: SingleStreamProjection<ShoppingCartDetails, Guid>
         {
 
         }

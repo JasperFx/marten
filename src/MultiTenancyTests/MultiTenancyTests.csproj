@@ -10,6 +10,9 @@
         <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <!-- Marten.csproj sets PrivateAssets="all" on the SG; this project
+             defines its own SimpleAggregate so it needs the analyzer locally. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

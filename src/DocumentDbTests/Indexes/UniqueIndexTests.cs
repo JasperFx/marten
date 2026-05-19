@@ -19,7 +19,7 @@ public class UserCreated
     public string Surname { get; set; }
 }
 
-public class UserMultiStreamProjection: MultiStreamProjection<UniqueUser, Guid>
+public partial class UserMultiStreamProjection: MultiStreamProjection<UniqueUser, Guid>
 {
     public UserMultiStreamProjection()
     {

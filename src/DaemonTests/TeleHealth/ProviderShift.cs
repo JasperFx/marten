@@ -61,7 +61,7 @@ public record ChartingStarted;
 
 #region sample_providershiftprojection
 
-public class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
+public partial class ProviderShiftProjection: SingleStreamProjection<ProviderShift, Guid>
 {
     public ProviderShiftProjection()
     {

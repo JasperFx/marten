@@ -93,7 +93,7 @@ public class CompositeProductMetric
     public double Price { get; set; }
 }
 
-public class CompositeProductProjection: SingleStreamProjection<CompositeProduct, Guid>
+public partial class CompositeProductProjection: SingleStreamProjection<CompositeProduct, Guid>
 {
     private readonly ICompositePriceLookup _lookup;
 

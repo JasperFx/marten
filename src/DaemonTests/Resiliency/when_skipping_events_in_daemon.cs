@@ -306,7 +306,7 @@ public partial class ErrorRejectingEventProjection: EventProjection
     }
 }
 
-public class CollateNames: MultiStreamProjection<NamesByLetter, string>
+public partial class CollateNames: MultiStreamProjection<NamesByLetter, string>
 {
     public CollateNames()
     {

@@ -359,7 +359,7 @@ public class side_effects_in_aggregations: OneOffConfigurationsContext
     }
 }
 
-public class Projection1: SingleStreamProjection<SideEffects1, Guid>
+public partial class Projection1: SingleStreamProjection<SideEffects1, Guid>
 {
     public Projection1()
     {
@@ -405,7 +405,7 @@ public class SideEffects1: IRevisioned
 
 public record WasDeleted(Guid Id);
 
-public class Projection2: SingleStreamProjection<SideEffects2, string>
+public partial class Projection2: SingleStreamProjection<SideEffects2, string>
 {
     public void Apply(SideEffects2 aggregate, MTAEvent _)
     {
@@ -428,7 +428,7 @@ public class Projection2: SingleStreamProjection<SideEffects2, string>
     }
 }
 
-public class Projection3: SingleStreamProjection<SideEffects1, Guid>
+public partial class Projection3: SingleStreamProjection<SideEffects1, Guid>
 {
     public void Apply(SideEffects1 aggregate, MTAEvent _)
     {

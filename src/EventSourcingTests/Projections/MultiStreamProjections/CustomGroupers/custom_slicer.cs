@@ -17,7 +17,7 @@ using Xunit;
 namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 
 #region sample_view-projection-custom-slicer
-public class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
+public partial class UserGroupsAssignmentProjection: MultiStreamProjection<UserGroupsAssignment, Guid>
 {
     public UserGroupsAssignmentProjection()
     {

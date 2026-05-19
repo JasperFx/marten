@@ -15,7 +15,7 @@ namespace Samples.Deleting
 {
     #region sample_deleting_aggregate_by_event_type
 
-    public class TripProjection: SingleStreamProjection<Trip, Guid>
+    public partial class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         public TripProjection()
         {
@@ -29,47 +29,6 @@ namespace Samples.Deleting
 }
 
 
-namespace Samples.Deleting2
-{
-    public class RepairShop
-    {
-        public string State { get; set; }
-        public Guid Id { get; set; }
-    }
-
-    #region sample_deleting_aggregate_by_event_type_and_func
-
-    public class TripProjection: SingleStreamProjection<Trip, Guid>
-    {
-        public TripProjection()
-        {
-            // The current Trip aggregate would be deleted if
-            // the Breakdown event is "critical"
-            DeleteEvent<Breakdown>(x => x.IsCritical);
-
-            // Alternatively, delete the aggregate if the trip
-            // is currently in New Mexico and the breakdown is critical
-            DeleteEvent<Breakdown>((trip, e) => e.IsCritical && trip.State == "New Mexico");
-
-            DeleteEventAsync<Breakdown>(async (session, trip, e) =>
-            {
-                var anyRepairShopsInState = await session.Query<RepairShop>()
-                    .Where(x => x.State == trip.State)
-                    .AnyAsync();
-
-                // Delete the trip if there are no repair shops in
-                // the current state
-                return !anyRepairShopsInState;
-            });
-        }
-    }
-
-    #endregion
-
-
-}
-
-
 namespace Samples.Deleting3
 {
     public class RepairShop
@@ -80,7 +39,7 @@ namespace Samples.Deleting3
 
     #region sample_deleting_aggregate_by_event_type_and_func_with_convention
 
-    public class TripProjection: SingleStreamProjection<Trip, Guid>
+    public partial class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         // The current Trip aggregate would be deleted if
         // the Breakdown event is "critical"

@@ -105,7 +105,7 @@ public record ThingStarted(string Size);
 
 public record ThingFed;
 
-public class ThingProjection: SingleStreamProjection<HThing, Guid>
+public partial class ThingProjection: SingleStreamProjection<HThing, Guid>
 {
     public override ValueTask<(HThing?, ActionType)> DetermineActionAsync(IQuerySession session, HThing snapshot, Guid identity,
         IIdentitySetter<HThing, Guid> identitySetter, IReadOnlyList<IEvent> events,

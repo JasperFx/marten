@@ -101,7 +101,7 @@ public class aggregation_projection_validation_rules
         }).ShouldNotBeNull();
     }
 
-    public class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate, Guid>
+    public partial class EmptyProjection: SingleStreamProjection<GuidIdentifiedAggregate, Guid>
     {
     }
 
@@ -115,7 +115,7 @@ public class aggregation_projection_validation_rules
         }
     }
 
-    public class GuidIdentifiedAggregateProjection: MultiStreamProjection<GuidIdentifiedAggregate, Guid>
+    public partial class GuidIdentifiedAggregateProjection: MultiStreamProjection<GuidIdentifiedAggregate, Guid>
     {
         public GuidIdentifiedAggregateProjection()
         {
@@ -141,25 +141,23 @@ public class aggregation_projection_validation_rules
         projection.AssembleAndAssertValidity();
     }
 
-    [Fact]
-    public void blow_on_soft_deleted_aggregates()
-    {
-        var projection = new AllGood();
-        var options = new StoreOptions();
-        options.Schema.For<MyAggregate>().SoftDeleted();
-        var errors = projection.ValidateConfiguration(options).ToArray();
-        errors.Single().ShouldBe("SingleStreamProjection cannot support aggregates that are soft-deleted with the conventional method approach. You will need to use an explicit workflow for this projection");
-    }
+    // 9.0: `blow_on_soft_deleted_aggregates` removed. Pre-9.0 the runtime
+    // reflection path validated soft-delete + conventional-method conflicts
+    // via `ValidateConfiguration`. With source-generated dispatch, the
+    // conflict can't manifest the same way — the SG-emitted dispatcher
+    // doesn't know about the document's soft-delete config. Documenting
+    // the constraint instead: a `SingleStreamProjection<TDoc, TId>`
+    // targeting a soft-deleted document type with conventional Apply/
+    // ShouldDelete methods is unsupported. See the 9.0 migration guide.
 
-    [Fact]
-    public void find_bad_method_names_that_are_not_ignored()
-    {
-        var projection = new BadMethodName();
-        var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
-
-        ex.Message.ShouldContain(
-            "Unrecognized method name 'DoStuff'. Either mark with [JasperFxIgnore] or use one of 'Apply', 'Create', 'ShouldDelete'");
-    }
+    // 9.0: `find_bad_method_names_that_are_not_ignored` removed. Pre-9.0
+    // the runtime threw `InvalidProjectionException` listing unrecognized
+    // public methods (anything not named Apply / Create / ShouldDelete).
+    // The source generator now silently ignores those methods at compile
+    // time — a user-added `DoStuff(...)` method doesn't get dispatched and
+    // doesn't fail validation. Users who relied on the old loud failure
+    // should add `[JasperFxIgnore]` (still honored by the SG) or rename
+    // the method. See the 9.0 migration guide.
 
     [Fact]
     public void find_invalid_argument_type()
@@ -199,26 +197,25 @@ public class aggregation_projection_validation_rules
                 "Return type 'string' is invalid. The valid options are System.Threading.CancellationToken, Marten.IQuerySession, Marten.Testing.Events.Aggregation.MyAggregate");
     }
 
-    [Fact]
-    public void missing_required_parameter()
-    {
-        var projection = new MissingMandatoryType();
-        var ex = Should.Throw<InvalidProjectionException>(() => projection.AssembleAndAssertValidity());
-
-        ex.InvalidMethods.Single()
-            .Errors
-            .ShouldContain($"Aggregate type '{typeof(MyAggregate).FullNameInCode()}' is required as a parameter");
-    }
+    // 9.0: `missing_required_parameter` removed. Pre-9.0 the runtime
+    // reflection path required projection-class Apply/Create handlers to
+    // include the aggregate type as a parameter, throwing
+    // `InvalidProjectionException` otherwise. With source-generated
+    // dispatch, an aggregate-less `Apply(SomeEvent)` on a projection class
+    // is silently accepted: the SG emits `case SomeEvent data: Apply(data);`
+    // and the method runs, but it can't mutate aggregate state — the
+    // aggregate isn't in scope. Users who hit this should add the
+    // aggregate parameter back to their handler. See the 9.0 migration guide.
 }
 
-public class MissingMandatoryType: SingleStreamProjection<MyAggregate, Guid>
+public partial class MissingMandatoryType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event)
     {
     }
 }
 
-public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
+public partial class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
 {
     public string Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
@@ -226,28 +223,28 @@ public class BadReturnType: SingleStreamProjection<MyAggregate, Guid>
     }
 }
 
-public class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
+public partial class MissingEventType1: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(MyAggregate aggregate, IQuerySession session)
     {
     }
 }
 
-public class CanGuessEventType: SingleStreamProjection<MyAggregate, Guid>
+public partial class CanGuessEventType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent a, MyAggregate aggregate, IQuerySession session)
     {
     }
 }
 
-public class InvalidArgumentType: SingleStreamProjection<MyAggregate, Guid>
+public partial class InvalidArgumentType: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(AEvent @event, MyAggregate aggregate, IDocumentOperations operations)
     {
     }
 }
 
-public class BadMethodName: SingleStreamProjection<MyAggregate, Guid>
+public partial class BadMethodName: SingleStreamProjection<MyAggregate, Guid>
 {
     public void DoStuff(AEvent @event, MyAggregate aggregate)
     {
@@ -259,7 +256,7 @@ public class BadMethodName: SingleStreamProjection<MyAggregate, Guid>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate, Guid>
+public partial class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

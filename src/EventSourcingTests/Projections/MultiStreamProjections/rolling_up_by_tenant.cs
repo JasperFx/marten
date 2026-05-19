@@ -91,7 +91,7 @@ public class rolling_up_by_tenant : OneOffConfigurationsContext
 
 #region sample_rollup_projection_by_tenant_id
 
-public class RollupProjection: MultiStreamProjection<Rollup, string>
+public partial class RollupProjection: MultiStreamProjection<Rollup, string>
 {
     public RollupProjection()
     {
@@ -115,7 +115,7 @@ public class Rollup
 
 public record struct TenantId(string Value);
 
-public class Rollup2Projection: MultiStreamProjection<Rollup2, TenantId>
+public partial class Rollup2Projection: MultiStreamProjection<Rollup2, TenantId>
 {
     public Rollup2Projection()
     {

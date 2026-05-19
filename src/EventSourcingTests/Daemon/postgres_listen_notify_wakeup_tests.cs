@@ -89,7 +89,7 @@ public class postgres_listen_notify_wakeup_tests
         public int Total { get; set; }
     }
 
-    public class LnProjection: SingleStreamProjection<LnCount, Guid>
+    public partial class LnProjection: SingleStreamProjection<LnCount, Guid>
     {
         public override LnCount Evolve(LnCount? snapshot, Guid id, IEvent e)
         {

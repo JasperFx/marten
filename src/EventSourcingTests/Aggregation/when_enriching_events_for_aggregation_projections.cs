@@ -84,7 +84,7 @@ public class UserAssigned
 
 #region snippet_usertaskprojection
 
-public class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
+public partial class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 {
     // This is where you have a hook to "enrich" event data *after* slicing,
     // but before processing

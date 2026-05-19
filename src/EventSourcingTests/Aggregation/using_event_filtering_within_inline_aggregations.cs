@@ -76,7 +76,7 @@ public class using_event_filtering_within_inline_aggregations : OneOffConfigurat
 
 public record RandomNotUsedEvent;
 
-public class SimpleSingleStreamProjection: SingleStreamProjection<MyAggregate, Guid>
+public partial class SimpleSingleStreamProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public SimpleSingleStreamProjection()
     {

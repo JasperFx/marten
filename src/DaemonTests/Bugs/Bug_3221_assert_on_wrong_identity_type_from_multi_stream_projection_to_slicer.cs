@@ -35,7 +35,7 @@ public class Bug_3221_assert_on_wrong_identity_type_from_multi_stream_projection
     }
 }
 
-public class MismatchedIdentityProjection : MultiStreamProjection<Target, string>
+public partial class MismatchedIdentityProjection : MultiStreamProjection<Target, string>
 {
     public MismatchedIdentityProjection()
     {

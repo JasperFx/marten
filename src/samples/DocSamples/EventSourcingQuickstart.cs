@@ -84,7 +84,7 @@ public static class AddMembersHandler
 #region sample_quest
 public sealed record Quest(Guid Id, List<string> Members, List<string> Slayed, string Name, bool isFinished);
 
-public sealed class QuestProjection: SingleStreamProjection<Quest, Guid>
+public sealed partial class QuestProjection: SingleStreamProjection<Quest, Guid>
 {
     public static Quest Create(QuestStarted started) => new(started.QuestId, [], [], started.Name, false);
     public static Quest Apply(MembersJoined joined, Quest party) =>

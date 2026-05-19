@@ -122,7 +122,7 @@ public class fetch_for_writing_and_projection_metadata_for_inline_projections : 
     }
 }
 
-public class ProjectionWithVersions : SingleStreamProjection<VersionedGuy, Guid>
+public partial class ProjectionWithVersions : SingleStreamProjection<VersionedGuy, Guid>
 {
     public static List<long> VersionsSeen { get; } = new();
 

@@ -71,15 +71,14 @@ public class WarehouseProductReadModel
     public int QuantityOnHand { get; set; }
 }
 
-public class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel, Guid>
+public partial class WarehouseProductProjection: SingleStreamProjection<WarehouseProductReadModel, Guid>
 {
-    public WarehouseProductProjection()
-    {
-        ProjectEvent<ProductShipped>(Apply);
-        ProjectEvent<ProductReceived>(Apply);
-        ProjectEvent<InventoryAdjusted>(Apply);
-    }
-
+    // JasperFx.Events 2.0 (JasperFx/jasperfx#276 / #286) removed the
+    // ProjectEvent<TEvent>(handler) registration helpers. Convention methods on
+    // a `partial` projection class are the supported replacement — the
+    // JasperFx.Events.SourceGenerator emits a [GeneratedEvolver] dispatcher
+    // that wires the same Apply methods at compile time, with no reflection
+    // or FastExpressionCompiler at runtime.
 
     public void Apply(WarehouseProductReadModel readModel, ProductShipped evnt)
     {

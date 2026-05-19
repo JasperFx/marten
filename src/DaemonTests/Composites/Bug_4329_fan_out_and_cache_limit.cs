@@ -26,7 +26,7 @@ public class Product
     public decimal Price { get; set; }
 }
 
-public class ProductProjection: SingleStreamProjection<Product, Guid>
+public partial class ProductProjection: SingleStreamProjection<Product, Guid>
 {
     public ProductProjection()
     {
@@ -73,7 +73,7 @@ public class OrderLineSummary
     public decimal Price { get; set; }
 }
 
-public class OrderSummaryProjection: MultiStreamProjection<OrderSummary, Guid>
+public partial class OrderSummaryProjection: MultiStreamProjection<OrderSummary, Guid>
 {
     public OrderSummaryProjection()
     {

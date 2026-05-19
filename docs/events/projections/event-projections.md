@@ -35,7 +35,7 @@ public partial class ExplicitSampleProjection: EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L130-L157' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_event_projection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L111-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_explicit_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or you can use the pre-V8 conventions as well:
@@ -55,33 +55,14 @@ To show off what `EventProjection` does, here's a sample that uses most features
 ```cs
 public partial class SampleEventProjection : EventProjection
 {
-    public SampleEventProjection()
-    {
-        // Inline document operations
-        Project<Event1>((e, ops) =>
-        {
-            // I'm creating a single new document, but
-            // I can do as many operations as I want
-            ops.Store(new Document1
-            {
-                Id = e.Id
-            });
-        });
+    // JasperFx.Events 2.0 (JasperFx/jasperfx#276 / #286) removed the
+    // EventProjection.Project<TEvent>(action) / ProjectAsync<TEvent>(action)
+    // inline-lambda registration helpers. Method-convention overloads on a
+    // `partial` projection class are the supported replacement —
+    // JasperFx.Events.SourceGenerator picks up each method below at compile
+    // time and emits the dispatch.
 
-        Project<StopEvent1>((e, ops) =>
-        {
-            ops.Delete<Document1>(e.Id);
-        });
-
-        ProjectAsync<Event3>(async (e, ops, _) =>
-        {
-            var lookup = await ops.LoadAsync<Lookup>(e.LookupId);
-            // now use the lookup document and the event to carry
-            // out other document operations against the ops parameter
-        });
-    }
-
-    // This is the conventional method equivalents to the inline calls above
+    // Equivalent to the removed `Project<Event1>(e => ops.Store(new Document1 { Id = e.Id }))`.
     public Document1 Create(Event1 e) => new Document1 {Id = e.Id};
 
     // Or with event metadata
@@ -106,7 +87,7 @@ public partial class SampleEventProjection : EventProjection
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L73-L128' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L73-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sampleeventprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Do note that at any point you can access event metadata by accepting `IEvent<T>` where `T` is the event type instead of just the event type. You can also take in an additional variable for `IEvent` to just

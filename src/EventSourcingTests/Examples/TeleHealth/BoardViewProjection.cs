@@ -5,7 +5,7 @@ using Marten.Events.Projections;
 
 namespace EventSourcingTests.Examples.TeleHealth;
 
-public class BoardViewProjection: MultiStreamProjection<BoardView, Guid>
+public partial class BoardViewProjection: MultiStreamProjection<BoardView, Guid>
 {
     public BoardViewProjection()
     {

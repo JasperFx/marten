@@ -54,7 +54,7 @@ public class blue_green_deployment_of_aggregates
     }
 }
 
-public class Version2: SingleStreamProjection<MyAggregate, Guid>
+public partial class Version2: SingleStreamProjection<MyAggregate, Guid>
 {
     public Version2()
     {

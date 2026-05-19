@@ -13,7 +13,7 @@ namespace DaemonTests.TeleHealth;
 
 #region sample_appointmentdetailsprojection
 
-public class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
+public partial class AppointmentDetailsProjection: MultiStreamProjection<AppointmentDetails, Guid>
 {
     public AppointmentDetailsProjection()
     {

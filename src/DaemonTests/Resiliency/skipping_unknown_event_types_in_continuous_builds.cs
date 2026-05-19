@@ -99,7 +99,7 @@ public class skipping_unknown_event_types_in_continuous_builds : IAsyncLifetime
     }
 }
 
-public class WeirdCustomAggregation: SingleStreamProjection<MyAggregate, Guid>
+public partial class WeirdCustomAggregation: SingleStreamProjection<MyAggregate, Guid>
 {
     public WeirdCustomAggregation()
     {

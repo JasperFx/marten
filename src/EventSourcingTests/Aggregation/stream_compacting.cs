@@ -385,7 +385,7 @@ public class LetterCountsByString: IRevisioned
     public long Version { get; set; }
 }
 
-public class LetterCountsByStringProjection: SingleStreamProjection<LetterCountsByString, string>
+public partial class LetterCountsByStringProjection: SingleStreamProjection<LetterCountsByString, string>
 {
     public override LetterCountsByString Evolve(LetterCountsByString snapshot, string id, IEvent e)
     {
@@ -414,7 +414,7 @@ public class LetterCountsByStringProjection: SingleStreamProjection<LetterCounts
     }
 }
 
-public class LetterCountsProjection1: SingleStreamProjection<LetterCounts, Guid>
+public partial class LetterCountsProjection1: SingleStreamProjection<LetterCounts, Guid>
 {
     public override LetterCounts Evolve(LetterCounts snapshot, Guid id, IEvent e)
     {
@@ -441,7 +441,7 @@ public class LetterCountsProjection1: SingleStreamProjection<LetterCounts, Guid>
     }
 }
 
-public class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
+public partial class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
 {
     #region sample_evolveasync
 
@@ -473,7 +473,7 @@ public class LetterCountsProjection2: SingleStreamProjection<LetterCounts, Guid>
     #endregion
 }
 
-public class LetterCountsProjection3: SingleStreamProjection<LetterCounts, Guid>
+public partial class LetterCountsProjection3: SingleStreamProjection<LetterCounts, Guid>
 {
     public override (LetterCounts, ActionType) DetermineAction(LetterCounts snapshot, Guid identity, IReadOnlyList<IEvent> events)
     {
@@ -503,7 +503,7 @@ public class LetterCountsProjection3: SingleStreamProjection<LetterCounts, Guid>
     }
 }
 
-public class LetterCountsProjection4: SingleStreamProjection<LetterCounts, Guid>
+public partial class LetterCountsProjection4: SingleStreamProjection<LetterCounts, Guid>
 {
     public override ValueTask<(LetterCounts, ActionType)> DetermineActionAsync(IQuerySession session, LetterCounts snapshot, Guid identity,
         IIdentitySetter<LetterCounts, Guid> identitySetter, IReadOnlyList<IEvent> events, CancellationToken cancellation)

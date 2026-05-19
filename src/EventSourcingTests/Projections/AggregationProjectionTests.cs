@@ -43,7 +43,7 @@ public class AggregationProjectionTests
 public interface IThing{}
 public class Thing : IThing{}
 
-public class SampleAggregate: SingleStreamProjection<MyAggregate, Guid>
+public partial class SampleAggregate: SingleStreamProjection<MyAggregate, Guid>
 {
     public SampleAggregate()
     {

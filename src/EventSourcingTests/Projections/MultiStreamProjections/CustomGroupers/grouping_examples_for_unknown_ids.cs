@@ -14,7 +14,7 @@ using static EventSourcingTests.Projections.MultiStreamProjections.CustomGrouper
 
 namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 
-public class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
+public partial class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
 {
     #region sample_external-account-link-events
 
@@ -41,7 +41,7 @@ public class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
         public required Guid CustomerId { get; set; }
     }
 
-    public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+    public partial class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
     {
         public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
         {
@@ -98,7 +98,7 @@ public class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
         public HashSet<string> ModesSeen { get; set; } = [];
     }
 
-    public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+    public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
     {
         public CustomerBillingProjection()
         {
@@ -136,7 +136,7 @@ public class GroupingForUnknownIdsByLookupExample: OneOffConfigurationsContext
     }
 }
 
-public class GroupingForUnknownIdsByBookKeepingIdListExample: OneOffConfigurationsContext
+public partial class GroupingForUnknownIdsByBookKeepingIdListExample: OneOffConfigurationsContext
 {
     #region sample_external-account-link-id-list-grouper
 
@@ -148,7 +148,7 @@ public class GroupingForUnknownIdsByBookKeepingIdListExample: OneOffConfiguratio
         public int ShippingLabels { get; set; }
     }
 
-    public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+    public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
     {
         public CustomerBillingProjection()
         {
@@ -200,7 +200,7 @@ public class GroupingForUnknownIdsByBookKeepingIdListExample: OneOffConfiguratio
     #endregion
 }
 
-public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
+public partial class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
 {
     // Pattern 4 — batch-aware grouper.
     //
@@ -231,7 +231,7 @@ public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
         public required Guid CustomerId { get; set; }
     }
 
-    public class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
+    public partial class ExternalAccountLinkProjection: SingleStreamProjection<ExternalAccountLink, string>
     {
         public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
         {
@@ -294,7 +294,7 @@ public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
         }
     }
 
-    public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+    public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
     {
         public CustomerBillingProjection()
         {
@@ -310,7 +310,7 @@ public class GroupingForUnknownIdsBatchAwareExample: OneOffConfigurationsContext
     #endregion
 }
 
-public class GroupingForUnknownIdsFatEventExample: OneOffConfigurationsContext
+public partial class GroupingForUnknownIdsFatEventExample: OneOffConfigurationsContext
 {
     #region sample_shipment-events
 
@@ -355,7 +355,7 @@ public class GroupingForUnknownIdsFatEventExample: OneOffConfigurationsContext
         public required int Items { get; set; }
     }
 
-    public class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
+    public partial class CustomerBillingProjection: MultiStreamProjection<CustomerBillingMetrics, Guid>
     {
         public CustomerBillingProjection()
         {

@@ -58,16 +58,17 @@ public class FooAuditLog
     public List<string> Changes { get; set; } = new List<string>();
 }
 
-public class FooProjection: MultiStreamProjection<FooAuditLog, Guid>
+public partial class FooProjection: MultiStreamProjection<FooAuditLog, Guid>
 {
     public FooProjection()
     {
         Name = nameof(FooAuditLog);
 
         Identity<FooCreated>(x => x.Id);
-
-        ProjectEvent<IEvent<FooCreated>>((state, ev) => state.Changes.Add($"Foo was updated at {ev.Timestamp}"));
     }
+
+    public void Apply(IEvent<FooCreated> ev, FooAuditLog state) =>
+        state.Changes.Add($"Foo was updated at {ev.Timestamp}");
 }
 
 public interface IRecordLogEvent
@@ -81,15 +82,18 @@ public record RecordLogCreated(Guid Id): IRecordLogEvent;
 
 public record RecordLogUpdated(Guid Id): IRecordLogEvent;
 
-public class RecordProjection: MultiStreamProjection<RecordAuditLog, Guid>
+public partial class RecordProjection: MultiStreamProjection<RecordAuditLog, Guid>
 {
     public RecordProjection()
     {
         Name = nameof(RecordAuditLog);
 
         Identity<IRecordLogEvent>(x => x.Id);
-
-        CreateEvent<RecordLogCreated>(x => new RecordAuditLog(x.Id, new List<string>()));
-        ProjectEvent<IEvent<RecordLogUpdated>>((state, ev) => state.Changes.Add($"Log was updated at {ev.Timestamp}"));
     }
+
+    public RecordAuditLog Create(RecordLogCreated x) =>
+        new RecordAuditLog(x.Id, new List<string>());
+
+    public void Apply(IEvent<RecordLogUpdated> ev, RecordAuditLog state) =>
+        state.Changes.Add($"Log was updated at {ev.Timestamp}");
 }

@@ -97,17 +97,8 @@ The `DeleteEvent<T>(...)` calls inside the constructor in the sample below are r
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    public TripProjection()
-    {
-        DeleteEvent<TripAborted>();
-
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
-
     // These methods can be either public, internal, or private but there's
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
@@ -129,9 +120,15 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
+
+    // ShouldDelete method-convention overloads — replace the pre-9.0
+    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
+    public bool ShouldDelete(TripAborted _) => true;
+    public bool ShouldDelete(Breakdown e) => e.IsCritical;
+    public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And register that projection like this:

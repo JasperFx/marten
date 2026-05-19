@@ -170,7 +170,7 @@ public class multi_tenancy_by_database: IAsyncLifetime
     }
 }
 
-public class AllSync: SingleStreamProjection<MyAggregate, Guid>
+public partial class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
@@ -217,7 +217,7 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate, Guid>
+public partial class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

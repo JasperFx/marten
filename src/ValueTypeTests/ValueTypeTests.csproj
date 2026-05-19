@@ -23,6 +23,9 @@
     <ItemGroup>
         <ProjectReference Include="..\FSharpTypes\FSharpTypes.fsproj" />
         <ProjectReference Include="..\Marten.Testing\Marten.Testing.csproj" />
+        <!-- Marten.csproj sets PrivateAssets="all" on the SG; this project
+             defines its own value-type aggregates so it needs the analyzer locally. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
         <!-- LimitedDocQuery in linq_querying_with_value_types.cs needs the source
              generator to emit its handler registration. See #4405. -->
         <ProjectReference Include="..\Marten.SourceGenerator\Marten.SourceGenerator.csproj"

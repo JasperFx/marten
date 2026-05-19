@@ -961,7 +961,7 @@ public class Totals
     public int Count { get; set; }
 }
 
-public class TotalsProjection: MultiStreamProjection<Totals, Guid>
+public partial class TotalsProjection: MultiStreamProjection<Totals, Guid>
 {
     public TotalsProjection()
     {

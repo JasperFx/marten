@@ -944,7 +944,7 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
 
 public record NamedEvent2(string Name);
 
-public class TestProjection2: SingleStreamProjection<TestAggregate, string>
+public partial class TestProjection2: SingleStreamProjection<TestAggregate, string>
 {
     public TestAggregate Create(NamedEvent2 @event)
         => new TestAggregate(@event.Name);

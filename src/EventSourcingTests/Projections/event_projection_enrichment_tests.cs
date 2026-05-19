@@ -132,18 +132,15 @@ public class TaskSummary
 
 #region Simple Enrichment (no DB lookup)
 
-public class SimpleEnrichmentProjection : EventProjection
+public partial class SimpleEnrichmentProjection : EventProjection
 {
-    public SimpleEnrichmentProjection()
+    // TaskAssigned handler reads UserName that was set by EnrichEventsAsync
+    public void Project(TaskAssigned e, IDocumentOperations ops)
     {
-        // TaskAssigned handler reads UserName that was set by EnrichEventsAsync
-        Project<TaskAssigned>((e, ops) =>
+        ops.Store(new TaskSummary
         {
-            ops.Store(new TaskSummary
-            {
-                Id = e.TaskId,
-                AssignedUserName = e.UserName
-            });
+            Id = e.TaskId,
+            AssignedUserName = e.UserName
         });
     }
 
@@ -162,18 +159,15 @@ public class SimpleEnrichmentProjection : EventProjection
 
 #region Database Lookup Enrichment
 
-public class DatabaseLookupEnrichmentProjection : EventProjection
+public partial class DatabaseLookupEnrichmentProjection : EventProjection
 {
-    public DatabaseLookupEnrichmentProjection()
+    // Stores a TaskSummary using the enriched UserName
+    public void Project(TaskAssigned e, IDocumentOperations ops)
     {
-        // Stores a TaskSummary using the enriched UserName
-        Project<TaskAssigned>((e, ops) =>
+        ops.Store(new TaskSummary
         {
-            ops.Store(new TaskSummary
-            {
-                Id = e.TaskId,
-                AssignedUserName = e.UserName
-            });
+            Id = e.TaskId,
+            AssignedUserName = e.UserName
         });
     }
 
@@ -201,18 +195,18 @@ public class DatabaseLookupEnrichmentProjection : EventProjection
 
 #region Call Order Tracking
 
-public class CallOrderTrackingProjection : EventProjection
+public partial class CallOrderTrackingProjection : EventProjection
 {
     private readonly List<string> _callOrder;
 
     public CallOrderTrackingProjection(List<string> callOrder)
     {
         _callOrder = callOrder;
+    }
 
-        Project<TaskCreated>((e, ops) =>
-        {
-            _callOrder.Add($"Apply:{nameof(TaskCreated)}");
-        });
+    public void Project(TaskCreated e, IDocumentOperations ops)
+    {
+        _callOrder.Add($"Apply:{nameof(TaskCreated)}");
     }
 
     public override Task EnrichEventsAsync(IQuerySession querySession,

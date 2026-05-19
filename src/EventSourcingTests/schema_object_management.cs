@@ -104,7 +104,7 @@ public class schema_object_management : OneOffConfigurationsContext
 
 }
 
-public class MyAggregateProjection: SingleStreamProjection<MyAggregate, Guid>
+public partial class MyAggregateProjection: SingleStreamProjection<MyAggregate, Guid>
 {
     public void Apply(MyAggregate aggregate, AEvent e) => aggregate.ACount++;
 }

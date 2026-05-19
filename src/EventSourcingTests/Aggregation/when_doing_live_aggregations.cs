@@ -238,7 +238,7 @@ public class UserUpdated
     public Guid UserId { get; set; }
 }
 
-public class UsingMetadata : SingleStreamProjection<MyAggregate, Guid>
+public partial class UsingMetadata : SingleStreamProjection<MyAggregate, Guid>
 {
     public MyAggregate Create(CreateEvent create, IEvent e)
     {

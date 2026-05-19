@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
 using EventSourcingTests.Aggregation;
+using JasperFx.Events.Aggregation;
+using Marten.Events.Aggregation;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -11,20 +13,7 @@ public class using_non_concrete_types_in_projections : AggregationContext
 {
     public using_non_concrete_types_in_projections(DefaultStoreFixture fixture) : base(fixture)
     {
-        UsingDefinition(p =>
-        {
-            p.ProjectEvent<ITabulator>((a, e) =>
-            {
-                e.Apply(a);
-                return a;
-            });
-
-            p.ProjectEvent<EEvent>((a, _) =>
-            {
-                a.ECount++;
-                return a;
-            });
-        });
+        UsingDefinition<NonConcreteTabulatorProjection>();
     }
 
     [Fact]
@@ -79,5 +68,26 @@ public class using_non_concrete_types_in_projections : AggregationContext
         aggregate.CCount.ShouldBe(2);
         aggregate.DCount.ShouldBe(1);
         aggregate.ECount.ShouldBe(4);
+    }
+}
+
+// JasperFx.Events 2.0 (JasperFx/jasperfx#276 / #286) removed the
+// SingleStreamProjection<T>.ProjectEvent<TEvent>(handler) helpers, so the
+// non-concrete-type dispatch this test exercises is now expressed via the
+// method convention on a `partial` projection class. The source generator
+// emits a `[GeneratedEvolver]` dispatcher that routes any event implementing
+// ITabulator to the interface-typed Apply method.
+public partial class NonConcreteTabulatorProjection: SingleStreamProjection<MyAggregate, Guid>
+{
+    public MyAggregate Apply(ITabulator e, MyAggregate a)
+    {
+        e.Apply(a);
+        return a;
+    }
+
+    public MyAggregate Apply(EEvent _, MyAggregate a)
+    {
+        a.ECount++;
+        return a;
     }
 }

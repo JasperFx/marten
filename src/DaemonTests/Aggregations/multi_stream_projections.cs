@@ -19,7 +19,7 @@ using Xunit.Abstractions;
 
 namespace DaemonTests.Aggregations;
 
-public class multi_stream_projections: DaemonContext
+public partial class multi_stream_projections: DaemonContext
 {
     public multi_stream_projections(ITestOutputHelper output): base(output)
     {
@@ -125,7 +125,7 @@ public class multi_stream_projections: DaemonContext
         public IList<long> EventSequenceList { get; set; } = new List<long>();
     }
 
-    public class Projector: MultiStreamProjection<Projection, Guid>
+    public partial class Projector: MultiStreamProjection<Projection, Guid>
     {
         public Projector()
         {
@@ -256,7 +256,7 @@ public class Day
 
 #region sample_showing_fanout_rules
 
-public class DayProjection: MultiStreamProjection<Day, int>
+public partial class DayProjection: MultiStreamProjection<Day, int>
 {
     public DayProjection()
     {
@@ -357,7 +357,7 @@ public interface IUserEvent
     public Guid UserId { get; }
 }
 
-public class UserIssueProjection: MultiStreamProjection<UserIssues, Guid>
+public partial class UserIssueProjection: MultiStreamProjection<UserIssues, Guid>
 {
     public UserIssueProjection()
     {

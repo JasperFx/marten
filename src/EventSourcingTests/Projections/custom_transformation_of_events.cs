@@ -111,7 +111,7 @@ public class LapFinished : LapEvent
 
 }
 
-public class LapMultiStreamProjection: MultiStreamProjection<Lap, Guid>
+public partial class LapMultiStreamProjection: MultiStreamProjection<Lap, Guid>
 {
     public LapMultiStreamProjection()
     {
@@ -188,7 +188,7 @@ public class ReaderUnsubscribed : SubscriptionEvent
     }
 }
 
-public class NewsletterSubscriptionProjection : MultiStreamProjection<NewsletterSubscription, Guid>
+public partial class NewsletterSubscriptionProjection : MultiStreamProjection<NewsletterSubscription, Guid>
 {
     public NewsletterSubscriptionProjection()
     {

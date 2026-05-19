@@ -394,7 +394,7 @@ public class SpecialCounter
 
 #region sample_specialcounterprojection
 
-public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
+public partial class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Guid>
 {
     public void Apply(SpecialCounter c, SpecialA _) => c.ACount++;
     public void Apply(SpecialCounter c, SpecialB _) => c.BCount++;
@@ -409,7 +409,7 @@ public class SpecialCounterProjection: SingleStreamProjection<SpecialCounter, Gu
 
 #region sample_specialcounterprojection2
 
-public class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
+public partial class SpecialCounterProjection2: SingleStreamProjection<SpecialCounter, Guid>
 {
     public SpecialCounterProjection2()
     {
@@ -463,7 +463,7 @@ public class SpecialCounterAsString
     public int DCount { get; set; }
 }
 
-public class SpecialCounterProjectionAsString: SingleStreamProjection<SpecialCounterAsString, string>
+public partial class SpecialCounterProjectionAsString: SingleStreamProjection<SpecialCounterAsString, string>
 {
     public SpecialCounterProjectionAsString()
     {
