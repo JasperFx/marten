@@ -1,5 +1,4 @@
 using System;
-using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
@@ -34,6 +33,5 @@ internal static class ConfigurationFixture
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = schemaName;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
         });
 }
