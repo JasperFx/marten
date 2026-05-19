@@ -397,10 +397,10 @@ public sealed class Invoice : AggregateBase
 
 This rule applies to:
 
-- `Apply` / `Create` / `ShouldDelete` methods on aggregates registered via `opts.Projections.Snapshot<T>(...)` or used live via `theSession.Events.AggregateStreamAsync<T>(streamId)` and friends.
-- `Apply` / `Create` / `ShouldDelete` methods on `SingleStreamProjection<TDoc, TId>` / `MultiStreamProjection<TDoc, TId>` subclasses.
-- `Project` / `ProjectAsync` methods on `EventProjection` subclasses.
-- Event-shaped constructors (`public T(SomeEvent e)`) on aggregates — the SG now treats these as implicit Create handlers in Marten 9, but only when the ctor is `public`.
+* `Apply` / `Create` / `ShouldDelete` methods on aggregates registered via `opts.Projections.Snapshot<T>(...)` or used live via `theSession.Events.AggregateStreamAsync<T>(streamId)` and friends.
+* `Apply` / `Create` / `ShouldDelete` methods on `SingleStreamProjection<TDoc, TId>` / `MultiStreamProjection<TDoc, TId>` subclasses.
+* `Project` / `ProjectAsync` methods on `EventProjection` subclasses.
+* Event-shaped constructors (`public T(SomeEvent e)`) on aggregates — the SG now treats these as implicit Create handlers in Marten 9, but only when the ctor is `public`.
 
 If you need encapsulation for your aggregate state, the standard pattern of `public` getters + `private set` properties still works — only the *methods* and *constructors* that Marten dispatches to need to be `public`.
 
@@ -446,9 +446,9 @@ If you'd prefer not to rely on the `default!` placeholder, add a `public static 
 
 A few of the runtime-validation messages that Marten 8 threw at registration time are no longer emitted, because the source generator silently skips signatures it can't dispatch:
 
-- **Unrecognized method names** on a projection class (anything not named `Apply` / `Create` / `ShouldDelete`) used to throw `InvalidProjectionException`. Marten 9 silently ignores them. Use `[JasperFxIgnore]` (still honored) or rename the method.
-- **Projection-class `Apply` without the aggregate parameter** (`public void Apply(SomeEvent e)` on a `SingleStreamProjection<TDoc, TId>`) used to throw. Marten 9 dispatches it but the method can't mutate aggregate state because the aggregate isn't in scope. Add the aggregate parameter back.
-- **`SingleStreamProjection` targeting a soft-deleted document type** used to throw at `ValidateConfiguration` time. The source-generated dispatcher doesn't know about the document's soft-delete config and is no longer in a position to detect the conflict at registration.
+* **Unrecognized method names** on a projection class (anything not named `Apply` / `Create` / `ShouldDelete`) used to throw `InvalidProjectionException`. Marten 9 silently ignores them. Use `[JasperFxIgnore]` (still honored) or rename the method.
+* **Projection-class `Apply` without the aggregate parameter** (`public void Apply(SomeEvent e)` on a `SingleStreamProjection<TDoc, TId>`) used to throw. Marten 9 dispatches it but the method can't mutate aggregate state because the aggregate isn't in scope. Add the aggregate parameter back.
+* **`SingleStreamProjection` targeting a soft-deleted document type** used to throw at `ValidateConfiguration` time. The source-generated dispatcher doesn't know about the document's soft-delete config and is no longer in a position to detect the conflict at registration.
 
 ### Synchronous query APIs removed
 
