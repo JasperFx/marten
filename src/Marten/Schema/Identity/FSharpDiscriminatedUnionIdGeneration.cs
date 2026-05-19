@@ -6,8 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
@@ -51,13 +49,6 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
     }
 
     public bool IsNumeric => false;
-
-    public void GenerateCode(GeneratedMethod method, DocumentMapping mapping)
-    {
-        var document = new Use(mapping.DocumentType);
-
-        method.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
-    }
 
     public ISelectClause BuildSelectClause(string tableName)
     {
@@ -143,40 +134,6 @@ public class FSharpDiscriminatedUnionIdGeneration: ValueTypeInfo, IIdGeneration,
         }
 
         return $"{mapping.IdMember.Name}.{ValueProperty.Name}";
-    }
-
-
-    public void GenerateCodeForFetchingId(int index, GeneratedMethod sync, GeneratedMethod async,
-        DocumentMapping mapping)
-    {
-        if (Builder != null)
-        {
-            sync.Frames.Code(
-                $"var id = {OuterType.FullNameInCode()}.{Builder.Name}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
-            async.Frames.CodeAsync(
-                $"var id = {OuterType.FullNameInCode()}.{Builder.Name}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
-        }
-        else
-        {
-            sync.Frames.Code(
-                $"var id = new {OuterType.FullNameInCode()}(reader.GetFieldValue<{SimpleType.FullNameInCode()}>({index}));");
-            async.Frames.CodeAsync(
-                $"var id = new {OuterType.FullNameInCode()}(await reader.GetFieldValueAsync<{SimpleType.FullNameInCode()}>({index}, token));");
-        }
-    }
-
-    public void WriteBulkWriterCode(GeneratedMethod load, DocumentMapping mapping)
-    {
-        var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code($"writer.Write(document.{mapping.IdMember.Name}.{ValueProperty.Name}, {{0}});", dbType);
-    }
-
-    public void WriteBulkWriterCodeAsync(GeneratedMethod load, DocumentMapping mapping)
-    {
-        var dbType = PostgresqlProvider.Instance.ToParameterType(SimpleType);
-        load.Frames.Code(
-            $"await writer.WriteAsync(document.{mapping.IdMember.Name}.{ValueProperty.Name}, {{0}}, {{1}});",
-            dbType, Use.Type<CancellationToken>());
     }
 }
 

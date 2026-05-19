@@ -1,14 +1,10 @@
-using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.Core;
-using Lamar;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.MultiTenancy;
+using Lamar;
 using Marten;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
@@ -28,14 +24,7 @@ public class reading_configuration_from_jasperfxoptions
 
         var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
 
-        var rules = store.Options.CreateGenerationRules();
-
         store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Dynamic);
-
-        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
-        rules.SourceCodeWritingEnabled.ShouldBeTrue();
-
     }
 
     [Fact]
@@ -63,241 +52,11 @@ public class reading_configuration_from_jasperfxoptions
             services.AddMarten(opts =>
             {
                 opts.Connection(ConnectionSource.ConnectionString);
-                // opts.TenantIdStyle = TenantIdStyle.ForceLowerCase;
             });
 
             services.CritterStackDefaults(x => x.TenantIdStyle = TenantIdStyle.ForceUpperCase);
         });
 
         container.GetInstance<IDocumentStore>().As<DocumentStore>().Options.TenantIdStyle.ShouldBe(TenantIdStyle.ForceUpperCase);
-    }
-
-    public static async Task bootstrapping_example()
-    {
-        #region sample_using_optimized_artifact_workflow
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten("connection string");
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-                    x.Production.ResourceAutoCreate = AutoCreate.None;
-                });
-            }).StartAsync();
-
-        #endregion
-    }
-
-    public static async Task bootstrapping_example_with_static()
-    {
-        #region sample_using_optimized_artifact_workflow_static
-
-        using var host = await Host.CreateDefaultBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten("connection string");
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-                    x.Production.ResourceAutoCreate = AutoCreate.None;
-                });
-            }).StartAsync();
-        #endregion
-    }
-
-    [Fact]
-    public void using_optimized_mode_in_development()
-    {
-        using var host = new HostBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(ConnectionSource.ConnectionString);
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-                    x.Production.ResourceAutoCreate = AutoCreate.None;
-
-                    x.Development.GeneratedCodeMode = TypeLoadMode.Auto;
-                    x.Development.ResourceAutoCreate = AutoCreate.CreateOrUpdate;
-
-                    x.TenantIdStyle = TenantIdStyle.ForceLowerCase;
-                });
-            })
-            .UseEnvironment("Development")
-            .Start();
-
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-
-        var rules = store.Options.CreateGenerationRules();
-
-        store.Options.TenantIdStyle.ShouldBe(TenantIdStyle.ForceLowerCase);
-
-        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
-
-        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
-        rules.SourceCodeWritingEnabled.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void using_optimized_mode_in_production()
-    {
-        using var host = new HostBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(ConnectionSource.ConnectionString);
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Auto;
-                    x.Production.ResourceAutoCreate = AutoCreate.None;
-                    x.Production.SourceCodeWritingEnabled = false;
-                });
-            })
-            .UseEnvironment("Production")
-            .Start();
-
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-
-        var rules = store.Options.CreateGenerationRules();
-
-        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
-
-        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
-        rules.SourceCodeWritingEnabled.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void application_assembly_from_critter_stack_defaults_flows_to_store_options()
-    {
-        var expectedAssembly = typeof(JasperFxOptions).Assembly;
-
-        using var container = Container.For(services =>
-        {
-            services.AddMarten(ConnectionSource.ConnectionString);
-            services.CritterStackDefaults(x => x.ApplicationAssembly = expectedAssembly);
-        });
-
-        var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-
-        #pragma warning disable CS0618
-        store.Options.ApplicationAssembly.ShouldBe(expectedAssembly);
-        #pragma warning restore CS0618
-    }
-
-    [Fact]
-    public void explicit_store_options_application_assembly_takes_precedence_over_critter_stack_defaults()
-    {
-        var critterStackAssembly = typeof(JasperFxOptions).Assembly;
-        var explicitAssembly = typeof(StoreOptions).Assembly;
-
-        using var container = Container.For(services =>
-        {
-            services.AddMarten(opts =>
-            {
-                opts.Connection(ConnectionSource.ConnectionString);
-                #pragma warning disable CS0618
-                opts.ApplicationAssembly = explicitAssembly;
-                #pragma warning restore CS0618
-            });
-            services.CritterStackDefaults(x => x.ApplicationAssembly = critterStackAssembly);
-        });
-
-        var store = container.GetInstance<IDocumentStore>().As<DocumentStore>();
-
-        #pragma warning disable CS0618
-        store.Options.ApplicationAssembly.ShouldBe(explicitAssembly);
-        #pragma warning restore CS0618
-    }
-
-    public static void default_setup()
-    {
-        #region sample_simplest_possible_setup
-
-        var store = DocumentStore.For("connection string");
-
-        #endregion
-    }
-
-    [Fact]
-    public void using_optimized_mode_in_production_override_type_load_mode()
-    {
-        using var host = new HostBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(ConnectionSource.ConnectionString);
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-                    x.Production.ResourceAutoCreate = AutoCreate.None;
-                    x.Production.SourceCodeWritingEnabled = false;
-                });
-            })
-            .UseEnvironment("Production")
-            .Start();
-
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-
-        var rules = store.Options.CreateGenerationRules();
-
-        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.None);
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Static);
-
-        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
-        rules.SourceCodeWritingEnabled.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void using_optimized_mode_in_production_override_environment_name()
-    {
-        using var host = new HostBuilder()
-            .ConfigureServices(services =>
-            {
-                services.AddMarten(ConnectionSource.ConnectionString);
-
-                // In a "Production" environment, we're turning off the
-                // automatic database migrations and dynamic code generation
-                services.CritterStackDefaults(x =>
-                {
-                    x.Production.GeneratedCodeMode = TypeLoadMode.Static;
-                    x.Production.ResourceAutoCreate = AutoCreate.CreateOrUpdate;
-
-                    x.Development.GeneratedCodeMode = TypeLoadMode.Auto;
-
-                    x.DevelopmentEnvironmentName = "Local";
-                });
-            })
-            .UseEnvironment("Local")
-            .Start();
-
-        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
-
-        var rules = store.Options.CreateGenerationRules();
-
-        store.Options.AutoCreateSchemaObjects.ShouldBe(AutoCreate.CreateOrUpdate);
-        store.Options.GeneratedCodeMode.ShouldBe(TypeLoadMode.Auto);
-
-        rules.GeneratedNamespace.ShouldBe("Marten.Generated");
-        rules.SourceCodeWritingEnabled.ShouldBeTrue();
     }
 }

@@ -5,7 +5,6 @@ using JasperFx.Core;
 using EventSourcingTests.Projections;
 using EventSourcingTests.Utils;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using Marten;
 using Marten.Events.Projections;
 using Marten.Storage;

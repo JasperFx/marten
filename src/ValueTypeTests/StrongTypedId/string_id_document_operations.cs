@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
@@ -22,11 +21,6 @@ public class string_id_document_operations : IDisposable, IAsyncDisposable
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "strong_typed4";
-
-            opts.ApplicationAssembly = GetType().Assembly;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath =
-                AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
         });
 
         theSession = theStore.LightweightSession();
@@ -269,11 +263,6 @@ public class string_id_document_operations_with_non_nullable_id : IDisposable, I
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "strong_typed23";
-
-            opts.ApplicationAssembly = GetType().Assembly;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath =
-                AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
         });
 
         theSession = theStore.LightweightSession();

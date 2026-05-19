@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using Marten.Events.Projections;
 using Marten.Testing.Harness;
 using Shouldly;
@@ -17,7 +16,6 @@ public class aggregation_with_event_type_hierarchy: OneOffConfigurationsContext
     {
         StoreOptions(x =>
         {
-            x.GeneratedCodeMode = TypeLoadMode.Auto;
             x.AutoCreateSchemaObjects = AutoCreate.All;
 
             x.Schema.For<Something>().Identity(something => something.Id);

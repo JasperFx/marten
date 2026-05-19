@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -87,31 +86,12 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         // is called with a type that has [NaturalKey]. Assembly-level scanning was
         // removed because it caused spurious InvalidProjectionException failures
         // when test projects share compile references with incompatible stream identity types.
-        //
-        // 9.0: Skip AssertValidity when running in TypeLoadMode.Static (#4305).
-        // Static mode means the runtime is loading pre-generated artifacts that
-        // would not have been emitted if validation had failed at codegen time —
-        // re-running the validation walk on every host start is pure cold-start
-        // overhead. Dynamic and Auto modes still validate, so any hot-reload or
-        // first-run codegen path keeps the existing fail-fast behavior.
-        if (Options.GeneratedCodeMode != TypeLoadMode.Static)
-        {
-            Options.Projections.AssertValidity(Options);
-        }
+        Options.Projections.AssertValidity(Options);
 
         if (Options.LogFactory != null)
         {
             Options.Projections.AttachLogging(Options.LogFactory);
         }
-
-        // marten#4370 Phase 2: compute the codegen snapshot verdict and log
-        // any rejection. The verdict is observed but not yet acted on —
-        // Phase 2 ships the plumbing so subsequent PRs can add concrete
-        // snapshot artifacts (event-name map, document-storage map,
-        // projection apply factories) each gated by this verdict.
-        MartenSnapshot.VerifyAtBoot(
-            Options,
-            Options.LogFactory?.CreateLogger("Marten.Snapshot"));
 
         Advanced = new AdvancedOperations(this);
 
@@ -136,12 +116,6 @@ public partial class DocumentStore: IDocumentStore, IDescribeMyself
         }
 
         Identity = new(Options.StoreName.ToLowerInvariant(), "marten");
-
-        // marten#4370 Phase 2: persist the fingerprint at the end of
-        // construction so the next boot's VerifyAtBoot has a baseline
-        // to compare against. Best-effort — persistence failure must not
-        // break construction.
-        MartenSnapshot.PersistFingerprint(Options);
     }
 
     public ITenancy Tenancy => Options.Tenancy;

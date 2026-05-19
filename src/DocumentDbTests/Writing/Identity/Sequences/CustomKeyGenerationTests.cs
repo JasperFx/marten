@@ -1,10 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using JasperFx.Core;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
 using JasperFx.Core.Reflection;
 using Marten;
 using Marten.Schema;
@@ -19,13 +12,6 @@ namespace DocumentDbTests.Writing.Identity.Sequences;
 public class CustomIdGeneration : IIdGeneration
 {
     public bool IsNumeric { get; } = false;
-    public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
-    {
-        var document = new Use(mapping.DocumentType);
-        assign.Frames.Code($"_setter({{0}}, \"newId\");", document);
-        assign.Frames.Code($"return {{0}}.{mapping.CodeGen.AccessId};", document);
-    }
-
 }
 #endregion
 

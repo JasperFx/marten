@@ -3,8 +3,6 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
-using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events;
 using Marten.Events.Schema;
@@ -26,26 +24,6 @@ internal class TenantIdColumn: MetadataColumn<string>, ISelectableColumn, IEvent
     public TenantIdColumn(): base(Name, x => x.TenantId)
     {
         DefaultExpression = $"'{StorageConstants.DefaultTenantId}'";
-    }
-
-    public void GenerateCode(StorageStyle storageStyle, GeneratedType generatedType, GeneratedMethod async,
-        GeneratedMethod sync,
-        int index, DocumentMapping mapping)
-    {
-        var variableName = "tenantId";
-        var memberType = typeof(string);
-
-        if (Member == null)
-        {
-            return;
-        }
-
-        sync.Frames.Code($"var {variableName} = reader.GetFieldValue<{memberType.FullNameInCode()}>({index});");
-        async.Frames.CodeAsync(
-            $"var {variableName} = await reader.GetFieldValueAsync<{memberType.FullNameInCode()}>({index}, token);");
-
-        sync.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
-        async.Frames.SetMemberValue(Member, variableName, mapping.DocumentType, generatedType);
     }
 
     public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)

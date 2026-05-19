@@ -1,7 +1,3 @@
-using System.Threading;
-using JasperFx.CodeGeneration;
-using JasperFx.CodeGeneration.Frames;
-using JasperFx.CodeGeneration.Model;
 using NpgsqlTypes;
 
 namespace Marten.Schema.Arguments;
@@ -14,19 +10,5 @@ internal class RevisionArgument: UpsertArgument
         PostgresType = "bigint";
         DbType = NpgsqlDbType.Bigint;
         Column = SchemaConstants.VersionColumn;
-    }
-
-    public override void GenerateCodeToSetDbParameterValue(GeneratedMethod method, GeneratedType type, int i,
-        Argument parameters,
-        DocumentMapping mapping, StoreOptions options)
-    {
-        method.Frames.Code("setCurrentRevisionParameter(parameterBuilder);");
-    }
-
-    public override void GenerateBulkWriterCodeAsync(GeneratedType type, GeneratedMethod load, DocumentMapping mapping)
-    {
-        load.Frames.CodeAsync(
-            "await writer.WriteAsync((long)1, {0}, {1});",
-            NpgsqlDbType.Bigint, Use.Type<CancellationToken>());
     }
 }

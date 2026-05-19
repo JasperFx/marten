@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.CommandLine;
 using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
@@ -191,8 +190,6 @@ public static class MartenServiceCollectionExtensions
             return options;
         });
 
-        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>().EventGraph);
-
         services.AddSingleton<IDocumentStore>(s =>
         {
             var options = s.GetRequiredService<StoreOptions>();
@@ -228,9 +225,6 @@ public static class MartenServiceCollectionExtensions
 
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
-
-        services.AddSingleton(s => (ICodeFileCollection)s.GetRequiredService<IDocumentStore>());
-        services.AddSingleton<ICodeFileCollection>(s => s.GetRequiredService<StoreOptions>());
 
         services.AddSingleton<IDatabaseSource>(s =>
             s.GetRequiredService<IDocumentStore>().As<DocumentStore>().Tenancy);

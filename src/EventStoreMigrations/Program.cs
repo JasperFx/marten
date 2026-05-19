@@ -1,5 +1,4 @@
 ﻿using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Events;
 using Marten;
 using Marten.Events;
@@ -25,8 +24,6 @@ public class Program
                     opts.AutoCreateSchemaObjects = AutoCreate.None;
                     opts.DatabaseSchemaName = "cli";
                     opts.Connection(ConnectionSource.ConnectionString);
-
-                    opts.GeneratedCodeMode = TypeLoadMode.Dynamic;
 
                     opts.Events.StreamIdentity = StreamIdentity.AsString;
                     opts.Events.MetadataConfig.HeadersEnabled = true;

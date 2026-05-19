@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
@@ -22,11 +21,6 @@ public class include_usage : IAsyncDisposable
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "strong_typed24";
-
-            opts.ApplicationAssembly = GetType().Assembly;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath =
-                AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
         });
 
         theSession = theStore.LightweightSession();

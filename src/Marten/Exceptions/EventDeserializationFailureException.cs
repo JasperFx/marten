@@ -1,5 +1,4 @@
 using System;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;

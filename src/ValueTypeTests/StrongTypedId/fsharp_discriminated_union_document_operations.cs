@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Exceptions;
@@ -30,12 +29,6 @@ public class fsharp_discriminated_union_document_operations: IDisposable, IAsync
         options.AutoCreateSchemaObjects = AutoCreate.All;
         options.NameDataLength = 100;
         options.DatabaseSchemaName = schemaName;
-
-        options.ApplicationAssembly = GetType().Assembly;
-        options.GeneratedCodeMode = TypeLoadMode.Auto;
-        options.GeneratedCodeOutputPath =
-            AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory()
-                .AppendPath("Internal", "Generated");
 
         //For docs on these options see: https://github.com/Tarmil/FSharp.SystemTextJson/blob/master/docs/Customizing.md
         var jsonFSharpOptions =

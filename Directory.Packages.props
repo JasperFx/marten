@@ -19,7 +19,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.RuntimeCompiler" Version="5.0.0-alpha.4" />
     <PackageVersion Include="JasperFx.SourceGeneration" Version="2.0.0-alpha.5" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />

@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using EventSourcingTests.Aggregation;
-using JasperFx.CodeGeneration;
 using JasperFx.CommandLine;
 using Marten;
 using Marten.Testing.Documents;
@@ -18,23 +17,6 @@ public class TestCommand: JasperFxAsyncCommand<NetCoreInput>
     public override async Task<bool> Execute(NetCoreInput input)
     {
         using var host = input.BuildHost();
-
-        var collections = host.Services.GetServices<ICodeFileCollection>().ToArray();
-        foreach (var collection in collections)
-        {
-            Console.WriteLine(collection);
-            Console.WriteLine("  " + collection.Rules.GeneratedCodeOutputPath);
-
-            var files = collection.BuildFiles();
-            if (files.Any())
-            {
-                foreach (var file in files) Console.WriteLine("    * " + file);
-            }
-            else
-            {
-                Console.WriteLine("    * NONE");
-            }
-        }
 
         using var store = host.Services.GetRequiredService<IDocumentStore>();
         await store.Advanced.Clean.DeleteAllDocumentsAsync();

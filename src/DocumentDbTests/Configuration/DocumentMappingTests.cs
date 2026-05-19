@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
@@ -758,11 +757,6 @@ public class DocumentMappingTests
     public class CustomIdGeneration: IIdGeneration
     {
         public bool IsNumeric { get; } = false;
-
-        public void GenerateCode(GeneratedMethod assign, DocumentMapping mapping)
-        {
-            throw new NotSupportedException();
-        }
     }
 
 

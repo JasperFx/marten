@@ -147,22 +147,6 @@ public class document_store_usage_tests
     }
 
     [Fact]
-    public async Task usage_includes_code_generation_child_descriptor()
-    {
-        using var host = await BuildHost(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.DatabaseSchemaName = "doc_usage_codegen";
-            opts.Schema.For<User>();
-        });
-
-        var usage = await GetUsageAsync(host);
-
-        usage.CodeGeneration.ShouldNotBeNull();
-        usage.CodeGeneration.GeneratedCodeMode.ShouldNotBeNullOrEmpty();
-    }
-
-    [Fact]
     public async Task event_store_usage_includes_global_aggregates_when_present()
     {
         using var host = await BuildHost(opts =>

@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
 using Marten.Events;
@@ -70,9 +69,6 @@ namespace Marten.Testing.Harness
             {
                 opts.Connection(ConnectionSource.ConnectionString);
                 opts.AutoCreateSchemaObjects = AutoCreate.All;
-
-                opts.GeneratedCodeMode = TypeLoadMode.Auto;
-                opts.ApplicationAssembly = GetType().Assembly;
             });
         }
 

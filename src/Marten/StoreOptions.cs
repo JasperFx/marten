@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using ImTools;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Descriptors;
@@ -298,37 +297,30 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     [ChildDescription]
     public ProjectionOptions Projections => _projections;
 
-    /// <summary>
-    ///     Direct Marten to either generate code at runtime (Dynamic), or attempt to load types from the entry assembly
-    /// </summary>
-    [Obsolete(PreferJasperFxMessage)]
-    public TypeLoadMode GeneratedCodeMode
-    {
-        get => _generatedCodeMode ?? TypeLoadMode.Dynamic;
-        set => _generatedCodeMode = value;
-    }
+    // This would only be set for "additional" document stores
+    public string StoreName { get; set; } = "Main";
 
     /// <summary>
-    ///     When <c>false</c>, Marten refuses to invoke <c>JasperFx.RuntimeCompiler</c>
-    ///     and will throw if a generated type is missing from the entry assembly.
-    ///     Defaults to <c>true</c> for back-compatibility.
+    /// The main application assembly. Defaults to <see cref="Assembly.GetEntryAssembly"/>;
+    /// override only when the entry-assembly heuristic can't find the consumer's
+    /// project (e.g. test runners, plug-in hosts). Used by
+    /// <see cref="AutoRegister"/> assembly scanning and by
+    /// <see cref="TryUseSourceGeneratedDiscovery"/>.
     /// </summary>
-    /// <remarks>
-    ///     <para>
-    ///         Set this to <c>false</c> in combination with
-    ///         <see cref="GeneratedCodeMode"/> = <see cref="TypeLoadMode.Static"/>
-    ///         when publishing under <c>PublishAot=true</c> (NativeAOT). The flag
-    ///         lets Marten verify at startup that every required code-generated
-    ///         type was pre-built and shipped in the application assembly, instead
-    ///         of falling back to Roslyn at runtime — which Native AOT can't do.
-    ///     </para>
-    ///     <para>
-    ///         AOT-friendly Tier 1 (#4309). Marten 9 still emits trim warnings on
-    ///         the dynamic codepaths; turning this off lets you opt out of those
-    ///         paths completely so the linker can drop them.
-    ///     </para>
-    /// </remarks>
-    public bool AllowRuntimeCodeGeneration { get; set; } = true;
+    public Assembly? ApplicationAssembly { get; set; }
+
+    internal void ReadJasperFxOptions(JasperFxOptions? options)
+    {
+        if (options == null) return;
+
+        if (!_tenantIdStyle.HasValue)
+        {
+            _tenantIdStyle = options.TenantIdStyle;
+        }
+
+        ApplicationAssembly ??= options.ApplicationAssembly;
+        _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
+    }
 
     /// <summary>
     ///     Access to adding custom schema features to this Marten-enabled Postgresql database
@@ -499,7 +491,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     private bool _shouldApplyChangesOnStartup = false;
     private bool _shouldAssertDatabaseMatchesConfigurationOnStartup = false;
     private readonly ProjectionOptions _projections;
-    private TypeLoadMode? _generatedCodeMode;
     private readonly StorageFeatures _storage;
     private Action<IDatabaseCreationExpressions>? _createDatabases;
     private readonly IProviderGraph _providers;
@@ -785,50 +776,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             throw new InvalidOperationException(
                 NoConnectionMessage);
         }
-    }
-
-    /// <summary>
-    ///     Meant for testing scenarios to "help" .Net understand where the IHostEnvironment for the
-    ///     Host. You may have to specify the relative path to the entry project folder from the AppContext.BaseDirectory
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="assembly"></param>
-    /// <param name="hintPath"></param>
-    /// <returns></returns>
-    public void SetApplicationProject(Assembly assembly,
-        string? hintPath = null)
-    {
-        ApplicationAssembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-
-        // TODO -- pull this into LamarCodeGeneration itself.
-        var path = AppContext.BaseDirectory.ToFullPath();
-        if (hintPath.IsNotEmpty())
-        {
-            path = path.AppendPath(hintPath).ToFullPath();
-        }
-        else
-        {
-            try
-            {
-                path = path.TrimEnd(Path.DirectorySeparatorChar);
-                while (!path.EndsWith("bin"))
-                {
-                    path = path.ParentDirectory();
-                }
-
-                // Go up once to get to the test project directory, then up again to the "src" level,
-                // then "down" to the application directory
-                path = path.ParentDirectory().ParentDirectory().AppendPath(assembly.GetName().Name);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Unable to determine the ");
-                Console.WriteLine(e);
-                path = AppContext.BaseDirectory.ToFullPath();
-            }
-        }
-
-        GeneratedCodeOutputPath = path.AppendPath("Internal", "Generated");
     }
 
     /// <summary>

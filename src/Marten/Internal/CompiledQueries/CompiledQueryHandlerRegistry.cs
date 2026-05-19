@@ -15,13 +15,12 @@ namespace Marten.Internal.CompiledQueries;
 /// <remarks>
 /// <para>
 /// This is the implicit-opt-in surface for #4405's compiled-query source-gen
-/// PoC. The consumer never calls <see cref="Register"/> directly — the
+/// path. The consumer never calls <see cref="Register"/> directly — the
 /// generator does it from per-query <c>[ModuleInitializer]</c> shims. The
 /// runtime side (<c>CompiledQueryCollection.GetCompiledQuerySourceFor</c>)
-/// consults the registry on first use of each query type. If a descriptor is
-/// present, the source-gen path is taken; if not, the PoC bridge currently
-/// falls through to <c>JasperFx.RuntimeCompiler</c>. The bridge is removed
-/// when iteration 4 lands green — at that point a miss throws.
+/// consults the registry on first use of each query type. A miss falls back
+/// to <see cref="RuntimeCompiledQueryDescriptorFactory"/>, which builds a
+/// descriptor reflectively from the walked query plan and caches it.
 /// </para>
 /// <para>
 /// The registry is intentionally a process-wide static. Compiled query

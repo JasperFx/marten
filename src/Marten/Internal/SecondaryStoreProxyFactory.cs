@@ -9,12 +9,10 @@ namespace Marten.Internal;
 
 /// <summary>
 /// Builds a thin runtime subclass <c>class &lt;T&gt;Implementation : DocumentStore, T</c>
-/// per user-supplied secondary-store interface — what the Roslyn-emit path
-/// in <see cref="SecondaryStoreConfig{T}"/> used to produce. Uses
-/// <see cref="System.Reflection.Emit"/> instead of JasperFx.RuntimeCompiler:
-/// <c>T</c> here is a marker interface (<c>T : IDocumentStore</c>) with no
-/// extra abstract members, so the emitted type only needs a forwarding
-/// constructor.
+/// per user-supplied secondary-store interface via
+/// <see cref="System.Reflection.Emit"/>. <c>T</c> here is a marker interface
+/// (<c>T : IDocumentStore</c>) with no extra abstract members, so the emitted
+/// type only needs a forwarding constructor.
 /// </summary>
 [RequiresDynamicCode("Generates a runtime subclass per secondary-store interface via System.Reflection.Emit.")]
 internal static class SecondaryStoreProxyFactory

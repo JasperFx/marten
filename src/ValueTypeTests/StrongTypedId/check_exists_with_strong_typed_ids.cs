@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using JasperFx.CodeGeneration;
 using JasperFx.Core;
 using Marten;
 using Marten.Testing.Harness;
@@ -19,11 +18,6 @@ public class check_exists_with_strong_typed_ids: IDisposable, IAsyncDisposable
         {
             opts.Connection(ConnectionSource.ConnectionString);
             opts.DatabaseSchemaName = "strong_typed_exists";
-
-            opts.ApplicationAssembly = GetType().Assembly;
-            opts.GeneratedCodeMode = TypeLoadMode.Auto;
-            opts.GeneratedCodeOutputPath =
-                AppContext.BaseDirectory.ParentDirectory().ParentDirectory().ParentDirectory().AppendPath("Internal", "Generated");
         });
 
         theSession = theStore.LightweightSession();

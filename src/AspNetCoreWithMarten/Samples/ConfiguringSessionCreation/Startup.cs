@@ -1,6 +1,5 @@
 using System.Data;
 using JasperFx;
-using JasperFx.CodeGeneration;
 using Marten;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,7 +68,6 @@ public class Startup
         // automatic database migrations and dynamic code generation
         services.CritterStackDefaults(x =>
         {
-            x.Production.GeneratedCodeMode = TypeLoadMode.Static;
             x.Production.ResourceAutoCreate = AutoCreate.None;
         });
         #endregion
