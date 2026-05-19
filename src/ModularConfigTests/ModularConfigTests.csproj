@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <!-- Marten#4472 modular composite configuration test harness.
+             Exercises the path where projection types declared in satellite
+             assemblies (each carrying [assembly: JasperFxAssembly]) contribute
+             their own IConfigureMarten / IAsyncConfigureMarten implementations
+             via DI, and the main host composes them.
+
+             The headline smoke test pins the post-#276 SG-only dispatch
+             contract against the multi-assembly case. The pin tests lock the
+             four locked-in design contracts (registration order, last-wins,
+             AddMarten timing, async-compose parity). -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="coverlet.collector">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <PackageReference Include="Shouldly" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- Satellite ProjectReferences trigger the satellites' .dlls to load
+             when this test assembly resolves their types, which is what makes
+             AppDomain.CurrentDomain.GetAssemblies() see them and lets Marten's
+             DiscoverGeneratedEvolvers find their [GeneratedEvolver] attributes. -->
+        <ProjectReference Include="..\ModularConfigTests.SatelliteA\ModularConfigTests.SatelliteA.csproj" />
+        <ProjectReference Include="..\ModularConfigTests.SatelliteB\ModularConfigTests.SatelliteB.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- The connection-string convention lives in Marten.Testing.Harness;
+             include the single file we need rather than ProjectReference the
+             whole test-helper project. -->
+        <Compile Include="..\Marten.Testing\Harness\ConnectionSource.cs">
+            <Link>Harness\ConnectionSource.cs</Link>
+        </Compile>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
+
+</Project>

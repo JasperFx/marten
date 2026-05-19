@@ -60,6 +60,9 @@
     <Project Path="Marten.Testing.OtherAssembly/Marten.Testing.OtherAssembly.csproj" />
     <Project Path="Marten.Testing.ThirdAssembly/Marten.Testing.ThirdAssembly.csproj" />
     <Project Path="Marten.Testing/Marten.Testing.csproj" />
+    <Project Path="ModularConfigTests.SatelliteA/ModularConfigTests.SatelliteA.csproj" />
+    <Project Path="ModularConfigTests.SatelliteB/ModularConfigTests.SatelliteB.csproj" />
+    <Project Path="ModularConfigTests/ModularConfigTests.csproj" />
     <Project Path="MultiTenancyTests/MultiTenancyTests.csproj" />
     <Project Path="PatchingTests/PatchingTests.csproj" />
     <Project Path="StressTests/StressTests.csproj" />

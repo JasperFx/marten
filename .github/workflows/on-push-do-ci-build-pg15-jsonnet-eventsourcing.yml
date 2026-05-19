@@ -83,3 +83,8 @@ jobs:
         run: ./build.sh test-event-sourcing
         shell: bash
 
+      - name: test-modular-config
+        if: ${{ success() || failure() }}
+        run: ./build.sh test-modular-config
+        shell: bash
+
