@@ -63,7 +63,7 @@ internal class LastModifiedByArgument: UpsertArgument
     {
         if (mapping.Metadata.LastModifiedBy.Member != null)
         {
-            method.Frames.Code($"var lastModifiedBy = {{0}}.{nameof(IMartenSession.LastModifiedBy)};",
+            method.Frames.Code($"var lastModifiedBy = {{0}}.{nameof(IMartenSession.CurrentUserName)};",
                 Use.Type<IMartenSession>());
             method.Frames.SetMemberValue(mapping.Metadata.LastModifiedBy.Member, "lastModifiedBy", mapping.DocumentType,
                 type);
@@ -75,7 +75,7 @@ internal class LastModifiedByArgument: UpsertArgument
         DocumentMapping mapping, StoreOptions options)
     {
         method.Frames.Code(
-            $"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.LastModifiedBy)});",
+            $"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.CurrentUserName)});",
             Use.Type<IMartenSession>());
     }
 

@@ -215,12 +215,6 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
-    Task IEventStore<IDocumentOperations, IQuerySession>.TeardownExistingProjectionProgressAsync(
-        IEventDatabase database, string subscriptionName, CancellationToken token)
-    {
-        throw new NotSupportedException();
-    }
-
     private void teardownProjectionStorage(IProjectionSource<IDocumentOperations, IQuerySession> source, IDocumentSession session)
     {
         if (source.Options.TeardownDataOnRebuild)
