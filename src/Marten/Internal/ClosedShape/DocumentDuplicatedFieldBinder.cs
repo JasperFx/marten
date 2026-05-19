@@ -34,6 +34,7 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
     private readonly bool _isEnum;
     private readonly Type? _enumType;
     private readonly EnumStorage _enumStorage;
+    private readonly PropertyInfo? _valueTypeUnwrap;
 
     public DocumentDuplicatedFieldBinder(DuplicatedField field, EnumStorage enumStorage)
     {
@@ -46,6 +47,15 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
             ? nullableUnderlying
             : leafType.IsEnum ? leafType : null;
         _isEnum = _enumType is not null;
+
+        // For Duplicate(x => x.SomeStrongTypedWrapper), the member walk
+        // yields the wrapper struct (e.g. a Vogen / StronglyTypedId value).
+        // _field.DbType already reflects the inner primitive (Uuid / int /
+        // long / varchar), so Npgsql will reject the wrapper as a parameter
+        // value. Stash the wrapper's inner-value property here and unwrap
+        // before binding. Mirrors what ValueTypeIdentification.ToRawSqlValue
+        // does for strong-typed ids.
+        _valueTypeUnwrap = (field as DuplicatedValueTypeField)?.ValueTypeInfo.ValueProperty;
     }
 
     public string ColumnName => _field.ColumnName.ToLowerInvariant();
@@ -77,6 +87,16 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
             return;
         }
 
+        if (_valueTypeUnwrap is not null)
+        {
+            current = _valueTypeUnwrap.GetValue(current);
+            if (current is null)
+            {
+                parameter.Value = DBNull.Value;
+                return;
+            }
+        }
+
         parameter.Value = current;
     }
 
@@ -106,6 +126,14 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
             current = _enumStorage == EnumStorage.AsString
                 ? current.ToString()!
                 : Convert.ToInt32(current);
+        }
+        else if (_valueTypeUnwrap is not null)
+        {
+            current = _valueTypeUnwrap.GetValue(current);
+            if (current is null)
+            {
+                return writer.WriteNullAsync(cancellation);
+            }
         }
 
         return writer.WriteAsync(current, _field.DbType, cancellation);
