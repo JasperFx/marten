@@ -20,7 +20,7 @@ using Table = Weasel.Postgresql.Tables.Table;
 
 namespace Marten.Storage;
 
-public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
+public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase, IProjectionDatabase
 {
     private readonly StorageFeatures _features;
 
@@ -48,6 +48,11 @@ public partial class MartenDatabase: PostgresqlDatabase, IMartenDatabase
     }
 
     public StoreOptions Options { get; }
+
+    // #4500-family dedupe: IProjectionDatabase contract for the lifted JasperFx.Events
+    // projection distributors. Identifier comes from the Weasel DatabaseBase; the URI is
+    // the canonical descriptor URI used for telemetry — never hit on the daemon hot path.
+    Uri IProjectionDatabase.DatabaseUri => Describe().DatabaseUri();
 
     public ISequences Sequences => _sequences.Value;
 
