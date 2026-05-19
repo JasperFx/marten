@@ -33,6 +33,7 @@ class Build : NukeBuild
         .DependsOn(TestCore)
         .DependsOn(TestDocumentDb)
         .DependsOn(TestEventSourcing)
+        .DependsOn(TestModularConfig)
         .DependsOn(TestCli)
         .DependsOn(TestLinq)
         .DependsOn(TestMultiTenancy)
@@ -177,6 +178,18 @@ class Build : NukeBuild
         {
             DotNetTest(c => c
                 .SetProjectFile("src/EventSourcingTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestModularConfig => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/ModularConfigTests")
                 .SetConfiguration(Configuration)
                 .EnableNoBuild()
                 .EnableNoRestore()

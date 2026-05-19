@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Satellite assembly for Marten#4472 modular composite configuration tests. Carries [assembly: JasperFxAssembly] and its own IAsyncConfigureMarten implementation that registers a partial MultiStreamProjection. Wired with the JasperFx.Events.SourceGenerator analyzer so [GeneratedEvolver] is emitted at compile time.</Description>
+        <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+        <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+        <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- See ModularConfigTests.SatelliteA.csproj for why the SG analyzer
+             needs to be wired locally per-satellite (Marten's PrivateAssets). -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>

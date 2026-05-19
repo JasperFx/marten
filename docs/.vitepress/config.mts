@@ -136,6 +136,7 @@ const config: UserConfig<DefaultTheme.Config> = {
           collapsed: true,
           items: [
             { text: 'Bootstrapping Marten', link: '/configuration/hostbuilder' },
+            { text: 'Composite Configuration Across Assemblies', link: '/configuration/composite-configuration' },
             { text: 'Configuring Document Storage', link: '/configuration/storeoptions' },
             { text: 'Json Serialization', link: '/configuration/json' },
             { text: 'Resiliency Policies', link: '/configuration/retries' },

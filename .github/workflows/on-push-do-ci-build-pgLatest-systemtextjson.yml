@@ -93,6 +93,11 @@ jobs:
         run: ./build.sh test-document-db
         shell: bash
 
+      - name: test-modular-config
+        if: ${{ success() || failure() }}
+        run: ./build.sh test-modular-config
+        shell: bash
+
       - name: test-cli
         if: ${{ success() || failure() }}
         run: ./build.sh test-cli
