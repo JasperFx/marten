@@ -39,7 +39,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
     }
 
     // 9.0 (#4385): per-batch column-array rentals from ArrayPool<T>.Shared, returned in
-    // Postprocess / PostprocessAsync once Npgsql has written the parameters to the wire.
+    // PostprocessAsync once Npgsql has written the parameters to the wire.
     // Capacity 12 covers writeBasicParameters (4) + writeCausationIds + writeCorrelationIds
     // + writeHeaders + writeUserNames + writeTimestamps + up-to-N tag-type arrays without
     // a List growth. Lazily-allocated so subclasses that override ConfigureCommand without
@@ -82,46 +82,6 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         if (_rentals is null) return;
         for (var i = 0; i < _rentals.Count; i++) _rentals[i].Dispose();
         _rentals.Clear();
-    }
-
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        try
-        {
-            if (reader.Read())
-            {
-                var values = reader.GetFieldValue<long[]>(0);
-
-                var finalVersion = values[0];
-                var events = Stream.Events;
-                for (int i = events.Count - 1; i >= 0; i--)
-                {
-                    events[i].Version = finalVersion;
-                    finalVersion--;
-                }
-
-                // Ignore the first value
-                for (int i = 1; i < values.Length; i++)
-                {
-                    // Only setting the sequence to aid in tombstone processing
-                    events[i - 1].Sequence = values[i];
-                }
-
-                if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
-                {
-                    throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
-                        ? Stream.Id
-                        : Stream.Key);
-                }
-            }
-        }
-        finally
-        {
-            // Always release the rentals — the parameter bytes have been on the wire since
-            // ExecuteReader returned, so they're safe to return to the pool whether
-            // Postprocess succeeded or threw.
-            releaseColumnRentals();
-        }
     }
 
     protected void writeId(IGroupedParameterBuilder builder)
@@ -309,8 +269,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         }
         finally
         {
-            // See Postprocess(reader, exceptions) above for the lifetime rationale —
-            // parameter bytes hit the wire before ExecuteReaderAsync returned, so the
+            // Parameter bytes hit the wire before ExecuteReaderAsync returned, so the
             // rentals are safe to release here regardless of whether the body threw.
             releaseColumnRentals();
         }

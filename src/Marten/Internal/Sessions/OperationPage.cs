@@ -65,62 +65,12 @@ public class OperationPage
         _session = null;
     }
 
-    public void ApplyCallbacks(DbDataReader reader,
-        IList<Exception> exceptions)
-    {
-        // 9.0 (#4375): indexed loop avoids the SkipIterator + List enumerator allocations
-        // the old `_operations.First()` + `_operations.Skip(1)` pattern triggered per page.
-        var first = _operations[0];
-
-        if (first is not NoDataReturnedCall)
-        {
-            first.Postprocess(reader, exceptions);
-            try
-            {
-                reader.NextResult();
-            }
-            catch (Exception e)
-            {
-                if (first is IExceptionTransform t && t.TryTransform(e, out var transformed))
-                {
-                    throw transformed;
-                }
-
-                throw;
-            }
-        }
-
-        for (var i = 1; i < _operations.Count; i++)
-        {
-            var operation = _operations[i];
-            if (operation is NoDataReturnedCall)
-            {
-                continue;
-            }
-
-            operation.Postprocess(reader, exceptions);
-
-            try
-            {
-                reader.NextResult();
-            }
-            catch (Exception e)
-            {
-                if (operation is IExceptionTransform t && t.TryTransform(e, out var transformed))
-                {
-                    throw transformed;
-                }
-
-                throw;
-            }
-        }
-    }
-
     public async Task ApplyCallbacksAsync(DbDataReader reader,
         IList<Exception> exceptions,
         CancellationToken token)
     {
-        // 9.0 (#4375): see comment in ApplyCallbacks above.
+        // 9.0 (#4375): indexed loop avoids the SkipIterator + List enumerator allocations
+        // the old `_operations.First()` + `_operations.Skip(1)` pattern triggered per page.
         var first = _operations[0];
 
         if (first is not NoDataReturnedCall)

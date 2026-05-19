@@ -26,21 +26,14 @@ public abstract class UpdateStreamVersion: IStorageOperation
 
     public Type DocumentType => typeof(IEvent);
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (reader.RecordsAffected != 0)
-        {
-            return;
-        }
-
-        var ex = new EventStreamUnexpectedMaxEventIdException(Stream.Key ?? (object)Stream.Id, Stream.AggregateType,
-            Stream.ExpectedVersionOnServer.Value, -1);
-        exceptions.Add(ex);
-    }
-
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
-        Postprocess(reader, exceptions);
+        if (reader.RecordsAffected == 0)
+        {
+            exceptions.Add(new EventStreamUnexpectedMaxEventIdException(
+                Stream.Key ?? (object)Stream.Id, Stream.AggregateType,
+                Stream.ExpectedVersionOnServer.Value, -1));
+        }
 
         return Task.CompletedTask;
     }

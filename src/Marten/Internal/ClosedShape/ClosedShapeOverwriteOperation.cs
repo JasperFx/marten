@@ -113,16 +113,6 @@ internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorage
         }
     }
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off) return;
-
-        if (reader.Read())
-        {
-            ApplyConcurrencyResult(reader);
-        }
-    }
-
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off) return;

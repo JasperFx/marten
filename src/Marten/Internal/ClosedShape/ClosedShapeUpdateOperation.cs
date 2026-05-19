@@ -143,20 +143,6 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
         }
     }
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (!reader.Read())
-        {
-            if (!IgnoreConcurrencyViolation)
-            {
-                exceptions.Add(MissingRowException());
-            }
-            return;
-        }
-
-        ApplyConcurrencyResult(reader);
-    }
-
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false))

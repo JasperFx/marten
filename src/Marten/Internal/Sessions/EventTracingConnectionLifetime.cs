@@ -169,29 +169,6 @@ internal class EventTracingConnectionLifetime:
         }
     }
 
-    public void ExecuteBatchPages(IReadOnlyList<OperationPage> pages, List<Exception> exceptions)
-    {
-        _databaseActivity?.AddEvent(new ActivityEvent(MartenBatchPagesExecutionStarted));
-
-        try
-        {
-            InnerConnectionLifetime.ExecuteBatchPages(pages, exceptions);
-            writeVerboseEvents(pages);
-        }
-        catch (AggregateException e)
-        {
-            _databaseActivity?.AddException(e);
-
-            throw;
-        }
-        catch (Exception e)
-        {
-            _databaseActivity?.AddException(e);
-
-            throw;
-        }
-    }
-
     public async Task ExecuteBatchPagesAsync(IReadOnlyList<OperationPage> pages, List<Exception> exceptions,
         CancellationToken token, IReadOnlyList<ITransactionParticipant>? participants = null)
     {

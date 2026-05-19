@@ -118,17 +118,6 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
         }
     }
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (!reader.Read())
-        {
-            exceptions.Add(new DocumentAlreadyExistsException(null, typeof(TDoc), _id));
-            return;
-        }
-
-        ApplyConcurrencyResult(reader);
-    }
-
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false))

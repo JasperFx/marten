@@ -44,14 +44,6 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public Type DocumentType => typeof(IEvent);
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (reader.RecordsAffected != 1)
-        {
-            throw new ProgressionProgressOutOfOrderException(Range.ShardName);
-        }
-    }
-
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (reader.RecordsAffected ==

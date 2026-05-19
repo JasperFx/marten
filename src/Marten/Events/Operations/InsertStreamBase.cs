@@ -29,10 +29,6 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
 
     public Type DocumentType => typeof(IEvent);
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-    }
-
     public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         return Task.CompletedTask;
