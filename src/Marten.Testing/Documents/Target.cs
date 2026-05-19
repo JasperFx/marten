@@ -23,31 +23,38 @@ public class Target
 
     public Nested NestedObject { get; set; }
 
-    // Seeded random shared across all tests in the assembly. The seed is fixed
-    // (67), but consumption is shared: every Target.Random() call advances the
-    // sequence, so a test's effective random data depends on which other tests
-    // (and how many Random() calls each made) ran before it. xUnit test
-    // discovery / ordering is mostly stable but not perfectly so — flakes that
-    // surface only on CI typically come from a small order shift consuming a
-    // different slice of the sequence and producing different test data.
+    // The default random source is Random.Shared (thread-safe, .NET 6+). The
+    // previous design used a static `new Random(67)` shared across the test
+    // assembly to keep the sequence reproducible, but `Random` is not
+    // thread-safe and xUnit parallelizes across test classes — concurrent
+    // calls into `Next(int, int)` could corrupt the internal state and start
+    // returning 0 indefinitely, which mapped every Target.Color to the `0`
+    // arm (Blue) and made tests that rely on a color distribution fail with
+    // "greens should not be empty but was". See marten#4491 for the trace.
     //
-    // ResetRandomSeed below lets a test that genuinely depends on specific
-    // random data pin the sequence at the start. Keep the static so unaffected
-    // tests are unchanged.
-    private static Random _random = new Random(67);
+    // Random.Shared is a per-thread, thread-safe Random with no fixed seed.
+    // Tests that genuinely need a deterministic stream call ResetRandomSeed
+    // below — that overlay is [ThreadStatic] so seeding doesn't leak across
+    // parallel test classes the way the old design did.
+    [ThreadStatic]
+    private static Random? _seededRandom;
+
+    // Fully-qualify System.Random.Shared because Target has a static `Random`
+    // factory method that shadows the type name in this scope.
+    private static Random _random => _seededRandom ?? System.Random.Shared;
 
     /// <summary>
-    /// Reset the shared random sequence to a known seed. Call from a test that
-    /// needs deterministic test data (assertions on exact counts, IDs of the
-    /// first N records, etc.) to remove its dependency on whatever sibling
-    /// tests happened to consume from the static random before it.
+    /// Pin the current thread's random sequence to a known seed for tests
+    /// that depend on specific random data (assertions on exact counts, IDs
+    /// of the first N records, etc.). The overlay is [ThreadStatic] so it
+    /// doesn't leak across xUnit-parallelized test classes.
     /// </summary>
-    /// <param name="seed">Seed for the new random sequence. Defaults to 67 to
-    /// match the historical default; pass a different value if a test wants its
-    /// own deterministic-but-distinct stream.</param>
+    /// <param name="seed">Seed for the seeded random sequence. Defaults to 67
+    /// to match the historical default; pass a different value if a test
+    /// wants its own deterministic-but-distinct stream.</param>
     public static void ResetRandomSeed(int seed = 67)
     {
-        _random = new Random(seed);
+        _seededRandom = new Random(seed);
     }
 
     private static readonly string[] _strings =
