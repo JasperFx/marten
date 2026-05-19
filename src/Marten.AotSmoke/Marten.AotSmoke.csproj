@@ -40,6 +40,12 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- Marten.csproj sets PrivateAssets="all" on the SG analyzer so it
+             doesn't flow transitively. AotSmoke declares its own SG-emitted
+             projection shapes (marten#4486 regression guard), so it needs
+             the analyzer wired in locally. Same pattern as the test projects
+             (CoreTests, DocumentDbTests, MultiTenancyTests, ValueTypeTests). -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>
