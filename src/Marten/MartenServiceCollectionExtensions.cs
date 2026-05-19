@@ -170,6 +170,10 @@ public static class MartenServiceCollectionExtensions
     )
     {
         services.AddJasperFx();
+        // #4494: register the hosted service that drains IAsyncConfigureMarten so
+        // bare AddSingleton<IAsyncConfigureMarten, T>() works the same way bare
+        // AddSingleton<IConfigureMarten, T>() does. The helper is idempotent.
+        services.EnsureAsyncConfigureMartenApplicationIsRegistered();
         services.AddSingleton<ISystemPart, MartenSystemPart>();
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
