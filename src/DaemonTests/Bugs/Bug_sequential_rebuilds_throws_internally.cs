@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
+public partial class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 {
     private readonly ITestOutputHelper _output;
 
@@ -64,9 +64,9 @@ public class Bug_sequential_rebuilds_throws_internally: BugIntegrationContext
 
     public record UpdatedEvent(Guid Id, string Value);
 
-    public record RandomProjection(Guid Id, string Value)
+    public partial record RandomProjection(Guid Id, string Value)
     {
-        public class Projector: SingleStreamProjection<RandomProjection, Guid>
+        public partial class Projector: SingleStreamProjection<RandomProjection, Guid>
         {
             public static RandomProjection Create(CreatedEvent @event)
             {

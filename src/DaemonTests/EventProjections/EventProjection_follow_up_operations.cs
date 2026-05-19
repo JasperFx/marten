@@ -5,13 +5,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using DaemonTests.TestingSupport;
 using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Projections;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace DaemonTests.EventProjections;
 
-public class EventProjection_follow_up_operations: DaemonContext
+public partial class EventProjection_follow_up_operations: DaemonContext
 {
     [Fact]
     public async Task rebuild_with_follow_up_operations_should_work()
@@ -57,20 +58,18 @@ public class EventProjection_follow_up_operations: DaemonContext
         public NestedEntityEventProjection()
         {
             Name = nameof(NestedEntity);
+        }
 
-            Project<EntityPublished>((@event, operations) =>
-            {
-                var entity = new NestedEntityProjection(@event.Id, @event.Entities.Select(x => x.Value).ToList());
+        public void Project(EntityPublished @event, IDocumentOperations operations)
+        {
+            var entity = new NestedEntityProjection(@event.Id, @event.Entities.Select(x => x.Value).ToList());
+            operations.Store(entity);
+        }
 
-                operations.Store(entity);
-            });
-
-            ProjectAsync<SomeOtherEntityWithNestedIdentifierPublished>(async (@event, operations, _) =>
-            {
-                var entity = await operations.LoadAsync<NestedEntityProjection>(@event.Id);
-
-                Assert.NotNull(entity);
-            });
+        public async Task ProjectAsync(SomeOtherEntityWithNestedIdentifierPublished @event, IDocumentOperations operations, CancellationToken cancellation)
+        {
+            var entity = await operations.LoadAsync<NestedEntityProjection>(@event.Id, cancellation);
+            Assert.NotNull(entity);
         }
     }
 

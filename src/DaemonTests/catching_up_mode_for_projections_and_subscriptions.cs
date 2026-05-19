@@ -131,7 +131,7 @@ public class LetterEventsSubscription: SubscriptionBase
     }
 }
 
-public class LetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
+public partial class LetterCountsProjection: SingleStreamProjection<LetterCounts, Guid>
 {
     public override LetterCounts Evolve(LetterCounts snapshot, Guid id, IEvent e)
     {

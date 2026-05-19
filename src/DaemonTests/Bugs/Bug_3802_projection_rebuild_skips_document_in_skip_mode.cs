@@ -77,7 +77,7 @@ public class Company
     public string Email { get; set; }
 }
 
-public class CompanyProjection: SingleStreamProjection<Company, Guid>
+public partial class CompanyProjection: SingleStreamProjection<Company, Guid>
 {
     public Company Create(CompanyCreated e)
     {
@@ -96,7 +96,7 @@ public class CompanyUniqueEmail
     public string Email { get; set; }
 }
 
-public class CompanyUniqueEmailProjection: SingleStreamProjection<CompanyUniqueEmail, Guid>
+public partial class CompanyUniqueEmailProjection: SingleStreamProjection<CompanyUniqueEmail, Guid>
 {
     public CompanyUniqueEmail Create(CompanyCreated e)
     {

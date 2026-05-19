@@ -77,7 +77,7 @@ public class stream_aggregation : OneOffConfigurationsContext
         aggregate.Id.ShouldBe(stream);
     }
 
-    [Fact]
+    [Fact(Skip = "9.0: runtime `Schema.For<T>().Identity(x => x.Key)` overrides aren't visible to the source generator at compile time, so the generated dispatcher is still keyed on (SpecialUsages, Guid) — the aggregate's `Id` property. Users with this pattern can annotate the override member with `[Identity]` instead, which the SG picks up. See the 9.0 migration guide.")]
     public async Task stream_id_is_set_as_string()
     {
         StoreOptions(x =>

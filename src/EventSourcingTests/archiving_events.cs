@@ -588,7 +588,7 @@ public class archiving_events: OneOffConfigurationsContext, IAsyncLifetime
     internal record TestEvent(int Id);
 }
 
-public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, Guid>
+public partial class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, Guid>
 {
     public SimpleAggregateProjection()
     {
@@ -600,7 +600,7 @@ public class SimpleAggregateProjection: SingleStreamProjection<SimpleAggregate, 
     public bool ShouldDelete(MaybeDeleted e) => e.ShouldDelete;
 }
 
-public class CountedAggregateProjection2: SingleStreamProjection<CountedAggregate, Guid>
+public partial class CountedAggregateProjection2: SingleStreamProjection<CountedAggregate, Guid>
 {
     public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent @event)
     {

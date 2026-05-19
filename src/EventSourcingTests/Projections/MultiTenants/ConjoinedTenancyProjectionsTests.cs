@@ -165,7 +165,7 @@ public enum ResourceState
     Enabled
 }
 
-public class ResourceProjection: SingleStreamProjection<Resource, Guid>
+public partial class ResourceProjection: SingleStreamProjection<Resource, Guid>
 {
     public ResourceProjection() =>
         DeleteEvent<ResourceRemovedEvent>();
@@ -186,7 +186,7 @@ public record ResourcesGlobalSummary
     public int TotalResourcesCount { get; set; }
 }
 
-public class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGlobalSummary, Guid>
+public partial class ResourcesGlobalSummaryProjection: MultiStreamProjection<ResourcesGlobalSummary, Guid>
 {
     public ResourcesGlobalSummaryProjection()
     {
@@ -211,7 +211,7 @@ public record CompanyLocationCreated(string Name);
 public record CompanyLocationUpdated(string NewName);
 public record CompanyLocationDeleted();
 
-public class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLocation, Guid>
+public partial class CompanyLocationCustomProjection : SingleStreamProjection<CompanyLocation, Guid>
 {
     public static string ExpectedTenant;
 

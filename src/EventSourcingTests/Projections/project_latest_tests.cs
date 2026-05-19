@@ -32,7 +32,7 @@ public class Report
     public void Apply(ReportPublished e) => IsPublished = true;
 }
 
-public class ReportProjection : SingleStreamProjection<Report, Guid>
+public partial class ReportProjection : SingleStreamProjection<Report, Guid>
 {
     public Report Create(ReportCreated e) => new Report { Title = e.Title };
 

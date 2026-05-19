@@ -193,12 +193,12 @@ public interface INumbered
     public int Number { get; }
 }
 
-public class MyCustomAggregateWithNoSlicer: SingleStreamProjection<CustomAggregate, int>
+public partial class MyCustomAggregateWithNoSlicer: SingleStreamProjection<CustomAggregate, int>
 {
 
 }
 
-public class MySingleStreamProjection: SingleStreamProjection<CustomAggregate, Guid>
+public partial class MySingleStreamProjection: SingleStreamProjection<CustomAggregate, Guid>
 {
     public override CustomAggregate Evolve(CustomAggregate snapshot, Guid id, IEvent e)
     {
@@ -217,7 +217,7 @@ public class MyCustomStringAggregate
     public int D { get; set; }
 }
 
-public class MyCustomStreamProjection: SingleStreamProjection<MyCustomStringAggregate, MyCustomStringId>
+public partial class MyCustomStreamProjection: SingleStreamProjection<MyCustomStringAggregate, MyCustomStringId>
 {
     public override MyCustomStringAggregate Evolve(MyCustomStringAggregate snapshot, MyCustomStringId id, IEvent e)
     {
@@ -252,7 +252,7 @@ public class MyCustomGuidAggregate
     public int D { get; set; }
 }
 
-public class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregate, MyCustomGuidId>
+public partial class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregate, MyCustomGuidId>
 {
     public override MyCustomGuidAggregate Evolve(MyCustomGuidAggregate snapshot, MyCustomGuidId id, IEvent e)
     {
@@ -280,7 +280,7 @@ public class MyCustomGuidProjection: SingleStreamProjection<MyCustomGuidAggregat
 
 public record struct MyCustomGuidId(Guid Value);
 
-public class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
+public partial class MyCustomProjection: MultiStreamProjection<CustomAggregate, int>
 {
     public MyCustomProjection()
     {
@@ -552,7 +552,7 @@ public class Increment
 
 #region sample_custom_aggregate_with_start_and_stop
 
-public class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
+public partial class StartAndStopProjection: SingleStreamProjection<StartAndStopAggregate, Guid>
 {
     public StartAndStopProjection()
     {

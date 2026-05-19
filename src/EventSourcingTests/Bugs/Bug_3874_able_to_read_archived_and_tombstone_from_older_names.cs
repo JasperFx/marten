@@ -90,14 +90,14 @@ public record ReproLiveAgg(Guid Id, string Name)
     public static ReproLiveAgg Apply(ReproEvent.ReproUpdated @event, ReproLiveAgg current) => current with { Name = @event.UpdatedName };
 }
 
-public class ReproSimpleProjection : SingleStreamProjection<ReproSimpleDetails, Guid>
+public partial class ReproSimpleProjection : SingleStreamProjection<ReproSimpleDetails, Guid>
 {
     public static ReproSimpleDetails Create(IEvent<ReproEvent.ReproCreated> @event) => new(@event.Id, @event.Data.Name, "Created");
     public static ReproSimpleDetails Apply(ReproEvent.ReproUpdated @event, ReproSimpleDetails current) => current with { Name = @event.UpdatedName, Status = "Updated" };
     public static bool ShouldDelete(Archived _) => true;
 }
 
-public class ReproArchivedProjection : SingleStreamProjection<ReproArchivedDetails, Guid>
+public partial class ReproArchivedProjection : SingleStreamProjection<ReproArchivedDetails, Guid>
 {
     public ReproArchivedProjection()
     {

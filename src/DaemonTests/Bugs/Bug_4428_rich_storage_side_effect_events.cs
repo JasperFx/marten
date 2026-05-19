@@ -88,7 +88,7 @@ public class Bug4428Counter: IRevisioned
     public long Version { get; set; }
 }
 
-public class Bug4428CounterProjection: SingleStreamProjection<Bug4428Counter, Guid>
+public partial class Bug4428CounterProjection: SingleStreamProjection<Bug4428Counter, Guid>
 {
     public void Apply(Bug4428Counter counter, Bug4428Incremented _) => counter.Increments++;
 

@@ -33,7 +33,7 @@ public class OrderShippingNotification
     public string Carrier { get; set; } = "";
 }
 
-public class OrderProjection: SingleStreamProjection<Order, Guid>
+public partial class OrderProjection: SingleStreamProjection<Order, Guid>
 {
     public OrderProjection()
     {
@@ -61,7 +61,7 @@ public class OrderProjection: SingleStreamProjection<Order, Guid>
     }
 }
 
-public class OrderShippingNotificationProjection: MultiStreamProjection<OrderShippingNotification, Guid>
+public partial class OrderShippingNotificationProjection: MultiStreamProjection<OrderShippingNotification, Guid>
 {
     public OrderShippingNotificationProjection()
     {

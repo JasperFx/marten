@@ -564,17 +564,6 @@ public class build_aggregate_projection: DaemonContext
     }
 
 
-    public class ContactProjectionNullReturn: SingleStreamProjection<Contact, Guid>
-    {
-        public ContactProjectionNullReturn()
-        {
-            Name = nameof(Contact);
-
-            CreateEvent<ICreateEvent>(Contact.Create);
-            ProjectEvent<ContactEdited>(Contact.Apply);
-        }
-    }
-
     public interface IEvent
     {
         Guid Id { get; init; }
@@ -591,9 +580,14 @@ public class build_aggregate_projection: DaemonContext
 
     public record ContactEdited(Guid Id, string Name): IEvent;
 
+    // The static helpers used to be named Create/Apply, but the
+    // JasperFx.Events.SourceGenerator scans nested types attached to a
+    // projection's aggregate for handler-shape methods and emitted duplicate
+    // switch arms colliding with ContactProjectionNullReturn's Create / Apply.
+    // Naming the helpers off-convention keeps them invisible to SG discovery.
     public record Contact(Guid Id, string Name)
     {
-        public static Contact Create(ICreateEvent ev)
+        public static Contact CreateFrom(ICreateEvent ev)
         {
             return ev switch
             {
@@ -602,7 +596,7 @@ public class build_aggregate_projection: DaemonContext
             };
         }
 
-        public static Contact Apply(Contact state, IEvent ev)
+        public static Contact ApplyEdit(Contact state, IEvent ev)
         {
             return ev switch
             {
@@ -612,16 +606,6 @@ public class build_aggregate_projection: DaemonContext
         }
     }
 
-
-    public class InterfaceCreationProjection: SingleStreamProjection<Foo, Guid>
-    {
-        public InterfaceCreationProjection()
-        {
-            Name = nameof(Foo);
-
-            CreateEvent<IFooCreated>(e => new Foo(e.Id, "Foo"));
-        }
-    }
 
     public interface IFooCreated
     {
@@ -635,17 +619,53 @@ public class build_aggregate_projection: DaemonContext
     public record Foo(Guid Id, string Name);
 
 
-    public class AbstractCreationProjection: SingleStreamProjection<Foo, Guid>
-    {
-        public AbstractCreationProjection()
-        {
-            Name = nameof(Foo);
-
-            CreateEvent<AbstractFooCreated>(e => new Foo(e.Id, "Foo"));
-        }
-    }
-
     public abstract record AbstractFooCreated(Guid Id);
 
     public record FooCreated2(Guid Id, string Name): AbstractFooCreated(Id);
+}
+
+
+// JasperFx.Events.SourceGenerator emits `[GeneratedEvolver]` partial class
+// declarations at the namespace level — it doesn't yet match nested
+// projection classes. Until that lands upstream, projection classes that need
+// SG dispatch live at namespace scope; the nested record types they consume
+// stay nested on the enclosing test class and get referenced by qualified
+// name.
+
+public partial class ContactProjectionNullReturn: SingleStreamProjection<build_aggregate_projection.Contact, Guid>
+{
+    public ContactProjectionNullReturn()
+    {
+        Name = nameof(build_aggregate_projection.Contact);
+    }
+
+    public build_aggregate_projection.Contact Create(build_aggregate_projection.ICreateEvent ev)
+        => build_aggregate_projection.Contact.CreateFrom(ev);
+
+    public build_aggregate_projection.Contact Apply(build_aggregate_projection.ContactEdited ev, build_aggregate_projection.Contact state)
+        => build_aggregate_projection.Contact.ApplyEdit(state, ev);
+}
+
+
+public partial class InterfaceCreationProjection: SingleStreamProjection<build_aggregate_projection.Foo, Guid>
+{
+    public InterfaceCreationProjection()
+    {
+        Name = nameof(build_aggregate_projection.Foo);
+    }
+
+    public build_aggregate_projection.Foo Create(build_aggregate_projection.IFooCreated e)
+        => new build_aggregate_projection.Foo(e.Id, "Foo");
+}
+
+
+public partial class AbstractCreationProjection: SingleStreamProjection<build_aggregate_projection.Foo, Guid>
+{
+    public AbstractCreationProjection()
+    {
+        Name = nameof(build_aggregate_projection.Foo);
+    }
+
+    public build_aggregate_projection.Foo Create(build_aggregate_projection.AbstractFooCreated e)
+        => new build_aggregate_projection.Foo(e.Id, "Foo");
 }

@@ -206,7 +206,7 @@ public record ItemWorked;
 
 public record ItemFinished;
 
-public class ItemProjection: SingleStreamProjection<Item, Guid>
+public partial class ItemProjection: SingleStreamProjection<Item, Guid>
 {
     public void Apply(Item item, ItemStarted started)
     {
@@ -251,7 +251,7 @@ public record ItemRecord(
     int Version);
 
 
-public class ItemRecordProjection: SingleStreamProjection<ItemRecord, Guid>
+public partial class ItemRecordProjection: SingleStreamProjection<ItemRecord, Guid>
 {
     public ItemRecord Create(ItemStarted started)
     {

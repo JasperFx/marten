@@ -149,7 +149,7 @@ public class QuestEnded
     }
 }
 
-public class AllSync: SingleStreamProjection<MyAggregate, Guid>
+public partial class AllSync: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllSync()
     {
@@ -196,7 +196,7 @@ public class AllSync: SingleStreamProjection<MyAggregate, Guid>
     }
 }
 
-public class AllGood: SingleStreamProjection<MyAggregate, Guid>
+public partial class AllGood: SingleStreamProjection<MyAggregate, Guid>
 {
     public AllGood()
     {

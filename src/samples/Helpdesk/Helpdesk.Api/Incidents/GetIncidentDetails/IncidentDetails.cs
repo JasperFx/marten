@@ -28,7 +28,7 @@ public enum IncidentNoteType
 
 #region sample_IncidentDetailsProjection
 
-public class IncidentDetailsProjection: SingleStreamProjection<IncidentDetails>
+public partial class IncidentDetailsProjection: SingleStreamProjection<IncidentDetails>
 {
     public static IncidentDetails Create(IncidentLogged logged) =>
         new(logged.IncidentId, logged.CustomerId, IncidentStatus.Pending, Array.Empty<IncidentNote>());

@@ -422,7 +422,7 @@ public class BoardSummaryProjection: MultiStreamProjection<BoardSummary, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/BoardSummary.cs#L30-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boardsummaryprojection' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TeleHealth/BoardSummary.cs#L29-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_boardsummaryprojection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Note the usage of the `Updated<T>` event types that the downstream projections are using in their

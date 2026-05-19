@@ -135,7 +135,7 @@ public class Bug4268Product
     public void Apply(Bug4268Registered e) => Name = e.Name;
 }
 
-public class Bug4268ProductProjection : SingleStreamProjection<Bug4268Product, System.Guid>
+public partial class Bug4268ProductProjection : SingleStreamProjection<Bug4268Product, System.Guid>
 {
     public Bug4268ProductProjection()
     {

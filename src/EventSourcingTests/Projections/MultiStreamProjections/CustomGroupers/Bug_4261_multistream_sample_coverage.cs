@@ -31,7 +31,7 @@ namespace EventSourcingTests.Projections.MultiStreamProjections.CustomGroupers;
 /// https://github.com/JasperFx/marten/discussions/3615.
 /// Pattern 3 should pass because the derived event carries the group key directly.
 /// </summary>
-public class Bug_4261_multistream_sample_coverage
+public partial class Bug_4261_multistream_sample_coverage
 {
     private readonly ITestOutputHelper _output;
 
@@ -393,7 +393,7 @@ public class Bug_4261_multistream_sample_coverage
 
     // ───────────────────────── Test fixtures (per-pattern) ─────────────────────────
 
-    public static class P1
+    public static partial class P1
     {
         public interface IExternalAccountEvent { string ExternalAccountId { get; } }
 
@@ -407,7 +407,7 @@ public class Bug_4261_multistream_sample_coverage
             public required Guid CustomerId { get; set; }
         }
 
-        public class ExternalAccountLinkProjection : SingleStreamProjection<ExternalAccountLink, string>
+        public partial class ExternalAccountLinkProjection : SingleStreamProjection<ExternalAccountLink, string>
         {
             public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
             {
@@ -450,7 +450,7 @@ public class Bug_4261_multistream_sample_coverage
             public int ShippingLabels { get; set; }
         }
 
-        public class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
+        public partial class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
         {
             public CustomerBillingProjection()
             {
@@ -463,7 +463,7 @@ public class Bug_4261_multistream_sample_coverage
         }
     }
 
-    public static class P2
+    public static partial class P2
     {
         public record CustomerRegistered(Guid CustomerId, string DisplayName);
         public record CustomerLinkedToExternalAccount(Guid CustomerId, string ExternalAccountId);
@@ -476,7 +476,7 @@ public class Bug_4261_multistream_sample_coverage
             public int ShippingLabels { get; set; }
         }
 
-        public class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
+        public partial class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
         {
             public CustomerBillingProjection()
             {
@@ -522,7 +522,7 @@ public class Bug_4261_multistream_sample_coverage
         }
     }
 
-    public static class P3
+    public static partial class P3
     {
         public record ShipmentBilled(Guid CustomerId, Guid ShipmentId, int UniqueItems);
 
@@ -533,7 +533,7 @@ public class Bug_4261_multistream_sample_coverage
             public required int Items { get; set; }
         }
 
-        public class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
+        public partial class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
         {
             public CustomerBillingProjection()
             {
@@ -551,7 +551,7 @@ public class Bug_4261_multistream_sample_coverage
         }
     }
 
-    public static class P4
+    public static partial class P4
     {
         public record CustomerRegistered(Guid CustomerId, string DisplayName);
         public record CustomerLinkedToExternalAccount(Guid CustomerId, string ExternalAccountId);
@@ -569,7 +569,7 @@ public class Bug_4261_multistream_sample_coverage
             public required Guid CustomerId { get; set; }
         }
 
-        public class ExternalAccountLinkProjection : SingleStreamProjection<ExternalAccountLink, string>
+        public partial class ExternalAccountLinkProjection : SingleStreamProjection<ExternalAccountLink, string>
         {
             public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
             {
@@ -632,7 +632,7 @@ public class Bug_4261_multistream_sample_coverage
             }
         }
 
-        public class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
+        public partial class CustomerBillingProjection : MultiStreamProjection<CustomerBillingMetrics, Guid>
         {
             public CustomerBillingProjection()
             {

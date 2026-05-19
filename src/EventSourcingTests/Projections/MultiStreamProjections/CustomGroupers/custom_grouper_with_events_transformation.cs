@@ -42,7 +42,7 @@ namespace EventSourcingTests.Projections.ViewProjections.CustomGroupers
 
     #region sample_view-custom-grouper-with-transformation-projection
 
-    public class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
+    public partial class MonthlyAllocationProjection: MultiStreamProjection<MonthlyAllocation, string>
     {
         public MonthlyAllocationProjection()
         {

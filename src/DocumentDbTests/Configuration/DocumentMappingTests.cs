@@ -839,7 +839,7 @@ public class ProjectionConfiguredView
     }
 }
 
-public class ProjectionWithConfiguredView: MultiStreamProjection<ProjectionConfiguredView, string>
+public partial class ProjectionWithConfiguredView: MultiStreamProjection<ProjectionConfiguredView, string>
 {
     public ProjectionWithConfiguredView()
     {

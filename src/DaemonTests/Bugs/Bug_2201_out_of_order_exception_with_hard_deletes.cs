@@ -14,7 +14,7 @@ using Xunit;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationContext
+public partial class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationContext
 {
     [Fact]
     public async Task should_complete_projection_when_only_hard_deletes_exist_in_batch()
@@ -55,7 +55,7 @@ public class Bug_2201_out_of_order_exception_with_hard_deletes: BugIntegrationCo
     }
 
 
-    public class TicketProjection: SingleStreamProjection<Ticket, Guid>
+    public partial class TicketProjection: SingleStreamProjection<Ticket, Guid>
     {
         public TicketProjection()
         {

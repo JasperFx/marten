@@ -64,7 +64,7 @@ public class Trip
     internal bool ShouldDelete(VacationOver e) => Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L123-L173' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L120-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_trip_stream_aggregation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Or finally, you can use a method named `Create()` on a projection type as shown in this sample:
@@ -72,17 +72,8 @@ Or finally, you can use a method named `Create()` on a projection type as shown 
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    public TripProjection()
-    {
-        DeleteEvent<TripAborted>();
-
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
-
     // These methods can be either public, internal, or private but there's
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
@@ -104,9 +95,15 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
+
+    // ShouldDelete method-convention overloads — replace the pre-9.0
+    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
+    public bool ShouldDelete(TripAborted _) => true;
+    public bool ShouldDelete(Breakdown e) => e.IsCritical;
+    public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Create()` method has to return either the aggregate document type or `Task<T>` where `T` is the aggregate document type. There must be an argument for the specific event type or `IEvent<T>` where `T` is the event type if you need access to event metadata. You can also take in an `IQuerySession` if you need to look up additional data as part of the transformation or `IEvent` in addition to the exact event type just to get at event metadata.
@@ -114,61 +111,17 @@ The `Create()` method has to return either the aggregate document type or `Task<
 ## Applying Changes to the Aggregate Document
 
 ::: tip
-`Apply()` methods or `ProjectEvent<T>()` method calls can also use interfaces or abstract types that are implemented by specific event types, and
+`Apply()` method-convention overloads can also use interfaces or abstract types that are implemented by specific event types, and
 Marten will apply all those event types that can be cast to the interface or abstract type to that method when executing the projection.
 :::
 
-::: warning Removed in Marten 9.0
-The inline-lambda registration APIs — `ProjectEvent<T>(...)`, `ProjectEventAsync<T>(...)`, `CreateEvent<T>(...)`, `DeleteEvent<T>(...)`, `DeleteEventAsync<T>(...)` — are removed in Marten 9.0 alongside the JasperFx 2.0 line (see [JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)). Replace them with `Apply` / `Create` / `ShouldDelete` method-convention overloads on a `partial` projection class so `JasperFx.Events.SourceGenerator` can emit a `[GeneratedEvolver]` dispatcher at compile time. See [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough.
-:::
-
-To make changes to an existing aggregate, you can either use inline Lambda functions per event type with one of the overloads of `ProjectEvent()`:
-
-<!-- snippet: sample_using_projectevent_in_aggregate_projection -->
-<a id='snippet-sample_using_projectevent_in_aggregate_projection'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        ProjectEvent<Arrival>((trip, e) => trip.State = e.State);
-        ProjectEvent<Travel>((trip, e) => trip.Traveled += e.TotalDistance());
-        ProjectEvent<TripEnded>((trip, e) =>
-        {
-            trip.Active = false;
-            trip.EndedOn = e.Day;
-        });
-
-        ProjectEventAsync<Breakdown>(async (session, trip, e) =>
-        {
-            var repairShop = await session.Query<RepairShop>()
-                .Where(x => x.State == trip.State)
-                .FirstOrDefaultAsync();
-
-            trip.RepairShopId = repairShop?.Id;
-        });
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L179-L204' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_projectevent_in_aggregate_projection' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-I'm not personally that wild about using lots of inline Lambdas like the example above, and to that end, Marten now supports the `Apply()` method convention. Here's the same `TripProjection`, but this time using methods to mutate the `Trip` document:
+To make changes to an existing aggregate, declare `Apply()` methods on a `partial` projection class. The `JasperFx.Events.SourceGenerator` discovers them at compile time and emits a `[GeneratedEvolver]` dispatcher with no runtime reflection. The pre-9.0 `ProjectEvent<T>(...)` / `ProjectEventAsync<T>(...)` constructor helpers were removed alongside the JasperFx 2.0 line ([JasperFx/jasperfx#286](https://github.com/JasperFx/jasperfx/issues/286)); see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal) for the migration walkthrough. Here's a `TripProjection` using `Apply()` methods to mutate the `Trip` document:
 
 <!-- snippet: sample_tripprojection_aggregate -->
 <a id='snippet-sample_tripprojection_aggregate'></a>
 ```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
+public partial class TripProjection: SingleStreamProjection<Trip, Guid>
 {
-    public TripProjection()
-    {
-        DeleteEvent<TripAborted>();
-
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        DeleteEvent<VacationOver>((trip, _) => trip.Traveled > 1000);
-    }
-
     // These methods can be either public, internal, or private but there's
     // a small performance gain to making them public
     public void Apply(Arrival e, Trip trip) => trip.State = e.State;
@@ -190,9 +143,15 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
     {
         return new Trip { Id = started.StreamId, StartedOn = started.Data.Day, Active = true };
     }
+
+    // ShouldDelete method-convention overloads — replace the pre-9.0
+    // DeleteEvent<T>() / DeleteEvent<T>(predicate) constructor helpers.
+    public bool ShouldDelete(TripAborted _) => true;
+    public bool ShouldDelete(Breakdown e) => e.IsCritical;
+    public bool ShouldDelete(VacationOver _, Trip trip) => trip.Traveled > 1000;
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L84' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L48-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_tripprojection_aggregate' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `Apply()` methods can accept any combination of these arguments:
@@ -237,40 +196,7 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
 <!-- endSnippet -->
 
 If the deletion of the aggregate document needs to be done by testing some combination of the current aggregate state, the event,
-and maybe even other document state in your Marten database, you can use more overloads of `DeleteEvent()` as shown below:
-
-<!-- snippet: sample_deleting_aggregate_by_event_type_and_func -->
-<a id='snippet-sample_deleting_aggregate_by_event_type_and_func'></a>
-```cs
-public class TripProjection: SingleStreamProjection<Trip, Guid>
-{
-    public TripProjection()
-    {
-        // The current Trip aggregate would be deleted if
-        // the Breakdown event is "critical"
-        DeleteEvent<Breakdown>(x => x.IsCritical);
-
-        // Alternatively, delete the aggregate if the trip
-        // is currently in New Mexico and the breakdown is critical
-        DeleteEvent<Breakdown>((trip, e) => e.IsCritical && trip.State == "New Mexico");
-
-        DeleteEventAsync<Breakdown>(async (session, trip, e) =>
-        {
-            var anyRepairShopsInState = await session.Query<RepairShop>()
-                .Where(x => x.State == trip.State)
-                .AnyAsync();
-
-            // Delete the trip if there are no repair shops in
-            // the current state
-            return !anyRepairShopsInState;
-        });
-    }
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L40-L67' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type_and_func' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
-
-Another option is to use a method convention with a method named `ShouldDelete()`, with this equivalent using the `ShouldDelete() : bool` method convention:
+and maybe even other document state in your Marten database, you can use the `ShouldDelete()` method convention:
 
 <!-- snippet: sample_deleting_aggregate_by_event_type_and_func_with_convention -->
 <a id='snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention'></a>
@@ -298,7 +224,7 @@ public class TripProjection: SingleStreamProjection<Trip, Guid>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L81-L106' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/AggregationExamples.cs#L40-L65' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deleting_aggregate_by_event_type_and_func_with_convention' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The `ShouldDelete()` method can take any combination of these arguments:

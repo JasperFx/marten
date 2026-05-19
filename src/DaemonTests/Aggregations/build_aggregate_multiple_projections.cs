@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 
 namespace DaemonTests.Aggregations;
 
-public class build_aggregate_multiple_projections: DaemonContext
+public partial class build_aggregate_multiple_projections: DaemonContext
 {
     //Aggregate 1
     public class Car
@@ -38,7 +38,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
     //Aggregation 2
-    public class CarProjection: SingleStreamProjection<CarView, Guid>
+    public partial class CarProjection: SingleStreamProjection<CarView, Guid>
     {
         public CarProjection()
         {
@@ -72,7 +72,7 @@ public class build_aggregate_multiple_projections: DaemonContext
     }
 
     //Aggregation 2
-    public class TruckProjection: SingleStreamProjection<TruckView, Guid>
+    public partial class TruckProjection: SingleStreamProjection<TruckView, Guid>
     {
         public TruckProjection()
         {

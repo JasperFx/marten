@@ -16,7 +16,7 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegrationContext
+public partial class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegrationContext
 {
     [Theory]
     [InlineData(true)]
@@ -77,7 +77,7 @@ public class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegra
     public record AggregateCreated(Guid Id);
     public record EntityCreated(Guid Id, Guid AggregateId);
 
-    public class AggregateProjection : SingleStreamProjection<Aggregate, Guid>
+    public partial class AggregateProjection : SingleStreamProjection<Aggregate, Guid>
     {
         public static Aggregate Create(IEvent<AggregateCreated> @event) => new Aggregate
         {
@@ -91,7 +91,7 @@ public class Bug_3946_tenancy_with_for_tenant_and_projection_issues : BugIntegra
         }
     }
 
-    public class EntityProjection : MultiStreamProjection<Entity, Guid>
+    public partial class EntityProjection : MultiStreamProjection<Entity, Guid>
     {
         public EntityProjection()
         {

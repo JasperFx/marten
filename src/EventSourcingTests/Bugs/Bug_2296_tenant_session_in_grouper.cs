@@ -15,7 +15,7 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
+public partial class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
 {
     [Fact]
     public async Task CanQueryTenantedStreamsInAsyncProjectionGrouper()
@@ -81,7 +81,7 @@ public class Bug_2296_tenant_session_in_grouper: OneOffConfigurationsContext
         public int Count { get; set; } = 0;
     }
 
-    public class CountsByTagProjector: MultiStreamProjection<CountsByTag, string>
+    public partial class CountsByTagProjector: MultiStreamProjection<CountsByTag, string>
     {
         public CountsByTagProjector()
         {

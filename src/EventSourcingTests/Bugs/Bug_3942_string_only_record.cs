@@ -38,7 +38,7 @@ public class single_property_async : BugIntegrationContext
     }
 }
 
-public class SingleProjection: SingleStreamProjection<SingleProp, string>
+public partial class SingleProjection: SingleStreamProjection<SingleProp, string>
 {
     public SingleProp Create(IEvent<SinglePropCreate> @event)
     {

@@ -29,7 +29,7 @@ public class OrderSummary4185
 /// Projection on the primary store that directly injects a secondary store.
 /// This is the pattern that caused #4185's original codegen conflict.
 /// </summary>
-public class OrderProjection4185 : SingleStreamProjection<OrderSummary4185, Guid>
+public partial class OrderProjection4185 : SingleStreamProjection<OrderSummary4185, Guid>
 {
     private readonly IBug4185Store _secondaryStore;
 

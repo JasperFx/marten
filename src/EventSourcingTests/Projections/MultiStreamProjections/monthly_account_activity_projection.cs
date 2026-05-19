@@ -44,7 +44,7 @@ public class MonthlyAccountActivity
 
 #region sample_monthly_account_activity_projection
 
-public class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAccountActivity, string>
+public partial class MonthlyAccountActivityProjection : MultiStreamProjection<MonthlyAccountActivity, string>
 {
     public MonthlyAccountActivityProjection()
     {

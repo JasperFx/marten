@@ -7,7 +7,7 @@ using Xunit;
 
 namespace EventSourcingTests.Aggregation;
 
-public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
+public partial class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity : AggregationContext
 {
     public when_doing_inline_per_stream_aggregations_with_Guid_stream_identity(DefaultStoreFixture fixture) : base(fixture)
     {
@@ -208,7 +208,7 @@ public class when_doing_inline_per_stream_aggregations_with_Guid_stream_identity
 
     }
 
-    public class SometimesDeletes: SingleStreamProjection<MyAggregate, Guid>
+    public partial class SometimesDeletes: SingleStreamProjection<MyAggregate, Guid>
     {
         public void Apply(AEvent @event, MyAggregate aggregate)
         {

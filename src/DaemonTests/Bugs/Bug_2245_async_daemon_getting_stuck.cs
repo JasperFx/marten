@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 
 namespace DaemonTests.Bugs;
 
-public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
+public partial class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
@@ -77,9 +77,9 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
     public record CreatedEvent(string Key, string Value);
     public record UpdatedEvent(string Key, string Value);
 
-    public record SyncProjection([property: Identity] string Key, string Value)
+    public partial record SyncProjection([property: Identity] string Key, string Value)
     {
-        public class Projector : MultiStreamProjection<SyncProjection, string>
+        public partial class Projector : MultiStreamProjection<SyncProjection, string>
         {
             public Projector()
             {
@@ -104,9 +104,9 @@ public class Bug_2245_async_daemon_getting_stuck : BugIntegrationContext
 
 
     public record UnrelatedEvent(string Key, string Value);
-    public record AsyncProjection([property: Identity] string Key, string Value)
+    public partial record AsyncProjection([property: Identity] string Key, string Value)
     {
-        public class Projector : MultiStreamProjection<AsyncProjection, string>
+        public partial class Projector : MultiStreamProjection<AsyncProjection, string>
         {
             public Projector()
             {

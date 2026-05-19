@@ -302,18 +302,21 @@ public partial class SimpleCreatorProjection2: EventProjection
     }
 }
 
-#region sample_lambda_definition_of_event_projection
+#region sample_method_convention_event_projection
 
 public partial class LambdaProjection: EventProjection
 {
-    public LambdaProjection()
-    {
-        Project<UserCreated>((e, ops) =>
-            ops.Store(new User { UserName = e.UserName }));
+    // JasperFx.Events 2.0 (JasperFx/jasperfx#276 / #286) removed the
+    // EventProjection.Project<TEvent>(action) / ProjectAsync<TEvent>(action)
+    // inline-lambda registration helpers. Use the `Project` /
+    // `ProjectAsync` method convention on a `partial` projection class
+    // instead — the source generator dispatches them at compile time.
 
-        Project<UserDeleted>((e, ops) =>
-            ops.DeleteWhere<User>(x => x.UserName == e.UserName));
-    }
+    public void Project(UserCreated e, IDocumentOperations ops) =>
+        ops.Store(new User { UserName = e.UserName });
+
+    public void Project(UserDeleted e, IDocumentOperations ops) =>
+        ops.DeleteWhere<User>(x => x.UserName == e.UserName);
 }
 
 #endregion

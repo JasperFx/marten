@@ -97,12 +97,12 @@ public class Bug4093BazDoc
     public Guid Id { get; set; }
 }
 
-public class Bug4093FooProjection : SingleStreamProjection<Bug4093FooDoc, Guid>
+public partial class Bug4093FooProjection : SingleStreamProjection<Bug4093FooDoc, Guid>
 {
     public Bug4093FooDoc Create(Bug4093FooStarted _) => new();
 }
 
-public class Bug4093BazProjection : SingleStreamProjection<Bug4093BazDoc, Guid>
+public partial class Bug4093BazProjection : SingleStreamProjection<Bug4093BazDoc, Guid>
 {
     public Bug4093BazDoc Create(Bug4093BazStarted _) => new();
 }

@@ -115,7 +115,7 @@ public class CountedAggregate: Marten.Metadata.IRevisioned
     public int ECount { get; set; }
 }
 
-public class ExplicitCounter: SingleStreamProjection<CountedAggregate, Guid>
+public partial class ExplicitCounter: SingleStreamProjection<CountedAggregate, Guid>
 {
     public override CountedAggregate Evolve(CountedAggregate snapshot, Guid id, IEvent e)
     {
@@ -160,7 +160,7 @@ public class CountedAsString
     public int ECount { get; set; }
 }
 
-public class ExplicitCounterThatHasStringId: SingleStreamProjection<CountedAsString, string>
+public partial class ExplicitCounterThatHasStringId: SingleStreamProjection<CountedAsString, string>
 {
     public override CountedAsString Evolve(CountedAsString snapshot, string id, IEvent e)
     {

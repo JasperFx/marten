@@ -148,7 +148,11 @@ public sealed class Invoice: AggregateBase
         AddUncommittedEvent(@event);
     }
 
-    private Invoice()
+    // Public parameterless ctor for Marten's event-store replay. Pre-9.0
+    // Marten could call a private parameterless ctor reflectively; the
+    // source-generated dispatch path in 9.0 emits direct calls instead,
+    // which require public visibility. See the 9.0 migration guide.
+    public Invoice()
     {
     }
 
@@ -179,8 +183,11 @@ public sealed class Invoice: AggregateBase
 
     private readonly List<Tuple<string, decimal, decimal>> lines = new List<Tuple<string, decimal, decimal>>();
 
-    // Apply the deltas to mutate our state
-    private void Apply(InvoiceCreated @event)
+    // Apply methods need to be `public` for the source-generated dispatcher
+    // to invoke them — pre-9.0 Marten reflected over private members; the
+    // SG-emitted dispatch path in 9.0 emits direct method calls. See the
+    // 9.0 migration guide.
+    public void Apply(InvoiceCreated @event)
     {
         Id = @event.InvoiceNumber.ToString(CultureInfo.InvariantCulture);
 
@@ -188,8 +195,7 @@ public sealed class Invoice: AggregateBase
         Version++;
     }
 
-    // Apply the deltas to mutate our state
-    private void Apply(LineItemAdded @event)
+    public void Apply(LineItemAdded @event)
     {
         var price = @event.Price * (1 + @event.Vat / 100);
         Total += price;

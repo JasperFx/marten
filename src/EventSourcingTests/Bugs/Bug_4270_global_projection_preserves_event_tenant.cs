@@ -123,7 +123,7 @@ public class Bug4270OrderSummary
     public string Status { get; set; } = default!;
 }
 
-public class Bug4270OrderSummaryProjection : SingleStreamProjection<Bug4270OrderSummary, string>
+public partial class Bug4270OrderSummaryProjection : SingleStreamProjection<Bug4270OrderSummary, string>
 {
     public static Bug4270OrderSummary Create(IEvent<Bug4270OrderCreated> @event)
     {

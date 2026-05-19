@@ -112,7 +112,7 @@ public record OrderPlaced
 // ── projection ────────────────────────────────────────────────────────────────
 
 // No constructor injection needed — the store is resolved from DI at enrichment time
-public class OrderProjection : SingleStreamProjection<Order, Guid>
+public partial class OrderProjection : SingleStreamProjection<Order, Guid>
 {
     public override async Task EnrichEventsAsync(
         SliceGroup<Order, Guid> group,

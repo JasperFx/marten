@@ -10,6 +10,11 @@
         <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <!-- The Marten csproj sets PrivateAssets="all" on the SG, so the analyzer
+             doesn't flow transitively. CoreTests defines its own projection
+             classes (e.g. OrderProjection4185, AllGood) and needs the SG to
+             emit dispatchers for them. Mirrors EventSourcingTests / DaemonTests. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

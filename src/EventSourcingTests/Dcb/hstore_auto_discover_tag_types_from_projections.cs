@@ -29,7 +29,7 @@ public class HsTicketSummary
     public void Apply(HsTicketResolved e) => Resolution = e.Resolution;
 }
 
-public class HsTicketSummaryProjection: SingleStreamProjection<HsTicketSummary, HsTicketId>
+public partial class HsTicketSummaryProjection: SingleStreamProjection<HsTicketSummary, HsTicketId>
 {
 }
 

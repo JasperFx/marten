@@ -49,7 +49,7 @@ public class LicenseFeatureToggledEventGrouper: IAggregateGrouper<Guid>
 }
 
 // projection with documentsession
-public class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
+public partial class UserFeatureTogglesProjection: MultiStreamProjection<UserFeatureToggles, Guid>
 {
     public UserFeatureTogglesProjection()
     {

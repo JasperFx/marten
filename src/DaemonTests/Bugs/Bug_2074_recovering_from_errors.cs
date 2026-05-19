@@ -64,7 +64,7 @@ public class UserIssueCounter
     public int Count { get; set; }
 }
 
-public class UserIssueCounterProjection: MultiStreamProjection<UserIssueCounter, Guid>
+public partial class UserIssueCounterProjection: MultiStreamProjection<UserIssueCounter, Guid>
 {
     private static int _attempts;
 

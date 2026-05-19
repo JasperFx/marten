@@ -40,7 +40,7 @@ public class SomethingHappened
     public Guid Id { get; set; }
 }
 
-public class ImplementationAProjection: MultiStreamProjection<ImplementationA, string>
+public partial class ImplementationAProjection: MultiStreamProjection<ImplementationA, string>
 {
     public ImplementationAProjection()
     {
@@ -53,7 +53,7 @@ public class ImplementationAProjection: MultiStreamProjection<ImplementationA, s
     ) => new() { Id = $"a-{e.Id}" };
 }
 
-public class ImplementationBProjection: MultiStreamProjection<ImplementationB, string>
+public partial class ImplementationBProjection: MultiStreamProjection<ImplementationB, string>
 {
     public ImplementationBProjection()
     {
@@ -66,7 +66,7 @@ public class ImplementationBProjection: MultiStreamProjection<ImplementationB, s
     ) => new() { Id = $"b-{e.Id}" };
 }
 
-public class ImplementationA2Projection: MultiStreamProjection<ImplementationA2, string>
+public partial class ImplementationA2Projection: MultiStreamProjection<ImplementationA2, string>
 {
     public ImplementationA2Projection()
     {
@@ -78,7 +78,7 @@ public class ImplementationA2Projection: MultiStreamProjection<ImplementationA2,
     ) => new() { Id = $"a2-{e.Id}" };
 }
 
-public class ImplementationB2Projection: MultiStreamProjection<ImplementationB2, string>
+public partial class ImplementationB2Projection: MultiStreamProjection<ImplementationB2, string>
 {
     public ImplementationB2Projection()
     {

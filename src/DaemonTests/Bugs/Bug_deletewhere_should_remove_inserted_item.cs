@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using JasperFx.Events.Projections;
+using Marten;
 using Marten.Events.Projections;
 using Marten.Metadata;
 using Marten.Storage;
@@ -86,20 +87,14 @@ public partial class DeletableEventProjection : EventProjection
     public DeletableEventProjection()
     {
         Options.DeleteViewTypeOnTeardown<DeletableProjection>();
-        Project<CreateDeletableProjection>((@event, operations) =>
-        {
-            operations.Store(new DeletableProjection(@event.Id, @event.InnerGuid));
-        });
-
-        Project<DeleteEvent>((@event, operations) =>
-        {
-            operations.DeleteWhere<DeletableProjection>(x=> x.InnerGuid == @event.Id);
-        });
-
-        Project<HardDeleteEvent>((@event, operations) =>
-        {
-            operations.HardDeleteWhere<DeletableProjection>(x=> x.InnerGuid == @event.Id);
-        });
-
     }
+
+    public void Project(CreateDeletableProjection @event, IDocumentOperations operations) =>
+        operations.Store(new DeletableProjection(@event.Id, @event.InnerGuid));
+
+    public void Project(DeleteEvent @event, IDocumentOperations operations) =>
+        operations.DeleteWhere<DeletableProjection>(x => x.InnerGuid == @event.Id);
+
+    public void Project(HardDeleteEvent @event, IDocumentOperations operations) =>
+        operations.HardDeleteWhere<DeletableProjection>(x => x.InnerGuid == @event.Id);
 }

@@ -553,7 +553,7 @@ public sealed class BookListing
 
 public readonly record struct Isbn(string Value);
 
-public sealed class BookListingProjection : SingleStreamProjection<BookListing, string>
+public sealed partial class BookListingProjection : SingleStreamProjection<BookListing, string>
 {
     [NaturalKeySource]
     public static BookListing Create(BookAcquired data, IEvent e) =>
