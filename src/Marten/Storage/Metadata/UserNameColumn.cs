@@ -55,7 +55,7 @@ internal class UserNameColumn: MetadataColumn<string>, ISelectableColumn, IEvent
     {
         builder.Append(ColumnName);
         builder.Append(" = ");
-        builder.AppendParameter(session.LastModifiedBy);
+        builder.AppendParameter(session.CurrentUserName);
     }
 
     public string ValueSql(EventGraph graph, AppendMode mode)
@@ -92,7 +92,7 @@ internal class UserNameArgument: UpsertArgument
     {
         if (mapping.Metadata.LastModifiedBy.Member != null)
         {
-            method.Frames.Code($"var userName = {{0}}.{nameof(IMartenSession.LastModifiedBy)};",
+            method.Frames.Code($"var userName = {{0}}.{nameof(IMartenSession.CurrentUserName)};",
                 Use.Type<IMartenSession>());
             method.Frames.SetMemberValue(mapping.Metadata.LastModifiedBy.Member, "userName", mapping.DocumentType,
                 type);
@@ -103,7 +103,7 @@ internal class UserNameArgument: UpsertArgument
         Argument parameters,
         DocumentMapping mapping, StoreOptions options)
     {
-        method.Frames.Code($"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.LastModifiedBy)});",
+        method.Frames.Code($"setStringParameter({parameters.Usage}, {{0}}.{nameof(IMartenSession.CurrentUserName)});",
             Use.Type<IMartenSession>());
     }
 

@@ -510,6 +510,21 @@ Marten 9 retires obsolete types and members deprecated in Marten 8.x:
 
 * `[Obsolete]` types and members deprecated since Marten 8.x have been retired in Marten 9. If your code compiled in Marten 8.x with `[Obsolete]` warnings against any Marten type, those members are now gone in Marten 9 — fix the warnings on 8.x first, then upgrade.
 
+### Renames coordinated with JasperFx 2.0 / JasperFx.Events 2.0
+
+The JasperFx 2.0 wave (`JasperFx` 2.0.0-alpha.16+, `JasperFx.Events` 2.0.0-alpha.15+) finishes a set of coordinated `[Obsolete]` removals. After upgrading Marten 9, audit consumer code for these renames:
+
+* **`ProjectionBase.ProjectionName` → `Name`.** If your projection subclass overrides or sets the legacy property in its constructor, switch to `Name`.
+* **`ProjectionBase.ProjectionVersion` → `Version`.** Same shape — find/replace any setter or getter usage.
+* **`JasperFxSubscriptionBase.SubscriptionName` → `Name`** and **`JasperFxSubscriptionBase.SubscriptionVersion` → `Version`.** Mirrors the projection rename for subscription subclasses.
+* **`EventSlice<T>.Aggregate` → `Snapshot`** (also on `IEventSlice<T>`). The old name was a holdover from a pre-1.0 vocabulary; semantics are unchanged.
+* **`MessageMetadata.LastModifiedBy` / `IMetadataContext.LastModifiedBy` → `CurrentUserName`.** The session-level "current user name" property was renamed for clarity. `Marten.IDocumentSession.LastModifiedBy` and `Marten.Storage.Metadata.DocumentMetadata.LastModifiedBy` are **separate document-side properties** (the "who last modified this row" stored column) and continue to use `LastModifiedBy` — only the session-level reading of the current user changed.
+* **`IEventStore.TeardownExistingProjectionProgressAsync` removed.** The full-state teardown helper `IEventStore.TeardownExistingProjectionStateAsync` (identical signature, takes `IEventDatabase`, the subscription/projection name, and a `CancellationToken`) is the replacement. The progress-only variant always also tore down the projected document state in practice, so the consolidated method matches actual behavior. Custom `IEventStore` implementations need their explicit interface implementation updated.
+* **`MultiStreamProjection.CustomGrouping(IEventSlicer<TDoc, TId, TQuerySession>)` removed.** Pass a `Func<TQuerySession, IReadOnlyList<IEvent>, IEventGrouping<TId>, Task>` lambda (the still-supported overload) or an `IAggregateGrouper<TId>` instance instead. Whole-slicer replacement is no longer a supported extension point — express the grouping logic in the lambda body.
+* **`Oakton.*` shims removed** (`OaktonEnvironment` / `ApplyOaktonExtensions` / `RunOaktonCommands`). These were `[Obsolete]` in the 1.x line. Drop the `using Oakton;` and switch to `JasperFx.JasperFxEnvironment` / `ApplyJasperFxExtensions` / `RunJasperFxCommands`.
+
+`CombGuidIdGeneration` keeps its `[Obsolete]` for one more cycle — scheduled for a future major release rather than this wave.
+
 ### Restoring V8 defaults
 
 Migrating from Marten 8? Call `StoreOptions.RestoreV8Defaults()` first, then layer your own configuration on top:

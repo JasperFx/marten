@@ -104,12 +104,6 @@ internal sealed class StreamTenantMetadataContext: IMetadataContext
         set => _inner.CorrelationId = value;
     }
 
-    public string? LastModifiedBy
-    {
-        get => _inner.LastModifiedBy;
-        set => _inner.LastModifiedBy = value;
-    }
-
     public string? CurrentUserName
     {
         get => _inner.CurrentUserName;
