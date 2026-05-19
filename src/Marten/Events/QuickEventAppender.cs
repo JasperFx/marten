@@ -85,9 +85,14 @@ internal class QuickEventAppender: IEventAppender
     {
         registerOperationsForStreams(eventGraph, session);
 
+        // Issue #4481: only pass streams that actually have events. See the
+        // matching guard in RichEventAppender.ProcessEventsAsync for context.
+        var streamsWithEvents = session.WorkTracker.Streams.Where(x => x.Events.Any()).ToList();
+        if (streamsWithEvents.Count == 0) return;
+
         foreach (var projection in inlineProjections)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+            await projection.ApplyAsync(session, streamsWithEvents, token).ConfigureAwait(false);
         }
     }
 }
