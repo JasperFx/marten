@@ -108,9 +108,11 @@ internal class QuickEventAppender: IEventAppender
 
         // 9.0 (#4306): pass the tracker collection directly now that the
         // IInlineProjection contract takes IEnumerable<StreamAction>.
+        // Issue #4481: filter to streams with events. See the matching
+        // guard in RichEventAppender.ProcessEventsAsync for context.
         foreach (var projection in inlineProjections)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams, token).ConfigureAwait(false);
+            await projection.ApplyAsync(session, session.WorkTracker.Streams.Where(x => x.Events.Any()), token).ConfigureAwait(false);
         }
     }
 }
