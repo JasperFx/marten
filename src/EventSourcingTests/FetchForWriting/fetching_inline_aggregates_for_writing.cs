@@ -913,6 +913,48 @@ public class fetching_inline_aggregates_for_writing : OneOffConfigurationsContex
     }
 
     [Fact]
+    public async Task decider_pattern_snapshot_matches_event_rebuild_4509()
+    {
+        // #4509 contract: with FetchForWriting + an inline snapshot + the V9 default
+        // UseIdentityMapForAggregates = true, the inline projection reuses the fetched
+        // aggregate instance as the apply baseline. That is only correct under the
+        // decider pattern — return events, do NOT mutate stream.Aggregate. This test
+        // pins the supported path: no in-place mutation, so the persisted snapshot
+        // equals the canonical AggregateStreamAsync rebuild.
+        StoreOptions(opts =>
+        {
+            opts.Events.UseIdentityMapForAggregates = true;
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Inline);
+        });
+
+        var streamId = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<SimpleAggregate>(streamId, new AEvent());
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            var stream = await session.Events.FetchForWriting<SimpleAggregate>(streamId);
+            stream.Aggregate.ACount.ShouldBe(1);
+
+            // Decider pattern: decide based on the aggregate, then append events only.
+            // Deliberately NOT mutating stream.Aggregate (e.g. no stream.Aggregate.ACount++).
+            stream.AppendOne(new AEvent());
+            await session.SaveChangesAsync();
+        }
+
+        await using var query = theStore.QuerySession();
+        var reloaded = await query.LoadAsync<SimpleAggregate>(streamId);
+        var rebuilt = await query.Events.AggregateStreamAsync<SimpleAggregate>(streamId);
+
+        // Persisted inline snapshot agrees with the event-sourced rebuild.
+        reloaded.ACount.ShouldBe(rebuilt.ACount);
+        reloaded.ACount.ShouldBe(2);
+    }
+
+    [Fact]
     public async Task fetch_for_writing_cache()
     {
         StoreOptions(opts =>
