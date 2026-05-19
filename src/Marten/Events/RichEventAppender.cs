@@ -87,9 +87,23 @@ internal class RichEventAppender: IEventAppender
         // 9.0 (#4306): IInlineProjection.ApplyAsync now takes IEnumerable<StreamAction>,
         // so we can pass the session's tracker collection directly without
         // allocating a fresh List on every SaveChangesAsync.
+        //
+        // Issue #4481: only pass streams that actually have events. An empty
+        // stream (e.g. FetchForWriting<TAggregate> called without any
+        // subsequent AppendOne/AppendMany) used to slip through here and
+        // trigger an inline projection's snapshot-write path on the unchanged
+        // aggregate, raising a JasperFx.ConcurrencyException on the next
+        // SaveChangesAsync for any other work on the same session. The
+        // upstream JasperFx aggregation base's `AppliesTo(eventTypes)`
+        // returns `true` unconditionally when the projection has no
+        // statically-known event types (Evolve-only projections), so the
+        // empty stream was not being filtered downstream. The lazy `Where`
+        // preserves the no-allocation property that #4306 introduced — the
+        // filter is one tiny iterator object per projection call instead of
+        // a fresh List on every save.
         foreach (var projection in inlineProjections)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams, token).ConfigureAwait(false);
+            await projection.ApplyAsync(session, session.WorkTracker.Streams.Where(x => x.Events.Any()), token).ConfigureAwait(false);
         }
     }
 }
