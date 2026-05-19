@@ -92,7 +92,13 @@ public static class ClosedShapeRegistration
     internal static DocumentProvider<TDoc> BuildSupportedProvider<TDoc>(DocumentMapping mapping)
         where TDoc : notnull
     {
-        if (mapping.IdStrategy is ValueTypeIdGeneration vt)
+        // Both ValueTypeIdGeneration (Vogen / StronglyTypedId) and
+        // FSharpDiscriminatedUnionIdGeneration (F# single-case DU)
+        // extend ValueTypeInfo and share the same shape (OuterType /
+        // SimpleType / ValueProperty / Ctor|Builder). The closed-shape
+        // identification only needs the base shape, so dispatch them
+        // through the same provider builder.
+        if (mapping.IdStrategy is ValueTypeInfo vt)
         {
             return BuildValueTypeProvider<TDoc>(mapping, vt);
         }
@@ -138,9 +144,13 @@ public static class ClosedShapeRegistration
     /// id whose wrapper type isn't known at compile time. Constructs the
     /// per-wrapper <see cref="ValueTypeIdentification{TDoc, TWrapper, TInner}"/>
     /// via <c>CloseAndBuildAs</c> and hands the closed-shape descriptor
-    /// the wrapper type as TId.
+    /// the wrapper type as TId. Accepts the <see cref="ValueTypeInfo"/>
+    /// base so both Vogen / StronglyTypedId
+    /// (<c>ValueTypeIdGeneration</c>) and F# discriminated-union
+    /// (<c>FSharpDiscriminatedUnionIdGeneration</c>) id strategies
+    /// flow through here.
     /// </summary>
-    private static DocumentProvider<TDoc> BuildValueTypeProvider<TDoc>(DocumentMapping mapping, ValueTypeIdGeneration vt)
+    private static DocumentProvider<TDoc> BuildValueTypeProvider<TDoc>(DocumentMapping mapping, ValueTypeInfo vt)
         where TDoc : notnull
     {
         var wrapperType = vt.OuterType;

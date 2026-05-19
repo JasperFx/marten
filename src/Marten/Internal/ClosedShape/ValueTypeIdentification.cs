@@ -5,14 +5,15 @@ using System.Linq.Expressions;
 using System.Reflection;
 using FastExpressionCompiler;
 using JasperFx.Core.Reflection;
-using Marten.Schema.Identity;
 using Marten.Storage;
 
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
 /// W3 spike (M15): <see cref="IIdentification{TDoc, TId}"/> for
-/// strong-typed ids (Marten's <see cref="ValueTypeIdGeneration"/>). The
+/// strong-typed ids — Vogen / StronglyTypedId
+/// (<c>ValueTypeIdGeneration</c>) and F# single-case discriminated
+/// unions (<c>FSharpDiscriminatedUnionIdGeneration</c>). The
 /// document's id member is a wrapper struct/class
 /// (<typeparamref name="TWrapper"/>) over a primitive
 /// (<typeparamref name="TInner"/>: Guid / int / long / string).
@@ -22,7 +23,6 @@ namespace Marten.Internal.ClosedShape;
 /// Guid -> <see cref="Guid.NewGuid"/>;
 /// int / long -> per-document HiLo sequence;
 /// string -> externally assigned (throws on missing).
-/// Matches <c>ValueTypeIdGeneration.GenerateCode</c>.
 /// </remarks>
 public sealed class ValueTypeIdentification<TDoc, TWrapper, TInner>: IIdentification<TDoc, TWrapper>
     where TDoc : notnull
@@ -36,7 +36,7 @@ public sealed class ValueTypeIdentification<TDoc, TWrapper, TInner>: IIdentifica
     private readonly Func<TInner, TWrapper> _wrap;
     private readonly Func<IMartenDatabase, TInner> _generator;
 
-    public ValueTypeIdentification(MemberInfo idMember, ValueTypeIdGeneration vt, Type sequenceKey)
+    public ValueTypeIdentification(MemberInfo idMember, ValueTypeInfo vt, Type sequenceKey)
     {
         (_getter, _isNullablePropertyMissing) = BuildAccessors(idMember);
         _setter = LambdaBuilder.Setter<TDoc, TWrapper>(idMember)!;
