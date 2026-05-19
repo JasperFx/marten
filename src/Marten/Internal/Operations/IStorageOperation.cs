@@ -1,18 +1,13 @@
 #nullable enable
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Threading;
-using System.Threading.Tasks;
 using Marten.Linq.QueryHandlers;
 
 namespace Marten.Internal.Operations;
 
-public interface IStorageOperation: IQueryHandler
+// Subinterface over Weasel.Core.IStorageOperation. The three storage-op members
+// (DocumentType, PostprocessAsync, Role) come from Weasel.Core; ConfigureCommand
+// with the session-aware signature comes from IQueryHandler. Polecat layers its
+// own ICommandBuilder-only ConfigureCommand on the same Weasel.Core base — see
+// #4500 / Critter Stack 2026 dedupe pillar (jasperfx#214).
+public interface IStorageOperation: Weasel.Core.IStorageOperation, IQueryHandler
 {
-    Type DocumentType { get; }
-
-    Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);
-
-    OperationRole Role();
 }
