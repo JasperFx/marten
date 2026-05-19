@@ -10,7 +10,9 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
 using Marten.Storage;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Polly;
+using Weasel.Postgresql;
 
 namespace Marten.Events.Daemon.Coordination;
 
@@ -40,27 +42,70 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
         Mode = store.Options.Projections.AsyncMode;
 
-        if (store.Options.Projections.AsyncMode == DaemonMode.Solo)
-        {
-            Distributor = new SoloProjectionDistributor(store);
-        }
-        else if (store.Options.Projections.AsyncMode == DaemonMode.HotCold)
-        {
-            if (store.Options.Tenancy is DefaultTenancy)
-            {
-                Distributor = new SingleTenantProjectionDistributor(store);
-            }
-            else
-            {
-                Distributor = new MultiTenantedProjectionDistributor(store);
-            }
-        }
+        Distributor = BuildDistributor(store);
 
         _options = store.Options;
         _logger = logger;
         _resilience = store.Options.ResiliencePipeline;
         _timeProvider = _options.Events.TimeProvider;
         Store = store;
+    }
+
+    // 9.0 (#4349 dedupe): the Solo / SingleTenant / MultiTenanted distributors now live in
+    // JasperFx.Events. Marten wires them with closures over its own tenancy, shard, and lock
+    // surfaces. ProjectionSet (Marten-side) remains the IProjectionSet implementation, and the
+    // Postgres lock factory hands back Weasel's AdvisoryLock — which implements
+    // JasperFx.Events.Daemon.IAdvisoryLock directly as of Weasel 9.0.0-alpha.7.
+    private static IProjectionDistributor BuildDistributor(DocumentStore store)
+    {
+        var projections = store.Options.Projections;
+        var baseLockId = projections.DaemonLockId;
+
+        Func<IEnumerable<ShardName>> allShards = () => projections.AllShards().Select(x => x.Name);
+
+        Func<IProjectionDatabase, IReadOnlyList<ShardName>, int, IProjectionSet> setFactory =
+            (db, names, lockId) => new ProjectionSet(lockId, (MartenDatabase)db, names);
+
+        Func<ValueTask<IReadOnlyList<IProjectionDatabase>>> allDatabases = async () =>
+        {
+            var databases = await store.Storage.AllDatabases().ConfigureAwait(false);
+            return databases.OfType<IProjectionDatabase>().ToList();
+        };
+
+        switch (projections.AsyncMode)
+        {
+            case DaemonMode.Solo:
+                return new SoloProjectionDistributor(allDatabases, allShards, setFactory, baseLockId);
+
+            case DaemonMode.HotCold:
+                var lockFactory = buildLockFactory(store);
+                if (store.Options.Tenancy is DefaultTenancy)
+                {
+                    return new SingleTenantProjectionDistributor(
+                        () => (IProjectionDatabase)store.Storage.Database,
+                        allShards, lockFactory, setFactory,
+                        store.Options.EventGraph.DatabaseSchemaName, baseLockId);
+                }
+
+                return new MultiTenantedProjectionDistributor(allDatabases, allShards, lockFactory, setFactory,
+                    baseLockId);
+
+            default:
+                return null;
+        }
+    }
+
+    private static Func<IProjectionDatabase, IAdvisoryLock> buildLockFactory(DocumentStore store)
+    {
+        ILogger logger = store.Options.LogFactory?.CreateLogger<AdvisoryLock>() ??
+                         store.Options.DotNetLogger ?? NullLogger<AdvisoryLock>.Instance;
+
+        return db => new AdvisoryLock(((MartenDatabase)db).DataSource, logger, ((MartenDatabase)db).Id.Identity,
+            new AdvisoryLockOptions
+            {
+                LockMonitoringEnabled = store.Options.Events.UseMonitoredAdvisoryLock,
+                TransactionalLockEnabled = store.Options.Events.UseAdvisoryLockTransaction
+            });
     }
 
     public DaemonMode Mode { get; }
