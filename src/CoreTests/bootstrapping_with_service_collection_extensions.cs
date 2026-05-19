@@ -154,12 +154,13 @@ public class bootstrapping_with_service_collection_extensions
         var store = container.GetInstance<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        var instance = container.Model.For<IHostedService>().Instances.First();
-        instance.ImplementationType.ShouldBe(typeof(MartenActivator));
+        var instance = container.Model.For<IHostedService>().Instances
+            .Single(x => x.ImplementationType == typeof(MartenActivator));
         instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
         // Just a smoke test here
-        await container.GetAllInstances<IHostedService>().First().StartAsync(default);
+        var activator = container.GetAllInstances<IHostedService>().OfType<MartenActivator>().Single();
+        await activator.StartAsync(default);
 
         await store.Storage.Database.AssertDatabaseMatchesConfigurationAsync();
     }
@@ -182,12 +183,12 @@ public class bootstrapping_with_service_collection_extensions
         var store = container.GetInstance<IDocumentStore>();
         await store.Advanced.Clean.CompletelyRemoveAllAsync();
 
-        var instance = container.Model.For<IHostedService>().Instances.First();
-        instance.ImplementationType.ShouldBe(typeof(MartenActivator));
+        var instance = container.Model.For<IHostedService>().Instances
+            .Single(x => x.ImplementationType == typeof(MartenActivator));
         instance.Lifetime.ShouldBe(ServiceLifetime.Singleton);
 
-        await Assert.ThrowsAsync<DatabaseValidationException>(() =>
-            container.GetAllInstances<IHostedService>().First().StartAsync(default));
+        var activator = container.GetAllInstances<IHostedService>().OfType<MartenActivator>().Single();
+        await Assert.ThrowsAsync<DatabaseValidationException>(() => activator.StartAsync(default));
     }
 
     [Fact]

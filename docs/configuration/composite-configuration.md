@@ -25,13 +25,9 @@ The main host:
 ```csharp
 var builder = Host.CreateApplicationBuilder();
 
-// Each satellite's IConfigureMarten gets wired into DI.
-builder.Services.AddSingleton<IConfigureMarten, OrdersConfig>();         // SatelliteA
-// For IAsyncConfigureMarten, use ConfigureMartenWithServices<T>() so the
-// hosted service that drains async configs gets registered. A raw
-// AddSingleton<IAsyncConfigureMarten>() would add the type to DI but
-// never invoke its Configure method.
-builder.Services.ConfigureMartenWithServices<ReportingConfig>();         // SatelliteB
+// Each satellite's IConfigureMarten / IAsyncConfigureMarten gets wired into DI.
+builder.Services.AddSingleton<IConfigureMarten, OrdersConfig>();           // SatelliteA
+builder.Services.AddSingleton<IAsyncConfigureMarten, ReportingConfig>();   // SatelliteB
 
 // Main host carries only shared infrastructure.
 builder.Services.AddMarten(opts =>
@@ -82,14 +78,12 @@ Pin test: `src/ModularConfigTests/AddMartenTimingTests.cs`.
 
 ### 4. `IConfigureMarten` and `IAsyncConfigureMarten` compose
 
-A host can mix both. Sync contributions apply during the `StoreOptions` factory's resolution (synchronous, on first `IDocumentStore` resolution). Async contributions apply inside the `AsyncConfigureMartenApplication` hosted service, which is inserted ahead of `MartenActivator` in the `IHostedService` chain — so async configs are visible by the time anything else consumes the store.
+A host can mix both. Sync contributions apply during the `StoreOptions` factory's resolution (synchronous, on first `IDocumentStore` resolution). Async contributions apply inside the `AsyncConfigureMartenApplication` hosted service, which is inserted ahead of `MartenActivator` in the `IHostedService` chain — so async configs are visible by the time anything else consumes the store. `AddMarten` registers the hosted service unconditionally (#4494), so bare `AddSingleton<IAsyncConfigureMarten, T>()` works the same as the sync sibling.
 
-The registration APIs are asymmetric:
-
-| Contract | Sync | Async |
+| Contract | Bare `AddSingleton<...>` | Extension API |
 | --- | --- | --- |
-| Bare `AddSingleton<...>` works | ✅ | ❌ (hosted service not registered) |
-| Extension API | `services.AddSingleton<IConfigureMarten, T>()` or `services.ConfigureMarten(...)` | `services.ConfigureMartenWithServices<T>()` |
+| `IConfigureMarten` | ✅ | `services.AddSingleton<IConfigureMarten, T>()` or `services.ConfigureMarten(...)` |
+| `IAsyncConfigureMarten` | ✅ | `services.ConfigureMartenWithServices<T>()` (still available; equivalent to the bare form) |
 
 Pin test: `src/ModularConfigTests/AsyncComposeTests.cs`.
 

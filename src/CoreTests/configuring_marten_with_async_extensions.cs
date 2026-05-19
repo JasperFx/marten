@@ -72,6 +72,43 @@ public class configuring_marten_with_async_extensions
             .Alias.ShouldBe("module_1_event");
 
     }
+
+    [Fact]
+    public async Task bare_AddSingleton_IAsyncConfigureMarten_is_invoked()
+    {
+        // #4494 regression. Pre-fix, bare AddSingleton<IAsyncConfigureMarten, T>()
+        // registered the impl but never wired AsyncConfigureMartenApplication, so
+        // Configure() silently never ran. AddMarten now registers the hosted service
+        // unconditionally, matching how bare AddSingleton<IConfigureMarten, T>() works.
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "async_config_bare";
+                });
+
+                services.AddSingleton<IAsyncConfigureMarten, RecordingAsyncConfig>();
+            }).StartAsync();
+
+        var recorded = host.Services.GetServices<IAsyncConfigureMarten>()
+            .OfType<RecordingAsyncConfig>()
+            .Single();
+
+        recorded.Invoked.ShouldBeTrue();
+    }
+}
+
+internal sealed class RecordingAsyncConfig: IAsyncConfigureMarten
+{
+    public bool Invoked { get; private set; }
+
+    public ValueTask Configure(StoreOptions options, CancellationToken cancellationToken)
+    {
+        Invoked = true;
+        return ValueTask.CompletedTask;
+    }
 }
 
 #region sample_featuremanagementusingextension
