@@ -120,6 +120,48 @@ public class fetch_for_writing_and_projection_metadata_for_inline_projections : 
         ProjectionWithVersions.VersionsSeen.ShouldBe([5, 6, 7, 8]);
 
     }
+
+    // Regression for #4481: when an Evolve-based inline projection's stream is
+    // fetched via FetchForWriting and no events are appended, an unrelated
+    // document insert in the same session was failing with
+    // JasperFx.ConcurrencyException because the empty stream still flowed
+    // through the inline-projection Apply step and queued a storage operation
+    // that did an optimistic-concurrency check against the unchanged version.
+    [Fact]
+    public async Task fetch_for_writing_without_appending_does_not_block_unrelated_inserts()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Projections.Add<ProjectionWithVersions>(ProjectionLifecycle.Inline);
+            opts.Schema.For<UnrelatedDoc>().Identity(x => x.Id);
+        });
+
+        var streamId = Guid.NewGuid();
+
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Events.StartStream<VersionedGuy>(streamId, new AEvent(), new BEvent());
+            await session.SaveChangesAsync();
+        }
+
+        await using (var session = theStore.LightweightSession())
+        {
+            // Fetch the stream but deliberately do not append any new events.
+            await session.Events.FetchForWriting<VersionedGuy>(streamId);
+
+            // Insert an unrelated document on the same session.
+            session.Store(new UnrelatedDoc { Id = streamId, Note = "no new events" });
+
+            // Should NOT throw — the empty stream must not propagate an
+            // optimistic-concurrency check on the unchanged aggregate.
+            await session.SaveChangesAsync();
+        }
+
+        await using var verify = theStore.QuerySession();
+        var unrelated = await verify.LoadAsync<UnrelatedDoc>(streamId);
+        unrelated.ShouldNotBeNull();
+        unrelated.Note.ShouldBe("no new events");
+    }
 }
 
 public class ProjectionWithVersions : SingleStreamProjection<VersionedGuy, Guid>
@@ -165,4 +207,10 @@ public class VersionedGuy
     public int DCount { get; set; }
 
     public int Version { get; set; }
+}
+
+public class UnrelatedDoc
+{
+    public Guid Id { get; set; }
+    public string Note { get; set; } = "";
 }

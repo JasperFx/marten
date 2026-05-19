@@ -80,9 +80,24 @@ internal class RichEventAppender: IEventAppender
         }
 
         // TODO -- look for opportunities to batch up the requests here too!
-        foreach (var projection in inlineProjections)
+        //
+        // Issue #4481: only pass streams that actually have events. An empty
+        // stream (e.g. FetchForWriting<TAggregate> called without any
+        // subsequent AppendOne/AppendMany) used to slip through here and
+        // trigger an inline projection's snapshot-write path on the unchanged
+        // aggregate, raising a JasperFx.ConcurrencyException on the next
+        // SaveChangesAsync for any other work on the same session. The
+        // upstream JasperFx aggregation base's `AppliesTo(eventTypes)`
+        // returns `true` unconditionally when the projection has no
+        // statically-known event types (Evolve-only projections), so the
+        // empty stream was not being filtered downstream.
+        var streamsWithEvents = session.WorkTracker.Streams.Where(x => x.Events.Any()).ToList();
+        if (streamsWithEvents.Count > 0)
         {
-            await projection.ApplyAsync(session, session.WorkTracker.Streams.ToList(), token).ConfigureAwait(false);
+            foreach (var projection in inlineProjections)
+            {
+                await projection.ApplyAsync(session, streamsWithEvents, token).ConfigureAwait(false);
+            }
         }
     }
 }
