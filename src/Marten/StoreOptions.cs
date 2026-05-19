@@ -722,8 +722,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     public void RestoreV8Defaults()
     {
         Events.AppendMode = EventAppendMode.Rich;
-        // EnableAdvancedAsyncTracking is not flipped in 9.0 yet (#4425), so it
-        // already sits at its V8 default and is not touched here.
+        Events.EnableAdvancedAsyncTracking = false;
         Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
         Events.UseIdentityMapForAggregates = false;
         Events.EnableBigIntEvents = false;

@@ -169,10 +169,10 @@ Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recomm
 * **Restore the V8 default:** `opts.Events.AppendMode = EventAppendMode.Rich;` (or `opts.RestoreV8Defaults();`).
 * See the [Event Appending modes](events/appending.md) and [Optimizing the Event Store](events/optimizing.md) docs.
 
-#### **`Events.EnableAdvancedAsyncTracking` — flip deferred for 9.0**
+#### **`Events.EnableAdvancedAsyncTracking` now defaults to `true`**
 
-* **Stays at `false` (the V8 default) for now.** The intent is to flip this to `true` in 9.0, but turning it on caused large portions of the EventSourcing and Daemon test suites to hang. Tracked in [#4425](https://github.com/JasperFx/marten/issues/4425); the flip lands once that's root-caused.
-* **Opt in early:** `opts.Events.EnableAdvancedAsyncTracking = true;` (at your own risk until #4425 is resolved). `RestoreV8Defaults()` does not touch this setting.
+* **Was `false` in Marten 8.x.** Records high-water skips into `mt_high_water_skips` so the async daemon can reason about gaps it has already skipped past instead of re-detecting them on every poll. See [#4425](https://github.com/JasperFx/marten/issues/4425) for the bootstrap bug that previously blocked this flip.
+* **Restore the V8 default:** `opts.Events.EnableAdvancedAsyncTracking = false;` (or `opts.RestoreV8Defaults();`).
 * See the [Async Projection Daemon](events/projections/async-daemon.md) docs.
 
 #### **`Events.EnableEventSkippingInProjectionsOrSubscriptions` now defaults to `true`**
@@ -546,6 +546,7 @@ var store = DocumentStore.For(opts =>
 | Setting | V8 default it restores |
 | --- | --- |
 | `Events.AppendMode` | `EventAppendMode.Rich` — [Event Appending](events/appending.md) |
+| `Events.EnableAdvancedAsyncTracking` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
 | `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
 | `Events.UseIdentityMapForAggregates` | `false` — [Aggregate Projections](events/projections/aggregate-projections.md) |
 | `Events.EnableBigIntEvents` | `false` — [Event Store](events/index.md) |
@@ -571,8 +572,8 @@ services.AddMarten(opts =>
         opts.Connection(configuration.GetConnectionString("Marten"));
 
         // Revert the StoreOptions defaults Marten 9 flipped (AppendMode,
-        // EnableEventSkippingInProjectionsOrSubscriptions, UseIdentityMapForAggregates,
-        // EnableBigIntEvents, DisableNpgsqlLogging).
+        // EnableAdvancedAsyncTracking, EnableEventSkippingInProjectionsOrSubscriptions,
+        // UseIdentityMapForAggregates, EnableBigIntEvents, DisableNpgsqlLogging).
         opts.RestoreV8Defaults();
 
         // Restore V8's Newtonsoft serializer default (Marten 9 ships STJ by default
