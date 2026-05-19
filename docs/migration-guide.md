@@ -355,6 +355,101 @@ public async Task<bool> ShouldDelete(Breakdown e, Trip trip, IQuerySession sessi
 
 The doc pages that previously showed the inline-lambda examples ([`/events/projections/conventions`](/events/projections/conventions), [`/events/projections/single-stream-projections`](/events/projections/single-stream-projections), [`/events/projections/event-projections`](/events/projections/event-projections), [`/events/projections/flat`](/events/projections/flat)) carry warning callouts pointing back here. The samples in those pages still reference the old API today — they will be migrated when the JasperFx 2.0 GA cut lands and the API is physically removed.
 
+### Aggregation method visibility now required to be `public` {#aggregation-public-handlers}
+
+Marten 8 and earlier used runtime reflection to dispatch events to `Apply` / `Create` / `ShouldDelete` methods on your aggregate or projection class. The reflection path picked up `private`, `internal`, and `protected` handlers — handlers were free to be encapsulated.
+
+Marten 9 routes aggregation through a compile-time source generator (`JasperFx.Events.SourceGenerator`) that emits direct method calls into a sibling `partial` class. Generated code can only invoke `public` members of the user's type, so the visibility requirement tightens: **all conventional handler methods on aggregates and projection classes must be `public`** in Marten 9.
+
+| Affected method shape | Pre-9.0 reflection | Marten 9 SG |
+| --- | --- | --- |
+| `private void Apply(SomeEvent e)` on aggregate | dispatched | not dispatched (silently) |
+| `internal bool ShouldDelete(SomeEvent e)` | dispatched | not dispatched (silently) |
+| `private SomeAggregate(SomeEvent e)` (event-shaped ctor) | dispatched as Create | not dispatched (use a `public` ctor) |
+| `private SomeAggregate()` (parameterless ctor for rehydration) | dispatched via `Activator.CreateInstance(nonPublic: true)` | the SG falls back to `RuntimeHelpers.GetUninitializedObject(typeof(T))` — **field initializers on the aggregate type are not invoked** in that fallback. Move field initialization into Apply / Create or make the ctor `public`. |
+
+**Migration:** flip the visibility of any private / internal / protected `Apply` / `Create` / `ShouldDelete` methods (and event-shaped constructors) to `public`.
+
+```csharp
+// Before — pre-9.0, worked via reflection:
+public sealed class Invoice : AggregateBase
+{
+    private Invoice() { }
+    public Invoice(int invoiceNumber)
+    {
+        var @event = new InvoiceCreated(invoiceNumber);
+        Apply(@event);
+        AddUncommittedEvent(@event);
+    }
+    private void Apply(InvoiceCreated e) { /* ... */ }
+    private void Apply(LineItemAdded e)  { /* ... */ }
+}
+
+// After — Marten 9, dispatched via the source generator:
+public sealed class Invoice : AggregateBase
+{
+    public Invoice() { }                       // public parameterless for replay
+    public Invoice(int invoiceNumber) { /* ... */ }
+    public void Apply(InvoiceCreated e) { /* ... */ }
+    public void Apply(LineItemAdded e)  { /* ... */ }
+}
+```
+
+This rule applies to:
+
+- `Apply` / `Create` / `ShouldDelete` methods on aggregates registered via `opts.Projections.Snapshot<T>(...)` or used live via `theSession.Events.AggregateStreamAsync<T>(streamId)` and friends.
+- `Apply` / `Create` / `ShouldDelete` methods on `SingleStreamProjection<TDoc, TId>` / `MultiStreamProjection<TDoc, TId>` subclasses.
+- `Project` / `ProjectAsync` methods on `EventProjection` subclasses.
+- Event-shaped constructors (`public T(SomeEvent e)`) on aggregates — the SG now treats these as implicit Create handlers in Marten 9, but only when the ctor is `public`.
+
+If you need encapsulation for your aggregate state, the standard pattern of `public` getters + `private set` properties still works — only the *methods* and *constructors* that Marten dispatches to need to be `public`.
+
+### Identity-by-attribute on non-`Id` members {#aggregation-identity-attribute}
+
+If your aggregate uses an `[Identity]`-marked property whose name isn't `Id` (e.g. a `[Identity] public string StreamKey` member), Marten 9 now respects that attribute at compile time when generating the dispatcher — no source change required:
+
+```csharp
+public record LoadTestInlineProjection
+{
+    [Identity]
+    public string StreamKey { get; init; }   // recognized as the aggregate identity in 9.0
+    public LoadTestInlineProjection Apply(LoadTestEvent e, LoadTestInlineProjection current) => /* ... */;
+}
+```
+
+Aggregates that use a runtime override via `opts.Schema.For<T>().Identity(x => x.SomeMember)` are **not** visible to the source generator (it can't see runtime configuration at compile time) — annotate the member with `[Identity]` instead, or expose it as the `Id` property.
+
+### Required-member aggregates {#aggregation-required-members}
+
+Aggregates whose root type declares `required` members are now supported as projection roots in Marten 9. The source generator constructs the empty instance via `new T { RequiredA = default!, RequiredB = default! }` and immediately runs the user's first Apply on it — your Apply is expected to overwrite those `default!` values:
+
+```csharp
+public class ExternalAccountLink
+{
+    public required string Id        { get; set; }
+    public required Guid   CustomerId { get; set; }
+}
+
+public partial class ExternalAccountLinkProjection : SingleStreamProjection<ExternalAccountLink, string>
+{
+    public void Apply(CustomerLinkedToExternalAccount e, ExternalAccountLink link)
+    {
+        link.Id         = e.ExternalAccountId;
+        link.CustomerId = e.CustomerId;
+    }
+}
+```
+
+If you'd prefer not to rely on the `default!` placeholder, add a `public static T Create(SomeEvent e)` method on the aggregate — the SG will route the null-snapshot branch through `Create` instead.
+
+### Validation-rule behavior change {#aggregation-validation-rules}
+
+A few of the runtime-validation messages that Marten 8 threw at registration time are no longer emitted, because the source generator silently skips signatures it can't dispatch:
+
+- **Unrecognized method names** on a projection class (anything not named `Apply` / `Create` / `ShouldDelete`) used to throw `InvalidProjectionException`. Marten 9 silently ignores them. Use `[JasperFxIgnore]` (still honored) or rename the method.
+- **Projection-class `Apply` without the aggregate parameter** (`public void Apply(SomeEvent e)` on a `SingleStreamProjection<TDoc, TId>`) used to throw. Marten 9 dispatches it but the method can't mutate aggregate state because the aggregate isn't in scope. Add the aggregate parameter back.
+- **`SingleStreamProjection` targeting a soft-deleted document type** used to throw at `ValidateConfiguration` time. The source-generated dispatcher doesn't know about the document's soft-delete config and is no longer in a position to detect the conflict at registration.
+
 ### Synchronous query APIs removed
 
 **Marten 9 fully removes the synchronous data-access path.** Every database-bound synchronous LINQ terminal operator, `IQuerySession`/`IDocumentSession` sync helper, and the `IQueryHandler<T>.Handle(DbDataReader, IMartenSession)` extensibility hook now either no longer exist or throw at runtime:
