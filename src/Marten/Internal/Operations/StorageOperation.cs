@@ -76,11 +76,6 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public Type DocumentType => typeof(T);
 
-    public virtual void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        // Nothing
-    }
-
     public virtual Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         return Task.CompletedTask;

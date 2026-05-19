@@ -144,32 +144,13 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
         }
     }
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
+    public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
         {
             // Mode Off Upsert is fire-and-forget today — RETURNING id is
             // there for symmetry with Insert/Update but the result isn't
             // inspected.
-            return;
-        }
-
-        if (!reader.Read())
-        {
-            if (!IgnoreConcurrencyViolation)
-            {
-                exceptions.Add(new ConcurrencyException(typeof(TDoc), _id));
-            }
-            return;
-        }
-
-        ApplyConcurrencyResult(reader);
-    }
-
-    public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
-    {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
-        {
             return;
         }
 

@@ -368,10 +368,6 @@ public class appending_events_workflow_specs
         }
 
         public Type DocumentType => null;
-        public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-        {
-            throw new DivideByZeroException("Boom!");
-        }
 
         public Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         {

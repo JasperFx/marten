@@ -145,14 +145,6 @@ internal class AssertDcbConsistency: IStorageOperation
 
     public Type DocumentType => typeof(IEvent);
 
-    public void Postprocess(DbDataReader reader, IList<Exception> exceptions)
-    {
-        if (reader.Read() && reader.GetBoolean(0))
-        {
-            exceptions.Add(new DcbConcurrencyException(_query, _lastSeenSequence));
-        }
-    }
-
     public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false) &&
