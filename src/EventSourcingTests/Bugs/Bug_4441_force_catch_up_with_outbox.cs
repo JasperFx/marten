@@ -81,7 +81,7 @@ public class Bug_4441_force_catch_up_with_outbox
         exceptions.ShouldBeEmpty();
     }
 
-    [Fact(Timeout = 60000, Skip = "Re-skipped after the #4463 fix didn't fully stabilize this in CI — see https://github.com/JasperFx/marten/issues/4462. The remaining flake is a daemon-internal cancellation that surfaces as an AggregateException with an OCE inside well before the test's CTS would fire (failing run terminated in ~176ms with the test CTS set to 45s). The next step is the deeper-fix path in #4462 — auditing the GroupedProjectionExecution / per-shard internal CTS contract so daemon-lifecycle cancellations don't leak into ForceAllMartenDaemonActivityToCatchUpAsync's exceptions list. Passes locally 5/5.")]
+    [Fact(Timeout = 60000)]
     public async Task force_catch_up_invokes_message_batch_lifecycle_with_custom_outbox()
     {
         var outbox = new RecordingOutbox();
