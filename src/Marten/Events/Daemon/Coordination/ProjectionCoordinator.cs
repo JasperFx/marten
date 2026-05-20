@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using ImTools;
-using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
@@ -23,35 +21,42 @@ public class ProjectionCoordinator<T>: ProjectionCoordinator, IProjectionCoordin
     }
 }
 
-public class ProjectionCoordinator: IProjectionCoordinator
+// 9.0 (#4516 dedupe): the leadership-election + agent-lifecycle loop now lives in
+// JasperFx.Events.Daemon.ProjectionCoordinatorBase. Marten supplies the distributor +
+// settings via the base ctor and implements the daemon-resolution seams, keeping its
+// own ImHashMap + double-checked-lock daemon cache.
+public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordinator
 {
     private readonly System.Threading.Lock _daemonLock = new();
-    private readonly ILogger<ProjectionCoordinator> _logger;
-    private readonly StoreOptions _options;
-
-    private readonly ResiliencePipeline _resilience;
-    private readonly TimeProvider _timeProvider;
-    private CancellationTokenSource? _cancellation;
+    private readonly ILogger _logger;
 
     private ImHashMap<string, IProjectionDaemon> _daemons = ImHashMap<string, IProjectionDaemon>.Empty;
-    private Task? _runner;
 
     public ProjectionCoordinator(IDocumentStore documentStore, ILogger<ProjectionCoordinator> logger)
+        : this((DocumentStore)documentStore, logger)
     {
-        var store = (DocumentStore)documentStore;
-
-        Mode = store.Options.Projections.AsyncMode;
-
-        Distributor = BuildDistributor(store);
-
-        _options = store.Options;
-        _logger = logger;
-        _resilience = store.Options.ResiliencePipeline;
-        _timeProvider = _options.Events.TimeProvider;
-        Store = store;
     }
 
-    // 9.0 (#4349 dedupe): the Solo / SingleTenant / MultiTenanted distributors now live in
+    private ProjectionCoordinator(DocumentStore store, ILogger<ProjectionCoordinator> logger)
+        : base(
+            BuildDistributor(store),
+            logger,
+            store.Options.ResiliencePipeline,
+            store.Options.Events.TimeProvider,
+            store.Options.Projections.LeadershipPollingTime.Milliseconds(),
+            store.Options.Projections.AgentPauseTime,
+            store.Options.Projections.HealthCheckPollingTime)
+    {
+        Mode = store.Options.Projections.AsyncMode;
+        Store = store;
+        _logger = logger;
+    }
+
+    public DaemonMode Mode { get; }
+
+    public DocumentStore Store { get; }
+
+    // 9.0 (#4349 dedupe): the Solo / SingleTenant / MultiTenanted distributors live in
     // JasperFx.Events. Marten wires them with closures over its own tenancy, shard, and lock
     // surfaces. ProjectionSet (Marten-side) remains the IProjectionSet implementation, and the
     // Postgres lock factory hands back Weasel's AdvisoryLock — which implements
@@ -108,108 +113,34 @@ public class ProjectionCoordinator: IProjectionCoordinator
             });
     }
 
-    public DaemonMode Mode { get; }
+    protected override IProjectionDaemon ResolveDaemon(IProjectionSet set)
+    {
+        return findDaemonForDatabase((MartenDatabase)set.Database);
+    }
 
-    public DocumentStore Store { get; }
+    protected override IReadOnlyList<IProjectionDaemon> ResolvedDaemons()
+    {
+        return _daemons.Enumerate().Select(x => x.Value).ToList();
+    }
 
-    public IProjectionDistributor Distributor { get; }
-
-    public IProjectionDaemon DaemonForMainDatabase()
+    public override IProjectionDaemon DaemonForMainDatabase()
     {
         var database = (MartenDatabase)Store.Tenancy.Default.Database;
 
         return findDaemonForDatabase(database);
     }
 
-    public async ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier)
+    public override async ValueTask<IProjectionDaemon> DaemonForDatabase(string databaseIdentifier)
     {
         var database =
             (MartenDatabase)await Store.Storage.FindOrCreateDatabase(databaseIdentifier).ConfigureAwait(false);
         return findDaemonForDatabase(database);
     }
 
-    public async ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync()
+    public override async ValueTask<IReadOnlyList<IProjectionDaemon>> AllDaemonsAsync()
     {
         var all = await Store.Storage.AllDatabases().ConfigureAwait(false);
         return all.OfType<MartenDatabase>().Select(findDaemonForDatabase).ToList();
-    }
-
-    public Task StartAsync(CancellationToken cancellationToken)
-    {
-        _cancellation?.SafeDispose();
-
-        _cancellation = new CancellationTokenSource();
-        _runner = Task.Run(() => executeAsync(_cancellation.Token), _cancellation.Token);
-
-        return Task.CompletedTask;
-    }
-
-    public async Task PauseAsync()
-    {
-        _logger.LogInformation("Pausing ProjectionCoordinator");
-        if (_cancellation != null)
-        {
-            await _cancellation.CancelAsync().ConfigureAwait(false);
-        }
-
-        await pauseDistributor().ConfigureAwait(false);
-
-        foreach (var pair in _daemons.Enumerate())
-        {
-            try
-            {
-                await pair.Value.StopAllAsync().ConfigureAwait(false);
-            }
-            catch (Exception exception)
-            {
-                _logger.LogError(exception, "Error while trying to stop daemon agents in database {Name}", pair.Key);
-            }
-        }
-    }
-
-    private async Task pauseDistributor()
-    {
-        if (_runner == null) return;
-
-        try
-        {
-#pragma warning disable VSTHRD003
-            await _runner.ConfigureAwait(false);
-#pragma warning restore VSTHRD003
-        }
-        catch (TaskCanceledException)
-        {
-            // Nothing, just from shutting down
-        }
-        catch (OperationCanceledException)
-        {
-            // Nothing, just from shutting down
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error while trying to stop the ProjectionCoordinator");
-        }
-    }
-
-    public Task ResumeAsync()
-    {
-        return StartAsync(default);
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        await PauseAsync().ConfigureAwait(false);
-
-        foreach (var daemon in _daemons.Enumerate()) daemon.Value.SafeDispose();
-
-        try
-        {
-            await Distributor.ReleaseAllLocks().ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error trying to release subscription agent locks");
-        }
     }
 
     private IProjectionDaemon findDaemonForDatabase(MartenDatabase database)
@@ -232,153 +163,4 @@ public class ProjectionCoordinator: IProjectionCoordinator
 
         return daemon;
     }
-
-    private async Task executeAsync(CancellationToken stoppingToken)
-    {
-        await Distributor.RandomWait(stoppingToken).ConfigureAwait(false);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                var sets = await Distributor
-                    .BuildDistributionAsync().ConfigureAwait(false);
-
-                foreach (var set in sets)
-                {
-                    // Is it already running here?
-                    if (Distributor.HasLock(set))
-                    {
-                        var daemon = resolveDaemon(set);
-
-                        // check if it's still running
-                        await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    try
-                    {
-                        if (await Distributor.TryAttainLockAsync(set, stoppingToken).ConfigureAwait(false))
-                        {
-                            var daemon = resolveDaemon(set);
-
-                            // check if it's still running
-                            await startAgentsIfNecessaryAsync(set, daemon, stoppingToken).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            // We don't hold the lock, so we might've lost it due to a postgres outage. We should make sure any agents are no longer running on this node.
-                            var daemon = resolveDaemon(set);
-
-                            await stopAgentsIfNecessaryAsync(set, daemon).ConfigureAwait(false);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, "Error trying to attain a lock for set {Name} and lock id {LockId}. Will retry later", set.Names.Select(x => x.Identity).Join(", "), set.LockId);
-                        await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken)
-                            .ConfigureAwait(false);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                if (stoppingToken.IsCancellationRequested)
-                {
-                    return;
-                }
-
-                // Only really expect any errors if there are dynamic tenants in place
-                _logger.LogError(e, "Error trying to resolve projection distributions");
-            }
-
-            if (stoppingToken.IsCancellationRequested)
-            {
-                return;
-            }
-
-            try
-            {
-                if (_daemons.Enumerate().Any(x => x.Value.HasAnyPaused()))
-                {
-                    await Task.Delay(_options.Projections.AgentPauseTime, stoppingToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    await Task.Delay(_options.Projections.LeadershipPollingTime.Milliseconds(), stoppingToken)
-                        .ConfigureAwait(false);
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                // just get out of here, this signals a graceful shutdown attempt
-            }
-            catch (OperationCanceledException)
-            {
-                // Nothing, just from shutting down
-            }
-        }
-    }
-
-
-    private async Task startAgentsIfNecessaryAsync(IProjectionSet set,
-        IProjectionDaemon daemon, CancellationToken stoppingToken)
-    {
-        foreach (var name in set.Names)
-        {
-            var agent = daemon.CurrentAgents().FirstOrDefault(x => x.Name.Equals(name));
-            if (agent == null)
-            {
-                await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
-            }
-            else if (agent is { Status: AgentStatus.Paused, PausedTime: not null } &&
-                     _timeProvider.GetUtcNow().Subtract(agent.PausedTime.Value) >
-                     _options.Projections.HealthCheckPollingTime)
-            {
-                await tryStartAgent(stoppingToken, daemon, name, set).ConfigureAwait(false);
-            }
-        }
-    }
-
-    private async Task stopAgentsIfNecessaryAsync(IProjectionSet set, IProjectionDaemon daemon)
-    {
-        foreach (var shardName in set.Names)
-        {
-            var status = daemon.StatusFor(shardName.Identity);
-            if (status == AgentStatus.Running)
-            {
-                await daemon.StopAgentAsync(shardName.Identity).ConfigureAwait(false);
-            }
-
-        }
-    }
-
-    private IProjectionDaemon resolveDaemon(IProjectionSet set)
-    {
-        return findDaemonForDatabase((MartenDatabase)set.Database);
-    }
-
-    private async Task tryStartAgent(CancellationToken stoppingToken, IProjectionDaemon daemon, ShardName name,
-        IProjectionSet set)
-    {
-        try
-        {
-            await _resilience.ExecuteAsync(
-                static (x, t) => new ValueTask(x.Daemon.StartAgentAsync(x.Name.Identity, t)),
-                new DaemonShardName(daemon, name), stoppingToken).ConfigureAwait(false);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Error trying to start subscription {Name} on database {Database}", name.Identity,
-                set.Database.Identifier);
-            if (daemon.StatusFor(name.Identity) == AgentStatus.Paused)
-            {
-                daemon.EjectPausedShard(name.Identity);
-            }
-
-            await Distributor.ReleaseLockAsync(set).ConfigureAwait(false);
-        }
-    }
-
-    internal record DaemonShardName(IProjectionDaemon Daemon, ShardName Name);
 }

@@ -36,3 +36,9 @@ global using IdentityAttribute = JasperFx.IdentityAttribute;
 // Serialization enums -> Weasel.Core (weasel#287 / marten#4527). Members unchanged.
 global using Casing = Weasel.Core.Casing;
 global using NonPublicMembersStorage = Weasel.Core.NonPublicMembersStorage;
+// Hi-Lo sequence pieces -> Weasel.Core.Sequences (weasel#287 / marten#4527).
+// Shapes are identical; HiloSequence derives from HiloSequenceBase.
+global using ISequence = Weasel.Core.Sequences.ISequence;
+global using IReadOnlyHiloSettings = Weasel.Core.Sequences.IReadOnlyHiloSettings;
+global using HiloSettings = Weasel.Core.Sequences.HiloSettings;
+global using HiloSequenceAdvanceToNextHiAttemptsExceededException = Weasel.Core.Sequences.HiloSequenceAdvanceToNextHiAttemptsExceededException;

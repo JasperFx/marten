@@ -2,44 +2,34 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Marten.Exceptions;
 using Marten.Storage;
 using Npgsql;
 using NpgsqlTypes;
 using Weasel.Core;
+using Weasel.Core.Sequences;
 using Weasel.Postgresql;
 
 namespace Marten.Schema.Identity.Sequences;
 
-public class HiloSequence: ISequence
+// 9.0 (#4527 dedupe): the Hi-Lo client-side arithmetic + hi/lo state now lives in
+// Weasel.Core.Sequences.HiloSequenceBase (line-for-line identical to Marten's prior
+// implementation). This subclass keeps only the PostgreSQL I/O — the mt_get_next_hi
+// stored function and the mt_hilo floor update.
+public class HiloSequence: HiloSequenceBase
 {
     private readonly IMartenDatabase _database;
-    private readonly System.Threading.Lock _lock = new();
     private readonly StoreOptions _options;
-    private readonly HiloSettings _settings;
 
     public HiloSequence(IMartenDatabase database, StoreOptions options, string entityName, HiloSettings settings)
+        : base(entityName, settings)
     {
         _database = database;
         _options = options;
-        EntityName = entityName;
-        CurrentHi = -1;
-        CurrentLo = 1;
-        MaxLo = settings.MaxLo;
-
-        _settings = settings;
     }
 
     private DbObjectName GetNextFunction => new PostgresqlObjectName(_options.DatabaseSchemaName, "mt_get_next_hi");
 
-    public string EntityName { get; }
-
-    public long CurrentHi { get; private set; }
-    public int CurrentLo { get; private set; }
-
-    public int MaxLo { get; }
-
-    public async Task SetFloor(long floor)
+    public override async Task SetFloor(long floor)
     {
         var numberOfPages = (long)Math.Ceiling((double)floor / MaxLo);
         var updateSql =
@@ -60,30 +50,12 @@ public class HiloSequence: ISequence
         await AdvanceToNextHi().ConfigureAwait(false);
     }
 
-    public int NextInt()
-    {
-        return (int)NextLong();
-    }
-
-    public long NextLong()
-    {
-        lock (_lock)
-        {
-            if (ShouldAdvanceHi())
-            {
-                AdvanceToNextHiSync();
-            }
-
-            return AdvanceValue();
-        }
-    }
-
-    public async Task AdvanceToNextHi(CancellationToken ct = default)
+    public override async Task AdvanceToNextHi(CancellationToken ct = default)
     {
         await using var conn = _database.CreateConnection();
         await conn.OpenAsync(ct).ConfigureAwait(false);
 
-        for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
+        for (var attempts = 0; attempts < Settings.MaxAdvanceToNextHiAttempts; attempts++)
         {
             var command = GetNexFunctionCommand(conn);
             var raw = await command.ExecuteScalarAsync(ct).ConfigureAwait(false);
@@ -98,12 +70,12 @@ public class HiloSequence: ISequence
         throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
     }
 
-    public void AdvanceToNextHiSync()
+    protected override void AdvanceToNextHiSync()
     {
         using var conn = _database.CreateConnection();
         conn.Open();
 
-        for (var attempts = 0; attempts < _settings.MaxAdvanceToNextHiAttempts; attempts++)
+        for (var attempts = 0; attempts < Settings.MaxAdvanceToNextHiAttempts; attempts++)
         {
             var command = GetNexFunctionCommand(conn);
             var raw = command.ExecuteScalar();
@@ -118,19 +90,6 @@ public class HiloSequence: ISequence
         throw new HiloSequenceAdvanceToNextHiAttemptsExceededException();
     }
 
-    private bool TrySetCurrentHi(object? raw)
-    {
-        CurrentHi = Convert.ToInt64(raw);
-
-        if (0 <= CurrentHi)
-        {
-            CurrentLo = 1;
-            return true;
-        }
-
-        return false;
-    }
-
     private NpgsqlCommand GetNexFunctionCommand(NpgsqlConnection conn)
     {
         // Sproc is expected to return -1 if it's unable to
@@ -138,19 +97,5 @@ public class HiloSequence: ISequence
         return conn.CallFunction(GetNextFunction, "entity")
             .With("entity", EntityName)
             .Returns("next", NpgsqlDbType.Bigint);
-    }
-
-
-    public long AdvanceValue()
-    {
-        var result = (CurrentHi * MaxLo) + CurrentLo;
-        CurrentLo++;
-
-        return result;
-    }
-
-    public bool ShouldAdvanceHi()
-    {
-        return CurrentHi < 0 || CurrentLo > MaxLo;
     }
 }
