@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using JasperFx.Events.Daemon;
 using Marten.Events.Daemon.Internals;
 using Marten.Exceptions;
 using Npgsql;

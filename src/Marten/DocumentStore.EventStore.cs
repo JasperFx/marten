@@ -275,7 +275,7 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters);
-        return new ResilientEventLoader(Options.ResiliencePipeline, inner);
+        return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
     }
 
     private IEnumerable<ISqlFragment> buildEventLoaderFilters(EventFilterable filterable)
