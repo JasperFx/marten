@@ -96,7 +96,17 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
                     baseLockId);
 
             default:
-                return null;
+                // DaemonMode.Disabled: no async daemon, so there is nothing to distribute.
+                // Return a no-op distributor rather than null. The #4516 dedupe lifted the
+                // coordinator loop into JasperFx.Events.Daemon.ProjectionCoordinatorBase,
+                // whose ctor now rejects a null distributor — and a ProjectionCoordinator can
+                // legitimately be *constructed* (but never started) in Disabled mode, e.g. when
+                // Wolverine's ancillary-store integration resolves IProjectionCoordinator<T>
+                // for a store that delegates subscription distribution to Wolverine
+                // (AncillaryWolverineOptionsMartenExtensions). Pre-dedupe this was a null
+                // assignment that constructed fine; the no-op distributor preserves that while
+                // satisfying the lifted ctor's non-null contract.
+                return new NulloProjectionDistributor();
         }
     }
 
@@ -163,4 +173,30 @@ public class ProjectionCoordinator: ProjectionCoordinatorBase, IProjectionCoordi
 
         return daemon;
     }
+}
+
+// No-op distributor for DaemonMode.Disabled. A ProjectionCoordinator can be *constructed*
+// (but never started) when the async daemon is disabled — e.g. Wolverine's ancillary-store
+// integration resolves IProjectionCoordinator<T> for stores whose subscription distribution
+// it manages itself. The #4516 dedupe lifted the coordinator loop into JasperFx.Events'
+// ProjectionCoordinatorBase, whose ctor rejects a null distributor; this preserves the
+// pre-dedupe "constructible while disabled" behavior without weakening that contract. Every
+// member is a benign no-op (empty distribution, no locks), so it is also safe if ever run.
+internal sealed class NulloProjectionDistributor : IProjectionDistributor
+{
+    public ValueTask<IReadOnlyList<IProjectionSet>> BuildDistributionAsync()
+        => new(Array.Empty<IProjectionSet>());
+
+    public Task RandomWait(System.Threading.CancellationToken token) => Task.CompletedTask;
+
+    public bool HasLock(IProjectionSet set) => false;
+
+    public Task<bool> TryAttainLockAsync(IProjectionSet set, System.Threading.CancellationToken token)
+        => Task.FromResult(false);
+
+    public Task ReleaseLockAsync(IProjectionSet set) => Task.CompletedTask;
+
+    public Task ReleaseAllLocks() => Task.CompletedTask;
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
