@@ -11,3 +11,9 @@ global using SnapshotLifecycle = JasperFx.Events.Projections.SnapshotLifecycle;
 // (Single=0/Conjoined=1, Remove=0/SoftDelete=1). Same alias pattern as above.
 global using TenancyStyle = JasperFx.MultiTenancy.TenancyStyle;
 global using DeleteStyle = JasperFx.DeleteStyle;
+// Metadata markers consolidated to JasperFx.Metadata per the dedup audit
+// (jasperfx#330 / marten#4520 / pillar #214). Shapes are byte-identical
+// (ITracked uses Marten's non-nullable string). Same alias pattern as above.
+global using ISoftDeleted = JasperFx.Metadata.ISoftDeleted;
+global using IVersioned = JasperFx.Metadata.IVersioned;
+global using ITracked = JasperFx.Metadata.ITracked;
