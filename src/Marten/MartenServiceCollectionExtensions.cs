@@ -973,9 +973,8 @@ public interface IGlobalConfigureMarten: IConfigureMarten;
 ///     Mechanism to register additional Marten configuration that is applied after AddMarten()
 ///     configuration, but before DocumentStore is initialized
 /// </summary>
-public interface IConfigureMarten
+public interface IConfigureMarten: JasperFx.IConfigureStore<StoreOptions>
 {
-    void Configure(IServiceProvider services, StoreOptions options);
 }
 
 #endregion
@@ -987,9 +986,8 @@ public interface IConfigureMarten
 ///     configuration, but before DocumentStore is initialized when you need to utilize some
 ///     kind of asynchronous services like Microsoft's FeatureManagement feature to configure Marten
 /// </summary>
-public interface IAsyncConfigureMarten
+public interface IAsyncConfigureMarten: JasperFx.IAsyncConfigureStore<StoreOptions>
 {
-    ValueTask Configure(StoreOptions options, CancellationToken cancellationToken);
 }
 
 #endregion
