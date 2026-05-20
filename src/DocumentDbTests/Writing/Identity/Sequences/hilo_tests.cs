@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
@@ -22,7 +23,11 @@ public class AdvanceToNextHi : IEnumerable<object[]>
 {
     private static readonly Func<HiloSequence, Task> AsyncNext = sequence => sequence.AdvanceToNextHi();
     private static readonly Func<HiloSequence, Task> SyncNext = sequence =>  {
-        sequence.AdvanceToNextHiSync();
+        // AdvanceToNextHiSync is protected on the lifted Weasel.Core HiloSequenceBase (#4527),
+        // so invoke it reflectively to keep exercising the synchronous hi-advance I/O path.
+        typeof(HiloSequence)
+            .GetMethod("AdvanceToNextHiSync", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .Invoke(sequence, null);
         return Task.CompletedTask;
     };
     public IEnumerator<object[]> GetEnumerator()

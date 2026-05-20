@@ -80,7 +80,7 @@ public class closed_shape_id_strategies_tests: BugIntegrationContext
         {
             opts.Schema.For<IdentityKeyDoc>().IdStrategy(
                 new Marten.Schema.Identity.Sequences.IdentityKeyGeneration(
-                    (DocumentMapping)null!, new Marten.Schema.Identity.Sequences.HiloSettings()));
+                    (DocumentMapping)null!, new HiloSettings()));
         });
 
         var doc = new IdentityKeyDoc { Name = "v1" };
