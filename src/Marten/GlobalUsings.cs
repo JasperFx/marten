@@ -17,3 +17,8 @@ global using DeleteStyle = JasperFx.DeleteStyle;
 global using ISoftDeleted = JasperFx.Metadata.ISoftDeleted;
 global using IVersioned = JasperFx.Metadata.IVersioned;
 global using ITracked = JasperFx.Metadata.ITracked;
+// Patching surface consolidated to JasperFx.Events per the dedup audit
+// (jasperfx#331 / marten#4521 / pillar #214). RemoveAction (enum) is aliased here;
+// IPatchExpression<T> is an open generic so it cannot be aliased — its consumer
+// files import JasperFx.Events directly.
+global using RemoveAction = JasperFx.Events.RemoveAction;
