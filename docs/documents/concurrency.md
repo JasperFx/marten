@@ -173,7 +173,7 @@ public class Reservation: IRevisioned
 
     // other properties
 
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/RevisionedDocuments.cs#L83-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_versioned_reservation' title='Start of snippet'>anchor</a></sup>

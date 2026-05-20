@@ -85,51 +85,51 @@ See [#4440](https://github.com/JasperFx/marten/issues/4440).
 
 * See [#4306](https://github.com/JasperFx/marten/issues/4306).
 
-### Numeric document revisions widened from `int` to `long`
+### `IRevisioned` stays `int`; new `ILongVersioned` for 64-bit revisions
 
-* The numeric document revision (the value tracked in the `mt_version` column when `UseNumericRevisions` is enabled, or on aggregate documents that derive `Version` from the stream version) is now a 64-bit `long` everywhere. This removes the 2.1B-update-per-document ceiling that `int` imposed — comfortably within reach for high-throughput inline projections and per-event-snapshotted aggregates.
+::: warning Reversal since the early 9.0 alphas
+An early Marten 9 alpha widened `IRevisioned.Version` from `int` to `long`. **That was reverted before the 9.0 release candidate** (see [#4533](https://github.com/JasperFx/marten/pull/4533)). `IRevisioned.Version` is back to **`int`** — the Marten 8 signature. If you read an earlier alpha guide and already widened your `IRevisioned` documents to `long`, switch them to `ILongVersioned` (below) rather than leaving them on `IRevisioned`.
+:::
 
-  **What changed on the .NET side:**
+* **`IRevisioned` is unchanged from Marten 8 — there is no migration to do for ordinary revisioned documents.** `IRevisioned.Version` is `int`. An ordinary per-document revision counter rarely approaches the `int` ceiling, so this is the right default.
 
-  | Surface | Before | After |
+* **New: `ILongVersioned` (`long Version`).** Implement this instead of `IRevisioned` when the version is the global **event sequence number** — e.g. a document produced by a `MultiStreamProjection` — which can exceed `Int32.MaxValue`. A `MultiStreamProjection`-derived document that implements `IRevisioned` (int) overflows on the `bigint → int` read once its version passes `Int32`; `ILongVersioned` avoids that. Both interfaces opt the document into numeric revisioning and share the same `bigint` `mt_version` column — only the .NET member width differs. (See [#4526](https://github.com/JasperFx/marten/issues/4526) / [#4528](https://github.com/JasperFx/marten/issues/4528) and JasperFx [#348](https://github.com/JasperFx/jasperfx/issues/348).)
+
+  ```csharp
+  // Ordinary revisioned document — UNCHANGED from Marten 8 (int is correct, no edit needed)
+  public class Reservation : IRevisioned
+  {
+      public Guid Id { get; set; }
+      public int Version { get; set; }
+  }
+
+  // MultiStreamProjection document whose Version is the global event sequence number
+  public class CustomerSummary : ILongVersioned
+  {
+      public Guid Id { get; set; }
+      public long Version { get; set; }   // long avoids Int32 overflow at high event counts
+  }
+  ```
+
+* **The `[Version]` attribute works on `int` or `long`.** A `[Version]`-annotated property used with `UseNumericRevisions` may be either type; no change is required, and you may use `long` if you need the wider range.
+
+* **The underlying column is `bigint`, and a few internal surfaces are `long`.** Independent of which interface you implement, the `mt_version` column is `bigint`, and Marten tracks the revision internally as a 64-bit value. The following are `long` (they were `int` in Marten 8):
+
+  | Surface | Marten 8 | Marten 9 |
   | --- | --- | --- |
-  | `Marten.Metadata.IRevisioned.Version` | `int` | `long` |
-  | `[Version]`-annotated numeric properties on revisioned documents | `int` | `long` |
+  | `Marten.Metadata.IRevisioned.Version` | `int` | `int` (unchanged) |
+  | `JasperFx.ILongVersioned.Version` (new) | — | `long` |
   | `DocumentMetadata.CurrentRevision` | `int` | `long` |
   | `IDocumentSession.UpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
   | `IDocumentSession.TryUpdateRevision<T>(entity, revision)` parameter | `int` | `long` |
   | `IRevisionedOperation.Revision` | `int` | `long` |
-  | `MartenRegistry.MetadataConfig.Revision` | `Column<int>` | `Column<long>` |
+  | `MartenRegistry` metadata config `m.Revision` | `Column<int>` | `Column<long>` |
 
-  **What you have to change in your code:**
-
-  * Any class implementing `IRevisioned`: widen `Version` to `long`.
-
-    ```csharp
-    // Before (Marten 8)
-    public class Reservation : IRevisioned
-    {
-        public Guid Id { get; set; }
-        public int Version { get; set; }
-    }
-
-    // After (Marten 9)
-    public class Reservation : IRevisioned
-    {
-        public Guid Id { get; set; }
-        public long Version { get; set; }
-    }
-    ```
-
-  * Any document with a `[Version]`-annotated numeric property used with `UseNumericRevisions`: widen the property to `long`.
-  * Any `m.Revision.MapTo(x => x.SomeProperty)` configuration: the target property must be `long`. Mapping to an `int` property now throws `ArgumentOutOfRangeException` at mapping time.
-  * Any code calling `IDocumentSession.UpdateRevision` / `TryUpdateRevision` with an explicit `int` literal compiles unchanged (`int` is implicitly convertible to `long`); explicit `int` locals passed in widen with a one-character edit.
+  These widenings are source-compatible for almost all callers: an `int` argument is implicitly convertible to `long`, so existing calls to `UpdateRevision` / `TryUpdateRevision` compile unchanged, and `m.Revision.MapTo(...)` accepts an `int` *or* `long` member. The only place you might touch code is a custom `IRevisionedOperation` implementation (a rare, advanced extensibility hook), where `Revision` is now `long`.
 
   **Schema migration is automatic and non-destructive.** Existing Marten 8 deployments have an `integer` `mt_version` column. Marten 9's schema migration emits `ALTER TABLE … ALTER COLUMN mt_version TYPE bigint` and rewrites the associated `mt_upsert_*` / `mt_update_*` / `mt_overwrite_*` functions to accept and return `BIGINT`. All existing revision values are preserved — there is no data loss and no manual SQL to run.
 
   **Bulk insert** of a revisioned document type pre-loads expected-version values as `bigint`. If you have a custom `IBulkLoader<T>` implementation (rare), you must use `NpgsqlDbType.Bigint` instead of `NpgsqlDbType.Integer` for the expected-version column.
-
-  See [#3733](https://github.com/JasperFx/marten/issues/3733) / [#4377](https://github.com/JasperFx/marten/pull/4377).
 
 ### Optional HSTORE-backed DCB tag storage
 
