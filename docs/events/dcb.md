@@ -195,6 +195,36 @@ var aggregate = await theSession.Events.AggregateByTagsAsync<StudentCourseEnroll
 
 Returns `null` if no matching events are found.
 
+### Identity-less Boundary Aggregates
+
+`StudentCourseEnrollment` above carries a single-stream `Id`, so it doubles as an ordinary aggregate. A **pure boundary aggregate** has no single-stream identity at all — it exists only as the projection of the events selected by a tag query, spanning many streams. Mark such a type with `[BoundaryAggregate]` so the source generator still emits a dispatcher for it even though it has no `Id` property and no `[AggregateIdentity]`:
+
+<!-- snippet: sample_marten_dcb_boundary_aggregate -->
+<a id='snippet-sample_marten_dcb_boundary_aggregate'></a>
+```cs
+// A *pure* DCB boundary aggregate: Apply methods, but no single-stream identity
+// (no Id property, no [AggregateIdentity]). It spans multiple streams by tag, so
+// the only thing that makes the source generator emit an evolver for it is the
+// [BoundaryAggregate] marker. See marten#4510 / jasperfx#324.
+[BoundaryAggregate]
+public class SubscriptionState
+{
+    public int EnrollmentCount { get; set; }
+    public int ProgressCount { get; set; }
+
+    public void Apply(Enrolled _) => EnrollmentCount++;
+    public void Apply(ProgressRecorded _) => ProgressCount++;
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Dcb/dcb_boundary_aggregate_fetch_for_writing_tests.cs#L22-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_marten_dcb_boundary_aggregate' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+Register it with `RegisterTagType<...>().ForAggregate<T>()` only — do **not** add a `LiveStreamAggregation<T>()` / `Snapshot<T>()` registration, since those require a stream identity. `AggregateByTagsAsync<T>` and `FetchForWritingByTags<T>` then work against the boundary aggregate.
+
+::: warning
+The `[BoundaryAggregate]` marker is required, and it is an explicit opt-in. Without it, an identity-less aggregate gets no source-generated dispatcher and `FetchForWritingByTags<T>` throws `InvalidProjectionException` ("No source-generated dispatcher found"). This is deliberate: a no-`Id` aggregate is far more often a forgotten identity than an intended boundary aggregate, so the marker distinguishes the two. The aggregate's assembly must reference the `JasperFx.Events.SourceGenerator` analyzer.
+:::
+
 ## Fetch for Writing (Consistency Boundary)
 
 `FetchForWritingByTags` loads the aggregate and establishes a consistency boundary. At `SaveChangesAsync` time, Marten checks whether any new events matching the query have been appended since the read, throwing `DcbConcurrencyException` if so:
