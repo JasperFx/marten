@@ -11,30 +11,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Marten.Services;
 
-public enum TrackLevel
+public sealed class OpenTelemetryOptions: JasperFx.OpenTelemetry.OpenTelemetryOptions
 {
-    /// <summary>
-    /// No Open Telemetry tracking
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Normal level of Open Telemetry tracking
-    /// </summary>
-    Normal,
-
-    /// <summary>
-    /// Very verbose event tracking, only suitable for debugging or performance tuning
-    /// </summary>
-    Verbose
-}
-
-public sealed class OpenTelemetryOptions
-{
-    /// <summary>
-    /// Used to track OpenTelemetry events for opening an connection or exceptions on a connection, for example when a command or data reader has been executed. This defaults to false.
-    /// </summary>
-    public TrackLevel TrackConnections { get; set; } = TrackLevel.None;
+    public OpenTelemetryOptions(): base("Marten")
+    {
+    }
 
     internal List<Action<IChangeSet>> Applications { get; } = new();
 
@@ -71,10 +52,6 @@ public sealed class OpenTelemetryOptions
             }
         });
     }
-
-    [IgnoreDescription]
-    public Meter Meter { get; } = new("Marten");
-
 }
 
 internal class MartenCommitMetrics(ILogger Logger, List<Action<IChangeSet>> applications): DocumentSessionListenerBase

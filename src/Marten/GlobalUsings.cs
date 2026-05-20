@@ -26,3 +26,7 @@ global using RemoveAction = JasperFx.Events.RemoveAction;
 // (jasperfx#333 / marten#4523 / pillar #214). Contract is verbatim from Marten's;
 // StoreOptions still implements it (explicit impls bind via this alias).
 global using IDocumentSchemaResolver = JasperFx.Events.IDocumentSchemaResolver;
+// TrackLevel consolidated to JasperFx.OpenTelemetry per the dedup audit
+// (jasperfx#332 / marten#4522 / pillar #214). Marten.Services.OpenTelemetryOptions
+// derives from the lifted base; TrackLevel is aliased here.
+global using TrackLevel = JasperFx.OpenTelemetry.TrackLevel;
