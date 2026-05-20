@@ -1,3 +1,4 @@
+using System;
 using JasperFx.Core;
 using Marten.Internal.CodeGeneration;
 using Marten.Internal.Sessions;
@@ -22,6 +23,12 @@ internal class RevisionColumn: MetadataColumn<long>, ISelectableColumn
     {
         return new RevisionArgument();
     }
+
+    // #4526/#4528: the bigint mt_version column backs either an int IRevisioned.Version
+    // or a long ILongVersioned.Version member. The bigint<->member conversion is handled
+    // by DocumentRevisionBinder (read) and the closed-shape operations (write).
+    protected override bool IsAcceptableMemberType(Type memberType)
+        => memberType == typeof(long) || memberType == typeof(int);
 
     public bool ShouldSelect(DocumentMapping mapping, StorageStyle storageStyle)
     {

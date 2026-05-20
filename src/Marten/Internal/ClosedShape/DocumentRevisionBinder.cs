@@ -35,7 +35,20 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     {
         if (revisionMember is not null)
         {
-            _setter = LambdaBuilder.Setter<TDoc, long>(revisionMember);
+            // #4526/#4528: the mt_version column is bigint, but the document member is
+            // either an int (IRevisioned) or a long (ILongVersioned). For an int member
+            // downcast the loaded long; this can overflow for huge MultiStreamProjection
+            // event sequences — those documents should use ILongVersioned (documented
+            // caveat).
+            if (revisionMember.GetRawMemberType() == typeof(int))
+            {
+                var intSetter = LambdaBuilder.Setter<TDoc, int>(revisionMember);
+                _setter = (doc, revision) => intSetter(doc, (int)revision);
+            }
+            else
+            {
+                _setter = LambdaBuilder.Setter<TDoc, long>(revisionMember);
+            }
         }
     }
 

@@ -16,7 +16,6 @@ using Microsoft.Extensions.Hosting;
 using Shouldly;
 using Weasel.Core;
 using Xunit;
-using IRevisioned = Marten.Metadata.IRevisioned;
 
 namespace DocumentDbTests.Concurrency;
 
@@ -567,7 +566,7 @@ public class RevisionedDoc: IRevisioned
     public Guid Id { get; set; }
     public string Name { get; set; }
 
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 public class OtherRevisionedDoc

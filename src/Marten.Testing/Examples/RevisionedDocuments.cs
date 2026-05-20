@@ -93,7 +93,7 @@ public class Reservation: IRevisioned
 
     // other properties
 
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 #endregion

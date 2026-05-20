@@ -189,6 +189,10 @@ Marten will not perfectly keep incrementing the IRevisioned.Revision number if t
 same session. Prefer using `UpdateRevision()` if you try to continuously update the same document from the same session!
 :::
 
+::: tip `IRevisioned` (int) vs `ILongVersioned` (long)
+`IRevisioned.Version` is an `int` — the right choice for an ordinary per-document revision counter. For documents projected from a `MultiStreamProjection` whose `Version` is the global **event sequence number**, the value can exceed `Int32.MaxValue`; implement `ILongVersioned` (with a `long Version`) instead. Both opt the document into numeric revisioning and use the same `bigint` `mt_version` column; the only difference is the member width. A `MultiStreamProjection`-derived document that implements `IRevisioned` (int) will overflow on the `bigint → int` read once its version exceeds `Int32` — use `ILongVersioned` for those.
+:::
+
 or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
 `UseNumericRevisions` behavior on the parent type with the decorated member being tracked as the version number as
 shown in this sample:

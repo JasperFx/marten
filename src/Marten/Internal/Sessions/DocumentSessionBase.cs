@@ -423,6 +423,9 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
             case IRevisioned revisioned when revisioned.Version != 0:
                 storage.Store(this, entity, revisioned.Version);
                 return;
+            case ILongVersioned longVersioned when longVersioned.Version != 0:
+                storage.Store(this, entity, longVersioned.Version);
+                return;
             default:
                 // Put it in the identity map -- if necessary
                 storage.Store(this, entity);

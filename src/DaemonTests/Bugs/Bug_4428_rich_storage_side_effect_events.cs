@@ -85,7 +85,7 @@ public class Bug4428Counter: IRevisioned
     public Guid Id { get; set; }
     public int Increments { get; set; }
     public int Bonuses { get; set; }
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 public partial class Bug4428CounterProjection: SingleStreamProjection<Bug4428Counter, Guid>
