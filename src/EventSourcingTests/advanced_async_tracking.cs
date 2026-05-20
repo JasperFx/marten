@@ -2,8 +2,10 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using JasperFx.Events;
+using Marten;
 using Marten.Events.Daemon.HighWater;
 using Marten.Events.Projections;
 using Marten.Storage;
@@ -108,5 +110,40 @@ public class advanced_async_tracking : OneOffConfigurationsContext, IAsyncLifeti
 
         var skips = await theDetector.FetchLastProgressionSkipsAsync(100, CancellationToken.None);
         skips.Any().ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task rebuilding_async_projection_twice_does_not_violate_skips_pk_4530()
+    {
+        // #4530: a rebuild rewinds mt_event_progression and re-advances the high-water
+        // mark, re-marking the same skip ending_sequence. Before the ON CONFLICT guard
+        // the second pass threw 23505 on pkey_mt_high_water_skips_ending_sequence.
+        using var store = DocumentStore.For(opts =>
+        {
+            opts.Connection(ConnectionSource.ConnectionString);
+            opts.DatabaseSchemaName = "adv_async_rebuild_4530";
+            opts.Events.EnableAdvancedAsyncTracking = true;
+            opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+        });
+
+        await store.Advanced.Clean.DeleteAllEventDataAsync();
+        await store.Advanced.Clean.DeleteDocumentsByTypeAsync(typeof(SimpleAggregate));
+
+        var streamId = Guid.NewGuid();
+        await using (var session = store.LightweightSession())
+        {
+            session.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent(), new CEvent());
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await store.BuildProjectionDaemonAsync();
+
+        // Two full rebuilds: the second re-marks the same high-water skip rows.
+        await daemon.RebuildProjectionAsync<SimpleAggregate>(CancellationToken.None);
+        await Should.NotThrowAsync(() => daemon.RebuildProjectionAsync<SimpleAggregate>(CancellationToken.None));
+
+        await using var query = store.QuerySession();
+        var aggregate = await query.LoadAsync<SimpleAggregate>(streamId);
+        aggregate.ShouldNotBeNull();
     }
 }

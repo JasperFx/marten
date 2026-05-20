@@ -15,12 +15,17 @@ BEGIN
         ON CONFLICT ON CONSTRAINT pk_mt_event_progression
             DO UPDATE SET last_seq_id = ending_sequence, last_updated = transaction_timestamp();
         IF ending_sequence > starting_sequence THEN
-            insert into {databaseSchema}.mt_high_water_skips (ending_sequence, starting_sequence) values (ending_sequence, starting_sequence);
+            -- Idempotent: a rebuild/replay re-marks the same skip (ending_sequence is the
+            -- PK). Re-recording an existing gap is a no-op. Conflict target is the PK
+            -- constraint (the bare column name collides with the function parameter). #4530.
+            insert into {databaseSchema}.mt_high_water_skips (ending_sequence, starting_sequence) values (ending_sequence, starting_sequence)
+                on conflict on constraint pkey_mt_high_water_skips_ending_sequence do nothing;
         END IF;
         return ending_sequence;
     ELSIF current_value = starting_sequence THEN
         update {databaseSchema}.mt_event_progression SET last_seq_id = ending_sequence, last_updated = transaction_timestamp() where shard_name = name;
-        insert into {databaseSchema}.mt_high_water_skips (ending_sequence, starting_sequence) values (ending_sequence, starting_sequence);
+        insert into {databaseSchema}.mt_high_water_skips (ending_sequence, starting_sequence) values (ending_sequence, starting_sequence)
+            on conflict on constraint pkey_mt_high_water_skips_ending_sequence do nothing;
         return ending_sequence;
     ELSE
         return current_value;
