@@ -311,7 +311,7 @@ public class DocThatShouldBeExempted2
 public class SimpleAggregate : IRevisioned
 {
     // This will be the aggregate version
-    public long Version { get; set; }
+    public int Version { get; set; }
 
     public Guid Id { get; set; }
 

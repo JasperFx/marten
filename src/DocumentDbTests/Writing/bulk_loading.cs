@@ -707,6 +707,6 @@ public class bulk_loading_Tests : OneOffConfigurationsContext, IAsyncLifetime
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public long Version { get; set; }
+        public int Version { get; set; }
     }
 }

@@ -102,7 +102,7 @@ internal abstract class MetadataColumn<T>: MetadataColumn
         {
             if (value != null)
             {
-                if (value.GetRawMemberType() != typeof(T))
+                if (!IsAcceptableMemberType(value.GetRawMemberType()!))
                 {
                     throw new ArgumentOutOfRangeException(nameof(value),
                         $"The {_memberName} member of {value.DeclaringType?.NameInCode() ?? "null"} has to be of type {typeof(T).NameInCode()}");
@@ -113,6 +113,13 @@ internal abstract class MetadataColumn<T>: MetadataColumn
             }
         }
     }
+
+    /// <summary>
+    /// Whether a document member of the given type can back this metadata column.
+    /// Defaults to an exact match on <typeparamref name="T"/>; the revision column
+    /// overrides this to accept both int (IRevisioned) and long (ILongVersioned).
+    /// </summary>
+    protected virtual bool IsAcceptableMemberType(Type memberType) => memberType == typeof(T);
 
     internal override async Task ApplyAsync(IMartenSession martenSession, DocumentMetadata metadata, int index,
         DbDataReader reader, CancellationToken token)

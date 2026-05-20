@@ -17,6 +17,11 @@ global using SnapshotLifecycle = JasperFx.Events.Projections.SnapshotLifecycle;
 // TenancyStyle + DeleteStyle -> JasperFx (jasperfx#327 / marten#4517)
 global using TenancyStyle = JasperFx.MultiTenancy.TenancyStyle;
 global using DeleteStyle = JasperFx.DeleteStyle;
+// IRevisioned reverted to JasperFx's canonical int signature; ILongVersioned (long)
+// added for MultiStreamProjection-derived docs whose Version is the event sequence
+// (jasperfx#348 / marten#4526 / marten#4528).
+global using IRevisioned = JasperFx.IRevisioned;
+global using ILongVersioned = JasperFx.ILongVersioned;
 // Metadata markers -> JasperFx.Metadata (jasperfx#330 / marten#4520)
 global using ISoftDeleted = JasperFx.Metadata.ISoftDeleted;
 global using IVersioned = JasperFx.Metadata.IVersioned;

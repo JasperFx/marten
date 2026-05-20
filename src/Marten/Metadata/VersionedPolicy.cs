@@ -26,6 +26,16 @@ internal class VersionedPolicy: IDocumentPolicy
             mapping.Metadata.Revision.Member = mapping.DocumentType.GetProperty(nameof(IRevisioned.Version));
         }
 
+        // #4528: ILongVersioned is the 64-bit revision variant for documents projected
+        // from a MultiStreamProjection, where Version is the global event sequence number
+        // and can exceed Int32.
+        else if (mapping.DocumentType.CanBeCastTo<ILongVersioned>())
+        {
+            mapping.UseNumericRevisions = true;
+            mapping.Metadata.Revision.Enabled = true;
+            mapping.Metadata.Revision.Member = mapping.DocumentType.GetProperty(nameof(ILongVersioned.Version));
+        }
+
         if (mapping.UseOptimisticConcurrency)
         {
             mapping.Metadata.Version.Enabled = true;

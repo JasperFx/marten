@@ -191,9 +191,9 @@ public class closed_shape_numeric_revisions_tests: BugIntegrationContext
     }
 }
 
-public class RevDoc: Marten.Metadata.IRevisioned
+public class RevDoc: IRevisioned
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public long Version { get; set; }
+    public int Version { get; set; }
 }

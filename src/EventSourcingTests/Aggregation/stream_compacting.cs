@@ -362,7 +362,7 @@ public class Letters : IRevisioned
     public int BCount { get; set; }
     public int CCount { get; set; }
     public int DCount { get; set; }
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 public class LetterCounts: IRevisioned
@@ -372,7 +372,7 @@ public class LetterCounts: IRevisioned
     public int BCount { get; set; }
     public int CCount { get; set; }
     public int DCount { get; set; }
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 public class LetterCountsByString: IRevisioned
@@ -382,7 +382,7 @@ public class LetterCountsByString: IRevisioned
     public int BCount { get; set; }
     public int CCount { get; set; }
     public int DCount { get; set; }
-    public long Version { get; set; }
+    public int Version { get; set; }
 }
 
 public partial class LetterCountsByStringProjection: SingleStreamProjection<LetterCountsByString, string>
