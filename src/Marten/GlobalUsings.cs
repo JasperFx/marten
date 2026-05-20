@@ -22,3 +22,7 @@ global using ITracked = JasperFx.Metadata.ITracked;
 // IPatchExpression<T> is an open generic so it cannot be aliased — its consumer
 // files import JasperFx.Events directly.
 global using RemoveAction = JasperFx.Events.RemoveAction;
+// IDocumentSchemaResolver consolidated to JasperFx.Events per the dedup audit
+// (jasperfx#333 / marten#4523 / pillar #214). Contract is verbatim from Marten's;
+// StoreOptions still implements it (explicit impls bind via this alias).
+global using IDocumentSchemaResolver = JasperFx.Events.IDocumentSchemaResolver;
