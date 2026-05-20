@@ -45,7 +45,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
         _naturalKeyTableName =
             $"{events.DatabaseSchemaName}.mt_natural_key_{naturalKey.AggregateType.Name.ToLowerInvariant()}";
         _streamIdColumn = events.StreamIdentity == StreamIdentity.AsGuid ? "stream_id" : "stream_key";
-        _isConjoined = events.TenancyStyle == Storage.TenancyStyle.Conjoined;
+        _isConjoined = events.TenancyStyle == TenancyStyle.Conjoined;
         _isGlobal = events.GlobalAggregates.Contains(typeof(TDoc));
     }
 

@@ -457,31 +457,12 @@ public partial class DocumentMapping: IDocumentMapping, IDocumentType
 
     public static MemberInfo FindIdMember(Type documentType)
     {
-        // Order of finding id member should be
-        // 1) IdentityAttribute on property
-        // 2) IdentityAttribute on field
-        // 3) Id Property
-        // 4) Id field
-        var propertiesWithTypeValidForId = GetProperties(documentType)
-            .Where(p => IsValidIdentityType(p.PropertyType));
-        var fieldsWithTypeValidForId = documentType.GetFields()
-            .Where(f => IsValidIdentityType(f.FieldType));
-        return propertiesWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-               ?? fieldsWithTypeValidForId.FirstOrDefault(x => x.HasAttribute<IdentityAttribute>())
-               ?? (MemberInfo)propertiesWithTypeValidForId
-                   .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase))
-               ?? fieldsWithTypeValidForId
-                   .FirstOrDefault(x => x.Name.Equals("id", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static PropertyInfo[] GetProperties(Type type)
-    {
-        return type.GetTypeInfo().IsInterface
-            ? new[] { type }
-                .Concat(type.GetInterfaces())
-                .SelectMany(i => i.GetProperties()).ToArray()
-            : type.GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                .OrderByDescending(x => x.DeclaringType == type).ToArray();
+        // #4525: the attribute-then-convention traversal (IdentityAttribute on a
+        // property, then a field, then a case-insensitive "id" property/field) is
+        // lifted verbatim to JasperFx.DocumentIdentity. Marten keeps its own
+        // IsValidIdentityType predicate (which also recognizes strong-typed ids and
+        // F# DUs) so resolution behavior is unchanged.
+        return JasperFx.DocumentIdentity.FindIdMember(documentType, IsValidIdentityType);
     }
 
     public DocumentIndex AddGinIndexToData()

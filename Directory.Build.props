@@ -16,4 +16,14 @@
         <PackageReference Include="DotNet.ReproducibleBuilds" PrivateAssets="All" />
     </ItemGroup>
 
+    <!-- Critter Stack 2026 dedupe pillar (jasperfx#214): centralized global-using
+         aliases mapping the old Marten names to the lifted JasperFx / Weasel.Core
+         types. Linked as a shared compile (not via MSBuild <Using>, since
+         ImplicitUsings is off repo-wide) into every JasperFx-referencing project.
+         F# projects (.fsproj), netstandard2.0 (the source generator), and any
+         project setting IncludeMartenDedupeAliases=false are excluded. -->
+    <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and '$(IncludeMartenDedupeAliases)' != 'false' and '$(TargetFramework)' != 'netstandard2.0'">
+        <Compile Include="$(MSBuildThisFileDirectory)src/Shared/DedupeAliases.cs" Link="Shared/DedupeAliases.cs" />
+    </ItemGroup>
+
 </Project>

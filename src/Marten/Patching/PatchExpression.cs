@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten.Internal.Sessions;
 using Marten.Linq.Parsing;
 using Marten.Util;

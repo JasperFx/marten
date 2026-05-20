@@ -39,7 +39,7 @@ public class project_events_from_multiple_streams_into_view: OneOffConfiguration
         StoreOptions(opts =>
         {
             opts.AutoCreateSchemaObjects = AutoCreate.All;
-            opts.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Schema.For<NewsletterSubscription>().MultiTenanted();
             opts.Projections.Add(new NewsletterSubscriptionProjection(), ProjectionLifecycle.Inline);
 

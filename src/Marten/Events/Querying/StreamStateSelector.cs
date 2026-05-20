@@ -14,7 +14,7 @@ namespace Marten.Events.Querying;
 /// <summary>
 ///     Internal base class for generated stream state query handling. Only the
 ///     <c>ConfigureCommand</c> step (which varies by <see cref="JasperFx.Events.StreamIdentity"/>
-///     and <see cref="Marten.Storage.TenancyStyle"/>) is codegen'd; the row read is delegated
+///     and <see cref="JasperFx.MultiTenancy.TenancyStyle"/>) is codegen'd; the row read is delegated
 ///     to <see cref="IEventStorage"/>'s <see cref="ISelector{StreamState}"/> implementation so
 ///     <see cref="DocumentStore"/>'s <c>FetchStreamStateAsync</c> shares the same reader as
 ///     any other call site (e.g. the <c>IEventStore</c> explorer) that needs a
