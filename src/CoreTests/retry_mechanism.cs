@@ -10,10 +10,6 @@ using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
 using Weasel.Postgresql;
-// OperationRole moved to Weasel.Core per the dedup audit (#4350 / pillar #214).
-// Use a file-local alias to avoid pulling in Weasel.Core wholesale (which
-// would collide with Marten.Internal.Operations.IStorageOperation).
-using OperationRole = Weasel.Core.OperationRole;
 using Xunit;
 
 namespace CoreTests;
