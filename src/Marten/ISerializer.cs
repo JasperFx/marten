@@ -160,30 +160,8 @@ public interface ISerializer
 
 #endregion
 
-/// <summary>
-///     Governs the JSON serialization behavior of how .Net
-///     member names are persisted in the JSON stored in
-///     the database
-/// </summary>
-public enum Casing
-{
-    /// <summary>
-    ///     Exactly mimic the .Net member names in the JSON persisted to the database
-    /// </summary>
-    Default,
-
-    /// <summary>
-    ///     Force the .Net member names to camel casing when serialized to JSON in
-    ///     the database
-    /// </summary>
-    CamelCase,
-
-    /// <summary>
-    ///     Force the .Net member names to snake casing when serialized to JSON in
-    ///     the database
-    /// </summary>
-    SnakeCase
-}
+// Casing consolidated to Weasel.Core per the dedup audit (marten#4527 / pillar #214);
+// aliased in src/Shared/DedupeAliases.cs.
 
 /// <summary>
 ///     Governs .Net collection serialization
@@ -202,12 +180,5 @@ public enum CollectionStorage
     AsArray
 }
 
-[Flags]
-public enum NonPublicMembersStorage
-{
-    Default = 0,
-    NonPublicSetters = 1,
-    NonPublicDefaultConstructor = 2,
-    NonPublicConstructor = 4,
-    All = Default | NonPublicSetters | NonPublicDefaultConstructor | NonPublicConstructor
-}
+// NonPublicMembersStorage consolidated to Weasel.Core per the dedup audit
+// (marten#4527 / pillar #214); aliased in src/Shared/DedupeAliases.cs.
