@@ -57,7 +57,7 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
     [Fact]
     public async Task does_not_throw_exception_if_start_stream_is_called_on_existing_stream_with_the_same_tenant_and_tenancy_style_conjoined()
     {
-        StoreOptions(_ => _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined);
+        StoreOptions(_ => _.Events.TenancyStyle = TenancyStyle.Conjoined);
 
         var stream = Guid.NewGuid();
         const string tenantName = "Tenant";
@@ -82,7 +82,7 @@ public class start_stream_should_enforce_that_it_is_a_new_stream: OneOffConfigur
     [Fact]
     public async Task does_not_throw_exception_if_start_stream_is_called_on_existing_stream_with_different_tenant_and_tenancy_style_conjoined()
     {
-        StoreOptions(_ => _.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined);
+        StoreOptions(_ => _.Events.TenancyStyle = TenancyStyle.Conjoined);
 
         var stream = Guid.NewGuid();
 

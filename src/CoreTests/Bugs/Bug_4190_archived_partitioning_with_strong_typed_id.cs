@@ -89,7 +89,7 @@ public class Bug_4190_archived_partitioning_with_strong_typed_id : BugIntegratio
         StoreOptions(opts =>
         {
             opts.Events.UseArchivedStreamPartitioning = true;
-            opts.Events.TenancyStyle = Marten.Storage.TenancyStyle.Conjoined;
+            opts.Events.TenancyStyle = TenancyStyle.Conjoined;
             opts.Events.RegisterTagType<EntityId>("entity");
         });
 
