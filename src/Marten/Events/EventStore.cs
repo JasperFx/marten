@@ -64,7 +64,7 @@ internal partial class EventStore: QueryEventStore, IEventStoreOperations
             _ => CompoundWhereFragment.And(holder.Fragments)
         };
 
-        var isConjoined = _store.Events.TenancyStyle == Storage.TenancyStyle.Conjoined;
+        var isConjoined = _store.Events.TenancyStyle == TenancyStyle.Conjoined;
 
         if (_store.Events.DcbStorageMode == DcbStorageMode.HStore)
         {
