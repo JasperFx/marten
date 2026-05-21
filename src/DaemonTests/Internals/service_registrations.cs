@@ -97,7 +97,7 @@ public class service_registrations
         var coordinator = container.GetInstance<IProjectionCoordinator>()
             .ShouldBeOfType<ProjectionCoordinator>();
 
-        coordinator.Distributor.ShouldBeOfType<SoloProjectionDistributor>();
+        coordinator.Distributor!.ShouldBeOfType<SoloProjectionDistributor>();
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class service_registrations
         var coordinator = container.GetInstance<IProjectionCoordinator>()
             .ShouldBeOfType<ProjectionCoordinator>();
 
-        coordinator.Distributor.ShouldBeOfType<SingleTenantProjectionDistributor>();
+        coordinator.Distributor!.ShouldBeOfType<SingleTenantProjectionDistributor>();
     }
 
     [Fact]
@@ -147,6 +147,6 @@ public class service_registrations
         var coordinator = container.GetInstance<IProjectionCoordinator>()
             .ShouldBeOfType<ProjectionCoordinator>();
 
-        coordinator.Distributor.ShouldBeOfType<MultiTenantedProjectionDistributor>();
+        coordinator.Distributor!.ShouldBeOfType<MultiTenantedProjectionDistributor>();
     }
 }
