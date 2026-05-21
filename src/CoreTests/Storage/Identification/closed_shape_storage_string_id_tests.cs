@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Schema;
 using Marten.Internal.ClosedShape;
