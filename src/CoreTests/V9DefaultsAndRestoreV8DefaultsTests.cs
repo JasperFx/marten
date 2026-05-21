@@ -31,12 +31,6 @@ public class V9DefaultsAndRestoreV8DefaultsTests
     }
 
     [Fact]
-    public void v9_default_for_enable_event_skipping_in_projections_or_subscriptions_is_true()
-    {
-        new StoreOptions().Events.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeTrue();
-    }
-
-    [Fact]
     public void v9_default_for_use_identity_map_for_aggregates_is_true()
     {
         new StoreOptions().Events.UseIdentityMapForAggregates.ShouldBeTrue();
@@ -70,14 +64,6 @@ public class V9DefaultsAndRestoreV8DefaultsTests
         var opts = new StoreOptions();
         opts.RestoreV8Defaults();
         opts.Events.EnableAdvancedAsyncTracking.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void restore_v8_defaults_reverts_enable_event_skipping_in_projections_or_subscriptions_to_false()
-    {
-        var opts = new StoreOptions();
-        opts.RestoreV8Defaults();
-        opts.Events.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
     }
 
     [Fact]

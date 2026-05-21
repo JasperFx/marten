@@ -175,12 +175,6 @@ Marten 9 ships a handful of `StoreOptions` defaults flipped to the values recomm
 * **Restore the V8 default:** `opts.Events.EnableAdvancedAsyncTracking = false;` (or `opts.RestoreV8Defaults();`).
 * See the [Async Projection Daemon](events/projections/async-daemon.md) docs.
 
-#### **`Events.EnableEventSkippingInProjectionsOrSubscriptions` now defaults to `true`**
-
-* **Was `false` in Marten 8.x.** Enables marking individual events as "plain bad" so a stuck projection or subscription can skip them on subsequent attempts instead of jamming the shard.
-* **Restore the V8 default:** `opts.Events.EnableEventSkippingInProjectionsOrSubscriptions = false;` (or `opts.RestoreV8Defaults();`).
-* See the [Async Projection Daemon](events/projections/async-daemon.md) docs.
-
 #### **`Events.UseIdentityMapForAggregates` now defaults to `true` — read carefully**
 
 * **Was `false` in Marten 8.x.** This optimizes inline aggregate projections by keeping a session-local identity map of in-flight aggregates so multiple events in the same `SaveChangesAsync` resolve against a single aggregate instance.
@@ -544,7 +538,6 @@ var store = DocumentStore.For(opts =>
 | --- | --- |
 | `Events.AppendMode` | `EventAppendMode.Rich` — [Event Appending](events/appending.md) |
 | `Events.EnableAdvancedAsyncTracking` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
-| `Events.EnableEventSkippingInProjectionsOrSubscriptions` | `false` — [Async Projection Daemon](events/projections/async-daemon.md) |
 | `Events.UseIdentityMapForAggregates` | `false` — [Aggregate Projections](events/projections/aggregate-projections.md) |
 | `Events.EnableBigIntEvents` | `false` — [Event Store](events/index.md) |
 | `DisableNpgsqlLogging` | `false` — [StoreOptions](configuration/storeoptions.md) |
@@ -569,8 +562,8 @@ services.AddMarten(opts =>
         opts.Connection(configuration.GetConnectionString("Marten"));
 
         // Revert the StoreOptions defaults Marten 9 flipped (AppendMode,
-        // EnableAdvancedAsyncTracking, EnableEventSkippingInProjectionsOrSubscriptions,
-        // UseIdentityMapForAggregates, EnableBigIntEvents, DisableNpgsqlLogging).
+        // EnableAdvancedAsyncTracking, UseIdentityMapForAggregates,
+        // EnableBigIntEvents, DisableNpgsqlLogging).
         opts.RestoreV8Defaults();
 
         // Restore V8's Newtonsoft serializer default (Marten 9 ships STJ by default
