@@ -136,7 +136,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// exception-transform path to detect when a Postgres
     /// unique-constraint violation belongs to this document type's
     /// table so it can be surfaced as
-    /// <see cref="Marten.Exceptions.DocumentAlreadyExistsException"/>.
+    /// <see cref="JasperFx.DocumentAlreadyExistsException"/>.
     /// </summary>
     internal string TableName { get; }
 

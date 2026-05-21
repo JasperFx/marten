@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using JasperFx;
 using JasperFx.Core.Exceptions;
 using Marten.Exceptions;
 using Npgsql;

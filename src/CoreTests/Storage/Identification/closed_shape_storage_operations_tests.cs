@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Marten;
+using JasperFx;
 using Marten.Exceptions;
 using Marten.Internal.ClosedShape;
 using Marten.Testing.Harness;
