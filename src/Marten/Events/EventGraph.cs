@@ -92,7 +92,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // these. Anything not listed here kept its V8 default. See docs/migration-guide.md
         // for the per-setting rationale + the consolidated RestoreV8Defaults recipe.
         AppendMode = EventAppendMode.QuickWithServerTimestamps;
-        EnableEventSkippingInProjectionsOrSubscriptions = true;
         UseIdentityMapForAggregates = true;
         EnableBigIntEvents = true;
         EnableAdvancedAsyncTracking = true;

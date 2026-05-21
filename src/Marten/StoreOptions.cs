@@ -686,7 +686,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     ///     and linked option documentation):
     ///     <list type="bullet">
     ///       <item><see cref="EventGraph.AppendMode"/> &rarr; <see cref="EventAppendMode.Rich"/></item>
-    ///       <item><see cref="EventGraph.EnableEventSkippingInProjectionsOrSubscriptions"/> &rarr; <c>false</c></item>
     ///       <item><see cref="EventGraph.UseIdentityMapForAggregates"/> &rarr; <c>false</c></item>
     ///       <item><see cref="EventGraph.EnableBigIntEvents"/> &rarr; <c>false</c></item>
     ///       <item><see cref="DisableNpgsqlLogging"/> &rarr; <c>false</c></item>
@@ -714,7 +713,6 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
     {
         Events.AppendMode = EventAppendMode.Rich;
         Events.EnableAdvancedAsyncTracking = false;
-        Events.EnableEventSkippingInProjectionsOrSubscriptions = false;
         Events.UseIdentityMapForAggregates = false;
         Events.EnableBigIntEvents = false;
         DisableNpgsqlLogging = false;

@@ -196,9 +196,11 @@ public class EventGraphTests
     }
 
     [Fact]
-    public void enable_event_skipping_should_be_enabled_by_default()
+    public void enable_event_skipping_should_be_disabled_by_default()
     {
-        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeTrue();
+        // Opt-in feature: defaults to false (the V8 behavior was retained for 9.0).
+        // Silently skipping poison events is too surprising to be on out of the box.
+        theGraph.EnableEventSkippingInProjectionsOrSubscriptions.ShouldBeFalse();
     }
 
     public class HouseRemodeling
