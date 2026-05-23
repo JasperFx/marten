@@ -63,6 +63,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     private DocumentStore _store;
 
+    // The owning store, set in Initialize(store). Lets database-level operations
+    // (e.g. MartenDatabase's dead-letter count reads, #4546) open a session via
+    // SessionOptions.ForDatabase(...) to query Marten documents with LINQ.
+    internal DocumentStore Store => _store;
+
     private readonly List<ITagTypeRegistration> _tagTypes = new();
 
     internal EventGraph(StoreOptions options)

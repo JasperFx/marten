@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
@@ -208,6 +209,47 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
         {
             await conn.CloseAsync().ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    ///     marten#4546 / jasperfx#356: count the stored projection/subscription dead letter
+    ///     events for a single shard. With SkipApplyErrors on (the JasperFx.Events 2.0 default)
+    ///     a failed Apply is recorded as a <see cref="DeadLetterEvent" />, so the accumulation is
+    ///     the primary "this projection is unhealthy" signal. DeadLetterEvent is a single-tenanted
+    ///     document in the event store schema, so this count spans every tenant sharing this
+    ///     database (consistent with <see cref="AllProjectionProgress" />).
+    /// </summary>
+    public async Task<long> CountDeadLetterEventsAsync(ShardName shard, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
+
+        // DeadLetterEvent is a Marten document, so query it with LINQ — the JSONB
+        // member paths (and serializer Casing) are handled by Marten.
+        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+        return await session.Query<DeadLetterEvent>()
+            .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey)
+            .CountAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     marten#4546 / jasperfx#356: fetch the stored dead letter event counts for this database,
+    ///     one row per shard (<see cref="DeadLetterShardCount.ProjectionName" /> +
+    ///     <see cref="DeadLetterShardCount.ShardKey" />). Mirrors the "give me every row" shape of
+    ///     <see cref="AllProjectionProgress" />.
+    /// </summary>
+    public async Task<IReadOnlyList<DeadLetterShardCount>> FetchDeadLetterCountsAsync(CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
+
+        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+        var rows = await session.Query<DeadLetterEvent>()
+            .GroupBy(x => new { x.ProjectionName, x.ShardName })
+            .Select(g => new { g.Key.ProjectionName, g.Key.ShardName, Count = g.Count() })
+            .ToListAsync(token).ConfigureAwait(false);
+
+        return rows
+            .Select(x => new DeadLetterShardCount(x.ProjectionName, x.ShardName, x.Count))
+            .ToList();
     }
 
     public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
