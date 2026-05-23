@@ -137,6 +137,37 @@ When using types annotated with `[JsonDerivedType]`, you **MUST** opt into the a
 options.AllowOutOfOrderMetadataProperties = true;
 ```
 
+## Source-Generated Metadata <Badge type="tip" text="System.Text.Json" />
+
+System.Text.Json builds the serialization metadata for each type via reflection the first time that type is serialized. You can remove that first-touch cost — and move toward AOT-clean serialization — by opting into a source-generated [`JsonSerializerContext`](https://learn.microsoft.com/dotnet/standard/serialization/system-text-json/source-generation) for your document types.
+
+Declare a context for the types you want covered:
+
+```cs
+[JsonSerializable(typeof(MyDocument))]
+[JsonSerializable(typeof(AnotherDocument))]
+internal partial class MyMartenJsonContext : JsonSerializerContext;
+```
+
+Then layer it into Marten's serializer with `UseTypeInfoResolver`:
+
+```cs
+var serializer = new SystemTextJsonSerializer();
+serializer.UseTypeInfoResolver(MyMartenJsonContext.Default);
+
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection(connectionString);
+    opts.Serializer(serializer);
+});
+```
+
+Types known to the context use its precompiled metadata, while everything else — Marten's internal documents, dynamic types, and any type the context does not cover — falls back to reflection. The reflection fallback is preserved on purpose, so covering only a subset of your types is safe.
+
+::: tip
+For a fully trimmed / AOT build you would supply a context that covers every serialized type and forgo the reflection fallback. See [AOT Publishing](/configuration/aot-publishing) for the broader story.
+:::
+
 ## Collection Storage <Badge type="warning" text="Newtonsoft Only" />
 
 Marten by default stores the collections as strongly typed (so with $type and $value). Because of that and current `MartenQueryable` limitations, it might result in not properly resolved nested collections queries.
