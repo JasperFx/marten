@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -263,6 +264,30 @@ public class SystemTextJsonSerializer: ISerializer
         configure(_withTypes);
 
         syncDocumentDeserializeOptions();
+    }
+
+    /// <summary>
+    ///     Opt in to System.Text.Json source generation by layering a
+    ///     <see cref="JsonSerializerContext"/> (or any <see cref="IJsonTypeInfoResolver"/>)
+    ///     ahead of a reflection-based resolver in every internal
+    ///     <see cref="JsonSerializerOptions"/>. Types known to the resolver use its
+    ///     precompiled metadata — removing the first-serialize reflection cost and enabling
+    ///     AOT-clean serialization for those types — while everything else (Marten's
+    ///     dynamic types, internal documents, anything the context doesn't cover) falls back
+    ///     to reflection. See marten#4540.
+    /// </summary>
+    /// <param name="resolver">
+    ///     The source-generated <see cref="JsonSerializerContext"/> (e.g. <c>MyContext.Default</c>)
+    ///     or any custom <see cref="IJsonTypeInfoResolver"/> to consult first.
+    /// </param>
+    public void UseTypeInfoResolver(IJsonTypeInfoResolver resolver)
+    {
+        if (resolver is null) throw new ArgumentNullException(nameof(resolver));
+
+        Configure(o =>
+            o.TypeInfoResolver = JsonTypeInfoResolver.Combine(
+                resolver,
+                o.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver()));
     }
 
     private void syncDocumentDeserializeOptions()
