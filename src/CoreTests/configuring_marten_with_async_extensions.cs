@@ -29,6 +29,14 @@ public class configuring_marten_with_async_extensions
                 {
                     opts.Connection(ConnectionSource.ConnectionString);
                     opts.DatabaseSchemaName = "async_config";
+
+                    // #4552: ApplyAllDatabaseChangesOnStartup takes the global advisory lock
+                    // (default id 4004) to apply schema changes. That id is shared by every
+                    // store in the suite, and advisory locks are connection-scoped, so a pooled
+                    // connection from another test's startup-apply can still hold 4004 and make
+                    // this acquisition time out under CI load ("Unable to attain a global lock in
+                    // time"). Use a distinct lock id so this test can't contend with the default.
+                    opts.ApplyChangesLockId = opts.ApplyChangesLockId + 4552;
                 }).ApplyAllDatabaseChangesOnStartup();
 
                 #region sample_registering_async_config_marten
