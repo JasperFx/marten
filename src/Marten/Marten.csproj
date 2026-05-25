@@ -33,7 +33,7 @@
         <!-- FSharp.Core removed: F# support uses reflection via FSharpTypeHelper -->
         <PackageReference Include="JasperFx" />
         <PackageReference Include="JasperFx.Events" />
-        <PackageReference Include="JasperFx.Events.SourceGenerator">
+        <PackageReference Include="JasperFx.Events.SourceGenerator" GeneratePathProperty="true">
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
@@ -45,6 +45,30 @@
         <PackageReference Include="Weasel.Postgresql" />
     </ItemGroup>
 
+    <!-- #4557: Bundle the JasperFx.Events.SourceGenerator analyzer into Marten's own
+         NuGet package (analyzers/dotnet/cs) so it is applied to every consuming project
+         automatically. Marten 9 requires a source-generated evolver for conventional
+         Apply/Create/ShouldDelete projections — there is no runtime fallback — but the
+         generator ships as a DevelopmentDependency that does NOT flow transitively, so a
+         consumer that only references the Marten package never ran it and hit
+         "No source-generated dispatcher found ..." at DocumentStore.For(). Carrying the
+         analyzer DLL in Marten's package is the self-contained fix. -->
+    <PropertyGroup>
+        <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_BundleEventsSourceGeneratorAnalyzer</TargetsForTfmSpecificContentInPackage>
+    </PropertyGroup>
+
+    <!-- Runs per-TFM (where the $(Pkg...) path property is resolved, unlike the outer
+         pack evaluation). The analyzer is TFM-agnostic and goes to analyzers/dotnet/cs,
+         so it must be contributed exactly once — guard on a single TFM to avoid a
+         duplicate-package-file conflict. -->
+    <Target Name="_BundleEventsSourceGeneratorAnalyzer"
+            Condition="'$(TargetFramework)' == 'net9.0' And '$(PkgJasperFx_Events_SourceGenerator)' != ''">
+        <ItemGroup>
+            <TfmSpecificPackageFile Include="$(PkgJasperFx_Events_SourceGenerator)\analyzers\dotnet\cs\JasperFx.Events.SourceGenerator.dll">
+                <PackagePath>analyzers/dotnet/cs</PackagePath>
+            </TfmSpecificPackageFile>
+        </ItemGroup>
+    </Target>
 
     <Import Project="../../Analysis.Build.props" />
 </Project>

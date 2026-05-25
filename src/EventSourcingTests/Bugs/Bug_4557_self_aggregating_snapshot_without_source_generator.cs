@@ -21,20 +21,29 @@ namespace EventSourcingTests.Bugs;
 //
 // The aggregate type + the Snapshot<MyType> registration both live in
 // Marten.Testing.OtherAssembly, which references Marten but NOT the
-// JasperFx.Events.SourceGenerator analyzer — faithfully mirroring a real consumer
-// app whose csproj only has `<PackageReference Include="Marten" />`. Marten hides
-// the analyzer with PrivateAssets=all, so the generator never runs in the consumer
-// assembly, no `[GeneratedEvolver]` attribute is emitted, and the runtime scan in
-// JasperFxAggregationProjectionBase.tryUseAssemblyRegisteredEvolver finds nothing.
+// JasperFx.Events.SourceGenerator analyzer. Originally the analyzer never reached a
+// consumer at all: Marten referenced it with PrivateAssets=all, so a project that only
+// had `<PackageReference Include="Marten" />` never ran the generator, no
+// `[GeneratedEvolver]` attribute was emitted, and the runtime scan in
+// JasperFxAggregationProjectionBase.tryUseAssemblyRegisteredEvolver found nothing.
+//
+// Resolution (#4557): Marten's NuGet package now BUNDLES the analyzer in
+// analyzers/dotnet/cs, so a real consumer that references only `Marten` gets the
+// generator automatically. That packaging fix is validated by packing Marten and
+// running the reproduction sample — it cannot be observed through a ProjectReference,
+// which never receives a NuGet-bundled analyzer. This test therefore still exercises
+// the underlying runtime fail-fast for the case where the analyzer genuinely did not
+// run in the aggregate's assembly (e.g. a consumer that strips the `analyzers` asset,
+// or the cross-assembly record gap below).
 //
 // (Defining these same types directly in EventSourcingTests would NOT reproduce,
 // because this test assembly references the analyzer explicitly and Pipeline 3 of
 // the generator would emit the dispatcher.)
 public class Bug_4557_self_aggregating_snapshot_without_source_generator
 {
-    // Current (broken) behavior — pins the exact failure so the branch stays green
-    // while we discuss the fix. The throw happens at DocumentStore.For(...) config
-    // time, before any database access.
+    // Pins the runtime fail-fast: when no source-generated dispatcher is present in the
+    // aggregate's assembly, registration throws at DocumentStore.For(...) — before any
+    // database access — rather than failing later at first event dispatch.
     [Fact]
     public void snapshot_without_source_generator_throws_at_registration()
     {
@@ -50,12 +59,15 @@ public class Bug_4557_self_aggregating_snapshot_without_source_generator
         ex.Message.ShouldContain("No source-generated dispatcher found");
     }
 
-    // Desired behavior once the root cause is addressed: a convention-based
-    // self-aggregating Snapshot<T> in an assembly without the source generator
-    // should still work (the migration guide promises "Marten falls back to runtime
-    // evolver lookup for those"). Skipped until that runtime fallback lands so CI
-    // stays green; un-skip when the fix is in place.
-    [Fact(Skip = "Reproduces #4557 — un-skip once the JasperFx runtime evolver fallback for convention methods lands.")]
+    // The end-to-end round trip a real consumer expects. This passes once the events
+    // source generator runs in this aggregate's assembly — which is exactly what the
+    // #4557 packaging fix does for package consumers (Marten now bundles the analyzer).
+    // It stays skipped here because Marten.Testing.OtherAssembly is a *ProjectReference*
+    // consumer and never receives a NuGet-bundled analyzer; the package-consumer path is
+    // validated by packing Marten and running the reproduction sample instead. Un-skip
+    // if/when OtherAssembly is given the analyzer or the cross-assembly generator change
+    // lands.
+    [Fact(Skip = "Validated via packaging (see PR); ProjectReference consumers don't receive a NuGet-bundled analyzer.")]
     public async Task snapshot_without_source_generator_should_round_trip()
     {
         using var store = DocumentStore.For(opts =>

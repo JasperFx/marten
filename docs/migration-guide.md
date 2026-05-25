@@ -332,7 +332,13 @@ public partial class OrderProjection : SingleStreamProjection<Order, Guid>
 
 The same shape applies to `EventProjection` — replace `Project<TEvent>(action)` / `ProjectAsync<TEvent>(action)` with `Project` / `ProjectAsync` method-convention overloads on a `partial` projection class.
 
-The `partial` keyword on the class is what lets the source generator emit a sibling partial declaration with the `[GeneratedEvolver]` dispatcher. Existing convention-based projections that don't currently use `partial` keep working without it (Marten falls back to runtime evolver lookup for those); adding `partial` is what enables the AOT-clean and trim-clean dispatcher path. See [Runtime code generation removed](#runtime-code-generation-removed) for the broader context on Marten 9's source-generated dispatch model.
+The `partial` keyword on a **projection subclass** (`SingleStreamProjection<T, TId>`, `MultiStreamProjection<...>`, `EventProjection`) is what lets the source generator emit a sibling partial declaration with the `[GeneratedEvolver]` dispatcher. **Self-aggregating** types registered via `Projections.Snapshot<T>(...)`, `LiveStreamAggregation<T>(...)`, `Projections.Add<SingleStreamProjection<T, TId>>(...)`, or used through `AggregateStreamAsync<T>(...)` / `FetchLatest<T>(...)` do **not** need to be `partial` — the generator emits a free-standing evolver keyed on the aggregate type.
+
+::: warning No runtime reflection fallback
+Marten 9 has **no runtime reflection/codegen fallback** for conventional `Apply`/`Create`/`ShouldDelete` methods (this was the whole point of the 9.0 projections rework — see [Runtime code generation removed](#runtime-code-generation-removed)). A projection that uses convention methods **must** have a source-generated dispatcher, or override `Evolve` / `EvolveAsync` / `DetermineAction` / `DetermineActionAsync` directly. If neither is present you get an `InvalidProjectionException: No source-generated dispatcher found ...` at `DocumentStore.For(...)`.
+
+The generator (`JasperFx.Events.SourceGenerator`) ships **inside the `Marten` NuGet package** as an analyzer ([#4557](https://github.com/JasperFx/marten/issues/4557)), so a normal `<PackageReference Include="Marten" />` is enough — you do not need to add the analyzer package yourself. It must, however, run in the assembly that **defines the aggregate type** (the runtime looks up the generated `[GeneratedEvolver]` in `typeof(TAggregate).Assembly`). If you reference Marten with `IncludeAssets`/`ExcludeAssets` that strip `analyzers`, the dispatcher won't be generated.
+:::
 
 If you need to delete the aggregate based on async work (the equivalent of the removed `DeleteEventAsync` overload), implement an `async`-returning `ShouldDelete` method that takes an `IQuerySession`:
 
