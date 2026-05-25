@@ -350,7 +350,8 @@ class Build : NukeBuild
                 "./src/Marten.Newtonsoft",
                 "./src/Marten.NodaTime",
                 "./src/Marten.AspNetCore",
-                "./src/Marten.EntityFrameworkCore"
+                "./src/Marten.EntityFrameworkCore",
+                "./src/Marten.SourceGenerator"
             };
 
             foreach (var project in projects)
