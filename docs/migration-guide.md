@@ -467,7 +467,7 @@ Async-only was the recommended path for several releases — the sync methods ha
   | Before (Marten 8 — `[Obsolete]`) | After (Marten 9) |
   | --- | --- |
   | `session.Query<Foo>().ToList()` | `await session.Query<Foo>().ToListAsync()` |
-  | `session.Query<Foo>().ToArray()` | `(await session.Query<Foo>().ToListAsync()).ToArray()` |
+  | `session.Query<Foo>().ToArray()` | `await session.Query<Foo>().ToListAsync()` |
   | `session.Query<Foo>().First()` | `await session.Query<Foo>().FirstAsync()` |
   | `session.Query<Foo>().FirstOrDefault()` | `await session.Query<Foo>().FirstOrDefaultAsync()` |
   | `session.Query<Foo>().Single()` | `await session.Query<Foo>().SingleAsync()` |
@@ -480,6 +480,8 @@ Async-only was the recommended path for several releases — the sync methods ha
   | `session.Query<Foo>().Sum(x => x.N)` | `await session.Query<Foo>().SumAsync(x => x.N)` |
   | `session.Query<Foo>().Average(x => x.N)` | `await session.Query<Foo>().AverageAsync(x => x.N)` |
   | `foreach (var f in session.Query<Foo>())` | `await foreach (var f in session.Query<Foo>().ToAsyncEnumerable(ct))` |
+
+  There is **no `ToArrayAsync()`** on a Marten `IQueryable<T>` — `ToListAsync()` is the async replacement for **both** `ToList()` and `ToArray()`. Prefer working with the `IReadOnlyList<T>` it returns; if you genuinely need a `T[]`, call `.ToArray()` on the awaited result (`(await session.Query<Foo>().ToListAsync()).ToArray()`).
 
 * Replace every `Load<T>`, `LoadMany<T>`, `Query<T>(sql, ...)`, `Json.*` sync call on `IQuerySession` with the corresponding `LoadAsync`, `LoadManyAsync`, `QueryAsync`, `Json.*Async` equivalent.
 
