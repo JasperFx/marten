@@ -138,6 +138,12 @@ The `Project()` methods can accept these arguments:
 
 The return value must be either `void` or `Task` depending on whether or not the method needs to be asynchronous
 
+## Identifying the Event Parameter
+
+In both the `Create()` and `Project()` conventions above, the event parameter can be named anything — Marten identifies it **by type**, not by name. Given `Project(StopEvent1 e, IDocumentOperations ops)`, `StopEvent1` is the event because it's the only concrete event type in the signature (`IDocumentOperations` is an interface and is never treated as the event). The same applies to `IEvent<T>`, which is always recognized as the event regardless of the parameter name.
+
+You only need a conventional parameter **name** — `@event`, `event`, `e`, or `ev` — when a method's signature is ambiguous (more than one parameter could be the event) and type inference alone can't resolve it. This is the same rule used by aggregation projections; see [How Marten Identifies the Event Argument](/events/projections/conventions#how-marten-identifies-the-event-argument).
+
 ## Reusing Documents in the Same Batch
 
 ::: tip

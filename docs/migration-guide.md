@@ -370,6 +370,15 @@ Marten 9 routes aggregation through a compile-time source generator (`JasperFx.E
 
 **Migration:** flip the visibility of any private / internal / protected `Apply` / `Create` / `ShouldDelete` methods (and event-shaped constructors) to `public`.
 
+### The event argument is identified by type, not parameter name {#event-parameter-naming}
+
+A common point of confusion when moving to convention methods is *which* parameter Marten treats as the event. Both the runtime registration and the source generator use the same rule for every projection type (`SingleStreamProjection`, `MultiStreamProjection`, `EventProjection`), and it is **type-based**, not name-based:
+
+- A parameter typed `IEvent<T>` is always the event, and `T` is the event type (use this when you want the [event metadata](/events/metadata)).
+- Otherwise the single **concrete** parameter that is *not* an interface (`IQuerySession`, `IDocumentOperations`), *not* `IEvent`, *not* `CancellationToken`, and *not* the aggregate type is the event.
+
+So you do **not** need to name the event parameter anything in particular — `Apply(SomeEvent e, MyAggregate aggregate)` and `Project(SomeEvent payload, IDocumentOperations ops)` both work regardless of the parameter's name. A conventional event parameter **name** is only consulted to disambiguate an unusual signature in which more than one parameter could be the event; the recognized names are `@event`, `event`, `e`, and `ev`. Full details: [How Marten Identifies the Event Argument](/events/projections/conventions#how-marten-identifies-the-event-argument).
+
 ```csharp
 // Before — pre-9.0, worked via reflection:
 public sealed class Invoice : AggregateBase

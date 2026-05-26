@@ -1,5 +1,19 @@
 # Aggregation with Conventional Methods
 
+## How Marten Identifies the Event Argument
+
+Every conventional method — `Create()`, `Apply()`, and `ShouldDelete()` here, as well as the `Project()` / `Transform()` methods on an [EventProjection](/events/projections/event-projections) — takes the event it handles as one of its parameters. Marten determines *which* parameter is the event using the same rules for every projection type (`SingleStreamProjection`, `MultiStreamProjection`, and `EventProjection`):
+
+1. If a parameter is typed `IEvent<T>`, that parameter is the event and `T` is the event type. Use this when you want access to the [event metadata](/events/metadata).
+2. Otherwise Marten looks for a single parameter whose type is a **concrete event type** — that is, not an interface such as `IQuerySession` / `IDocumentOperations`, not `IEvent`, not `CancellationToken`, and not the aggregate type. If exactly one parameter qualifies, it is the event. **This is the usual case, and the parameter can be named anything.**
+3. If a method has more than one parameter that could be the event (an ambiguous signature that type inference can't resolve), Marten falls back to the parameter **name**: a parameter named `@event`, `event`, `e`, or `ev` is taken as the event.
+
+In practice you almost never need to think about this. `Apply(SomeEvent e, MyAggregate aggregate)` just works, because `SomeEvent` is the only concrete, non-aggregate parameter — the name `e` is incidental, not required. The name convention only matters to disambiguate the unusual signature that has more than one candidate parameter.
+
+::: tip
+The recognized event parameter names are `@event`, `event`, `e`, and `ev`. You only ever need one of these when type inference alone cannot pick out the event parameter.
+:::
+
 ## Aggregate Creation
 
 ::: tip
