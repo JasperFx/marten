@@ -11,6 +11,7 @@ using Marten.Internal.Storage;
 using Marten.Linq.Includes;
 using Marten.Linq.Members;
 using Marten.Linq.Parsing;
+using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration;
 using Marten.Linq.SqlGeneration.Filters;
 using System.Diagnostics.CodeAnalysis;
@@ -97,6 +98,7 @@ public partial class CollectionUsage
                 statement.IsDistinct = IsDistinct = Inner.IsDistinct;
                 statement.Limit ??= Inner._limit;
                 statement.Offset ??= Inner._offset;
+                DistinctByExpression ??= Inner.DistinctByExpression;
             }
         }
 
@@ -110,6 +112,8 @@ public partial class CollectionUsage
 
         statement = compileNext(session, collection, statement, statistics).SelectorStatement();
 
+        ApplyDistinctByIfAny(statement, collection);
+
         // THIS CAN BE A PROBLEM IF IT'S DONE TOO SOON
         if (IsDistinct)
         {
@@ -121,6 +125,45 @@ public partial class CollectionUsage
         }
 
         return statement.Top();
+    }
+
+    /// <summary>
+    /// Translate a <c>DistinctBy(keySelector)</c> operator to PostgreSQL
+    /// <c>SELECT DISTINCT ON (key) ...</c>. The key is resolved against the queried
+    /// document collection (the same way an OrderBy member is) and prepended to the
+    /// ORDER BY, because Postgres requires the DISTINCT ON expression to match the
+    /// leftmost ORDER BY expression. See https://github.com/JasperFx/marten/issues/4565.
+    /// </summary>
+    private void ApplyDistinctByIfAny(SelectorStatement statement, IQueryableMemberCollection collection)
+    {
+        if (DistinctByExpression == null)
+        {
+            return;
+        }
+
+        var member = collection.MemberFor(DistinctByExpression, "Invalid DistinctBy() key selector");
+
+        // Use the exact same expression for both DISTINCT ON and the leading ORDER BY.
+        // Postgres requires them to match textually, and a typed member's ordering
+        // locator (e.g. CAST(... as integer)) differs from its RawLocator. Asc never
+        // appends a direction suffix, so the result is a bare column expression.
+        var keySql = member.BuildOrderingExpression(
+            new Ordering(DistinctByExpression, OrderingDirection.Asc), CasingRule.CaseSensitive);
+
+        statement.Ordering.Expressions.Insert(0, keySql);
+
+        if (statement.SelectClause is IDistinctOnSelectClause distinctOn)
+        {
+            distinctOn.DistinctOn = keySql;
+        }
+        else
+        {
+            throw new BadLinqExpressionException(
+                "Marten can only translate DistinctBy() when it is preceded by a Select(...) projection "
+                + "(for example Select(x => new { x.Foo, x.Bar }).DistinctBy(x => x.Foo)). For other query "
+                + "shapes, materialize with ToListAsync() and call DistinctBy() in memory. "
+                + "See https://github.com/JasperFx/marten/issues/4565.");
+        }
     }
 
 

@@ -33,7 +33,7 @@ public void select_a_single_value(IDocumentSession session)
     session.Query<Target>().Single(x => x.Number == 5);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L138-L156' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L152-L170' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_select_a_single_value' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Filtering Documents
@@ -58,7 +58,7 @@ public async Task basic_operators(IDocumentSession session)
     await session.Query<Target>().Where(x => x.Number <= 5).ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L20-L36' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_basic_operators' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L34-L50' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_by_basic_operators' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Marten's Linq support will also allow you to make "deep" searches on properties of properties (or fields):
@@ -71,7 +71,7 @@ public void deep_queries(IDocumentSession session)
     session.Query<Target>().Where(x => x.Inner.Number == 3);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L50-L56' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_nested_properties' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L64-L70' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_deep_nested_properties' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Right now, Marten supports both _and_ and _or_ queries with Linq:
@@ -88,7 +88,7 @@ public void and_or(IDocumentSession session)
     session.Query<Target>().Where(x => x.Number == 5 || x.Date == DateTime.Today);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L38-L48' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_and_or_or' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L52-L62' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_querying_with_and_or_or' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ordering Results
@@ -113,7 +113,7 @@ public void order_by(IDocumentSession session)
     session.Query<Target>().OrderBySql("substring(d.data -> 'String', 1, 2)");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L85-L101' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L99-L115' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Ordering with dynamic properties
@@ -146,7 +146,7 @@ public void order_by_dynamic_props(IDocumentSession session)
     session.Query<Target>().OrderBy("Date DESC", "Number");
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L103-L127' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L117-L141' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_ordering-in-linq-using-dynamic-props' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Case-insensitive ordering for strings
@@ -193,7 +193,7 @@ public async Task sample_aggregation_operations(IQuerySession session)
     var average = await session.Query<Target>().AverageAsync(x => x.Number);
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L190-L205' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L204-L219' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregation_operations' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Partitioning Operators
@@ -212,7 +212,7 @@ public async Task using_take_and_skip(IDocumentSession session)
     await session.Query<Target>().Skip(10).Take(10).OrderBy(x => x.Number).ToListAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L129-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L143-L150' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_take_and_skip' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 TODO -- link to the paging support
@@ -345,6 +345,58 @@ public async Task get_distinct_numbers()
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L31-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### DistinctBy()
+
+Marten translates the LINQ `DistinctBy(keySelector)` operator to PostgreSQL's [`SELECT DISTINCT ON (key) ...`](https://www.postgresql.org/docs/current/sql-select.html#SQL-DISTINCT), keeping one row per distinct key value ([#4565](https://github.com/JasperFx/marten/issues/4565)). Use it after a `Select(...)` projection:
+
+<!-- snippet: sample_distinct_by -->
+<a id='snippet-sample_distinct_by'></a>
+```cs
+public async Task distinct_by(IDocumentSession session)
+{
+    // Keep one row per distinct Number. DistinctBy() is translated to
+    // PostgreSQL `select distinct on (...)`, so it runs in the database
+    // rather than pulling every row into memory.
+    var results = await session.Query<Target>()
+        .Select(x => new { x.Number, x.String })
+        .DistinctBy(x => x.Number)
+        .ToListAsync();
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/LinqExamples.cs#L20-L32' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_distinct_by' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+This generates roughly:
+
+```sql
+select distinct on (d.data ->> 'InstitutionId') jsonb_build_object(...) as data
+from mt_doc_pendinginstitutionclaimline as d
+order by d.data ->> 'InstitutionId'
+```
+
+Things to know:
+
+- The key expression is automatically prepended to the `ORDER BY` because Postgres requires the `DISTINCT ON` expression to be the leftmost `ORDER BY` expression. Any `OrderBy()` you add becomes a secondary sort, so _which_ row survives within each key group follows your ordering (and is otherwise arbitrary, exactly like SQL `DISTINCT ON`).
+- The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.InstitutionId, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
+
+## CountBy(), AggregateBy(), and Index() (.NET 9)
+
+The `CountBy`, `AggregateBy`, and `Index` operators added in .NET 9 are **not translated to SQL by Marten**, because .NET only added them to `Enumerable` (there are no `IQueryable` overloads, so a query provider never sees them). Calling them on a Marten query therefore **runs client-side**: the full result set is pulled into memory first and the operator is applied there with LINQ to Objects — the same behavior you get with EF Core.
+
+::: warning
+`session.Query<Target>().CountBy(x => x.Color)` does **not** push the grouping into PostgreSQL — it materializes every matching document first. For large tables, express the grouping with `GroupBy(...).Select(...)`, which Marten does translate to a SQL `GROUP BY`:
+
+```csharp
+// Translated to SQL: select count(*), color ... group by color
+var counts = await session.Query<Target>()
+    .GroupBy(x => x.Color)
+    .Select(g => new { Color = g.Key, Count = g.Count() })
+    .ToListAsync();
+```
+
+(There is no efficient SQL equivalent for `AggregateBy`'s arbitrary accumulator function; `Index` corresponds to a window `row_number()` but is likewise only an in-memory operator today.) If/when .NET ships `Queryable` overloads for these, Marten can revisit native translation.
+:::
 
 ## Modulo Queries
 

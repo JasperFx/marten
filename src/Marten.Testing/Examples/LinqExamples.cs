@@ -17,6 +17,20 @@ public class LinqExamples
 
     #endregion
 
+    #region sample_distinct_by
+    public async Task distinct_by(IDocumentSession session)
+    {
+        // Keep one row per distinct Number. DistinctBy() is translated to
+        // PostgreSQL `select distinct on (...)`, so it runs in the database
+        // rather than pulling every row into memory.
+        var results = await session.Query<Target>()
+            .Select(x => new { x.Number, x.String })
+            .DistinctBy(x => x.Number)
+            .ToListAsync();
+    }
+
+    #endregion
+
     #region sample_query_by_basic_operators
     public async Task basic_operators(IDocumentSession session)
     {
