@@ -348,26 +348,27 @@ public async Task get_distinct_numbers()
 
 ### DistinctBy()
 
-Marten does **not** translate the LINQ `DistinctBy(keySelector)` operator to SQL. Calling it inside a query throws a `BadLinqExpressionException` rather than silently pulling the whole table into memory. (Native support would map to PostgreSQL's `SELECT DISTINCT ON (key) ...` and is tracked by [#4565](https://github.com/JasperFx/marten/issues/4565).)
-
-Until then, materialize the results first and run `DistinctBy()` in memory with LINQ to Objects:
+Marten translates the LINQ `DistinctBy(keySelector)` operator to PostgreSQL's [`SELECT DISTINCT ON (key) ...`](https://www.postgresql.org/docs/current/sql-select.html#SQL-DISTINCT), keeping one row per distinct key value ([#4565](https://github.com/JasperFx/marten/issues/4565)). Use it after a `Select(...)` projection:
 
 ```csharp
-// Throws BadLinqExpressionException -- DistinctBy() is not translated to SQL:
-// var institutions = await session.Query<PendingInstitutionClaimLine>()
-//     .Select(x => new { x.InstitutionId, x.InstitutionName })
-//     .DistinctBy(x => x.InstitutionId)
-//     .ToListAsync(cancellation);
-
-// Instead, fetch the projection, then DistinctBy() client-side:
-var rows = await session.Query<PendingInstitutionClaimLine>()
+var institutions = await session.Query<PendingInstitutionClaimLine>()
     .Select(x => new { x.InstitutionId, x.InstitutionName })
+    .DistinctBy(x => x.InstitutionId)
     .ToListAsync(cancellation);
-
-var institutions = rows.DistinctBy(x => x.InstitutionId).ToList();
 ```
 
-For a single column, the server-side `Distinct()` operator described above is translated to SQL and does not require materializing the result set.
+This generates roughly:
+
+```sql
+select distinct on (d.data ->> 'InstitutionId') jsonb_build_object(...) as data
+from mt_doc_pendinginstitutionclaimline as d
+order by d.data ->> 'InstitutionId'
+```
+
+Things to know:
+
+- The key expression is automatically prepended to the `ORDER BY` because Postgres requires the `DISTINCT ON` expression to be the leftmost `ORDER BY` expression. Any `OrderBy()` you add becomes a secondary sort, so _which_ row survives within each key group follows your ordering (and is otherwise arbitrary, exactly like SQL `DISTINCT ON`).
+- The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.InstitutionId, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
 
 ## Modulo Queries
 

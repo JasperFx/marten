@@ -13,6 +13,12 @@ public partial class CollectionUsage
     public List<Expression> WhereExpressions { get; } = new();
     public Expression? SelectExpression { get; set; }
 
+    /// <summary>
+    /// The key selector of a <c>DistinctBy(keySelector)</c> operator, if any.
+    /// Translated to PostgreSQL <c>SELECT DISTINCT ON (key)</c>. See #4565.
+    /// </summary>
+    public Expression? DistinctByExpression { get; set; }
+
     public void AddWhereClause(MethodCallExpression expression)
     {
         if (expression.Arguments.Count == 1)

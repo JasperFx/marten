@@ -10,8 +10,10 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject where T : notnull
+internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifyableFromObject, IDistinctOnSelectClause where T : notnull
 {
+    public string? DistinctOn { get; set; }
+
     public DataSelectClause(string from)
     {
         FromObject = from;
@@ -49,6 +51,13 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifya
         if (MemberName.IsNotEmpty())
         {
             sql.Append("select ");
+            if (DistinctOn.IsNotEmpty())
+            {
+                sql.Append("distinct on (");
+                sql.Append(DistinctOn);
+                sql.Append(") ");
+            }
+
             sql.Append(MemberName);
             sql.Append(" as data from ");
         }
