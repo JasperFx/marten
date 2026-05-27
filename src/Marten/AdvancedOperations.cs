@@ -17,6 +17,7 @@ using Marten.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Postgresql;
+using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
@@ -307,7 +308,12 @@ public class AdvancedOperations
     /// <param name="tenantIds"></param>
     public Task<TablePartitionStatus[]> AddMartenManagedTenantsAsync(CancellationToken token, params Guid[] tenantIds)
     {
-        return AddMartenManagedTenantsAsync(token, tenantIds.Select(id => id.ToString()).ToArray());
+        // The tenant id stays the canonical Guid string, but the partition *suffix* uses the
+        // hyphen-free "N" format (e.g. "538f87e5...") so it is a legal PostgreSQL identifier
+        // fragment. Previously this delegated to id.ToString() (with hyphens), which always
+        // failed suffix validation. See https://github.com/JasperFx/marten/issues/4567.
+        return AddMartenManagedTenantsAsync(token,
+            tenantIds.ToDictionary(id => id.ToString(), id => id.ToString("N")));
     }
 
     /// <summary>
@@ -354,6 +360,7 @@ public class AdvancedOperations
 
         var database = (PostgresqlDatabase)_store.Tenancy.Default.Database;
 
+        AssertSuffixesWithinIdentifierLimit(tenantIdToPartitionMapping.Values, LongestPartitionedTableNameLength(database));
 
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
         return await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
@@ -363,7 +370,13 @@ public class AdvancedOperations
             token).ConfigureAwait(false);
     }
 
-    internal static readonly Regex ValidPostgresqlIdentifierRegex = new(@"^[a-zA-Z_][a-zA-Z0-9_]*$", RegexOptions.Compiled);
+    // Partition suffixes are always concatenated onto an already-valid table name prefix
+    // (e.g. "mt_doc_mymessage_"), so the suffix itself does NOT need to satisfy the
+    // "identifiers start with a letter or underscore" rule — a digit-leading suffix such as
+    // a sanitized Guid ("538f87e5_...") produces a perfectly valid full identifier. We only
+    // reject characters that are illegal inside an unquoted identifier (anything other than
+    // letters, digits, and underscores). See https://github.com/JasperFx/marten/issues/4567.
+    internal static readonly Regex ValidPostgresqlIdentifierRegex = new(@"^[A-Za-z0-9_]+$", RegexOptions.Compiled);
 
     internal static void AssertValidPostgresqlIdentifiers(IEnumerable<string> suffixes)
     {
@@ -371,8 +384,51 @@ public class AdvancedOperations
         if (invalidSuffixes.Length > 0)
         {
             throw new ArgumentException(
-                $"The following partition suffix values contain illegal characters for PostgreSQL object identifiers: {string.Join(", ", invalidSuffixes.Select(s => $"'{s}'"))}. Suffixes must start with a letter or underscore and contain only letters, digits, and underscores.");
+                $"The following partition suffix values contain illegal characters for PostgreSQL object identifiers: {string.Join(", ", invalidSuffixes.Select(s => $"'{s}'"))}. Suffixes may contain only letters, digits, and underscores.");
         }
+    }
+
+    /// <summary>
+    /// The maximum length of a PostgreSQL object identifier in bytes (NAMEDATALEN - 1). Identifiers
+    /// longer than this are silently truncated by Postgres, which can collide partition tables.
+    /// </summary>
+    internal const int PostgresqlIdentifierMaxLength = 63;
+
+    /// <summary>
+    /// The real hazard for partition suffixes is not the leading character but the 63-byte identifier
+    /// limit: the full partition table name is "{baseTable}_{suffix}", and Postgres silently truncates
+    /// anything longer. Guard the full name against the longest partitioned table. See #4567.
+    /// </summary>
+    internal static void AssertSuffixesWithinIdentifierLimit(IEnumerable<string> suffixes, int longestTableNameLength)
+    {
+        if (longestTableNameLength <= 0)
+        {
+            return;
+        }
+
+        // -1 for the '_' separator between the table name and the suffix
+        var maxSuffixLength = PostgresqlIdentifierMaxLength - longestTableNameLength - 1;
+        var tooLong = suffixes.Where(s => s.Length > maxSuffixLength).Distinct().ToArray();
+        if (tooLong.Length > 0)
+        {
+            throw new ArgumentException(
+                $"The following partition suffix values would produce PostgreSQL table identifiers longer than the {PostgresqlIdentifierMaxLength}-byte limit (causing silent truncation and potential partition collisions): {string.Join(", ", tooLong.Select(s => $"'{s}'"))}. The longest partitioned table name is {longestTableNameLength} characters, so suffixes must be at most {maxSuffixLength} characters.");
+        }
+    }
+
+    private int LongestPartitionedTableNameLength(PostgresqlDatabase database)
+    {
+        var manager = _store.Options.TenantPartitions?.Partitions;
+        if (manager == null)
+        {
+            return 0;
+        }
+
+        return database.AllObjects().OfType<Table>()
+            .Where(x => x.Partitioning is ListPartitioning lp && ReferenceEquals(lp.PartitionManager, manager))
+            .Select(x => x.Identifier.Name.Length)
+            .DefaultIfEmpty(0)
+            .Max();
     }
 
     /// <summary>
