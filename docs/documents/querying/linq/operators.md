@@ -380,6 +380,24 @@ Things to know:
 - The key expression is automatically prepended to the `ORDER BY` because Postgres requires the `DISTINCT ON` expression to be the leftmost `ORDER BY` expression. Any `OrderBy()` you add becomes a secondary sort, so _which_ row survives within each key group follows your ordering (and is otherwise arbitrary, exactly like SQL `DISTINCT ON`).
 - The `DistinctBy()` key must be a member that also exists on the queried document (the common case where the projection copies members through, e.g. `Select(x => new { x.InstitutionId, ... })`). `DistinctBy()` must be preceded by a `Select(...)` projection; calling it directly on the document (`Query<T>().DistinctBy(...)`) throws a `BadLinqExpressionException` — project first, or materialize and use `DistinctBy()` in memory.
 
+## CountBy(), AggregateBy(), and Index() (.NET 9)
+
+The `CountBy`, `AggregateBy`, and `Index` operators added in .NET 9 are **not translated to SQL by Marten**, because .NET only added them to `Enumerable` (there are no `IQueryable` overloads, so a query provider never sees them). Calling them on a Marten query therefore **runs client-side**: the full result set is pulled into memory first and the operator is applied there with LINQ to Objects — the same behavior you get with EF Core.
+
+::: warning
+`session.Query<Target>().CountBy(x => x.Color)` does **not** push the grouping into PostgreSQL — it materializes every matching document first. For large tables, express the grouping with `GroupBy(...).Select(...)`, which Marten does translate to a SQL `GROUP BY`:
+
+```csharp
+// Translated to SQL: select count(*), color ... group by color
+var counts = await session.Query<Target>()
+    .GroupBy(x => x.Color)
+    .Select(g => new { Color = g.Key, Count = g.Count() })
+    .ToListAsync();
+```
+
+(There is no efficient SQL equivalent for `AggregateBy`'s arbitrary accumulator function; `Index` corresponds to a window `row_number()` but is likewise only an in-memory operator today.) If/when .NET ships `Queryable` overloads for these, Marten can revisit native translation.
+:::
+
 ## Modulo Queries
 
 Marten has the ability to use the modulo operator in Linq queries:
