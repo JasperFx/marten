@@ -57,12 +57,13 @@ public class validate_partition_suffixes
     }
 
     [Fact]
-    public void suffix_starting_with_digit_should_throw()
+    public void suffix_starting_with_digit_should_not_throw()
     {
-        var ex = Should.Throw<ArgumentException>(() =>
-            AdvancedOperations.AssertValidPostgresqlIdentifiers(["1tenant"]));
-
-        ex.Message.ShouldContain("1tenant");
+        // #4567: digit-leading suffixes (e.g. sanitized GUIDs) are valid because the suffix is
+        // always concatenated onto an already-valid table-name prefix (e.g. "mt_doc_mymessage_").
+        Should.NotThrow(() =>
+            AdvancedOperations.AssertValidPostgresqlIdentifiers(
+                ["1tenant", "538f87e5_6872_4676_9468_54500f905f78"]));
     }
 
     [Fact]
@@ -111,6 +112,37 @@ public class validate_partition_suffixes
     }
 
     [Fact]
+    public void suffix_within_identifier_length_limit_should_not_throw()
+    {
+        // base table (50) + '_' (1) + suffix (12) = 63 -> within the 63-byte limit
+        Should.NotThrow(() =>
+            AdvancedOperations.AssertSuffixesWithinIdentifierLimit(["abcdefghijkl"], 50));
+    }
+
+    [Fact]
+    public void suffix_exceeding_identifier_length_limit_should_throw()
+    {
+        // base table (50) + '_' (1) + suffix (13) = 64 -> exceeds the 63-byte limit
+        var ex = Should.Throw<ArgumentException>(() =>
+            AdvancedOperations.AssertSuffixesWithinIdentifierLimit(["abcdefghijklm"], 50));
+
+        ex.Message.ShouldContain("abcdefghijklm");
+        ex.Message.ShouldContain("63");
+    }
+
+    [Fact]
+    public void reporter_real_world_guid_suffix_passes_both_checks()
+    {
+        // The exact suffix from #4567: it is digit-leading and, concatenated onto a normal
+        // mt_doc_* table name, stays well within the 63-byte limit.
+        var suffix = "538f87e5_6872_4676_9468_54500f905f78";
+
+        Should.NotThrow(() => AdvancedOperations.AssertValidPostgresqlIdentifiers([suffix]));
+        Should.NotThrow(() =>
+            AdvancedOperations.AssertSuffixesWithinIdentifierLimit([suffix], "mt_doc_mymessage".Length));
+    }
+
+    [Fact]
     public void add_tenants_params_overload_should_throw_for_illegal_suffixes()
     {
         using var store = DocumentStore.For(opts =>
@@ -147,7 +179,7 @@ public class validate_partition_suffixes
     }
 
     [Fact]
-    public void guid_params_overload_delegates_to_string_overload()
+    public void guid_params_overload_uses_hyphen_free_suffix()
     {
         using var store = DocumentStore.For(opts =>
         {
@@ -156,12 +188,15 @@ public class validate_partition_suffixes
             opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants");
         });
 
-        // Guid.ToString() produces hyphens (e.g. "d3b07384-d9a0-...") which are invalid identifiers,
-        // so the validation should catch this
+        // #4567: the params Guid[] overload now derives a hyphen-free "N"-format suffix
+        // (e.g. "538f87e5..."), so it no longer fails suffix validation. It may still throw later
+        // for other reasons (database/partition state), but never an ArgumentException for the suffix.
         var id = Guid.NewGuid();
-        Should.Throw<ArgumentException>(() =>
+        var ex = Record.Exception(() =>
             store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, id)
                 .GetAwaiter().GetResult());
+
+        ex.ShouldNotBeOfType<ArgumentException>();
     }
 
     [Fact]
