@@ -2,6 +2,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using JasperFx.Core;
+using JasperFx.Events;
 using Marten;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -154,6 +155,23 @@ public class DocumentStore_IMartenStorage_implementation : IAsyncLifetime
     {
         var databases = await theStore.Storage.AllDatabases();
         databases.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task event_store_all_databases_returns_one_event_database_per_database()
+    {
+        // IEventStore.AllDatabases() is the store-agnostic mirror of IMartenStorage.AllDatabases() (#4570).
+        // A Marten + Wolverine host registers IEventStore (the concrete DocumentStore) in DI but not
+        // IEventDatabase, so this is how store-neutral tooling reaches every database.
+        var databases = await ((IEventStore)theStore).AllDatabases();
+        databases.Count.ShouldBe(3);
+
+        // Each IEventDatabase can serve the store-neutral read abstractions
+        foreach (var database in databases)
+        {
+            (await database.AllProjectionProgress()).ShouldNotBeNull();
+            (await database.FetchDeadLetterCountsAsync()).ShouldNotBeNull();
+        }
     }
 }
 
