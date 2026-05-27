@@ -65,6 +65,15 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         }
     }
 
+    async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
+    {
+        // Straight delegation to ITenancy, mirroring IMartenStorage.AllDatabases(). The IMartenDatabase
+        // interface does not itself extend IEventDatabase (only the concrete MartenDatabase does), so this
+        // projects rather than returning the list directly. See #4570.
+        var databases = await Tenancy.BuildDatabases().ConfigureAwait(false);
+        return databases.OfType<IEventDatabase>().ToList();
+    }
+
     public EventStoreIdentity Identity { get; }
 
     IEventRegistry IEventStore<IDocumentOperations, IQuerySession>.Registry => Options.EventGraph;
