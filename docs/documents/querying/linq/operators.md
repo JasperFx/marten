@@ -346,6 +346,29 @@ public async Task get_distinct_numbers()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Operators/distinct_operator.cs#L31-L52' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_get_distinct_numbers' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
+### DistinctBy()
+
+Marten does **not** translate the LINQ `DistinctBy(keySelector)` operator to SQL. Calling it inside a query throws a `BadLinqExpressionException` rather than silently pulling the whole table into memory. (Native support would map to PostgreSQL's `SELECT DISTINCT ON (key) ...` and is tracked by [#4565](https://github.com/JasperFx/marten/issues/4565).)
+
+Until then, materialize the results first and run `DistinctBy()` in memory with LINQ to Objects:
+
+```csharp
+// Throws BadLinqExpressionException -- DistinctBy() is not translated to SQL:
+// var institutions = await session.Query<PendingInstitutionClaimLine>()
+//     .Select(x => new { x.InstitutionId, x.InstitutionName })
+//     .DistinctBy(x => x.InstitutionId)
+//     .ToListAsync(cancellation);
+
+// Instead, fetch the projection, then DistinctBy() client-side:
+var rows = await session.Query<PendingInstitutionClaimLine>()
+    .Select(x => new { x.InstitutionId, x.InstitutionName })
+    .ToListAsync(cancellation);
+
+var institutions = rows.DistinctBy(x => x.InstitutionId).ToList();
+```
+
+For a single column, the server-side `Distinct()` operator described above is translated to SQL and does not require materializing the result set.
+
 ## Modulo Queries
 
 Marten has the ability to use the modulo operator in Linq queries:

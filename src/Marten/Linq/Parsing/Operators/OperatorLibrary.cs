@@ -31,6 +31,7 @@ internal class OperatorLibrary
         Add<GroupByOperator>();
         Add<AnyOperator>();
         Add<DistinctOperator>();
+        Add<DistinctByOperator>();
         Add<IncludeOperator>(); // TODO -- is this necessary?
         Add<IncludePlanOperator>();
 
