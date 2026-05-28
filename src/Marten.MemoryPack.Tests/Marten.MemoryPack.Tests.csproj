@@ -13,6 +13,11 @@
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
         <PackageReference Include="MemoryPack" />
+        <!-- #4515: Marten's source generator dispatches the Apply/Create
+             conventional methods on self-aggregating types like Trip in
+             BinaryEventIntegrationTests. Required in any test assembly
+             that defines its own aggregate / projection types. -->
+        <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>
