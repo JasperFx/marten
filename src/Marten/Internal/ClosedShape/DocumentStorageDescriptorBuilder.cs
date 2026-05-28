@@ -114,6 +114,19 @@ internal static class DocumentStorageDescriptorBuilder
             }
         }
 
+        // #4575: mt_created_at sits in the table between mt_last_modified
+        // and mt_dotnet_type (DocumentTable line 51), and DotNetTypeColumn
+        // is NOT ISelectableColumn, so in the SELECT projection it lands
+        // immediately after mt_last_modified. CreatedAtColumn.ShouldSelect
+        // is Member != null — read-only: the column has a
+        // transaction_timestamp() DEFAULT for insert and is never updated
+        // afterwards, so we deliberately keep it out of writeBinders to
+        // avoid clobbering the creation time on subsequent saves.
+        if (mapping.Metadata.CreatedAt.Enabled && mapping.Metadata.CreatedAt.Member is not null)
+        {
+            readBinders.Add(new DocumentCreatedAtBinder<TDoc>(mapping.Metadata.CreatedAt.Member));
+        }
+
         // Session-derived metadata columns: correlation_id, causation_id,
         // last_modified_by, headers. Each column gets a write slot when
         // enabled (the value comes from IMartenSession on every write,
