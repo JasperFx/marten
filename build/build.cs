@@ -42,7 +42,9 @@ class Build : NukeBuild
 
     Target TestExtensions => _ => _
         .DependsOn(TestNodaTime)
-        .DependsOn(TestAspnetcore);
+        .DependsOn(TestAspnetcore)
+        .DependsOn(TestPostGIS)
+        .DependsOn(TestPgVector);
 
     Target Init => _ => _
         .Executes(() =>
@@ -130,6 +132,30 @@ class Build : NukeBuild
         {
             DotNetTest(c => c
                 .SetProjectFile("src/Marten.AspNetCore.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestPostGIS => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.PostGIS.Tests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestPgVector => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.PgVector.Tests")
                 .SetConfiguration(Configuration)
                 .EnableNoBuild()
                 .EnableNoRestore()

@@ -424,6 +424,14 @@ const config: UserConfig<DefaultTheme.Config> = {
               text: 'Read Replicas',
               link: '/postgres/read-replicas'
             },
+            {
+              text: 'PostGIS spatial support',
+              link: '/postgres/postgis'
+            },
+            {
+              text: 'pgvector support',
+              link: '/postgres/pgvector'
+            },
             // {
             //   text: 'Backup and restore',
             //   link: '/postgres/backup-restore/'

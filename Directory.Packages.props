@@ -43,12 +43,15 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" />
     <PackageVersion Include="Neovolve.Logging.Xunit" Version="6.3.0" />
+    <PackageVersion Include="NetTopologySuite" Version="2.5.0" />
+    <PackageVersion Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="NodaTime.Serialization.JsonNet" Version="3.1.0" />
     <PackageVersion Include="NodaTime.Serialization.SystemTextJson" Version="1.1.2" />
     <PackageVersion Include="Npgsql" Version="9.0.4" />
     <PackageVersion Include="Npgsql.DependencyInjection" Version="9.0.2" />
     <PackageVersion Include="Npgsql.Json.NET" Version="9.0.4" />
+    <PackageVersion Include="Npgsql.NetTopologySuite" Version="9.0.4" />
     <PackageVersion Include="Npgsql.NodaTime" Version="9.0.2" />
     <PackageVersion Include="NSubstitute" Version="5.3.0" />
     <PackageVersion Include="Nuke.Common" Version="10.1.0" />
@@ -60,6 +63,7 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.8.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.8.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.0" />
+    <PackageVersion Include="Pgvector" Version="0.3.2" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Spectre.Console" Version="0.53.0" />
     <PackageVersion Include="StronglyTypedId" Version="1.0.0-beta08" />

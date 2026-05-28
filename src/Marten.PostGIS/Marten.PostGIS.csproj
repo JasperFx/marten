@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>PostGIS spatial extension for Marten — enables the "postgis" PostgreSQL extension and exposes spatial query helpers (NearestTo, WithinDistance, Containing, Intersecting) backed by NetTopologySuite geometry types.</Description>
+        <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>Marten.PostGIS</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="NetTopologySuite" />
+        <PackageReference Include="NetTopologySuite.IO.GeoJSON" />
+        <PackageReference Include="Npgsql.NetTopologySuite" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+        <!-- JsonNetSerializer (GeoJSON converters are wired through it) lives in Marten.Newtonsoft as of Marten 9 -->
+        <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
+    </ItemGroup>
+</Project>

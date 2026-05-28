@@ -104,6 +104,8 @@
     "ngram",
     "ngrams",
     "pgcrypto",
+    "pgvector",
+    "Ollama",
     "Jeremie",
     "Chassaing",
     "dedup"
