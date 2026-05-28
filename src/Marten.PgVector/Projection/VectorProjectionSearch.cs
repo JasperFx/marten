@@ -1,6 +1,7 @@
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Npgsql;
+using NpgsqlTypes;
 using Pgvector;
 
 namespace Marten.PgVector.Projection;
@@ -31,10 +32,15 @@ public static class VectorProjectionSearchExtensions
         var schemaName = store.Options.Events.DatabaseSchemaName;
         var qualifiedTable = $"{schemaName}.{projectionTableName}";
         var op = distance.Operator();
+        var dimensions = queryVector.ToArray().Length;
 
-        var sql = $"SELECT id, embedding {op} $1 as distance, content_text " +
+        // See PgVectorExtensions.VectorSearchAsync — bind the query vector as its
+        // text form and cast to vector(N) server-side to bypass the
+        // NpgsqlDataSource type-info cache (which can be stale when the "vector"
+        // extension is created at migration time on the same data source).
+        var sql = $"SELECT id, embedding {op} $1::vector({dimensions}) as distance, content_text " +
                   $"FROM {qualifiedTable} " +
-                  $"ORDER BY embedding {op} $1 LIMIT $2";
+                  $"ORDER BY embedding {op} $1::vector({dimensions}) LIMIT $2";
 
         var results = new List<VectorSearchResult>();
 
@@ -44,7 +50,7 @@ public static class VectorProjectionSearchExtensions
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
-        cmd.Parameters.Add(new NpgsqlParameter { Value = queryVector });
+        cmd.Parameters.Add(new NpgsqlParameter { Value = queryVector.ToString(), NpgsqlDbType = NpgsqlDbType.Text });
         cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
 
         await using var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);

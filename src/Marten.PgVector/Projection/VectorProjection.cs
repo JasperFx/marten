@@ -175,14 +175,19 @@ public abstract class VectorProjection : IProjection
             var (id, content, hash) = needsEmbedding[i];
             var embedding = embeddings[i];
 
+            // See PgVectorExtensions.VectorSearchAsync — bind the embedding as
+            // its text form and cast to vector(N) server-side. The
+            // NpgsqlDataSource type-info cache is unreliable across schema
+            // migrations that create the "vector" extension.
+            var dimensions = _provider.Dimensions;
             var upsertCmd = conn.CreateCommand();
             upsertCmd.CommandText =
                 $"INSERT INTO {qualifiedTable} (id, embedding, content_text, content_hash, last_updated) " +
-                $"VALUES ($1, $2, $3, $4, now()) " +
-                $"ON CONFLICT (id) DO UPDATE SET embedding = $2, content_text = $3, content_hash = $4, last_updated = now()";
+                $"VALUES ($1, $2::vector({dimensions}), $3, $4, now()) " +
+                $"ON CONFLICT (id) DO UPDATE SET embedding = $2::vector({dimensions}), content_text = $3, content_hash = $4, last_updated = now()";
 
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = id });
-            upsertCmd.Parameters.Add(new NpgsqlParameter { Value = embedding });
+            upsertCmd.Parameters.Add(new NpgsqlParameter { Value = embedding.ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text });
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = content });
             upsertCmd.Parameters.Add(new NpgsqlParameter { Value = hash });
 

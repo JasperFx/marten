@@ -3,6 +3,7 @@ using System.Reflection;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions;
 using Npgsql;
+using NpgsqlTypes;
 using Pgvector;
 using Pgvector.Npgsql;
 using Weasel.Postgresql;
@@ -66,9 +67,17 @@ public static class PgVectorExtensions
             whereClause += " AND d.tenant_id = $3";
         }
 
+        // Pass the query vector as its text form ([f1,f2,…]) and cast to vector(N)
+        // server-side instead of binding a Pgvector.Vector parameter. UseVector()
+        // registers a Pgvector.Vector ↔ "vector" OID mapping on the NpgsqlDataSource,
+        // but the data source caches pg_type the first time it opens a connection —
+        // if the "vector" extension is created later (e.g. by Marten's schema
+        // migration on the same data source), the cache is stale and parameter
+        // resolution throws "Cannot resolve 'vector' to a fully qualified datatype
+        // name." Routing through text + an explicit cast makes this race-immune.
         var sql = $"select d.data from {tableName} d " +
                   $"WHERE {whereClause} " +
-                  $"ORDER BY (d.data->>'{jsonPath}')::vector({dimensions}) {op} $1 LIMIT $2";
+                  $"ORDER BY (d.data->>'{jsonPath}')::vector({dimensions}) {op} $1::vector({dimensions}) LIMIT $2";
 
         var results = new List<T>();
 
@@ -78,7 +87,7 @@ public static class PgVectorExtensions
 
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
-        cmd.Parameters.Add(new NpgsqlParameter { Value = queryVector });
+        cmd.Parameters.Add(new NpgsqlParameter { Value = queryVector.ToString(), NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text });
         cmd.Parameters.Add(new NpgsqlParameter { Value = limit });
         if (hasTenantFilter)
         {
