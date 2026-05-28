@@ -29,13 +29,15 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
         string insertStreamSql,
         string updateStreamVersionSql,
         string streamStateSelectSql,
-        Func<IEvent, string> serializeEventData)
+        Func<IEvent, string> serializeEventData,
+        Func<IEvent, byte[]?> serializeEventBdata)
     {
         QuickAppendEventsWithServerTimestampsSql = quickAppendEventsWithServerTimestampsSql;
         InsertStreamSql = insertStreamSql;
         UpdateStreamVersionSql = updateStreamVersionSql;
         StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
+        SerializeEventBdata = serializeEventBdata;
     }
 
     /// <summary>
@@ -48,6 +50,14 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
     public string UpdateStreamVersionSql { get; }
     public string StreamStateSelectSql { get; }
     public Func<IEvent, string> SerializeEventData { get; }
+
+    /// <summary>
+    ///     #4515: serializer for the <c>bdata</c> bytea column on the per-event
+    ///     QuickWithVersion INSERT shape. Binary event types are rejected at
+    ///     descriptor-build time in Quick modes, so this always returns
+    ///     <c>null</c> — see <see cref="Quick.QuickEventStorageDescriptor.SerializeEventBdata"/>.
+    /// </summary>
+    public Func<IEvent, byte[]?> SerializeEventBdata { get; }
 
     /// <summary>Guid stream identity (writeId) vs string identity (writeKey).</summary>
     public bool IsGuidStreamIdentity { get; init; }

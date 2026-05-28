@@ -35,6 +35,7 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             _descriptor.AppendEventFullMetadataBinders,
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
+            _descriptor.SerializeEventBdata,
             stream,
             @event);
 
@@ -45,6 +46,7 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
             _descriptor.MetadataBinders,
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
+            _descriptor.SerializeEventBdata,
             stream,
             @event);
 

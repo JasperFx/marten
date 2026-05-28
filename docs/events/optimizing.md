@@ -11,6 +11,13 @@ very large data loads.
 Marten has several options to potentially increase the performance and scalability of a system that uses
 the event sourcing functionality:
 
+::: tip
+For hot streams where JSON serialization overhead dominates, see
+[Binary Event Serialization](/events/binary-serialization) — opt individual
+event types into MemoryPack (or any `IEventBinarySerializer`) on a
+per-type basis, with no migration of existing JSON-serialized events.
+:::
+
 <!-- snippet: sample_turn_on_optimizations_for_event_sourcing -->
 <a id='snippet-sample_turn_on_optimizations_for_event_sourcing'></a>
 ```cs

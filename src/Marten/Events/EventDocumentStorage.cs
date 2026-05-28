@@ -321,7 +321,31 @@ public abstract class EventDocumentStorage: IEventStorage
             }
         }
 
-        var @event = mapping.ReadEventData(_serializer, reader);
+        // #4515: per-row JSON-vs-binary dispatch. EventsTable pins bdata at
+        // column ordinal 3 right after data/type/mt_dotnet_type. bdata IS NULL
+        // means JSON-serialized event (existing path); non-null bytes mean
+        // binary-serialized — deserialize via the mapping's registered
+        // IEventBinarySerializer.
+        IEvent @event;
+        if (!reader.IsDBNull(3))
+        {
+            if (mapping.BinarySerializer is null)
+            {
+                throw new InvalidOperationException(
+                    $"Event row at mt_events.bdata is non-null but no IEventBinarySerializer is registered " +
+                    $"for type '{mapping.DocumentType.FullName}'. Configure with " +
+                    $"opts.Events.UseBinarySerializer<{mapping.DocumentType.Name}>(...) " +
+                    $"or set opts.Events.DefaultBinarySerializer.");
+            }
+
+            var bytes = reader.GetFieldValue<byte[]>(3);
+            var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+            @event = mapping.Wrap(data);
+        }
+        else
+        {
+            @event = mapping.ReadEventData(_serializer, reader);
+        }
 
         ApplyReaderDataToEvent(reader, @event);
 
@@ -354,11 +378,42 @@ public abstract class EventDocumentStorage: IEventStorage
         IEvent @event;
         try
         {
-            @event = await mapping.ReadEventDataAsync(_serializer, reader, token).ConfigureAwait(false);
+            // #4515: same per-row dispatch as the sync Resolve overload — bdata
+            // at ordinal 3 picks JSON-vs-binary deserialization.
+            if (!await reader.IsDBNullAsync(3, token).ConfigureAwait(false))
+            {
+                if (mapping.BinarySerializer is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Event row at mt_events.bdata is non-null but no IEventBinarySerializer is registered " +
+                        $"for type '{mapping.DocumentType.FullName}'. Configure with " +
+                        $"opts.Events.UseBinarySerializer<{mapping.DocumentType.Name}>(...) " +
+                        $"or set opts.Events.DefaultBinarySerializer.");
+                }
+
+                var bytes = await reader.GetFieldValueAsync<byte[]>(3, token).ConfigureAwait(false);
+                var data = mapping.BinarySerializer.Deserialize(mapping.DocumentType, bytes);
+                @event = mapping.Wrap(data);
+            }
+            else
+            {
+                @event = await mapping.ReadEventDataAsync(_serializer, reader, token).ConfigureAwait(false);
+            }
         }
         catch (Exception e)
         {
-            var sequence = await reader.GetFieldValueAsync<long>(3, token).ConfigureAwait(false);
+            // #4515: mt_events.seq_id shifted from ordinal 3 to ordinal 4 after
+            // bdata's insertion (EventsTable.SelectColumns now pins data, type,
+            // mt_dotnet_type, bdata, seq_id at 0..4).
+            long sequence;
+            try
+            {
+                sequence = await reader.GetFieldValueAsync<long>(4, token).ConfigureAwait(false);
+            }
+            catch
+            {
+                sequence = -1;
+            }
             throw new EventDeserializationFailureException(sequence, mapping, e);
         }
 

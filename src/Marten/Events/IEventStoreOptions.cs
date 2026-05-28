@@ -200,6 +200,27 @@ namespace Marten.Events
         void AddEventTypes(IEnumerable<Type> types);
 
         /// <summary>
+        ///     Store-wide fallback <see cref="IEventBinarySerializer"/> used for event types
+        ///     marked with <see cref="BinaryEventAttribute"/> when no explicit per-type
+        ///     serializer was wired via <see cref="UseBinarySerializer{TEvent}"/>. Default
+        ///     is <c>null</c>; setting this is what makes attribute-only opt-in work for
+        ///     the common case of one binary serializer per store. See #4515.
+        /// </summary>
+        public IEventBinarySerializer? DefaultBinarySerializer { get; set; }
+
+        /// <summary>
+        ///     Opt a single event type into binary serialization (#4515). The event's
+        ///     payload is written to the <c>bdata</c> bytea column instead of the
+        ///     <c>data</c> jsonb column; existing JSON rows for the same type continue
+        ///     to read through the JSON path. Calling this also adds the event type to
+        ///     the registry (no separate <see cref="AddEventType{TEvent}"/> call needed).
+        /// </summary>
+        /// <typeparam name="TEvent">CLR event type to opt in.</typeparam>
+        /// <param name="serializer">Per-type serializer to use for this event.</param>
+        /// <returns>Event store options, to allow fluent definition.</returns>
+        IEventStoreOptions UseBinarySerializer<TEvent>(IEventBinarySerializer serializer);
+
+        /// <summary>
         ///     Maps CLR event type as particular event type name. This is useful for event type migration.
         ///     See more in <a href="https://martendb.io/events/versioning.html#event-type-name-migration">documentation</a>
         /// </summary>

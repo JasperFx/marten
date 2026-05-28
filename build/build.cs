@@ -44,7 +44,8 @@ class Build : NukeBuild
         .DependsOn(TestNodaTime)
         .DependsOn(TestAspnetcore)
         .DependsOn(TestPostGIS)
-        .DependsOn(TestPgVector);
+        .DependsOn(TestPgVector)
+        .DependsOn(TestMemoryPack);
 
     Target Init => _ => _
         .Executes(() =>
@@ -132,6 +133,18 @@ class Build : NukeBuild
         {
             DotNetTest(c => c
                 .SetProjectFile("src/Marten.AspNetCore.Testing")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    Target TestMemoryPack => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/Marten.MemoryPack.Tests")
                 .SetConfiguration(Configuration)
                 .EnableNoBuild()
                 .EnableNoRestore()

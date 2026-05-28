@@ -223,6 +223,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Natural Keys', link: '/events/natural-keys' },
             { text: 'Dynamic Consistency Boundary', link: '/events/dcb' },
             { text: 'Optimizing Performance', link: '/events/optimizing' },
+            { text: 'Binary Event Serialization', link: '/events/binary-serialization' },
 
             {
               text: 'Projections Overview', link: '/events/projections/', collapsed: true, items: [

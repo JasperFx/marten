@@ -50,6 +50,12 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         _parent = parent;
         DocumentType = eventType;
 
+        // #4515: pick up binary-serializer wiring at construction. Either an
+        // explicit per-type registration via UseBinarySerializer<T>(...) or
+        // the BinaryEventAttribute + store-wide DefaultBinarySerializer.
+        // Null = plain JSON-serialized event (the existing path).
+        BinarySerializer = parent.ResolveBinarySerializerFor(eventType);
+
         IdMember = DocumentType.GetProperty(nameof(IEvent.Id))!;
 
         _inner = new DocumentMapping(eventType, parent.Options);
@@ -65,6 +71,24 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
 
         JsonTransformation(null);
     }
+
+    /// <summary>
+    ///     #4515: binary serializer for this event type, or <c>null</c> for the
+    ///     standard JSON path. When non-null, write operations route the payload
+    ///     into <c>mt_events.bdata</c> (bytea); read operations dispatch on the
+    ///     row's <c>bdata IS NULL</c> state so JSON-serialized rows for the same
+    ///     event type still read correctly.
+    /// </summary>
+    [IgnoreDescription]
+    public IEventBinarySerializer? BinarySerializer { get; internal set; }
+
+    /// <summary>
+    ///     #4515: <c>true</c> when this event type is opted in to binary
+    ///     serialization on the write path (a <see cref="BinarySerializer"/> is
+    ///     wired). Read-path dispatch remains row-by-row on <c>bdata</c>'s NULL
+    ///     state so pre-opt-in JSON rows continue to read through the JSON path.
+    /// </summary>
+    public bool IsBinary => BinarySerializer is not null;
 
     [IgnoreDescription]
     public Func<ISerializer, DbDataReader, IEvent> ReadEventData { get; private set; }

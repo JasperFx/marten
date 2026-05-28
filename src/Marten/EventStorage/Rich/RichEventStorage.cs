@@ -44,6 +44,7 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
             _descriptor.MetadataBindersWithoutSequence,
             _descriptor.IsGuidStreamIdentity,
             _descriptor.SerializeEventData,
+            _descriptor.SerializeEventBdata,
             stream,
             @event);
 
