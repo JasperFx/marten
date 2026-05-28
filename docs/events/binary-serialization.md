@@ -154,14 +154,64 @@ NULL.
 You don't have to think about the append mode: binary opt-in is per event
 type and works identically across all of them.
 
-## Constraints
+## Schema evolution — use versioned event types
 
-- **No upcaster support.** Marten's
-  [event upcasters](/events/versioning) operate on JSON payloads and don't
-  generalize to a `byte[]` wire form. Binary event upcasters need their own
-  typed transform shape; tracked as a deferred follow-up. For now, design
-  binary event schemas with forward-compatibility in the serializer itself
-  (MemoryPack's `[MemoryPackOrder]` evolution, for example).
+Marten's existing [event upcasters](/events/versioning) operate on the JSON
+wire form and don't generalize to a `byte[]` payload, so they don't apply to
+binary events. The recommended pattern for evolving a binary event's shape
+is **introduce a new event type for each version** rather than upcasting in
+place:
+
+```csharp
+// Original
+[BinaryEvent]
+[MemoryPackable]
+public partial record TripStarted(Guid TripId, string DriverName);
+
+// Schema change — new fields. Don't edit TripStarted; add a new type.
+[BinaryEvent]
+[MemoryPackable]
+public partial record TripStartedV2(Guid TripId, string DriverName, DateTimeOffset StartedAt);
+```
+
+When the projection / aggregate handles both versions explicitly, old
+streams keep replaying through the old type and new appends use the new
+type:
+
+```csharp
+public class Trip
+{
+    public Guid Id { get; set; }
+    public string DriverName { get; set; } = "";
+    public DateTimeOffset? StartedAt { get; set; }
+
+    public void Apply(TripStarted e)   { Id = e.TripId; DriverName = e.DriverName; }
+    public void Apply(TripStartedV2 e) { Id = e.TripId; DriverName = e.DriverName; StartedAt = e.StartedAt; }
+}
+```
+
+The coexistence design lets old rows (written as `TripStarted`) and new rows
+(written as `TripStartedV2`) live on the same stream without migration.
+
+### Why not in-place backward-compatible schema changes?
+
+You *can* lean on MemoryPack's
+[backward-compatible field evolution](https://github.com/Cysharp/MemoryPack#version-tolerant-format)
+(`[MemoryPackOrder]`, nullable fields, the `VersionTolerant` mode) for
+additive-only changes to a single event type. That works as long as the
+serializer itself can deserialize old payloads into the new shape — but the
+moment a change goes beyond the serializer's tolerance rules (renaming, type
+changes, splitting a field), there's no JSON-style upcaster path to fall
+back on. Versioning the event type works for every shape of change and stays
+explicit about which version each row was written with.
+
+### Mixing binary + JSON
+
+If you have an existing JSON-serialized event and want a future version to
+go binary, the same pattern applies: define a new `[BinaryEvent]`-marked
+type for the new version, leave the old (JSON) type and its upcasters
+alone, and have the aggregate handle both. The per-row dispatch already
+copes with mixed formats on the same stream.
 
 ## See also
 
