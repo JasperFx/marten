@@ -59,13 +59,17 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : EventStorageBuilder.Build<string>(Events, _serializer);
 
         // Read-side column list for ApplyReaderDataToEvent (#4411). Built off
-        // EventsTable.SelectColumns() with positions 0/1/2 stripped — those
-        // are read by the base ISelector<IEvent>. Identical across all three
-        // append-mode variants (read shape doesn't depend on write shape) so
-        // we build it here instead of routing through EventStorage<TId>.
+        // EventsTable.SelectColumns() with positions 0/1/2/3 stripped:
+        // - 0/1/2 (data/type/mt_dotnet_type) are read by the base ISelector<IEvent>.
+        // - 3 (bdata, #4515) is read inline in EventDocumentStorage.Resolve to
+        //   pick the JSON-vs-binary deserialization path; the bdata column's
+        //   own ReadValueSync is a no-op so including it here would be wasted.
+        // Identical across all three append-mode variants (read shape doesn't
+        // depend on write shape) so we build it here instead of routing
+        // through EventStorage<TId>.
         _readerColumns = new Marten.Events.Schema.EventsTable(Events)
             .SelectColumns()
-            .Skip(3)
+            .Skip(4)
             .ToArray();
     }
 
@@ -139,7 +143,10 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             // (default interface method falls through to the parameterless
             // ReadValueSync). HeadersColumn overrides this to deserialize
             // jsonb → Dictionary<string, object> via the session's serializer.
-            _readerColumns[i].ReadValueSync(reader, i + 3, e, _serializer);
+            // Offset is + 4: 0/1/2 are data/type/mt_dotnet_type (base
+            // ISelector<IEvent>); 3 is bdata (#4515 — consumed inline in
+            // Resolve to pick the deserialization path).
+            _readerColumns[i].ReadValueSync(reader, i + 4, e, _serializer);
         }
     }
 
@@ -148,7 +155,7 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
         for (var i = 0; i < _readerColumns.Count; i++)
         {
             await _readerColumns[i]
-                .ReadValueAsync(reader, i + 3, e, _serializer, token)
+                .ReadValueAsync(reader, i + 4, e, _serializer, token)
                 .ConfigureAwait(false);
         }
     }

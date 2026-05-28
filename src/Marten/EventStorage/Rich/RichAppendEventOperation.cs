@@ -60,6 +60,14 @@ internal sealed class RichAppendEventOperation: AppendEventOperationBase
 
         pb.AppendParameter(Event.EventTypeName, NpgsqlDbType.Varchar);
         pb.AppendParameter(Event.DotNetTypeName, NpgsqlDbType.Varchar);
+
+        // #4515: bdata bytea (nullable). For JSON-serialized events this is
+        // NULL; for binary-serialized events it carries the payload. Column
+        // order matches EventsTable.SelectColumns — bdata is pinned at
+        // position 3 right after mt_dotnet_type.
+        var bdataBytes = _descriptor.SerializeEventBdata(Event);
+        pb.AppendParameter(bdataBytes ?? (object)System.DBNull.Value, NpgsqlDbType.Bytea);
+
         pb.AppendParameter(Event.Id, NpgsqlDbType.Uuid);
 
         // stream_id — Guid streams use Stream.Id, string streams use Stream.Key.

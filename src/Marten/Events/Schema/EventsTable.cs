@@ -23,6 +23,10 @@ internal class EventsTable: Table
 
         AddColumn(new VersionColumn());
         AddColumn<EventJsonDataColumn>();
+        // #4515: nullable sibling to `data` for binary event payloads. NULL
+        // for JSON-serialized events; bytes (e.g. MemoryPack) for events
+        // opted in via [BinaryEvent] / opts.Events.UseBinarySerializer<T>(...).
+        AddColumn<EventBdataColumn>();
         AddColumn<EventTypeColumn>();
         AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
             .NotNull().DefaultValueByString("(now())");
@@ -151,6 +155,11 @@ internal class EventsTable: Table
         var data = columns.OfType<EventJsonDataColumn>().Single();
         var typeName = columns.OfType<EventTypeColumn>().Single();
         var dotNetTypeName = columns.OfType<DotNetTypeColumn>().Single();
+        // #4515: bdata (nullable bytea) for binary event payloads. Pinned at
+        // position 3 in the SELECT projection so EventDocumentStorage.Resolve
+        // can pick JSON-vs-binary deserialization from a stable ordinal
+        // before the per-column metadata loop runs.
+        var bdata = columns.OfType<EventBdataColumn>().Single();
 
         columns.Remove(data);
         columns.Insert(0, data);
@@ -158,6 +167,8 @@ internal class EventsTable: Table
         columns.Insert(1, typeName);
         columns.Remove(dotNetTypeName);
         columns.Insert(2, dotNetTypeName);
+        columns.Remove(bdata);
+        columns.Insert(3, bdata);
 
         return columns;
     }

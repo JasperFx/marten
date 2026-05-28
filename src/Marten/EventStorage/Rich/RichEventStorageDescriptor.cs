@@ -26,6 +26,7 @@ public sealed class RichEventStorageDescriptor
         string updateStreamVersionSql,
         string streamStateSelectSql,
         Func<IEvent, string> serializeEventData,
+        Func<IEvent, byte[]?> serializeEventBdata,
         IEventMetadataBinder[] metadataBinders)
     {
         AppendEventSqlPrefix = appendEventSqlPrefix;
@@ -34,6 +35,7 @@ public sealed class RichEventStorageDescriptor
         UpdateStreamVersionSql = updateStreamVersionSql;
         StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
+        SerializeEventBdata = serializeEventBdata;
         MetadataBinders = metadataBinders;
     }
 
@@ -42,7 +44,22 @@ public sealed class RichEventStorageDescriptor
     public string InsertStreamSql { get; }
     public string UpdateStreamVersionSql { get; }
     public string StreamStateSelectSql { get; }
+
+    /// <summary>
+    ///     Serializer for the <c>data</c> jsonb column. Returns the full JSON
+    ///     payload for JSON-serialized events and the literal <c>{}</c>
+    ///     placeholder for binary-serialized events (the real payload lives in
+    ///     <c>bdata</c> in that case — see <see cref="SerializeEventBdata"/>).
+    /// </summary>
     public Func<IEvent, string> SerializeEventData { get; }
+
+    /// <summary>
+    ///     #4515: serializer for the <c>bdata</c> bytea column. Returns the
+    ///     serialized bytes for binary-serialized events; returns <c>null</c>
+    ///     (bound as <see cref="System.DBNull.Value"/>) for JSON-serialized
+    ///     events.
+    /// </summary>
+    public Func<IEvent, byte[]?> SerializeEventBdata { get; }
 
     /// <summary>
     /// Ordered metadata-column binders. Rich-mode only — Quick-mode

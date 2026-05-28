@@ -16,6 +16,10 @@
     <Project Path="EventStoreMigrations/EventStoreMigrations.csproj" />
     <Project Path="MultiDatabaseCommandLineRunner/MultiDatabaseCommandLineRunner.csproj" />
   </Folder>
+  <Folder Name="/MemoryPack/">
+    <Project Path="Marten.MemoryPack.Tests/Marten.MemoryPack.Tests.csproj" />
+    <Project Path="Marten.MemoryPack/Marten.MemoryPack.csproj" />
+  </Folder>
   <Folder Name="/NodaTime/">
     <Project Path="Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj" />
     <Project Path="Marten.NodaTime/Marten.NodaTime.csproj" />

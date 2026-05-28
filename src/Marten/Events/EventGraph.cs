@@ -333,6 +333,68 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         _events.FillDefault(eventType);
     }
 
+    // #4515: per-event-type binary serializer registry. EventMapping<T>'s
+    // constructor calls ResolveBinarySerializerFor when the mapping is built
+    // (lazily on first use); UseBinarySerializer<T> populates this dictionary
+    // ahead of time so the resolution lands on the registered instance.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<Type, IEventBinarySerializer> _binarySerializerByType = new();
+
+    /// <inheritdoc />
+    public IEventBinarySerializer? DefaultBinarySerializer { get; set; }
+
+    /// <inheritdoc />
+    public IEventStoreOptions UseBinarySerializer<TEvent>(IEventBinarySerializer serializer)
+    {
+        if (serializer == null) throw new ArgumentNullException(nameof(serializer));
+
+        var eventType = typeof(TEvent);
+        _binarySerializerByType[eventType] = serializer;
+
+        // Make sure the mapping exists and is wired with this serializer.
+        // EventMapping<T> reads its BinarySerializer from
+        // ResolveBinarySerializerFor in its constructor, so if the mapping
+        // already exists (e.g. another store-options call referenced the type
+        // first) we need to refresh its serializer reference here too.
+        AddEventType(eventType);
+        var mapping = EventMappingFor(eventType);
+        if (mapping is not null)
+        {
+            mapping.BinarySerializer = serializer;
+        }
+
+        return this;
+    }
+
+    /// <summary>
+    ///     #4515: resolve the binary serializer for an event type. Called from
+    ///     <see cref="EventMapping"/>'s constructor. Precedence: explicit
+    ///     per-type registration via <see cref="UseBinarySerializer{TEvent}"/>
+    ///     beats <see cref="BinaryEventAttribute"/> + <see cref="DefaultBinarySerializer"/>.
+    ///     Returns <c>null</c> for plain JSON events.
+    /// </summary>
+    internal IEventBinarySerializer? ResolveBinarySerializerFor(Type eventType)
+    {
+        if (_binarySerializerByType.TryGetValue(eventType, out var explicitSerializer))
+        {
+            return explicitSerializer;
+        }
+
+        if (eventType.IsDefined(typeof(BinaryEventAttribute), inherit: false))
+        {
+            if (DefaultBinarySerializer is null)
+            {
+                throw new InvalidOperationException(
+                    $"Event type '{eventType.FullName}' is marked with [BinaryEvent] but no IEventBinarySerializer was registered. " +
+                    $"Either call opts.Events.UseBinarySerializer<{eventType.Name}>(...) explicitly, " +
+                    $"or set opts.Events.DefaultBinarySerializer to a store-wide fallback.");
+            }
+
+            return DefaultBinarySerializer;
+        }
+
+        return null;
+    }
+
     /// <summary>
     ///     Register an event type with Marten. This isn't strictly necessary for normal usage,
     ///     but can help Marten with asynchronous projections where Marten hasn't yet encountered
