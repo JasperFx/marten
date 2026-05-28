@@ -53,6 +53,7 @@
         "TestEventSourcing",
         "TestExtensions",
         "TestLinq",
+        "TestMemoryPack",
         "TestModularConfig",
         "TestMultiTenancy",
         "TestNodaTime",

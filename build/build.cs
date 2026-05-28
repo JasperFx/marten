@@ -390,7 +390,13 @@ class Build : NukeBuild
                 "./src/Marten.NodaTime",
                 "./src/Marten.AspNetCore",
                 "./src/Marten.EntityFrameworkCore",
-                "./src/Marten.SourceGenerator"
+                "./src/Marten.SourceGenerator",
+                // New optional companion packages — must be listed here so
+                // the existing on-manual-do-nuget-publish.yml workflow picks
+                // them up. Without this they'd silently never reach NuGet.
+                "./src/Marten.PostGIS",        // PostGIS spatial support (#4576)
+                "./src/Marten.PgVector",       // pgvector similarity search (#4576)
+                "./src/Marten.MemoryPack"      // binary event serialization (#4515 / #4578)
             };
 
             foreach (var project in projects)
