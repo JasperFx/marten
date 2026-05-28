@@ -57,6 +57,8 @@
         "TestMultiTenancy",
         "TestNodaTime",
         "TestPatching",
+        "TestPgVector",
+        "TestPostGIS",
         "TestValueTypes"
       ]
     },

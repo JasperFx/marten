@@ -1,0 +1,129 @@
+name: Build & Test - Extensions - PostGIS / PgVector
+
+# Dedicated workflow for the Marten.PostGIS and Marten.PgVector test projects.
+# Each suite needs a Postgres image with the matching extension preinstalled —
+# the default `postgres:15-alpine` service container used by the other CI
+# workflows doesn't ship `postgis` or `vector`, so we run two jobs side-by-side
+# with officially-maintained extension images.
+
+on:
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - 'documentation/**'
+      - 'docs/**'
+      - 'azure-pipelines.yml'
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  pg_db: marten_testing
+  pg_user: postgres
+  CONFIGURATION: Release
+  FRAMEWORK: net9.0
+  DISABLE_TEST_PARALLELIZATION: true
+  DEFAULT_SERIALIZER: "Newtonsoft"
+  NUKE_TELEMETRY_OPTOUT: true
+
+jobs:
+  postgis:
+    name: PostGIS extension tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgis/postgis:17-3.5
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: ${{ env.pg_db }}
+          NAMEDATALEN: 150
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --user postgres
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker container restart $PG_CONTAINER_NAME
+        shell: bash
+
+      - name: compile
+        run: ./build.sh compile
+        shell: bash
+
+      - name: test-postgis
+        if: ${{ success() || failure() }}
+        run: ./build.sh TestPostGIS
+        shell: bash
+
+  pgvector:
+    name: PgVector extension tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: ${{ env.pg_db }}
+          NAMEDATALEN: 150
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+          --user postgres
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Optimize database for running tests faster
+        run: |
+          PG_CONTAINER_NAME=$(docker ps --filter expose=5432/tcp --format {{.Names}})
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfsync = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nfull_page_writes = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker exec $PG_CONTAINER_NAME bash -c "echo -e '\nsynchronous_commit = off' >> /var/lib/postgresql/data/postgresql.conf"
+          docker container restart $PG_CONTAINER_NAME
+        shell: bash
+
+      - name: compile
+        run: ./build.sh compile
+        shell: bash
+
+      - name: test-pgvector
+        if: ${{ success() || failure() }}
+        run: ./build.sh TestPgVector
+        shell: bash

@@ -1,7 +1,14 @@
 version: '3'
 services:
   postgresql:
-    image: ${POSTGRES_IMAGE:-ionx/postgres-plv8:12.8}
+    # Custom build layering PostGIS 3 + pgvector on top of the official
+    # multi-arch `postgres:17` image (see docker/postgres/Dockerfile).
+    # The Debian packages `postgresql-17-postgis-3` and
+    # `postgresql-17-pgvector` are available on both amd64 and arm64, so
+    # this works on Apple-silicon hosts. PLv8 was dropped — Marten core
+    # SQL no longer requires it.
+    build:
+      context: ./docker/postgres
     ports:
       - "5432:5432"
     environment:

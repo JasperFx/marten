@@ -20,6 +20,14 @@
     <Project Path="Marten.NodaTime.Testing/Marten.NodaTime.Testing.csproj" />
     <Project Path="Marten.NodaTime/Marten.NodaTime.csproj" />
   </Folder>
+  <Folder Name="/PgVector/">
+    <Project Path="Marten.PgVector.Tests/Marten.PgVector.Tests.csproj" />
+    <Project Path="Marten.PgVector/Marten.PgVector.csproj" />
+  </Folder>
+  <Folder Name="/PostGIS/">
+    <Project Path="Marten.PostGIS.Tests/Marten.PostGIS.Tests.csproj" />
+    <Project Path="Marten.PostGIS/Marten.PostGIS.csproj" />
+  </Folder>
   <Folder Name="/Samples/">
     <Project Path="AspNetCoreWithMarten/AspNetCoreWithMarten.csproj" />
     <Project Path="samples/DocSamples/DocSamples.csproj" />

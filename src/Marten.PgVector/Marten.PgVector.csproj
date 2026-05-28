@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>pgvector extension for Marten — enables the "vector" PostgreSQL extension, exposes a UsePgVector() store-options helper, and provides VectorSearchAsync against vector-typed JSONB fields plus an embedding-aware VectorProjection base class.</Description>
+        <GenerateAssemblyTitleAttribute>true</GenerateAssemblyTitleAttribute>
+        <GenerateAssemblyDescriptionAttribute>true</GenerateAssemblyDescriptionAttribute>
+        <GenerateAssemblyProductAttribute>true</GenerateAssemblyProductAttribute>
+        <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+        <GenerateAssemblyVersionAttribute>true</GenerateAssemblyVersionAttribute>
+        <GenerateAssemblyFileVersionAttribute>true</GenerateAssemblyFileVersionAttribute>
+        <GenerateAssemblyInformationalVersionAttribute>true</GenerateAssemblyInformationalVersionAttribute>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <RootNamespace>Marten.PgVector</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Pgvector" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+</Project>
