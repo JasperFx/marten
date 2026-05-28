@@ -42,6 +42,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
     private readonly IEventMetadataBinder[] _metadataBinders;
     private readonly bool _isGuidStreamIdentity;
     private readonly System.Func<IEvent, string> _serializeEventData;
+    private readonly System.Func<IEvent, byte[]?> _serializeEventBdata;
 
     public QuickAppendEventWithVersionOperation(
         string appendEventSqlPrefix,
@@ -49,6 +50,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         IEventMetadataBinder[] metadataBinders,
         bool isGuidStreamIdentity,
         System.Func<IEvent, string> serializeEventData,
+        System.Func<IEvent, byte[]?> serializeEventBdata,
         StreamAction stream,
         IEvent e)
         : base(stream, e)
@@ -58,6 +60,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         _metadataBinders = metadataBinders;
         _isGuidStreamIdentity = isGuidStreamIdentity;
         _serializeEventData = serializeEventData;
+        _serializeEventBdata = serializeEventBdata;
     }
 
     public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
@@ -70,6 +73,14 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         pb.AppendParameter(_serializeEventData(Event), NpgsqlDbType.Jsonb);
         pb.AppendParameter(Event.EventTypeName, NpgsqlDbType.Varchar);
         pb.AppendParameter(Event.DotNetTypeName, NpgsqlDbType.Varchar);
+
+        // #4515: bdata bytea (nullable). NULL for JSON-serialized events;
+        // bytes for binary-serialized events. Pinned at SELECT position 3
+        // (right after mt_dotnet_type) by EventsTable.SelectColumns, so the
+        // bind sequence here mirrors that position.
+        var bdataBytes = _serializeEventBdata(Event);
+        pb.AppendParameter(bdataBytes ?? (object)System.DBNull.Value, NpgsqlDbType.Bytea);
+
         pb.AppendParameter(Event.Id, NpgsqlDbType.Uuid);
 
         if (_isGuidStreamIdentity)

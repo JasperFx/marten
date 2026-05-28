@@ -296,7 +296,12 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
-            serializeEventData: e => serializer.ToJson(e.Data))
+            serializeEventData: e => serializer.ToJson(e.Data),
+            // #4515: Quick mode rejects binary events at build time (see
+            // AssertNoBinaryEventsForQuickMode), so bdata is always NULL
+            // here. The slot still exists because mt_events.bdata is part
+            // of every full-shape INSERT column list.
+            serializeEventBdata: _ => null)
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,
@@ -359,7 +364,9 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
-            serializeEventData: e => serializer.ToJson(e.Data))
+            serializeEventData: e => serializer.ToJson(e.Data),
+            // #4515: see notes on the parallel call in BuildQuickDescriptor.
+            serializeEventBdata: _ => null)
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,

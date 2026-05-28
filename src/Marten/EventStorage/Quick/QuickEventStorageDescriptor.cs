@@ -38,13 +38,15 @@ public sealed class QuickEventStorageDescriptor
         string insertStreamSql,
         string updateStreamVersionSql,
         string streamStateSelectSql,
-        Func<IEvent, string> serializeEventData)
+        Func<IEvent, string> serializeEventData,
+        Func<IEvent, byte[]?> serializeEventBdata)
     {
         QuickAppendEventsSql = quickAppendEventsSql;
         InsertStreamSql = insertStreamSql;
         UpdateStreamVersionSql = updateStreamVersionSql;
         StreamStateSelectSql = streamStateSelectSql;
         SerializeEventData = serializeEventData;
+        SerializeEventBdata = serializeEventBdata;
     }
 
     /// <summary>
@@ -61,6 +63,18 @@ public sealed class QuickEventStorageDescriptor
     public string UpdateStreamVersionSql { get; }
     public string StreamStateSelectSql { get; }
     public Func<IEvent, string> SerializeEventData { get; }
+
+    /// <summary>
+    ///     #4515: serializer for the <c>bdata</c> bytea column on the per-event
+    ///     QuickWithVersion INSERT shape. In Quick modes, binary event types
+    ///     are rejected at descriptor-build time (see
+    ///     <c>PostgresEventStoreDialect.AssertNoBinaryEventsForQuickMode</c>),
+    ///     so the dialect installs a closure that always returns <c>null</c> —
+    ///     <c>bdata</c> binds as DBNull. The slot still exists because
+    ///     <c>mt_events.bdata</c> is part of the column list on every
+    ///     full-shape INSERT.
+    /// </summary>
+    public Func<IEvent, byte[]?> SerializeEventBdata { get; }
 
     /// <summary>Guid stream identity (writeId) vs string identity (writeKey).</summary>
     public bool IsGuidStreamIdentity { get; init; }
