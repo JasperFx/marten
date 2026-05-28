@@ -96,7 +96,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         param.NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
-    protected void writeBasicParameters(IGroupedParameterBuilder builder, IMartenSession session)
+    // #4515 / #4578 Phase 2: placeholder for the data jsonb column when an
+    // event is binary-serialized. The real payload travels in the parallel
+    // bdata bytea[] array; this keeps the `data NOT NULL` constraint intact
+    // without holding the real payload twice.
+    private static readonly byte[] s_emptyJsonObjectUtf8 = "{}"u8.ToArray();
+
+    protected void writeBasicParameters(
+        IGroupedParameterBuilder builder,
+        IMartenSession session,
+        Func<IEvent, byte[]?>? serializeEventBdata = null)
     {
         var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
         param1.NpgsqlDbType = NpgsqlDbType.Varchar;
@@ -116,6 +125,11 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         var typeNames = rentColumn<string>(count);
         var dotNetTypeNames = rentColumn<string>(count);
         var jsonBodies = rentColumn<byte[]>(count);
+        // #4515 Phase 2: parallel bdata column — bytes for binary events,
+        // null for JSON. Always rented even when no binary events are
+        // registered, because the mt_quick_append_events function signature
+        // unconditionally carries the bdatas bytea[] parameter.
+        var bdataArray = rentColumn<byte[]>(count);
 
         for (int i = 0; i < count; i++)
         {
@@ -123,7 +137,20 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
             ids[i] = e.Id;
             typeNames[i] = e.EventTypeName;
             dotNetTypeNames[i] = e.DotNetTypeName;
-            jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
+
+            var bdataBytes = serializeEventBdata?.Invoke(e);
+            if (bdataBytes is not null)
+            {
+                // Binary event — placeholder in data, real payload in bdata.
+                jsonBodies[i] = s_emptyJsonObjectUtf8;
+                bdataArray[i] = bdataBytes;
+            }
+            else
+            {
+                // JSON event — payload in data, NULL in bdata.
+                jsonBodies[i] = SerializeToUtf8(session.Serializer, e.Data);
+                bdataArray[i] = null!;
+            }
         }
 
         var param3 = builder.AppendParameter<IList<Guid>>(ids);
@@ -137,6 +164,13 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
         var param6 = builder.AppendParameter<IList<byte[]>>(jsonBodies);
         param6.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
+
+        // #4515 Phase 2: bdata bytea[] — must appear in the call-site parameter
+        // sequence in the same position as the function signature declares
+        // (right after bodies). The PG function inserts bdatas[index] into
+        // mt_events.bdata.
+        var param7 = builder.AppendParameter<IList<byte[]>>(bdataArray);
+        param7.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Bytea;
     }
 
     /// <summary>

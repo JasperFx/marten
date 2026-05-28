@@ -274,14 +274,11 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
 
     public QuickEventStorageDescriptor BuildQuickDescriptor(EventGraph graph, ISerializer serializer)
     {
-        // #4515 Phase 1 limitation: binary event serialization is implemented
-        // for the Rich append path only. The Quick path goes through the
-        // mt_quick_append_events server function whose signature is
-        // generated against `bytea[]` (UTF-8 JSON) for the data column; adding
-        // a parallel `bdata bytea[]` parameter (+ the function regen + bulk
-        // appender) is the explicit Phase 2 scope. Fail loud at store-build
-        // time rather than silently writing JSON for an opted-in binary type.
-        AssertNoBinaryEventsForQuickMode(graph, EventAppendMode.Quick);
+        // #4515 Phase 2: Quick mode now supports binary events too. The
+        // mt_quick_append_events PG function gained a `bdatas bytea[]`
+        // parameter that's inserted into mt_events.bdata in parallel with
+        // bodies[]. SerializeEventBdata below dispatches per event type
+        // (real bytes for binary events, null for JSON).
 
         var (isConjoined, isGuid, hasCausation, hasCorrelation, hasHeaders, hasUserName, hasTagWrites)
             = ReadQuickFlags(graph);
@@ -296,12 +293,23 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
-            serializeEventData: e => serializer.ToJson(e.Data),
-            // #4515: Quick mode rejects binary events at build time (see
-            // AssertNoBinaryEventsForQuickMode), so bdata is always NULL
-            // here. The slot still exists because mt_events.bdata is part
-            // of every full-shape INSERT column list.
-            serializeEventBdata: _ => null)
+            // #4515 Phase 2: binary events write {} to data + real bytes to
+            // bdata; JSON events write JSON to data + NULL to bdata. Same
+            // dispatch shape as the Rich descriptor.
+            serializeEventData: e =>
+            {
+                var mapping = graph.EventMappingFor(e.EventType);
+                return mapping?.IsBinary == true
+                    ? "{}"
+                    : serializer.ToJson(e.Data);
+            },
+            serializeEventBdata: e =>
+            {
+                var mapping = graph.EventMappingFor(e.EventType);
+                return mapping?.IsBinary == true
+                    ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
+                    : null;
+            })
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,
@@ -320,36 +328,11 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         };
     }
 
-    /// <summary>
-    ///     #4515: enforce the Phase 1 constraint that binary event serialization
-    ///     only ships on the Rich append path. If the user registered any
-    ///     binary event types and is still on the default
-    ///     <see cref="EventAppendMode.QuickWithServerTimestamps"/> (or
-    ///     explicit <see cref="EventAppendMode.Quick"/>), throw with the
-    ///     remediation recipe instead of writing wrong data.
-    /// </summary>
-    private static void AssertNoBinaryEventsForQuickMode(EventGraph graph, EventAppendMode mode)
-    {
-        var binaryEventTypes = graph.AllEvents()
-            .Where(e => e.IsBinary)
-            .Select(e => e.DocumentType.FullName ?? e.DocumentType.Name)
-            .ToArray();
-
-        if (binaryEventTypes.Length == 0) return;
-
-        throw new InvalidOperationException(
-            $"Binary event serialization (#4515) is currently only supported with EventAppendMode.Rich, " +
-            $"but AppendMode is {mode} and the following event types are opted in to binary serialization: " +
-            $"{string.Join(", ", binaryEventTypes)}. " +
-            $"Set `opts.Events.AppendMode = EventAppendMode.Rich;` to use binary event serialization. " +
-            $"(Quick-mode support is tracked as a follow-up — the mt_quick_append_events server function " +
-            $"needs a parallel `bdata bytea[]` parameter.)");
-    }
-
     public QuickWithServerTimestampsEventStorageDescriptor BuildQuickWithServerTimestampsDescriptor(
         EventGraph graph, ISerializer serializer)
     {
-        AssertNoBinaryEventsForQuickMode(graph, EventAppendMode.QuickWithServerTimestamps);
+        // #4515 Phase 2: Quick-with-server-timestamps supports binary events
+        // too — see BuildQuickDescriptor for the dispatch shape.
 
         var (isConjoined, isGuid, hasCausation, hasCorrelation, hasHeaders, hasUserName, hasTagWrites)
             = ReadQuickFlags(graph);
@@ -364,9 +347,21 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             insertStreamSql: BuildInsertStreamSql(graph),
             updateStreamVersionSql: BuildUpdateStreamVersionSql(graph),
             streamStateSelectSql: Marten.EventStorage.StreamStateSql.Build(graph),
-            serializeEventData: e => serializer.ToJson(e.Data),
-            // #4515: see notes on the parallel call in BuildQuickDescriptor.
-            serializeEventBdata: _ => null)
+            // #4515 Phase 2: same dispatch as BuildQuickDescriptor.
+            serializeEventData: e =>
+            {
+                var mapping = graph.EventMappingFor(e.EventType);
+                return mapping?.IsBinary == true
+                    ? "{}"
+                    : serializer.ToJson(e.Data);
+            },
+            serializeEventBdata: e =>
+            {
+                var mapping = graph.EventMappingFor(e.EventType);
+                return mapping?.IsBinary == true
+                    ? mapping.BinarySerializer!.Serialize(e.EventType, e.Data)
+                    : null;
+            })
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,
