@@ -221,11 +221,7 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<IDocumentStore>());
 
         // This can be overridden by the expression following
-        services.AddSingleton<ISessionFactory, DefaultSessionFactory>(sp =>
-        {
-            var logger = sp.GetService<ILogger<DefaultSessionFactory>>() ?? new NullLogger<DefaultSessionFactory>();
-            return new DefaultSessionFactory(sp.GetRequiredService<IDocumentStore>(), logger);
-        });
+        services.AddSingleton<ISessionFactory, LightweightSessionFactory>();
 
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().QuerySession());
         services.AddScoped(s => s.GetRequiredService<ISessionFactory>().OpenSession());
@@ -319,8 +315,7 @@ public static class MartenServiceCollectionExtensions
         services.AddKeyedSingleton<ISessionFactory>(typeof(T), (sp, _) =>
         {
             var store = (IDocumentStore)sp.GetRequiredService<T>();
-            var logger = sp.GetService<ILogger<DefaultSessionFactory>>() ?? new NullLogger<DefaultSessionFactory>();
-            return new DefaultSessionFactory(store, logger);
+            return new LightweightSessionFactory(store);
         });
 
         services.AddSingleton<IMasterTableMultiTenancy>(s => (IMasterTableMultiTenancy)s.GetRequiredService<T>());
@@ -720,7 +715,7 @@ public static class MartenServiceCollectionExtensions
 
         /// <summary>
         ///     Use lightweight sessions by default for the injected IDocumentSession objects. Equivalent to
-        ///     IDocumentStore.LightweightSession();
+        ///     IDocumentStore.LightweightSession(); This is now the default as of Marten 9.0.3
         /// </summary>
         /// <returns></returns>
         public MartenConfigurationExpression UseLightweightSessions()

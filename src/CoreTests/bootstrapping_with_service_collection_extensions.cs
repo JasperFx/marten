@@ -529,7 +529,7 @@ public class bootstrapping_with_service_collection_extensions
 
         var sp = services.BuildServiceProvider();
         var factory = sp.GetRequiredKeyedService<ISessionFactory>(typeof(IInvoicingStore));
-        factory.ShouldBeOfType<DefaultSessionFactory>();
+        factory.ShouldBeOfType<LightweightSessionFactory>();
     }
 
     public class SpecialBuilder: ISessionFactory
