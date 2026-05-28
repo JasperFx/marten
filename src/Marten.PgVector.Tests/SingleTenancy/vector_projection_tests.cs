@@ -42,6 +42,7 @@ public class ProductSearchProjection : VectorProjection
 
 #endregion
 
+[Collection("Marten.PgVector")]
 public class vector_projection_tests : IAsyncLifetime
 {
     private DocumentStore _store = null!;

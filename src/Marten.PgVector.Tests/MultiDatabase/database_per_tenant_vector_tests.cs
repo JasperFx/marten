@@ -16,7 +16,7 @@ namespace Marten.PgVector.Tests.MultiDatabase;
 /// Also serves as verification for issue #2515 — PostgreSQL extensions must be
 /// created in EACH tenant database, not just the default.
 /// </summary>
-[Collection("multi-tenancy")]
+[Collection("Marten.PgVector")]
 public class database_per_tenant_vector_tests : IAsyncLifetime
 {
     private static readonly string[] TenantDatabases = { "pgvector_tenant1", "pgvector_tenant2", "pgvector_tenant3" };

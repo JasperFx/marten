@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Marten.PgVector.Tests.ConjoinedTenancy;
 
+[Collection("Marten.PgVector")]
 public class conjoined_vector_tests : IAsyncLifetime
 {
     private DocumentStore _store = null!;

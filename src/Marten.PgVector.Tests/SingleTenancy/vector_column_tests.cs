@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Marten.PgVector.Tests.SingleTenancy;
 
+[Collection("Marten.PgVector")]
 public class vector_column_tests : IAsyncLifetime
 {
     private DocumentStore _store = null!;
