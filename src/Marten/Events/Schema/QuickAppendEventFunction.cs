@@ -111,7 +111,7 @@ namespace Marten.Events.Schema;
             var returnType = _events.EnableBigIntEvents ? "bigint[]" : "int[]";
 
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[], bdatas bytea[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
 DECLARE
 	event_version {intType};
 	stream_is_archived boolean;
@@ -151,10 +151,14 @@ BEGIN
 		event_type = event_types[index];
 		body = bodies[index];
 
+		-- #4515 / #4578 / Phase 2: bdatas[index] carries the binary payload
+		-- for events opted in to binary serialization (NULL otherwise).
+		-- bodies[index] is the {{}} JSON placeholder for those events so the
+		-- existing data jsonb NOT NULL constraint stays intact.
 		insert into {databaseSchema}.mt_events
-			(seq_id, id, stream_id, version, data, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
+			(seq_id, id, stream_id, version, data, bdata, type, tenant_id, timestamp, {SchemaConstants.DotNetTypeColumn}, is_archived{metadataColumns})
 		values
-			(seq, event_id, stream, event_version, body, event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues});
+			(seq, event_id, stream, event_version, body, bdatas[index], event_type, tenantid, {timestampValue}, dotnet_types[index], FALSE{metadataValues});
 {tagInserts}
 		index := index + 1;
 	end loop;

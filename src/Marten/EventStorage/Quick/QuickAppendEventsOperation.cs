@@ -53,9 +53,11 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
             writeKey(pb);
 
         // Always-on: aggregate type, tenant id, event_ids[], event_types[],
-        // dotnet_types[], bodies[]. Bodies are serialized via the session
-        // serializer to a sized UTF-8 byte[] (no intermediate string alloc).
-        writeBasicParameters(pb, session);
+        // dotnet_types[], bodies[], bdatas[]. Bodies are serialized via the
+        // session serializer to a sized UTF-8 byte[] (no intermediate string
+        // alloc) for JSON events; binary events (#4515) get a {} JSON
+        // placeholder in bodies and their bytes in the parallel bdatas[].
+        writeBasicParameters(pb, session, _descriptor.SerializeEventBdata);
 
         // Configuration-gated metadata column arrays. Order MUST match the
         // dialect's QuickAppendEventFunction.WriteCreateStatement column

@@ -256,6 +256,11 @@ internal class BulkEventAppender
             "stream_id",
             "version",
             "data",
+            // #4515 Phase 2: bdata bytea (nullable) — bytes for binary events,
+            // NULL for JSON events. Always present in the COPY column list
+            // because mt_events.bdata is universal; writeEventRow writes
+            // either the binary payload or NULL per event.
+            "bdata",
             "type",
             "timestamp",
             "tenant_id",
@@ -308,9 +313,29 @@ internal class BulkEventAppender
         // version
         await writer.WriteAsync(e.Version, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
 
-        // data (jsonb) — direct UTF-8 serialization, no intermediate string allocation.
-        var dataBytes = SerializeToUtf8(_serializer, e.Data);
+        // data (jsonb) — direct UTF-8 serialization, no intermediate string
+        // allocation. For binary events (#4515), emits the {} placeholder so
+        // the `data NOT NULL` constraint stays intact; the real payload
+        // travels in the bdata bytea slot below.
+        var mapping = _events.EventMappingFor(e.EventType);
+        var isBinary = mapping?.IsBinary == true;
+
+        var dataBytes = isBinary
+            ? "{}"u8.ToArray()
+            : SerializeToUtf8(_serializer, e.Data);
         await writer.WriteAsync(dataBytes, NpgsqlDbType.Jsonb, cancellation).ConfigureAwait(false);
+
+        // bdata (bytea, nullable) — binary payload for [BinaryEvent] types;
+        // NULL for JSON-serialized events.
+        if (isBinary)
+        {
+            var bdataBytes = mapping!.BinarySerializer!.Serialize(e.EventType, e.Data);
+            await writer.WriteAsync(bdataBytes, NpgsqlDbType.Bytea, cancellation).ConfigureAwait(false);
+        }
+        else
+        {
+            await writer.WriteNullAsync(cancellation).ConfigureAwait(false);
+        }
 
         // type
         await writer.WriteAsync(e.EventTypeName, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);

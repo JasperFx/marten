@@ -44,7 +44,10 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
         else
             writeKey(pb);
 
-        writeBasicParameters(pb, session);
+        // #4515 Phase 2: SerializeEventBdata gives the binary bytes per event
+        // (null for JSON events). Appends a bdatas bytea[] parameter right
+        // after bodies in the function call.
+        writeBasicParameters(pb, session, _descriptor.SerializeEventBdata);
 
         // Order MUST match the dialect's function-signature ordering:
         // metadata columns first, then timestamps, then tag arrays.

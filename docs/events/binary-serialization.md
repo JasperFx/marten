@@ -62,11 +62,10 @@ var store = DocumentStore.For(opts =>
 {
     opts.Connection(connectionString);
 
-    // Phase 1 limitation — see "Constraints" below.
-    opts.Events.AppendMode = EventAppendMode.Rich;
-
     // Wire MemoryPack as DefaultBinarySerializer. [BinaryEvent]-marked
-    // event types resolve to this serializer on registration.
+    // event types resolve to this serializer on registration. Works with
+    // every EventAppendMode (Rich / Quick / QuickWithServerTimestamps)
+    // and with BulkEventAppender — see the "Append modes" section.
     opts.Events.UseMemoryPackSerializer();
 });
 ```
@@ -141,20 +140,22 @@ Existing rows have `bdata = NULL` (the column's default for prior data) and
 read through the JSON path. Marten's standard schema migration creates the
 column for existing installations — no event data conversion required.
 
+## Append modes
+
+Binary event serialization works with **every** `EventAppendMode` Marten
+ships — `Rich`, `Quick`, and `QuickWithServerTimestamps`. The Quick modes
+route appends through the `mt_quick_append_events` PostgreSQL function,
+which carries a `bdatas bytea[]` parameter that's inserted into `mt_events.bdata`
+in parallel with the existing `bodies jsonb[]`. `BulkEventAppender` (the
+COPY-based bulk loader) also supports binary events — its COPY column list
+includes `bdata`, and each event row writes either the binary payload or
+NULL.
+
+You don't have to think about the append mode: binary opt-in is per event
+type and works identically across all of them.
+
 ## Constraints
 
-The 9.3 cut ships with deliberate scope:
-
-- **`EventAppendMode.Rich` only.** The default `QuickWithServerTimestamps` and
-  `Quick` modes go through the `mt_quick_append_events` PostgreSQL function,
-  whose signature would need a parallel `bdata bytea[]` parameter to carry
-  binary payloads. Until that lands, `BuildQuickDescriptor` /
-  `BuildQuickWithServerTimestampsDescriptor` throw at store-build time if any
-  binary event type is registered. Workaround: set
-  `opts.Events.AppendMode = EventAppendMode.Rich;`.
-- **No bulk appender support.** `BulkEventAppender` uses Npgsql `COPY` with
-  the existing column shape; adding the `bdata` column to the COPY format
-  is part of the same Quick-mode follow-up.
 - **No upcaster support.** Marten's
   [event upcasters](/events/versioning) operate on JSON payloads and don't
   generalize to a `byte[]` wire form. Binary event upcasters need their own
