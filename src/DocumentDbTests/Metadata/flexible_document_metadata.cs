@@ -22,6 +22,7 @@ public class MetadataTarget
 
     public Dictionary<string, object> Headers { get; set; }
     public DateTimeOffset LastModified { get; set; }
+    public DateTimeOffset CreatedOn { get; set; }
 }
 
 
@@ -170,6 +171,59 @@ public class when_mapping_to_the_correlation_tracking : FlexibleDocumentMetadata
             doc2.LastModifiedBy.ShouldBe(theSession.LastModifiedBy);
         }
 
+    }
+}
+
+public class when_mapping_to_the_created_at_metadata: FlexibleDocumentMetadataContext
+{
+    protected override void MetadataIs(MartenRegistry.DocumentMappingExpression<MetadataTarget>.MetadataConfig metadata)
+    {
+        metadata.CreatedAt.MapTo(x => x.CreatedOn);
+    }
+
+    // #4575: in v8 the codegen storage path projected mt_created_at back
+    // onto the mapped member; the v9 ClosedShape rewrite missed wiring it
+    // (every other metadata column was ported) so CreatedOn stayed at
+    // default(DateTimeOffset) after reload.
+    [Fact]
+    public async Task created_at_is_populated_on_query_only()
+    {
+        var doc = new MetadataTarget();
+        var before = DateTimeOffset.UtcNow.AddSeconds(-1);
+
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
+
+        await using var query = theStore.QuerySession();
+        var loaded = await query.LoadAsync<MetadataTarget>(doc.Id);
+
+        loaded.CreatedOn.ShouldNotBe(default);
+        loaded.CreatedOn.ShouldBeGreaterThanOrEqualTo(before);
+    }
+
+    [Fact]
+    public async Task created_at_is_immutable_across_updates()
+    {
+        var doc = new MetadataTarget();
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
+
+        DateTimeOffset firstCreated;
+        await using (var query = theStore.QuerySession())
+        {
+            var loaded = await query.LoadAsync<MetadataTarget>(doc.Id);
+            firstCreated = loaded.CreatedOn;
+        }
+
+        // Force an update and confirm CreatedOn doesn't get clobbered by the new write.
+        await Task.Delay(50);
+        doc.Name = "renamed";
+        theSession.Store(doc);
+        await theSession.SaveChangesAsync();
+
+        await using var query2 = theStore.QuerySession();
+        var afterUpdate = await query2.LoadAsync<MetadataTarget>(doc.Id);
+        afterUpdate.CreatedOn.ShouldBe(firstCreated);
     }
 }
 
