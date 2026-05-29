@@ -107,8 +107,14 @@ public class LinqParsing: IReadOnlyLinqParsing
     /// </summary>
     public readonly IList<IMethodCallParser> MethodCallParsers = new List<IMethodCallParser>();
 
-    private ImHashMap<Module, ImHashMap<int, IMethodCallParser>> _methodParsersByModule =
-        ImHashMap<Module, ImHashMap<int, IMethodCallParser>>.Empty;
+    // #4586: key by MethodInfo, not (Module, MetadataToken). The MetadataToken
+    // is the same for every closed generic of a given generic method definition
+    // (e.g. Enumerable.Contains<StrongId> and Enumerable.Contains<string> share
+    // a token), so the old cache returned whichever parser landed first for any
+    // subsequent T. MethodInfo.Equals / GetHashCode on the closed reified
+    // MethodInfo correctly distinguishes the two.
+    private ImHashMap<MethodInfo, IMethodCallParser> _methodParsers =
+        ImHashMap<MethodInfo, IMethodCallParser>.Empty;
 
     internal LinqParsing(StoreOptions options)
     {
@@ -142,27 +148,20 @@ public class LinqParsing: IReadOnlyLinqParsing
 
     internal IMethodCallParser FindMethodParser(MethodCallExpression expression)
     {
-        var module = expression.Method.Module;
-
-        // 9.0 (#4374): consolidate the per-module map mutation into one AddOrUpdate.
-        // The previous code stored an empty inner map under `module`, then on the
-        // very next mutation overwrote it with the parser-populated map — wasted a
-        // write and the transient empty ImHashMap instance.
-        if (!_methodParsersByModule.TryFind(module, out var methodParsers))
-        {
-            methodParsers = ImHashMap<int, IMethodCallParser>.Empty;
-        }
-        else if (methodParsers.TryFind(expression.Method.MetadataToken, out var cached))
+        // #4586: key by the closed MethodInfo. For generic methods like
+        // Enumerable.Contains<T> the MetadataToken-keyed cache used previously
+        // collapsed every closed generic (StrongId, string, …) into a single
+        // slot — the first parser that matched any T was returned for all
+        // subsequent Ts. MethodInfo's overridden Equals / GetHashCode include
+        // the closed generic arguments, so each closed reified method gets its
+        // own cache entry.
+        if (_methodParsers.TryFind(expression.Method, out var cached))
         {
             return cached;
         }
 
         var parser = determineMethodParser(expression);
-
-        _methodParsersByModule = _methodParsersByModule.AddOrUpdate(
-            module,
-            methodParsers.AddOrUpdate(expression.Method.MetadataToken, parser));
-
+        _methodParsers = _methodParsers.AddOrUpdate(expression.Method, parser);
         return parser;
     }
 
