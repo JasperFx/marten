@@ -123,7 +123,13 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         // there is no Id member
         if (idType == null)
         {
-            if (StreamIdentity == StreamIdentity.AsGuid)
+            // [BoundaryAggregate] SG emits TId=string (see jasperfx#324); match
+            // it here so the dispatcher lookup hits regardless of StreamIdentity.
+            if (typeof(TDoc).IsDefined(typeof(BoundaryAggregateAttribute), inherit: false))
+            {
+                idType = typeof(string);
+            }
+            else if (StreamIdentity == StreamIdentity.AsGuid)
             {
                 idType = typeof(Guid);
             }

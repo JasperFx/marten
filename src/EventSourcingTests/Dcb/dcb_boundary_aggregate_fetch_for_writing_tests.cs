@@ -91,3 +91,48 @@ public class dcb_boundary_aggregate_fetch_for_writing_tests: OneOffConfiguration
         boundary.Events.Count.ShouldBe(2);
     }
 }
+
+// Same setup as the sibling fixture but without overriding StreamIdentity,
+// covering the default AsGuid path.
+[Collection("OneOffs")]
+public class dcb_boundary_aggregate_default_stream_identity_tests: OneOffConfigurationsContext, IAsyncLifetime
+{
+    private void ConfigureStore()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Events.AddEventType<Enrolled>();
+            opts.Events.AddEventType<ProgressRecorded>();
+
+            opts.Events.RegisterTagType<EnrolleeId>("enrollee").ForAggregate<SubscriptionState>();
+            opts.Events.RegisterTagType<ProgramId>("program").ForAggregate<SubscriptionState>();
+        });
+    }
+
+    public Task InitializeAsync()
+    {
+        ConfigureStore();
+        return Task.CompletedTask;
+    }
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    [Fact]
+    public async Task fetch_for_writing_by_tags_works_with_default_guid_stream_identity()
+    {
+        var enrolleeId = new EnrolleeId(Guid.NewGuid());
+
+        var enrolled = theSession.Events.BuildEvent(new Enrolled("Bob"));
+        enrolled.WithTag(enrolleeId);
+        theSession.Events.Append(Guid.NewGuid(), enrolled);
+
+        await theSession.SaveChangesAsync();
+
+        await using var session = theStore.LightweightSession();
+        var query = new EventTagQuery().Or<EnrolleeId>(enrolleeId);
+        var boundary = await session.Events.FetchForWritingByTags<SubscriptionState>(query);
+
+        boundary.Aggregate.ShouldNotBeNull();
+        boundary.Aggregate!.EnrollmentCount.ShouldBe(1);
+    }
+}

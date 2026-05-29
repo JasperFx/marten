@@ -230,6 +230,7 @@ stresults.htm
 
 docs/.vitepress/dist
 docs/.vitepress/cache
+docs/public/freight-shipping-tutorial.zip
 
 src/CommandLineRunner/Internal/*
 
