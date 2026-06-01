@@ -790,6 +790,47 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
                 "Either change Events.AppendMode to a quick variant, or clear " +
                 "Events.UseTenantPartitionedEvents.");
         }
+
+        // #4596 Session 1: per-tenant partitioning requires conjoined tenancy on the
+        // event store — there's nothing to partition by if every event lives in the
+        // default tenant. Mirrors the document-side MartenManagedTenantListPartitions
+        // policy which already skips Single-tenancy mappings.
+        if (Events.UseTenantPartitionedEvents && Events.TenancyStyle != TenancyStyle.Conjoined)
+        {
+            throw new InvalidOperationException(
+                "Events.UseTenantPartitionedEvents requires Events.TenancyStyle = " +
+                "TenancyStyle.Conjoined. Per-tenant partitioning has nothing to slice " +
+                "by when every event lives in the default tenant.");
+        }
+
+        // #4596 Session 1: archived-stream partitioning slices mt_events / mt_streams
+        // by the `is_archived` column via the existing `archiving.PartitionByListValues()`
+        // path. Per-tenant partitioning would need to slice by `tenant_id` on the same
+        // tables. Sub-partitioning (archive within tenant, or tenant within archive)
+        // is a future deliverable — reject the combination at config time rather than
+        // emitting a half-coherent schema.
+        if (Events.UseTenantPartitionedEvents && Events.UseArchivedStreamPartitioning)
+        {
+            throw new InvalidOperationException(
+                "Events.UseTenantPartitionedEvents currently cannot be combined with " +
+                "Events.UseArchivedStreamPartitioning. Sub-partitioning mt_events / mt_streams " +
+                "by both tenant_id and is_archived is a planned follow-up (see " +
+                "https://github.com/JasperFx/marten/issues/4596). Pick one for now.");
+        }
+
+        // #4596 Session 1: per-tenant event partitioning re-uses Marten's existing
+        // ManagedListPartitions machinery via the `mt_tenant_partitions` lookup
+        // table. The EventsTable / StreamsTable schema needs the same
+        // ManagedListPartitions instance the document-partitioning path uses, so
+        // auto-create it here when the flag is on and the user hasn't already
+        // called `Policies.PartitionMultiTenantedDocumentsUsingMartenManagement`
+        // themselves. Mirrors the user-facing helper but skips registering the
+        // policy that would partition every multi-tenanted document — opting in
+        // to per-tenant events doesn't implicitly opt in document tables.
+        if (Events.UseTenantPartitionedEvents && TenantPartitions == null)
+        {
+            _ = new Schema.MartenManagedTenantListPartitions(this, schemaName: null);
+        }
     }
 
     /// <summary>

@@ -12,6 +12,7 @@ using NpgsqlTypes;
 using Weasel.Core;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Events.Schema;
 
@@ -64,6 +65,19 @@ internal class StreamsTable: Table
         if (events.UseArchivedStreamPartitioning)
         {
             archiving.PartitionByListValues().AddPartition("archived", true);
+        }
+
+        // #4596 Session 1: per-tenant partitioning of mt_streams via the existing
+        // ManagedListPartitions instance. tenant_id is already part of the PK in
+        // conjoined mode (see top of constructor — first column for partition
+        // affinity). Combination with archived-partitioning is rejected at
+        // config time; tenancy style restriction is enforced upstream by the
+        // requirement that callers pass real tenant_ids on append.
+        if (events.UseTenantPartitionedEvents)
+        {
+            var manager = events.Options.TenantPartitions!.Partitions;
+            Partitioning = new ListPartitioning { Columns = [TenantIdColumn.Name] }
+                .UsePartitionManager(manager);
         }
     }
 }

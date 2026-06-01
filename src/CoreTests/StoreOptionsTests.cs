@@ -459,6 +459,10 @@ public class StoreOptionsTests
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
+            // #4596 Session 1: per-tenant partitioning also requires Conjoined event
+            // tenancy. Set it so the tenancy guard passes and we reach the AppendMode
+            // guard we're actually testing.
+            options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
             options.Events.UseTenantPartitionedEvents = true;
             options.Events.AppendMode = JasperFx.Events.EventAppendMode.Rich;
 
@@ -475,6 +479,8 @@ public class StoreOptionsTests
         {
             var options = new StoreOptions();
             options.Connection(ConnectionSource.ConnectionString);
+            // #4596 Session 1: per-tenant partitioning requires Conjoined event tenancy.
+            options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
             options.Events.UseTenantPartitionedEvents = true;
             options.Events.AppendMode = mode;
 
