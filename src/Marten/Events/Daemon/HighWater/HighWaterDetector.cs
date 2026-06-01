@@ -52,6 +52,19 @@ internal class HighWaterDetector: IHighWaterDetector
     public Uri DatabaseUri { get; }
 
     /// <summary>
+    /// #4596 Phase 2c — the SINGLE SWITCH that opts the running daemon into
+    /// vectorized per-tenant high-water + per-tenant rebuilds. JasperFx Phase 2b
+    /// wired both behaviors into <c>JasperFxAsyncDaemon</c> gated on this flag,
+    /// so flipping it on lights up <c>TenantedHighWaterCoordinator</c> +
+    /// per-tenant <c>RebuildProjectionAsync(name, tenantId, …)</c> without any
+    /// further plumbing on the Marten side. When the user has not opted into
+    /// <see cref="Marten.Events.IEventStoreOptions.UseTenantPartitionedEvents"/>
+    /// this stays false → today's single store-global mark + single-shard
+    /// rebuild, byte for byte.
+    /// </summary>
+    public bool SupportsTenantPartitioning => _graph.UseTenantPartitionedEvents;
+
+    /// <summary>
     /// Advance the high water mark to the latest detected sequence
     /// </summary>
     /// <param name="token"></param>

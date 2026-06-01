@@ -225,13 +225,27 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     }
 
     /// <summary>
-    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
-    /// per-tenant overload. Non-null <paramref name="tenantId"/> deletes only
-    /// the tenant-bearing <see cref="ShardName.Identity"/> rows
-    /// (<c>{ProjName}:{ShardKey}:{tenantId}</c>) for that projection — the
-    /// store-global row and other tenants' rows for the same projection are
-    /// untouched. Null preserves the today's-behavior "drop every shard
-    /// progression row for this projection" semantics.
+    /// #4596 Phase 1 Session 4 + Phase 2c — override the jasperfx#407
+    /// default-throwing per-tenant overload. Non-null <paramref name="tenantId"/>
+    /// scopes the whole pre-rebuild reset to that one tenant:
+    /// <list type="bullet">
+    ///   <item><description>Per-tenant progression row(s) for every registered shard
+    ///   (the <c>{ProjName}:{ShardKey}:{tenantId}</c> identities) — Session 4 work.</description></item>
+    ///   <item><description><b>Per-tenant projected documents</b> for every leaf
+    ///   (composite member or single source) of the projection — Phase 2c. Uses
+    ///   <see cref="AsyncOptionsExtensions.TeardownForTenant"/> which emits
+    ///   <c>DELETE FROM &lt;table&gt; WHERE tenant_id = '$tenant'</c> instead of
+    ///   TRUNCATE, so other tenants' rows are untouched.</description></item>
+    ///   <item><description>Tenant-scoped <see cref="DeadLetterEvent"/>s for the projection.</description></item>
+    /// </list>
+    /// JasperFx Phase 2b's <c>rebuildProjectionForTenant</c> explicitly does NOT call
+    /// the store-global <c>TeardownExistingProjectionStateAsync</c> (that would wipe
+    /// every other tenant's data) — this method is the only Marten-side hook fired
+    /// before a per-tenant rebuild starts, so the tenant-scoped doc teardown rides
+    /// along with the progression delete. Null <paramref name="tenantId"/> preserves
+    /// today's "drop every shard progression row for this projection" semantics
+    /// (no docs touched — the rebuild path uses TeardownExistingProjectionStateAsync
+    /// for that).
     /// </summary>
     async Task IEventStore<IDocumentOperations, IQuerySession>.DeleteProjectionProgressAsync(
         IEventDatabase database, string subscriptionName, string? tenantId, CancellationToken token)
@@ -253,6 +267,21 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             throw new ArgumentOutOfRangeException(nameof(subscriptionName));
         }
 
+        // Tenant-scoped doc teardown — same set of leaves the store-global
+        // TeardownExistingProjectionStateAsync visits, but DELETE WHERE tenant_id
+        // = $tenant instead of TRUNCATE.
+        if (source is CompositeProjection composite)
+        {
+            foreach (var leafSource in composite.AllProjections())
+            {
+                teardownProjectionStorageForTenant(leafSource, session, tenantId);
+            }
+        }
+        else
+        {
+            teardownProjectionStorageForTenant(source, session, tenantId);
+        }
+
         foreach (var agent in source.Shards())
         {
             // Compose the per-tenant ShardName so its Identity carries the
@@ -261,7 +290,23 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             session.QueueOperation(new DeleteProjectionProgress(Events, tenantShardName.Identity));
         }
 
+        // Note: DeadLetterEvent intentionally NOT wiped here. The store-global
+        // teardown wipes them blanket-style, but jasperfx#407 Phase 2b's
+        // per-tenant rebuild is single-tenant-scoped — the dead-letter table is
+        // store-global and doesn't have a `tenant_id` column to scope on. Stale
+        // entries from a previous failed apply will re-fire (or not) on the
+        // rebuild and self-correct.
+
         await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    private void teardownProjectionStorageForTenant(IProjectionSource<IDocumentOperations, IQuerySession> source,
+        IDocumentSession session, string tenantId)
+    {
+        if (source.Options.TeardownDataOnRebuild)
+        {
+            source.Options.TeardownForTenant(session, tenantId);
+        }
     }
 
     private void teardownProjectionStorage(IProjectionSource<IDocumentOperations, IQuerySession> source, IDocumentSession session)
@@ -324,6 +369,27 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
         var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters);
+        return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
+    }
+
+    /// <summary>
+    /// #4596 Phase 2c — consume jasperfx#407 Phase 2c's 5-arg BuildEventLoader
+    /// overload, which threads <see cref="ShardName"/> (and therefore the
+    /// shard's tenant slot) into the loader. Per-tenant rebuilds rebind the
+    /// shard via <c>ShardName.ForTenant(tenantId)</c> before reaching here, so
+    /// the loader can add a literal <c>d.tenant_id = '{tenantId}'</c> predicate
+    /// to its SQL — partition-pruning <c>mt_events</c> AND ensuring the
+    /// per-tenant execution never sees another tenant's events (which would
+    /// route doc writes via <see cref="IEvent.TenantId"/> to the wrong tenant
+    /// on a rebuild for someone else). The 4-arg explicit-interface override
+    /// above stays compiled in case any caller (or out-of-tree composite stage)
+    /// still routes through it.
+    /// </summary>
+    IEventLoader IEventStore<IDocumentOperations, IQuerySession>.BuildEventLoader(IEventDatabase database,
+        ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions, ShardName shardName)
+    {
+        var filters = buildEventLoaderFilters(filtering).ToArray();
+        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters, shardName);
         return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
     }
 

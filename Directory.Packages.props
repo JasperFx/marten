@@ -21,15 +21,26 @@
          — IHighWaterDetector.DetectForTenantsAsync /
          DetectInSafeZoneForTenantsAsync, VectorizedHighWaterMonitor,
          PolledTenantSet, ICrossTenantRebuildSource, monitor.CeilingFor).
+         2.5.0-pt209.4: jasperfx#407 Phase 2b (tenant-aware daemon wiring —
+         IHighWaterDetector.SupportsTenantPartitioning capability gate +
+         TenantedHighWaterCoordinator inside JasperFxAsyncDaemon + real
+         per-tenant RebuildProjectionAsync). Marten flips the capability
+         switch on UseTenantPartitionedEvents and inherits the rest.
+         2.5.0-pt209.5: jasperfx#407 Phase 2c (ShardName on BuildEventLoader)
+         — 5-arg IEventStore.BuildEventLoader overload threads the shard's
+         name (and therefore its tenant slot) into Marten's loader so the
+         loader can add a `tenant_id = $tenant` literal to its SQL on a
+         per-tenant rebuild. Without this, per-tenant rebuilds would scan
+         every tenant's events and overwrite other tenants' projected docs.
          Consumed from the repo-local nuget feed (see nuget.config). Bump in
          lockstep when new pt209.N packs land for #4596. -->
-    <PackageVersion Include="JasperFx" Version="2.5.0-pt209.3" />
-    <PackageVersion Include="JasperFx.Events" Version="2.5.0-pt209.3" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.5.0-pt209.3">
+    <PackageVersion Include="JasperFx" Version="2.5.0-pt209.5" />
+    <PackageVersion Include="JasperFx.Events" Version="2.5.0-pt209.5" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.5.0-pt209.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.5.0-pt209.3" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.5.0-pt209.5" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
