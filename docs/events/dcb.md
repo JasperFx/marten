@@ -276,6 +276,18 @@ catch (DcbConcurrencyException ex)
 The consistency check only detects events that match the **same tag query**. Events appended to unrelated tags or streams will not cause a violation.
 :::
 
+### How the boundary check serializes <Badge type="tip" text="9.4" />
+
+::: warning Upgrading from 9.3 or earlier
+Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
+:::
+
+Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). At `SaveChangesAsync` time Marten emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. The row-level lock plus the captured-version predicate is the serialization point: two truly-concurrent appenders observing the same captured version both attempt to bump the row — the first wins, the second's `RETURNING` matches no rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+
+Every save that appends a tagged event — boundary or otherwise — also queues a producer-side bump against the same row. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session: the version moves on every commit, not only on boundary saves.
+
+The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+
 ## Checking Event Existence
 
 If you only need to know whether any events matching a tag query exist -- without loading or deserializing them -- use `EventsExistAsync`. This is a lightweight `SELECT EXISTS(...)` query that avoids the overhead of fetching and materializing event data:
@@ -384,17 +396,17 @@ A reproducible side-by-side benchmark lives at `src/DcbLoadTest` and can be re-r
 Guidance:
 
 - **Prefer HStore** when your DCB queries match on **two or more tag types** (the common case — most projection boundaries combine an aggregate-id tag with one or more domain tags). The JOIN cost on TagTables grows with each additional tag type; HStore stays flat.
-- **Prefer HStore** when your hot path is `FetchForWritingByTags` (consistency-boundary read-modify-write). Round-trip drops roughly in half because both the read and the consistency-check `EXISTS` become single-table lookups.
+- **Prefer HStore** when your hot path is `FetchForWritingByTags` (consistency-boundary read-modify-write). The fetch round-trip drops because the events `SELECT` is a single-table lookup instead of an N-way JOIN.
 - **Stay on TagTables** if your DCB workload is dominated by **single-tag `EventsExistAsync` probes**. That case is what the per-type tables are optimized for — a primary-key lookup on a small dedicated table — and HStore's GIN containment is slightly slower per probe.
 - **Either mode is fine** for append throughput. With tags, HStore is about 30% faster than TagTables because it issues one `UPDATE` per tagged event instead of one `INSERT` per `(event, tag)` pair.
 
 If you're starting a new event store on Marten 9.0 and most of your projections key off `(aggregateId, someOtherTag)`, HStore is the recommended choice. If you're upgrading from Marten 8 and already have a populated TagTables-mode store, there is no compelling reason to switch.
 
-### Consistency Check
+### Consistency Check <Badge type="tip" text="9.4" />
 
-At `SaveChangesAsync` time, Marten executes an `EXISTS` query checking for new events matching the tag query with `seq_id > lastSeenSequence`. This runs in the same transaction as the event appends, providing serializable consistency for the tagged boundary.
+At `SaveChangesAsync` time, Marten emits a per-tag `UPDATE … WHERE version = $captured` against the `mt_dcb_tag_version` side table — one statement per distinct `(tag_table, tag_value)` tuple in the boundary query, in deterministic sort order. The row-level write lock plus the version predicate is the serialization point: two concurrent appenders capturing the same version both try to bump it; one wins, the other's `UPDATE` matches zero rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation — no advisory locks, no `SERIALIZABLE` transactions.
 
-The shape of the `EXISTS` query depends on the storage mode (multi-table `INNER JOIN` for TagTables, single-table `@>` containment for HStore), but the behavior is identical from the caller's perspective.
+The check shape no longer depends on `DcbStorageMode`. Both `TagTables` and `HStore` share the same side-table mechanism for the consistency check; the storage mode only affects how tags are physically read at fetch time and written at append time.
 
 ### Tag Routing
 

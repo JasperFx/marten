@@ -1,5 +1,33 @@
 # Migration Guide
 
+## Key Changes in 9.4.0
+
+### Required schema migration — DCB tag-version side table <Badge type="warning" text="action required" />
+
+If you register **any** DCB tag types via `Events.RegisterTagType<T>()` (or auto-discovery from `SingleStreamProjection<TDoc, TId>` with a strong-typed `TId`), Marten 9.4 introduces a new schema object: a side table `mt_dcb_tag_version` in your event-store schema. The table is created automatically on first save under the default `AutoCreate.CreateOrUpdate`, but **deployments that pin `AutoCreate.None` and ship schema changes via `db-patch` / `db-apply` must run the migration before deploying 9.4**, or saves with tagged events will fail with `relation "<schema>.mt_dcb_tag_version" does not exist`.
+
+```bash
+# Generate the patch against your production-equivalent DB
+dotnet run -- db-patch ./schema-9.4.sql --drop ./schema-9.4.drop.sql
+
+# Or apply directly if your deploy pipeline runs Marten with elevated DDL rights
+dotnet run -- db-apply
+```
+
+#### What changes on every save (with DCB tags)
+
+Beyond the new schema object, every save that appends a tagged event now also queues one extra `INSERT … ON CONFLICT DO UPDATE` against `mt_dcb_tag_version`. This is the *producer-side bump* that makes the boundary check serializable. The overhead is one row write per distinct `(tag_type, tag_value)` tuple referenced by the batch — typically one or two rows per save.
+
+#### Why this lands as a required migration in a point release
+
+This is the fix for [#4591](https://github.com/JasperFx/marten/issues/4591) — a correctness bug where truly-concurrent DCB tag-boundary appends could **both commit** when the contract demands exactly one. The check pre-9.4 emitted a `SELECT EXISTS (… FROM mt_events …)` as a separate non-locking statement before the INSERTs at `READ COMMITTED`, leaving an open race window. Two concurrent fetch→save sessions both ran the check before either committed, both saw no conflict, both inserted. The bug affected both `DcbStorageMode.HStore` and `DcbStorageMode.TagTables` — the predicate shape differed but the racy `SELECT-then-INSERT` pattern was identical.
+
+The side-table mechanism converts the predicate read into a row-level write conflict, so concurrent boundary saves serialize on a row lock at `READ COMMITTED` — no `SERIALIZABLE`, no advisory locks. See [DCB → Consistency Check](/events/dcb#consistency-check) for the full mechanism.
+
+#### Growth and cleanup
+
+The side table grows with **distinct boundary-tag values**, not with event volume — the same `StudentId` or `CourseId` reuses its row across every save. Rows are never deleted automatically; avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+
 ## Key Changes in 9.0.0
 
 ### Platform support

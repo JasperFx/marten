@@ -61,21 +61,22 @@ internal partial class EventStore
     public async Task<IEventBoundary<T>> FetchForWritingByTags<T>(EventTagQuery query,
         CancellationToken cancellation = default) where T : class
     {
-        var eventTypeNames = ResolveAggregatorEventTypeNames<T>();
-        var events = await QueryByTagsAsync(query, eventTypeNames, cancellation).ConfigureAwait(false);
-        var lastSeenSequence = events.Count > 0 ? events.Max(e => e.Sequence) : 0;
-
-        T? aggregate = default;
-        if (events.Count > 0)
+        if (query.Conditions.Count == 0)
         {
-            aggregate = await AggregateEventsAsync<T>(events, cancellation).ConfigureAwait(false);
+            throw new ArgumentException("EventTagQuery must have at least one condition.");
         }
 
-        // Register the DCB assertion to run at SaveChangesAsync time
-        var assertion = new AssertDcbConsistency(_store.Events, query, lastSeenSequence);
-        _session.QueueOperation(assertion);
+        await _session.Database.EnsureStorageExistsAsync(typeof(IEvent), cancellation).ConfigureAwait(false);
 
-        return new EventBoundary<T>(_session, _store.Events, aggregate, events, lastSeenSequence);
+        // #4591: route the non-batched path through the same handler used by
+        // BatchedQuery.FetchForWritingByTags. The handler is now responsible
+        // for (a) selecting events, (b) reading the captured per-tag versions
+        // from the mt_dcb_tag_version side table, and (c) queuing the
+        // DcbTagVersionAssertion that bumps those rows at SaveChangesAsync
+        // time. Keeping the two entry points pointed at one implementation
+        // means the boundary serialization can't drift between them.
+        var handler = new FetchForWritingByTagsHandler<T>(_store, query);
+        return await _session.ExecuteHandlerAsync(handler, cancellation).ConfigureAwait(false);
     }
 
     private async Task<T?> AggregateEventsAsync<T>(IReadOnlyList<IEvent> events,
@@ -220,20 +221,5 @@ internal partial class EventStore
         sb.Append(" order by e.seq_id");
 
         return (sb.ToString(), paramValues);
-    }
-
-    private string[]? ResolveAggregatorEventTypeNames<T>() where T : class
-    {
-        var aggregator = _store.Options.Projections.AggregatorFor<T>();
-        if (aggregator is not EventFilterable filterable) return null;
-
-        var includedTypes = filterable.IncludedEventTypes;
-        if (includedTypes.Count == 0 || includedTypes.Any(x => x.IsAbstract || x.IsInterface)) return null;
-
-        var additionalAliases = _store.Events.AliasesForEvents(includedTypes);
-        return includedTypes
-            .Select(x => _store.Events.EventMappingFor(x).Alias)
-            .Union(additionalAliases)
-            .ToArray();
     }
 }

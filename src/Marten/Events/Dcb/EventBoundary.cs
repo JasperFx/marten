@@ -11,8 +11,8 @@ namespace Marten.Events.Dcb;
 /// <summary>
 ///     Marten's concrete implementation of the lifted
 ///     <see cref="JasperFx.Events.Tags.IEventBoundary{T}"/> contract. Boundary
-///     consistency is enforced by <see cref="AssertDcbConsistency"/> at
-///     <c>SaveChangesAsync()</c> time.
+///     consistency is enforced by <see cref="DcbTagVersionAssertion"/> at
+///     <c>SaveChangesAsync()</c> time — see #4591.
 /// </summary>
 internal class EventBoundary<T>: IEventBoundary<T> where T : class
 {

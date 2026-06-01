@@ -10,8 +10,8 @@ namespace Marten.Events.Dcb;
 /// Shared SQL-emission helpers for DCB queries when <see cref="DcbStorageMode.HStore"/>
 /// is in effect. The same containment predicate shape is needed by
 /// <see cref="EventsExistByTagsHandler"/>, <see cref="FetchForWritingByTagsHandler"/>,
-/// <see cref="AssertDcbConsistency"/>, and the inline query builder on
-/// <see cref="EventStore"/>; this helper keeps the SQL identical across all four.
+/// and the inline query builder on <see cref="EventStore"/>; this helper keeps the
+/// SQL identical across all three.
 /// </summary>
 internal static class HStoreDcbQueryFragment
 {
