@@ -224,6 +224,46 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         await session.SaveChangesAsync(token).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
+    /// per-tenant overload. Non-null <paramref name="tenantId"/> deletes only
+    /// the tenant-bearing <see cref="ShardName.Identity"/> rows
+    /// (<c>{ProjName}:{ShardKey}:{tenantId}</c>) for that projection — the
+    /// store-global row and other tenants' rows for the same projection are
+    /// untouched. Null preserves the today's-behavior "drop every shard
+    /// progression row for this projection" semantics.
+    /// </summary>
+    async Task IEventStore<IDocumentOperations, IQuerySession>.DeleteProjectionProgressAsync(
+        IEventDatabase database, string subscriptionName, string? tenantId, CancellationToken token)
+    {
+        if (tenantId == null)
+        {
+            await ((IEventStore<IDocumentOperations, IQuerySession>)this)
+                .DeleteProjectionProgressAsync(database, subscriptionName, token).ConfigureAwait(false);
+            return;
+        }
+
+        var sessionOptions = SessionOptions.ForDatabase((IMartenDatabase)database);
+        sessionOptions.AllowAnyTenant = true;
+        await using var session = LightweightSession(sessionOptions);
+
+        var source = Options.Projections.All.FirstOrDefault(x => x.Name.EqualsIgnoreCase(subscriptionName));
+        if (source == null)
+        {
+            throw new ArgumentOutOfRangeException(nameof(subscriptionName));
+        }
+
+        foreach (var agent in source.Shards())
+        {
+            // Compose the per-tenant ShardName so its Identity carries the
+            // trailing :tenantId — that's the row this DELETE targets.
+            var tenantShardName = ShardName.Compose(agent.Name.Name, agent.Name.ShardKey, tenantId, agent.Name.Version);
+            session.QueueOperation(new DeleteProjectionProgress(Events, tenantShardName.Identity));
+        }
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
     private void teardownProjectionStorage(IProjectionSource<IDocumentOperations, IQuerySession> source, IDocumentSession session)
     {
         if (source.Options.TeardownDataOnRebuild)

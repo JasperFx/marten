@@ -25,6 +25,16 @@ internal class ProjectionProgressStatement: Statement
     /// </summary>
     public ShardName[]? Names { get; set; }
 
+    /// <summary>
+    /// #4596 Phase 1 Session 4: scope progression rows to a single tenant when the
+    /// per-tenant flag is on. Matches rows whose <c>name</c> ends in <c>:tenantId</c>
+    /// — that's the 3-segment <see cref="ShardName.Identity"/> grammar
+    /// (<c>{Name}:{ShardKey}:{tenantId}</c>) emitted by <see cref="ShardName.Compose"/>
+    /// when its tenant slot is populated. Null means "no tenant filter"
+    /// (today's behavior — every row).
+    /// </summary>
+    public string? TenantId { get; set; }
+
     protected override void configure(ICommandBuilder builder)
     {
         if (_events.UseOptimizedProjectionRebuilds && _events.EnableExtendedProgressionTracking)
@@ -45,17 +55,32 @@ internal class ProjectionProgressStatement: Statement
         }
 
 
+        var whereStarted = false;
+
         if (Name != null)
         {
             builder.Append(" where name = ");
             builder.AppendParameter(Name.Identity);
+            whereStarted = true;
         }
 
         if (Names != null)
         {
-            builder.Append(" where name = ANY(");
+            builder.Append(whereStarted ? " and " : " where ");
+            builder.Append("name = ANY(");
             builder.AppendParameter(Names.Select(x => x.Identity).ToArray());
             builder.Append(")");
+            whereStarted = true;
+        }
+
+        if (TenantId != null)
+        {
+            builder.Append(whereStarted ? " and " : " where ");
+            // Tenant-bearing ShardName.Identity always ends in `:{tenantId}`.
+            // Match the trailing tenant suffix via LIKE — partition suffixes
+            // are valid PG identifiers so they don't contain LIKE wildcards.
+            builder.Append("name like ");
+            builder.AppendParameter("%:" + TenantId);
         }
     }
 }
