@@ -276,11 +276,17 @@ catch (DcbConcurrencyException ex)
 The consistency check only detects events that match the **same tag query**. Events appended to unrelated tags or streams will not cause a violation.
 :::
 
-### How the boundary check serializes
+### How the boundary check serializes <Badge type="tip" text="9.4" />
 
-Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). At `SaveChangesAsync` time Marten emits an `UPDATE … WHERE version = $captured` for each captured row; the row-level lock plus the optimistic-version predicate is the serialization point. Two truly-concurrent appenders observing the same captured version both attempt to bump the row — the first wins, the second's `UPDATE` matches no rows and raises `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation; you do not need `SERIALIZABLE` or any advisory locks.
+::: warning Upgrading from 9.3 or earlier
+Marten 9.4 added a new schema object — `mt_dcb_tag_version` — to fix [#4591](https://github.com/JasperFx/marten/issues/4591). Deployments with `AutoCreate.None` must run `db-patch` / `db-apply` before deploying 9.4. See [Migration Guide → 9.4 schema migration](/migration-guide#required-schema-migration-dcb-tag-version-side-table).
+:::
 
-The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` keeps reusing its row across every fetch. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
+Internally, `FetchForWritingByTags` records the captured version of every tag value referenced by the query in a side table (`mt_dcb_tag_version`, one row per `(tag_table, tag_value, tenant_id)`). At `SaveChangesAsync` time Marten emits an `INSERT … ON CONFLICT DO UPDATE … WHERE version = $captured RETURNING 1` for each captured row. The row-level lock plus the captured-version predicate is the serialization point: two truly-concurrent appenders observing the same captured version both attempt to bump the row — the first wins, the second's `RETURNING` matches no rows and surfaces `DcbConcurrencyException`. This works at PostgreSQL's default `READ COMMITTED` isolation; no `SERIALIZABLE`, no advisory locks.
+
+Every save that appends a tagged event — boundary or otherwise — also queues a producer-side bump against the same row. That's what keeps a plain `session.Events.Append(streamId, taggedEvent)` from silently committing past an in-flight boundary fetch held by another session: the version moves on every commit, not only on boundary saves.
+
+The side table grows with **distinct boundary-tag values**, not with event volume, and is never deleted automatically — the same `StudentId` or `CourseId` reuses its row across every save. Avoid using ephemeral or one-shot values as DCB tags if you want to keep the table compact.
 
 ## Checking Event Existence
 
