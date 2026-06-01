@@ -21,17 +21,20 @@ internal class EventProgressionTable: Table
         AddColumn("last_updated", "timestamp with time zone")
             .DefaultValueByExpression("(transaction_timestamp())");
 
-        // #4596 Session 1: per-tenant progression key prep. Phase 1 splits
-        // `mt_event_progression` rows from `(name)` to `(name, tenant_id)` so each
-        // tenant's projection progress is independent. Session 1 only adds the
-        // column (nullable, default null = store-global row = today's behavior).
-        // Session 3 promotes it into the primary key; until then existing
-        // single-row progression continues to work unchanged because every read
-        // / write still uses `name` and treats `tenant_id IS NULL` as the global row.
-        if (eventGraph.UseTenantPartitionedEvents)
-        {
-            AddColumn("tenant_id", "varchar").AllowNulls();
-        }
+        // #4596 Session 3: progression keying for per-tenant partitioning.
+        // No tenant_id column — the per-tenant key lives inside the
+        // `name` value itself via ShardName.Identity (jasperfx#407 Phase 0
+        // grammar: `{Name}:{ShardKey}:{tenantId}`). Per-tenant daemon shards
+        // (Phase 2) get ShardNames with the TenantId slot populated, which
+        // produces a distinct Identity per (projection, shardKey, tenant) and
+        // therefore a distinct row in this single-PK table — no schema-shape
+        // change to mt_event_progression.
+        //
+        // The high-water-mark shard hardcodes its Identity to the
+        // ShardState.HighWaterMark constant (the tenant slot is discarded in
+        // jasperfx). Per-tenant high-water tracking, when Phase 2 lands,
+        // composes its row name on the Marten side as
+        // `$"{ShardState.HighWaterMark}:{tenantId}"` — same single-PK shape.
 
         if (eventGraph.UseOptimizedProjectionRebuilds)
         {

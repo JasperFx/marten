@@ -159,8 +159,13 @@ public class use_tenant_partitioned_events_schema_groundwork
     }
 
     [Fact]
-    public void event_progression_table_adds_nullable_tenant_id_column_when_flag_is_on()
+    public void event_progression_table_has_no_tenant_id_column_with_flag_on()
     {
+        // #4596 Session 3 design pivot: per-tenant rows are distinguished by
+        // ShardName.Identity (which embeds the tenant slot in the
+        // {Name}:{ShardKey}:{tenantId} grammar) rather than by a separate
+        // tenant_id column. The progression table's PK + columns are
+        // byte-for-byte identical to the flag-off case — see Session 3 tests.
         using var store = DocumentStore.For(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
@@ -174,31 +179,11 @@ public class use_tenant_partitioned_events_schema_groundwork
         var progressionTable = schemaObjects.OfType<Table>()
             .Single(t => t.Identifier.Name == EventProgressionTable.Name);
 
-        var tenantIdColumn = progressionTable.Columns
-            .SingleOrDefault(c => c.Name == "tenant_id");
-        tenantIdColumn.ShouldNotBeNull(
-            "Session 1 adds the column (nullable, default null = store-global). Session 3 promotes it into the PK.");
-        tenantIdColumn.AllowNulls.ShouldBeTrue(
-            "Existing single-row progression continues to read/write the (name) row with tenant_id IS NULL.");
-    }
-
-    [Fact]
-    public void event_progression_table_omits_tenant_id_column_when_flag_is_off()
-    {
-        using var store = DocumentStore.For(o =>
-        {
-            o.Connection(ConnectionSource.ConnectionString);
-            o.DatabaseSchemaName = Schema + "_prog_off";
-            // flag off
-            o.Policies.AllDocumentsAreMultiTenanted();
-        });
-
-        var schemaObjects = ((Weasel.Core.Migrations.IFeatureSchema)store.Options.EventGraph).Objects;
-        var progressionTable = schemaObjects.OfType<Table>()
-            .Single(t => t.Identifier.Name == EventProgressionTable.Name);
-
         progressionTable.Columns.Any(c => c.Name == "tenant_id")
-            .ShouldBeFalse("Column is only added when UseTenantPartitionedEvents is on.");
+            .ShouldBeFalse(
+                "Per-tenant separation lives in ShardName.Identity (`{Name}:{ShardKey}:{tenantId}`), not in a tenant_id column.");
+        progressionTable.PrimaryKeyColumns.ShouldBe(new[] { "name" },
+            "PK shape is unchanged when the flag flips on — the per-tenant suffix is baked into the name value, not a separate PK column.");
     }
 
     [Fact]
