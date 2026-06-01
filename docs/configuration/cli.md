@@ -6,6 +6,13 @@ libraries. For the full reference of available commands, extensibility points, a
 see the [JasperFx shared libraries documentation](https://shared-libs.jasperfx.net/).
 :::
 
+::: tip
+Running an AppHost with .NET Aspire? The optional `JasperFx.Aspire` package
+surfaces these same verbs as clickable buttons on each resource tile in the
+Aspire dashboard — see
+[JasperFx Commands in the Aspire Dashboard](/configuration/aspire-commands).
+:::
+
 ::: warning
 The usage of JasperFx commands shown in this document are only valid for applications bootstrapped with the
 [generic host builder](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host) with Marten registered in the application's IoC container.

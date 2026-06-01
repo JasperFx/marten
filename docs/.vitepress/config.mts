@@ -141,6 +141,7 @@ const config: UserConfig<DefaultTheme.Config> = {
             { text: 'Json Serialization', link: '/configuration/json' },
             { text: 'Resiliency Policies', link: '/configuration/retries' },
             { text: 'Command Line Tooling', link: '/configuration/cli' },
+            { text: 'JasperFx Commands in the Aspire Dashboard', link: '/configuration/aspire-commands' },
             { text: 'Optimized Development Workflow', link: '/configuration/optimized_artifact_workflow' },
             { text: 'Publishing with Native AOT', link: '/configuration/aot-publishing' },
             { text: 'Multi-Tenancy with Database per Tenant', link: '/configuration/multitenancy' },
