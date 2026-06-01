@@ -25,8 +25,14 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
     {
         _options = options;
 
-        Partitions = new ManagedListPartitions("TenantIds",
-            new DbObjectName(schemaName ?? options.DatabaseSchemaName, TableName));
+        // #4596 Session 2: stash the qualified DbObjectName on the wrapper so the
+        // QuickAppendEventFunction can reach it for the in-function
+        // `SELECT partition_suffix FROM <schema>.mt_tenant_partitions WHERE
+        // partition_value = tenantid` lookup. ManagedListPartitions keeps its
+        // internal Table private — the wrapper is the public access point.
+        TenantsTableName = new DbObjectName(schemaName ?? options.DatabaseSchemaName, TableName);
+
+        Partitions = new ManagedListPartitions("TenantIds", TenantsTableName);
 
         _options.Storage.Add(Partitions);
 
@@ -34,6 +40,14 @@ public class MartenManagedTenantListPartitions : IDocumentPolicy
     }
 
     public ManagedListPartitions Partitions { get; }
+
+    /// <summary>
+    /// Fully qualified name of the <c>mt_tenant_partitions</c> table this
+    /// manager owns. Surfaced for downstream consumers (per-tenant event
+    /// sequence machinery in #4596 etc.) so they can emit SQL that references
+    /// the lookup table regardless of the schema the user configured.
+    /// </summary>
+    public DbObjectName TenantsTableName { get; }
 
     public void Apply(DocumentMapping mapping)
     {

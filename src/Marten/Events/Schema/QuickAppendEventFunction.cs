@@ -110,6 +110,43 @@ namespace Marten.Events.Schema;
             var intType = _events.EnableBigIntEvents ? "bigint" : "int";
             var returnType = _events.EnableBigIntEvents ? "bigint[]" : "int[]";
 
+            // #4596 Phase 1 Session 2: per-tenant sequence pick.
+            // - When UseTenantPartitionedEvents is OFF (today's behavior): nextval
+            //   the single store-global mt_events_sequence.
+            // - When ON: look up the partition_suffix for this tenant in
+            //   mt_tenant_partitions ONCE at the very top of the function — before
+            //   any INSERTs against the partitioned tables — so an unregistered
+            //   tenant surfaces a clean MT002 error instead of PG's opaque
+            //   "no partition of relation mt_events found for row" (23514) on the
+            //   first insert. Then the per-event step is a cheap EXECUTE …
+            //   nextval against the pre-built sequence name. Dynamic SQL via
+            //   EXECUTE is needed because the sequence name varies per tenant;
+            //   format(%I) handles the identifier quoting safely.
+            string sequenceDecl;
+            string sequenceResolveUpFront;
+            string sequencePickPerEvent;
+            if (_events.UseTenantPartitionedEvents)
+            {
+                var tenantsTable = _events.Options.TenantPartitions!.TenantsTableName;
+                sequenceDecl = @"
+    tenant_seq_suffix varchar;
+    tenant_seq_name varchar;";
+                sequenceResolveUpFront = $@"
+    select partition_suffix into tenant_seq_suffix from {tenantsTable} where partition_value = tenantid;
+    if tenant_seq_suffix IS NULL then
+        RAISE EXCEPTION 'Tenant ''%'' has no registered partition. Call AddMartenManagedTenantsAsync before appending events.', tenantid USING ERRCODE = 'MT002';
+    end if;
+    tenant_seq_name := format('%I.%I', '{databaseSchema}', 'mt_events_sequence_' || tenant_seq_suffix);
+";
+                sequencePickPerEvent = "        execute 'select nextval(''' || tenant_seq_name || ''')' into seq;";
+            }
+            else
+            {
+                sequenceDecl = string.Empty;
+                sequenceResolveUpFront = string.Empty;
+                sequencePickPerEvent = $"        seq := nextval('{databaseSchema}.mt_events_sequence');";
+            }
+
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[], bdatas bytea[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
 DECLARE
@@ -121,8 +158,8 @@ DECLARE
 	index int;
 	seq {intType};
     actual_tenant varchar;
-	return_value {returnType};
-BEGIN
+	return_value {returnType};{sequenceDecl}
+BEGIN{sequenceResolveUpFront}
 	select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};
 	if event_version IS NULL then
 		event_version = 0;
@@ -144,7 +181,7 @@ BEGIN
 
 	foreach event_id in ARRAY event_ids
 	loop
-	    seq := nextval('{databaseSchema}.mt_events_sequence');
+{sequencePickPerEvent}
 		return_value := array_append(return_value, seq);
 
 	    event_version := event_version + 1;

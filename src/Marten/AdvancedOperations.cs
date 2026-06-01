@@ -363,11 +363,35 @@ public class AdvancedOperations
         AssertSuffixesWithinIdentifierLimit(tenantIdToPartitionMapping.Values, LongestPartitionedTableNameLength(database));
 
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
-        return await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
+        var statuses = await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
             logger,
             database,
             tenantIdToPartitionMapping,
             token).ConfigureAwait(false);
+
+        // #4596 Phase 1 Session 2: when UseTenantPartitionedEvents is on, also
+        // create the per-tenant event sequence `mt_events_sequence_{suffix}` for
+        // every freshly-registered partition. CREATE SEQUENCE IF NOT EXISTS keeps
+        // it idempotent so re-running with overlapping or already-present
+        // partitions is safe. Without this, the QuickAppendEventFunction's
+        // `nextval(mt_events_sequence_<suffix>)` would fail for tenants that
+        // joined post-schema-apply.
+        if (_store.Options.Events.UseTenantPartitionedEvents)
+        {
+            await using var conn = database.CreateConnection();
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            var schema = _store.Options.Events.DatabaseSchemaName;
+            foreach (var pair in tenantIdToPartitionMapping)
+            {
+                var sequenceName = $"\"{schema}\".\"mt_events_sequence_{pair.Value}\"";
+                await conn
+                    .CreateCommand($"create sequence if not exists {sequenceName} as bigint;")
+                    .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return statuses;
     }
 
     // Partition suffixes are always concatenated onto an already-valid table name prefix
