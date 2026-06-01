@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
@@ -30,12 +31,14 @@ internal class HighWaterDetector: IHighWaterDetector
     private readonly HighWaterStatisticsDetector _highWaterStatisticsDetector;
     private readonly ILogger _logger;
     private readonly ISingleQueryRunner _runner;
+    private readonly MartenDatabase _database;
     private readonly EventGraph _graph;
     private readonly ProjectionOptions _settings;
 
     public HighWaterDetector(MartenDatabase runner, EventGraph graph, ILogger logger)
     {
         _runner = runner;
+        _database = runner;
         _graph = graph;
         _logger = logger;
         _gapDetector = new GapDetector(graph);
@@ -116,6 +119,143 @@ internal class HighWaterDetector: IHighWaterDetector
         await calculateHighWaterMark(statistics, DetectionType.Normal, token).ConfigureAwait(false);
 
         return statistics;
+    }
+
+    /// <summary>
+    /// #4596 Phase 2: vectorized per-tenant high-water polling. When
+    /// <see cref="Marten.Events.EventGraph.UseTenantPartitionedEvents"/> is on,
+    /// poll every supplied tenant's per-tenant sequence + per-tenant high-water
+    /// progression row in a single round-trip and return one
+    /// <see cref="HighWaterStatistics"/> per tenant with <c>TenantId</c>
+    /// populated. When the flag is off, inherit the default interface impl
+    /// (single store-global reading) so existing single-mark consumers keep
+    /// compiling and behaving unchanged.
+    /// </summary>
+    public async Task<HighWaterVector> DetectForTenantsAsync(
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        if (!_graph.UseTenantPartitionedEvents)
+        {
+            // Flag off → no per-tenant partitioning; collapse to store-global.
+            var global = await Detect(token).ConfigureAwait(false);
+            return HighWaterVector.ForGlobal(global);
+        }
+
+        if (tenantIds.Count == 0)
+        {
+            return new HighWaterVector([]);
+        }
+
+        var stats = await loadPerTenantStatistics(tenantIds, token).ConfigureAwait(false);
+        return new HighWaterVector(stats);
+    }
+
+    /// <summary>
+    /// Safe-zone variant of <see cref="DetectForTenantsAsync"/>. Same vectorized
+    /// shape; per-tenant independent gap detection is the caller's job
+    /// (<see cref="VectorizedHighWaterMonitor"/>). When the flag is off, inherit
+    /// the default interface impl (store-global safe-zone reading).
+    /// </summary>
+    public async Task<HighWaterVector> DetectInSafeZoneForTenantsAsync(
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        if (!_graph.UseTenantPartitionedEvents)
+        {
+            var global = await DetectInSafeZone(token).ConfigureAwait(false);
+            return HighWaterVector.ForGlobal(global);
+        }
+
+        if (tenantIds.Count == 0)
+        {
+            return new HighWaterVector([]);
+        }
+
+        // The vectorized poll itself is the same; the daemon-level safe-zone
+        // behavior (skipping gaps for stale tenants) is layered on top by
+        // VectorizedHighWaterMonitor — store responsibility is just one
+        // round-trip per poll regardless of normal vs safe-zone mode.
+        var stats = await loadPerTenantStatistics(tenantIds, token).ConfigureAwait(false);
+        return new HighWaterVector(stats);
+    }
+
+    private async Task<IReadOnlyList<HighWaterStatistics>> loadPerTenantStatistics(
+        IReadOnlyCollection<string> tenantIds, CancellationToken token)
+    {
+        var tenantsTable = _graph.Options.TenantPartitions!.TenantsTableName;
+        var schema = _graph.DatabaseSchemaName;
+        var highWaterPrefix = ShardState.HighWaterMark + ":";
+
+        // Single round-trip: for each requested tenant, join (mt_tenant_partitions
+        // → pg_sequences for that partition's mt_events_sequence_{suffix} →
+        // mt_event_progression for the per-tenant high-water row keyed by
+        // `'{HighWaterMark}:{tenantId}'`, matching Session 3's per-tenant naming
+        // convention for the high-water shard). LEFT JOINs preserve a row per
+        // input tenant even when the partition / sequence / progression row
+        // hasn't been created yet (returns null → treated as zero downstream).
+        var sql = $@"
+with inputs(tenant_id) as (select unnest(:tenants))
+select
+    i.tenant_id,
+    coalesce(seq.last_value, 0)        as last_value,
+    coalesce(prog.last_seq_id, 0)      as last_seq_id,
+    prog.last_updated                  as last_updated,
+    transaction_timestamp()            as ""timestamp""
+from inputs i
+left join {tenantsTable} p
+    on p.partition_value = i.tenant_id
+left join pg_sequences seq
+    on seq.schemaname = '{schema}'
+    and seq.sequencename = 'mt_events_sequence_' || p.partition_suffix
+left join {schema}.mt_event_progression prog
+    on prog.name = :prefix || i.tenant_id;";
+
+        await using var conn = _database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        try
+        {
+            await using var cmd = conn.CreateCommand(sql)
+                .With("tenants", tenantIds.ToArray())
+                .With("prefix", highWaterPrefix);
+            await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
+
+            var results = new List<HighWaterStatistics>(tenantIds.Count);
+            while (await reader.ReadAsync(token).ConfigureAwait(false))
+            {
+                var tenantId = await reader.GetFieldValueAsync<string>(0, token).ConfigureAwait(false);
+                var lastValue = await reader.GetFieldValueAsync<long>(1, token).ConfigureAwait(false);
+                var lastSeqId = await reader.GetFieldValueAsync<long>(2, token).ConfigureAwait(false);
+
+                DateTimeOffset? lastUpdated = await reader.IsDBNullAsync(3, token).ConfigureAwait(false)
+                    ? null
+                    : await reader.GetFieldValueAsync<DateTimeOffset>(3, token).ConfigureAwait(false);
+                var timestamp = await reader.GetFieldValueAsync<DateTimeOffset>(4, token).ConfigureAwait(false);
+
+                // CurrentMark = the latest sequence the daemon may treat as
+                // "caught up". With per-tenant gap detection not yet wired in
+                // (a Phase 3 refinement), seed CurrentMark from the saved
+                // progression row when one exists, otherwise from the
+                // tenant's sequence last_value. SafeStartMark mirrors
+                // CurrentMark for the same reason — the safe-zone walker
+                // resumes from the last good mark.
+                var currentMark = lastSeqId > 0 ? lastSeqId : lastValue;
+                results.Add(new HighWaterStatistics
+                {
+                    TenantId = tenantId,
+                    HighestSequence = lastValue,
+                    LastMark = lastSeqId,
+                    SafeStartMark = currentMark,
+                    CurrentMark = currentMark,
+                    LastUpdated = lastUpdated,
+                    Timestamp = timestamp
+                });
+            }
+
+            return results;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
     }
 
     private async Task calculateHighWaterMark(HighWaterStatistics statistics, DetectionType detectionType,
