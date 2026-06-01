@@ -773,6 +773,23 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
             throw new InvalidOperationException(
                 NoConnectionMessage);
         }
+
+        // #4596: per-tenant partitioning wires the tenant-specific sequence
+        // pick into the QuickAppendEventFunction code path only. Rich append
+        // goes through RichEventAppender / RichEventStorage which assigns
+        // sequences ahead of time from a shared sequence reader, so it cannot
+        // honor a per-tenant sequence choice. Reject the combination at config
+        // time rather than failing opaquely on the first append.
+        if (Events.UseTenantPartitionedEvents && Events.AppendMode == EventAppendMode.Rich)
+        {
+            throw new InvalidOperationException(
+                "Events.UseTenantPartitionedEvents requires a quick append mode " +
+                "(EventAppendMode.Quick or EventAppendMode.QuickWithServerTimestamps). " +
+                "EventAppendMode.Rich is explicitly out of scope for per-tenant " +
+                "partitioning (see https://github.com/JasperFx/marten/issues/4596). " +
+                "Either change Events.AppendMode to a quick variant, or clear " +
+                "Events.UseTenantPartitionedEvents.");
+        }
     }
 
     /// <summary>

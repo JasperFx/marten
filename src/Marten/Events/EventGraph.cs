@@ -251,6 +251,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// produced outside Marten — e.g. user-supplied string keys).
     /// </summary>
     public bool EnableStrictStreamIdentityEnforcement { get; set; } = false;
+
+    /// <summary>
+    /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
+    /// Phase 0 — surface only; opting in does not yet partition storage or
+    /// alter daemon behavior. Validated at <c>DocumentStore</c> construction
+    /// to reject combinations with <see cref="EventAppendMode.Rich"/>.
+    /// </summary>
+    public bool UseTenantPartitionedEvents { get; set; }
+
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 
