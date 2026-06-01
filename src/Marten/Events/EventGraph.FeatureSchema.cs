@@ -124,5 +124,14 @@ public partial class EventGraph: IFeatureSchema
                 yield return new EventTagTable(this, tagRegistration);
             }
         }
+
+        // #4591: side-table that serializes truly-concurrent DCB tag appends.
+        // Only relevant if at least one DCB tag type is registered (since the
+        // table is keyed by tag_table/tag_value and would be dead weight in
+        // event stores that don't use tags at all).
+        if (_tagTypes.Count > 0)
+        {
+            yield return new DcbTagVersionTable(this);
+        }
     }
 }

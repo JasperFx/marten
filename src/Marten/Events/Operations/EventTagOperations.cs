@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using JasperFx.Events;
+using Marten.Events.Dcb;
 using Marten.Internal.Sessions;
 using Marten.Storage;
 
@@ -7,6 +8,36 @@ namespace Marten.Events.Operations;
 
 internal static class EventTagOperations
 {
+    /// <summary>
+    /// #4591: queue the producer-side bump of <c>mt_dcb_tag_version</c> for every
+    /// distinct (tag_table, tag_value) tuple appearing on the stream's tagged
+    /// events. Must be called for every save that may write tagged events,
+    /// regardless of whether tags are persisted via per-type tables (TagTables),
+    /// the HStore column, or the bulk PostgreSQL function — without this, plain
+    /// <c>session.Events.Append</c> commits silently bypass the DCB boundary
+    /// check held by another in-flight session.
+    /// </summary>
+    public static void QueueDcbVersionBumpIfNeeded(EventGraph eventGraph, DocumentSessionBase session, StreamAction stream)
+    {
+        if (eventGraph.TagTypes.Count == 0) return;
+
+        var seen = new HashSet<(string, string)>();
+        var entries = new List<(string TagTable, string TagValue)>();
+
+        foreach (var @event in stream.Events)
+        {
+            var tags = @event.Tags;
+            if (tags == null || tags.Count == 0) continue;
+
+            CollectDcbVersionTargets(eventGraph, tags, seen, entries);
+        }
+
+        if (entries.Count > 0)
+        {
+            session.QueueOperation(new DcbTagVersionBumpOperation(eventGraph, entries));
+        }
+    }
+
     /// <summary>
     /// Queue tag inserts using pre-assigned sequence numbers (Rich append mode).
     /// </summary>
@@ -75,6 +106,31 @@ internal static class EventTagOperations
                 if (registration == null) continue;
 
                 session.QueueOperation(new InsertEventTagByEventIdOperation(schema, registration, @event.Id, tag.Value, isConjoined, useArchived));
+            }
+        }
+    }
+
+    // #4591: collect canonical (tag_table, tag_value) tuples for the
+    // mt_dcb_tag_version producer-bump operation. Skips tag types that aren't
+    // registered for storage and dedupes tuples already seen in this save.
+    private static void CollectDcbVersionTargets(EventGraph eventGraph,
+        IReadOnlyList<EventTag> tags,
+        HashSet<(string, string)> seen,
+        List<(string TagTable, string TagValue)> entries)
+    {
+        foreach (var tag in tags)
+        {
+            var registration = eventGraph.FindTagType(tag.TagType);
+            if (registration == null) continue;
+
+            var raw = registration.ExtractValue(tag.Value);
+            if (raw == null) continue;
+
+            var canonical = TagValueStringifier.Stringify(raw);
+            var key = (registration.TableSuffix, canonical);
+            if (seen.Add(key))
+            {
+                entries.Add((registration.TableSuffix, canonical));
             }
         }
     }

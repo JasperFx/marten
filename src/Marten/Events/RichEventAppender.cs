@@ -66,6 +66,12 @@ internal class RichEventAppender: IEventAppender
             }
 
             EventTagOperations.QueueTagOperations(eventGraph, session, stream);
+
+            // #4591: always queue the DCB tag-version producer-bump separately
+            // from the per-storage-mode tag writes. Boundary-fetch sessions in
+            // flight rely on this row-level bump to invalidate their captured
+            // versions.
+            EventTagOperations.QueueDcbVersionBumpIfNeeded(eventGraph, session, stream);
         }
 
         // Queue AssertStreamVersion operations for streams with AlwaysEnforceConsistency but no events
