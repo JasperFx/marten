@@ -205,11 +205,24 @@ public static class LinqInternalExtensions
 
     public static bool IsCompilableExpression(this MemberExpression node)
     {
-        // Field of the containing code
+        // A MemberExpression is reducible to a constant at parse time iff its inner
+        // subtree contains no free ParameterExpression -- which correctly covers both
+        // compiler-emitted closure captures (Property(Constant(<displayClass>), "p"))
+        // *and* shapes whose inner is a MethodCall over closure-captured values
+        // (e.g. Member(Call(ElementAt, [Member(Constant(<displayClass>), "list"),
+        // Constant(2)]), "Date")).
+        //
+        // The previous heuristic gated on `node.Expression.ToString().StartsWith("value(")`,
+        // which incidentally covered MethodCall shapes whose printed form started with
+        // the closure access, *but* missed programmatic receivers whose wrapper type
+        // overrides ToString() (the #4599 trigger). The "no free parameter" structural
+        // check is the precise predicate the heuristic was approximating and handles
+        // both cases correctly.
         if (node.Expression == null) return true;
 
-        return (node.Expression is ConstantExpression || node.Expression != null) &&
-               node.Expression.ToString().StartsWith("value(");
+        var finder = new FreeParameterFinder();
+        finder.Visit(node.Expression);
+        return finder.Found == null;
     }
 
     public static bool TryToParseConstant(this Expression? expression, [NotNullWhen(true)]out ConstantExpression? constant)
@@ -337,6 +350,22 @@ public static class LinqInternalExtensions
             return constantExpression;
         }
 
+        // Guard: if the expression references a free ParameterExpression (one not
+        // bound by a lambda *inside* the expression), wrapping it in our parameter-less
+        // Lambda<Func<object>> below produces a body with unbound parameters, and
+        // FastExpressionCompiler crashes with the confusing
+        //   "variable 'x' of type 'Doc' referenced from scope '', but it is not defined"
+        // message. That symptom (see #4599) is almost always a Linq-parser bug at the
+        // call site; surface a clear error instead of leaking the FEC message.
+        var freeParameterFinder = new FreeParameterFinder();
+        freeParameterFinder.Visit(expression);
+        if (freeParameterFinder.Found != null)
+        {
+            var p = freeParameterFinder.Found;
+            throw new BadLinqExpressionException(
+                $"Marten cannot reduce the expression '{expression}' to a constant because it references the free parameter '{p.Name}' of type '{p.Type.Name}'. This usually indicates a Linq parser issue at the call site.");
+        }
+
         var lambdaWithoutParameters = Expression.Lambda<Func<object>>(Expression.Convert(expression, typeof(object)));
         var compiledLambda = FastExpressionCompiler.ExpressionCompiler.CompileFast(lambdaWithoutParameters);
 
@@ -350,6 +379,37 @@ public static class LinqInternalExtensions
         {
             throw new BadLinqExpressionException(
                 "Error while trying to find a value for the Linq expression " + expression, e);
+        }
+    }
+
+    /// <summary>
+    /// Walks an expression looking for the first <see cref="ParameterExpression"/>
+    /// that is *not* bound by a lambda inside the expression itself. Used by
+    /// <see cref="ReduceToConstant"/> as a safety net against feeding parameter-bearing
+    /// subtrees into the parameter-less lambda + FEC compile path (see #4599).
+    /// </summary>
+    private sealed class FreeParameterFinder: ExpressionVisitor
+    {
+        private readonly HashSet<ParameterExpression> _bound = new();
+
+        public ParameterExpression? Found { get; private set; }
+
+        protected override Expression VisitLambda<T>(Expression<T> node)
+        {
+            foreach (var p in node.Parameters) _bound.Add(p);
+            var result = base.VisitLambda(node);
+            foreach (var p in node.Parameters) _bound.Remove(p);
+            return result;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (Found == null && !_bound.Contains(node))
+            {
+                Found = node;
+            }
+
+            return node;
         }
     }
 }
