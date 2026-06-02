@@ -27,7 +27,8 @@ namespace Marten.Storage;
 /// Multi-tenancy implementation that distributes tenants across a pool of databases
 /// with conjoined tenancy and native PG list partitioning per tenant within each database.
 /// </summary>
-public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatabasePool
+public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatabasePool,
+    IDynamicTenantSource<string>
 {
     private readonly StoreOptions _options;
     private readonly ShardedTenancyOptions _configuration;
@@ -360,6 +361,93 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
     #endregion
 
+    #region IDynamicTenantSource<string>
+
+    // jasperfx#413 / #4598: ShardedTenancy is an auto-assign source — the connection-value
+    // surface (AddTenantAsync(tenantId, databaseId)) maps to AssignTenantAsync, and the
+    // auto-assign override (AddTenantAsync(tenantId, ct) → string) maps to the same path
+    // that Advanced.AddTenantToShardAsync(tenantId, ct) drives. The DisableTenantAsync /
+    // EnableTenantAsync / AllDisabledAsync surface is intentionally NOT yet implemented —
+    // the sharded tenant assignment table has no `disabled` column and no consumer needs
+    // those yet. Add column + lifecycle if/when a consumer surfaces.
+
+    /// <summary>
+    /// jasperfx#413 / #4598: store-agnostic FindAsync. For ShardedTenancy the "value" is
+    /// the database id the tenant is assigned to (NOT the connection string — the pool
+    /// owns connection strings via the master database).
+    /// </summary>
+    async ValueTask<string> ITenantedSource<string>.FindAsync(string tenantId)
+    {
+        var databaseId = await FindDatabaseForTenantAsync(tenantId, CancellationToken.None).ConfigureAwait(false);
+        if (databaseId == null)
+        {
+            throw new UnknownTenantIdException(tenantId);
+        }
+
+        return databaseId;
+    }
+
+    Task ITenantedSource<string>.RefreshAsync()
+    {
+        // Reset the cached tenant→database map so next lookup re-reads from the pool tables.
+        _tenantToDatabase = ImHashMap<string, MartenDatabase>.Empty;
+        return Task.CompletedTask;
+    }
+
+    IReadOnlyList<string> ITenantedSource<string>.AllActive()
+        => _databasesById.Enumerate().Select(x => x.Key).ToList();
+
+    IReadOnlyList<Assignment<string>> ITenantedSource<string>.AllActiveByTenant()
+        => _tenantToDatabase.Enumerate()
+            .Select(pair => new Assignment<string>(pair.Key, pair.Value.Identifier))
+            .ToList();
+
+    /// <summary>
+    /// jasperfx#413 / #4598: caller-supplied connection value. For ShardedTenancy the
+    /// "value" is the target database id, so this maps to <see cref="AssignTenantAsync" />.
+    /// </summary>
+    Task IDynamicTenantSource<string>.AddTenantAsync(string tenantId, string databaseId)
+        => AssignTenantAsync(tenantId, databaseId, CancellationToken.None).AsTask();
+
+    /// <summary>
+    /// jasperfx#413 / #4598: auto-assign override. Runs the same auto-assign +
+    /// partition/sequence provisioning path that
+    /// <c>Advanced.AddTenantToShardAsync(tenantId, ct)</c> drives, and returns the
+    /// resolved database id. This is the entrypoint CritterWatch (and any other
+    /// store-agnostic admin tool) uses to provision a sharded tenant without sniffing
+    /// the concrete tenancy type — see jasperfx#413.
+    /// </summary>
+    public async Task<string> AddTenantAsync(string tenantId, CancellationToken token = default)
+    {
+        // findOrAssignTenantDatabaseAsync (the existing internal) runs the full
+        // auto-assign + createPartitionsForTenant flow (now including the per-tenant
+        // event sequence — #4598). It already caches the resolved database in
+        // _tenantToDatabase, so FindDatabaseForTenantAsync hits the pool table only
+        // when this method races a concurrent provisioning.
+        await findOrAssignTenantDatabaseAsync(tenantId).ConfigureAwait(false);
+        return await FindDatabaseForTenantAsync(tenantId, token).ConfigureAwait(false)
+            ?? throw new InvalidOperationException(
+                $"Tenant '{tenantId}' was not assigned to any database after auto-assignment");
+    }
+
+    Task IDynamicTenantSource<string>.DisableTenantAsync(string tenantId)
+        => throw new NotSupportedException(
+            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy. " +
+            "Use RemoveTenantAsync to drop a tenant assignment, or open an issue to request the soft-delete surface.");
+
+    Task IDynamicTenantSource<string>.RemoveTenantAsync(string tenantId)
+        => RemoveTenantAsync(tenantId, CancellationToken.None).AsTask();
+
+    Task<IReadOnlyList<string>> IDynamicTenantSource<string>.AllDisabledAsync()
+        => throw new NotSupportedException(
+            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy.");
+
+    Task IDynamicTenantSource<string>.EnableTenantAsync(string tenantId)
+        => throw new NotSupportedException(
+            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy.");
+
+    #endregion
+
 #pragma warning disable MA0032
     #region Internals
 
@@ -475,6 +563,22 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         await partitions.AddPartitionToAllTables(
             NullLogger.Instance, database, dict, ct).ConfigureAwait(false);
+
+        // #4598: when per-tenant event partitioning is on, the new tenant also
+        // needs its `mt_events_sequence_<suffix>` sequence in the SAME shard
+        // database (the QuickAppendEventFunction calls
+        // nextval(mt_events_sequence_<suffix>) when it inserts events for that
+        // tenant). Without this, the tenant's first event append fails with
+        // 42P01: relation "{schema}.mt_events_sequence_<tenant>" does not exist.
+        // Suffix == tenantId per the dict above; idempotent CREATE IF NOT EXISTS.
+        if (_options.Events.UseTenantPartitionedEvents)
+        {
+            await Events.Schema.PerTenantEventSequences.EnsureSequencesAsync(
+                database,
+                _options.Events.DatabaseSchemaName,
+                dict.Values,
+                ct).ConfigureAwait(false);
+        }
     }
 
     private async Task maybeApplyChanges()

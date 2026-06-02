@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.MultiTenancy;
 using JasperFx.CommandLine;
 using JasperFx.CommandLine.Descriptions;
 using JasperFx.Core.Reflection;
@@ -155,6 +156,20 @@ public static class MartenServiceCollectionExtensions
     )
     {
         services.AddMarten(s => options);
+
+        // #4598 / jasperfx#413: when the configured tenancy is a dynamic source
+        // (MasterTableTenancy or ShardedTenancy as of #4598), register it as
+        // IDynamicTenantSource<string> so a store-agnostic admin tool (e.g.
+        // CritterWatch) can resolve it via GetServices without referencing
+        // concrete Marten tenancy types. Conditional so non-dynamic stores
+        // (DefaultTenancy / StaticMultiTenant) keep GetServices empty — the
+        // graceful-no-op behavior the consumer relies on.
+        if (options.Tenancy is IDynamicTenantSource<string>)
+        {
+            services.AddSingleton<IDynamicTenantSource<string>>(s =>
+                (IDynamicTenantSource<string>)s.GetRequiredService<IDocumentStore>().As<DocumentStore>().Tenancy);
+        }
+
         return new MartenConfigurationExpression(services, options);
     }
 

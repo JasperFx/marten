@@ -122,4 +122,46 @@ internal class PerTenantEventSequences: ISchemaObject
             yield return seq.Identifier;
         }
     }
+
+    /// <summary>
+    /// Imperative sibling of the schema-apply path: ensures the per-tenant
+    /// <c>mt_events_sequence_{suffix}</c> sequence exists for each supplied
+    /// partition suffix, in the given database. <c>CREATE SEQUENCE IF NOT EXISTS</c>
+    /// keeps it idempotent.
+    ///
+    /// <para>
+    /// Originally inlined inside <c>AdvancedOperations.AddMartenManagedTenantsAsync</c>
+    /// for the <c>DefaultTenancy</c> + Marten-managed-partitioning case (#4596
+    /// Phase 1 Session 2). Extracted so the sharded runtime-assignment path
+    /// (<c>ShardedTenancy.createPartitionsForTenant</c>) can call the same
+    /// implementation against the assigned shard database — without this, the
+    /// shard's first event append for a newly-provisioned tenant fails with
+    /// <c>42P01: relation "{schema}.mt_events_sequence_{suffix}" does not exist</c>
+    /// because quick-append calls <c>nextval(...)</c> on the per-tenant sequence.
+    /// See #4598.
+    /// </para>
+    /// </summary>
+    /// <param name="database">The database to provision the sequence(s) in. For
+    /// sharded tenancy this must be the tenant's assigned shard, NOT the default.</param>
+    /// <param name="eventSchema">Schema that hosts <c>mt_events</c> — usually
+    /// <c>EventGraph.DatabaseSchemaName</c>.</param>
+    /// <param name="partitionSuffixes">Partition suffixes to provision. For the
+    /// Marten-managed model the suffix is the tenant id itself.</param>
+    public static async Task EnsureSequencesAsync(
+        Weasel.Postgresql.PostgresqlDatabase database,
+        string eventSchema,
+        IEnumerable<string> partitionSuffixes,
+        CancellationToken token = default)
+    {
+        await using var conn = database.CreateConnection();
+        await conn.OpenAsync(token).ConfigureAwait(false);
+        foreach (var suffix in partitionSuffixes)
+        {
+            var sequenceName = $"\"{eventSchema}\".\"mt_events_sequence_{suffix}\"";
+            await conn
+                .CreateCommand($"create sequence if not exists {sequenceName} as bigint;")
+                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+        }
+        await conn.CloseAsync().ConfigureAwait(false);
+    }
 }
