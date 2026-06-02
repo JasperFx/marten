@@ -51,6 +51,13 @@ builder.Services.AddMarten(opts =>
 
 The archived stream option is further described in the section on [Hot/Cold Storage Partitioning](/events/archiving.html#hot-cold-storage-partitioning).
 
+::: tip
+For large multi-tenanted event stores, you can also physically isolate each tenant's events and give the async daemon a
+per-tenant view of progress with [Per-Tenant Event Partitioning](/events/multitenancy.html#per-tenant-event-partitioning).
+This partitions `mt_events` / `mt_streams` by `tenant_id`, gives each tenant its own event sequence, and enables
+per-tenant projection rebuilds — removing the single shared event store as a scalability bottleneck across tenants.
+:::
+
 See the ["Rich" vs "Quick" Appends](/events/appending.html#rich-vs-quick-appends) section for more information about the
 applicability and drawbacks of the "Quick" event appending.
 
