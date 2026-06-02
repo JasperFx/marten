@@ -68,8 +68,11 @@ internal sealed class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
 
     private void ApplyMetadata(DbDataReader reader, T document)
     {
+        // #4602: QueryOnlyReadBinders, not ReadBinders — the QueryOnly SELECT omits
+        // mt_version when the version/revision column has no member, so its binder
+        // set is narrower to keep ordinals aligned with the projection.
         var ordinal = FirstMetadataColumn;
-        foreach (var binder in _descriptor.ReadBinders)
+        foreach (var binder in _descriptor.QueryOnlyReadBinders)
         {
             binder.Apply(reader, ordinal, document, _session);
             ordinal++;

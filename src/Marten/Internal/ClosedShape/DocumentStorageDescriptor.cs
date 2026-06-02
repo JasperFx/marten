@@ -53,6 +53,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         IDocumentMetadataBinder<TDoc>[] clientSideWriteBinders,
         IDocumentMetadataBinder<TDoc>[] writeBinders,
         IDocumentMetadataBinder<TDoc>[] readBinders,
+        IDocumentMetadataBinder<TDoc>[] queryOnlyReadBinders,
         string upsertSql,
         string insertSql,
         string updateSql,
@@ -72,6 +73,7 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
         ClientSideWriteBinders = clientSideWriteBinders;
         WriteBinders = writeBinders;
         ReadBinders = readBinders;
+        QueryOnlyReadBinders = queryOnlyReadBinders;
         TableName = tableName;
         UpsertSql = upsertSql;
         InsertSql = insertSql;
@@ -147,6 +149,16 @@ public sealed class DocumentStorageDescriptor<TDoc, TId>
     /// (each binder consumes one result column).
     /// </summary>
     public IDocumentMetadataBinder<TDoc>[] ReadBinders { get; }
+
+    /// <summary>
+    /// #4602: the read-binder set for the QueryOnly storage style. Identical
+    /// to <see cref="ReadBinders"/> except it omits the version/revision binder
+    /// when that column has no annotated member — <c>Version/RevisionColumn.ShouldSelect</c>
+    /// returns false for QueryOnly in that case, so <c>mt_version</c> is absent
+    /// from the QueryOnly SELECT and its binders would otherwise be offset by one.
+    /// Same array instance as <see cref="ReadBinders"/> when nothing is dropped.
+    /// </summary>
+    public IDocumentMetadataBinder<TDoc>[] QueryOnlyReadBinders { get; }
 
     /// <summary>
     /// Full upsert SQL with <c>?</c> placeholders for client-side
