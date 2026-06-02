@@ -352,8 +352,42 @@ public class AdvancedOperations
 
         if (_store.Tenancy is not DefaultTenancy)
         {
+            // #4598: route the sharded case to the dynamic-tenant provisioning path
+            // (which covers both the document LIST partitions AND the per-tenant event
+            // sequence under UseTenantPartitionedEvents). The Marten-managed partition
+            // model assumes one DocumentStore-wide partition registry — under sharded
+            // tenancy that registry lives per shard, so we delegate per tenant rather
+            // than building a registry-wide dictionary across all shards.
+            if (_store.Tenancy is ShardedTenancy sharded)
+            {
+                foreach (var pair in tenantIdToPartitionMapping)
+                {
+                    // Sharded provisioning has a 1:1 tenant↔partition-suffix shape
+                    // (see ShardedTenancy.createPartitionsForTenant), so we reject any
+                    // override where the caller wants a partition suffix that differs
+                    // from the tenant id rather than silently dropping it.
+                    if (!string.Equals(pair.Key, pair.Value, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"Under sharded multi-tenancy, tenant id and partition suffix must match. " +
+                            $"Got tenantId='{pair.Key}' suffix='{pair.Value}'. " +
+                            $"Use AddTenantToShardAsync(tenantId) (auto-assign) or AddTenantToShardAsync(tenantId, databaseId) instead.");
+                    }
+
+                    await sharded.AddTenantAsync(pair.Key, token).ConfigureAwait(false);
+                }
+
+                // Sharded provisioning's per-shard table statuses come from each
+                // shard's own AddPartitionToAllTables call (richer shape than the
+                // single-DB TablePartitionStatus[] this method returns). Return empty
+                // — callers wanting per-shard status should use the per-shard admin path.
+                return Array.Empty<TablePartitionStatus>();
+            }
+
             throw new InvalidOperationException(
-                "This option is not (yet) supported in combination with database per tenant multi-tenancy");
+                "AddMartenManagedTenantsAsync supports DefaultTenancy and ShardedTenancy. " +
+                "MasterTableTenancy uses caller-supplied connection strings — call " +
+                "IServiceProvider.AddTenantAsync(tenantId, connectionValue) instead.");
         }
 
         AssertValidPostgresqlIdentifiers(tenantIdToPartitionMapping.Values);
@@ -371,24 +405,19 @@ public class AdvancedOperations
 
         // #4596 Phase 1 Session 2: when UseTenantPartitionedEvents is on, also
         // create the per-tenant event sequence `mt_events_sequence_{suffix}` for
-        // every freshly-registered partition. CREATE SEQUENCE IF NOT EXISTS keeps
-        // it idempotent so re-running with overlapping or already-present
-        // partitions is safe. Without this, the QuickAppendEventFunction's
-        // `nextval(mt_events_sequence_<suffix>)` would fail for tenants that
-        // joined post-schema-apply.
+        // every freshly-registered partition. Without this, the
+        // QuickAppendEventFunction's `nextval(mt_events_sequence_<suffix>)` would
+        // fail for tenants that joined post-schema-apply.
+        // #4598: extracted into PerTenantEventSequences.EnsureSequencesAsync so the
+        // sharded runtime-assignment path (ShardedTenancy.createPartitionsForTenant)
+        // can call the same implementation against the assigned shard database.
         if (_store.Options.Events.UseTenantPartitionedEvents)
         {
-            await using var conn = database.CreateConnection();
-            await conn.OpenAsync(token).ConfigureAwait(false);
-            var schema = _store.Options.Events.DatabaseSchemaName;
-            foreach (var pair in tenantIdToPartitionMapping)
-            {
-                var sequenceName = $"\"{schema}\".\"mt_events_sequence_{pair.Value}\"";
-                await conn
-                    .CreateCommand($"create sequence if not exists {sequenceName} as bigint;")
-                    .ExecuteNonQueryAsync(token).ConfigureAwait(false);
-            }
-            await conn.CloseAsync().ConfigureAwait(false);
+            await Events.Schema.PerTenantEventSequences.EnsureSequencesAsync(
+                database,
+                _store.Options.Events.DatabaseSchemaName,
+                tenantIdToPartitionMapping.Values,
+                token).ConfigureAwait(false);
         }
 
         return statuses;
@@ -500,18 +529,22 @@ public class AdvancedOperations
 
     /// <summary>
     ///     Auto-assign a tenant to a database using the configured assignment strategy,
-    ///     then create list partitions in the target database. Only available with sharded tenancy.
+    ///     then create list partitions (and, under <c>UseTenantPartitionedEvents</c>, the
+    ///     per-tenant event sequence) in the target database. Only available with sharded
+    ///     tenancy.
     /// </summary>
     /// <returns>The database_id the tenant was assigned to</returns>
-    public async Task<string> AddTenantToShardAsync(string tenantId, CancellationToken ct)
+    public Task<string> AddTenantToShardAsync(string tenantId, CancellationToken ct)
     {
         var sharded = _store.Options.Tenancy as ShardedTenancy
             ?? throw new InvalidOperationException(
                 "AddTenantToShardAsync is only available when using MultiTenantedWithShardedDatabases()");
 
-        await sharded.GetTenantAsync(tenantId).ConfigureAwait(false);
-        return await sharded.FindDatabaseForTenantAsync(tenantId, ct).ConfigureAwait(false)
-            ?? throw new InvalidOperationException($"Tenant '{tenantId}' was not assigned to any database");
+        // #4598: delegate to ShardedTenancy.AddTenantAsync — the jasperfx#413
+        // IDynamicTenantSource<string> auto-assign override — so the documented Advanced
+        // entry point and the store-agnostic JasperFx admin extension drive ONE code path
+        // (auto-assign → createPartitionsForTenant → per-tenant event sequence).
+        return sharded.AddTenantAsync(tenantId, ct);
     }
 
     /// <summary>
