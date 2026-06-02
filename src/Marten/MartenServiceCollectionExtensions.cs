@@ -164,13 +164,35 @@ public static class MartenServiceCollectionExtensions
         // concrete Marten tenancy types. Conditional so non-dynamic stores
         // (DefaultTenancy / StaticMultiTenant) keep GetServices empty — the
         // graceful-no-op behavior the consumer relies on.
-        if (options.Tenancy is IDynamicTenantSource<string>)
+        //
+        // Probed safely: `options.Tenancy` throws if no tenancy is configured yet
+        // (e.g. when the caller uses the AddMarten() + later UseNpgsqlDataSource()
+        // pattern). Dynamic tenancies are always set inside the StoreOptions
+        // configure callback before AddMarten returns, so a not-yet-configured
+        // store is by construction not dynamic and the registration is correctly
+        // skipped.
+        if (TryGetDynamicTenantSource(options) is not null)
         {
             services.AddSingleton<IDynamicTenantSource<string>>(s =>
                 (IDynamicTenantSource<string>)s.GetRequiredService<IDocumentStore>().As<DocumentStore>().Tenancy);
         }
 
         return new MartenConfigurationExpression(services, options);
+    }
+
+    private static IDynamicTenantSource<string>? TryGetDynamicTenantSource(StoreOptions options)
+    {
+        try
+        {
+            return options.Tenancy as IDynamicTenantSource<string>;
+        }
+        catch (InvalidOperationException)
+        {
+            // No tenancy configured yet — the caller is on the AddMarten() +
+            // UseNpgsqlDataSource() flow, which only ever lands on DefaultTenancy
+            // (not dynamic). Safe to treat as "not a dynamic source".
+            return null;
+        }
     }
 
     /// <summary>
