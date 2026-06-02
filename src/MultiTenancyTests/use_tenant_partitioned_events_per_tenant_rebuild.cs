@@ -58,12 +58,22 @@ namespace MultiTenancyTests;
 // source generator needs the partial chain to add the dispatcher method).
 public partial class use_tenant_partitioned_events_per_tenant_rebuild
 {
-    private const string Schema = "tenant_partitioned_events_session_p2c";
+    // Schema name includes the running process id so the net9.0 and net10.0
+    // test runs (which `dotnet test` launches in parallel against the same
+    // database by default) get distinct schemas. Without this, the per-tenant
+    // partitions created by AddMartenManagedTenantsAsync from one TFM's process
+    // collide with the other's ResetSchemaAsync + EnsureStorageExistsAsync
+    // sequence, surfacing as "42P07 relation mt_streams_alpha already exists".
+    private static readonly string Schema =
+        $"tenant_partitioned_events_session_p2c_p{Environment.ProcessId}";
 
     private static async Task ResetSchemaAsync(string schema)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
+        // DROP SCHEMA … CASCADE wipes the parent partitioned tables (mt_streams,
+        // mt_events) and the per-tenant partition children that were attached
+        // to them, so a re-run of the test starts from a clean slate.
         try { await conn.DropSchemaAsync(schema); } catch (Exception) { }
     }
 
