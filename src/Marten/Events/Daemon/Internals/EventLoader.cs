@@ -54,7 +54,27 @@ internal sealed class EventLoader: IEventLoader
         WindowStep
     }
 
+    /// <summary>
+    /// #4596 Phase 2c — per-tenant rebuild scoping. Non-null on a per-tenant
+    /// rebuild shard (<c>ShardName.TenantId != null</c>) when the store opted
+    /// into <see cref="Marten.Events.IEventStoreOptions.UseTenantPartitionedEvents"/>;
+    /// null on the store-global continuous shard (today's only flavor when the
+    /// flag is off). When set, both the normal SELECT and the SkipAhead MIN
+    /// fallback prepend a literal <c>d.tenant_id = '{tenantId}'</c> predicate
+    /// so Postgres partition-prunes <c>mt_events</c> to one partition AND the
+    /// per-tenant execution never sees another tenant's events — which would
+    /// otherwise route document writes via <see cref="IEvent.TenantId"/> to
+    /// the wrong tenant on a rebuild for someone else.
+    /// </summary>
+    public string? TenantFilterValue { get; }
+
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters)
+        : this(store, database, options, filters, shardName: null)
+    {
+    }
+
+    public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters,
+        ShardName? shardName)
     {
         _store = store;
         Database = database;
@@ -65,6 +85,10 @@ internal sealed class EventLoader: IEventLoader
         _schemaName = store.Options.Events.DatabaseSchemaName;
         _hasTypeFilter = filters.OfType<EventTypeFilter>().Any();
         _hasEventTypeIndex = store.Options.EventGraph.EnableEventTypeIndex;
+
+        TenantFilterValue = (shardName?.TenantId != null && store.Options.Events.UseTenantPartitionedEvents)
+            ? shardName!.TenantId
+            : null;
 
         var builder = new CommandBuilder();
         builder.Append($"select {_storage.SelectFields().Select(x => "d." + x).Join(", ")}, s.type as stream_type");
@@ -80,6 +104,18 @@ internal sealed class EventLoader: IEventLoader
         _floor = parameters[0];
         _ceiling = parameters[1];
         _floor.NpgsqlDbType = _ceiling.NpgsqlDbType = NpgsqlDbType.Bigint;
+
+        if (TenantFilterValue != null)
+        {
+            // Literal (not parameterized) so the Postgres planner partition-prunes
+            // mt_events at plan time. The tenant id is a Marten-registered
+            // partition suffix that was already validated against
+            // AdvancedOperations.AssertValidPostgresqlIdentifiers (letters, digits,
+            // underscores), so it cannot carry SQL-injection shape.
+            builder.Append(" and d.tenant_id = '");
+            builder.Append(TenantFilterValue);
+            builder.Append("'");
+        }
 
         foreach (var filter in filters)
         {
@@ -226,6 +262,16 @@ internal sealed class EventLoader: IEventLoader
         var minBuilder = new CommandBuilder();
         minBuilder.Append($"select min(seq_id) from {_schemaName}.mt_events as d where d.seq_id > ");
         minBuilder.AppendParameter(request.Floor, NpgsqlDbType.Bigint);
+
+        if (TenantFilterValue != null)
+        {
+            // Same per-tenant scoping the normal SELECT applies (see TenantFilterValue
+            // doc) — partition-prunes mt_events so the MIN doesn't scan other tenants'
+            // events looking for the next match.
+            minBuilder.Append(" and d.tenant_id = '");
+            minBuilder.Append(TenantFilterValue);
+            minBuilder.Append("'");
+        }
 
         foreach (var filter in _filters)
         {

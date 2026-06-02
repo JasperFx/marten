@@ -24,6 +24,10 @@ internal class DeleteProjectionProgress: IStorageOperation
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
+        // #4596 Session 3: per-tenant scoping flows through the shard name
+        // itself. Callers wanting to delete one tenant's progression pass the
+        // tenant-bearing ShardName.Identity (e.g. "OrdersProjection:All:alpha").
+        // No tenant_id column on mt_event_progression — see EventProgressionTable.
         var parameters =
             builder.AppendWithParameters($"delete from {_events.ProgressionTable} where name = ?");
 

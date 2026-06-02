@@ -125,3 +125,83 @@ be appended as the default tenant id _no matter what the session's tenant id is_
 4. Live, Async, or Inline projections have all been tested with this functionality
 5. `AppendOptimistic()` and `AppendPessimistic()` do not work (yet) with this setting, but you should probably
    be using `FetchForWriting()` instead anyway. 
+
+## Per-Tenant Event Partitioning <Badge type="tip" text="9.4" />
+
+::: tip
+This is an advanced, opt-in option aimed at large multi-tenanted event stores where a single, shared
+event store becomes a scalability bottleneck. It builds on the conjoined event tenancy described above
+by physically isolating each tenant's events and giving the async daemon a per-tenant view of progress.
+See [JasperFx/marten#4596](https://github.com/JasperFx/marten/issues/4596) and
+[CritterStack #209](https://github.com/JasperFx/CritterWatch/issues/209) for the full design.
+:::
+
+For systems with many tenants and very high event volumes, you can opt into **per-tenant event partitioning**.
+This layers native PostgreSQL LIST partitioning by `tenant_id` on top of the conjoined event tenancy model so
+that each tenant's events and streams live in their own physical partitions, get their own event sequence, and
+are tracked independently by the asynchronous projection daemon:
+
+```cs
+var store = DocumentStore.For(opts =>
+{
+    opts.Connection("some connection string");
+
+    // Per-tenant partitioning requires conjoined event tenancy
+    opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+
+    // Per-tenant partitioning only supports the "quick" append modes
+    opts.Events.AppendMode = EventAppendMode.Quick;
+
+    // Opt into per-tenant event partitioning
+    opts.Events.UseTenantPartitionedEvents = true;
+});
+```
+
+When `UseTenantPartitionedEvents` is enabled, Marten:
+
+* **Partitions `mt_events` and `mt_streams` by `tenant_id`** using native PostgreSQL LIST partitioning. This
+  reuses the same managed-partition machinery (the `mt_tenant_partitions` lookup table) as
+  [document partitioning](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling), but opting
+  into per-tenant _events_ does not implicitly partition your multi-tenanted document tables.
+* **Gives each tenant its own event sequence** (`mt_events_sequence_{tenant_suffix}`) instead of a single global
+  sequence, so high-volume tenants no longer contend on one shared sequence.
+* **Keys `mt_event_progression` by `(name, tenant_id)`**, so projection progress is tracked per tenant rather than
+  for the store as a whole.
+* **Runs the async daemon with a vectorized per-tenant high-water mark** — one query per database reports the high-water
+  position for every active tenant in a single round trip — plus **per-tenant rebuild isolation**, so a projection can
+  be rebuilt for a single tenant without tearing down or replaying every other tenant's progress.
+
+### Constraints
+
+Per-tenant partitioning is validated at `DocumentStore` construction. The following combinations throw immediately
+rather than failing opaquely later:
+
+* **Requires `TenancyStyle.Conjoined`.** There is nothing to partition by when every event lives in the default tenant.
+* **Requires a "quick" append mode** (`EventAppendMode.Quick` or `EventAppendMode.QuickWithServerTimestamps`). The
+  per-tenant sequence pick is wired into the quick-append code path only; `EventAppendMode.Rich` assigns sequences
+  ahead of time from a shared reader and is explicitly out of scope. See
+  ["Rich" vs "Quick" Appends](/events/appending#rich-vs-quick-appends).
+* **Cannot currently be combined with `UseArchivedStreamPartitioning`.** Sub-partitioning the event tables by both
+  `tenant_id` and `is_archived` is a planned follow-up; pick one for now.
+
+### Registering Tenants
+
+As with document-level managed partitioning, a tenant's partitions must exist before its events can be appended.
+Register tenants through the admin API:
+
+```cs
+await store.Advanced.AddMartenManagedTenantsAsync(
+    cancellationToken,
+    "tenant-a", "tenant-b", "tenant-c");
+```
+
+This creates the LIST partitions (and per-tenant sequence) for each tenant across the partitioned event tables. When
+rebuilding a projection across every tenant, the daemon discovers the full set of registered tenants from the
+`mt_tenant_partitions` table and fans out into independent per-tenant rebuilds.
+
+::: tip
+Per-tenant event partitioning composes with the
+[Sharded Multi-Tenancy with Database Pooling](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling)
+model: sharding distributes tenants across a pool of databases, and per-tenant partitioning physically isolates each
+tenant's events _within_ whichever database hosts that tenant.
+:::

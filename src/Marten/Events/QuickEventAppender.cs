@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -53,7 +54,30 @@ internal class QuickEventAppender: IEventAppender
             // with the stream's tenant instead of the session's.
             var metadataContext = TenantPropagation.MetadataContextFor(session, stream);
 
-            if (stream.ActionType == StreamActionType.Start)
+            // #4596 Phase 1 Session 2: when per-tenant partitioning is on, the
+            // per-event `QuickAppendEventWithVersion` INSERT (used by the Start
+            // and ExpectedVersionOnServer paths) would inline
+            // `nextval('mt_events_sequence')` — the *global* sequence — via
+            // SequenceColumn.ValueSql. Only the bulk `mt_quick_append_events`
+            // function honors the per-tenant sequence pick (#4596 Session 2
+            // rewrite). Route every per-tenant append through the bulk function
+            // so the seq_id always comes from the tenant's
+            // `mt_events_sequence_{suffix}`. The function handles new-stream
+            // creation internally and rejects unregistered tenants with
+            // SQLSTATE MT002. Optimistic-concurrency (ExpectedVersionOnServer)
+            // appends with per-tenant partitioning are not supported yet —
+            // Session 3's progression rework lays the groundwork, Session 4
+            // wires the function signature for it.
+            var forceBulkFunction = eventGraph.UseTenantPartitionedEvents;
+            if (forceBulkFunction && stream.ExpectedVersionOnServer.HasValue)
+            {
+                throw new NotSupportedException(
+                    $"Optimistic-concurrency event appends with explicit ExpectedVersionOnServer are not yet " +
+                    $"supported when Events.UseTenantPartitionedEvents is on (stream id '{stream.Id}'). " +
+                    $"This combination lands in #4596 Phase 1 Session 4. Use unconditional append for now.");
+            }
+
+            if (!forceBulkFunction && stream.ActionType == StreamActionType.Start)
             {
                 stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
                 session.QueueOperation(storage.InsertStream(stream));
@@ -68,7 +92,7 @@ internal class QuickEventAppender: IEventAppender
             }
             else
             {
-                if (stream.ExpectedVersionOnServer.HasValue)
+                if (!forceBulkFunction && stream.ExpectedVersionOnServer.HasValue)
                 {
                     // We can supply the version to the events going in
                     stream.PrepareEvents(stream.ExpectedVersionOnServer.Value, eventGraph, sequences, metadataContext);

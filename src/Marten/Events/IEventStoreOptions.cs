@@ -104,6 +104,32 @@ namespace Marten.Events
         public bool EnableStrictStreamIdentityEnforcement { get; set; }
 
         /// <summary>
+        /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
+        /// When enabled, the event store partitions <c>mt_events</c> and
+        /// <c>mt_streams</c> by <c>tenant_id</c>, uses one event sequence per
+        /// tenant (<c>mt_events_sequence_{tenant_suffix}</c>), keys
+        /// <c>mt_event_progression</c> by <c>(name, tenant_id)</c>, and runs
+        /// the async daemon with a vectorized per-tenant high-water mark plus
+        /// per-tenant rebuild isolation.
+        ///
+        /// <para>
+        /// Opt-in flag, defaults to false. Currently in Phase 0 — surface only.
+        /// The flag exists so consumer code can be written against the future
+        /// behavior, but enabling it is not yet meaningful at runtime.
+        /// </para>
+        /// <para>
+        /// Constraint: only the quick append modes
+        /// (<see cref="EventAppendMode.Quick"/> /
+        /// <see cref="EventAppendMode.QuickWithServerTimestamps"/>) are
+        /// supported. Setting this with <see cref="EventAppendMode.Rich"/>
+        /// throws at <c>DocumentStore</c> construction — the per-tenant
+        /// sequence pick is wired into the <c>QuickAppendEventFunction</c>
+        /// code path only.
+        /// </para>
+        /// </summary>
+        public bool UseTenantPartitionedEvents { get; set; }
+
+        /// <summary>
         /// Optional extension point to receive published messages as a side effect from
         /// aggregation projections
         /// </summary>

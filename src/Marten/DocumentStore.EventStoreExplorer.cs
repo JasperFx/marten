@@ -329,6 +329,21 @@ public partial class DocumentStore
     /// </remarks>
     async Task<IReadOnlyList<ProjectionStatus>> IEventStore.GetProjectionStatusesAsync(CancellationToken ct)
     {
+        return await ((IEventStore)this).GetProjectionStatusesAsync(tenantId: null, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
+    /// per-tenant overload. Non-null <paramref name="tenantId"/> returns the
+    /// per-tenant slice of each registered projection: the shard identities
+    /// reported carry the trailing tenant suffix
+    /// (<c>{ProjName}:{ShardKey}:{tenantId}</c>) and their ProcessedSequence
+    /// comes from the matching tenant-bearing row in <c>mt_event_progression</c>.
+    /// Null preserves the today's-behavior "every registered shard, no tenant
+    /// suffix" semantics.
+    /// </summary>
+    async Task<IReadOnlyList<ProjectionStatus>> IEventStore.GetProjectionStatusesAsync(string? tenantId, CancellationToken ct)
+    {
         await using var session = openExplorerSession();
         await session.Database.EnsureStorageExistsAsync(typeof(IEvent), ct).ConfigureAwait(false);
 
@@ -343,9 +358,17 @@ public partial class DocumentStore
             var shardStatuses = new List<ShardStatus>(shards.Count);
             foreach (var shard in shards)
             {
-                var processed = progression.TryGetValue(shard.Name.Identity, out var seq) ? seq : 0L;
+                // For per-tenant requests, compose the tenant-bearing ShardName
+                // so the reported identity AND the progression-row lookup both
+                // carry the trailing :tenantId suffix that Phase 1 Session 3
+                // writes for per-tenant shards.
+                var effectiveName = tenantId == null
+                    ? shard.Name
+                    : ShardName.Compose(shard.Name.Name, shard.Name.ShardKey, tenantId, shard.Name.Version);
+
+                var processed = progression.TryGetValue(effectiveName.Identity, out var seq) ? seq : 0L;
                 shardStatuses.Add(new ShardStatus(
-                    shard.Name.Identity,
+                    effectiveName.Identity,
                     State: "Unknown",
                     ProcessedSequence: processed,
                     EventStoreSequence: headSequence,

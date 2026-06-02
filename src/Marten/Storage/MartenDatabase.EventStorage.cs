@@ -66,6 +66,43 @@ public partial class MartenDatabase : IEventDatabase
         }
     }
 
+    /// <summary>
+    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
+    /// per-tenant overload. Non-null <paramref name="tenantId"/> adds an
+    /// <c>AND tenant_id = :tenantId</c> filter to the events scan so the
+    /// returned floor is the earliest sequence at or after the timestamp
+    /// <em>belonging to that tenant</em> — Phase 1 partitioned mt_events by
+    /// tenant_id so the planner only touches that tenant's partition. Null
+    /// preserves the store-global behavior (today's tenantless overload).
+    /// </summary>
+    public async Task<long?> FindEventStoreFloorAtTimeAsync(DateTimeOffset timestamp, string? tenantId, CancellationToken token)
+    {
+        if (tenantId == null)
+        {
+            return await FindEventStoreFloorAtTimeAsync(timestamp, token).ConfigureAwait(false);
+        }
+
+        var sql =
+            $"select seq_id from {Options.Events.DatabaseSchemaName}.mt_events where timestamp >= :timestamp and tenant_id = :tenant_id order by seq_id limit 1";
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        await using var conn = CreateConnection();
+        try
+        {
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            var raw = await conn
+                .CreateCommand(sql)
+                .With("timestamp", timestamp.ToUniversalTime(), NpgsqlDbType.TimestampTz)
+                .With("tenant_id", tenantId, NpgsqlDbType.Varchar)
+                .ExecuteScalarAsync(token).ConfigureAwait(false);
+            return raw is null or DBNull ? null : (long?)raw;
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
     string IEventDatabase.StorageIdentifier => _storageIdentifier;
 
     /// <summary>
@@ -188,10 +225,24 @@ select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
     public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(
         CancellationToken token = default)
     {
+        return await AllProjectionProgress(tenantId: null, token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #4596 Phase 1 Session 4 — override the jasperfx#407 default-throwing
+    /// per-tenant overload. Non-null <paramref name="tenantId"/> filters the
+    /// progression rows by the trailing tenant suffix on
+    /// <see cref="ShardName.Identity"/> (the
+    /// <c>{Name}:{ShardKey}:{tenantId}</c> 3-segment grammar). Null preserves
+    /// the today's-behavior "every row" semantics.
+    /// </summary>
+    public async Task<IReadOnlyList<ShardState>> AllProjectionProgress(string? tenantId, CancellationToken token = default)
+    {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
 
+        var statement = new ProjectionProgressStatement(Options.EventGraph) { TenantId = tenantId };
         var handler = (IQueryHandler<IReadOnlyList<ShardState>>)new ListQueryHandler<ShardState>(
-            new ProjectionProgressStatement(Options.EventGraph),
+            statement,
             new ShardStateSelector(Options.EventGraph));
 
         await using var conn = CreateConnection();

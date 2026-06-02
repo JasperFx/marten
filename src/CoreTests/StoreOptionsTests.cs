@@ -5,6 +5,7 @@ using JasperFx;
 using JasperFx.Descriptors;
 using JasperFx.MultiTenancy;
 using Marten;
+using Marten.Events;
 using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Documents;
@@ -439,6 +440,52 @@ public class StoreOptionsTests
     {
         // just a smoke test
         var description = new OptionsDescription(new StoreOptions());
+    }
+
+    // #4596 — Phase 0 surface: UseTenantPartitionedEvents flag + AppendMode guard.
+    // Per the issue spec, only Quick / QuickWithServerTimestamps append modes are
+    // compatible with per-tenant partitioning; Rich is explicitly out of scope
+    // (the per-tenant sequence pick lives in QuickAppendEventFunction only).
+    public class per_tenant_events_flag
+    {
+        [Fact]
+        public void defaults_to_false()
+        {
+            new StoreOptions().Events.UseTenantPartitionedEvents.ShouldBeFalse();
+        }
+
+        [Fact]
+        public void validate_throws_when_combined_with_rich_append_mode()
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString);
+            // #4596 Session 1: per-tenant partitioning also requires Conjoined event
+            // tenancy. Set it so the tenancy guard passes and we reach the AppendMode
+            // guard we're actually testing.
+            options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
+            options.Events.UseTenantPartitionedEvents = true;
+            options.Events.AppendMode = JasperFx.Events.EventAppendMode.Rich;
+
+            var ex = Should.Throw<InvalidOperationException>(() => options.Validate());
+
+            ex.Message.ShouldContain(nameof(IEventStoreOptions.UseTenantPartitionedEvents));
+            ex.Message.ShouldContain("EventAppendMode.Rich");
+        }
+
+        [Theory]
+        [InlineData(JasperFx.Events.EventAppendMode.Quick)]
+        [InlineData(JasperFx.Events.EventAppendMode.QuickWithServerTimestamps)]
+        public void validate_succeeds_with_quick_modes(JasperFx.Events.EventAppendMode mode)
+        {
+            var options = new StoreOptions();
+            options.Connection(ConnectionSource.ConnectionString);
+            // #4596 Session 1: per-tenant partitioning requires Conjoined event tenancy.
+            options.Events.TenancyStyle = JasperFx.MultiTenancy.TenancyStyle.Conjoined;
+            options.Events.UseTenantPartitionedEvents = true;
+            options.Events.AppendMode = mode;
+
+            Should.NotThrow(() => options.Validate());
+        }
     }
 
 

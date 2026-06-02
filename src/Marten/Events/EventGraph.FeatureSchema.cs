@@ -81,6 +81,17 @@ public partial class EventGraph: IFeatureSchema
 
         yield return sequence;
 
+        // #4596 Phase 1 Session 2: per-tenant sequences for the
+        // UseTenantPartitionedEvents path live alongside the global sequence.
+        // The wrapper yields one Sequence per partition currently registered on
+        // the shared MartenManagedTenantListPartitions; tenants joining later
+        // are picked up automatically because the wrapper walks the live
+        // partitions dictionary on each access.
+        if (UseTenantPartitionedEvents)
+        {
+            yield return new PerTenantEventSequences(this);
+        }
+
         yield return new EventProgressionTable(this);
 
         yield return new SystemFunction(DatabaseSchemaName, "mt_mark_event_progression", "varchar, bigint");

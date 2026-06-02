@@ -79,6 +79,13 @@ public interface IReadOnlyEventStoreOptions
     bool EnableStrictStreamIdentityEnforcement { get; set; }
 
     /// <summary>
+    /// Per-tenant partitioning master flag (CritterStack #209 / Marten #4596).
+    /// Surface-only in Phase 0 — see <see cref="IEventStoreOptions.UseTenantPartitionedEvents"/>
+    /// on the writable interface for the full contract.
+    /// </summary>
+    bool UseTenantPartitionedEvents { get; set; }
+
+    /// <summary>
     /// Optional extension point to receive published messages as a side effect from
     /// aggregation projections
     /// </summary>

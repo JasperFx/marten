@@ -5,6 +5,7 @@ using Marten.Storage;
 using Marten.Storage.Metadata;
 using Weasel.Postgresql;
 using Weasel.Postgresql.Tables;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Events.Schema;
 
@@ -31,7 +32,16 @@ internal class EventsTable: Table
         AddColumn(new EventTableColumn("timestamp", x => x.Timestamp))
             .NotNull().DefaultValueByString("(now())");
 
-        AddColumn<TenantIdColumn>();
+        // #4596 Session 1: PostgreSQL requires the partition column in every
+        // unique constraint on a partitioned table, PK included. When
+        // UseTenantPartitionedEvents is on, mark tenant_id as part of the PK
+        // alongside seq_id (which alone is already store-unique via the
+        // sequence — adding tenant_id is purely about satisfying the PG rule).
+        var tenantIdColumn = AddColumn<TenantIdColumn>();
+        if (events.UseTenantPartitionedEvents)
+        {
+            tenantIdColumn.AsPrimaryKey();
+        }
 
         AddColumn<DotNetTypeColumn>().AllowNulls();
 
@@ -144,6 +154,21 @@ internal class EventsTable: Table
         if (events.UseArchivedStreamPartitioning)
         {
             archiving.PartitionByListValues().AddPartition("archived", true);
+        }
+
+        // #4596 Session 1: per-tenant partitioning of mt_events via the existing
+        // ManagedListPartitions instance. The combination with archived-partitioning
+        // is rejected at config time (StoreOptions.Validate) — sub-partitioning is a
+        // future deliverable. Partition rows arrive on the fly as tenants join, via
+        // the standard `additivelyMigrateTablesForNewPartitions` path that scans every
+        // table whose Partitioning uses this manager.
+        if (events.UseTenantPartitionedEvents)
+        {
+            // Auto-init in StoreOptions.Validate guarantees TenantPartitions is non-null
+            // by the time the EventsTable is constructed for schema generation.
+            var manager = events.Options.TenantPartitions!.Partitions;
+            Partitioning = new ListPartitioning { Columns = [TenantIdColumn.Name] }
+                .UsePartitionManager(manager);
         }
     }
 

@@ -30,6 +30,10 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
     {
+        // #4596 Session 3: per-tenant progression keying flows naturally
+        // through ShardName.Identity — per-tenant shards (Phase 2) get a
+        // distinct Identity per (projection, shardKey, tenant) so the same
+        // WHERE name = ? optimistic update naturally scopes to one tenant.
         var parameters =
             builder.AppendWithParameters(
                 $"update {_events.ProgressionTable} set last_seq_id = ? where name = ? and last_seq_id = ?");
