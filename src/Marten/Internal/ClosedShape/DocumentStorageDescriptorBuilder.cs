@@ -39,6 +39,15 @@ internal static class DocumentStorageDescriptorBuilder
         var docTypeReadIndex = -1;
         DocumentMapping? hierarchyMapping = null;
 
+        // #4602: the version/revision column is the one metadata column whose
+        // presence in the SELECT depends on the storage style — Version/Revision
+        // ShouldSelect returns false for QueryOnly when there's no annotated
+        // member (only the non-QueryOnly concurrency-tracking rule keeps it).
+        // readBinders below matches the non-QueryOnly SELECT (mt_version present);
+        // when this stays false we drop that binder for the QueryOnly read set so
+        // the QueryOnly selector's ordinals stay aligned with its narrower SELECT.
+        var versionInQueryOnlyReadSet = false;
+
         // M11: hierarchical mappings carry mt_doc_type — the discriminator
         // SubClassDocumentStorage filters on and the selector reads to
         // dispatch deserialization to the right subclass type.
@@ -65,6 +74,9 @@ internal static class DocumentStorageDescriptorBuilder
             {
                 versionReadIndex = readBinders.Count;
                 readBinders.Add(revisionBinder);
+                // Selected by QueryOnly too only when it has a member; otherwise it's
+                // present here solely for the non-QueryOnly concurrency rule.
+                versionInQueryOnlyReadSet = mapping.Metadata.Revision.Member is not null;
             }
         }
         else if (mapping.Metadata.Version.Enabled)
@@ -77,6 +89,7 @@ internal static class DocumentStorageDescriptorBuilder
             {
                 versionReadIndex = readBinders.Count;
                 readBinders.Add(versionBinder);
+                versionInQueryOnlyReadSet = mapping.Metadata.Version.Member is not null;
             }
         }
 
@@ -217,6 +230,17 @@ internal static class DocumentStorageDescriptorBuilder
 
         var writeArray = writeBinders.ToArray();
         var readArray = readBinders.ToArray();
+
+        // #4602: QueryOnly's SELECT omits mt_version when the version/revision
+        // column has no member, so its read set drops that binder to stay aligned
+        // with the narrower projection. Same array reference otherwise — no extra
+        // allocation for the common case.
+        var queryOnlyReadArray = readArray;
+        if (versionReadIndex >= 0 && !versionInQueryOnlyReadSet)
+        {
+            queryOnlyReadArray = readArray.Where((_, i) => i != versionReadIndex).ToArray();
+        }
+
         var clientSide = writeArray.Where(b => !b.IsServerSide).ToArray();
 
         var isConjoined = mapping.TenancyStyle == TenancyStyle.Conjoined;
@@ -251,6 +275,7 @@ internal static class DocumentStorageDescriptorBuilder
             clientSideWriteBinders: clientSide,
             writeBinders: writeArray,
             readBinders: readArray,
+            queryOnlyReadBinders: queryOnlyReadArray,
             upsertSql: upsertSql,
             insertSql: insertSql,
             updateSql: updateSql,
