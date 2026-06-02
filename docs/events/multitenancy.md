@@ -162,7 +162,7 @@ When `UseTenantPartitionedEvents` is enabled, Marten:
 * **Partitions `mt_events` and `mt_streams` by `tenant_id`** using native PostgreSQL LIST partitioning. This
   reuses the same managed-partition machinery (the `mt_tenant_partitions` lookup table) as
   [document partitioning](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling), but opting
-  into per-tenant *events* does not implicitly partition your multi-tenanted document tables.
+  into per-tenant _events_ does not implicitly partition your multi-tenanted document tables.
 * **Gives each tenant its own event sequence** (`mt_events_sequence_{tenant_suffix}`) instead of a single global
   sequence, so high-volume tenants no longer contend on one shared sequence.
 * **Keys `mt_event_progression` by `(name, tenant_id)`**, so projection progress is tracked per tenant rather than
@@ -203,5 +203,5 @@ rebuilding a projection across every tenant, the daemon discovers the full set o
 Per-tenant event partitioning composes with the
 [Sharded Multi-Tenancy with Database Pooling](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling)
 model: sharding distributes tenants across a pool of databases, and per-tenant partitioning physically isolates each
-tenant's events *within* whichever database hosts that tenant.
+tenant's events _within_ whichever database hosts that tenant.
 :::
