@@ -13,45 +13,16 @@
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FSharp.Core" Version="9.0.100" />
     <PackageVersion Include="FSharp.SystemTextJson" Version="1.3.13" />
-    <!-- 2.5.0-pt209.1: jasperfx#407 Phase 0 (per-tenant partitioning surface).
-         2.5.0-pt209.2: jasperfx#407 Phase A (composite single-pass rebuild
-         executor — CompositeReplayExecutor + CompositeProjection.TryBuildReplayExecutor
-         + CanParticipateInCompositeReplay hook).
-         2.5.0-pt209.3: jasperfx#407 Phase 2 (per-tenant daemon abstractions
-         — IHighWaterDetector.DetectForTenantsAsync /
-         DetectInSafeZoneForTenantsAsync, VectorizedHighWaterMonitor,
-         PolledTenantSet, ICrossTenantRebuildSource, monitor.CeilingFor).
-         2.5.0-pt209.4: jasperfx#407 Phase 2b (tenant-aware daemon wiring —
-         IHighWaterDetector.SupportsTenantPartitioning capability gate +
-         TenantedHighWaterCoordinator inside JasperFxAsyncDaemon + real
-         per-tenant RebuildProjectionAsync). Marten flips the capability
-         switch on UseTenantPartitionedEvents and inherits the rest.
-         2.5.0-pt209.5: jasperfx#407 Phase 2c (ShardName on BuildEventLoader)
-         — 5-arg IEventStore.BuildEventLoader overload threads the shard's
-         name (and therefore its tenant slot) into Marten's loader so the
-         loader can add a `tenant_id = $tenant` literal to its SQL on a
-         per-tenant rebuild. Without this, per-tenant rebuilds would scan
-         every tenant's events and overwrite other tenants' projected docs.
-         2.5.0-pt209.6: jasperfx#407 Phase A-fix
-         (SubscriptionAgent.Apply CommandType.Start) — after the optimized
-         replay executor (CompositeReplayExecutor) finishes a catch-up, the
-         agent now reconciles `LastEnqueued = LastCommitted = HighWaterMark`
-         so the post-switch fall-through doesn't redundantly `loadNextAsync`
-         events 0→HighWater into the block. Before the fix, that second pass
-         built a second composite batch whose `INSERT TeleHealth:All`
-         collided with the catch-up's already-committed row → 23505 on
-         `pk_mt_event_progression`. Fixes
-         `DaemonTests.Composites.multi_stage_projections.end_to_end` +
-         `downstream_lookups_survive_tiny_upstream_cache` regressions.
-         Consumed from the repo-local nuget feed (see nuget.config). Bump in
-         lockstep when new pt209.N packs land for #4596. -->
-    <PackageVersion Include="JasperFx" Version="2.5.0-pt209.6" />
-    <PackageVersion Include="JasperFx.Events" Version="2.5.0-pt209.6" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.5.0-pt209.6">
+    <!-- JasperFx 2.5.0: per-tenant event partitioning + tenant-aware async daemon
+         surface (jasperfx#407 / CritterWatch#209). Released to nuget.org; this
+         consumes the published packages rather than the local-feed pt209 prereleases. -->
+    <PackageVersion Include="JasperFx" Version="2.5.0" />
+    <PackageVersion Include="JasperFx.Events" Version="2.5.0" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.5.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.5.0-pt209.6" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.5.0" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
