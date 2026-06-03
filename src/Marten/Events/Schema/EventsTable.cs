@@ -69,14 +69,40 @@ internal class EventsTable: Table
 
         if (events.TenancyStyle == TenancyStyle.Conjoined)
         {
+            // #4606: under UseTenantPartitionedEvents, mt_events is itself a partitioned
+            // table (by tenant_id) and so is mt_streams. Declaring a parent-level FK from
+            // mt_events → mt_streams makes Postgres auto-propagate a partition-targeting
+            // FK (mt_events → mt_streams_<tenant>) into mt_events as an INHERITED constraint
+            // the moment the first mt_streams_<tenant> partition is attached. The next
+            // mt_events_<tenant> partition-attach then trips
+            // `42P16: cannot drop inherited constraint` because Weasel's
+            // additivelyMigrateTablesForNewPartitions treats the auto-propagated FK as an
+            // "extra" (not in Marten's declared FK set) and tries to drop it, which
+            // Postgres refuses on an inherited constraint. The downstream symptom is
+            // 23514 on the first event append because the partition attach was silently
+            // swallowed by the migration's catch block.
+            //
+            // Skipping the explicit FK trades database-level referential integrity from
+            // mt_events to mt_streams for the per-tenant-partitioning combination
+            // working at all. Marten's append path always inserts/updates the stream row
+            // before persisting events, so application-level integrity is preserved;
+            // external tooling that writes mt_events directly without ensuring the
+            // stream exists in mt_streams is the only at-risk path, and that's already
+            // outside Marten's contract. The non-partitioned and archived-partitioning
+            // shapes keep their FK because they don't trigger the auto-propagation.
+            var skipMtEventsFkForTenantPartitioning = events.UseTenantPartitionedEvents;
+
             if (events.UseArchivedStreamPartitioning)
             {
-                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id_is_archived")
+                if (!skipMtEventsFkForTenantPartitioning)
                 {
-                    ColumnNames = new[] { TenantIdColumn.Name, "stream_id", "is_archived" },
-                    LinkedNames = new[] { TenantIdColumn.Name, "id", "is_archived" },
-                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
-                });
+                    ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id_is_archived")
+                    {
+                        ColumnNames = new[] { TenantIdColumn.Name, "stream_id", "is_archived" },
+                        LinkedNames = new[] { TenantIdColumn.Name, "id", "is_archived" },
+                        LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
+                    });
+                }
 
                 Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
                 {
@@ -85,12 +111,15 @@ internal class EventsTable: Table
             }
             else
             {
-                ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
+                if (!skipMtEventsFkForTenantPartitioning)
                 {
-                    ColumnNames = new[] { TenantIdColumn.Name, "stream_id" },
-                    LinkedNames = new[] { TenantIdColumn.Name, "id" },
-                    LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
-                });
+                    ForeignKeys.Add(new ForeignKey("fkey_mt_events_stream_id_tenant_id")
+                    {
+                        ColumnNames = new[] { TenantIdColumn.Name, "stream_id" },
+                        LinkedNames = new[] { TenantIdColumn.Name, "id" },
+                        LinkedTable = new PostgresqlObjectName(events.DatabaseSchemaName, "mt_streams")
+                    });
+                }
 
                 Indexes.Add(new IndexDefinition("pk_mt_events_stream_and_version")
                 {
