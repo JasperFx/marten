@@ -17,7 +17,23 @@ namespace Marten.Internal;
 [RequiresDynamicCode("Generates a runtime subclass per secondary-store interface via System.Reflection.Emit.")]
 internal static class SecondaryStoreProxyFactory
 {
-    private static readonly ConcurrentDictionary<Type, Type> _cache = new();
+    // Lazy<Type> (not Type) is the value: ConcurrentDictionary.GetOrAdd does NOT
+    // guarantee the value-factory runs only once under contention, so caching the
+    // raw Type would let multiple threads run Build for the same key — each calling
+    // DefineType with the same name on the shared module and throwing
+    // "Duplicate type name within an assembly". Caching a Lazy makes Build run
+    // exactly once per key.
+    //
+    // Note: Lazy (ExecutionAndPublication) caches a thrown exception permanently,
+    // so a failed Build is no longer retried on the next call as it was with the
+    // bare GetOrAdd(Build). Build only fails deterministically here (a non-marker
+    // interface that can't be implemented), so caching the failure is acceptable.
+    private static readonly ConcurrentDictionary<Type, Lazy<Type>> _cache = new();
+
+    // The ModuleBuilder is process-shared across every secondary-store interface,
+    // and ModuleBuilder.DefineType/CreateType are not thread-safe even for distinct
+    // type names. Serialise all emission through this gate.
+    private static readonly object _emitLock = new();
 
     private static readonly Lazy<ModuleBuilder> _module = new(() =>
     {
@@ -36,10 +52,18 @@ internal static class SecondaryStoreProxyFactory
                 nameof(interfaceType));
         }
 
-        return _cache.GetOrAdd(interfaceType, Build);
+        return _cache.GetOrAdd(interfaceType, t => new Lazy<Type>(() => Build(t))).Value;
     }
 
     private static Type Build(Type interfaceType)
+    {
+        lock (_emitLock)
+        {
+            return BuildCore(interfaceType);
+        }
+    }
+
+    private static Type BuildCore(Type interfaceType)
     {
         var module = _module.Value;
         var typeName = $"Marten.DynamicStores.{interfaceType.Name}Implementation";
