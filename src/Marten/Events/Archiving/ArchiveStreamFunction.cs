@@ -46,18 +46,44 @@ internal class ArchiveStreamFunction: Function
 
     private void writeWithPartitioning(TextWriter writer, string argList, string tenantWhere)
     {
-        var eventColumns = new EventsTable(_events).Columns.Where(x => x.Name != IsArchivedColumn.ColumnName)
-            .Select(x => x.Name).Join(", ");
+        // #4619: emit an EXPLICIT column list on both the INSERT target AND the
+        // SELECT source. The previous implementation relied on positional
+        // ordering — the SELECT enumerated columns from the in-memory
+        // EventsTable/StreamsTable model and the INSERT had no target column
+        // list. That works on a freshly-created table where the model order
+        // matches the physical order, but breaks the moment ALTER TABLE ADD
+        // COLUMN appends a new column at the end of an existing table (PG
+        // can't reposition columns), shifting the positional alignment by one.
+        // The #4515 bdata column added at model position 3 reproduces this on
+        // any upgrade: physical layout is `... data, type, timestamp, ...,
+        // bdata` while the model + SELECT walks `... data, bdata, type,
+        // timestamp, ...`, so the timestamptz `timestamp` column receives the
+        // varchar `type` value → 42804. Naming the columns on both sides
+        // makes the function robust to physical-order drift forever.
+        var eventColumnNames = new EventsTable(_events).Columns
+            .Where(x => x.Name != IsArchivedColumn.ColumnName)
+            .Select(x => x.Name)
+            .ToList();
+        var eventColumnList = eventColumnNames.Join(", ");
+        var eventInsertColumns = eventColumnNames
+            .Append(IsArchivedColumn.ColumnName)
+            .Join(", ");
 
-        var streamColumns = new StreamsTable(_events).Columns.Where(x => x.Name != IsArchivedColumn.ColumnName)
-            .Select(x => x.Name).Join(", ");
+        var streamColumnNames = new StreamsTable(_events).Columns
+            .Where(x => x.Name != IsArchivedColumn.ColumnName)
+            .Select(x => x.Name)
+            .ToList();
+        var streamColumnList = streamColumnNames.Join(", ");
+        var streamInsertColumns = streamColumnNames
+            .Append(IsArchivedColumn.ColumnName)
+            .Join(", ");
 
         writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {_events.DatabaseSchemaName}.{Name}({argList}) RETURNS VOID LANGUAGE plpgsql AS
 $function$
 BEGIN
-  insert into {_events.DatabaseSchemaName}.mt_streams select {streamColumns}, TRUE from {_events.DatabaseSchemaName}.mt_streams where id = streamid {tenantWhere};
-  insert into {_events.DatabaseSchemaName}.mt_events select {eventColumns}, TRUE from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid {tenantWhere};
+  insert into {_events.DatabaseSchemaName}.mt_streams ({streamInsertColumns}) select {streamColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_streams where id = streamid {tenantWhere};
+  insert into {_events.DatabaseSchemaName}.mt_events ({eventInsertColumns}) select {eventColumnList}, TRUE from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid {tenantWhere};
   delete from {_events.DatabaseSchemaName}.mt_events where stream_id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
   delete from {_events.DatabaseSchemaName}.mt_streams where id = streamid and {IsArchivedColumn.ColumnName} = FALSE {tenantWhere};
 END;
