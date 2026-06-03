@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +12,6 @@ using Marten;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Storage;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
@@ -20,9 +20,10 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace MultiTenancyTests;
+namespace TenantPartitionedEventsTests.Sharded;
 
 /// <summary>
+/// Migrated from MultiTenancyTests/sharded_tenancy_per_tenant_events_tests.cs.
 /// #4598 — per-tenant event partitioning under sharded multi-tenancy. The headline bug
 /// was that runtime-provisioned sharded tenants got the document LIST partitions but NOT
 /// the per-tenant <c>mt_events_sequence_{suffix}</c> sequence, so the first event append
@@ -32,13 +33,13 @@ namespace MultiTenancyTests;
 /// <see cref="IDynamicTenantSource{T}.AddTenantAsync(string,CancellationToken)" />
 /// auto-assign override so CritterWatch can provision store-agnostically.
 /// </summary>
-[Collection("sharded-tenancy")]
-public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
+[Collection("sharded-tenant-partitioned")]
+public class sharded_tenancy_per_tenant_events : IAsyncLifetime
 {
-    private readonly ShardedTenancyFixture _fixture;
+    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_tenancy_per_tenant_events_tests(ShardedTenancyFixture fixture)
+    public sharded_tenancy_per_tenant_events(ShardedPartitionedFixture fixture)
     {
         _fixture = fixture;
     }
@@ -55,7 +56,7 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
             await using var tenantConn = new NpgsqlConnection(connStr);
             await tenantConn.OpenAsync();
             try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedTenancyFixture.cleanMartenObjectsInPublicSchema(tenantConn);
+            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
         }
     }
 
@@ -393,6 +394,11 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
             .ExecuteScalarAsync())!;
         exists.ShouldBe(0L, because);
     }
+}
+
+public class ShardedTestEvent
+{
+    public string Value { get; set; } = "";
 }
 
 public class ShardedAggregate
