@@ -17,37 +17,42 @@ using Weasel.Postgresql.Tables;
 using Weasel.Postgresql.Tables.Partitioning;
 using Xunit;
 
-namespace MultiTenancyTests;
+namespace TenantPartitionedEventsTests.Config;
 
 /// <summary>
-/// #4596 Session 1 — schema groundwork for <c>StoreOptions.Events.UseTenantPartitionedEvents</c>.
-/// Validates that flipping the flag (a) attaches tenant_id list-partitioning to
-/// <c>mt_events</c> and <c>mt_streams</c> via the existing
-/// <see cref="MartenManagedTenantListPartitions"/> machinery; (b) adds the
-/// nullable <c>tenant_id</c> column to <c>mt_event_progression</c>; (c) auto-creates
-/// the tenant-partition manager when the user hasn't opted documents in; and
-/// (d) raises a clear config-time error on incompatible combinations
-/// (rich append mode, archived-stream partitioning).
-/// Per-tenant sequence creation, the QuickAppend function rewrite, and the
-/// admin-override impls land in Sessions 2–4 of the same Phase 1 round.
+/// Migrated from MultiTenancyTests/use_tenant_partitioned_events_schema_groundwork.cs
+/// — config-time validation + schema-shape invariants for
+/// <c>UseTenantPartitionedEvents</c>. Every test here builds its own
+/// <see cref="StoreOptions"/> or <see cref="DocumentStore"/> on a unique schema:
+/// these are configuration-level guards (no shared DocumentStore makes sense
+/// because the tests' subject IS the configuration / fresh schema shape).
 /// </summary>
-public class use_tenant_partitioned_events_schema_groundwork
+public class schema_groundwork_for_partitioned_events
 {
-    private const string Schema = "tenant_partitioned_events_session1";
+    private static string UniqueSchema(string discriminator)
+    {
+        // tp_sg_<disc>_<pid>_<16-hex>  — keeps under PG's 63-byte identifier limit
+        // even for the longest discriminator while staying unique per-test.
+        var hex = Guid.NewGuid().ToString("N")[..16];
+        return $"tp_sg_{discriminator}_{Environment.ProcessId}_{hex}";
+    }
 
-    private static async Task ResetSchemaAsync()
+    private static async Task ResetSchemaAsync(string schema, string? extra = null)
     {
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
-        try { await conn.DropSchemaAsync("tenants_pt209s1"); } catch (Exception) { }
-        try { await conn.DropSchemaAsync(Schema); } catch (Exception) { }
+        if (extra is not null)
+        {
+            try { await conn.DropSchemaAsync(extra); } catch (Exception) { }
+        }
+        try { await conn.DropSchemaAsync(schema); } catch (Exception) { }
     }
 
-    private static StoreOptions BaseOptions()
+    private static StoreOptions BaseOptions(string schema)
     {
         var opts = new StoreOptions();
         opts.Connection(ConnectionSource.ConnectionString);
-        opts.DatabaseSchemaName = Schema;
+        opts.DatabaseSchemaName = schema;
         opts.Events.TenancyStyle = TenancyStyle.Conjoined;
         opts.Events.UseTenantPartitionedEvents = true;
         return opts;
@@ -58,7 +63,7 @@ public class use_tenant_partitioned_events_schema_groundwork
     {
         var opts = new StoreOptions();
         opts.Connection(ConnectionSource.ConnectionString);
-        opts.DatabaseSchemaName = Schema;
+        opts.DatabaseSchemaName = UniqueSchema("single");
         opts.Events.UseTenantPartitionedEvents = true;
         // Events.TenancyStyle defaults to Single
 
@@ -70,7 +75,7 @@ public class use_tenant_partitioned_events_schema_groundwork
     [Fact]
     public void validate_throws_on_archived_partitioning_combination()
     {
-        var opts = BaseOptions();
+        var opts = BaseOptions(UniqueSchema("arch"));
         opts.Events.UseArchivedStreamPartitioning = true;
 
         var ex = Should.Throw<InvalidOperationException>(() => opts.Validate());
@@ -81,7 +86,7 @@ public class use_tenant_partitioned_events_schema_groundwork
     [Fact]
     public void validate_auto_creates_tenant_partitions_when_flag_is_on()
     {
-        var opts = BaseOptions();
+        var opts = BaseOptions(UniqueSchema("auto"));
         opts.TenantPartitions.ShouldBeNull("precondition: not yet validated");
 
         opts.Validate();
@@ -94,8 +99,8 @@ public class use_tenant_partitioned_events_schema_groundwork
     [Fact]
     public void validate_keeps_user_supplied_tenant_partitions_when_already_configured()
     {
-        var opts = BaseOptions();
-        opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants_pt209s1");
+        var opts = BaseOptions(UniqueSchema("user"));
+        opts.Policies.PartitionMultiTenantedDocumentsUsingMartenManagement("tenants_pt_sg_" + Guid.NewGuid().ToString("N")[..10]);
         var preExisting = opts.TenantPartitions.ShouldNotBeNull();
 
         opts.Validate();
@@ -105,14 +110,15 @@ public class use_tenant_partitioned_events_schema_groundwork
     }
 
     [Fact]
-    public async Task events_table_has_tenant_list_partitioning_attached()
+    public void events_table_has_tenant_list_partitioning_attached()
     {
-        await ResetSchemaAsync();
-
+        // Schema-objects inspection — doesn't touch the database, so no
+        // ResetSchemaAsync needed. The store gets disposed at the end of the
+        // using block before any apply happens.
         using var store = DocumentStore.For(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
-            o.DatabaseSchemaName = Schema;
+            o.DatabaseSchemaName = UniqueSchema("etbl");
             o.Events.TenancyStyle = TenancyStyle.Conjoined;
             o.Events.UseTenantPartitionedEvents = true;
             o.Policies.AllDocumentsAreMultiTenanted();
@@ -143,7 +149,7 @@ public class use_tenant_partitioned_events_schema_groundwork
         using var store = DocumentStore.For(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
-            o.DatabaseSchemaName = Schema + "_off";
+            o.DatabaseSchemaName = UniqueSchema("off");
             o.Events.TenancyStyle = TenancyStyle.Conjoined;
             // UseTenantPartitionedEvents stays false
             o.Policies.AllDocumentsAreMultiTenanted();
@@ -169,7 +175,7 @@ public class use_tenant_partitioned_events_schema_groundwork
         using var store = DocumentStore.For(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
-            o.DatabaseSchemaName = Schema + "_prog";
+            o.DatabaseSchemaName = UniqueSchema("prog");
             o.Events.TenancyStyle = TenancyStyle.Conjoined;
             o.Events.UseTenantPartitionedEvents = true;
             o.Policies.AllDocumentsAreMultiTenanted();
@@ -189,12 +195,16 @@ public class use_tenant_partitioned_events_schema_groundwork
     [Fact]
     public async Task schema_creation_succeeds_with_flag_on_in_empty_database()
     {
-        await ResetSchemaAsync();
+        // This one DOES touch the database — actually applies schema changes via
+        // EnsureStorageExistsAsync and inspects the live tables. Per-test schema
+        // suffix keeps it isolated from sibling tests.
+        var schema = UniqueSchema("create");
+        await ResetSchemaAsync(schema);
 
         using var store = DocumentStore.For(o =>
         {
             o.Connection(ConnectionSource.ConnectionString);
-            o.DatabaseSchemaName = Schema;
+            o.DatabaseSchemaName = schema;
             o.Events.TenancyStyle = TenancyStyle.Conjoined;
             o.Events.UseTenantPartitionedEvents = true;
             o.Policies.AllDocumentsAreMultiTenanted();
@@ -206,7 +216,7 @@ public class use_tenant_partitioned_events_schema_groundwork
         // works post-creation; this is the simpler-to-assert ordering.)
         await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha", "beta");
 
-        await store.Storage.Database.EnsureStorageExistsAsync(typeof(JasperFx.Events.IEvent));
+        await store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
 
         // Live table inspection by fetching directly via the connection — Weasel's
         // FetchExistingAsync returns the materialized table state including its
@@ -214,7 +224,7 @@ public class use_tenant_partitioned_events_schema_groundwork
         await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
         await conn.OpenAsync();
 
-        var eventsTable = new Table(new PostgresqlObjectName(Schema, "mt_events"));
+        var eventsTable = new Table(new PostgresqlObjectName(schema, "mt_events"));
         var liveEvents = await eventsTable.FetchExistingAsync(conn);
         liveEvents.ShouldNotBeNull("mt_events should exist after EnsureStorageExistsAsync");
 
@@ -223,7 +233,7 @@ public class use_tenant_partitioned_events_schema_groundwork
         liveEventsPartitioning.Partitions.Select(p => p.Suffix).OrderBy(s => s)
             .ShouldBe(new[] { "alpha", "beta" });
 
-        var streamsTable = new Table(new PostgresqlObjectName(Schema, "mt_streams"));
+        var streamsTable = new Table(new PostgresqlObjectName(schema, "mt_streams"));
         var liveStreams = await streamsTable.FetchExistingAsync(conn);
         liveStreams.ShouldNotBeNull("mt_streams should exist after EnsureStorageExistsAsync");
 
