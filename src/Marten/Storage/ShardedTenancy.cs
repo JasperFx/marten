@@ -192,9 +192,12 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
             await poolReader.CloseAsync().ConfigureAwait(false);
 
-            // Load all tenant assignments
+            // Load all tenant assignments — only active (non-disabled). Disabled
+            // tenants are excluded from the in-memory tenant→database cache so
+            // GetTenantAsync surfaces UnknownTenantIdException for them, mirroring
+            // MasterTableTenancy's soft-delete semantics (#4607).
             await using var assignReader = await ((DbCommand)conn
-                    .CreateCommand($"select tenant_id, database_id from {_schemaName}.{TenantAssignmentTable.TableName}"))
+                    .CreateCommand($"select tenant_id, database_id from {_schemaName}.{TenantAssignmentTable.TableName} where {MartenTenantAssignmentTable.DisabledColumn} = false"))
                 .ExecuteReaderAsync().ConfigureAwait(false);
 
             while (await assignReader.ReadAsync().ConfigureAwait(false))
@@ -295,9 +298,11 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
         await maybeApplyChanges().ConfigureAwait(false);
 
+        // #4607: filter out soft-deleted assignments so disabled tenants are not
+        // resolvable — mirrors MasterTableTenancy's `disabled = false` gate.
         var result = await _dataSource.Value
             .CreateCommand(
-                $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id")
+                $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id and {MartenTenantAssignmentTable.DisabledColumn} = false")
             .With("id", tenantId)
             .ExecuteScalarAsync(ct).ConfigureAwait(false);
 
@@ -319,14 +324,18 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         try
         {
+            // #4607: explicit assignment also clears the disabled flag so re-assigning
+            // a soft-deleted tenant via this API reactivates it. Pairs with the
+            // tolerant DisableTenantAsync / EnableTenantAsync semantics — explicit
+            // intent overrides prior soft-delete.
             await conn.CreateCommand(
-                    $"insert into {_schemaName}.{TenantAssignmentTable.TableName} (tenant_id, database_id) values (:tid, :did) on conflict (tenant_id) do update set database_id = :did")
+                    $"insert into {_schemaName}.{TenantAssignmentTable.TableName} (tenant_id, database_id) values (:tid, :did) on conflict (tenant_id) do update set database_id = :did, {MartenTenantAssignmentTable.DisabledColumn} = false")
                 .With("tid", tenantId)
                 .With("did", databaseId)
                 .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
             await conn.CreateCommand(
-                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did) where database_id = :did")
+                    $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :did")
                 .With("did", databaseId)
                 .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
 
@@ -430,21 +439,87 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                 $"Tenant '{tenantId}' was not assigned to any database after auto-assignment");
     }
 
-    Task IDynamicTenantSource<string>.DisableTenantAsync(string tenantId)
-        => throw new NotSupportedException(
-            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy. " +
-            "Use RemoveTenantAsync to drop a tenant assignment, or open an issue to request the soft-delete surface.");
+    /// <summary>
+    /// #4607: soft-delete the tenant — flip <c>disabled = true</c> on its assignment row
+    /// and evict it from the in-memory tenant→database cache so subsequent tenant
+    /// resolution surfaces <see cref="UnknownTenantIdException"/>. Mirrors
+    /// <see cref="MasterTableTenancy"/>'s lifecycle so the two dynamic sources behave
+    /// uniformly behind the store-agnostic <see cref="IDynamicTenantSource{T}"/>
+    /// admin extensions. Idempotent — a no-op for an already-disabled or unknown tenant
+    /// (no exception; matches MasterTableTenancy's tolerance).
+    /// </summary>
+    public async Task DisableTenantAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        await maybeApplyChanges().ConfigureAwait(false);
+
+        await _dataSource.Value
+            .CreateCommand(
+                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = true where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+
+        // Evict from cache (and dispose only if no other tenant is using the same
+        // shared shard database — sharded tenancy reuses one MartenDatabase per
+        // assigned shard across tenants, unlike MasterTableTenancy's per-tenant DBs).
+        _tenantToDatabase = _tenantToDatabase.Remove(tenantId);
+    }
+
+    /// <summary>
+    /// #4607: re-enable a soft-deleted tenant — flip <c>disabled = false</c>. The next
+    /// tenant resolution rehydrates the cache via the standard
+    /// <see cref="findOrAssignTenantDatabaseAsync"/> path. Idempotent for already-enabled
+    /// or unknown tenants.
+    /// </summary>
+    public async Task EnableTenantAsync(string tenantId)
+    {
+        tenantId = _options.TenantIdStyle.MaybeCorrectTenantId(tenantId);
+        await maybeApplyChanges().ConfigureAwait(false);
+
+        await _dataSource.Value
+            .CreateCommand(
+                $"update {_schemaName}.{TenantAssignmentTable.TableName} set {MartenTenantAssignmentTable.DisabledColumn} = false where tenant_id = :id")
+            .With("id", tenantId)
+            .ExecuteNonQueryAsync(CancellationToken.None).ConfigureAwait(false);
+    }
 
     Task IDynamicTenantSource<string>.RemoveTenantAsync(string tenantId)
         => RemoveTenantAsync(tenantId, CancellationToken.None).AsTask();
 
-    Task<IReadOnlyList<string>> IDynamicTenantSource<string>.AllDisabledAsync()
-        => throw new NotSupportedException(
-            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy.");
+    /// <summary>
+    /// #4607: enumerate currently soft-deleted tenants — the rows with
+    /// <c>disabled = true</c>. Used by the store-agnostic admin extension
+    /// <see cref="JasperFx.MultiTenancy.DynamicTenancyAdminExtensions.AllDisabledTenantsAsync"/>.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> AllDisabledAsync()
+    {
+        await maybeApplyChanges().ConfigureAwait(false);
 
-    Task IDynamicTenantSource<string>.EnableTenantAsync(string tenantId)
-        => throw new NotSupportedException(
-            "Disable/enable tenant lifecycle is not yet supported on sharded tenancy.");
+        var list = new List<string>();
+        await using var conn = _dataSource.Value.CreateConnection();
+        await conn.OpenAsync().ConfigureAwait(false);
+
+        try
+        {
+            await using var reader = await ((DbCommand)conn
+                    .CreateCommand(
+                        $"select tenant_id from {_schemaName}.{TenantAssignmentTable.TableName} where {MartenTenantAssignmentTable.DisabledColumn} = true"))
+                .ExecuteReaderAsync().ConfigureAwait(false);
+
+            while (await reader.ReadAsync().ConfigureAwait(false))
+            {
+                list.Add(await reader.GetFieldValueAsync<string>(0).ConfigureAwait(false));
+            }
+
+            await reader.CloseAsync().ConfigureAwait(false);
+        }
+        finally
+        {
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
+
+        return list;
+    }
 
     #endregion
 
@@ -476,12 +551,37 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         try
         {
-            // Double-check after acquiring lock
-            var existingDbId = (string?)await conn
+            // #4607: under the lock, distinguish three cases:
+            //   (a) tenant has an active assignment   → use it
+            //   (b) tenant has a DISABLED assignment  → throw UnknownTenantIdException
+            //       (mirrors MasterTableTenancy; auto-assigning here would silently
+            //       resurrect the soft-deleted tenant, possibly onto a different shard)
+            //   (c) no assignment at all              → fall through to auto-assign
+            var existingState = await ((DbCommand)conn
                 .CreateCommand(
-                    $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id")
-                .With("id", tenantId)
-                .ExecuteScalarAsync(CancellationToken.None).ConfigureAwait(false);
+                    $"select database_id, {MartenTenantAssignmentTable.DisabledColumn} from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :id")
+                .With("id", tenantId))
+                .ExecuteReaderAsync(CancellationToken.None).ConfigureAwait(false);
+
+            string? existingDbId = null;
+            var existingDisabled = false;
+            try
+            {
+                if (await existingState.ReadAsync().ConfigureAwait(false))
+                {
+                    existingDbId = await existingState.GetFieldValueAsync<string>(0).ConfigureAwait(false);
+                    existingDisabled = await existingState.GetFieldValueAsync<bool>(1).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                await existingState.CloseAsync().ConfigureAwait(false);
+            }
+
+            if (existingDisabled)
+            {
+                throw new UnknownTenantIdException(tenantId);
+            }
 
             if (existingDbId != null && _databasesById.TryFind(existingDbId, out database))
             {
@@ -665,7 +765,10 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
         protected override IEnumerable<ISchemaObject> schemaObjects()
         {
             yield return new DatabasePoolTable(_schemaName);
-            yield return new TenantAssignmentTable(_schemaName);
+            // #4607: Marten subclass adds the `disabled` column for soft-delete
+            // (Disable/Enable lifecycle) without requiring a Weasel release. The
+            // additive column-add migration upgrades existing pools in place.
+            yield return new MartenTenantAssignmentTable(_schemaName);
         }
     }
 
