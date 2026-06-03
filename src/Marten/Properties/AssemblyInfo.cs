@@ -17,6 +17,7 @@ using JasperFx.Core.TypeScanning;
 [assembly: InternalsVisibleTo("ConfigurationTests")]
 [assembly: InternalsVisibleTo("CoreTests")]
 [assembly: InternalsVisibleTo("MultiTenancyTests")]
+[assembly: InternalsVisibleTo("TenantPartitionedEventsTests")]
 [assembly: InternalsVisibleTo("LinqTests")]
 [assembly: InternalsVisibleTo("DocumentDbTests")]
 [assembly: InternalsVisibleTo("EventSourcingTests")]

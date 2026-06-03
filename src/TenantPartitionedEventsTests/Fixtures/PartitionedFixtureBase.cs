@@ -75,7 +75,9 @@ public abstract class PartitionedFixtureBase: IAsyncLifetime
 
             // Representative projections registered up front. Short DocumentAlias
             // matters: nested type names + tenant suffix overflow PG's 64-byte
-            // identifier limit.
+            // identifier limit. Projection .Name is set in each projection's
+            // constructor to a deterministic value so ShardName.Compose(...)
+            // from test code stays stable.
             opts.Projections.Add<TripDistanceProjection>(ProjectionLifecycle.Async);
             opts.Projections.Add<TripCountInlineProjection>(ProjectionLifecycle.Inline);
             opts.Projections.LiveStreamAggregation<TripSnapshot>();
@@ -123,6 +125,50 @@ public abstract class PartitionedFixtureBase: IAsyncLifetime
             .With("t", tenantId)
             .ExecuteScalarAsync())!;
     }
+
+    /// <summary>
+    /// All rows in the per-store <c>mt_event_progression</c> table whose name
+    /// starts with <paramref name="namePrefix"/>. Used by admin-API tests that
+    /// seed progression rows for a specific projection name and want to read
+    /// just those rows back without picking up the high-water row + sibling
+    /// projections from the shared store.
+    /// </summary>
+    public async Task<System.Collections.Generic.IReadOnlyList<(string Name, long LastSeqId)>>
+        ReadProgressionRowsAsync(string schemaName, string namePrefix)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            $"select name, last_seq_id from {schemaName}.mt_event_progression where name like @n order by name";
+        cmd.Parameters.AddWithValue("n", namePrefix + "%");
+        await using var reader = await cmd.ExecuteReaderAsync();
+
+        var rows = new System.Collections.Generic.List<(string, long)>();
+        while (await reader.ReadAsync())
+        {
+            rows.Add((reader.GetString(0), reader.GetInt64(1)));
+        }
+        return rows;
+    }
+
+    /// <summary>
+    /// Append <paramref name="count"/> TripLeg events to a fresh stream for the
+    /// given tenant. Returns the freshly-minted stream id so tests can reuse it
+    /// for subsequent assertions.
+    /// </summary>
+    public async Task<Guid> AppendNEventsAsync(string tenantId, int count)
+    {
+        var streamId = Guid.NewGuid();
+        await using var session = Store.LightweightSession(tenantId);
+        session.Events.StartStream<TripSnapshot>(streamId, new TripStarted(streamId));
+        for (var i = 0; i < count - 1; i++)
+        {
+            session.Events.Append(streamId, new TripLeg(1.0));
+        }
+        await session.SaveChangesAsync();
+        return streamId;
+    }
 }
 
 // ---- Representative projection / aggregate types ----
@@ -139,6 +185,8 @@ public class TripDistance
 
 public partial class TripDistanceProjection: SingleStreamProjection<TripDistance, Guid>
 {
+    public const string ProjectionName = "TripDistance";
+    public TripDistanceProjection() { Name = ProjectionName; }
     public void Apply(TripDistance agg, TripLeg @event) => agg.Distance += @event.Distance;
 }
 
@@ -151,6 +199,8 @@ public class TripCount
 
 public partial class TripCountInlineProjection: SingleStreamProjection<TripCount, Guid>
 {
+    public const string ProjectionName = "TripCount";
+    public TripCountInlineProjection() { Name = ProjectionName; }
     public void Apply(TripCount agg, TripLeg @event) => agg.Count++;
 }
 
