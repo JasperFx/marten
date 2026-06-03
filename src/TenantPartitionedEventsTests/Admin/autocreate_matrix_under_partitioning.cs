@@ -26,25 +26,21 @@ namespace TenantPartitionedEventsTests.Admin;
 /// </para>
 ///
 /// <para>
-/// AutoCreate.None: the observed contract is incomplete. The admin call
-/// <c>AddMartenManagedTenantsAsync</c> is EXEMPT from the gate for the per-
-/// tenant sequence DDL it owns, but the partition-table-migrate path
-/// (<see cref="Weasel.Postgresql.Tables.Partitioning.ManagedListPartitions"/>'s
-/// <c>MigrateAsync</c>) does NOT find the events tables to migrate when there's
-/// no other DDL trigger, AND the surrounding event-store plpgsql functions
-/// (<c>mt_quick_append_events</c>, <c>mt_archive_stream</c>) are not installed
-/// either. The next append fails with 42P01 (mt_streams missing) or 42883
-/// (function missing) depending on what's missing first. Pinned as the
-/// known-incomplete state — fixing it cleanly requires either applying the
-/// events feature's full schema as part of the admin call (which conflicts
-/// with <c>CreateOnly</c>'s diff-tightness rules) or scoping a per-feature
-/// apply with a temporary <c>CreateOrUpdate</c> override; that's a non-trivial
-/// design decision deferred for a follow-up. See #4641.
+/// AutoCreate.None: <c>AddMartenManagedTenantsAsync</c> is the user's
+/// explicit "yes, mutate schema" signal — already exempt from the gate for
+/// the partition-table and per-tenant-sequence DDL it owns. #4641 extended
+/// that exemption to the surrounding events feature: a per-feature
+/// <c>CreateMigrationAsync(typeof(IEvent))</c> + <c>Migrator.ApplyAllAsync</c>
+/// with a scoped <c>CreateOrUpdate</c> override runs BEFORE the partition
+/// work, so the parent partitioned tables + plpgsql functions exist by the
+/// time partitions are attached. End-to-end append + read now works against
+/// a virgin schema under <c>AutoCreate.None</c>.
 /// </para>
 /// <para>
 /// Also pinned: once the schema IS pre-created (typical CLI-apply-then-runtime
-/// flow), AutoCreate.None permits the full AddMartenManagedTenantsAsync +
-/// append + read flow.
+/// flow), <c>AutoCreate.None</c> permits the full AddMartenManagedTenantsAsync
+/// + append + read flow — covered independently so both the cold-start and
+/// pre-warmed deployment shapes have explicit coverage.
 /// </para>
 /// </summary>
 public class autocreate_matrix_under_partitioning
@@ -105,45 +101,41 @@ public class autocreate_matrix_under_partitioning
     }
 
     [Fact]
-    public async Task AutoCreate_None_virgin_schema_admin_call_does_not_install_full_partitioned_append_path()
+    public async Task AutoCreate_None_virgin_schema_admin_call_installs_full_partitioned_append_path()
     {
-        // #4641 known-incomplete contract: AddMartenManagedTenantsAsync against
-        // a virgin schema under AutoCreate.None creates the per-tenant sequences
-        // (via PerTenantEventSequences.EnsureSequencesAsync, which bypasses
-        // AutoCreate explicitly) but leaves the events tables AND surrounding
-        // plpgsql functions uninstalled. The next append errors — typically
-        // with 42P01 (mt_streams does not exist) which is reached before any
-        // function-resolution error.
+        // #4641 fix verification: AddMartenManagedTenantsAsync against a
+        // virgin schema under AutoCreate.None now ALSO installs the events
+        // feature (parent partitioned tables + plpgsql functions) via a
+        // per-feature CreateMigrationAsync + Migrator.ApplyAllAsync with
+        // a scoped CreateOrUpdate override. The admin call already bypassed
+        // the AutoCreate gate for partition tables (Weasel) and per-tenant
+        // sequences (EnsureSequencesAsync) — the fix extends that bypass
+        // to the surrounding events feature so the next append succeeds
+        // end-to-end without the user having to pre-create anything.
         //
-        // Pin captures the half-installed state so a future fix that completes
-        // the admin call's bypass scope (install the events feature in full
-        // when UseTenantPartitionedEvents is on) flips the assertion
-        // intentionally. The fix is deferred because the natural in-band
-        // implementation (call EnsureStorageExistsAsync with an override)
-        // conflicts with CreateOnly's diff-tightness rules and a per-feature
-        // apply API is not yet exposed.
+        // Before #4641 the admin call left a half-installed state — the
+        // next append failed with 42P01 (mt_streams missing) or 42883
+        // (function missing). Now the parent tables + functions exist by
+        // the time partitions are attached, and append + read both work.
         var schema = MakeSchema("none");
         await DropSchemaAsync(schema);
 
         using var store = BuildStore(schema, AutoCreate.None);
 
-        // The admin call itself does not throw — it lays down what it can.
-        await Should.NotThrowAsync(async () =>
-            await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha"));
+        await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
 
-        // The next append fails because the events-feature schema isn't there.
-        await using var session = store.LightweightSession("alpha");
-        session.Events.StartStream(Guid.NewGuid(), new AutoCreateProbeEvent("none-virgin"));
+        var streamId = Guid.NewGuid();
+        await using (var session = store.LightweightSession("alpha"))
+        {
+            session.Events.StartStream(streamId, new AutoCreateProbeEvent("none-virgin"));
+            await session.SaveChangesAsync();
+        }
 
-        var ex = await Should.ThrowAsync<Marten.Exceptions.MartenCommandException>(async () =>
-            await session.SaveChangesAsync());
-
-        // Either 42P01 (table missing) or 42883 (function missing) — both are
-        // shapes of the same half-installed state.
-        var message = ex.Message;
-        var sawExpectedShape = message.Contains("42P01") || message.Contains("42883");
-        sawExpectedShape.ShouldBeTrue(
-            "expected a half-installed schema error (42P01 missing table / 42883 missing function), got: " + message);
+        await using var query = store.QuerySession("alpha");
+        var events = await query.Events.FetchStreamAsync(streamId);
+        events.Count.ShouldBe(1,
+            "AutoCreate.None against a virgin schema must work end-to-end after #4641 — " +
+            "the admin call's bypass scope now includes the events feature");
     }
 
     [Fact]
