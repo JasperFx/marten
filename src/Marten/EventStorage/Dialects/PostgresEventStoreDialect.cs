@@ -318,6 +318,11 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             HasHeaders = hasHeaders,
             HasUserName = hasUserName,
             HasTagWrites = hasTagWrites,
+            // #4614: pass-through the partitioning + bigint flags so the operation
+            // knows whether to bind the trailing optimistic-concurrency parameter
+            // and what NpgsqlDbType it should be.
+            UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
+            UseBigIntEvents = graph.EnableBigIntEvents,
             ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
             ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
             AppendEventSqlPrefix = appendEventSqlPrefix,
@@ -370,6 +375,11 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             HasHeaders = hasHeaders,
             HasUserName = hasUserName,
             HasTagWrites = hasTagWrites,
+            // #4614: pass-through the partitioning + bigint flags so the operation
+            // knows whether to bind the trailing optimistic-concurrency parameter
+            // and what NpgsqlDbType it should be.
+            UseTenantPartitionedEvents = graph.UseTenantPartitionedEvents,
+            UseBigIntEvents = graph.EnableBigIntEvents,
             ConfigureInsertStreamCommand = BuildInsertStreamCommandConfigurer(graph, isConjoined, isGuid),
             ConfigureUpdateStreamVersionCommand = BuildUpdateStreamVersionCommandConfigurer(graph, isConjoined, isGuid),
             AppendEventSqlPrefix = appendEventSqlPrefix,
