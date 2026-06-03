@@ -5,11 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
-using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Events;
 using Marten.Storage;
-using Marten.Testing.Documents;
 using Marten.Testing.Harness;
 using Npgsql;
 using Shouldly;
@@ -17,9 +15,10 @@ using Weasel.Core;
 using Weasel.Postgresql;
 using Xunit;
 
-namespace MultiTenancyTests;
+namespace TenantPartitionedEventsTests.Sharded;
 
 /// <summary>
+/// Migrated from MultiTenancyTests/sharded_eager_apply_per_tenant_events_tests.cs.
 /// #4606 regression — eager schema apply on a sharded + per-tenant-events store,
 /// followed by runtime tenant provisioning, must succeed (no 42P16 on the partition
 /// attach's FK drop).
@@ -35,13 +34,13 @@ namespace MultiTenancyTests;
 /// eager-apply variant.
 /// </para>
 /// </summary>
-[Collection("sharded-tenancy")]
-public class sharded_eager_apply_per_tenant_events_tests : IAsyncLifetime
+[Collection("sharded-tenant-partitioned")]
+public class sharded_eager_apply_per_tenant_events : IAsyncLifetime
 {
-    private readonly ShardedTenancyFixture _fixture;
+    private readonly ShardedPartitionedFixture _fixture;
     private IDocumentStore _store = null!;
 
-    public sharded_eager_apply_per_tenant_events_tests(ShardedTenancyFixture fixture)
+    public sharded_eager_apply_per_tenant_events(ShardedPartitionedFixture fixture)
     {
         _fixture = fixture;
     }
@@ -57,7 +56,7 @@ public class sharded_eager_apply_per_tenant_events_tests : IAsyncLifetime
             await using var tenantConn = new NpgsqlConnection(connStr);
             await tenantConn.OpenAsync();
             try { await tenantConn.DropSchemaAsync("tenants"); } catch { }
-            await ShardedTenancyFixture.cleanMartenObjectsInPublicSchema(tenantConn);
+            await ShardedPartitionedFixture.CleanMartenObjectsInPublicSchema(tenantConn);
         }
     }
 
