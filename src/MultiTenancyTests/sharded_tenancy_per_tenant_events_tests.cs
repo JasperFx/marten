@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.MultiTenancy;
 using Marten;
 using Marten.Events;
+using Marten.Exceptions;
 using Marten.Storage;
 using Marten.Testing.Documents;
 using Marten.Testing.Harness;
@@ -133,7 +135,7 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
                 opts.Events.StreamIdentity = StreamIdentity.AsString;
                 opts.Events.UseMandatoryStreamTypeDeclaration = true;
             });
-        await _store.Advanced.AddTenantToShardAsync("india", CancellationToken.None);
+        var dbId = await _store.Advanced.AddTenantToShardAsync("india", CancellationToken.None);
 
         var streamId = Guid.NewGuid().ToString();
 
@@ -148,6 +150,18 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
             (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(1);
         }
 
+        // End-state assertion that #4611 specifically broke: the mt_streams row must
+        // exist with the AggregateType name set. The original bug let the events land
+        // in mt_events but the post-process guard tombstoned the StartStream, so the
+        // mt_streams row never landed — that's why a later Append threw NonExistentStream.
+        await assertStreamRowExistsWithType(
+            _fixture.ConnectionStrings[dbId!],
+            streamId,
+            tenantId: "india",
+            // EventGraph.AggregateAliasFor for a non-generic type = type.Name.ToTableAlias()
+            // — i.e. "ShardedAggregate" → "sharded_aggregate".
+            expectedType: typeof(ShardedAggregate).Name.ToTableAlias());
+
         await using (var session = _store.LightweightSession("india"))
         {
             session.Events.Append(streamId, new ShardedTestEvent { Value = "second" });
@@ -158,6 +172,58 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
         {
             (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(2);
         }
+    }
+
+    // #4611 follow-up — pin that the mandatory-stream-type check still fires for
+    // untyped StartStream under the same sharded + UseTenantPartitionedEvents config.
+    // The fix in QuickAppendEventsOperationBase only relaxes the post-process guard
+    // for Start actions; the API-level guard in EventStore.StartStream must still
+    // reject the no-type overload up front (synchronously, before SaveChangesAsync),
+    // so this combination doesn't quietly accept untyped streams.
+    [Fact]
+    public async Task untyped_StartStream_still_throws_when_mandatory_stream_type_is_on()
+    {
+        CreateStore(x => x.UseSmallestDatabaseAssignment(),
+            opts =>
+            {
+                opts.Events.StreamIdentity = StreamIdentity.AsString;
+                opts.Events.UseMandatoryStreamTypeDeclaration = true;
+            });
+        await _store.Advanced.AddTenantToShardAsync("juliet", CancellationToken.None);
+
+        await using var session = _store.LightweightSession("juliet");
+
+        // The no-type StartStream overload — should be rejected immediately by the
+        // EventStore.StartStream guard, before any queuing or SaveChanges happens.
+        Should.Throw<StreamTypeMissingException>(() =>
+        {
+            session.Events.StartStream(
+                Guid.NewGuid().ToString(),
+                new object[] { new ShardedTestEvent { Value = "should-not-land" } });
+        });
+
+        // The params-array overload too — same enforcement path.
+        Should.Throw<StreamTypeMissingException>(() =>
+        {
+            session.Events.StartStream(
+                Guid.NewGuid().ToString(),
+                new ShardedTestEvent { Value = "should-not-land" });
+        });
+    }
+
+    private static async Task assertStreamRowExistsWithType(
+        string connectionString, string streamId, string tenantId, string expectedType)
+    {
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync();
+        var typeName = (string?)await conn.CreateCommand(
+            "select type from public.mt_streams where id = :id and tenant_id = :tid")
+            .With("id", streamId)
+            .With("tid", tenantId)
+            .ExecuteScalarAsync();
+        typeName.ShouldNotBeNull(
+            $"mt_streams row for stream '{streamId}' (tenant '{tenantId}') must exist in {connectionString} — its absence is the #4611 regression surface");
+        typeName.ShouldBe(expectedType);
     }
 
     [Fact]
