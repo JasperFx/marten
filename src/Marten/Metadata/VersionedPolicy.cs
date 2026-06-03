@@ -2,6 +2,7 @@
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Marten.Metadata;
@@ -21,6 +22,12 @@ internal class VersionedPolicy: IDocumentPolicy
 
         else if (mapping.DocumentType.CanBeCastTo<IRevisioned>())
         {
+            // #4614: swap the default (bigint) Revision column for the integer variant.
+            // IRevisioned was the Marten 8 default, and the per-stream version it backs
+            // (SingleStreamProjection) is comfortably in Int32 range. Restoring the
+            // narrower column here means a V8→V9 upgrade no longer migrates the table
+            // from integer to bigint, and new schemas match the V8 shape exactly.
+            mapping.Metadata.Revision = new RevisionColumnInt32();
             mapping.UseNumericRevisions = true;
             mapping.Metadata.Revision.Enabled = true;
             mapping.Metadata.Revision.Member = mapping.DocumentType.GetProperty(nameof(IRevisioned.Version));
@@ -28,7 +35,7 @@ internal class VersionedPolicy: IDocumentPolicy
 
         // #4528: ILongVersioned is the 64-bit revision variant for documents projected
         // from a MultiStreamProjection, where Version is the global event sequence number
-        // and can exceed Int32.
+        // and can exceed Int32. Keeps the default RevisionColumn (bigint).
         else if (mapping.DocumentType.CanBeCastTo<ILongVersioned>())
         {
             mapping.UseNumericRevisions = true;

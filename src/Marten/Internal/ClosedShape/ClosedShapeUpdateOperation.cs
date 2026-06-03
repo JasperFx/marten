@@ -134,12 +134,16 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
         }
         else if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric)
         {
-            // WHERE (? = 0 or {table}.mt_version < ?) — bind raw
-            // Revision to both slots.
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[slot + 1].Value = Revision;
-            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
+            // WHERE (? = 0 or {table}.mt_version < ?) — bind raw Revision to both slots.
+            // #4614: parameter type tracks the column width (integer/bigint).
+            var revisionDbType = _descriptor.RevisionBinder!.ColumnDbType;
+            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+                ? (object)checked((int)Revision)
+                : Revision;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
+            parameters[slot + 1].Value = revisionValue;
+            parameters[slot + 1].NpgsqlDbType = revisionDbType;
         }
     }
 
@@ -177,10 +181,15 @@ internal sealed class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageOpe
             ReferenceEquals(binder, _descriptor.RevisionBinder))
         {
             // SET mt_version = CASE WHEN ? = 0 THEN current+1 ELSE ? END
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
-            parameters[slot + 1].Value = Revision;
-            parameters[slot + 1].NpgsqlDbType = NpgsqlDbType.Bigint;
+            // #4614: parameter type tracks the column width (integer/bigint).
+            var revisionDbType = _descriptor.RevisionBinder.ColumnDbType;
+            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+                ? (object)checked((int)Revision)
+                : Revision;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
+            parameters[slot + 1].Value = revisionValue;
+            parameters[slot + 1].NpgsqlDbType = revisionDbType;
             return slot + 2;
         }
 

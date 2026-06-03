@@ -188,8 +188,14 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
             //   UseVersionFromMatchingStream + conjoined: same with extra ? for tenant_id (4 slots)
             // The ON CONFLICT SET / WHERE branches always reference {table}.id
             // directly so they keep their 4 revision slots downstream.
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            // #4614: the parameter type follows the column width (integer for IRevisioned,
+            // bigint for ILongVersioned) so the CASE expression's branch types align.
+            var revisionDbType = _descriptor.RevisionBinder.ColumnDbType;
+            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+                ? (object)checked((int)Revision)
+                : Revision;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
             slot++;
 
             if (_descriptor.UseVersionFromMatchingStream)
@@ -206,8 +212,8 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
                 }
             }
 
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
             return slot + 1;
         }
 
