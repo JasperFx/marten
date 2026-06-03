@@ -159,6 +159,27 @@ internal partial class EventStore
                 sb.Append(" on e.seq_id = t");
                 sb.Append(i);
                 sb.Append(".seq_id");
+
+                // #4645: under UseTenantPartitionedEvents the per-tenant
+                // mt_events_sequence_{suffix} sequences make seq_id alone
+                // non-unique across tenants — seq_id=1 exists in EVERY tenant's
+                // mt_events partition. Without the tenant_id JOIN predicate
+                // alpha's event row matches BOTH alpha's tag row AND beta's
+                // tag row sharing the same seq_id, duplicating alpha's event
+                // in the result. The trailing `e.tenant_id = @p` filter only
+                // constrains the events side and doesn't deduplicate.
+                //
+                // Only emit the predicate under conjoined tenancy — that's the
+                // only mode where EventTagTable carries a tenant_id column
+                // (see EventTagTable.cs). For non-conjoined tenancy seq_id IS
+                // unique store-wide (single global mt_events_sequence) so the
+                // predicate isn't needed anyway.
+                if (_store.Events.TenancyStyle == TenancyStyle.Conjoined)
+                {
+                    sb.Append(" and e.tenant_id = t");
+                    sb.Append(i);
+                    sb.Append(".tenant_id");
+                }
             }
         }
 
