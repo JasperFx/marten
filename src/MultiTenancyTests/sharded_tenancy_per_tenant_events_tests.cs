@@ -63,7 +63,7 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
         return Task.CompletedTask;
     }
 
-    private IDocumentStore CreateStore(Action<ShardedTenancyOptions>? customConfig = null)
+    private IDocumentStore CreateStore(Action<ShardedTenancyOptions>? customConfig = null, Action<StoreOptions>? storeConfig = null)
     {
         _store = DocumentStore.For(opts =>
         {
@@ -92,6 +92,8 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
             opts.Events.UseTenantPartitionedEvents = true;
 
             opts.Events.AddEventType<ShardedTestEvent>();
+
+            storeConfig?.Invoke(opts);
         });
 
         return _store;
@@ -115,6 +117,47 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
         await using var session = _store.LightweightSession("alpha");
         session.Events.StartStream(Guid.NewGuid(), new ShardedTestEvent { Value = "first" });
         await session.SaveChangesAsync();
+    }
+
+    // #4611 — With UseTenantPartitionedEvents, StartStream actions are routed through the bulk
+    // mt_quick_append_events operation. Combined with UseMandatoryStreamTypeDeclaration, the
+    // post-process guard that rejects appends to a non-existent stream (first event => version 1)
+    // wrongly fired for a legitimate StartStream (also version 1), throwing NonExistentStreamException
+    // and tombstoning the events. A later append to the (never-created) stream then failed too.
+    [Fact]
+    public async Task starting_then_appending_a_stream_works_with_mandatory_stream_type()
+    {
+        CreateStore(x => x.UseSmallestDatabaseAssignment(),
+            opts =>
+            {
+                opts.Events.StreamIdentity = StreamIdentity.AsString;
+                opts.Events.UseMandatoryStreamTypeDeclaration = true;
+            });
+        await _store.Advanced.AddTenantToShardAsync("india", CancellationToken.None);
+
+        var streamId = Guid.NewGuid().ToString();
+
+        await using (var session = _store.LightweightSession("india"))
+        {
+            session.Events.StartStream<ShardedAggregate>(streamId, new ShardedTestEvent { Value = "first" });
+            await session.SaveChangesAsync();
+        }
+
+        await using (var query = _store.QuerySession("india"))
+        {
+            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(1);
+        }
+
+        await using (var session = _store.LightweightSession("india"))
+        {
+            session.Events.Append(streamId, new ShardedTestEvent { Value = "second" });
+            await session.SaveChangesAsync();
+        }
+
+        await using (var query = _store.QuerySession("india"))
+        {
+            (await query.Events.FetchStreamAsync(streamId)).Count.ShouldBe(2);
+        }
     }
 
     [Fact]
@@ -284,4 +327,12 @@ public class sharded_tenancy_per_tenant_events_tests : IAsyncLifetime
             .ExecuteScalarAsync())!;
         exists.ShouldBe(0L, because);
     }
+}
+
+public class ShardedAggregate
+{
+    public string Id { get; set; } = string.Empty;
+    public int Count { get; set; }
+
+    public void Apply(ShardedTestEvent _) => Count++;
 }

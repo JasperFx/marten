@@ -293,7 +293,17 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
                     events[i - 1].Sequence = values[i];
                 }
 
-                if (Events is { UseMandatoryStreamTypeDeclaration: true } && events[0].Version == 1)
+                // UseMandatoryStreamTypeDeclaration rejects appending to a stream that does not
+                // exist yet (its first event would come back as version 1). But when
+                // UseTenantPartitionedEvents is on, StartStream actions are also routed through this
+                // bulk-append operation (see QuickEventAppender.registerOperationsForStreams), and a
+                // legitimate StartStream of a brand-new stream likewise produces version 1. Only an
+                // Append — not a Start — to a non-existent stream is the case this guard is meant to
+                // catch, so exclude StartStream actions here. Without this, a partitioned StartStream
+                // throws NonExistentStreamException and the events get tombstoned (#4611).
+                if (Events is { UseMandatoryStreamTypeDeclaration: true }
+                    && events[0].Version == 1
+                    && Stream.ActionType != StreamActionType.Start)
                 {
                     throw new NonExistentStreamException(Events.StreamIdentity == StreamIdentity.AsGuid
                         ? Stream.Id
