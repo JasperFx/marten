@@ -183,9 +183,32 @@ internal class BulkEventAppender
             await writer.WriteAsync(stream.Key!, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
         }
 
-        if (stream.AggregateTypeName != null)
+        // #4625: BulkInsertEventsAsync writes mt_streams.type from
+        // AggregateTypeName, but that string is only ever populated inside
+        // StreamAction.PrepareEvents (which is NOT called on the bulk path —
+        // PrepareEvents also dequeues sequence values and assigns
+        // Sequence/Version/Timestamp, work the bulk importer does itself).
+        // So a caller that does the documented thing —
+        //   var action = StreamAction.Start(events, key, …);
+        //   action.AggregateType = typeof(MyAggregate);
+        //   await store.BulkInsertEventsAsync(tenant, new[] { action });
+        // — would end up with mt_streams.type = NULL, breaking later appends
+        // under UseMandatoryStreamTypeDeclaration. Derive the alias here so
+        // the public API surface (AggregateType) is honored without making
+        // callers reach for the internal AggregateTypeName setter.
+        // AggregateTypeName has an internal set scoped to JasperFx.Events so
+        // we can't assign it from Marten — compute a local fallback string
+        // and write THAT instead. Future-proofing: if AggregateTypeName is
+        // ever already set (e.g. caller round-tripped a fully-prepared action),
+        // honor that value first.
+        var aggregateTypeName = stream.AggregateTypeName
+                                ?? (stream.AggregateType != null
+                                    ? _events.AggregateAliasFor(stream.AggregateType)
+                                    : null);
+
+        if (aggregateTypeName != null)
         {
-            await writer.WriteAsync(stream.AggregateTypeName, NpgsqlDbType.Varchar, cancellation)
+            await writer.WriteAsync(aggregateTypeName, NpgsqlDbType.Varchar, cancellation)
                 .ConfigureAwait(false);
         }
         else
