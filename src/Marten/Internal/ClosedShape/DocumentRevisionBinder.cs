@@ -30,16 +30,28 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     where TDoc : notnull
 {
     private readonly Action<TDoc, long>? _setter;
+    private readonly NpgsqlDbType _columnDbType;
 
     public DocumentRevisionBinder(MemberInfo? revisionMember)
+        : this(revisionMember, NpgsqlDbType.Bigint)
     {
+    }
+
+    public DocumentRevisionBinder(MemberInfo? revisionMember, NpgsqlDbType columnDbType)
+    {
+        // #4614: the mt_version column comes in two widths — bigint (default, used for
+        // ILongVersioned docs) or integer (used for IRevisioned docs, restored Marten 8
+        // behavior). The parameter NpgsqlDbType has to match the column type so Postgres
+        // doesn't refuse the bind on the strict VALUES (CASE … END) path.
+        _columnDbType = columnDbType;
+
         if (revisionMember is not null)
         {
-            // #4526/#4528: the mt_version column is bigint, but the document member is
-            // either an int (IRevisioned) or a long (ILongVersioned). For an int member
-            // downcast the loaded long; this can overflow for huge MultiStreamProjection
-            // event sequences — those documents should use ILongVersioned (documented
-            // caveat).
+            // #4526/#4528: regardless of column width, the document member is either int
+            // (IRevisioned) or long (ILongVersioned). Read-side conversion (long → int)
+            // handles the rare overflow path; the integer column can't overflow into an
+            // int member, but a bigint column with an int member can. Those docs should
+            // use ILongVersioned (documented caveat).
             if (revisionMember.GetRawMemberType() == typeof(int))
             {
                 var intSetter = LambdaBuilder.Setter<TDoc, int>(revisionMember);
@@ -52,14 +64,24 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
         }
     }
 
+    public NpgsqlDbType ColumnDbType => _columnDbType;
+
     public string ColumnName => Marten.Schema.SchemaConstants.VersionColumn;
 
     public string ValueSql => "?";
 
     public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
     {
-        parameter.Value = 0L;
-        parameter.NpgsqlDbType = NpgsqlDbType.Bigint;
+        if (_columnDbType == NpgsqlDbType.Integer)
+        {
+            parameter.Value = 0;
+            parameter.NpgsqlDbType = NpgsqlDbType.Integer;
+        }
+        else
+        {
+            parameter.Value = 0L;
+            parameter.NpgsqlDbType = NpgsqlDbType.Bigint;
+        }
     }
 
     public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
@@ -67,6 +89,8 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;
 
+        // Npgsql widens an int column to long via the field-value type handler, so
+        // reading as long works for both column widths.
         var revision = reader.GetFieldValue<long>(columnOrdinal);
         _setter(document, revision);
     }
@@ -83,8 +107,10 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
     {
         // Bulk path defaults to revision 1 — matches the codegen
         // BulkLoader.GenerateBulkWriterCodeAsync's hard-coded "write
-        // (long)1" for RevisionArgument.
+        // (long)1" for RevisionArgument. The parameter type follows the column.
         _setter?.Invoke(document, 1L);
-        return writer.WriteAsync(1L, NpgsqlDbType.Bigint, cancellation);
+        return _columnDbType == NpgsqlDbType.Integer
+            ? writer.WriteAsync(1, NpgsqlDbType.Integer, cancellation)
+            : writer.WriteAsync(1L, NpgsqlDbType.Bigint, cancellation);
     }
 }

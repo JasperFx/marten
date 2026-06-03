@@ -11,7 +11,13 @@ public class DocumentMetadataCollection
     }
 
     public MetadataColumn Version { get; } = new VersionColumn();
-    public MetadataColumn Revision { get; } = new RevisionColumn();
+
+    // #4614: VersionedPolicy reassigns this to RevisionColumnInt32 when the document
+    // type implements IRevisioned (int) so the mt_version column is `integer` rather
+    // than `bigint`, restoring the Marten 8 schema shape. ILongVersioned (long) docs
+    // keep the default RevisionColumn (bigint). The setter is internal because the
+    // variant choice is policy-driven, not user-driven.
+    public MetadataColumn Revision { get; internal set; } = new RevisionColumn();
     public MetadataColumn LastModified { get; } = new LastModifiedColumn();
     public MetadataColumn CreatedAt { get; } = new CreatedAtColumn();
     public MetadataColumn TenantId { get; } = new TenantIdColumn();

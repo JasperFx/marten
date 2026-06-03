@@ -197,6 +197,10 @@ internal class DocumentTable: Table
         // Bug_3946 against MultiStreamProjection + conjoined tenancy.
         ISelectableColumn? version = columns.OfType<VersionColumn>().SingleOrDefault();
         version ??= columns.OfType<RevisionColumn>().SingleOrDefault();
+        // #4614: the integer revision variant is a sibling class, not a subclass of
+        // RevisionColumn — has to be matched explicitly so the version slot stays
+        // canonical in the SELECT projection for IRevisioned-backed documents.
+        version ??= columns.OfType<RevisionColumnInt32>().SingleOrDefault();
 
         var answer = new List<ISelectableColumn>();
 

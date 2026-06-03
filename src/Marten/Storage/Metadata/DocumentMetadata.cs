@@ -31,6 +31,18 @@ public class DocumentMetadata
     public long CurrentRevision { get; internal set; }
 
     /// <summary>
+    ///     The current numeric revision when the document is mapped to the 32-bit (integer)
+    ///     mt_version column variant (i.e. when its type implements <see cref="Metadata.IRevisioned"/>).
+    ///     Shares storage with <see cref="CurrentRevision"/>; the int accessor is a view onto the
+    ///     same persisted value, narrowed for the Int32 metadata-column read path (#4614).
+    /// </summary>
+    public int CurrentRevisionInt32
+    {
+        get => (int)CurrentRevision;
+        internal set => CurrentRevision = value;
+    }
+
+    /// <summary>
     ///     Timestamp of the last time this document was modified
     /// </summary>
     public DateTimeOffset LastModified { get; internal set; }

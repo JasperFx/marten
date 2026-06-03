@@ -150,8 +150,13 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
             //       THEN COALESCE((select version from <events>.mt_streams where id = ?), 1)
             //       ELSE ? END (3 slots: ?=0 check, subquery id, explicit revision)
             //   UseVersionFromMatchingStream + conjoined: same with extra ? for tenant_id (4 slots)
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            // #4614: parameter type follows the column width (integer vs bigint).
+            var revisionDbType = _descriptor.RevisionBinder.ColumnDbType;
+            var revisionValue = revisionDbType == NpgsqlDbType.Integer
+                ? (object)checked((int)Revision)
+                : Revision;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
             slot++;
 
             if (_descriptor.UseVersionFromMatchingStream)
@@ -168,8 +173,8 @@ internal sealed class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageOpe
                 }
             }
 
-            parameters[slot].Value = Revision;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Bigint;
+            parameters[slot].Value = revisionValue;
+            parameters[slot].NpgsqlDbType = revisionDbType;
             return slot + 1;
         }
 
