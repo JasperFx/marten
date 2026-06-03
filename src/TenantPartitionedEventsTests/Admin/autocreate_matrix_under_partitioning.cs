@@ -139,6 +139,92 @@ public class autocreate_matrix_under_partitioning
     }
 
     [Fact]
+    public async Task admin_call_installs_events_feature_eagerly_only_under_None_intentional_asymmetry()
+    {
+        // #4649 investigation outcome: pin the intentional asymmetry between
+        // AutoCreate.None and the permissive modes (All / CreateOrUpdate /
+        // CreateOnly).
+        //
+        // Under None:
+        //   The #4641 fix runs a per-feature CreateMigrationAsync +
+        //   Migrator.ApplyAllAsync with a scoped CreateOrUpdate override BEFORE
+        //   AddPartitionToAllTables, so mt_quick_append_events exists as soon
+        //   as the admin call returns.
+        //
+        // Under All / CreateOrUpdate / CreateOnly:
+        //   No eager install — the events feature is laid down on the FIRST
+        //   session's SaveChangesAsync via the normal ensureStorageExistsAsync
+        //   path. Trying to make this eager runs into two timing problems:
+        //     1. Running EnsureStorageExistsAsync(IEvent) BEFORE
+        //        AddPartitionToAllTables creates mt_events with no partition
+        //        children (the partition manager's _partitions dict is empty
+        //        at that point). Subsequent additivelyMigrate doesn't reliably
+        //        add the children. Breaks schema_creation_succeeds_with_flag_on_in_empty_database.
+        //     2. Running EnsureStorageExistsAsync(IEvent) AFTER
+        //        AddPartitionToAllTables solves (1) but duplicates what the
+        //        next SaveChangesAsync would do anyway, with the additional
+        //        cost of potentially tripping CreateOnly's Function body-diff
+        //        on subsequent diffs if Weasel's CanonicizeSql normalization
+        //        ever diverges from PG's stored form.
+        //
+        //   The lazy path already works correctly for permissive modes — the
+        //   #4641 bug only manifested under None because None gates the lazy
+        //   path off. No user-facing reason to force eager install elsewhere.
+        //
+        // This pin documents the design choice so a future contributor doesn't
+        // re-attempt the same eager-install path that was already investigated
+        // and reverted.
+
+        // None: function exists right after the admin call returns.
+        var noneSchema = MakeSchema("none_eager");
+        await DropSchemaAsync(noneSchema);
+        using (var store = BuildStore(noneSchema, AutoCreate.None))
+        {
+            await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+            (await CountQuickAppendFunctionAsync(noneSchema)).ShouldBe(1L,
+                "AutoCreate.None bypass installs the events feature eagerly (#4641)");
+        }
+
+        // All: function NOT installed by the admin call alone (eager-install
+        // for permissive modes was investigated under #4649 and rejected —
+        // see method comment for the timing rationale).
+        var allSchema = MakeSchema("all_lazy");
+        await DropSchemaAsync(allSchema);
+        using (var store = BuildStore(allSchema, AutoCreate.All))
+        {
+            await store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, "alpha");
+            (await CountQuickAppendFunctionAsync(allSchema)).ShouldBe(0L,
+                "AutoCreate.All defers the events feature install to first SaveChangesAsync (the lazy path)");
+
+            // Same for CreateOnly + CreateOrUpdate — but a single probe per
+            // group is enough; the underlying gate logic is identical for all
+            // three permissive values.
+
+            // Force the lazy install and confirm it does land.
+            var streamId = Guid.NewGuid();
+            await using (var session = store.LightweightSession("alpha"))
+            {
+                session.Events.StartStream(streamId, new AutoCreateProbeEvent("trigger"));
+                await session.SaveChangesAsync();
+            }
+            (await CountQuickAppendFunctionAsync(allSchema)).ShouldBe(1L,
+                "the first SaveChangesAsync lazy-installs the events feature under permissive modes");
+        }
+    }
+
+    private static async Task<long> CountQuickAppendFunctionAsync(string schema)
+    {
+        await using var conn = new NpgsqlConnection(ConnectionSource.ConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText =
+            "select count(*) from pg_proc p join pg_namespace n on p.pronamespace = n.oid " +
+            "where n.nspname = @s and p.proname = 'mt_quick_append_events'";
+        cmd.Parameters.AddWithValue("s", schema);
+        return (long)(await cmd.ExecuteScalarAsync())!;
+    }
+
+    [Fact]
     public async Task AutoCreate_None_works_after_a_primer_store_creates_the_schema()
     {
         // The pin: AutoCreate.None is usable in production — the user is
