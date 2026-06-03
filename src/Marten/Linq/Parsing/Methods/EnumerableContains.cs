@@ -9,6 +9,7 @@ using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.Members.ValueCollections;
 using Marten.Linq.QueryHandlers;
+using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 using System.Diagnostics.CodeAnalysis;
 
@@ -47,6 +48,28 @@ internal class EnumerableContains: IMethodCallParser
         {
             // This is the value.Contains() pattern
             var collectionMember = memberCollection.MemberFor(expression.Arguments.Last());
+
+            // The document member is a CLR enum. Npgsql has no parameter mapping for
+            // an arbitrary EnumType[]/List<EnumType> (we get NpgsqlDbType '-2147483639' →
+            // "Writing values of 'YourEnum[]' is not supported"), so we must project the
+            // constant collection into a string[]/int[] up front per the active EnumStorage.
+            // EnumIsOneOfWhereFragment already does exactly that for the parallel
+            // LinqExtensions.IsOneOf path (IsOneOf.cs:36) — route the Contains shape through
+            // it too so HotChocolate's `[UseFiltering]` `in` operator works on enum members.
+            if (collectionMember.MemberType.IsEnum && constant.Value is not null)
+            {
+                // EnumIsOneOfWhereFragment requires a System.Array — HotChocolate hands an
+                // EnumType[] (which already is one), but a hand-written `new List<EnumType>{...}.Contains(p.X)`
+                // would otherwise InvalidCastException inside the fragment.
+                var arrayValue = constant.Value is Array
+                    ? constant.Value
+                    : ((IEnumerable)constant.Value).Cast<object>().ToArray();
+
+                return new EnumIsOneOfWhereFragment(
+                    arrayValue,
+                    options.Serializer().EnumStorage,
+                    collectionMember.TypedLocator);
+            }
 
             return new IsOneOfFilter(collectionMember, new CommandParameter(constant.Value));
         }
