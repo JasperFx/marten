@@ -73,22 +73,40 @@ public abstract class PartitionedFixtureBase: IAsyncLifetime
             opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
             opts.Policies.AllDocumentsAreMultiTenanted();
 
-            // Representative projections registered up front. Short DocumentAlias
-            // matters: nested type names + tenant suffix overflow PG's 64-byte
-            // identifier limit. Projection .Name is set in each projection's
-            // constructor to a deterministic value so ShardName.Compose(...)
-            // from test code stays stable.
-            opts.Projections.Add<TripDistanceProjection>(ProjectionLifecycle.Async);
-            opts.Projections.Add<TripCountInlineProjection>(ProjectionLifecycle.Inline);
-            opts.Projections.LiveStreamAggregation<TripSnapshot>();
-
-            opts.Schema.For<TripDistance>().Identity(x => x.Id).DocumentAlias("p2c_trip_dist");
-            opts.Schema.For<TripCount>().Identity(x => x.Id).DocumentAlias("p2c_trip_count");
+            // Projection registration is stream-identity-bound (Guid vs string id
+            // type on the projection's aggregate must match opts.Events.StreamIdentity),
+            // so each fixture flavor registers its own parallel set. Base default =
+            // Guid-id registration to preserve the original GuidPartitionedFixture
+            // contract for tests already pinned to TripDistance/TripCount/TripSnapshot.
+            RegisterProjections(opts);
         });
 
         // Sanity: the schema applies cleanly on its own. Caller tests register
         // tenants on-demand via Store.Advanced.AddMartenManagedTenantsAsync.
         await Store.Storage.Database.EnsureStorageExistsAsync(typeof(IEvent));
+    }
+
+    /// <summary>
+    /// Stream-identity-flavored projection registration. Default = Guid-id
+    /// projections (matches <see cref="GuidPartitionedFixture"/>). The
+    /// <see cref="StringPartitionedFixture"/> overrides this to register
+    /// string-id parallels so its store builds cleanly.
+    /// </summary>
+    /// <remarks>
+    /// Representative projections registered up front. Short DocumentAlias
+    /// matters: nested type names + tenant suffix overflow PG's 64-byte
+    /// identifier limit. Projection .Name is set in each projection's
+    /// constructor to a deterministic value so ShardName.Compose(...) from
+    /// test code stays stable.
+    /// </remarks>
+    protected virtual void RegisterProjections(StoreOptions opts)
+    {
+        opts.Projections.Add<TripDistanceProjection>(ProjectionLifecycle.Async);
+        opts.Projections.Add<TripCountInlineProjection>(ProjectionLifecycle.Inline);
+        opts.Projections.LiveStreamAggregation<TripSnapshot>();
+
+        opts.Schema.For<TripDistance>().Identity(x => x.Id).DocumentAlias("p2c_trip_dist");
+        opts.Schema.For<TripCount>().Identity(x => x.Id).DocumentAlias("p2c_trip_count");
     }
 
     public virtual Task DisposeAsync()
