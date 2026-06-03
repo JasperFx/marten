@@ -37,6 +37,7 @@ class Build : NukeBuild
         .DependsOn(TestCli)
         .DependsOn(TestLinq)
         .DependsOn(TestMultiTenancy)
+        .DependsOn(TestTenantPartitionedEvents)
         .DependsOn(TestPatching)
         .DependsOn(TestValueTypes);
 
@@ -265,6 +266,23 @@ class Build : NukeBuild
         {
             DotNetTest(c => c
                 .SetProjectFile("src/MultiTenancyTests")
+                .SetConfiguration(Configuration)
+                .EnableNoBuild()
+                .EnableNoRestore()
+                .SetFramework(Framework));
+        });
+
+    // #4617: dedicated project for the UseTenantPartitionedEvents feature
+    // surface. Single-store shared fixtures (string + guid) + per-test unique
+    // tenant ids — the schema-creation race lives in the partition-CREATE
+    // path, so isolation is on tenant not schema. See AssemblyInfo.cs for the
+    // DisableTestParallelization rationale.
+    Target TestTenantPartitionedEvents => _ => _
+        .ProceedAfterFailure()
+        .Executes(() =>
+        {
+            DotNetTest(c => c
+                .SetProjectFile("src/TenantPartitionedEventsTests")
                 .SetConfiguration(Configuration)
                 .EnableNoBuild()
                 .EnableNoRestore()

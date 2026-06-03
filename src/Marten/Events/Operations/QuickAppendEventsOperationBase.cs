@@ -24,6 +24,14 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
     // Keep in sync with QuickAppendEventFunction.WriteCreateStatement.
     private const string ArchivedStreamSqlState = "MT001";
 
+    // #4614: SQLSTATE raised by mt_quick_append_events when the caller's
+    // ExpectedVersionOnServer doesn't match the stream's actual version under
+    // UseTenantPartitionedEvents (the bulk path is the only one available there,
+    // so it has to enforce optimistic concurrency itself). Translated to
+    // EventStreamUnexpectedMaxEventIdException so the user-visible exception
+    // matches the rich path's UpdateStreamVersion contract.
+    private const string OptimisticVersionMismatchSqlState = "MT003";
+
     public bool TryTransform(Exception original, out Exception transformed)
     {
         var pg = original as PostgresException ?? original.InnerException as PostgresException;
@@ -31,6 +39,16 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         {
             transformed = new InvalidStreamOperationException(
                 $"Attempted to append event to archived stream with Id '{Stream.Id}'.");
+            return true;
+        }
+
+        if (pg is { SqlState: OptimisticVersionMismatchSqlState })
+        {
+            transformed = new EventStreamUnexpectedMaxEventIdException(
+                Stream.Key ?? (object)Stream.Id,
+                Stream.AggregateType,
+                expected: Stream.ExpectedVersionOnServer ?? -1,
+                actual: -1);
             return true;
         }
 
@@ -227,6 +245,34 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
         var param = builder.AppendParameter<IList<string>>(userNames);
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
+    }
+
+    /// <summary>
+    /// #4614: bind the caller's <see cref="StreamAction.ExpectedVersionOnServer"/>
+    /// to the <c>expected_version</c> parameter of <c>mt_quick_append_events</c>.
+    /// Pass null when this stream isn't an optimistic append — the function then
+    /// short-circuits the version check entirely.
+    /// </summary>
+    /// <remarks>
+    /// Only called by the partitioned bulk path. The non-partitioned bulk path
+    /// is never reached with <c>ExpectedVersionOnServer</c> set — those streams
+    /// route through the rich per-event InsertStream + UpdateStreamVersion in
+    /// <c>QuickEventAppender.registerOperationsForStreams</c>.
+    /// </remarks>
+    protected void writeExpectedVersion(IGroupedParameterBuilder builder, bool useBigInt)
+    {
+        var dbType = useBigInt ? NpgsqlDbType.Bigint : NpgsqlDbType.Integer;
+        if (Stream.ExpectedVersionOnServer is { } expected)
+        {
+            object value = useBigInt ? expected : (object)checked((int)expected);
+            var param = builder.AppendParameter(value);
+            param.NpgsqlDbType = dbType;
+        }
+        else
+        {
+            var param = builder.AppendParameter<object>(DBNull.Value);
+            param.NpgsqlDbType = dbType;
+        }
     }
 
     protected void writeTimestamps(IGroupedParameterBuilder builder)

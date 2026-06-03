@@ -90,4 +90,5 @@
   <Project Path="Marten.SourceGenerator.Tests/Marten.SourceGenerator.Tests.csproj" />
   <Project Path="Marten/Marten.csproj" />
   <Project Path="MemoryUsageChecker/MemoryUsageChecker.csproj" />
+  <Project Path="TenantPartitionedEventsTests/TenantPartitionedEventsTests.csproj" />
 </Solution>

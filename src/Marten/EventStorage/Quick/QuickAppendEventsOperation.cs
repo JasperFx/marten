@@ -75,6 +75,15 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
         // dialect flagged this configuration as needing tag writes.
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
 
+        // #4614: the trailing optimistic-concurrency parameter only exists
+        // on the function signature when partitioning is on (the non-partitioned
+        // bulk path never gets here with ExpectedVersionOnServer set — those
+        // streams route through the per-event InsertStream + UpdateStreamVersion
+        // path in QuickEventAppender). Always bind when present so the bulk
+        // function's NULL-check short-circuits when not optimistic.
+        if (_descriptor.UseTenantPartitionedEvents)
+            writeExpectedVersion(pb, _descriptor.UseBigIntEvents);
+
         builder.Append(")");
     }
 }

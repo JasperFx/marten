@@ -147,8 +147,39 @@ namespace Marten.Events.Schema;
                 sequencePickPerEvent = $"        seq := nextval('{databaseSchema}.mt_events_sequence');";
             }
 
+            // #4614 (#4596 Phase 1 Session 4): when partitioning is on, the bulk
+            // function is the only path for *every* event append — including the
+            // FetchForWriting / AppendOptimistic / AppendExclusive shapes that
+            // pass a caller-supplied ExpectedVersionOnServer. Take it as an
+            // optional trailing parameter, default NULL (no check) so previously
+            // generated call sites still match the signature, and raise MT003
+            // on mismatch so QuickAppendEventsOperationBase.TryTransform can
+            // surface it as EventStreamUnexpectedMaxEventIdException — the same
+            // exception type the rich path's UpdateStreamVersion already throws.
+            // Only emitted under partitioning because the non-partitioned bulk
+            // path is never reached with ExpectedVersionOnServer set (the
+            // QuickEventAppender takes the per-event InsertStream + atomic
+            // UpdateStreamVersion route instead).
+            var expectedVersionParameter = string.Empty;
+            var expectedVersionCheck = string.Empty;
+            if (_events.UseTenantPartitionedEvents)
+            {
+                expectedVersionParameter = $", expected_version {intType} DEFAULT NULL";
+                expectedVersionCheck = $@"
+    if expected_version IS NOT NULL then
+        -- COALESCE turns the NULL we get for a brand-new stream into 0, so a
+        -- FetchForWriting against a non-existent stream (which sets
+        -- ExpectedVersionOnServer = 0) and a StartStream(id, version: 0) both
+        -- land on the new-stream branch instead of mis-firing the guard.
+        if COALESCE(event_version, 0) != expected_version then
+            RAISE EXCEPTION 'Stream version mismatch on ''%'': expected %, actual %', stream, expected_version, COALESCE(event_version, 0) USING ERRCODE = 'MT003';
+        end if;
+    end if;
+";
+            }
+
             writer.WriteLine($@"
-CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[], bdatas bytea[]{metadataParameters}{tagParameters}) RETURNS {returnType} AS $$
+CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[], bdatas bytea[]{metadataParameters}{tagParameters}{expectedVersionParameter}) RETURNS {returnType} AS $$
 DECLARE
 	event_version {intType};
 	stream_is_archived boolean;
@@ -160,7 +191,7 @@ DECLARE
     actual_tenant varchar;
 	return_value {returnType};{sequenceDecl}
 BEGIN{sequenceResolveUpFront}
-	select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};
+	select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};{expectedVersionCheck}
 	if event_version IS NULL then
 		event_version = 0;
 		insert into {databaseSchema}.mt_streams (id, type, version, timestamp, tenant_id) values (stream, stream_type, 0, now(), tenantid);

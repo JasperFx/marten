@@ -102,6 +102,24 @@ public sealed class QuickEventStorageDescriptor
     public bool HasTagWrites { get; init; }
 
     /// <summary>
+    /// #4614: <c>UseTenantPartitionedEvents</c> is on, which means the bulk
+    /// function carries the trailing <c>expected_version</c> parameter (default
+    /// NULL) for the optimistic-concurrency append shapes (<c>FetchForWriting</c>,
+    /// <c>AppendOptimistic</c>, <c>AppendExclusive</c>, expected-version
+    /// StartStream/Append). The Quick operation binds the parameter via
+    /// <c>writeExpectedVersion</c> when this flag is on.
+    /// </summary>
+    public bool UseTenantPartitionedEvents { get; init; }
+
+    /// <summary>
+    /// <c>EnableBigIntEvents</c> picks <c>bigint</c> over <c>int</c> for sequence
+    /// + version columns, which propagates to the optimistic-concurrency
+    /// parameter type — has to match the function-signature width so Postgres
+    /// doesn't refuse the bind on the strict typed path.
+    /// </summary>
+    public bool UseBigIntEvents { get; init; }
+
+    /// <summary>
     /// SQL prefix <c>insert into mt_events (cols) values (</c> for the
     /// per-event QuickWithVersion path. The Quick appender uses this shape
     /// (one INSERT per event) for new streams and for existing streams

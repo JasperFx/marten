@@ -54,28 +54,22 @@ internal class QuickEventAppender: IEventAppender
             // with the stream's tenant instead of the session's.
             var metadataContext = TenantPropagation.MetadataContextFor(session, stream);
 
-            // #4596 Phase 1 Session 2: when per-tenant partitioning is on, the
-            // per-event `QuickAppendEventWithVersion` INSERT (used by the Start
-            // and ExpectedVersionOnServer paths) would inline
-            // `nextval('mt_events_sequence')` — the *global* sequence — via
-            // SequenceColumn.ValueSql. Only the bulk `mt_quick_append_events`
-            // function honors the per-tenant sequence pick (#4596 Session 2
-            // rewrite). Route every per-tenant append through the bulk function
-            // so the seq_id always comes from the tenant's
+            // #4596 Phase 1 Session 2 / #4614 Session 4: when per-tenant
+            // partitioning is on, the per-event `QuickAppendEventWithVersion`
+            // INSERT (used by the Start and ExpectedVersionOnServer paths) would
+            // inline `nextval('mt_events_sequence')` — the *global* sequence —
+            // via SequenceColumn.ValueSql. Only the bulk
+            // `mt_quick_append_events` function honors the per-tenant sequence
+            // pick. Route every per-tenant append through the bulk function so
+            // the seq_id always comes from the tenant's
             // `mt_events_sequence_{suffix}`. The function handles new-stream
-            // creation internally and rejects unregistered tenants with
-            // SQLSTATE MT002. Optimistic-concurrency (ExpectedVersionOnServer)
-            // appends with per-tenant partitioning are not supported yet —
-            // Session 3's progression rework lays the groundwork, Session 4
-            // wires the function signature for it.
+            // creation internally, rejects unregistered tenants with SQLSTATE
+            // MT002, and (#4614) now enforces the optimistic version check via
+            // the trailing `expected_version` parameter, raising MT003 on
+            // mismatch — translated back to EventStreamUnexpectedMaxEventIdException
+            // by QuickAppendEventsOperationBase.TryTransform so the user-facing
+            // exception type matches the rich path's UpdateStreamVersion.
             var forceBulkFunction = eventGraph.UseTenantPartitionedEvents;
-            if (forceBulkFunction && stream.ExpectedVersionOnServer.HasValue)
-            {
-                throw new NotSupportedException(
-                    $"Optimistic-concurrency event appends with explicit ExpectedVersionOnServer are not yet " +
-                    $"supported when Events.UseTenantPartitionedEvents is on (stream id '{stream.Id}'). " +
-                    $"This combination lands in #4596 Phase 1 Session 4. Use unconditional append for now.");
-            }
 
             if (!forceBulkFunction && stream.ActionType == StreamActionType.Start)
             {
@@ -111,7 +105,17 @@ internal class QuickEventAppender: IEventAppender
                     // array parameters. In HStore mode the function signature is trimmed
                     // (no per-tag varchar[] params), so tags are written via a follow-up
                     // UPDATE keyed on the event's id after the bulk insert completes.
-                    stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
+                    // #4614: when ExpectedVersionOnServer is set (FetchForWriting,
+                    // AppendOptimistic, AppendExclusive, expected-version StartStream/
+                    // Append), pass it as the currentVersion to PrepareEvents so the
+                    // client-side optimistic-concurrency guard (StreamAction.PrepareEvents
+                    // lines 319-341 in jasperfx) doesn't false-positive on "expected N
+                    // but was 0" — events get their server-bound versions assigned from
+                    // ExpectedVersionOnServer + 1. The actual version check still happens
+                    // server-side in mt_quick_append_events via the trailing
+                    // expected_version parameter (MT003 on mismatch).
+                    var preparedFrom = stream.ExpectedVersionOnServer ?? 0L;
+                    stream.PrepareEvents(preparedFrom, eventGraph, sequences, metadataContext);
                     var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
                     quickAppendEvents.Events = eventGraph;
                     session.QueueOperation(quickAppendEvents);

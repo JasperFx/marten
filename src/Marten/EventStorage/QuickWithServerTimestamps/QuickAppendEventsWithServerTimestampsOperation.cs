@@ -63,6 +63,12 @@ internal sealed class QuickAppendEventsWithServerTimestampsOperation: QuickAppen
 
         if (_descriptor.HasTagWrites) writeAllTagValues(pb);
 
+        // #4614: trailing optimistic-concurrency parameter; only present on the
+        // function signature under partitioning. See QuickAppendEventsOperation
+        // for the rationale on why this is gated.
+        if (_descriptor.UseTenantPartitionedEvents)
+            writeExpectedVersion(pb, _descriptor.UseBigIntEvents);
+
         builder.Append(")");
     }
 }

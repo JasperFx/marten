@@ -84,6 +84,16 @@ public sealed class QuickWithServerTimestampsEventStorageDescriptor
     public bool HasTagWrites { get; init; }
 
     /// <summary>
+    /// #4614: see <see cref="Quick.QuickEventStorageDescriptor.UseTenantPartitionedEvents"/>.
+    /// </summary>
+    public bool UseTenantPartitionedEvents { get; init; }
+
+    /// <summary>
+    /// See <see cref="Quick.QuickEventStorageDescriptor.UseBigIntEvents"/>.
+    /// </summary>
+    public bool UseBigIntEvents { get; init; }
+
+    /// <summary>
     /// SQL prefix <c>insert into mt_events (cols) values (</c> for the
     /// per-event QuickWithVersion path used by the Quick appender.
     /// </summary>
