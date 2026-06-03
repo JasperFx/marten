@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using JasperFx.Events;
 using JasperFx.Events.Projections;
 using JasperFx.MultiTenancy;
 using Marten.Events;
@@ -397,6 +398,47 @@ public class AdvancedOperations
         AssertSuffixesWithinIdentifierLimit(tenantIdToPartitionMapping.Values, LongestPartitionedTableNameLength(database));
 
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+        // #4641: under AutoCreate.None the admin call previously half-installed
+        // — partition registry rows got written but mt_events / mt_streams
+        // parent tables and mt_quick_append_events function were missing,
+        // because the regular ensureStorageExistsAsync path is gated off under
+        // None. The next append then failed with 42P01 / 42883.
+        //
+        // Permissive AutoCreate values (All / CreateOrUpdate / CreateOnly)
+        // already lazy-install the events feature on the first session's
+        // SaveChangesAsync, so this bypass only needs to fire for None. Apply
+        // the events feature once here with a scoped CreateOrUpdate override
+        // to respect the user's explicit "yes, mutate schema" intent of the
+        // admin call (already exempt for partition-table + per-tenant-sequence
+        // DDL — extend the same exemption to the surrounding events feature).
+        //
+        // CreateOnly intentionally NOT bypassed: doing so trips Weasel's
+        // Function body-diff on a subsequent ensureStorageExistsAsync (which
+        // CreateOnly forbids — only Create deltas are allowed). CreateOnly
+        // already worked via the lazy path before the fix, so the scoped
+        // override is sufficient for the only mode that was broken.
+        if (_store.Options.Events.UseTenantPartitionedEvents
+            && _store.Options.AutoCreateSchemaObjects == JasperFx.AutoCreate.None)
+        {
+            var migration = await database.CreateMigrationAsync(typeof(IEvent), token).ConfigureAwait(false);
+            if (migration.Difference != Weasel.Core.SchemaPatchDifference.None)
+            {
+                await using var ddlConn = database.CreateConnection();
+                await ddlConn.OpenAsync(token).ConfigureAwait(false);
+                try
+                {
+                    await _store.Options.Advanced.Migrator
+                        .ApplyAllAsync(ddlConn, migration, JasperFx.AutoCreate.CreateOrUpdate, ct: token)
+                        .ConfigureAwait(false);
+                }
+                finally
+                {
+                    await ddlConn.CloseAsync().ConfigureAwait(false);
+                }
+            }
+        }
+
         var statuses = await _store.Options.TenantPartitions.Partitions.AddPartitionToAllTables(
             logger,
             database,
