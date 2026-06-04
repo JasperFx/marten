@@ -50,6 +50,9 @@ public sealed class DirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyCheckedDocum
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
 
+    public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
+        => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null, null);
+
     public override ISelector BuildSelector(IMartenSession session)
         => new ClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor);
 

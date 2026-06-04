@@ -167,6 +167,11 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.Overwrite(document, session, tenant);
     }
 
+    public IStorageOperation OverwriteProjected(T document, string tenant)
+    {
+        return _parent.OverwriteProjected(document, tenant);
+    }
+
     public IDeletion DeleteForDocument(T document, string tenant)
     {
         return _parent.DeleteForDocument(document, tenant);

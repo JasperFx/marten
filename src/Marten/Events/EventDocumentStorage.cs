@@ -223,6 +223,11 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
+    public IStorageOperation OverwriteProjected(IEvent document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
     public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream,
         IEvent e);
 

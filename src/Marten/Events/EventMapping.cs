@@ -329,6 +329,11 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         throw new NotSupportedException();
     }
 
+    IStorageOperation IDocumentStorage<T>.OverwriteProjected(T document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
     public IDeletion DeleteForDocument(T document, string tenant)
     {
         throw new NotSupportedException();
