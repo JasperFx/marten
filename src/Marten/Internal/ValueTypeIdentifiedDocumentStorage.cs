@@ -138,6 +138,9 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenantId)
         => Inner.Overwrite(document, session, tenantId);
 
+    public IStorageOperation OverwriteProjected(TDoc document, string tenantId)
+        => Inner.OverwriteProjected(document, tenantId);
+
     public IDeletion DeleteForDocument(TDoc document, string tenantId)
         => Inner.DeleteForDocument(document, tenantId);
 

@@ -153,7 +153,13 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public void StoreProjection(TDoc aggregate, IEvent lastEvent, AggregationScope scope)
     {
-        var op = _storage.Overwrite(aggregate, _session, TenantId);
+        // OverwriteProjected (not Overwrite) so we never touch _session.Versions. The async
+        // daemon shares a single session across parallel slice handlers (Block(10, ...) inside
+        // AggregationRunner.BuildBatchAsync), and IMartenSession is documented as not
+        // thread-safe. The projection path doesn't need session-level tracking anyway --
+        // the revision is set explicitly from the event below and IgnoreConcurrencyViolation
+        // = true makes any tracker bookkeeping moot.
+        var op = _storage.OverwriteProjected(aggregate, TenantId);
         if (op is IRevisionedOperation r)
         {
             r.Revision = scope == AggregationScope.SingleStream ? (int)lastEvent.Version : (int)lastEvent.Sequence;

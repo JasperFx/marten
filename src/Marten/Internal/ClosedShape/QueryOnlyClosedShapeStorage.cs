@@ -58,6 +58,9 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Overwrite.");
 
+    public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
+        => throw new NotSupportedException("QueryOnly storage doesn't support OverwriteProjected.");
+
     public override ISelector BuildSelector(IMartenSession session)
         => new ClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor);
 }

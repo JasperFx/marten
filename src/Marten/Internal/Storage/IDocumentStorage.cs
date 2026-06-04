@@ -109,6 +109,17 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
 
     IStorageOperation Overwrite(T document, IMartenSession session, string tenantId);
 
+    /// <summary>
+    /// Lighter-weight overwrite for projection storage. Builds the same Overwrite operation
+    /// but does NOT consult session-level version / revision tracking, so it is safe to call
+    /// from parallel async-daemon slice handlers that share an <see cref="IMartenSession"/>
+    /// (see https://github.com/JasperFx/marten/issues/4657). The session is, by contract,
+    /// not thread-safe; projections set the revision explicitly from the event and never
+    /// read the session's <c>Versions</c> back, so there is no reason for the projection
+    /// path to touch it.
+    /// </summary>
+    IStorageOperation OverwriteProjected(T document, string tenantId);
+
     IDeletion DeleteForDocument(T document, string tenantId);
 
 
