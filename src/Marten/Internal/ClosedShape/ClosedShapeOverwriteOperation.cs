@@ -175,11 +175,21 @@ internal sealed class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStorage
         switch (_descriptor.ConcurrencyMode)
         {
             case ConcurrencyMode.Optimistic:
-                _versions![_id] = _newVersion;
+                // Trackers are null when built via DocumentStorage.OverwriteProjected
+                // (async-daemon projection path) — see issue #4657.
+                if (_versions is not null)
+                {
+                    _versions[_id] = _newVersion;
+                }
                 break;
             case ConcurrencyMode.Numeric:
+                // Must still consume the RETURNING row so the OperationPage cursor
+                // stays aligned; only the tracker write is conditional.
                 var newRevision = reader.GetFieldValue<long>(0);
-                _revisions![_id] = newRevision;
+                if (_revisions is not null)
+                {
+                    _revisions[_id] = newRevision;
+                }
                 _descriptor.RevisionBinder?.ApplyRevisionTo(_document, newRevision);
                 break;
         }
