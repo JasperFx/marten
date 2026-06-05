@@ -1,8 +1,10 @@
 using JasperFx;
 using JasperFx.Events;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events;
 using Marten.ScaleTesting;
+using Marten.ScaleTesting.Domain;
 using Marten.Storage;
 using Microsoft.Extensions.Hosting;
 
@@ -36,15 +38,37 @@ builder.ConfigureServices(services =>
         });
         opts.Advanced.DefaultTenantUsageEnabled = false;
 
-        // Phase A intentionally does NOT register the snapshot projections —
-        // the seeder only writes raw events. Registering Snapshot<T> would
-        // require the JasperFx.Events.SourceGenerator to emit the dispatcher
-        // for each aggregate's partial class, which is fine when we wire up
-        // the composite projection in Phase B but is dead weight for a
-        // pure-seeding run. Without registration, StartStream<T> on the
-        // seeder just tags the stream with the aggregate type name; that
-        // doesn't trigger any projection machinery and Phase B's rebuild
-        // builds the snapshots from the seeded events.
+        // Phase B — register the 4+2+2 composite projection per the #4666
+        // issue's topology. Async lifecycle so the seed itself doesn't trigger
+        // any projection work; rebuild is driven explicitly via the daemon
+        // (the `rebuild` subcommand).
+        //
+        // Stage 1 — single-stream snapshots + the custom AppointmentMetrics
+        //   IProjection (independent per-stream rollups).
+        // Stage 2 — multi-stream + enrichment projections that read the
+        //   stage-1 Updated<TUpstream> emissions (AppointmentDetails fans
+        //   out from Updated<Appointment>+ProviderAssigned+AppointmentRouted;
+        //   BoardSummary aggregates Updated<Board>+Updated<Appointment>+
+        //   Updated<ProviderShift>).
+        // Stage 3 — NEW projections that read stage-2 Updated<TDownstream>
+        //   emissions, exercising the cross-stage chaining + per-tenant
+        //   aggregation under the conjoined boundary.
+        opts.Projections.CompositeProjectionFor("TelehealthComposite", projection =>
+        {
+            // Stage 1
+            projection.Add<AppointmentProjection>(stageNumber: 1);
+            projection.Add<ProviderShiftProjection>(stageNumber: 1);
+            projection.Snapshot<Board>(stageNumber: 1);
+            projection.Add(new AppointmentMetricsProjection(), stageNumber: 1);
+
+            // Stage 2
+            projection.Add<AppointmentDetailsProjection>(stageNumber: 2);
+            projection.Add<BoardSummaryProjection>(stageNumber: 2);
+
+            // Stage 3
+            projection.Add<ProviderUtilizationProjection>(stageNumber: 3);
+            projection.Add<TenantDailyRollupProjection>(stageNumber: 3);
+        });
     });
 });
 

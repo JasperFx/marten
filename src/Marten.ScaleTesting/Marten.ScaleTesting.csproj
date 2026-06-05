@@ -22,6 +22,12 @@
          reference it directly to avoid a CPM downgrade pin (JasperFx 2.8.0
          already requires Spectre 0.55+). -->
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <!-- #4666 Phase B: source-gen dispatcher for the conventional Apply /
+         Create / ShouldDelete methods on Board / Appointment / ProviderShift
+         + the multi-stream Evolve methods on the stage-2/3 projections.
+         OutputItemType=Analyzer + ReferenceOutputAssembly=false matches the
+         shape every Marten test project uses. -->
+    <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
