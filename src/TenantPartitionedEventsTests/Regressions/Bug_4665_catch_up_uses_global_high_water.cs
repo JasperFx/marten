@@ -118,17 +118,7 @@ public partial class Bug_4665_catch_up_uses_global_high_water
         public void Apply(TripDistance agg, TripLeg @event) => agg.Distance += @event.Distance;
     }
 
-    [Fact(
-        Skip = "#4665 — JasperFx-side fix pending. JasperFx.Events.Daemon.JasperFxAsyncDaemon.CatchUpAsync " +
-               "(src/JasperFx.Events/Daemon/JasperFxAsyncDaemon.cs:899) calls _highWater.CheckNowAsync() and " +
-               "HighWaterMark() (the store-global path) instead of dispatching on " +
-               "IHighWaterDetector.SupportsTenantPartitioning to the _tenantHighWater coordinator the " +
-               "normally-running daemon uses. Marten's HighWaterDetector already exposes " +
-               "DetectForTenantsAsync / DetectInSafeZoneForTenantsAsync (#4596 Phase 2) — the fix is on " +
-               "the JasperFx caller side. Locally this test hangs the catch-up loop (the global gap " +
-               "detector waits indefinitely for sequence values that will never appear) which would " +
-               "stall CI; we ship as Skip + repro until JasperFx ships and the JasperFx.Events version " +
-               "bump in Directory.Packages.props lands.")]
+    [Fact]
     public async Task force_catch_up_advances_async_projection_under_partitioning()
     {
         // Store-direct shape (not host-based). The buggy method is
