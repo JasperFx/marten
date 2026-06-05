@@ -295,6 +295,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     /// <inheritdoc />
     public abstract IStorageOperation OverwriteProjected(T document, string tenant);
 
+    /// <inheritdoc />
+    public abstract IStorageOperation UpsertProjected(T document, string tenant);
+
+    /// <inheritdoc />
+    public abstract IStorageOperation InsertProjected(T document, string tenant);
+
+    /// <inheritdoc />
+    public abstract IStorageOperation UpdateProjected(T document, string tenant);
+
     public IDeletion DeleteForDocument(T document, string tenant)
     {
         var id = Identity(document);

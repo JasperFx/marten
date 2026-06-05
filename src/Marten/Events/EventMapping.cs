@@ -334,6 +334,22 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         throw new NotSupportedException();
     }
 
+    // #4667 — events aren't projected through the document write path.
+    IStorageOperation IDocumentStorage<T>.UpsertProjected(T document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
+    IStorageOperation IDocumentStorage<T>.InsertProjected(T document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
+    IStorageOperation IDocumentStorage<T>.UpdateProjected(T document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
     public IDeletion DeleteForDocument(T document, string tenant)
     {
         throw new NotSupportedException();

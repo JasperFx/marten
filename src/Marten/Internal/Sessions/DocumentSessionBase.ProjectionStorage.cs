@@ -83,7 +83,10 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public void Store(TDoc snapshot)
     {
-        var upsert = _storage.Upsert(snapshot, _session, TenantId);
+        // #4667 — UpsertProjected (not Upsert) so we never read or mutate
+        // _session.Versions / _session.Revisions from a daemon worker. The
+        // projection runtime is by-contract not session-state-aware.
+        var upsert = _storage.UpsertProjected(snapshot, TenantId);
         _session.QueueOperation(upsert);
     }
 
@@ -118,19 +121,35 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     {
         _storage.SetIdentity(snapshot, id);
 
-        // The aggregate may already be in the identity map from a prior SaveChangesAsync
-        // on the same session — for example, a FetchForWriting → save → StartStream
-        // sequence. In that case the projection has built a NEW snapshot instance for
-        // this save, and the duplicate-instance guard in IdentityMapDocumentStorage.store
-        // would throw before the underlying event store can surface the real conflict
-        // (ExistingStreamIdCollisionException). Evict the stale entry so the new snapshot
-        // can take its place.
-        _session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
+        // #4667 — The ItemMap eject + IdentityMap-storage Store call below is
+        // the GH-3850 fix: inline-projection-rewriting-an-immutable-aggregate
+        // on an IdentitySession needs the freshly-built snapshot instance to
+        // replace the stale identity-map entry so a subsequent FetchLatest on
+        // the same session sees the new state. That ItemMap mutation is a race
+        // source under the async daemon's parallel Block(10, ...) workers
+        // (#4657), but the daemon never opts into UseIdentityMapForAggregates,
+        // so we gate the identity-map maintenance on the same flag. The
+        // default (false) case takes the session-state-free UpsertProjected
+        // path; the opt-in (true) case preserves the GH-3850 semantics and
+        // accepts the documented race risk per the #4667 Phase 3 design note
+        // ("opt-in is not safe for parallel projection workers").
+        if (_session.Options.EventGraph.UseIdentityMapForAggregates)
+        {
+            // The aggregate may already be in the identity map from a prior
+            // SaveChangesAsync on the same session — for example, a
+            // FetchForWriting → save → StartStream sequence. In that case
+            // the projection has built a NEW snapshot instance for this save
+            // and the duplicate-instance guard in IdentityMapDocumentStorage.store
+            // would throw before the underlying event store can surface the
+            // real conflict (ExistingStreamIdCollisionException). Evict the
+            // stale entry so the new snapshot can take its place.
+            _session.EjectAggregateFromIdentityMap<TDoc, TId>(id);
 
-        // Put it in the identity map -- if necessary
-        _storage.Store(_session, snapshot);
+            // Put it in the identity map -- if necessary
+            _storage.Store(_session, snapshot);
+        }
 
-        var upsert = _storage.Upsert(snapshot, _session, tenantId);
+        var upsert = _storage.UpsertProjected(snapshot, tenantId);
         _session.QueueOperation(upsert);
     }
 

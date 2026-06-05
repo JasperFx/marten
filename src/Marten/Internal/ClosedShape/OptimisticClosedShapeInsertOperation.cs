@@ -25,7 +25,7 @@ internal sealed class OptimisticClosedShapeInsertOperation<TDoc, TId>: ClosedSha
     where TDoc : notnull
     where TId : notnull
 {
-    private readonly Dictionary<TId, Guid> _versions;
+    private readonly Dictionary<TId, Guid>? _versions;
     private readonly Guid _newVersion;
 
     public OptimisticClosedShapeInsertOperation(
@@ -33,7 +33,7 @@ internal sealed class OptimisticClosedShapeInsertOperation<TDoc, TId>: ClosedSha
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        Dictionary<TId, Guid> versions)
+        Dictionary<TId, Guid>? versions)
         : base(document, id, tenantId, descriptor)
     {
         _versions = versions;
@@ -69,6 +69,12 @@ internal sealed class OptimisticClosedShapeInsertOperation<TDoc, TId>: ClosedSha
             return;
         }
 
-        _versions[_id] = _newVersion;
+        // #4667 — null tracker (the InsertProjected path) just skips the
+        // tracker write. The fresh version is still applied to the document
+        // via VersionBinder during command configuration.
+        if (_versions is not null)
+        {
+            _versions[_id] = _newVersion;
+        }
     }
 }

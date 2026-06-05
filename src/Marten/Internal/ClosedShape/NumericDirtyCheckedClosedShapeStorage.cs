@@ -33,6 +33,16 @@ internal sealed class NumericDirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyChe
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => new NumericClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
+    // #4667 — null revision tracker; see Lightweight peer for semantics.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new NumericClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, null);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new NumericClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new NumericClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalNumericClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor)

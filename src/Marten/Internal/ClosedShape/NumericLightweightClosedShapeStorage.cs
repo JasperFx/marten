@@ -38,6 +38,19 @@ internal sealed class NumericLightweightClosedShapeStorage<TDoc, TId>: Lightweig
         // the session's numeric-revision map for the projected doc.
         => new NumericClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
+    // #4667 — null revision tracker. Numeric ops bind the IRevisionedOperation
+    // `Revision` property (default 0) in ConfigureCommand, so the WHERE guard
+    // `? = 0 OR table.mt_version < ?` always passes when the caller leaves
+    // Revision at the default.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new NumericClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, null);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new NumericClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new NumericClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalNumericClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)

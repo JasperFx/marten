@@ -172,6 +172,23 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.OverwriteProjected(document, tenant);
     }
 
+    // #4667 — delegate the new projection write entry points to the parent
+    // hierarchy storage just like Overwrite/OverwriteProjected do.
+    public IStorageOperation UpsertProjected(T document, string tenant)
+    {
+        return _parent.UpsertProjected(document, tenant);
+    }
+
+    public IStorageOperation InsertProjected(T document, string tenant)
+    {
+        return _parent.InsertProjected(document, tenant);
+    }
+
+    public IStorageOperation UpdateProjected(T document, string tenant)
+    {
+        return _parent.UpdateProjected(document, tenant);
+    }
+
     public IDeletion DeleteForDocument(T document, string tenant)
     {
         return _parent.DeleteForDocument(document, tenant);

@@ -24,14 +24,14 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
     where TDoc : notnull
     where TId : notnull
 {
-    private readonly Dictionary<TId, long> _revisions;
+    private readonly Dictionary<TId, long>? _revisions;
 
     public NumericClosedShapeUpdateOperation(
         TDoc document,
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        Dictionary<TId, long> revisions)
+        Dictionary<TId, long>? revisions)
         : base(document, id, tenantId, descriptor)
     {
         _revisions = revisions;
@@ -66,7 +66,13 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
         }
 
         var newRevision = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-        _revisions[_id] = newRevision;
+        // #4667 — null tracker (the UpdateProjected path) skips the tracker
+        // write. RevisionBinder still applies so the document's revision
+        // field is fresh.
+        if (_revisions is not null)
+        {
+            _revisions[_id] = newRevision;
+        }
         _descriptor.RevisionBinder!.ApplyRevisionTo(_document, newRevision);
     }
 

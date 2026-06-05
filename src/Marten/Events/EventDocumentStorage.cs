@@ -228,6 +228,22 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
+    // #4667 — events aren't projected through the document write path.
+    public IStorageOperation UpsertProjected(IEvent document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
+    public IStorageOperation InsertProjected(IEvent document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
+    public IStorageOperation UpdateProjected(IEvent document, string tenant)
+    {
+        throw new NotSupportedException();
+    }
+
     public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream,
         IEvent e);
 
