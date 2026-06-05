@@ -286,6 +286,58 @@ public class AdvancedOperations
     }
 
     /// <summary>
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(string, CancellationToken)"/>.
+    ///     Convenience method to rebuild the projected document of type T for a single stream
+    ///     identified by <paramref name="streamKey"/> under the supplied <paramref name="tenantId"/>.
+    ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
+    ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
+    ///     multi-tenancy — the event load and the upsert both have to be scoped to the
+    ///     tenant or you get a default-tenant lookup miss / write.
+    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
+    /// </summary>
+    /// <param name="streamKey">The string-keyed stream id.</param>
+    /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    public async Task RebuildSingleStreamAsync<T>(string streamKey, string tenantId, CancellationToken token = default) where T : class
+    {
+        await using var session = _store.LightweightSession(tenantId);
+        var document = await session.Events.AggregateStreamAsync<T>(streamKey, token: token).ConfigureAwait(false);
+        session.Store(document!);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    ///     Tenant-scoped overload of <see cref="RebuildSingleStreamAsync{T}(Guid, CancellationToken)"/>.
+    ///     Convenience method to rebuild the projected document of type T for a single stream
+    ///     identified by <paramref name="streamId"/> under the supplied <paramref name="tenantId"/>.
+    ///     Required when <see cref="Marten.Events.IEventStoreOptions.TenancyStyle"/> is
+    ///     <see cref="Marten.Storage.TenancyStyle.Conjoined"/> or when running under sharded
+    ///     multi-tenancy — the event load and the upsert both have to be scoped to the
+    ///     tenant or you get a default-tenant lookup miss / write.
+    ///     *You will still have to call SaveChangesAsync() to commit the changes though!*
+    ///     #4668 — new overload, not a default parameter, so existing call sites bind unchanged.
+    /// </summary>
+    /// <param name="streamId">The Guid-keyed stream id.</param>
+    /// <param name="tenantId">Tenant id to scope the rebuild session and the projected-document upsert to.</param>
+    /// <param name="token"></param>
+    /// <typeparam name="T"></typeparam>
+    public async Task RebuildSingleStreamAsync<T>(Guid streamId, string tenantId, CancellationToken token = default) where T : class
+    {
+        // Mirror the Guid-overload's ConcurrencyChecks.Disabled posture so behavior matches
+        // the existing non-tenanted Guid path beyond the tenant scope.
+        await using var session = _store.LightweightSession(new SessionOptions
+        {
+            ConcurrencyChecks = ConcurrencyChecks.Disabled,
+            TenantId = tenantId
+        });
+        var document = await session.Events.AggregateStreamAsync<T>(streamId, token: token).ConfigureAwait(false);
+        session.Store(document!);
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     "Upsert" tenant ids and matching partition suffixes to all conjoined, multi-tenanted
     ///     tables *if* Marten-managed partitioning is applied to this store. This assumes a 1-1
     ///     relationship between tenant ids and table partitions
