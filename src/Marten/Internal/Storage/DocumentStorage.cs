@@ -356,6 +356,22 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Default impl throws — closed-shape storages (the projection-eligible
+    /// path) override with a fresh-connection read that bypasses session-shared
+    /// trackers. Non-closed-shape storages aren't reachable via the projection
+    /// write path and don't need this overload.
+    /// </remarks>
+    public virtual Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+        => throw new NotSupportedException(
+            $"{GetType().Name} doesn't implement LoadProjectedAsync. Closed-shape storage variants provide this for the async-daemon projection-safe read path (#4667 Phase 2).");
+
+    /// <inheritdoc />
+    public virtual Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+        => throw new NotSupportedException(
+            $"{GetType().Name} doesn't implement LoadManyProjectedAsync. Closed-shape storage variants provide this for the async-daemon projection-safe read path (#4667 Phase 2).");
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public abstract TId Identity(T document);
 

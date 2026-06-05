@@ -221,6 +221,19 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
     }
 
+    // #4667 Phase 2 — delegate projection loads to the parent hierarchy storage
+    // and downcast to the subclass like the session-aware path above.
+    public async Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+    {
+        var doc = await _parent.LoadProjectedAsync(id, database, tenantId, token).ConfigureAwait(false);
+        return doc is T x ? x : default;
+    }
+
+    public async Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+    {
+        return (await _parent.LoadManyProjectedAsync(ids, database, tenantId, token).ConfigureAwait(false)).OfType<T>().ToList();
+    }
+
     public TId AssignIdentity(T document, string tenantId, IMartenDatabase database)
     {
         return _parent.AssignIdentity(document, tenantId, database);

@@ -181,6 +181,13 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IMartenSession session, CancellationToken token)
         => Inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);
 
+    // #4667 Phase 2 — delegate to inner with the unwrapped id like the session-aware path.
+    public Task<TDoc?> LoadProjectedAsync(TSimple id, IMartenDatabase database, string tenantId, CancellationToken token)
+        => Inner.LoadProjectedAsync(_converter(id), database, tenantId, token);
+
+    public Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TSimple[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+        => Inner.LoadManyProjectedAsync(ids.Select(_converter).ToArray(), database, tenantId, token);
+
     public TSimple AssignIdentity(TDoc document, string tenantId, IMartenDatabase database)
         => _unwrapper(Inner.AssignIdentity(document, tenantId, database));
 
