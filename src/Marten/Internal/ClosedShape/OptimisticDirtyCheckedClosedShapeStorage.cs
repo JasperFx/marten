@@ -34,5 +34,7 @@ internal sealed class OptimisticDirtyCheckedClosedShapeStorage<TDoc, TId>: Dirty
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new OptimisticClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor);
+        => _descriptor.HierarchyMapping is not null
+            ? new HierarchicalOptimisticClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor)
+            : new FlatOptimisticClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor);
 }

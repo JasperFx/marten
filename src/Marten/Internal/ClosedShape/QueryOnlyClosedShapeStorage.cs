@@ -62,5 +62,10 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
         => throw new NotSupportedException("QueryOnly storage doesn't support OverwriteProjected.");
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new ClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor);
+        // #4659 Phase 2: pick the Flat / Hierarchical selector ONCE per
+        // query — neither selector class branches on HierarchyMapping per
+        // row.
+        => _descriptor.HierarchyMapping is not null
+            ? new HierarchicalClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor)
+            : new FlatClosedShapeQueryOnlySelector<TDoc, TId>(session, _descriptor);
 }

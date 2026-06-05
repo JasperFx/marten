@@ -5,23 +5,24 @@ using System.Data.Common;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// <c>ConcurrencyMode.Numeric</c> DirtyTracking selector. CaptureVersion
-/// writes the row's mt_version (long) into the session's per-type
-/// revision dict. #4659 leaf.
+/// <c>ConcurrencyMode.Numeric</c> DirtyTracking selector — concurrency-
+/// mode intermediate. CaptureVersion writes long into the session's
+/// per-type revision dict. Sealed Flat / Hierarchical subclasses
+/// provide ReadDocument. #4659 Phase 2.
 /// </summary>
-internal sealed class NumericClosedShapeDirtyTrackingSelector<T, TId>: ClosedShapeDirtyTrackingSelector<T, TId>
+internal abstract class NumericClosedShapeDirtyTrackingSelector<T, TId>: ClosedShapeDirtyTrackingSelector<T, TId>
     where T : notnull
     where TId : notnull
 {
     private readonly Dictionary<TId, long> _revisions;
 
-    public NumericClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected NumericClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _revisions = session.Versions.RevisionsFor<T, TId>();
     }
 
-    protected override void CaptureVersion(DbDataReader reader, TId id)
+    protected sealed override void CaptureVersion(DbDataReader reader, TId id)
     {
         var versionIndex = _descriptor.VersionReadIndex;
         if (versionIndex < 0) return;

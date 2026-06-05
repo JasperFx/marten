@@ -4,22 +4,22 @@ using System.Data.Common;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// <c>ConcurrencyMode.Off</c> Lightweight selector. No version/revision
-/// tracker — CaptureVersion is a no-op. #4659 leaf.
+/// <c>ConcurrencyMode.Off</c> Lightweight selector — concurrency-mode
+/// intermediate. CaptureVersion is a no-op; sealed Flat / Hierarchical
+/// subclasses provide <c>ReadDocument</c> /
+/// <c>ReadDocumentAsync</c> (#4659 Phase 2).
 /// </summary>
-internal sealed class UnversionedClosedShapeLightweightSelector<T, TId>: ClosedShapeLightweightSelector<T, TId>
+internal abstract class UnversionedClosedShapeLightweightSelector<T, TId>: ClosedShapeLightweightSelector<T, TId>
     where T : notnull
     where TId : notnull
 {
-    public UnversionedClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected UnversionedClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }
 
-    protected override void CaptureVersion(DbDataReader reader, TId id)
+    protected sealed override void CaptureVersion(DbDataReader reader, TId id)
     {
-        // Off-mode: nothing to capture. The mt_version column may or may
-        // not be present in ReadBinders (depends on the user's mapping)
-        // but the session has no tracker to push it into.
+        // Off-mode: nothing to capture.
     }
 }
