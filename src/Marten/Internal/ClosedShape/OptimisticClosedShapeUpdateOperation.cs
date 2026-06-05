@@ -26,7 +26,7 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
     where TDoc : notnull
     where TId : notnull
 {
-    private readonly Dictionary<TId, Guid> _versions;
+    private readonly Dictionary<TId, Guid>? _versions;
     private readonly Guid _newVersion;
 
     public OptimisticClosedShapeUpdateOperation(
@@ -34,7 +34,7 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        Dictionary<TId, Guid> versions)
+        Dictionary<TId, Guid>? versions)
         : base(document, id, tenantId, descriptor)
     {
         _versions = versions;
@@ -46,8 +46,12 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
         var slot = BindPreConcurrencyParameters(parameters, session);
 
-        // Trailing WHERE mt_version = ? guard.
-        if (_versions.TryGetValue(_id, out var expected))
+        // Trailing WHERE mt_version = ? guard. #4667 — null tracker (the
+        // UpdateProjected path) treats expected version as DBNull, which the
+        // SQL WHERE never matches. Callers that go through UpdateProjected
+        // should also set IgnoreConcurrencyViolation = true to suppress the
+        // resulting "no row" exception.
+        if (_versions is not null && _versions.TryGetValue(_id, out var expected))
         {
             parameters[slot].Value = expected;
         }
@@ -69,7 +73,13 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
             return;
         }
 
-        _versions[_id] = _newVersion;
+        // #4667 — null tracker (the UpdateProjected path) just skips the
+        // tracker write. The fresh version is still applied to the document
+        // via VersionBinder during command configuration.
+        if (_versions is not null)
+        {
+            _versions[_id] = _newVersion;
+        }
     }
 
     protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)

@@ -120,6 +120,26 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     /// </summary>
     IStorageOperation OverwriteProjected(T document, string tenantId);
 
+    /// <summary>
+    /// Session-free Upsert for projection storage (#4667 Phase 1). Builds the same Upsert
+    /// operation as <see cref="Upsert"/> but passes a null version/revision tracker so the
+    /// projection path never touches <see cref="IMartenSession.Versions"/>. Safe to call
+    /// from parallel async-daemon slice handlers that share an <see cref="IMartenSession"/>.
+    /// </summary>
+    IStorageOperation UpsertProjected(T document, string tenantId);
+
+    /// <summary>
+    /// Session-free Insert for projection storage (#4667 Phase 1). See
+    /// <see cref="UpsertProjected"/>.
+    /// </summary>
+    IStorageOperation InsertProjected(T document, string tenantId);
+
+    /// <summary>
+    /// Session-free Update for projection storage (#4667 Phase 1). See
+    /// <see cref="UpsertProjected"/>.
+    /// </summary>
+    IStorageOperation UpdateProjected(T document, string tenantId);
+
     IDeletion DeleteForDocument(T document, string tenantId);
 
 

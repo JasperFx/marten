@@ -61,6 +61,16 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support OverwriteProjected.");
 
+    // #4667 — projection write paths aren't reachable from query sessions.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => throw new NotSupportedException("QueryOnly storage doesn't support UpsertProjected.");
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => throw new NotSupportedException("QueryOnly storage doesn't support InsertProjected.");
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => throw new NotSupportedException("QueryOnly storage doesn't support UpdateProjected.");
+
     public override ISelector BuildSelector(IMartenSession session)
         // #4659 Phase 2: pick the Flat / Hierarchical selector ONCE per
         // query — neither selector class branches on HierarchyMapping per

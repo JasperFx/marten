@@ -36,6 +36,18 @@ internal sealed class UnversionedLightweightClosedShapeStorage<TDoc, TId>: Light
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => new UnversionedClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
+    // #4667 — Unversioned ops have no tracker plumbing to begin with, so
+    // the *Projected factories return the same op as their session-aware
+    // counterparts. They exist for API uniformity across concurrency modes.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalUnversionedClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)

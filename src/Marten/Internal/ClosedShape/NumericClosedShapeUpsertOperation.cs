@@ -27,7 +27,7 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
     where TDoc : notnull
     where TId : notnull
 {
-    private readonly Dictionary<TId, long> _revisions;
+    private readonly Dictionary<TId, long>? _revisions;
 
     public NumericClosedShapeUpsertOperation(
         TDoc document,
@@ -35,7 +35,7 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
         OperationRole role,
-        Dictionary<TId, long> revisions)
+        Dictionary<TId, long>? revisions)
         : base(document, id, tenantId, descriptor, role)
     {
         _revisions = revisions;
@@ -68,7 +68,13 @@ internal sealed class NumericClosedShapeUpsertOperation<TDoc, TId>: ClosedShapeU
         }
 
         var newRevision = await reader.GetFieldValueAsync<long>(0, token).ConfigureAwait(false);
-        _revisions[_id] = newRevision;
+        // #4667 — null tracker (the UpsertProjected path) skips the tracker
+        // write. RevisionBinder still applies so the document's revision
+        // field is fresh.
+        if (_revisions is not null)
+        {
+            _revisions[_id] = newRevision;
+        }
         _descriptor.RevisionBinder!.ApplyRevisionTo(_document, newRevision);
     }
 

@@ -141,6 +141,16 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IStorageOperation OverwriteProjected(TDoc document, string tenantId)
         => Inner.OverwriteProjected(document, tenantId);
 
+    // #4667 — delegate the projection write entry points.
+    public IStorageOperation UpsertProjected(TDoc document, string tenantId)
+        => Inner.UpsertProjected(document, tenantId);
+
+    public IStorageOperation InsertProjected(TDoc document, string tenantId)
+        => Inner.InsertProjected(document, tenantId);
+
+    public IStorageOperation UpdateProjected(TDoc document, string tenantId)
+        => Inner.UpdateProjected(document, tenantId);
+
     public IDeletion DeleteForDocument(TDoc document, string tenantId)
         => Inner.DeleteForDocument(document, tenantId);
 

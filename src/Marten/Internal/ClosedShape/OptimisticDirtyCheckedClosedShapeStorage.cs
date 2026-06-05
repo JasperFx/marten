@@ -33,6 +33,16 @@ internal sealed class OptimisticDirtyCheckedClosedShapeStorage<TDoc, TId>: Dirty
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
+    // #4667 — null version tracker; see Lightweight peer for semantics.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, null);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalOptimisticClosedShapeDirtyTrackingSelector<TDoc, TId>(session, _descriptor)

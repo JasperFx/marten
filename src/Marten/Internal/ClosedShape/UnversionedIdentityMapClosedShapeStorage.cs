@@ -33,6 +33,16 @@ internal sealed class UnversionedIdentityMapClosedShapeStorage<TDoc, TId>: Ident
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => new UnversionedClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
+    // #4667 — Unversioned ops have no tracker plumbing; see Lightweight peer.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new UnversionedClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalUnversionedClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor)

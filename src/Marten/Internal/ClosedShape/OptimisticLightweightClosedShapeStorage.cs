@@ -38,6 +38,21 @@ internal sealed class OptimisticLightweightClosedShapeStorage<TDoc, TId>: Lightw
         // the session's optimistic-version map for the projected doc.
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
+    // #4667 — projection write paths pass null tracker (no session-shared
+    // dict access). Optimistic Upsert/Update with null tracker bind DBNull
+    // for the WHERE-guard; existing rows are left untouched on the ON CONFLICT
+    // branch. Callers in the projection runtime set IgnoreConcurrencyViolation
+    // = true (see ProjectionStorage.StoreProjection / Store flows) to suppress
+    // the resulting "no row" exception.
+    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, null);
+
+    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
+    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+        => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
+
     public override ISelector BuildSelector(IMartenSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalOptimisticClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
