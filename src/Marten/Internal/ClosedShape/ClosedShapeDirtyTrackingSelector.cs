@@ -1,5 +1,4 @@
 #nullable enable
-using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -12,29 +11,27 @@ using Marten.Internal.CodeGeneration;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// W3 spike (M2): <see cref="ISelector{T}"/> for the
-/// <see cref="DirtyCheckedSequentialGuidStorage{TDoc}"/> path.
-/// Identity-map writes (like <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>)
-/// plus a <see cref="ChangeTracker{T}"/> registered on the session for
-/// every loaded document — gives <c>SaveChangesAsync</c> a baseline to
-/// compare against when dirty-checking which loaded docs were modified.
+/// Abstract base for the per-<see cref="ConcurrencyMode"/> closed-shape
+/// DirtyTracking <see cref="ISelector{T}"/>. Identity-map writes (like
+/// <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>) plus a
+/// <see cref="ChangeTracker{T}"/> registered on the session per loaded
+/// document. Sealed concurrency-specific subclasses override
+/// <c>CaptureVersion</c> (#4659).
 /// </summary>
-internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, IDocumentSelector
+internal abstract class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {
-    private const int IdColumn = 0;
-    private const int DataColumn = 1;
-    private const int FirstMetadataColumn = 2;
+    protected const int IdColumn = 0;
+    protected const int DataColumn = 1;
+    protected const int FirstMetadataColumn = 2;
 
-    private readonly IMartenSession _session;
-    private readonly ISerializer _serializer;
-    private readonly DocumentStorageDescriptor<T, TId> _descriptor;
-    private readonly Dictionary<TId, T> _identityMap;
-    private readonly Dictionary<TId, Guid>? _versions;
-    private readonly Dictionary<TId, long>? _revisions;
+    protected readonly IMartenSession _session;
+    protected readonly ISerializer _serializer;
+    protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
+    protected readonly Dictionary<TId, T> _identityMap;
 
-    public ClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected ClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _session = session;
         _serializer = session.Serializer;
@@ -49,13 +46,6 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
             _identityMap = new Dictionary<TId, T>();
             session.ItemMap[typeof(T)] = _identityMap;
         }
-
-        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
-            ? session.Versions.ForType<T, TId>()
-            : null;
-        _revisions = descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
-            ? session.Versions.RevisionsFor<T, TId>()
-            : null;
     }
 
     public T Resolve(DbDataReader reader)
@@ -96,7 +86,12 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         return doc;
     }
 
-    private T ReadDocument(DbDataReader reader)
+    /// <summary>
+    /// Concurrency-specific per-row version capture.
+    /// </summary>
+    protected abstract void CaptureVersion(DbDataReader reader, TId id);
+
+    protected T ReadDocument(DbDataReader reader)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -106,7 +101,7 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         return _serializer.FromJson<T>(reader, DataColumn);
     }
 
-    private async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
+    protected async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -116,30 +111,13 @@ internal sealed class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, ID
         return await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
     }
 
-    private void ApplyMetadata(DbDataReader reader, T document)
+    protected void ApplyMetadata(DbDataReader reader, T document)
     {
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
             binder.Apply(reader, ordinal, document, _session);
             ordinal++;
-        }
-    }
-
-    private void CaptureVersion(DbDataReader reader, TId id)
-    {
-        var versionIndex = _descriptor.VersionReadIndex;
-        if (versionIndex < 0) return;
-        var versionOrdinal = FirstMetadataColumn + versionIndex;
-        if (reader.IsDBNull(versionOrdinal)) return;
-
-        if (_versions is not null)
-        {
-            _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
-        }
-        else if (_revisions is not null)
-        {
-            _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
         }
     }
 }

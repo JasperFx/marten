@@ -9,36 +9,31 @@ using Marten.Storage;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// W3 spike (M2+M4+M7): hand-written, closed-shape
-/// <see cref="LightweightDocumentStorage{T, TId}"/> for any
-/// <typeparamref name="TId"/>. Composes
-/// <see cref="DocumentStorageDescriptor{TDoc, TId}"/> (SQL + metadata
-/// binders) and <see cref="IIdentification{TDoc, TId}"/> (identity
-/// strategy). The closed-shape JIT specialization happens at
-/// construction time per <c>(TDoc, TId)</c> closure — no runtime
-/// branching after that.
+/// Closed-shape <see cref="LightweightDocumentStorage{T, TId}"/> base.
+/// Holds the shared infrastructure (Identity / AssignIdentity /
+/// RawIdentityValue / BuildManyIdParameter) common to every concurrency
+/// flavor; concrete subclasses provide the Insert / Update / Upsert /
+/// Overwrite factories + BuildSelector so the storage class is
+/// monomorphic-by-construction per <c>(TDoc, TId, ConcurrencyMode)</c>
+/// closure (#4659).
 /// </summary>
 /// <remarks>
 /// <para>
-/// One cell of the planned W3 matrix: Lightweight + any id type + any
-/// concurrency mode + no revisions + no tenancy + no hierarchical.
-/// </para>
-/// <para>
-/// Inheriting <see cref="LightweightDocumentStorage{T, TId}"/> picks up
-/// Store / Eject / LoadAsync / LoadManyAsync. What we hand-write here:
-/// Identity / AssignIdentity (via the descriptor's
-/// <see cref="IIdentification{TDoc, TId}"/>), Insert / Update / Upsert /
-/// Overwrite (return the corresponding closed-shape operation), and
-/// BuildSelector (returns <see cref="ClosedShapeLightweightSelector{TDoc, TId}"/>).
+/// Public sealed → public abstract. The class still exists as a public
+/// type but cannot be instantiated directly; consumers go through
+/// <see cref="ClosedShapeRegistration"/> which builds the right
+/// concurrency-mode leaf. The W3 spike's <c>Use…ClosedShape</c>
+/// extension helpers still work — the registration internals just
+/// dispatch on <see cref="DocumentStorageDescriptor{TDoc,TId}.ConcurrencyMode"/>.
 /// </para>
 /// </remarks>
-public sealed class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocumentStorage<TDoc, TId>
+public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocumentStorage<TDoc, TId>
     where TDoc : notnull
     where TId : notnull
 {
-    private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
+    protected readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
 
-    public LightweightClosedShapeStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, TId> descriptor)
+    protected LightweightClosedShapeStorage(DocumentMapping mapping, DocumentStorageDescriptor<TDoc, TId> descriptor)
         : base(mapping)
     {
         _descriptor = descriptor;
@@ -57,32 +52,4 @@ public sealed class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocumen
 
     public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
         => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
-
-    public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
-
-    public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
-
-    public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, VersionsFor(session), RevisionsFor(session));
-
-    public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
-        => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, VersionsFor(session), RevisionsFor(session));
-
-    public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
-        => new ClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null, null);
-
-    public override ISelector BuildSelector(IMartenSession session)
-        => new ClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);
-
-    private System.Collections.Generic.Dictionary<TId, System.Guid>? VersionsFor(IMartenSession session)
-        => _descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
-            ? session.Versions.ForType<TDoc, TId>()
-            : null;
-
-    private System.Collections.Generic.Dictionary<TId, long>? RevisionsFor(IMartenSession session)
-        => _descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
-            ? session.Versions.RevisionsFor<TDoc, TId>()
-            : null;
 }
