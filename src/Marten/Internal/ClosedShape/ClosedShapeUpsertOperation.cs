@@ -4,10 +4,6 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-using JasperFx;
-using JasperFx.Core;
-using Marten.Exceptions;
-using Marten.Internal;
 using Marten.Internal.Operations;
 using Npgsql;
 using NpgsqlTypes;
@@ -17,59 +13,42 @@ using Weasel.Postgresql;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M7+M8): hand-written upsert operation that consumes the
-/// descriptor's pre-built SQL + client-side binder array.
+/// Abstract base for the per-<see cref="ConcurrencyMode"/> closed-shape
+/// Upsert operation. Sealed subclasses provide the concrete
+/// <see cref="ConfigureCommand"/> + <see cref="PostprocessAsync"/> bodies
+/// so the hot path doesn't branch on <c>ConcurrencyMode</c> (#4659).
 /// </summary>
 /// <remarks>
-/// Concurrency variants:
-/// <list type="bullet">
-/// <item><c>Optimistic</c>: ON CONFLICT DO UPDATE adds <c>where mt_version = ?</c>
-/// (caller-supplied expected version). A mismatch produces no
-/// RETURNING row → <see cref="ConcurrencyException"/>.</item>
-/// <item><c>Numeric</c>: revision binder writes
-/// <c>CASE WHEN ? = 0 THEN current+1 ELSE ? END</c>; ON CONFLICT
-/// guard is <c>? = 0 OR current &lt; supplied</c>. A failed guard
-/// surfaces as <see cref="ConcurrencyException"/> unless
-/// <see cref="IRevisionedOperation.IgnoreConcurrencyViolation"/> is
-/// set.</item>
-/// </list>
+/// The Upsert <see cref="OperationRole"/> is supplied by the caller
+/// (Upsert or Insert) so the dirty-tracking change tracker can register
+/// the right kind of op against the session. Subclasses inherit the same
+/// role choice.
 /// </remarks>
-internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
+internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOperation, IRevisionedOperation, IIdentifiedOperation<TDoc, TId>, JasperFx.Core.Exceptions.IExceptionTransform
     where TDoc : notnull
     where TId : notnull
 {
-    public TId Id => _id;
+    protected readonly TDoc _document;
+    protected readonly TId _id;
+    protected readonly string _tenantId;
+    protected readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
+    protected readonly OperationRole _role;
 
-    private readonly TDoc _document;
-    private readonly TId _id;
-    private readonly string _tenantId;
-    private readonly DocumentStorageDescriptor<TDoc, TId> _descriptor;
-    private readonly OperationRole _role;
-    private readonly Dictionary<TId, Guid>? _versions;
-    private readonly Dictionary<TId, long>? _revisions;
-    private readonly Guid _newVersion;
-
-    public ClosedShapeUpsertOperation(
+    protected ClosedShapeUpsertOperation(
         TDoc document,
         TId id,
         string tenantId,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        OperationRole role,
-        Dictionary<TId, Guid>? versions,
-        Dictionary<TId, long>? revisions)
+        OperationRole role)
     {
         _document = document;
         _id = id;
         _tenantId = tenantId;
         _descriptor = descriptor;
         _role = role;
-        _versions = versions;
-        _revisions = revisions;
-        if (descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
-        {
-            _newVersion = CombGuidIdGeneration.NewGuid();
-        }
     }
+
+    public TId Id => _id;
 
     public long Revision { get; set; }
 
@@ -84,13 +63,17 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
 
     public OperationRole Role() => _role;
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
-    {
-        // Upsert SQL ordering (non-conjoined, Numeric):
-        //   id, data, rev (INSERT CASE × 2), [other binders],
-        //   rev (SET CASE × 2), rev (WHERE × 2)
-        var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
+    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
 
+    public abstract Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);
+
+    /// <summary>
+    /// Bind <c>[tenant_id,] id, data</c> + the client-side write binders
+    /// up to (not including) the trailing ON CONFLICT concurrency-extras
+    /// slots. Returns the next free parameter slot.
+    /// </summary>
+    protected int BindPreOnConflictParameters(NpgsqlParameter[] parameters, IMartenSession session)
+    {
         var slot = 0;
         if (_descriptor.IsConjoined)
         {
@@ -103,8 +86,6 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
         parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
         slot++;
 
-        // Project session-derived metadata onto the document BEFORE
-        // serialization so the values flow into the JSON data column.
         foreach (var binder in _descriptor.WriteBinders)
         {
             binder.ApplyToDocument(_document, session);
@@ -115,127 +96,39 @@ internal sealed class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageOpe
 
         foreach (var binder in _descriptor.ClientSideWriteBinders)
         {
-            slot = BindBinder(parameters, slot, binder, session);
+            slot = BindClientSideBinder(parameters, slot, binder, session);
         }
 
-        // ON CONFLICT side concurrency-related extras.
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic)
-        {
-            // ON CONFLICT DO UPDATE ... WHERE table.mt_version = ?
-            if (_versions!.TryGetValue(_id, out var expected))
-            {
-                parameters[slot].Value = expected;
-            }
-            else
-            {
-                parameters[slot].Value = DBNull.Value;
-            }
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
-        }
-        else if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric)
-        {
-            // DO UPDATE SET mt_version = CASE WHEN ? = 0 THEN current+1 ELSE ? END
-            // WHERE ? = 0 OR table.mt_version < ?
-            for (var i = 0; i < 4; i++)
-            {
-                parameters[slot + i].Value = Revision;
-                parameters[slot + i].NpgsqlDbType = NpgsqlDbType.Bigint;
-            }
-        }
+        return slot;
     }
 
-    public async Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
+    /// <summary>
+    /// Bind the optional <c>id [, tenant_id]</c> subquery slots that
+    /// <c>UseVersionFromMatchingStream</c> emits inside the revision CASE
+    /// expression. Common to Numeric Upsert / Overwrite.
+    /// </summary>
+    protected int BindUseVersionFromMatchingStreamSubquery(NpgsqlParameter[] parameters, int slot)
     {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Off)
-        {
-            // Mode Off Upsert is fire-and-forget today — RETURNING id is
-            // there for symmetry with Insert/Update but the result isn't
-            // inspected.
-            return;
-        }
+        parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
+        parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
+        slot++;
 
-        if (!await reader.ReadAsync(token).ConfigureAwait(false))
+        if (_descriptor.IsConjoined)
         {
-            if (!IgnoreConcurrencyViolation)
-            {
-                exceptions.Add(new ConcurrencyException(typeof(TDoc), _id));
-            }
-            return;
-        }
-
-        ApplyConcurrencyResult(reader);
-    }
-
-    private int BindBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
-    {
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic &&
-            ReferenceEquals(binder, _descriptor.VersionBinder))
-        {
-            parameters[slot].Value = _newVersion;
-            parameters[slot].NpgsqlDbType = NpgsqlDbType.Uuid;
-            _descriptor.VersionBinder.ApplyVersionTo(_document, _newVersion);
-            return slot + 1;
-        }
-
-        if (_descriptor.ConcurrencyMode == ConcurrencyMode.Numeric &&
-            ReferenceEquals(binder, _descriptor.RevisionBinder))
-        {
-            // INSERT VALUES side; two layouts depending on UseVersionFromMatchingStream:
-            //   Default:                CASE WHEN ? = 0 THEN 1 ELSE ? END (2 slots)
-            //   UseVersionFromMatchingStream (non-conjoined): CASE WHEN ? = 0
-            //       THEN COALESCE((select version from <events>.mt_streams where id = ?), 1)
-            //       ELSE ? END (3 slots)
-            //   UseVersionFromMatchingStream + conjoined: same with extra ? for tenant_id (4 slots)
-            // The ON CONFLICT SET / WHERE branches always reference {table}.id
-            // directly so they keep their 4 revision slots downstream.
-            // #4614: the parameter type follows the column width (integer for IRevisioned,
-            // bigint for ILongVersioned) so the CASE expression's branch types align.
-            var revisionDbType = _descriptor.RevisionBinder.ColumnDbType;
-            var revisionValue = revisionDbType == NpgsqlDbType.Integer
-                ? (object)checked((int)Revision)
-                : Revision;
-            parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
+            parameters[slot].Value = _tenantId;
+            parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
             slot++;
-
-            if (_descriptor.UseVersionFromMatchingStream)
-            {
-                parameters[slot].Value = _descriptor.Identification.ToRawSqlValue(_id);
-                parameters[slot].NpgsqlDbType = PostgresqlProvider.Instance.ToParameterType(_descriptor.Identification.RawSqlType);
-                slot++;
-
-                if (_descriptor.IsConjoined)
-                {
-                    parameters[slot].Value = _tenantId;
-                    parameters[slot].NpgsqlDbType = NpgsqlDbType.Varchar;
-                    slot++;
-                }
-            }
-
-            parameters[slot].Value = revisionValue;
-            parameters[slot].NpgsqlDbType = revisionDbType;
-            return slot + 1;
         }
 
-        binder.BindParameter(parameters[slot], _document, session);
-        return slot + 1;
+        return slot;
     }
 
-    private void ApplyConcurrencyResult(DbDataReader reader)
-    {
-        switch (_descriptor.ConcurrencyMode)
-        {
-            case ConcurrencyMode.Optimistic:
-                _versions![_id] = _newVersion;
-                break;
-            case ConcurrencyMode.Numeric:
-                var newRevision = reader.GetFieldValue<long>(0);
-                _revisions![_id] = newRevision;
-                _descriptor.RevisionBinder?.ApplyRevisionTo(_document, newRevision);
-                break;
-        }
-    }
+    /// <summary>
+    /// Concurrency-aware subclasses override to special-case the
+    /// VersionBinder / RevisionBinder.
+    /// </summary>
+    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session);
+
     public bool TryTransform(System.Exception original, out System.Exception? transformed)
         => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);
-
 }

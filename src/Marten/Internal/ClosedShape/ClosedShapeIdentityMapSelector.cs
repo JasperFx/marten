@@ -1,5 +1,4 @@
 #nullable enable
-using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
@@ -11,37 +10,27 @@ using Marten.Internal.CodeGeneration;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// W3 spike (M2): <see cref="ISelector{T}"/> for the
-/// <see cref="IdentityMapSequentialGuidStorage{TDoc}"/> path. Reads
-/// id+data+metadata and writes <c>(id, doc)</c> into the session's
-/// identity-map dictionary so subsequent <c>LoadAsync</c> calls
-/// short-circuit to the in-memory instance.
+/// Abstract base for the per-<see cref="ConcurrencyMode"/> closed-shape
+/// IdentityMap <see cref="ISelector{T}"/>. Owns the identity-map cache
+/// init + lookup; sealed subclasses provide a monomorphic
+/// <c>CaptureVersion</c> override so the per-row hot path doesn't read
+/// <c>ConcurrencyMode</c> (#4659).
 /// </summary>
-/// <remarks>
-/// The identity map lives on <see cref="IMartenSession.ItemMap"/> keyed by
-/// document type. The selector acquires it (or creates a fresh one) at
-/// construction so per-row writes don't re-walk the dictionary lookup.
-/// Mirrors what the codegen-emitted <c>DocumentSelectorWithIdentityMap</c>
-/// subclass does today.
-/// </remarks>
-internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDocumentSelector
+internal abstract class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {
     // Same column layout as Lightweight: id at 0, data at 1, metadata at 2+.
-    // IdColumn.ShouldSelect is true for all non-QueryOnly styles.
-    private const int IdColumn = 0;
-    private const int DataColumn = 1;
-    private const int FirstMetadataColumn = 2;
+    protected const int IdColumn = 0;
+    protected const int DataColumn = 1;
+    protected const int FirstMetadataColumn = 2;
 
-    private readonly IMartenSession _session;
-    private readonly ISerializer _serializer;
-    private readonly DocumentStorageDescriptor<T, TId> _descriptor;
-    private readonly Dictionary<TId, T> _identityMap;
-    private readonly Dictionary<TId, Guid>? _versions;
-    private readonly Dictionary<TId, long>? _revisions;
+    protected readonly IMartenSession _session;
+    protected readonly ISerializer _serializer;
+    protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
+    protected readonly Dictionary<TId, T> _identityMap;
 
-    public ClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected ClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _session = session;
         _serializer = session.Serializer;
@@ -56,13 +45,6 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
             _identityMap = new Dictionary<TId, T>();
             session.ItemMap[typeof(T)] = _identityMap;
         }
-
-        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
-            ? session.Versions.ForType<T, TId>()
-            : null;
-        _revisions = descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
-            ? session.Versions.RevisionsFor<T, TId>()
-            : null;
     }
 
     public T Resolve(DbDataReader reader)
@@ -106,7 +88,13 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
         return doc;
     }
 
-    private T ReadDocument(DbDataReader reader)
+    /// <summary>
+    /// Concurrency-specific per-row version capture. Off-mode subclasses
+    /// no-op; Optimistic / Numeric capture into their typed tracker.
+    /// </summary>
+    protected abstract void CaptureVersion(DbDataReader reader, TId id);
+
+    protected T ReadDocument(DbDataReader reader)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -116,7 +104,7 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
         return _serializer.FromJson<T>(reader, DataColumn);
     }
 
-    private async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
+    protected async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -126,30 +114,13 @@ internal sealed class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, IDoc
         return await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
     }
 
-    private void ApplyMetadata(DbDataReader reader, T document)
+    protected void ApplyMetadata(DbDataReader reader, T document)
     {
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
             binder.Apply(reader, ordinal, document, _session);
             ordinal++;
-        }
-    }
-
-    private void CaptureVersion(DbDataReader reader, TId id)
-    {
-        var versionIndex = _descriptor.VersionReadIndex;
-        if (versionIndex < 0) return;
-        var versionOrdinal = FirstMetadataColumn + versionIndex;
-        if (reader.IsDBNull(versionOrdinal)) return;
-
-        if (_versions is not null)
-        {
-            _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
-        }
-        else if (_revisions is not null)
-        {
-            _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
         }
     }
 }

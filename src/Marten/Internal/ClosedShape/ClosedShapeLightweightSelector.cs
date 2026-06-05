@@ -1,6 +1,4 @@
 #nullable enable
-using System;
-using System.Collections.Generic;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,50 +9,42 @@ using Marten.Internal.CodeGeneration;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// W3 spike (M1+M2+M7): <see cref="ISelector{T}"/> for the lightweight
-/// closed-shape storage path. Reads the data column at index 1 and
-/// dispatches each <see cref="IDocumentMetadataBinder{TDoc}"/>.Apply at
-/// the binder's column position (2, 3, …). Lightweight skips
-/// identity-map writes — every <c>LoadAsync</c> hits the database.
-/// Under <see cref="ConcurrencyMode.Optimistic"/> the selector also
-/// captures each row's <c>mt_version</c> into <c>session.Versions</c>
-/// so subsequent updates can supply it as the expected version.
+/// Abstract base for the per-<see cref="ConcurrencyMode"/> closed-shape
+/// Lightweight <see cref="ISelector{T}"/>. Owns the shared row-shape
+/// (id at col 0, data at col 1, metadata at 2+) plus document
+/// deserialization and metadata-apply. The per-row
+/// <c>CaptureVersion</c> step is virtual; sealed subclasses provide a
+/// monomorphic implementation so the JIT can devirtualize the hot
+/// path (#4659).
 /// </summary>
-internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDocumentSelector
+internal abstract class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
     where TId : notnull
 {
     // Lightweight column order from DocumentTable.SelectColumns:
     //   id (col 0), data (col 1), then ShouldSelect metadata columns.
-    private const int IdColumn = 0;
-    private const int DataColumn = 1;
-    private const int FirstMetadataColumn = 2;
+    protected const int IdColumn = 0;
+    protected const int DataColumn = 1;
+    protected const int FirstMetadataColumn = 2;
 
-    private readonly IMartenSession _session;
-    private readonly ISerializer _serializer;
-    private readonly DocumentStorageDescriptor<T, TId> _descriptor;
-    private readonly Dictionary<TId, Guid>? _versions;
-    private readonly Dictionary<TId, long>? _revisions;
+    protected readonly IMartenSession _session;
+    protected readonly ISerializer _serializer;
+    protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
-    public ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _session = session;
         _serializer = session.Serializer;
         _descriptor = descriptor;
-        _versions = descriptor.ConcurrencyMode == ConcurrencyMode.Optimistic
-            ? session.Versions.ForType<T, TId>()
-            : null;
-        _revisions = descriptor.ConcurrencyMode == ConcurrencyMode.Numeric
-            ? session.Versions.RevisionsFor<T, TId>()
-            : null;
     }
 
     public T Resolve(DbDataReader reader)
     {
         var doc = ReadDocument(reader);
         ApplyMetadata(reader, doc);
-        CaptureVersion(reader);
-        _session.MarkAsDocumentLoaded(_descriptor.Identification.ReadIdFromReader(reader, IdColumn), doc);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
+        CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 
@@ -62,12 +52,20 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
     {
         var doc = await ReadDocumentAsync(reader, token).ConfigureAwait(false);
         ApplyMetadata(reader, doc);
-        CaptureVersion(reader);
-        _session.MarkAsDocumentLoaded(_descriptor.Identification.ReadIdFromReader(reader, IdColumn), doc);
+        var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
+        CaptureVersion(reader, id);
+        _session.MarkAsDocumentLoaded(id, doc);
         return doc;
     }
 
-    private T ReadDocument(DbDataReader reader)
+    /// <summary>
+    /// Concurrency-specific per-row version capture. Off-mode subclasses
+    /// no-op; Optimistic captures the Guid into the per-type version
+    /// dict; Numeric captures the long into the per-type revision dict.
+    /// </summary>
+    protected abstract void CaptureVersion(DbDataReader reader, TId id);
+
+    protected T ReadDocument(DbDataReader reader)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -77,7 +75,7 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         return _serializer.FromJson<T>(reader, DataColumn);
     }
 
-    private async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
+    protected async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
     {
         if (_descriptor.HierarchyMapping is { } hierarchy)
         {
@@ -87,32 +85,13 @@ internal sealed class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, IDoc
         return await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
     }
 
-    private void ApplyMetadata(DbDataReader reader, T document)
+    protected void ApplyMetadata(DbDataReader reader, T document)
     {
         var ordinal = FirstMetadataColumn;
         foreach (var binder in _descriptor.ReadBinders)
         {
             binder.Apply(reader, ordinal, document, _session);
             ordinal++;
-        }
-    }
-
-    private void CaptureVersion(DbDataReader reader)
-    {
-        var versionIndex = _descriptor.VersionReadIndex;
-        if (versionIndex < 0) return;
-        var versionOrdinal = FirstMetadataColumn + versionIndex;
-        if (reader.IsDBNull(versionOrdinal)) return;
-
-        if (_versions is not null)
-        {
-            var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
-            _versions[id] = reader.GetFieldValue<Guid>(versionOrdinal);
-        }
-        else if (_revisions is not null)
-        {
-            var id = _descriptor.Identification.ReadIdFromReader(reader, IdColumn);
-            _revisions[id] = reader.GetFieldValue<long>(versionOrdinal);
         }
     }
 }
