@@ -6,23 +6,25 @@ using System.Data.Common;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// <c>ConcurrencyMode.Optimistic</c> Lightweight selector. Captures the
-/// row's mt_version (Guid) into the session's per-type version dict so
-/// subsequent updates can supply it as the expected version. #4659 leaf.
+/// <c>ConcurrencyMode.Optimistic</c> Lightweight selector — concurrency-
+/// mode intermediate. CaptureVersion writes the row's mt_version (Guid)
+/// into the session's per-type version dict; sealed Flat / Hierarchical
+/// subclasses provide <c>ReadDocument</c> / <c>ReadDocumentAsync</c>
+/// (#4659 Phase 2).
 /// </summary>
-internal sealed class OptimisticClosedShapeLightweightSelector<T, TId>: ClosedShapeLightweightSelector<T, TId>
+internal abstract class OptimisticClosedShapeLightweightSelector<T, TId>: ClosedShapeLightweightSelector<T, TId>
     where T : notnull
     where TId : notnull
 {
     private readonly Dictionary<TId, Guid> _versions;
 
-    public OptimisticClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected OptimisticClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _versions = session.Versions.ForType<T, TId>();
     }
 
-    protected override void CaptureVersion(DbDataReader reader, TId id)
+    protected sealed override void CaptureVersion(DbDataReader reader, TId id)
     {
         var versionIndex = _descriptor.VersionReadIndex;
         if (versionIndex < 0) return;

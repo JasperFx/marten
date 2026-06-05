@@ -34,5 +34,7 @@ internal sealed class UnversionedIdentityMapClosedShapeStorage<TDoc, TId>: Ident
         => new UnversionedClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override ISelector BuildSelector(IMartenSession session)
-        => new UnversionedClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor);
+        => _descriptor.HierarchyMapping is not null
+            ? new HierarchicalUnversionedClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor)
+            : new FlatUnversionedClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor);
 }

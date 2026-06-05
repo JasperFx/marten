@@ -11,12 +11,14 @@ using Marten.Internal.CodeGeneration;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// Abstract base for the per-<see cref="ConcurrencyMode"/> closed-shape
-/// DirtyTracking <see cref="ISelector{T}"/>. Identity-map writes (like
-/// <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>) plus a
-/// <see cref="ChangeTracker{T}"/> registered on the session per loaded
-/// document. Sealed concurrency-specific subclasses override
-/// <c>CaptureVersion</c> (#4659).
+/// Abstract base for the per-<see cref="ConcurrencyMode"/> ×
+/// <see cref="DocumentStorageDescriptor{T,TId}.HierarchyMapping"/>
+/// closed-shape DirtyTracking <see cref="ISelector{T}"/>. Identity-map
+/// writes (like <see cref="ClosedShapeIdentityMapSelector{T, TId}"/>)
+/// plus a <see cref="ChangeTracker{T}"/> registered on the session per
+/// loaded document. Sealed concurrency × hierarchy leaves provide
+/// monomorphic <c>CaptureVersion</c> + <c>ReadDocument</c> bodies
+/// (#4659).
 /// </summary>
 internal abstract class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, IDocumentSelector
     where T : notnull
@@ -86,30 +88,11 @@ internal abstract class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, 
         return doc;
     }
 
-    /// <summary>
-    /// Concurrency-specific per-row version capture.
-    /// </summary>
     protected abstract void CaptureVersion(DbDataReader reader, TId id);
 
-    protected T ReadDocument(DbDataReader reader)
-    {
-        if (_descriptor.HierarchyMapping is { } hierarchy)
-        {
-            var alias = reader.GetFieldValue<string>(FirstMetadataColumn + _descriptor.DocTypeReadIndex);
-            return (T)_serializer.FromJson(hierarchy.TypeFor(alias), reader, DataColumn);
-        }
-        return _serializer.FromJson<T>(reader, DataColumn);
-    }
+    protected abstract T ReadDocument(DbDataReader reader);
 
-    protected async System.Threading.Tasks.ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token)
-    {
-        if (_descriptor.HierarchyMapping is { } hierarchy)
-        {
-            var alias = await reader.GetFieldValueAsync<string>(FirstMetadataColumn + _descriptor.DocTypeReadIndex, token).ConfigureAwait(false);
-            return (T)await _serializer.FromJsonAsync(hierarchy.TypeFor(alias), reader, DataColumn, token).ConfigureAwait(false);
-        }
-        return await _serializer.FromJsonAsync<T>(reader, DataColumn, token).ConfigureAwait(false);
-    }
+    protected abstract ValueTask<T> ReadDocumentAsync(DbDataReader reader, CancellationToken token);
 
     protected void ApplyMetadata(DbDataReader reader, T document)
     {

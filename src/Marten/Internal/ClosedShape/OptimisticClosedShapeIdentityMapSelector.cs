@@ -6,23 +6,24 @@ using System.Data.Common;
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>
-/// <c>ConcurrencyMode.Optimistic</c> IdentityMap selector. CaptureVersion
-/// writes the row's mt_version (Guid) into the session's per-type version
-/// dict. #4659 leaf.
+/// <c>ConcurrencyMode.Optimistic</c> IdentityMap selector — concurrency-
+/// mode intermediate. CaptureVersion writes Guid into the session's
+/// per-type version dict. Sealed Flat / Hierarchical subclasses provide
+/// ReadDocument. #4659 Phase 2.
 /// </summary>
-internal sealed class OptimisticClosedShapeIdentityMapSelector<T, TId>: ClosedShapeIdentityMapSelector<T, TId>
+internal abstract class OptimisticClosedShapeIdentityMapSelector<T, TId>: ClosedShapeIdentityMapSelector<T, TId>
     where T : notnull
     where TId : notnull
 {
     private readonly Dictionary<TId, Guid> _versions;
 
-    public OptimisticClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected OptimisticClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _versions = session.Versions.ForType<T, TId>();
     }
 
-    protected override void CaptureVersion(DbDataReader reader, TId id)
+    protected sealed override void CaptureVersion(DbDataReader reader, TId id)
     {
         var versionIndex = _descriptor.VersionReadIndex;
         if (versionIndex < 0) return;
