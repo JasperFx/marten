@@ -104,48 +104,58 @@ public partial class ProviderUtilizationProjection: MultiStreamProjection<Provid
     }
 }
 
-// ---- TenantDailyRollup --------------------------------------------------
+// ---- TenantBucketRollup -------------------------------------------------
 //
-// Per-day rollup of appointment activity for the current tenant. Conjoined
-// tenancy means each tenant sees its own slice of the projection table —
-// keying on date alone is fine because the tenant column filters reads.
-// Demonstrates per-tenant aggregation under load: every tenant has its own
-// (Date) → TenantDailyRollup row set, and the daemon must keep them isolated.
+// Per-tenant bucketed rollup of appointment activity. The bucket key is
+// derived deterministically from the upstream AppointmentDetails id so the
+// rollup is reproducible across rebuild runs (the validate / stress chain
+// in Phase C wants byte-identical aggregates for the determinism gate).
+// Roughly 64 buckets per tenant — enough cardinality to exercise the
+// cross-stage chaining + per-tenant slice fan-out without exploding the
+// projection table.
+//
+// Conjoined tenancy means each tenant sees its own slice of the projection
+// table; keying on a derived bucket alone is fine because the tenant column
+// filters reads. Originally drafted as a date-based rollup, but the
+// DateTimeOffset.UtcNow fallback for stage-2 snapshots that didn't carry
+// a Requested timestamp made rebuilds non-deterministic — the validate
+// command caught it on first end-to-end run. Deterministic bucket key
+// keeps the harness reproducible.
 
-public class TenantDailyRollup
+public class TenantBucketRollup
 {
     [Identity]
-    public string Date { get; set; } = string.Empty; // ISO "yyyy-MM-dd"
+    public string Bucket { get; set; } = string.Empty;
     public int RequestedCount { get; set; }
     public int CompletedCount { get; set; }
     public int CancelledCount { get; set; }
-    public Dictionary<string, int> ByRoutingReason { get; set; } = new();
+
+    // SortedDictionary so the JSON serialization key order is stable across
+    // rebuild runs — the validate / stress determinism gate hashes the data
+    // column directly, so a Dictionary<,> with insertion-order serialization
+    // would drift between runs.
+    public SortedDictionary<string, int> ByRoutingReason { get; set; } = new();
 }
 
-public partial class TenantDailyRollupProjection: MultiStreamProjection<TenantDailyRollup, string>
+public partial class TenantDailyRollupProjection: MultiStreamProjection<TenantBucketRollup, string>
 {
+    private const int BucketCount = 64;
+
     public TenantDailyRollupProjection()
     {
         Options.CacheLimitPerTenant = 100;
+        Name = "TenantDailyRollup"; // preserves the projection name from the issue's spec
 
-        // Bucket by the appointment's Requested date if known, else by the
-        // event timestamp date. Both lookups are cheap because Updated<T>
-        // carries the snapshot in-line.
-        Identity<Updated<AppointmentDetails>>(x =>
-            DateOnlyOf(x.Entity.Requested == default
-                ? DateTimeOffset.UtcNow
-                : x.Entity.Requested));
-
-        Identity<ProjectionDeleted<AppointmentDetails, Guid>>(_ =>
-            DateOnlyOf(DateTimeOffset.UtcNow));
+        Identity<Updated<AppointmentDetails>>(x => BucketKey(x.Entity.Id));
+        Identity<ProjectionDeleted<AppointmentDetails, Guid>>(x => BucketKey(x.Identity));
     }
 
-    public override TenantDailyRollup? Evolve(TenantDailyRollup? snapshot, string id, IEvent e)
+    public override TenantBucketRollup? Evolve(TenantBucketRollup? snapshot, string id, IEvent e)
     {
         switch (e.Data)
         {
             case Updated<AppointmentDetails> updated:
-                snapshot ??= new TenantDailyRollup { Date = id };
+                snapshot ??= new TenantBucketRollup { Bucket = id };
                 snapshot.RequestedCount++;
                 if (updated.Entity.Status == AppointmentStatus.Completed)
                 {
@@ -159,7 +169,7 @@ public partial class TenantDailyRollupProjection: MultiStreamProjection<TenantDa
                 break;
 
             case ProjectionDeleted<AppointmentDetails>:
-                snapshot ??= new TenantDailyRollup { Date = id };
+                snapshot ??= new TenantBucketRollup { Bucket = id };
                 snapshot.CancelledCount++;
                 break;
         }
@@ -167,6 +177,16 @@ public partial class TenantDailyRollupProjection: MultiStreamProjection<TenantDa
         return snapshot;
     }
 
-    private static string DateOnlyOf(DateTimeOffset moment)
-        => moment.UtcDateTime.ToString("yyyy-MM-dd");
+    /// <summary>
+    /// Stable hash-bucket key for a Guid. We pull the first 4 bytes of the
+    /// Guid into a uint and mod by <see cref="BucketCount"/>. Same Guid
+    /// always lands in the same bucket → reproducible across rebuilds.
+    /// </summary>
+    private static string BucketKey(Guid id)
+    {
+        Span<byte> bytes = stackalloc byte[16];
+        id.TryWriteBytes(bytes);
+        var prefix = BitConverter.ToUInt32(bytes);
+        return "b" + (prefix % BucketCount).ToString("D3");
+    }
 }
