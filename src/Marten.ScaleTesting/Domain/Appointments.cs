@@ -1,0 +1,93 @@
+// Lifted from src/DaemonTests/TeleHealth/Appointments.cs (#4666 Phase A).
+// Copy-paste, not ProjectReference — the ScaleTesting harness owns its domain
+// fork so we can extend without disturbing the DaemonTests fixtures.
+using JasperFx.Events;
+using Marten.Events.Aggregation;
+
+namespace Marten.ScaleTesting.Domain;
+
+public record AppointmentRequested(Guid PatientId, string StateCode, string SpecialtyCode);
+public record AppointmentRouted(Guid BoardId, string ReasonCode);
+public record AppointmentExternalIdentifierAssigned(Guid AppointmentId, Guid ExternalId);
+public record ProviderAssigned(Guid ProviderId);
+public record AppointmentStarted;
+public record AppointmentCompleted;
+public record AppointmentEstimated(DateTimeOffset Time);
+public record AppointmentCancelled;
+
+public enum AppointmentStatus
+{
+    Requested,
+    Scheduled,
+    Started,
+    Completed
+}
+
+public class Appointment
+{
+    public Guid Id { get; set; }
+    public long Version { get; set; }
+    public DateTimeOffset Created { get; set; }
+    public string SpecialtyCode { get; set; } = string.Empty;
+    public Licensing? Requirement { get; set; }
+    public AppointmentStatus Status { get; set; }
+    public Guid? ProviderId { get; set; }
+    public DateTimeOffset? EstimatedTime { get; set; }
+    public Guid? BoardId { get; set; }
+    public Guid PatientId { get; set; }
+    public DateTimeOffset? Started { get; set; }
+    public DateTimeOffset? Completed { get; set; }
+}
+
+public partial class AppointmentProjection: SingleStreamProjection<Appointment, Guid>
+{
+    public AppointmentProjection()
+    {
+        Options.CacheLimitPerTenant = 1000;
+    }
+
+    public override Appointment? Evolve(Appointment? snapshot, Guid id, IEvent e)
+    {
+        switch (e.Data)
+        {
+            case AppointmentRequested requested:
+                snapshot = new Appointment
+                {
+                    Status = AppointmentStatus.Requested,
+                    Requirement = new Licensing(requested.SpecialtyCode, requested.StateCode),
+                    PatientId = requested.PatientId,
+                    Created = e.Timestamp,
+                    SpecialtyCode = requested.SpecialtyCode
+                };
+                break;
+
+            case AppointmentRouted routed:
+                snapshot!.BoardId = routed.BoardId;
+                break;
+
+            case ProviderAssigned assigned:
+                snapshot!.ProviderId = assigned.ProviderId;
+                break;
+
+            case AppointmentEstimated estimated:
+                snapshot!.Status = AppointmentStatus.Scheduled;
+                snapshot.EstimatedTime = estimated.Time;
+                break;
+
+            case AppointmentStarted:
+                snapshot!.Status = AppointmentStatus.Started;
+                snapshot.Started = e.Timestamp;
+                break;
+
+            case AppointmentCompleted:
+                snapshot!.Status = AppointmentStatus.Completed;
+                snapshot.Completed = e.Timestamp;
+                break;
+
+            case AppointmentCancelled:
+                return null;
+        }
+
+        return snapshot;
+    }
+}

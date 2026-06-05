@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Marten.ScaleTesting</RootNamespace>
+    <!-- Internal dev tooling; never packed, never shipped. -->
+    <IsPackable>false</IsPackable>
+    <!-- AOT analysis is noise for a dev-box CLI; opt out so we don't spam IL2026 / IL3050 here. -->
+    <IsAotCompatible>false</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Marten\Marten.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JasperFx" />
+    <!-- Spectre.Console comes in transitively via JasperFx ≥ 0.55. We don't
+         reference it directly to avoid a CPM downgrade pin (JasperFx 2.8.0
+         already requires Spectre 0.55+). -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+</Project>
