@@ -1,4 +1,7 @@
+#nullable enable
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon;
@@ -71,4 +74,31 @@ internal class ProjectionDocumentSession: DocumentSessionBase, ITransactionParti
             batch.AddTransactionParticipant(participant);
         }
     }
+
+    /// <summary>
+    /// #4667 Phase 3 — close the user-code escape hatch. When user-supplied
+    /// <c>operations.LoadAsync&lt;X&gt;(...)</c> runs inside an aggregation
+    /// projection's EvolveAsync, route it through
+    /// <see cref="IDocumentStorage{T, TId}.LoadProjectedAsync"/> so the
+    /// daemon's shared 10-wide parallel <c>Block&lt;EventSliceExecution&gt;</c>
+    /// workers never touch <c>_session.Versions</c> / <c>_session.ItemMap</c> /
+    /// <c>_session.ChangeTrackers</c>. The opt-in
+    /// <see cref="Marten.Events.EventGraph.UseIdentityMapForAggregates"/>
+    /// path falls through to the base session-aware route (the GH-3850
+    /// inline-projection identity-map semantics; documented as not safe for
+    /// parallel projection workers).
+    /// </summary>
+    // Return is bare Task<T> (with [return: MaybeNull] on the base) — see the
+    // chokepoint declaration in QuerySession.Load.cs for why.
+    [return: MaybeNull]
+    protected internal override Task<T> ExecuteLoadOneAsync<T, TId>(IDocumentStorage<T, TId> storage, TId id, CancellationToken token)
+        => Options.EventGraph.UseIdentityMapForAggregates
+            ? base.ExecuteLoadOneAsync(storage, id, token)
+            : storage.LoadProjectedAsync(id, Database, TenantId, token)!;
+
+    /// <inheritdoc cref="ExecuteLoadOneAsync{T, TId}"/>
+    protected internal override Task<IReadOnlyList<T>> ExecuteLoadManyAsync<T, TId>(IDocumentStorage<T, TId> storage, TId[] ids, CancellationToken token)
+        => Options.EventGraph.UseIdentityMapForAggregates
+            ? base.ExecuteLoadManyAsync(storage, ids, token)
+            : storage.LoadManyProjectedAsync(ids, Database, TenantId, token);
 }
