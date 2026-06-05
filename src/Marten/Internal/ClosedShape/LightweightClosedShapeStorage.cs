@@ -1,4 +1,7 @@
 #nullable enable
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Marten.Internal;
 using Marten.Internal.Operations;
 using Marten.Internal.Storage;
@@ -52,4 +55,16 @@ public abstract class LightweightClosedShapeStorage<TDoc, TId>: LightweightDocum
 
     public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
         => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
+
+    // #4667 Phase 2 — session-free projection load. Opens a fresh connection
+    // from the supplied database and deserializes the data column directly,
+    // bypassing the session-aware BuildSelector path that writes versions /
+    // ItemMap / ChangeTrackers per row. Shared with IdentityMap / DirtyChecked.
+    public override Task<TDoc?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
+        => ClosedShapeProjectionLoader<TDoc, TId>.LoadAsync(
+            BuildLoadCommand(id, tenantId), _descriptor, _mapping.StoreOptions.Serializer(), database, token);
+
+    public override Task<IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token)
+        => ClosedShapeProjectionLoader<TDoc, TId>.LoadManyAsync(
+            BuildLoadManyCommand(ids, tenantId), _descriptor, _mapping.StoreOptions.Serializer(), database, token);
 }

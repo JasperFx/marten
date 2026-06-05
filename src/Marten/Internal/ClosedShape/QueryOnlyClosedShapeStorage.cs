@@ -71,6 +71,15 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override IStorageOperation UpdateProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support UpdateProjected.");
 
+    // #4667 Phase 2 — QueryOnly storages aren't used by the projection read
+    // path; ProjectionStorage holds a writeable storage instance for the
+    // projected document type, not a QueryOnly one.
+    public override System.Threading.Tasks.Task<TDoc?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, System.Threading.CancellationToken token)
+        => throw new NotSupportedException("QueryOnly storage doesn't support LoadProjectedAsync.");
+
+    public override System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, System.Threading.CancellationToken token)
+        => throw new NotSupportedException("QueryOnly storage doesn't support LoadManyProjectedAsync.");
+
     public override ISelector BuildSelector(IMartenSession session)
         // #4659 Phase 2: pick the Flat / Hierarchical selector ONCE per
         // query — neither selector class branches on HierarchyMapping per

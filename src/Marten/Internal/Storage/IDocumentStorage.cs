@@ -159,6 +159,23 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<
 
     Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
 
+    /// <summary>
+    /// Session-free Load for projection storage (#4667 Phase 2). Opens a fresh
+    /// connection from the database, executes the load SQL, and returns the
+    /// deserialized document. Does not touch any session-shared state — no
+    /// version/revision tracker writes, no ItemMap updates, no
+    /// <c>MarkAsDocumentLoaded</c>, no <c>ChangeTrackers</c> writes. Safe to call
+    /// from parallel async-daemon slice handlers that share an
+    /// <see cref="IMartenSession"/>.
+    /// </summary>
+    Task<T?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token);
+
+    /// <summary>
+    /// Session-free LoadMany for projection storage (#4667 Phase 2). See
+    /// <see cref="LoadProjectedAsync"/>.
+    /// </summary>
+    Task<IReadOnlyList<T>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, CancellationToken token);
+
 
     TId AssignIdentity(T document, string tenantId, IMartenDatabase database);
     ISqlFragment ByIdFilter(TId id);

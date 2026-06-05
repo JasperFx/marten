@@ -161,7 +161,17 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public async Task<IReadOnlyDictionary<TId, TDoc>> LoadManyAsync(TId[] identities, CancellationToken cancellationToken)
     {
-        var docs = await _storage.LoadManyAsync(identities, _session, cancellationToken).ConfigureAwait(false);
+        // #4667 Phase 2 — default (UseIdentityMapForAggregates = false) routes
+        // through LoadManyProjectedAsync, which opens a fresh connection and
+        // uses a tracker-free deserialization path so the async daemon's
+        // parallel slice workers never touch _session.Versions /
+        // _session.ItemMap / _session.ChangeTrackers. The opt-in (true) case
+        // preserves the inline-projection identity-map semantics by falling
+        // through to the session-aware LoadManyAsync — at the cost of the
+        // race the flag's design note already documents.
+        var docs = _session.Options.EventGraph.UseIdentityMapForAggregates
+            ? await _storage.LoadManyAsync(identities, _session, cancellationToken).ConfigureAwait(false)
+            : await _storage.LoadManyProjectedAsync(identities, _session.Database, TenantId, cancellationToken).ConfigureAwait(false);
         return docs.ToDictionary(doc => _storage.Identity(doc));
     }
 
@@ -240,6 +250,9 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     //TODO fix in IProjectionStorage
     public Task<TDoc?> LoadAsync(TId id, CancellationToken cancellation)
     {
-        return _storage.LoadAsync(id, _session, cancellation);
+        // #4667 Phase 2 — see LoadManyAsync above for rationale.
+        return _session.Options.EventGraph.UseIdentityMapForAggregates
+            ? _storage.LoadAsync(id, _session, cancellation)
+            : _storage.LoadProjectedAsync(id, _session.Database, TenantId, cancellation);
     }
 }
