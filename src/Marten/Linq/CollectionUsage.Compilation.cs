@@ -392,12 +392,22 @@ public partial class CollectionUsage
         // 6-arg ctor doesn't fit the fixed-arity overloads, so we pay an
         // array allocation per call in exchange for skipping MakeGenericType.
         var resultType = groupJoin.FlattenedResultSelector.ReturnType;
+
+        // Sum()/Min()/Max()/Average() over a bare scalar projection cannot aggregate the
+        // to_jsonb(...) form (Postgres has no sum/min/max/avg for jsonb). For those, render the
+        // raw scalar into the join CTE and put a standard scalar select clause over it below.
+        var pendingMode = Inner?.SingleValueMode ?? Inner?.Inner?.SingleValueMode;
+        var scalarAggregate = joinParser.ScalarRawProjection != null
+            && pendingMode is Marten.Linq.Parsing.SingleValueMode.Sum or Marten.Linq.Parsing.SingleValueMode.Min
+                or Marten.Linq.Parsing.SingleValueMode.Max or Marten.Linq.Parsing.SingleValueMode.Average
+            && (resultType == typeof(string) || resultType.IsValueType);
+
         var joinSelectClause = (ISelectClause)GenericFactoryCache.BuildAs<object>(
             typeof(JoinSelectClause<>),
             resultType,
             new object[]
             {
-                joinParser.Projection,
+                scalarAggregate ? joinParser.ScalarRawProjection : joinParser.Projection,
                 outerCteAlias,
                 innerCteAlias,
                 groupJoin.IsLeftJoin,
@@ -459,6 +469,30 @@ public partial class CollectionUsage
         if ((Inner?.IsDistinct ?? false) || (Inner?.Inner?.IsDistinct ?? false))
         {
             joinStatement.IsDistinct = true;
+        }
+
+        if (scalarAggregate)
+        {
+            // Wrap the raw-scalar join in a CTE and aggregate over its single 'data' column with a
+            // standard scalar select clause, which already handles the aggregate result types
+            // (SUM(int)->bigint, AVG->double via CloneToDouble, etc.).
+            joinStatement.ConvertToCommonTableExpression(session);
+
+            // For a nullable scalar (e.g. (int?)c.Amount) build the clause over the underlying type
+            // -- NewScalarSelectClause<T> is `where T : struct` and also implements ISelector<T?>,
+            // so the single-value handler reads the nullable result (null when all rows are null).
+            var clauseType = Nullable.GetUnderlyingType(resultType) ?? resultType;
+            var scalarClause = clauseType == typeof(string)
+                ? new NewScalarStringSelectClause("d.data", joinStatement.ExportName)
+                : typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(
+                    "d.data", joinStatement.ExportName, clauseType);
+
+            var scalarStatement = new SelectorStatement { SelectClause = scalarClause };
+            joinStatement.AddToEnd(scalarStatement);
+
+            ProcessSingleValueModeIfAny(scalarStatement, session, null, statistics);
+
+            return joinStatement;
         }
 
         // Apply single value mode to the join statement

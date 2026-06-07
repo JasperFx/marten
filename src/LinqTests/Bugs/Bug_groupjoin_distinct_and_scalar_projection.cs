@@ -257,4 +257,76 @@ public class Bug_groupjoin_distinct_and_scalar_projection: BugIntegrationContext
                 .SelectMany(x => x.children, (x, c) => c.Amount + 1)
                 .ToListAsync());
     }
+
+    // ---- aggregates over a bare scalar projection (Sum / Min / Max / Average) ----
+    // Inner-join rows from seedAsync: P1->10, P1->10, P2->20.
+
+    private static IQueryable<int> InnerJoinAmount(IQuerySession q) =>
+        q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => c.Amount);
+
+    [Fact]
+    public async Task scalar_sum_over_inner_join()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        (await InnerJoinAmount(q).SumAsync(z => z)).ShouldBe(40);
+    }
+
+    [Fact]
+    public async Task scalar_min_and_max_over_inner_join()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        (await InnerJoinAmount(q).MinAsync(z => z)).ShouldBe(10);
+        (await InnerJoinAmount(q).MaxAsync(z => z)).ShouldBe(20);
+    }
+
+    [Fact]
+    public async Task scalar_average_over_inner_join_returns_double()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        (await InnerJoinAmount(q).AverageAsync(z => z)).ShouldBe(40d / 3d, 0.0001);
+    }
+
+    [Fact]
+    public async Task scalar_decimal_sum_over_inner_join()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        // p.Score over the joined rows: 1.5 (P1) + 1.5 (P1) + 2.5 (P2) = 5.5
+        var sum = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => x.p.Score)
+            .SumAsync(z => z);
+        sum.ShouldBe(5.5m);
+    }
+
+    [Fact]
+    public async Task scalar_sum_over_left_join_ignores_null_inner()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        // left join adds P3 (null inner); SUM ignores the null data row => still 40
+        var sum = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children.DefaultIfEmpty(), (x, c) => c.Amount)
+            .SumAsync(z => z);
+        sum.ShouldBe(40);
+    }
+
+    [Fact]
+    public async Task nullable_scalar_sum_over_inner_join()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        // (int?)c.Amount over inner-join rows 10, 10, 20 -> 40
+        var sum = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => (int?)c.Amount)
+            .SumAsync(z => z);
+        sum.ShouldBe(40);
+    }
 }
