@@ -397,7 +397,7 @@ public partial class CollectionUsage
             resultType,
             new object[]
             {
-                joinParser.NewObject,
+                joinParser.Projection,
                 outerCteAlias,
                 innerCteAlias,
                 groupJoin.IsLeftJoin,
@@ -450,6 +450,15 @@ public partial class CollectionUsage
                 joinStatement.Limit ??= deepInner._limit;
                 joinStatement.Offset ??= deepInner._offset;
             }
+        }
+
+        // Transfer Distinct() from the SelectMany usage chain. JoinSelectClause implements
+        // IScalarSelectClause, so ProcessSingleValueModeIfAny renders DISTINCT(<projection>) for
+        // a materialized Distinct() and wraps it in a count(*) CTE for Distinct().Count().
+        // Without this the join would silently return non-distinct rows / the joined row count.
+        if ((Inner?.IsDistinct ?? false) || (Inner?.Inner?.IsDistinct ?? false))
+        {
+            joinStatement.IsDistinct = true;
         }
 
         // Apply single value mode to the join statement

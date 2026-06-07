@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Marten.Exceptions;
 using Marten.Linq.Members;
 using Marten.Linq.SqlGeneration;
 using Weasel.Postgresql;
@@ -39,6 +40,14 @@ internal class JoinSelectParser: ExpressionVisitor
 
     public NewObject NewObject { get; private set; }
 
+    // Non-null when the SelectMany result selector is a bare scalar (e.g. (temp, o) => o.Amount)
+    // rather than an object projection. Rendered as to_jsonb(<scalar>) so the existing
+    // SerializationSelector<T> deserializes it and the DISTINCT machinery applies unchanged.
+    public ISqlFragment ScalarProjection { get; private set; }
+
+    // The fragment to render after SELECT: the scalar wrap if present, else the jsonb_build_object.
+    public ISqlFragment Projection => ScalarProjection ?? NewObject;
+
     public JoinSelectParser(
         ISerializer serializer,
         IQueryableMemberCollection outerMembers,
@@ -70,6 +79,38 @@ internal class JoinSelectParser: ExpressionVisitor
         _selectManyElementParam = selectManyResultSelector.Parameters[1]; // the inner element
 
         Visit(selectManyResultSelector.Body);
+
+        // A bare scalar result selector — (temp, o) => o.Amount — adds nothing to NewObject
+        // (VisitMember early-returns because _currentField is never set by a New/MemberInit).
+        // Resolve it as a single scalar fragment wrapped in to_jsonb(...).
+        if (NewObject.Members.Count == 0)
+        {
+            ScalarProjection = ResolveScalarProjection(selectManyResultSelector.Body);
+        }
+    }
+
+    private ISqlFragment ResolveScalarProjection(Expression body)
+    {
+        // Strip compiler-inserted Convert/TypeAs (e.g. (decimal?)o.Amount).
+        while (body is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.TypeAs } unary)
+        {
+            body = unary.Operand;
+        }
+
+        var classification = ClassifyMemberAccess(body);
+        if (classification == null)
+        {
+            throw new BadLinqExpressionException(
+                "Marten cannot translate this GroupJoin/SelectMany result selector. Project into an "
+                + "anonymous type or record (for example (x, o) => new { x.c.Id, o.Amount }) for shapes "
+                + "other than a single outer/inner member access.");
+        }
+
+        var fragment = ResolveMember(body, classification.Value.isOuter);
+
+        // Wrap in to_jsonb so the rendered 'data' column is a JSON value the SerializationSelector
+        // can deserialize back to the scalar T (a raw text/uuid locator would not be valid JSON).
+        return new ToJsonbScalarFragment(fragment);
     }
 
     private void ParseGroupJoinResultSelector(LambdaExpression resultSelector)
@@ -359,5 +400,27 @@ internal class CteAliasedFragment: ISqlFragment
     public void Apply(ICommandBuilder builder)
     {
         builder.Append(_sql);
+    }
+}
+
+/// <summary>
+/// Wraps a scalar SQL fragment in <c>to_jsonb(...)</c> so a bare scalar GroupJoin/SelectMany
+/// projection renders a JSON value in the "data" column that <see cref="Marten.Linq.Selectors.SerializationSelector{T}"/>
+/// can deserialize back to the scalar type.
+/// </summary>
+internal class ToJsonbScalarFragment: ISqlFragment
+{
+    private readonly ISqlFragment _inner;
+
+    public ToJsonbScalarFragment(ISqlFragment inner)
+    {
+        _inner = inner;
+    }
+
+    public void Apply(ICommandBuilder builder)
+    {
+        builder.Append("to_jsonb(");
+        _inner.Apply(builder);
+        builder.Append(")");
     }
 }
