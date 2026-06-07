@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Exceptions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -20,7 +21,15 @@ namespace LinqTests.Bugs;
 // rendered as to_jsonb(<scalar>) so the existing SerializationSelector + distinct machinery apply.
 public class Bug_groupjoin_distinct_and_scalar_projection: BugIntegrationContext
 {
-    public class Parent { public Guid Id { get; set; } public string Name { get; set; } = ""; }
+    public enum Color { Red, Green, Blue }
+    public class Parent
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = "";
+        public decimal Score { get; set; }
+        public Color Tone { get; set; }
+        public DateOnly Day { get; set; }
+    }
     public class Child { public Guid Id { get; set; } public Guid ParentId { get; set; } public int Amount { get; set; } }
     public class AmountRow { public int Amount { get; set; } }
 
@@ -38,9 +47,9 @@ public class Bug_groupjoin_distinct_and_scalar_projection: BugIntegrationContext
 
         await using var session = theStore.LightweightSession();
         session.Store(
-            new Parent { Id = P1, Name = "a" },
-            new Parent { Id = P2, Name = "b" },
-            new Parent { Id = P3, Name = "c" });
+            new Parent { Id = P1, Name = "a", Score = 1.5m, Tone = Color.Red, Day = new DateOnly(2026, 1, 1) },
+            new Parent { Id = P2, Name = "b", Score = 2.5m, Tone = Color.Blue, Day = new DateOnly(2026, 2, 2) },
+            new Parent { Id = P3, Name = "c", Score = 3.5m, Tone = Color.Green, Day = new DateOnly(2026, 3, 3) });
         // P1 has two children (amount 10, 10), P2 has one (amount 20). Joined rows for inner join = 3,
         // distinct parents = 2, distinct amounts = {10, 20} = 2.
         session.Store(
@@ -155,5 +164,97 @@ public class Bug_groupjoin_distinct_and_scalar_projection: BugIntegrationContext
 
         // P1 children amount 10, 10; P2 amount 20; P3 -> null. Distinct = { 10, 20, null }.
         amounts.OrderBy(a => a.HasValue).ThenBy(a => a).ShouldBe(new int?[] { null, 10, 20 });
+    }
+
+    // ---- dedup correctness: DISTINCT must dedupe by the FULL projected value, not over-merge ----
+
+    [Fact]
+    public async Task object_projection_distinct_keeps_rows_differing_in_one_field()
+    {
+        StoreOptions(opts => { opts.Schema.For<Parent>(); opts.Schema.For<Child>(); });
+        var p = Guid.NewGuid();
+        await using (var session = theStore.LightweightSession())
+        {
+            session.Store(new Parent { Id = p, Name = "a" });
+            // same parent (Name "a") but DIFFERENT amounts -> {a,10} and {a,20} must NOT merge
+            session.Store(
+                new Child { Id = Guid.NewGuid(), ParentId = p, Amount = 10 },
+                new Child { Id = Guid.NewGuid(), ParentId = p, Amount = 20 });
+            await session.SaveChangesAsync();
+        }
+
+        await using var q = theStore.QuerySession();
+        var rows = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), x => x.Id, c => c.ParentId, (x, children) => new { x, children })
+            .SelectMany(z => z.children, (z, c) => new { z.x.Name, c.Amount })
+            .Distinct()
+            .ToListAsync();
+
+        rows.Count.ShouldBe(2);
+        rows.Select(r => r.Amount).OrderBy(a => a).ShouldBe(new[] { 10, 20 });
+    }
+
+    // ---- scalar projection across types (round-trip via to_jsonb), distinct over an inner join ----
+
+    [Fact]
+    public async Task scalar_projection_string_distinct_values()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        var names = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => x.p.Name)
+            .Distinct().ToListAsync();
+        names.OrderBy(n => n).ShouldBe(new[] { "a", "b" });
+    }
+
+    [Fact]
+    public async Task scalar_projection_decimal_distinct_values()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        var scores = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => x.p.Score)
+            .Distinct().ToListAsync();
+        scores.OrderBy(s => s).ShouldBe(new[] { 1.5m, 2.5m });
+    }
+
+    [Fact]
+    public async Task scalar_projection_enum_distinct_values()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        var tones = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => x.p.Tone)
+            .Distinct().ToListAsync();
+        tones.OrderBy(t => t).ShouldBe(new[] { Color.Red, Color.Blue }.OrderBy(t => t));
+    }
+
+    [Fact]
+    public async Task scalar_projection_dateonly_distinct_values()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        var days = await q.Query<Parent>()
+            .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+            .SelectMany(x => x.children, (x, c) => x.p.Day)
+            .Distinct().ToListAsync();
+        days.OrderBy(d => d).ShouldBe(new[] { new DateOnly(2026, 1, 1), new DateOnly(2026, 2, 2) });
+    }
+
+    // ---- a non-member-access scalar body is not translatable: fail with a clear error ----
+
+    [Fact]
+    public async Task scalar_projection_of_computed_expression_throws_clear_error()
+    {
+        await seedAsync();
+        await using var q = theStore.QuerySession();
+        await Should.ThrowAsync<BadLinqExpressionException>(async () =>
+            await q.Query<Parent>()
+                .GroupJoin(q.Query<Child>(), p => p.Id, c => c.ParentId, (p, children) => new { p, children })
+                .SelectMany(x => x.children, (x, c) => c.Amount + 1)
+                .ToListAsync());
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Marten;
+using Marten.Newtonsoft;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -132,5 +133,41 @@ public class Bug_dateonly_timeonly_scalar_projection: BugIntegrationContext
             .ToListAsync();
 
         dates.ShouldBe(new[] { new DateOnly(2026, 5, 1) });
+    }
+
+    [Fact]
+    public async Task select_dateonly_scalar_directly_with_newtonsoft()
+    {
+        // The fix reads the native date/time locator, so it is serializer-agnostic -- pin Newtonsoft too.
+        StoreOptions(opts =>
+        {
+            opts.UseNewtonsoftForSerialization();
+            opts.Schema.For<DocWithDateOnly>();
+        });
+        await seedAsync();
+
+        await using var query = theStore.QuerySession();
+        var dates = await query.Query<DocWithDateOnly>()
+            .OrderByDescending(x => x.Date)
+            .Select(x => x.Date)
+            .ToListAsync();
+
+        dates.ShouldBe(new[] { new DateOnly(2026, 5, 1), new DateOnly(2026, 4, 29) });
+    }
+
+    [Fact]
+    public async Task select_distinct_dateonly_scalar()
+    {
+        ConfigureStore();
+        await seedAsync();
+
+        await using var query = theStore.QuerySession();
+        // both rows have distinct dates already; add no duplicates -> 2 distinct
+        var dates = await query.Query<DocWithDateOnly>()
+            .Select(x => x.Date)
+            .Distinct()
+            .ToListAsync();
+
+        dates.OrderBy(d => d).ShouldBe(new[] { new DateOnly(2026, 4, 29), new DateOnly(2026, 5, 1) });
     }
 }
