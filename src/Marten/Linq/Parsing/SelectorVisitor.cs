@@ -101,8 +101,11 @@ public class SelectorVisitor: ExpressionVisitor
         }
         else if (member.MemberType.IsSimple() || member.MemberType == typeof(Guid) ||
                  member.MemberType == typeof(decimal) ||
-                 member.MemberType == typeof(DateTimeOffset) || member.MemberType == typeof(DateTime))
+                 member.MemberType == typeof(DateTimeOffset) || member.MemberType == typeof(DateTime) ||
+                 member.MemberType == typeof(DateOnly) || member.MemberType == typeof(TimeOnly))
         {
+            // DateOnly/TimeOnly read their native date/time TypedLocator here; the
+            // DataSelectClause fallback would JSON-deserialize the raw ->> text and fail.
             _statement.SelectClause =
                 typeof(NewScalarSelectClause<>).CloseAndBuildAs<ISelectClause>(member,
                     _statement.SelectClause.FromObject,
