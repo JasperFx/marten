@@ -130,8 +130,10 @@ internal class JoinSelectClause<T>: ISelectClause, IScalarSelectClause where T :
     }
 
     // IScalarSelectClause — implemented so GroupJoin(...).SelectMany(...).Distinct()[.Count()]
-    // reuses the standard distinct machinery. Only DISTINCT is meaningful over a join projection;
-    // the scalar aggregate operators (MIN/MAX/SUM/AVG) and table cloning are not applicable here.
+    // reuses the standard distinct machinery (renders DISTINCT(<projection>)). Aggregates over a
+    // bare SCALAR projection are handled separately: CompileGroupJoin renders the raw scalar and
+    // routes Sum/Min/Max/Average through a CTE + standard scalar clause. This throw only guards the
+    // object-projection (or nullable-scalar) case, where there is no single column to aggregate.
     public string MemberName => "data";
 
     public void ApplyOperator(string op)
@@ -139,18 +141,24 @@ internal class JoinSelectClause<T>: ISelectClause, IScalarSelectClause where T :
         if (op != "DISTINCT")
         {
             throw new NotSupportedException(
-                $"Marten does not support the '{op}' operator over a GroupJoin/SelectMany projection. Only Distinct() is supported.");
+                $"Marten does not support the '{op}' aggregate over this GroupJoin/SelectMany projection. "
+                + "Aggregates are supported over a bare non-nullable scalar projection, e.g. "
+                + ".SelectMany(..., (x, c) => c.Amount).Sum(z => z).");
         }
 
         _operator = op;
     }
 
+    // Reached only for an object/nullable-scalar Average(); scalar aggregates use a real scalar clause.
     public ISelectClause CloneToDouble()
     {
         throw new NotSupportedException(
-            "Average aggregation is not supported over a GroupJoin/SelectMany projection.");
+            "Marten does not support Average() over this GroupJoin/SelectMany projection. "
+            + "Average a bare non-nullable scalar projection, e.g. .SelectMany(..., (x, c) => c.Amount).Average(z => z).");
     }
 
+    // Not reachable for a join statement (only the dictionary / value-collection scalar paths clone
+    // a select clause to another table); present only to satisfy IScalarSelectClause.
     public ISelectClause CloneToOtherTable(string tableName)
     {
         throw new NotSupportedException(

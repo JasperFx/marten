@@ -45,6 +45,10 @@ internal class JoinSelectParser: ExpressionVisitor
     // SerializationSelector<T> deserializes it and the DISTINCT machinery applies unchanged.
     public ISqlFragment ScalarProjection { get; private set; }
 
+    // The same scalar without the to_jsonb wrapper -- the native column. Used for aggregates
+    // (Sum/Min/Max/Average), which cannot operate on a jsonb value.
+    public ISqlFragment ScalarRawProjection { get; private set; }
+
     // The fragment to render after SELECT: the scalar wrap if present, else the jsonb_build_object.
     public ISqlFragment Projection => ScalarProjection ?? NewObject;
 
@@ -85,11 +89,11 @@ internal class JoinSelectParser: ExpressionVisitor
         // Resolve it as a single scalar fragment wrapped in to_jsonb(...).
         if (NewObject.Members.Count == 0)
         {
-            ScalarProjection = ResolveScalarProjection(selectManyResultSelector.Body);
+            ResolveScalarProjection(selectManyResultSelector.Body);
         }
     }
 
-    private ISqlFragment ResolveScalarProjection(Expression body)
+    private void ResolveScalarProjection(Expression body)
     {
         // Strip compiler-inserted Convert/TypeAs (e.g. (decimal?)o.Amount).
         while (body is UnaryExpression { NodeType: ExpressionType.Convert or ExpressionType.TypeAs } unary)
@@ -106,11 +110,11 @@ internal class JoinSelectParser: ExpressionVisitor
                 + "other than a single outer/inner member access.");
         }
 
-        var fragment = ResolveMember(body, classification.Value.isOuter);
+        ScalarRawProjection = ResolveMember(body, classification.Value.isOuter);
 
         // Wrap in to_jsonb so the rendered 'data' column is a JSON value the SerializationSelector
         // can deserialize back to the scalar T (a raw text/uuid locator would not be valid JSON).
-        return new ToJsonbScalarFragment(fragment);
+        ScalarProjection = new ToJsonbScalarFragment(ScalarRawProjection);
     }
 
     private void ParseGroupJoinResultSelector(LambdaExpression resultSelector)
