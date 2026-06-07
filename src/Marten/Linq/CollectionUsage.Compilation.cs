@@ -179,7 +179,11 @@ public partial class CollectionUsage
 
         statement = ConfigureSelectManyStatement(session, collection, statement, statistics).SelectorStatement();
 
-        if (IsDistinct)
+        // Count()/LongCount() over a Distinct() is already wrapped in a CTE and counted by
+        // ProcessSingleValueModeIfAny; re-applying DISTINCT here would hit the count clause
+        // and throw "DISTINCT cannot be used with non-simple types".
+        if (IsDistinct && SingleValueMode is not (Marten.Linq.Parsing.SingleValueMode.Count
+                or Marten.Linq.Parsing.SingleValueMode.LongCount))
         {
             statement.ApplySqlOperator("DISTINCT");
         }
@@ -238,6 +242,17 @@ public partial class CollectionUsage
                 statement.Limit ??= Inner._limit;
                 statement.Offset ??= Inner._offset;
             }
+        }
+
+        // A SelectMany(...).Distinct().Count() carries IsDistinct on the Inner usage merged
+        // in just above; re-sync it onto the statement so the Count branch of
+        // ProcessSingleValueModeIfAny wraps the DISTINCT projection in a CTE and counts that.
+        // Only for the count modes -- the non-aggregate Distinct() is applied via the
+        // ApplySqlOperator("DISTINCT") below, so leaving its flag set would double the DISTINCT.
+        if (SingleValueMode is Marten.Linq.Parsing.SingleValueMode.Count
+            or Marten.Linq.Parsing.SingleValueMode.LongCount)
+        {
+            statement.IsDistinct = IsDistinct;
         }
 
         ProcessSingleValueModeIfAny(statement, session, collection, statistics);
