@@ -428,3 +428,224 @@ internal class ToJsonbScalarFragment: ISqlFragment
         builder.Append(")");
     }
 }
+
+/// <summary>
+/// Reduces a member access on a GroupJoin/SelectMany result-selector's projected anon type
+/// back into the (outer, inner) parameter space the projection was built from. The SelectMany
+/// result selector body builds an anon type (or a MemberInit) whose members map to source
+/// expressions in terms of the SelectMany (x, c) parameters; this visitor walks an arbitrary
+/// expression and replaces any <c>z.MemberName</c> access on a parameter of the projection
+/// type with the corresponding source expression. Used so a post-SelectMany .Select(z =&gt; z.X)
+/// or .Sum(z =&gt; z.X) collapses cleanly back into the join's projection space.
+///
+/// Recognises both anon-type binding shapes:
+/// * <c>new { c.Amount, x.p.Name }</c> — NewExpression carries the member names on its Members property
+/// * <c>new Row { Amount = c.Amount }</c> — MemberInitExpression carries them as MemberAssignment bindings
+/// </summary>
+internal sealed class AnonProjectionExpander: ExpressionVisitor
+{
+    private readonly Dictionary<string, Expression> _memberToSource = new(StringComparer.Ordinal);
+    private readonly Type _projectionType;
+
+    public AnonProjectionExpander(LambdaExpression flattenedResultSelector)
+    {
+        _projectionType = flattenedResultSelector.ReturnType;
+        ExtractBindings(flattenedResultSelector.Body);
+    }
+
+    /// <summary>True if the result selector body was a NewExpression / MemberInit we could index.</summary>
+    public bool CanExpand => _memberToSource.Count > 0;
+
+    /// <summary>Rewrites <paramref name="body"/>, replacing every <c>z.X</c> (where z is the projection type) with the bound source expression.</summary>
+    public Expression Expand(Expression body) => Visit(body);
+
+    private void ExtractBindings(Expression body)
+    {
+        if (body is NewExpression newExpr)
+        {
+            // Anon types: prefer the Members property (anonymous-type member infos), fall back to
+            // constructor parameter names. Records / explicit ctors only expose parameter names.
+            if (newExpr.Members != null)
+            {
+                for (var i = 0; i < newExpr.Members.Count; i++)
+                {
+                    _memberToSource[newExpr.Members[i].Name] = newExpr.Arguments[i];
+                }
+            }
+            else
+            {
+                var parameters = newExpr.Constructor!.GetParameters();
+                for (var i = 0; i < parameters.Length; i++)
+                {
+                    if (parameters[i].Name is { } name)
+                    {
+                        _memberToSource[name] = newExpr.Arguments[i];
+                    }
+                }
+            }
+        }
+        else if (body is MemberInitExpression memberInit)
+        {
+            ExtractBindings(memberInit.NewExpression);
+            foreach (var binding in memberInit.Bindings.OfType<MemberAssignment>())
+            {
+                _memberToSource[binding.Member.Name] = binding.Expression;
+            }
+        }
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        // z.MemberName where z is *any* parameter of the projection's anon type.
+        // We match by Type rather than reference because the SelectExpression body
+        // stored on the CollectionUsage has lost the original lambda parameter.
+        if (node.Expression is ParameterExpression p && p.Type == _projectionType
+            && _memberToSource.TryGetValue(node.Member.Name, out var source))
+        {
+            return source;
+        }
+
+        return base.VisitMember(node);
+    }
+}
+
+/// <summary>
+/// Classifies an expanded post-SelectMany Where filter by which side of the join its
+/// parameter references touch (outer, inner, both, or neither). Used to decide whether
+/// the filter can be routed onto the inner CTE's existing WhereExpressions pipeline
+/// or needs the (not-yet-implemented) outer / cross-CTE handling.
+/// </summary>
+internal static class PostSelectManyFilterSideAnalyzer
+{
+    [Flags]
+    public enum Side
+    {
+        None = 0,
+        Outer = 1,
+        Inner = 2,
+        Both = Outer | Inner,
+        InnerOnly = Inner,
+        OuterOnly = Outer,
+    }
+
+    public static Side Analyze(Expression expression, IReadOnlyList<ParameterExpression> selectManyParameters)
+    {
+        var visitor = new SideVisitor(selectManyParameters[0], selectManyParameters[1]);
+        visitor.Visit(expression);
+        return visitor.Touched;
+    }
+
+    private sealed class SideVisitor: ExpressionVisitor
+    {
+        private readonly ParameterExpression _outer;
+        private readonly ParameterExpression _inner;
+        public Side Touched { get; private set; }
+
+        public SideVisitor(ParameterExpression outer, ParameterExpression inner)
+        {
+            _outer = outer;
+            _inner = inner;
+        }
+
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            if (node == _outer) Touched |= Side.Outer;
+            else if (node == _inner) Touched |= Side.Inner;
+            return node;
+        }
+    }
+}
+
+/// <summary>
+/// Substitutes one ParameterExpression for another in an expression tree. Used to retarget
+/// a hoisted post-SelectMany inner-side Where filter from the SelectMany lambda's <c>c</c>
+/// parameter onto a fresh parameter of the inner document type, so MemberFor's standard
+/// pipeline binds it cleanly without needing to know about the original SelectMany lambda.
+/// </summary>
+internal sealed class ParameterReplacingVisitor: ExpressionVisitor
+{
+    private readonly ParameterExpression _from;
+    private readonly ParameterExpression _to;
+
+    public ParameterReplacingVisitor(ParameterExpression from, ParameterExpression to)
+    {
+        _from = from;
+        _to = to;
+    }
+
+    protected override Expression VisitParameter(ParameterExpression node)
+        => node == _from ? _to : base.VisitParameter(node);
+}
+
+/// <summary>
+/// Strips the GroupJoin result selector's anon-type navigation off a hoisted post-SelectMany
+/// outer-side Where filter, so the resulting expression binds against the outer document type
+/// directly via <see cref="Marten.Linq.Members.IQueryableMemberCollection.MemberFor"/>.
+///
+/// The GroupJoin result selector typically looks like <c>(p, children) =&gt; new { p, children }</c>,
+/// so the SelectMany's outer parameter <c>x</c> has the anon type. A user filter
+/// <c>z.OuterMember == "a"</c> expands through the FlattenedResultSelector to <c>x.p.OuterMember</c>;
+/// this visitor rewrites <c>x.p</c> (the anon member access of the outer-side binding) to a
+/// fresh <c>outerParam</c> of the outer document type, leaving the trailing member access intact.
+/// </summary>
+internal sealed class GroupJoinOuterNavigationStripper: ExpressionVisitor
+{
+    private readonly ParameterExpression _selectManyOuterParam;
+    private readonly ParameterExpression _outerDocParam;
+    // The anonymous-type member name on x whose value is the outer document, eg. "p".
+    private readonly string? _outerMemberName;
+
+    public GroupJoinOuterNavigationStripper(
+        ParameterExpression selectManyOuterParam,
+        LambdaExpression groupJoinResultSelector,
+        ParameterExpression outerDocParam)
+    {
+        _selectManyOuterParam = selectManyOuterParam;
+        _outerDocParam = outerDocParam;
+        _outerMemberName = FindOuterMember(groupJoinResultSelector);
+    }
+
+    private static string? FindOuterMember(LambdaExpression resultSelector)
+    {
+        // (outer, inner) => new { p = outer, children = inner }: walk the anon-type bindings and
+        // return the member name whose value is the GroupJoin outer parameter.
+        var outerParam = resultSelector.Parameters[0];
+        if (resultSelector.Body is NewExpression newExpr)
+        {
+            for (var i = 0; i < newExpr.Arguments.Count; i++)
+            {
+                if (newExpr.Arguments[i] == outerParam)
+                {
+                    return newExpr.Members != null
+                        ? newExpr.Members[i].Name
+                        : newExpr.Constructor!.GetParameters()[i].Name;
+                }
+            }
+        }
+        else if (resultSelector.Body is MemberInitExpression memberInit)
+        {
+            foreach (var binding in memberInit.Bindings.OfType<MemberAssignment>())
+            {
+                if (binding.Expression == outerParam)
+                {
+                    return binding.Member.Name;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        // x.p  ->  outerDocParam
+        if (node.Expression == _selectManyOuterParam
+            && _outerMemberName != null
+            && node.Member.Name == _outerMemberName)
+        {
+            return _outerDocParam;
+        }
+
+        return base.VisitMember(node);
+    }
+}

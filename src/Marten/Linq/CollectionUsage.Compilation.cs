@@ -357,6 +357,116 @@ public partial class CollectionUsage
         };
         var innerCteAlias = innerStatement.ExportName;
 
+        // 3b. #4677 follow-up — reduce a post-SelectMany Select(z => ...) / Where(z => ...) chain
+        // back into the join's (x, c) projection space, so the join SQL collapses to the actually
+        // used shape. Without this:
+        //   * .SelectMany(.., (x,c) => new {..}).Sum(z=>z.X) (which lowers to .Select(z=>z.X).SumAsync())
+        //     hits JoinSelectClause.ApplyOperator("SUM") on an object projection and throws.
+        //   * .SelectMany(.., (x,c) => new {..}).Select(z=>z.X) silently returns the original anon rows.
+        //   * .SelectMany(.., (x,c) => new {..}).Where(z=>...) is dropped entirely.
+        //
+        // Both Select() and inner-side Where() can be folded by walking the FlattenedResultSelector's
+        // bindings -- z.MemberName -> the source expression in (x, c) terms. The Select rewrites the
+        // effective result selector that JoinSelectParser then renders; the Where(s) get re-homed onto
+        // the inner CTE's WhereExpressions just before ParseWhereClause runs below.
+        //
+        // The Select / Where can land on Inner (the SelectMany usage) OR on Inner.Inner (when the
+        // post-SelectMany .Select(...) changed the element type and re-linq cut a new usage), so we
+        // walk the chain and gather them — mirroring how SingleValueMode / IsDistinct already cope
+        // with both levels just below.
+        var effectiveResultSelector = groupJoin.FlattenedResultSelector;
+        var expander = new AnonProjectionExpander(groupJoin.FlattenedResultSelector);
+
+        Expression? postSmSelect = null;
+        CollectionUsage? postSmSelectCarrier = null;
+        var postSmWheres = new List<(CollectionUsage Carrier, Expression Where)>();
+
+        for (var sweep = Inner; sweep != null; sweep = sweep.Inner)
+        {
+            if (postSmSelect == null && sweep.SelectExpression != null)
+            {
+                postSmSelect = sweep.SelectExpression;
+                postSmSelectCarrier = sweep;
+            }
+
+            foreach (var w in sweep.WhereExpressions)
+            {
+                postSmWheres.Add((sweep, w));
+            }
+        }
+
+        if (expander.CanExpand && postSmSelect != null)
+        {
+            // Reduce: (x, c) => <expanded SelectExpression>. Null the carrier's SelectExpression so
+            // the post-join compileNext / SVM processing doesn't try to re-apply it.
+            var expanded = expander.Expand(postSmSelect);
+            effectiveResultSelector = Expression.Lambda(expanded, groupJoin.FlattenedResultSelector.Parameters);
+            postSmSelectCarrier!.SelectExpression = null;
+        }
+
+        // Route post-SelectMany Where filters that resolve cleanly to one side onto that CTE's
+        // existing Where pipeline. Inner-side filters get pushed onto the InnerCollectionUsage's
+        // WhereExpressions before ParseWhereClause runs below; outer-side filters get parsed
+        // straight into the already-compiled outer CTE's Wheres list (the second ParseWhereClause
+        // call uses storage=null so we don't double-apply tenant / soft-delete defaults). Filters
+        // that reference both sides are pinned as a known limitation -- they'd need a join-level
+        // WHERE clause in JoinSelectClause; left for a follow-up if anyone hits it.
+        if (expander.CanExpand && postSmWheres.Count > 0)
+        {
+            var carriersTouched = new HashSet<CollectionUsage>();
+            var outerSideFilters = new List<Expression>();
+            foreach (var (carrier, where) in postSmWheres)
+            {
+                var expanded = expander.Expand(where);
+                var sides = PostSelectManyFilterSideAnalyzer.Analyze(
+                    expanded, groupJoin.FlattenedResultSelector.Parameters);
+                if (sides == PostSelectManyFilterSideAnalyzer.Side.InnerOnly)
+                {
+                    // Replace the SelectMany inner parameter c with a fresh parameter so MemberFor's
+                    // standard pipeline binds against the inner document type cleanly.
+                    var innerParam = Expression.Parameter(groupJoin.InnerElementType, "child");
+                    var rewritten = new ParameterReplacingVisitor(
+                            groupJoin.FlattenedResultSelector.Parameters[1], innerParam)
+                        .Visit(expanded);
+                    groupJoin.InnerCollectionUsage.WhereExpressions.Add(rewritten);
+                    carriersTouched.Add(carrier);
+                }
+                else if (sides == PostSelectManyFilterSideAnalyzer.Side.OuterOnly)
+                {
+                    // The expanded filter still references the GroupJoin result selector's
+                    // anon-type navigation (e.g. x.p.Name where x = new { p, children }). Strip
+                    // that navigation so MemberFor binds against the outer document type directly.
+                    var outerParam = Expression.Parameter(ElementType, "outer");
+                    var rewritten = new GroupJoinOuterNavigationStripper(
+                            groupJoin.FlattenedResultSelector.Parameters[0],
+                            groupJoin.ResultSelector, outerParam)
+                        .Visit(expanded);
+                    outerSideFilters.Add(rewritten);
+                    carriersTouched.Add(carrier);
+                }
+                else
+                {
+                    throw new BadLinqExpressionException(
+                        "Marten cannot translate this post-SelectMany Where() filter -- it touches both "
+                        + "the outer and inner sides of the GroupJoin (or neither). Single-sided filters "
+                        + "are supported. Combine the predicate into either the outer Query<T>().Where(...) "
+                        + "or the inner GroupJoin argument's Where(...).");
+                }
+            }
+
+            if (outerSideFilters.Count > 0)
+            {
+                // Append to the already-compiled outer CTE. storage=null so we don't re-apply the
+                // default tenant / soft-delete filter that the first ParseWhereClause call wrapped.
+                outerStatement.ParseWhereClause(outerSideFilters, session, outerCollection);
+            }
+
+            foreach (var carrier in carriersTouched)
+            {
+                carrier.WhereExpressions.Clear();
+            }
+        }
+
         // Apply extracted Where clauses and default filters (soft delete, tenancy) to inner CTE.
         innerStatement.ParseWhereClause(
             groupJoin.InnerCollectionUsage.WhereExpressions,
@@ -385,13 +495,13 @@ public partial class CollectionUsage
             outerCteAlias,
             innerCteAlias,
             groupJoin.ResultSelector,
-            groupJoin.FlattenedResultSelector);
+            effectiveResultSelector);
 
         // 5. Create the JoinSelectClause and final SelectorStatement
         // 9.0 (#4308): use GenericFactoryCache's object[] overload — the
         // 6-arg ctor doesn't fit the fixed-arity overloads, so we pay an
         // array allocation per call in exchange for skipping MakeGenericType.
-        var resultType = groupJoin.FlattenedResultSelector.ReturnType;
+        var resultType = effectiveResultSelector.ReturnType;
 
         // Sum()/Min()/Max()/Average() over a bare scalar projection cannot aggregate the
         // to_jsonb(...) form (Postgres has no sum/min/max/avg for jsonb). For those, render the
