@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Text.Json;
 using JasperFx;
 using JasperFx.CommandLine;
+using Marten.ScaleTesting.Instrumentation;
 using Spectre.Console;
 
 namespace Marten.ScaleTesting.Commands;
@@ -13,6 +15,7 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
     {
         using var host = input.BuildHost();
         var store = host.DocumentStore();
+        var schemaName = store.Options.DatabaseSchemaName ?? "public";
 
         // Ensure the schema is in place so a brand-new database can still
         // rebuild even if the user skipped the `seed` step (no events =
@@ -26,6 +29,16 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
         using var daemon = await store.BuildProjectionDaemonAsync().ConfigureAwait(false);
 
         var shardTimeout = TimeSpan.FromSeconds(input.ShardTimeoutSecondsFlag);
+
+        // #4684 Phase E.1: arm the optional harness instrumentation. When --instrument is off
+        // (or implied off because no trace path was set), the returned object is a no-op so
+        // production-style runs aren't paying for measurement.
+        var instrumentationOptions = BuildInstrumentationOptions(input);
+        var progressionRow = input.ProjectionFlag + ":All";
+        await using var instrumentation = RebuildInstrumentation.Start(
+            instrumentationOptions, ConnectionSource.ConnectionString,
+            schemaName, progressionRow, CancellationToken.None);
+
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -42,6 +55,7 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
             return false;
         }
 
+        var snapshot = await instrumentation.CaptureAsync().ConfigureAwait(false);
         var rate = stats.EventCount > 0
             ? stats.EventCount / Math.Max(0.001, stopwatch.Elapsed.TotalSeconds)
             : 0;
@@ -53,8 +67,63 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
         table.AddRow("Streams", stats.StreamCount.ToString("N0"));
         table.AddRow("Elapsed", $"{stopwatch.Elapsed.TotalSeconds:N1}s");
         table.AddRow("Throughput (events/sec)", rate.ToString("N0"));
+        if (snapshot.Enabled)
+        {
+            table.AddRow("Throughput p50 (events/sec)", snapshot.Throughput.P50.ToString("N0"));
+            table.AddRow("Throughput p95 (events/sec)", snapshot.Throughput.P95.ToString("N0"));
+            table.AddRow("Throughput max (events/sec)", snapshot.Throughput.Max.ToString("N0"));
+            table.AddRow("Npgsql commands total", snapshot.NpgsqlCommandCount.ToString("N0"));
+            table.AddRow("Progress samples", snapshot.Samples.Count.ToString("N0"));
+        }
         AnsiConsole.Write(table);
 
+        await WriteMetricsAsync(input.MetricsFlag, stats, stopwatch.Elapsed, rate, snapshot).ConfigureAwait(false);
+
         return true;
+    }
+
+    private static InstrumentationOptions BuildInstrumentationOptions(RebuildInput input)
+    {
+        // --instrument-trace implies --instrument so users don't have to remember both flags.
+        var enabled = input.InstrumentFlag || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag);
+        return new InstrumentationOptions
+        {
+            Enabled = enabled,
+            ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
+            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag
+        };
+    }
+
+    private static async Task WriteMetricsAsync(string? path, Marten.Events.EventStoreStatistics stats,
+        TimeSpan elapsed, double rate, RebuildInstrumentation.Snapshot snapshot)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return;
+        }
+
+        // Slim the instrumentation block for JSON -- a multi-hour run's per-sample list would
+        // bloat metrics.json into the MB range; the rolled-up percentiles + total are what the
+        // dashboard / regression-comparison tooling actually consumes. Per-sample detail lives in
+        // the CSV trace when --instrument-trace is set.
+        var doc = new
+        {
+            projection = "rebuild",
+            events = stats.EventCount,
+            streams = stats.StreamCount,
+            elapsedSeconds = elapsed.TotalSeconds,
+            throughputEventsPerSecond = rate,
+            instrumentation = new
+            {
+                enabled = snapshot.Enabled,
+                sampleCount = snapshot.Samples.Count,
+                npgsqlCommandCount = snapshot.NpgsqlCommandCount,
+                throughput = snapshot.Throughput
+            }
+        };
+        await File.WriteAllTextAsync(path,
+            JsonSerializer.Serialize(doc, new JsonSerializerOptions { WriteIndented = true }))
+            .ConfigureAwait(false);
+        AnsiConsole.MarkupLine($"[grey]Wrote metrics to {path}[/]");
     }
 }

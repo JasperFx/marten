@@ -1,6 +1,8 @@
 using System.Diagnostics;
+using System.Text.Json;
 using JasperFx;
 using JasperFx.CommandLine;
+using Marten.ScaleTesting.Instrumentation;
 using Marten.ScaleTesting.Seeding;
 using Marten.ScaleTesting.Validation;
 using Spectre.Console;
@@ -60,8 +62,19 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
         // ---- Phase 2: rebuild --------------------------------------------
 
         AnsiConsole.MarkupLine($"[blue]Phase 2: rebuild [yellow]{input.ProjectionFlag}[/][/]");
+
+        // #4684 Phase E.1: arm harness instrumentation around the rebuild only. Seed phase isn't
+        // measured by the same machinery -- it's a bulk-writer path that exercises a different
+        // bottleneck and gets its own per-batch console reporting already.
+        var instrumentationOptions = BuildInstrumentationOptions(input);
+        var progressionRow = input.ProjectionFlag + ":All";
+        await using var instrumentation = RebuildInstrumentation.Start(
+            instrumentationOptions, ConnectionSource.ConnectionString,
+            schemaName, progressionRow, CancellationToken.None);
+
         var rebuildSw = Stopwatch.StartNew();
         var rebuildEventCount = 0L;
+        RebuildInstrumentation.Snapshot rebuildSnapshot = RebuildInstrumentation.Snapshot.Disabled;
         try
         {
             var stats = await store.Advanced.FetchEventStoreStatistics().ConfigureAwait(false);
@@ -73,10 +86,13 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
                 TimeSpan.FromSeconds(input.ShardTimeoutSecondsFlag),
                 CancellationToken.None).ConfigureAwait(false);
             rebuildSw.Stop();
+            rebuildSnapshot = await instrumentation.CaptureAsync().ConfigureAwait(false);
         }
         catch (Exception e)
         {
             rebuildSw.Stop();
+            // Capture whatever the sampler observed before the crash; useful for post-mortem.
+            try { rebuildSnapshot = await instrumentation.CaptureAsync().ConfigureAwait(false); } catch { /* shutdown */ }
             summary.Add(("rebuild", "FAILED", rebuildSw.Elapsed, e.GetType().Name + ": " + e.Message));
             AnsiConsole.MarkupLine($"[red]Rebuild FAILED after {rebuildSw.Elapsed.TotalSeconds:N1}s — skipping validate.[/]");
             AnsiConsole.WriteException(e);
@@ -85,11 +101,12 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
         }
 
         var rate = rebuildEventCount > 0 ? rebuildEventCount / Math.Max(0.001, rebuildSw.Elapsed.TotalSeconds) : 0;
-        summary.Add((
-            "rebuild",
-            "OK",
-            rebuildSw.Elapsed,
-            $"{rebuildEventCount:N0} events @ {rate:N0}/sec"));
+        var rebuildNote = $"{rebuildEventCount:N0} events @ {rate:N0}/sec";
+        if (rebuildSnapshot.Enabled)
+        {
+            rebuildNote += $" (p50 {rebuildSnapshot.Throughput.P50:N0}, p95 {rebuildSnapshot.Throughput.P95:N0}, {rebuildSnapshot.NpgsqlCommandCount:N0} pg cmds)";
+        }
+        summary.Add(("rebuild", "OK", rebuildSw.Elapsed, rebuildNote));
 
         // ---- Phase 3: validate -------------------------------------------
 
@@ -156,6 +173,17 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
             PrintSummary(summary, totalStopwatch);
             return false;
         }
+    }
+
+    private static InstrumentationOptions BuildInstrumentationOptions(StressInput input)
+    {
+        var enabled = input.InstrumentFlag || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag);
+        return new InstrumentationOptions
+        {
+            Enabled = enabled,
+            ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
+            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag
+        };
     }
 
     private static void PrintSummary(List<(string Phase, string Status, TimeSpan Elapsed, string Note)> rows, Stopwatch total)
