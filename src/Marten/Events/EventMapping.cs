@@ -83,6 +83,20 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
     public IEventBinarySerializer? BinarySerializer { get; internal set; }
 
     /// <summary>
+    /// #4680: true when this <see cref="EventMapping"/> was created by
+    /// <c>EventGraph.Upcast(...)</c>. The mapping's <see cref="DocumentType"/> is the
+    /// upcast TARGET type (TNew); the <see cref="EventTypeName"/> still belongs to the
+    /// SOURCE event-type-name (so on-disk events written under that name continue to
+    /// resolve here). The resolver in <c>EventDocumentStorage.Resolve/ResolveAsync</c>
+    /// uses this flag to skip the <c>dotnet_type</c>-driven alt-mapping swap; otherwise
+    /// a typed Append of TOld into the same store would register a separate
+    /// EventMapping&lt;TOld&gt; and the alt-mapping swap would shadow the upcaster on
+    /// read.
+    /// </summary>
+    [IgnoreDescription]
+    internal bool IsUpcastTarget { get; set; }
+
+    /// <summary>
     ///     #4515: <c>true</c> when this event type is opted in to binary
     ///     serialization on the write path (a <see cref="BinarySerializer"/> is
     ///     wired). Read-path dispatch remains row-by-row on <c>bdata</c>'s NULL

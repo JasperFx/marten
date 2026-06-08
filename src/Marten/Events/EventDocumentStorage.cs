@@ -329,7 +329,12 @@ public abstract class EventDocumentStorage: IEventStorage
 
             mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
         }
-        else if (!reader.IsDBNull(2))
+        // #4680: an upcaster mapping is the authoritative interpretation of the stored
+        // event-type name (it was registered with that name as its SOURCE). Skip the
+        // dotnet_type alt-mapping swap or a typed Append of TOld in the same store would
+        // shadow the upcaster on read. The swap remains for the original case it was added
+        // for: same EventTypeName, multiple CLR types, NO upcaster registered.
+        else if (!mapping.IsUpcastTarget && !reader.IsDBNull(2))
         {
             var dotnetTypeName = reader.GetFieldValue<string>(2);
             if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)
@@ -383,7 +388,10 @@ public abstract class EventDocumentStorage: IEventStorage
 
             mapping = eventMappingForDotNetTypeName(dotnetTypeName, eventTypeName);
         }
-        else if (!await reader.IsDBNullAsync(2, token).ConfigureAwait(false))
+        // #4680: see the sync Resolve overload above -- upcaster mappings are authoritative
+        // for their source event-type name and the dotnet_type alt-mapping swap would shadow
+        // them when the source type is appended (typed) into the same store.
+        else if (!mapping.IsUpcastTarget && !await reader.IsDBNullAsync(2, token).ConfigureAwait(false))
         {
             var dotnetTypeName = await reader.GetFieldValueAsync<string>(2, token).ConfigureAwait(false);
             if (!string.IsNullOrEmpty(dotnetTypeName) && dotnetTypeName != mapping.DotNetTypeName)

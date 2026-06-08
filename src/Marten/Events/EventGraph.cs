@@ -572,6 +572,12 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         var eventMapping = typeof(EventMapping<>).CloseAndBuildAs<EventMapping>(this, eventType);
         eventMapping.EventTypeName = eventTypeName;
         eventMapping.JsonTransformation(jsonTransformation);
+        // #4680: pin the mapping as an upcast target so EventDocumentStorage.Resolve skips
+        // its dotnet_type alt-mapping swap on read. Without this, a typed Append of the
+        // SOURCE type into the same store registers a concrete EventMapping<TOld> whose
+        // DotNetTypeName matches the stored dotnet_type, and the swap shadows the upcaster
+        // -- events read back as TOld instead of TNew. See the Bug_4680 regression test.
+        eventMapping.IsUpcastTarget = true;
 
         _byEventName.Fill(eventTypeName, eventMapping);
 
