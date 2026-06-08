@@ -47,6 +47,20 @@ public sealed class StressInput: NetCoreInput
     [Description("Skip the validate phase entirely (just seed + rebuild). Useful for the very first stress run before a baseline exists.")]
     public bool SkipValidateFlag { get; set; }
 
+    // ---- instrumentation flags (#4684 Phase E.1) ----------------------------
+
+    [Description("Enable per-period throughput sampling against mt_event_progression + Npgsql command counting during the rebuild phase. Off by default.")]
+    public bool InstrumentFlag { get; set; }
+
+    [Description("Optional CSV trace path. Implies --instrument. One row per progress sample: timestamp, sequence_id, delta, events_per_second, npgsql_commands_in_interval.")]
+    public string? InstrumentTraceFlag { get; set; }
+
+    [Description("Sample interval for the progression poller when --instrument is on. Default 1s.")]
+    public double InstrumentSampleSecondsFlag { get; set; } = 1.0;
+
+    [Description("Metrics JSON output path. When set (and --instrument is on), the instrumentation snapshot is written here as JSON.")]
+    public string? MetricsFlag { get; set; }
+
     public SeedOptions ToSeedOptions() => new(
         TenantCount: TenantsFlag,
         EventsPerTenant: EventsPerTenantFlag,
