@@ -74,6 +74,10 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
             table.AddRow("Throughput max (events/sec)", snapshot.Throughput.Max.ToString("N0"));
             table.AddRow("Npgsql commands total", snapshot.NpgsqlCommandCount.ToString("N0"));
             table.AddRow("Progress samples", snapshot.Samples.Count.ToString("N0"));
+            var lw = snapshot.ProgressionLockWaits;
+            table.AddRow("Progression max waiters", lw.MaxConcurrentWaiters.ToString("N0"));
+            table.AddRow("Progression max single-wait (ms)", lw.MaxSingleWaitMs.ToString("N0"));
+            table.AddRow("Progression observed waiter-seconds", lw.ObservedWaiterSeconds.ToString("N1"));
         }
         AnsiConsole.Write(table);
 
@@ -84,13 +88,17 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
 
     private static InstrumentationOptions BuildInstrumentationOptions(RebuildInput input)
     {
-        // --instrument-trace implies --instrument so users don't have to remember both flags.
-        var enabled = input.InstrumentFlag || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag);
+        // --instrument-trace and --instrument-lock-trace both imply --instrument so users don't
+        // have to remember the master toggle separately.
+        var enabled = input.InstrumentFlag
+            || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag)
+            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag);
         return new InstrumentationOptions
         {
             Enabled = enabled,
             ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
-            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag
+            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag,
+            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag
         };
     }
 
@@ -118,7 +126,8 @@ public sealed class RebuildCommand: JasperFxAsyncCommand<RebuildInput>
                 enabled = snapshot.Enabled,
                 sampleCount = snapshot.Samples.Count,
                 npgsqlCommandCount = snapshot.NpgsqlCommandCount,
-                throughput = snapshot.Throughput
+                throughput = snapshot.Throughput,
+                progressionLockWaits = snapshot.ProgressionLockWaits
             }
         };
         await File.WriteAllTextAsync(path,

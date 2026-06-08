@@ -16,15 +16,17 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
     private readonly InstrumentationOptions _options;
     private readonly ProgressSampler? _sampler;
     private readonly NpgsqlCommandCounter? _commands;
+    private readonly ProgressionLockSampler? _lockSampler;
     private readonly Activity? _activity;
     private static readonly ActivitySource s_activitySource = new("Marten.ScaleTesting", "1.0");
 
     private RebuildInstrumentation(InstrumentationOptions options, ProgressSampler? sampler,
-        NpgsqlCommandCounter? commands, Activity? activity)
+        NpgsqlCommandCounter? commands, ProgressionLockSampler? lockSampler, Activity? activity)
     {
         _options = options;
         _sampler = sampler;
         _commands = commands;
+        _lockSampler = lockSampler;
         _activity = activity;
     }
 
@@ -42,7 +44,7 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
     {
         if (!options.Enabled)
         {
-            return new RebuildInstrumentation(options, null, null, null);
+            return new RebuildInstrumentation(options, null, null, null, null);
         }
 
         var activity = s_activitySource.StartActivity("scaletest.rebuild", ActivityKind.Internal);
@@ -53,8 +55,10 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         var sampler = ProgressSampler.Start(
             connectionString, schemaName, progressionRowName, options.ProgressSampleInterval,
             commands, options.TracePath, cancellation);
+        var lockSampler = ProgressionLockSampler.Start(
+            connectionString, options.ProgressSampleInterval, options.LockTracePath, cancellation);
 
-        return new RebuildInstrumentation(options, sampler, commands, activity);
+        return new RebuildInstrumentation(options, sampler, commands, lockSampler, activity);
     }
 
     /// <summary>
@@ -69,15 +73,19 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
 
         var samples = _sampler != null ? await _sampler.StopAsync().ConfigureAwait(false) : Array.Empty<ProgressSample>();
         var commandCount = _commands?.Stop() ?? 0;
+        var lockWait = _lockSampler != null ? await _lockSampler.StopAsync().ConfigureAwait(false) : LockWaitStats.Empty;
         _activity?.SetTag("samples", samples.Length);
         _activity?.SetTag("npgsql.commands", commandCount);
+        _activity?.SetTag("progression.max_waiters", lockWait.MaxConcurrentWaiters);
+        _activity?.SetTag("progression.observed_waiter_seconds", lockWait.ObservedWaiterSeconds);
         _activity?.Stop();
 
         return new Snapshot(
             Enabled: true,
             Samples: samples,
             NpgsqlCommandCount: commandCount,
-            Throughput: ThroughputPercentiles.From(samples));
+            Throughput: ThroughputPercentiles.From(samples),
+            ProgressionLockWaits: lockWait);
     }
 
     public async ValueTask DisposeAsync()
@@ -88,6 +96,10 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         {
             await _sampler.DisposeAsync().ConfigureAwait(false);
         }
+        if (_lockSampler != null)
+        {
+            await _lockSampler.DisposeAsync().ConfigureAwait(false);
+        }
         _commands?.Dispose();
         _activity?.Dispose();
     }
@@ -97,10 +109,11 @@ public sealed class RebuildInstrumentation : IAsyncDisposable
         bool Enabled,
         IReadOnlyList<ProgressSample> Samples,
         long NpgsqlCommandCount,
-        ThroughputPercentiles Throughput)
+        ThroughputPercentiles Throughput,
+        LockWaitStats ProgressionLockWaits)
     {
         public static Snapshot Disabled { get; } =
-            new(false, Array.Empty<ProgressSample>(), 0, ThroughputPercentiles.Empty);
+            new(false, Array.Empty<ProgressSample>(), 0, ThroughputPercentiles.Empty, LockWaitStats.Empty);
     }
 }
 

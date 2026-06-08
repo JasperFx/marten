@@ -21,4 +21,11 @@ public sealed class InstrumentationOptions
     /// Set via <c>--instrument-trace &lt;path&gt;</c>. When null, only the rolled-up JSON
     /// metrics are written.</summary>
     public string? TracePath { get; init; }
+
+    /// <summary>Optional CSV trace path for the per-sample progression-lock-wait series
+    /// (#4684 Phase E.2). One row per sample: timestamp, current waiter count on
+    /// <c>mt_event_progression</c>, max single-waiter wait in ms. Set via
+    /// <c>--instrument-lock-trace &lt;path&gt;</c>; when null, only the rolled-up stats
+    /// land in <c>metrics.json</c>.</summary>
+    public string? LockTracePath { get; init; }
 }
