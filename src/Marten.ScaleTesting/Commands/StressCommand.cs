@@ -104,7 +104,10 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
         var rebuildNote = $"{rebuildEventCount:N0} events @ {rate:N0}/sec";
         if (rebuildSnapshot.Enabled)
         {
-            rebuildNote += $" (p50 {rebuildSnapshot.Throughput.P50:N0}, p95 {rebuildSnapshot.Throughput.P95:N0}, {rebuildSnapshot.NpgsqlCommandCount:N0} pg cmds)";
+            var lw = rebuildSnapshot.ProgressionLockWaits;
+            rebuildNote += $" (p50 {rebuildSnapshot.Throughput.P50:N0}, p95 {rebuildSnapshot.Throughput.P95:N0}, "
+                + $"{rebuildSnapshot.NpgsqlCommandCount:N0} pg cmds, "
+                + $"lock max-waiters {lw.MaxConcurrentWaiters}, waiter-sec {lw.ObservedWaiterSeconds:N1})";
         }
         summary.Add(("rebuild", "OK", rebuildSw.Elapsed, rebuildNote));
 
@@ -177,12 +180,15 @@ public sealed class StressCommand: JasperFxAsyncCommand<StressInput>
 
     private static InstrumentationOptions BuildInstrumentationOptions(StressInput input)
     {
-        var enabled = input.InstrumentFlag || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag);
+        var enabled = input.InstrumentFlag
+            || !string.IsNullOrWhiteSpace(input.InstrumentTraceFlag)
+            || !string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag);
         return new InstrumentationOptions
         {
             Enabled = enabled,
             ProgressSampleInterval = TimeSpan.FromSeconds(Math.Max(0.1, input.InstrumentSampleSecondsFlag)),
-            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag
+            TracePath = string.IsNullOrWhiteSpace(input.InstrumentTraceFlag) ? null : input.InstrumentTraceFlag,
+            LockTracePath = string.IsNullOrWhiteSpace(input.InstrumentLockTraceFlag) ? null : input.InstrumentLockTraceFlag
         };
     }
 
