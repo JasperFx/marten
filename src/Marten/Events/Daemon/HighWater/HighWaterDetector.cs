@@ -196,7 +196,11 @@ internal class HighWaterDetector: IHighWaterDetector
     {
         var tenantsTable = _graph.Options.TenantPartitions!.TenantsTableName;
         var schema = _graph.DatabaseSchemaName;
-        var highWaterPrefix = ShardState.HighWaterMark + ":";
+        // #4681: the per-tenant high-water identity prefix is produced by
+        // HighWaterShardIdentity rather than hand-rolled here, so any future
+        // change to the high-water grammar (separator, version segment, escape
+        // rule) only needs to land in one place.
+        var highWaterPrefix = HighWaterShardIdentity.PerTenantPrefix;
 
         // Single round-trip: for each requested tenant, join (mt_tenant_partitions
         // → pg_sequences for that partition's mt_events_sequence_{suffix} →
@@ -347,7 +351,7 @@ left join {schema}.mt_event_progression prog
         public NpgsqlCommand BuildCommand()
         {
             return new NpgsqlCommand(
-                    $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression('{ShardState.HighWaterMark}', :seq);")
+                    $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression('{HighWaterShardIdentity.StoreGlobal}', :seq);")
                 .With("seq", _currentMark);
         }
 
@@ -373,7 +377,7 @@ left join {schema}.mt_event_progression prog
         public TryMarkHighWaterSkippingHandler(EventGraph graph, long endingMark, long currentMark)
         {
             _command = new NpgsqlCommand(
-                    $"select {graph.DatabaseSchemaName}.mt_mark_progression_with_skip('{ShardState.HighWaterMark}', :ending, :starting);")
+                    $"select {graph.DatabaseSchemaName}.mt_mark_progression_with_skip('{HighWaterShardIdentity.StoreGlobal}', :ending, :starting);")
                 .With("ending", endingMark)
                 .With("starting", currentMark)
                 ;
