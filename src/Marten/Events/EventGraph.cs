@@ -41,7 +41,8 @@ namespace Marten.Events;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
-    IAggregationSourceFactory<IQuerySession>, IDescribeMyself
+    IAggregationSourceFactory<IQuerySession>, IDescribeMyself,
+    IEventStoreInstrumentation
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -232,10 +233,30 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool EnableEventSkippingInProjectionsOrSubscriptions { get; set; }
 
     /// <summary>
-    /// When enabled, adds heartbeat, agent_status, pause_reason, and running_on_node
-    /// columns to the event progression table for CritterWatch monitoring
+    /// When enabled, adds heartbeat, agent_status, pause_reason, running_on_node, and
+    /// warning/critical-behind-threshold columns to the event progression table for
+    /// CritterWatch monitoring.
+    /// <para>
+    /// This is the long-standing Marten-side toggle; #4686 added the storage-agnostic
+    /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> as a sibling so
+    /// store-agnostic monitoring tooling (e.g. <c>Wolverine.CritterWatch.Marten</c>) can flip
+    /// the switch via the JasperFx.Events abstraction without referencing Marten's concrete
+    /// option type. Both names refer to the same underlying field; new code is encouraged to
+    /// prefer <c>ExtendedProgressionEnabled</c> on the interface.
+    /// </para>
     /// </summary>
-    public bool EnableExtendedProgressionTracking { get; set; }
+    public bool EnableExtendedProgressionTracking
+    {
+        get => ExtendedProgressionEnabled;
+        set => ExtendedProgressionEnabled = value;
+    }
+
+    /// <summary>
+    /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> -- the primary
+    /// (storage-agnostic) toggle that controls extended progression tracking. Aliased by the
+    /// legacy <see cref="EnableExtendedProgressionTracking"/> property.
+    /// </summary>
+    public bool ExtendedProgressionEnabled { get; set; }
     public bool UseArchivedStreamPartitioning { get; set; }
     public bool UseListenNotifyForEventAppends { get; set; }
 
