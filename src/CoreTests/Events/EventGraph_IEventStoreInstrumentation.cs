@@ -26,14 +26,42 @@ public class EventGraph_IEventStoreInstrumentation
         BuildEventGraph().ShouldBeAssignableTo<IEventStoreInstrumentation>();
     }
 
+    // #4687: default flipped from false → true (Critter Stack 1.0 timing). The six
+    // monitoring columns are written from existing daemon runtime state so the cost is
+    // negligible, and they're useful for any stuck-shard diagnosis -- not just CritterWatch.
+    // Opt-out remains via either name.
     [Fact]
-    public void default_is_disabled()
+    public void default_is_enabled()
     {
         var events = BuildEventGraph();
 
+        events.EnableExtendedProgressionTracking.ShouldBeTrue();
+        events.ExtendedProgressionEnabled.ShouldBeTrue();
+        ((IEventStoreInstrumentation)events).ExtendedProgressionEnabled.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void opt_out_via_legacy_name_disables_both_surfaces()
+    {
+        var events = BuildEventGraph();
+        var instrumentation = (IEventStoreInstrumentation)events;
+
+        events.EnableExtendedProgressionTracking = false;
+
+        events.ExtendedProgressionEnabled.ShouldBeFalse();
+        instrumentation.ExtendedProgressionEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void opt_out_via_interface_disables_both_surfaces()
+    {
+        var events = BuildEventGraph();
+        var instrumentation = (IEventStoreInstrumentation)events;
+
+        instrumentation.ExtendedProgressionEnabled = false;
+
         events.EnableExtendedProgressionTracking.ShouldBeFalse();
         events.ExtendedProgressionEnabled.ShouldBeFalse();
-        ((IEventStoreInstrumentation)events).ExtendedProgressionEnabled.ShouldBeFalse();
     }
 
     [Fact]

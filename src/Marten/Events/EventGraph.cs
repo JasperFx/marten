@@ -255,8 +255,15 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> -- the primary
     /// (storage-agnostic) toggle that controls extended progression tracking. Aliased by the
     /// legacy <see cref="EnableExtendedProgressionTracking"/> property.
+    /// <para>
+    /// **Default: true** (#4687, Critter Stack 1.0 timing). The six monitoring columns are
+    /// written from existing daemon runtime state, so the cost is negligible (no extra queries,
+    /// 6 nullable columns on a low-volume progression table) and they're useful for any
+    /// stuck-shard diagnosis -- not just CritterWatch. Opt out by setting this to false (or
+    /// the legacy <c>EnableExtendedProgressionTracking</c>) explicitly.
+    /// </para>
     /// </summary>
-    public bool ExtendedProgressionEnabled { get; set; }
+    public bool ExtendedProgressionEnabled { get; set; } = true;
     public bool UseArchivedStreamPartitioning { get; set; }
     public bool UseListenNotifyForEventAppends { get; set; }
 
