@@ -3,7 +3,6 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Events.Daemon.HighWater;
-using JasperFx.Events.Projections;
 using Marten.Services;
 using Npgsql;
 
@@ -15,9 +14,12 @@ internal class HighWaterStatisticsDetector: ISingleQueryHandler<HighWaterStatist
 
     public HighWaterStatisticsDetector(EventGraph graph)
     {
+        // #4681: the literal 'HighWaterMark' name is produced by HighWaterShardIdentity so
+        // any future change to the grammar (e.g. an alternate store-global name) lands in
+        // one place rather than scattered SQL string literals.
         _commandText = $@"
 select last_value from {graph.DatabaseSchemaName}.mt_events_sequence;
-select last_seq_id, last_updated, transaction_timestamp() as timestamp from {graph.DatabaseSchemaName}.mt_event_progression where name = '{ShardState.HighWaterMark}';
+select last_seq_id, last_updated, transaction_timestamp() as timestamp from {graph.DatabaseSchemaName}.mt_event_progression where name = '{HighWaterShardIdentity.StoreGlobal}';
 ".Trim();
     }
 

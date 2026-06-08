@@ -32,9 +32,10 @@ internal class EventProgressionTable: Table
         //
         // The high-water-mark shard hardcodes its Identity to the
         // ShardState.HighWaterMark constant (the tenant slot is discarded in
-        // jasperfx). Per-tenant high-water tracking, when Phase 2 lands,
-        // composes its row name on the Marten side as
-        // `$"{ShardState.HighWaterMark}:{tenantId}"` — same single-PK shape.
+        // jasperfx). Per-tenant high-water tracking composes its row name on
+        // the Marten side as `$"{ShardState.HighWaterMark}:{tenantId}"` — same
+        // single-PK shape. See Marten.Events.Daemon.HighWater.HighWaterShardIdentity
+        // for the canonical producer (#4681).
 
         if (eventGraph.UseOptimizedProjectionRebuilds)
         {

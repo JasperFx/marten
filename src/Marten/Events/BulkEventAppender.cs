@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
 using JasperFx.Events;
+using Marten.Events.Daemon.HighWater;
 using Marten.Events.Schema;
 using Marten.Storage;
 using Npgsql;
@@ -445,9 +446,11 @@ internal class BulkEventAppender
             .SelectMany(s => s.Events)
             .Max(e => e.Sequence);
 
+        // #4681: the literal 'HighWaterMark' name is produced by HighWaterShardIdentity so
+        // any future change to the grammar lands in one place rather than in scattered SQL.
         var sql = $@"
 INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
-VALUES ('HighWaterMark', @seq)
+VALUES ('{HighWaterShardIdentity.StoreGlobal}', @seq)
 ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
 
         await using var cmd = conn.CreateCommand();
