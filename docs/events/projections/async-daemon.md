@@ -501,25 +501,34 @@ that just emits and update every time that Marten has to "skip" stale events.
 
 ## Extended Progression Tracking
 
-When you opt into extended progression tracking, Marten adds six monitoring
-columns (`heartbeat`, `agent_status`, `pause_reason`, `running_on_node`,
-`warning_behind_threshold`, `critical_behind_threshold`) to `mt_event_progression`
-and the async daemon writes them from runtime state. The shard-state selector
-reads them back into `ShardState` so monitoring tooling such as CritterWatch can
-display per-shard health.
+Extended progression tracking adds six monitoring columns (`heartbeat`,
+`agent_status`, `pause_reason`, `running_on_node`, `warning_behind_threshold`,
+`critical_behind_threshold`) to `mt_event_progression`. The async daemon writes
+them from existing runtime state and the shard-state selector reads them back
+into `ShardState` so monitoring tooling such as CritterWatch can display
+per-shard health.
+
+**Default: on** (#4687, Critter Stack 1.0 timing). The columns are useful for
+any stuck-shard diagnosis -- not just CritterWatch -- and the write-side cost is
+negligible because they're already-computed daemon-internal values. The next
+`ApplyAllConfiguredChangesToDatabaseAsync()` adds the columns to an existing
+database; they're nullable so no backfill is required.
+
+Opt out (e.g. you have your own monitoring story and don't want the columns)
+by setting the toggle to false explicitly:
 
 ```cs
-opts.Events.EnableExtendedProgressionTracking = true;
+opts.Events.EnableExtendedProgressionTracking = false;
 ```
 
-Marten 9.7 also implements the storage-agnostic
+Marten implements the storage-agnostic
 [`IEventStoreInstrumentation`](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/IEventStoreInstrumentation.cs)
-abstraction from JasperFx.Events 2.9.0 — `Wolverine.CritterWatch.Marten` and
-similar satellite packages flip the same toggle via the interface without
+abstraction from JasperFx.Events 2.9.0 -- `Wolverine.CritterWatch.Marten` and
+similar satellite packages can flip the same toggle via the interface without
 referencing Marten's concrete `EventGraph`:
 
 ```cs
-((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = true;
+((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = false;
 ```
 
 Both names refer to the same underlying field. New code is encouraged to prefer
