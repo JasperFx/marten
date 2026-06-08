@@ -499,6 +499,33 @@ using multi-tenancy through a database per tenant. On these spans will be these 
 There is also a counter metric called `marten.daemon.skipping` or `marten.[database name].daemon.skipping`
 that just emits and update every time that Marten has to "skip" stale events.
 
+## Extended Progression Tracking
+
+When you opt into extended progression tracking, Marten adds six monitoring
+columns (`heartbeat`, `agent_status`, `pause_reason`, `running_on_node`,
+`warning_behind_threshold`, `critical_behind_threshold`) to `mt_event_progression`
+and the async daemon writes them from runtime state. The shard-state selector
+reads them back into `ShardState` so monitoring tooling such as CritterWatch can
+display per-shard health.
+
+```cs
+opts.Events.EnableExtendedProgressionTracking = true;
+```
+
+Marten 9.7 also implements the storage-agnostic
+[`IEventStoreInstrumentation`](https://github.com/JasperFx/jasperfx/blob/main/src/JasperFx.Events/IEventStoreInstrumentation.cs)
+abstraction from JasperFx.Events 2.9.0 — `Wolverine.CritterWatch.Marten` and
+similar satellite packages flip the same toggle via the interface without
+referencing Marten's concrete `EventGraph`:
+
+```cs
+((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = true;
+```
+
+Both names refer to the same underlying field. New code is encouraged to prefer
+the interface property; `EnableExtendedProgressionTracking` continues to work
+without deprecation warnings.
+
 ## Advanced Skipping Tracking <Badge type="tip" text="8.6" />
 
 ::: info
