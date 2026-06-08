@@ -205,3 +205,28 @@ Per-tenant event partitioning composes with the
 model: sharding distributes tenants across a pool of databases, and per-tenant partitioning physically isolates each
 tenant's events _within_ whichever database hosts that tenant.
 :::
+
+### Dropping Tenants
+
+Both routes that remove a tenant under `UseTenantPartitionedEvents` clean up the full
+per-tenant footprint -- partition tables, the freestanding `mt_events_sequence_{tenantId}`
+sequence, and the per-tenant `mt_event_progression` rows (one per projection's per-tenant
+catch-up plus the `HighWaterMark:{tenantId}` row):
+
+```cs
+// Wipe all data for a tenant, keep the partition registered (re-seeding works after this)
+await store.Advanced.DeleteAllTenantDataAsync("tenant-a", cancellationToken);
+
+// Remove the tenants entirely (drops their partitions + cleanup)
+await store.Advanced.RemoveMartenManagedTenantsAsync(
+    new[] { "tenant-b", "tenant-c" }, cancellationToken);
+```
+
+Store-global progression rows (the `HighWaterMark` constant, `MyProjection:All` without a
+tenant suffix) are intentionally preserved by the per-tenant cleanup -- they belong to
+the store as a whole. Other tenants' partitions, sequences, and progression rows are
+untouched.
+
+The cleanup identifies per-tenant `mt_event_progression` rows by parsing the
+`ShardName` grammar rather than pattern-matching the name, so a projection whose name
+happens to end with a tenant id is never mistakenly deleted (#4683).

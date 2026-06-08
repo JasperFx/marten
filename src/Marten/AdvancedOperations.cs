@@ -604,8 +604,22 @@ public class AdvancedOperations
 
 
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
+
+        // #4683: capture sequence-suffix mapping BEFORE the partition drop. Weasel's drop may
+        // clear the tenant from the partition registry, and we still need the suffix to drop
+        // the freestanding mt_events_sequence_{suffix} afterwards.
+        var capturedSuffixes = Marten.Internal.PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
+            _store.Options, suffixes);
+
         await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTables(database, logger, suffixes,
             token).ConfigureAwait(false);
+
+        // #4683: drop the per-tenant sequence and per-tenant mt_event_progression rows for the
+        // removed tenants. The partition drop above leaves the freestanding sequence orphaned
+        // and the progression rows untouched; both leak across drop-tenant cycles otherwise.
+        await Marten.Internal.PerTenantPartitionedCleanup.RunAsync(
+            _store.Options, _store.Tenancy.Default.Database, suffixes, capturedSuffixes, token)
+            .ConfigureAwait(false);
     }
 
     /// <summary>

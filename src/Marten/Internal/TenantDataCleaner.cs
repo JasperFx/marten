@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core;
-using Marten.Events.Schema;
 using Marten.Schema;
 using Marten.Services;
 using Marten.Storage;
@@ -11,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Core;
 using Weasel.Postgresql;
-using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten.Internal;
 
@@ -31,6 +29,13 @@ internal class TenantDataCleaner
         var logger = _store.Options.LogFactory?.CreateLogger<DocumentStore>() ?? NullLogger<DocumentStore>.Instance;
 
         var database = await _store.Storage.FindOrCreateDatabase(_tenantId).ConfigureAwait(false);
+
+        // #4683: capture the per-tenant sequence suffix *before* the partition drop, so we can
+        // drop the freestanding mt_events_sequence_{suffix} afterwards. The Weasel managed-list
+        // partition registry may forget the tenant once DropPartitionFromAllTablesForValue runs.
+        var capturedSuffixes = PerTenantPartitionedCleanup.CaptureSequenceSuffixes(
+            _store.Options, new[] { _tenantId });
+
         if (_store.Options is { TenantPartitions: not null})
         {
             await _store.Options.TenantPartitions.Partitions.DropPartitionFromAllTablesForValue(
@@ -89,14 +94,22 @@ internal class TenantDataCleaner
             deleteDataForTenantDatabase(deleteTenantedDataIfExists, deleteDataIfExists);
         }
 
-        if (!foundTables) return;
+        if (foundTables)
+        {
+            var batch = builder.Compile();
+            await using var conn = database.CreateConnection();
+            await conn.OpenAsync(token).ConfigureAwait(false);
+            batch.Connection = conn;
+            await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            await conn.CloseAsync().ConfigureAwait(false);
+        }
 
-        var batch = builder.Compile();
-        await using var conn = database.CreateConnection();
-        await conn.OpenAsync(token).ConfigureAwait(false);
-        batch.Connection = conn;
-        await batch.ExecuteNonQueryAsync(token).ConfigureAwait(false);
-        await conn.CloseAsync().ConfigureAwait(false);
+        // #4683: drop the freestanding per-tenant sequence and per-tenant progression rows
+        // that aren't covered by the partition drop. Lives in the shared helper so
+        // RemoveMartenManagedTenantsAsync (which doesn't go through this cleaner) can call
+        // the same code path.
+        await PerTenantPartitionedCleanup.RunAsync(
+            _store.Options, database, new[] { _tenantId }, capturedSuffixes, token).ConfigureAwait(false);
     }
 
     private void deleteDataForTenantDatabase(Action<DbObjectName> deleteTenantedDataIfExists, Action<DbObjectName> deleteDataIfExists)
