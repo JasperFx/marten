@@ -499,6 +499,24 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
         Options.Projections.Describe(usage, this);
 
+        // JasperFx/ProductSupport#3 — surface the async-daemon error-handling
+        // policy on the wire so monitoring tools (CritterWatch) can render the
+        // right "shard halts on error" vs "view related dead letters" affordance.
+        // Normal-run + rebuild-mode are mirrored as separate descriptors because
+        // they carry independent ErrorHandlingOptions on the store.
+        usage.ProjectionErrors = new ProjectionErrorHandlingDescriptor
+        {
+            SkipApplyErrors = Options.Projections.Errors.SkipApplyErrors,
+            SkipUnknownEvents = Options.Projections.Errors.SkipUnknownEvents,
+            SkipSerializationErrors = Options.Projections.Errors.SkipSerializationErrors
+        };
+        usage.ProjectionRebuildErrors = new ProjectionErrorHandlingDescriptor
+        {
+            SkipApplyErrors = Options.Projections.RebuildErrors.SkipApplyErrors,
+            SkipUnknownEvents = Options.Projections.RebuildErrors.SkipUnknownEvents,
+            SkipSerializationErrors = Options.Projections.RebuildErrors.SkipSerializationErrors
+        };
+
         foreach (var eventMapping in Options.EventGraph.AllEvents())
         {
             var descriptor =
