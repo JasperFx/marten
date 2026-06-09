@@ -520,6 +520,21 @@ namespace Marten.Events
         /// and eliminate the per-query LEFT JOINs across tag tables.
         /// </summary>
         DcbStorageMode DcbStorageMode { get; set; }
+
+        /// <summary>
+        /// When enabled, adds heartbeat, agent_status, pause_reason, running_on_node, and
+        /// warning/critical-behind-threshold columns to the event progression table for
+        /// CritterWatch monitoring.
+        /// <para>
+        /// This is the long-standing Marten-side toggle; #4686 added the storage-agnostic
+        /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> as a sibling so
+        /// store-agnostic monitoring tooling (e.g. <c>Wolverine.CritterWatch.Marten</c>) can flip
+        /// the switch via the JasperFx.Events abstraction without referencing Marten's concrete
+        /// option type. Both names refer to the same underlying field; new code is encouraged to
+        /// prefer <c>ExtendedProgressionEnabled</c> on the interface.
+        /// </para>
+        /// </summary>
+        public bool EnableExtendedProgressionTracking { get; set; }
     }
 }
 

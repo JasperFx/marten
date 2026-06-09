@@ -215,6 +215,11 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
+
+        var instrument = new SetEventStoreInstrumentation();
+        services.AddSingleton<IConfigureMarten>(instrument);
+        services.AddSingleton<IEventStoreInstrumentation>(instrument);
+
         services.AddSingleton(s =>
         {
             var options = optionSource(s);
@@ -327,6 +332,10 @@ public static class MartenServiceCollectionExtensions
 
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreUsageSource>(s => (IDocumentStoreUsageSource)s.GetRequiredService<T>());
+
+        var instrument = new SetEventStoreInstrumentation<T>();
+        services.AddSingleton<IConfigureMarten<T>>(instrument);
+        services.AddSingleton<IEventStoreInstrumentation>(instrument);
 
         var stores = services
             .Where(x => !x.IsKeyedService)
@@ -1080,4 +1089,25 @@ internal class DocumentStoreSource<T>: IDocumentStoreSource where T : IDocumentS
     {
         return services.GetRequiredService<T>();
     }
+}
+
+// This little bit of fun is all about CritterWatch
+internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstrumentation
+{
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
+    }
+
+    public bool ExtendedProgressionEnabled { get; set; }
+}
+
+internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStoreInstrumentation where T : IDocumentStore
+{
+    public void Configure(IServiceProvider services, StoreOptions options)
+    {
+        options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
+    }
+
+    public bool ExtendedProgressionEnabled { get; set; }
 }
