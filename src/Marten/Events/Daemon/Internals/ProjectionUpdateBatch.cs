@@ -15,6 +15,7 @@ using Marten.Internal.Operations;
 using Marten.Internal.Sessions;
 using Marten.Patching;
 using Marten.Services;
+using Weasel.Core;
 
 namespace Marten.Events.Daemon.Internals;
 
@@ -56,6 +57,17 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     public ShardExecutionMode Mode { get; }
 
     public bool ShouldApplyListeners { get; set; }
+
+    /// <summary>
+    /// #4685 PR 1 plumbing: classifies the batch as <see cref="BatchFlushMode.InsertOnly"/> when
+    /// every queued operation carries <see cref="OperationRole.Insert"/>, or
+    /// <see cref="BatchFlushMode.Mixed"/> otherwise. Maintained incrementally as operations
+    /// arrive; once demoted to <c>Mixed</c> it stays there for the lifetime of the batch (the
+    /// transition is monotonic). Subsequent PRs in the #4685 series dispatch the BulkWriter
+    /// (binary <c>COPY</c>) flush path on this signal; <b>this PR is plumbing only and does
+    /// not change the flush behavior</b>.
+    /// </summary>
+    public BatchFlushMode FlushMode { get; private set; } = BatchFlushModeClassifier.Initial;
 
     // TODO -- make this private
     public Block<IStorageOperation> Queue { get; }
@@ -356,6 +368,10 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         _current.Append(operation);
 
         _documentTypes.Fill(operation.DocumentType);
+
+        // #4685 PR 1 plumbing: keep FlushMode in sync with the operations queued so far.
+        // Subsequent PRs dispatch the BulkWriter (binary COPY) path on this signal.
+        FlushMode = BatchFlushModeClassifier.WithOperation(FlushMode, operation.Role());
 
         if (_session != null && !_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
         {
