@@ -69,6 +69,40 @@ public class jasper_fx_mechanics
     }
 
     [Fact]
+    public async Task try_create_usage_populates_projection_error_handling_descriptors()
+    {
+        // JasperFx/ProductSupport#3 — the projection error policy needs to ride
+        // along on EventStoreUsage so monitoring tools can render the right
+        // affordance (DLQ button vs "shard halts on error" indicator) without
+        // sniffing into Marten internals.
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(m =>
+                {
+                    m.Connection(ConnectionSource.ConnectionString);
+                    m.DatabaseSchemaName = "ps3_error_policy";
+
+                    // Stop-on-error normal-run policy — the reporter's actual
+                    // config in PS#3. Without this opt-out, the JasperFx.Events 2.0
+                    // default is SkipApplyErrors=true.
+                    m.Projections.Errors.SkipApplyErrors = false;
+                    m.Projections.Errors.SkipSerializationErrors = false;
+                });
+            }).StartAsync();
+
+        var usage = await host.Services.GetRequiredService<IEventStore>().TryCreateUsage(CancellationToken.None);
+
+        usage.ProjectionErrors.ShouldNotBeNull();
+        usage.ProjectionErrors.SkipApplyErrors.ShouldBeFalse();
+        usage.ProjectionErrors.SkipSerializationErrors.ShouldBeFalse();
+
+        // RebuildErrors stays at JasperFx.Events 2.0 defaults (all three false).
+        usage.ProjectionRebuildErrors.ShouldNotBeNull();
+        usage.ProjectionRebuildErrors.SkipApplyErrors.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task run_describe_with_single_document_store_and_single_tenancy()
     {
         var result = await Host.CreateDefaultBuilder()
