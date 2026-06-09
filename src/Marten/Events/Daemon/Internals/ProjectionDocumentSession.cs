@@ -20,6 +20,10 @@ internal class ProjectionDocumentSession: DocumentSessionBase, ITransactionParti
 {
     public ShardExecutionMode Mode { get; }
 
+    // #4685 PR 2 — surface the per-shard execution mode to ProjectionStorage so a rebuild
+    // replay can route to INSERT-only operations.
+    internal override ShardExecutionMode ExecutionMode => Mode;
+
     public ProjectionDocumentSession(DocumentStore store,
         ISessionWorkTracker workTracker,
         SessionOptions sessionOptions, ShardExecutionMode mode): base(store, sessionOptions, sessionOptions.BuildAutoClosingLifetime(store), workTracker)

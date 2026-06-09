@@ -61,6 +61,20 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
 
     public Type IdType => typeof(TId);
 
+    // #4685 PR 2 (proving the blocker) — when the backing session is a rebuild replay, the
+    // projection table was TRUNCATEd / per-tenant-DELETEd before replay started, so every
+    // write is (in principle) an INSERT. Routing through InsertProjected instead of
+    // UpsertProjected/OverwriteProjected makes the batch classify as BatchFlushMode.InsertOnly
+    // so the BulkWriter (binary COPY) path can pick it up. CAUTION: this is only correct when
+    // each aggregate id is written exactly once across the whole rebuild, which Marten's
+    // page-batched rebuild does NOT guarantee today — see the EXPERIMENTAL
+    // ProjectionOptions.RebuildWithInsertOnly flag (default off, no behavior change) and the
+    // Bug_4685_rebuild_insert_only_multipage proving test for why this is gated off until
+    // CritterWatch#208 Phase 4 (single-flush) lands.
+    private bool IsRebuild =>
+        _session.ExecutionMode == JasperFx.Events.Daemon.ShardExecutionMode.Rebuild
+        && _session.Options.Projections.RebuildWithInsertOnly;
+
     public TId Identity(TDoc document)
     {
         return _storage.Identity(document);
@@ -86,8 +100,9 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         // #4667 — UpsertProjected (not Upsert) so we never read or mutate
         // _session.Versions / _session.Revisions from a daemon worker. The
         // projection runtime is by-contract not session-state-aware.
-        var upsert = _storage.UpsertProjected(snapshot, TenantId);
-        _session.QueueOperation(upsert);
+        // #4685 PR 2 — rebuild replay routes to InsertProjected.
+        var op = IsRebuild ? _storage.InsertProjected(snapshot, TenantId) : _storage.UpsertProjected(snapshot, TenantId);
+        _session.QueueOperation(op);
     }
 
     public void Delete(TId identity)
@@ -149,8 +164,9 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             _storage.Store(_session, snapshot);
         }
 
-        var upsert = _storage.UpsertProjected(snapshot, tenantId);
-        _session.QueueOperation(upsert);
+        // #4685 PR 2 — rebuild replay routes to InsertProjected.
+        var op = IsRebuild ? _storage.InsertProjected(snapshot, tenantId) : _storage.UpsertProjected(snapshot, tenantId);
+        _session.QueueOperation(op);
     }
 
     public void Delete(TId identity, string tenantId)
@@ -188,7 +204,9 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         // thread-safe. The projection path doesn't need session-level tracking anyway --
         // the revision is set explicitly from the event below and IgnoreConcurrencyViolation
         // = true makes any tracker bookkeeping moot.
-        var op = _storage.OverwriteProjected(aggregate, TenantId);
+        // #4685 PR 2 — rebuild replay routes to InsertProjected (still INSERT-only post-teardown);
+        // the revision is set explicitly from the event below either way.
+        var op = IsRebuild ? _storage.InsertProjected(aggregate, TenantId) : _storage.OverwriteProjected(aggregate, TenantId);
         if (op is IRevisionedOperation r)
         {
             r.Revision = scope == AggregationScope.SingleStream ? (int)lastEvent.Version : (int)lastEvent.Sequence;
