@@ -66,39 +66,32 @@ public class event_store_statistics_under_partitioning
     }
 
     [Fact]
-    public async Task FetchEventStoreStatistics_EventSequenceNumber_is_STALE_under_partitioning()
+    public async Task FetchHighestEventSequenceNumber_tracks_high_water_under_partitioning()
     {
-        // The pin: the global mt_events_sequence is NEVER nextval'd under
-        // partitioning (per-tenant sequences are used instead). The
-        // EventSequenceNumber field of statistics reads `last_value` from that
-        // dead global sequence, so it stays at its starting value regardless
-        // of how many events have been appended store-wide.
-        //
-        // This is by-design — but monitoring tools that historically used
-        // EventSequenceNumber as the event-store high-water need to switch to
-        // FetchMaxEventSequenceAsync under partitioning. Pin the broken-by-design
-        // value so the divergence is part of the documented contract.
+        // #4705: the store-global mt_events_sequence is never nextval'd under partitioning (per-tenant
+        // sequences are used), so reading its last_value returned a stale 1. That stale value, used as a
+        // ceiling by the composite single-pass replay executor, made composite shards stall at seq 1.
+        // FetchHighestEventSequenceNumber (and FetchEventStoreStatistics.EventSequenceNumber) now read
+        // max(seq_id) under partitioning, so they report the real high-water and agree with
+        // FetchMaxEventSequenceAsync.
         var tenant = PartitionedFixtureBase.NewTenant();
         await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
 
-        // Snapshot the global "high-water" BEFORE we append.
         var db = (MartenDatabase)_fixture.Store.Storage.Database;
-        var globalBefore = await db.FetchHighestEventSequenceNumber(CancellationToken.None);
-        var statsBefore = await db.FetchEventStoreStatistics(token: CancellationToken.None);
-
-        // Now append 10 events to a fresh tenant.
         await _fixture.AppendNEventsAsync(tenant, 10);
 
-        var globalAfter = await db.FetchHighestEventSequenceNumber(CancellationToken.None);
-        var statsAfter = await db.FetchEventStoreStatistics(token: CancellationToken.None);
+        var high = await db.FetchHighestEventSequenceNumber(CancellationToken.None);
+        var max = (await db.FetchMaxEventSequenceAsync(CancellationToken.None)) ?? 0L;
+        var stats = await db.FetchEventStoreStatistics(token: CancellationToken.None);
 
-        // The global sequence is unchanged — pin the staleness.
-        globalAfter.ShouldBe(globalBefore,
-            "FetchHighestEventSequenceNumber reads the store-global sequence which is " +
-            "NEVER advanced under per-tenant partitioning — stale by design");
-        statsAfter.EventSequenceNumber.ShouldBe(statsBefore.EventSequenceNumber,
-            "FetchEventStoreStatistics.EventSequenceNumber is the same dead value " +
-            "as FetchHighestEventSequenceNumber");
+        // No longer the stale 1 — at least this tenant's 10 events exist somewhere in the store.
+        high.ShouldBeGreaterThanOrEqualTo(10L,
+            "FetchHighestEventSequenceNumber must read the real max(seq_id) under partitioning, not the dead global sequence");
+
+        // The two 'highest sequence' APIs and the statistics field are now consistent.
+        high.ShouldBe(max);
+        stats.EventSequenceNumber.ShouldBe(max,
+            "FetchEventStoreStatistics.EventSequenceNumber must match max(seq_id) under partitioning");
     }
 
     [Fact]
@@ -134,11 +127,12 @@ public class event_store_statistics_under_partitioning
         // a sibling tenant has already written more events.
         maxAfter.ShouldBeGreaterThanOrEqualTo(3L);
 
-        // And critically: this MUST diverge from FetchHighestEventSequenceNumber
-        // under partitioning — that's the whole point.
+        // #4705: FetchHighestEventSequenceNumber is now partition-aware too, so the two AGREE
+        // (both read max(seq_id) under partitioning). Before the fix this asserted divergence; the
+        // divergence WAS the bug.
         var globalSeq = await db.FetchHighestEventSequenceNumber(CancellationToken.None);
-        maxAfter.ShouldBeGreaterThan(globalSeq,
-            "FetchMaxEventSequenceAsync must diverge from the stale FetchHighestEventSequenceNumber " +
-            "under partitioning — this divergence IS the monitoring-grade pin");
+        maxAfter.ShouldBe(globalSeq,
+            "FetchMaxEventSequenceAsync and FetchHighestEventSequenceNumber both read max(seq_id) " +
+            "under partitioning and must now agree");
     }
 }

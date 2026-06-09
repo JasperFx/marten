@@ -117,9 +117,19 @@ public partial class MartenDatabase : IEventDatabase
         await conn.OpenAsync(token).ConfigureAwait(false);
         try
         {
-            var highest = (long)await conn
-                .CreateCommand($"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;")
-                .ExecuteScalarAsync(token).ConfigureAwait(false)!;
+            // #4705: under per-tenant event partitioning the store-global mt_events_sequence is
+            // never advanced -- every tenant's events draw seq_id from its own
+            // mt_events_sequence_{suffix}, so the global sequence's last_value is stale (reads as 1).
+            // Callers use this as a high-water ceiling (e.g. the composite single-pass replay
+            // executor); reading the stale 1 made composite shards replay only events 0..1 and
+            // stall. Read the real maximum from the events table instead in that mode.
+            var sql = Options.Events.UseTenantPartitionedEvents
+                ? $"select coalesce(max(seq_id), 0) from {Options.Events.DatabaseSchemaName}.mt_events;"
+                : $"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;";
+
+            var highest = (long)(await conn
+                .CreateCommand(sql)
+                .ExecuteScalarAsync(token).ConfigureAwait(false))!;
 
             return highest;
         }
@@ -167,10 +177,17 @@ public partial class MartenDatabase : IEventDatabase
     public async Task<EventStoreStatistics> FetchEventStoreStatistics(
         CancellationToken token = default)
     {
+        // #4705: under per-tenant partitioning the store-global mt_events_sequence is never advanced,
+        // so EventSequenceNumber would be stale (reads as 1). Read max(seq_id) in that mode so it stays
+        // consistent with FetchHighestEventSequenceNumber / FetchMaxEventSequenceAsync.
+        var highWaterSql = Options.Events.UseTenantPartitionedEvents
+            ? $"select coalesce(max(seq_id), 0) from {Options.Events.DatabaseSchemaName}.mt_events;"
+            : $"select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;";
+
         var sql = $@"
 select count(*) from {Options.Events.DatabaseSchemaName}.mt_events;
 select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
-select last_value from {Options.Events.DatabaseSchemaName}.mt_events_sequence;
+{highWaterSql}
 ";
 
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
