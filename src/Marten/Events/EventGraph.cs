@@ -41,8 +41,7 @@ namespace Marten.Events;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEventStoreOptions,
     IDisposable, IAsyncDisposable,
-    IAggregationSourceFactory<IQuerySession>, IDescribeMyself,
-    IEventStoreInstrumentation
+    IAggregationSourceFactory<IQuerySession>, IDescribeMyself
 {
     private readonly Cache<Type, string> _aggregateNameByType =
         new(type => type.IsGenericType ? type.ShortNameInCode() : type.Name.ToTableAlias());
@@ -247,23 +246,11 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool EnableExtendedProgressionTracking
     {
-        get => ExtendedProgressionEnabled;
-        set => ExtendedProgressionEnabled = value;
+        get;
+        set;
     }
 
-    /// <summary>
-    /// <see cref="IEventStoreInstrumentation.ExtendedProgressionEnabled"/> -- the primary
-    /// (storage-agnostic) toggle that controls extended progression tracking. Aliased by the
-    /// legacy <see cref="EnableExtendedProgressionTracking"/> property.
-    /// <para>
-    /// **Default: true** (#4687, Critter Stack 1.0 timing). The six monitoring columns are
-    /// written from existing daemon runtime state, so the cost is negligible (no extra queries,
-    /// 6 nullable columns on a low-volume progression table) and they're useful for any
-    /// stuck-shard diagnosis -- not just CritterWatch. Opt out by setting this to false (or
-    /// the legacy <c>EnableExtendedProgressionTracking</c>) explicitly.
-    /// </para>
-    /// </summary>
-    public bool ExtendedProgressionEnabled { get; set; } = true;
+
     public bool UseArchivedStreamPartitioning { get; set; }
     public bool UseListenNotifyForEventAppends { get; set; }
 
