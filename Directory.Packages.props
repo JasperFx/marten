@@ -99,8 +99,14 @@
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageVersion Include="System.IO.Hashing" Version="10.0.3" />
     <PackageVersion Include="Vogen" Version="7.0.0" />
-    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.0.3" />
-    <PackageVersion Include="Weasel.Postgresql" Version="9.0.3" />
+    <PackageVersion Include="Weasel.EntityFrameworkCore" Version="9.1.2" />
+    <!-- Weasel.Postgresql 9.1.2: fix for marten#4706 — managed LIST partitions are no longer
+         destructively rebuilt under multi-database (sharded) apply. The explicit, out-of-band
+         AddPartitionToAllTables path bypasses IgnorePartitionsInMigration so partition creation
+         still works while the generic schema diff leaves managed-partition tables alone (Marten
+         sets IgnorePartitionsInMigration on those tables; see DocumentTable). 9.1.2 supersedes
+         9.1.1, whose per-database reload regressed lazy sharded event-partition creation. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.1.2" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />

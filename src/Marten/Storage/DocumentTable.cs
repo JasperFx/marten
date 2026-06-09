@@ -106,6 +106,19 @@ internal class DocumentTable: Table
         if (Partitioning != null)
         {
             IgnorePartitionsInMigration = mapping.IgnorePartitions;
+
+            // #4706: a Marten-managed LIST partitioning keeps its PARTITION BY clause but is exempt from
+            // child-partition reconciliation in the generic schema diff. The per-tenant partitions are
+            // created/dropped out-of-band by AddMartenManagedTenantsAsync / DeleteAllTenantDataAsync (the
+            // additive path). Without this, re-applying the schema over existing data — especially under
+            // sharded tenancy, where databases migrate in parallel against one shared partition manager —
+            // sees the live per-tenant partitions as "unexpected" and destructively rebuilds the table
+            // (CREATE _temp / copy), failing with 23514 because the rebuilt parent has no partitions.
+            if (Partitioning is Weasel.Postgresql.Tables.Partitioning.ListPartitioning { PartitionManager: not null })
+            {
+                IgnorePartitionsInMigration = true;
+            }
+
             foreach (var columnName in Partitioning.Columns)
             {
                 var column = ModifyColumn(columnName);
