@@ -44,6 +44,16 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// (A MultiStream <c>RollUpByTenant :All</c> projection added here instead surfaced a separate
 /// <c>23514</c> doc-table partition-routing error — adjacent to #4648, not this issue.)
 /// </para>
+///
+/// <para>
+/// <b>Composite projections (the explicit hypothesis that composite support doesn't honor the
+/// per-tenant ShardName) — also does NOT reproduce.</b> A multi-stage
+/// <c>CompositeProjectionFor</c> caught up per-tenant writes correctly tenant-scoped rows for both
+/// the composite's own shard (<c>Bug4679Composite:All:tA</c>) AND every member stage
+/// (<c>Bug4679ShardedTrip:All:tA</c>, …) — see <see cref="composite_force_catch_up_with_multiple_tenants_on_one_shard"/>.
+/// The composite catch-up honors <c>ShardName.ForTenant</c>; the store-global collision still
+/// requires some other config detail.
+/// </para>
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
 public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
@@ -204,6 +214,96 @@ public partial class Bug_4679_sharded_catch_up_23505: IAsyncLifetime
         var names = await progressionNamesAsync(_fixture.ConnectionStrings[shardAssignment["tA"]]);
         names.ShouldContain("Bug4679ShardedTrip:All:tA");
         names.ShouldContain("Bug4679ShardedTrip:All:tB");
+        names.ShouldNotContain("Bug4679ShardedTrip:All");
+        names.ShouldNotContain("Bug4679ShardedCount:All");
+    }
+
+    private void configureComposite(StoreOptions opts)
+    {
+        opts.MultiTenantedWithShardedDatabases(x =>
+        {
+            x.ConnectionString = ConnectionSource.ConnectionString;
+            x.SchemaName = "sharded";
+            x.PartitionSchemaName = "tenants";
+
+            foreach (var (dbName, connStr) in _fixture.ConnectionStrings)
+            {
+                x.AddDatabase(dbName, connStr);
+            }
+        });
+
+        opts.AutoCreateSchemaObjects = AutoCreate.All;
+        opts.Events.TenancyStyle = TenancyStyle.Conjoined;
+        opts.Events.AppendMode = EventAppendMode.QuickWithServerTimestamps;
+        opts.Events.UseTenantPartitionedEvents = true;
+        opts.Events.AddEventType<Bug4679TripLeg>();
+
+        // A multi-stage COMPOSITE projection — the path the user flagged. Members live in
+        // different stages; the composite owns a single store-global shard (Bug4679Composite:All).
+        opts.Projections.CompositeProjectionFor("Bug4679Composite", c =>
+        {
+            c.Add<Bug4679TripProjection>(stageNumber: 1);
+            c.Add<Bug4679CountProjection>(stageNumber: 2);
+        });
+
+        opts.Schema.For<Bug4679Trip>().DocumentAlias("b4679_trip");
+        opts.Schema.For<Bug4679Count>().DocumentAlias("b4679_cnt");
+    }
+
+    [Fact]
+    public async Task composite_force_catch_up_with_multiple_tenants_on_one_shard()
+    {
+        var tenants = new[] { "tA", "tB", "tC", "tD", "tE" };
+        var shardAssignment = new Dictionary<string, string>
+        {
+            ["tA"] = _fixture.DbNames[0],
+            ["tB"] = _fixture.DbNames[0],
+            ["tC"] = _fixture.DbNames[0],
+            ["tD"] = _fixture.DbNames[1],
+            ["tE"] = _fixture.DbNames[2],
+        };
+
+        await using var store = (DocumentStore)DocumentStore.For(configureComposite);
+        foreach (var tenant in tenants)
+        {
+            await store.Advanced.AddTenantToShardAsync(tenant, shardAssignment[tenant], CancellationToken.None);
+        }
+
+        foreach (var tenant in tenants)
+        {
+            var streamId = Guid.NewGuid();
+            await using var session = store.LightweightSession(tenant);
+            session.Events.StartStream<Bug4679Trip>(streamId,
+                new Bug4679TripStarted(streamId),
+                new Bug4679TripLeg(1.0),
+                new Bug4679TripLeg(2.5));
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await store.BuildProjectionDaemonAsync("tA");
+
+        Exception? thrown = null;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            await daemon.CatchUpAsync(cts.Token);
+        }
+        catch (Exception e)
+        {
+            thrown = e;
+            _output.WriteLine("=== CatchUpAsync threw ===");
+            _output.WriteLine(e.ToString());
+        }
+
+        var names = await progressionNamesAsync(_fixture.ConnectionStrings[shardAssignment["tA"]]);
+        _output.WriteLine("=== mt_event_progression rows on shard_a ===");
+        foreach (var n in names) _output.WriteLine(n);
+
+        // OBSERVE: does the composite write store-global (tenant-less) progression names? If the
+        // composite execution doesn't honor the per-tenant ShardName, these bare :All rows appear
+        // (and collide on the 2nd tenant under InsertProjectionProgress => 23505).
+        thrown.ShouldBeNull("composite catch-up threw — captured: " + thrown?.Message);
+        names.ShouldNotContain("Bug4679Composite:All");
         names.ShouldNotContain("Bug4679ShardedTrip:All");
         names.ShouldNotContain("Bug4679ShardedCount:All");
     }

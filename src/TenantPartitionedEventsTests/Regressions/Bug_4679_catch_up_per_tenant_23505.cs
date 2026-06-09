@@ -115,12 +115,12 @@ public partial class Bug_4679_catch_up_per_tenant_23505
         public void Apply(TripDistance agg, TripLeg @event) => agg.Distance += @event.Distance;
     }
 
-    [Fact(Skip = "#4679: JasperFx-side regression in catchUpPerTenantAsync. " +
-                 "This minimal single-DB Conjoined + UseTenantPartitionedEvents " +
-                 "reproduction does NOT trigger the 23505 in isolation -- the user's " +
-                 "MultiTenantedWithShardedDatabases setup appears load-bearing. " +
-                 "Pinned here as a permanent regression fixture; once the upstream fix lands + " +
-                 "a tighter repro emerges, replace this Skip with an [Fact] and update the body.")]
+    // #4679 fixed in JasperFx.Events 2.9.0 (jasperfx#419 — composite member stages now compose
+    // ShardName with the parent's tenant id instead of a bare store-global name). Unskipped: this
+    // single-DB SingleStream repro never triggered the 23505 on its own (the real trigger was
+    // composite projections, covered by Sharded/Bug_4679_sharded_catch_up_23505), but it stays as
+    // a per-tenant catch-up advance + no-23505 guard.
+    [Fact]
     public async Task force_catch_up_across_multiple_tenants_does_not_throw_23505()
     {
         using var store = DocumentStore.For(opts =>
