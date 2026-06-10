@@ -337,6 +337,42 @@ left join {schema}.mt_event_progression prog
         return _runner.Query(new MarkHighWaterQueryHandler(_graph, currentMark), token);
     }
 
+    // #4717: persist a durable per-tenant high-water row (HighWaterMark:<tenant>) so each tenant's mark
+    // survives a daemon restart. Under per-tenant event partitioning the store-global mt_events_sequence
+    // is never advanced and a single HighWaterMark row cannot represent multiple tenants. Invoked by
+    // JasperFx's TenantedHighWaterCoordinator on each vectorized per-tenant poll.
+    public Task MarkHighWaterForTenantAsync(string tenantId, long sequence, CancellationToken token)
+    {
+        return _runner.Query(new MarkTenantHighWaterQueryHandler(_graph, tenantId, sequence), token);
+    }
+
+    public class MarkTenantHighWaterQueryHandler: ISingleQueryHandler<bool>
+    {
+        private readonly EventGraph _graph;
+        private readonly string _tenantId;
+        private readonly long _currentMark;
+
+        public MarkTenantHighWaterQueryHandler(EventGraph graph, string tenantId, long currentMark)
+        {
+            _graph = graph;
+            _tenantId = tenantId;
+            _currentMark = currentMark;
+        }
+
+        public NpgsqlCommand BuildCommand()
+        {
+            return new NpgsqlCommand(
+                    $"select {_graph.DatabaseSchemaName}.mt_mark_event_progression(:name, :seq);")
+                .With("name", HighWaterShardIdentity.PerTenant(_tenantId))
+                .With("seq", _currentMark);
+        }
+
+        public Task<bool> HandleAsync(DbDataReader reader, CancellationToken token)
+        {
+            return Task.FromResult(true);
+        }
+    }
+
     public class MarkHighWaterQueryHandler: ISingleQueryHandler<bool>
     {
         private readonly EventGraph _graph;
