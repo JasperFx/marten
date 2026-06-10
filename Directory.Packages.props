@@ -43,13 +43,13 @@
          JasperFx 2.9.2: jasperfx#431 — ProjectionErrorHandlingDescriptor on EventStoreUsage
          so monitoring tools (CritterWatch) can read the daemon error-handling policy off
          the wire instead of presuming skip-and-DLQ behaviour. See JasperFx/ProductSupport#3. -->
-    <PackageVersion Include="JasperFx" Version="2.9.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.9.2" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.2">
+    <PackageVersion Include="JasperFx" Version="2.9.4" />
+    <PackageVersion Include="JasperFx.Events" Version="2.9.4" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.2" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.4" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />

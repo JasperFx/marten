@@ -68,10 +68,7 @@ public partial class Bug_4717_per_tenant_progression
 
     private static readonly string Schema = $"bug4717_p{Environment.ProcessId}";
 
-    [Fact(Skip = "#4717: requires per-tenant continuous daemon progression (per-tenant agent fan-out + " +
-                 "per-tenant high-water persistence) — JasperFx work in progress. Proven RED today: only " +
-                 "store-global <Projection>:All + one HighWaterMark are persisted, all at the max tenant's " +
-                 "height. Un-skip when the JasperFx fix ships and is consumed.")]
+    [Fact]
     public async Task daemon_persists_per_tenant_progression_for_standalone_and_composite()
     {
         using var store = (DocumentStore)DocumentStore.For(o =>

@@ -149,19 +149,27 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
         await daemonA.WaitForNonStaleData(15.Seconds());
         await daemonB.WaitForNonStaleData(15.Seconds());
 
-        // Pin 1: each tenant's projection doc reflects ONLY its own event count.
-        await using (var query = _store.QuerySession("tenant_on_a"))
+        // Pin 1: each tenant's projection doc reflects ONLY its own event count. Poll for the docs to
+        // materialize — WaitForNonStaleData can return before a per-tenant agent commits on a
+        // partitioned store (its caught-up check counts store-global shards, not per-tenant ones).
+        ShardedDaemonCounter? docA = null, docB = null;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.Elapsed < 20.Seconds())
         {
-            var doc = await query.LoadAsync<ShardedDaemonCounter>(aStream);
-            doc.ShouldNotBeNull("tenant_on_a's projection must materialize on shard A");
-            doc!.EventCount.ShouldBe(3, "tenant_on_a appended 3 events — tenant_on_b's must not bleed");
+            await using (var query = _store.QuerySession("tenant_on_a"))
+                docA = await query.LoadAsync<ShardedDaemonCounter>(aStream);
+            await using (var query = _store.QuerySession("tenant_on_b"))
+                docB = await query.LoadAsync<ShardedDaemonCounter>(bStream);
+
+            if (docA is { EventCount: 3 } && docB is { EventCount: 2 }) break;
+
+            await Task.Delay(250);
         }
-        await using (var query = _store.QuerySession("tenant_on_b"))
-        {
-            var doc = await query.LoadAsync<ShardedDaemonCounter>(bStream);
-            doc.ShouldNotBeNull("tenant_on_b's projection must materialize on shard B");
-            doc!.EventCount.ShouldBe(2, "tenant_on_b appended 2 events — tenant_on_a's must not bleed");
-        }
+
+        docA.ShouldNotBeNull("tenant_on_a's projection must materialize on shard A");
+        docA!.EventCount.ShouldBe(3, "tenant_on_a appended 3 events — tenant_on_b's must not bleed");
+        docB.ShouldNotBeNull("tenant_on_b's projection must materialize on shard B");
+        docB!.EventCount.ShouldBe(2, "tenant_on_b appended 2 events — tenant_on_a's must not bleed");
     }
 
     [Fact]
@@ -225,8 +233,23 @@ public class sharded_daemon_per_shard_progression : IAsyncLifetime
         var shardAConnStr = _fixture.ConnectionStrings[shardA];
         var shardBConnStr = _fixture.ConnectionStrings[shardB];
 
-        var rowsOnA = await ReadProgressionRowsAsync(shardAConnStr, ShardedDaemonProjection.ProjectionName);
-        var rowsOnB = await ReadProgressionRowsAsync(shardBConnStr, ShardedDaemonProjection.ProjectionName);
+        // Poll for the per-tenant progression rows. WaitForNonStaleData can return before a per-tenant
+        // agent has committed on a partitioned store (its caught-up check counts store-global shards,
+        // not per-tenant ones), so poll for the actual per-tenant rows rather than asserting immediately.
+        System.Collections.Generic.IReadOnlyList<(string Name, long LastSeqId)> rowsOnA = [], rowsOnB = [];
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.Elapsed < 20.Seconds())
+        {
+            rowsOnA = await ReadProgressionRowsAsync(shardAConnStr, ShardedDaemonProjection.ProjectionName);
+            rowsOnB = await ReadProgressionRowsAsync(shardBConnStr, ShardedDaemonProjection.ProjectionName);
+            if (rowsOnA.Count > 0 && rowsOnB.Count > 0
+                && rowsOnA.All(r => r.LastSeqId > 0) && rowsOnB.All(r => r.LastSeqId > 0))
+            {
+                break;
+            }
+
+            await Task.Delay(250);
+        }
 
         rowsOnA.Count.ShouldBeGreaterThan(0,
             "shard A must have a projection progression row for tenant-on-A's catch-up");
