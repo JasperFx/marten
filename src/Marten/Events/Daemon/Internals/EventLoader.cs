@@ -143,10 +143,16 @@ internal sealed class EventLoader: IEventLoader
                 _ => await loadNormalAsync(request, token).ConfigureAwait(false)
             };
         }
-        catch (Exception ex) when (isTimeoutException(ex))
+        // #4720: a deliberate daemon shutdown cancels this token and surfaces as an
+        // OperationCanceledException — do not treat that as a query timeout and escalate;
+        // let it propagate so the shard stops cleanly.
+        catch (Exception ex) when (!token.IsCancellationRequested && isTimeoutException(ex))
         {
-            // Only escalate strategy if we have a type filter (otherwise the timeout is from something else)
-            if (_hasTypeFilter && !_hasEventTypeIndex)
+            // Only escalate strategy if we have a type filter (otherwise the timeout is from something else).
+            // #4720: escalate regardless of whether the (type, seq_id) event-type index is enabled. That
+            // composite index cannot serve a multi-type, globally seq_id-ordered LIMIT query, so the normal
+            // query can still time out with the index present — the flag now only governs the advisory text.
+            if (_hasTypeFilter)
             {
                 var nextStrategy = _currentStrategy switch
                 {
@@ -155,10 +161,20 @@ internal sealed class EventLoader: IEventLoader
                     _ => LoadStrategy.WindowStep
                 };
 
-                request.Runtime?.Logger.LogWarning(
-                    "Event loading timed out with {Strategy} strategy for range [{Floor}, {Ceiling}]. " +
-                    "Falling back to {NextStrategy}. Consider enabling opts.Events.EnableEventTypeIndex for better performance.",
-                    _currentStrategy, request.Floor, request.HighWater, nextStrategy);
+                if (_hasEventTypeIndex)
+                {
+                    request.Runtime?.Logger.LogWarning(
+                        "Event loading timed out with {Strategy} strategy for range [{Floor}, {Ceiling}]. " +
+                        "Falling back to {NextStrategy}.",
+                        _currentStrategy, request.Floor, request.HighWater, nextStrategy);
+                }
+                else
+                {
+                    request.Runtime?.Logger.LogWarning(
+                        "Event loading timed out with {Strategy} strategy for range [{Floor}, {Ceiling}]. " +
+                        "Falling back to {NextStrategy}. Consider enabling opts.Events.EnableEventTypeIndex for better performance.",
+                        _currentStrategy, request.Floor, request.HighWater, nextStrategy);
+                }
 
                 _currentStrategy = nextStrategy;
 
@@ -395,12 +411,31 @@ internal sealed class EventLoader: IEventLoader
         return emptyPage;
     }
 
-    private static bool isTimeoutException(Exception ex)
+    // internal (not private) so the #4720 regression test can assert the chain-walking directly.
+    internal static bool isTimeoutException(Exception? ex)
     {
-        return ex is NpgsqlException { InnerException: TimeoutException }
-            or NpgsqlException { SqlState: "57014" } // query_canceled (statement timeout)
-            or TimeoutException
-            or OperationCanceledException;
+        // #4720: a query timeout does not always arrive as a bare NpgsqlException. Marten's
+        // AutoClosingLifetime catches the original exception and re-throws it through
+        // MartenExceptionTransformer, which wraps any NpgsqlException into a MartenCommandException
+        // (which is NOT an NpgsqlException) before it reaches this catch filter. Inspecting only the
+        // outermost exception therefore missed every wrapped timeout and the adaptive fallback never
+        // engaged. Walk the whole inner-exception chain instead.
+        //
+        // Note: the bare TimeoutException arm subsumes the old "NpgsqlException { InnerException:
+        // TimeoutException }" case once we walk inner exceptions.
+        while (ex is not null)
+        {
+            if (ex is NpgsqlException { SqlState: "57014" } // query_canceled (statement timeout)
+                or TimeoutException
+                or OperationCanceledException)
+            {
+                return true;
+            }
+
+            ex = ex.InnerException;
+        }
+
+        return false;
     }
 }
 
