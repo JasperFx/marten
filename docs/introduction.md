@@ -34,6 +34,17 @@ was made possible by the unique [PostgreSQL support for JSON storage](https://ww
 
 **Thanks to that and other Postgresql capabilities, Marten brings strong data consistency into both of those approaches.**
 
+::: tip Prefer SQL Server? Meet Polecat
+Marten itself is built specifically on PostgreSQL, but if your team needs to stay on SQL Server, there's a
+sibling project for you. [**Polecat**](https://polecat.jasperfx.net) is a Marten-inspired library in the same
+["Critter Stack"](https://wolverinefx.net) ecosystem that brings the same document database and event sourcing
+model to **SQL Server 2025**. Polecat shares much of Marten's API shape and concepts, so most of what you learn
+in these docs carries over directly — it simply targets SQL Server's native JSON type and modern T-SQL instead
+of PostgreSQL's JSONB.
+
+<img src="/images/polecat-logo.png" alt="Polecat logo" width="140" />
+:::
+
 Marten is feature-rich and focused on accessibility, and we do that without compromising performance.
 
 Whether you're working on a new greenfield project or a bigger enterprise one, Marten will help you to quickly iterate and evolve your system with a focus on business value.

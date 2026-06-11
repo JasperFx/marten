@@ -4,6 +4,12 @@ description: Get started with Marten in your .NET application. Install the NuGet
 
 # Getting Started
 
+::: tip On SQL Server instead of PostgreSQL?
+Marten targets PostgreSQL. If you need SQL Server, see the Marten-inspired sibling project
+[Polecat](https://polecat.jasperfx.net), which brings the same document database and event sourcing
+model to SQL Server 2025 within the same "Critter Stack" ecosystem.
+:::
+
 Following the common .NET idiom, Marten supplies extension methods to quickly integrate Marten into any .NET application that uses the `IServiceCollection` abstractions to register IoC services. 
 Most features of Marten will work without the IoC registrations or any kind of `IHostBuilder`, but all of the command line tooling and
 much of the "Async Daemon" or database setup activators leverage the basic .NET `IHost` model. See the section on using `DocumentStore` directly
