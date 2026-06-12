@@ -408,17 +408,19 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             return _batch;
         }
 
-        // The semaphore is being sensitive to race conditions, so let's try to alleviate that
-        await Task.Delay(Random.Shared.Next(25, 200).Milliseconds(), _token).ConfigureAwait(false);
         await _semaphore.WaitAsync(_token).ConfigureAwait(false);
-
-        if (_batch != null)
-        {
-            return _batch;
-        }
 
         try
         {
+            // Double-checked locking: another caller may have created the batch while we waited.
+            // This check MUST live inside the try so the finally always releases the semaphore —
+            // returning here without releasing leaks the semaphore and deadlocks every later caller
+            // (the parallel event slices in a composite rebuild all park on WaitAsync forever).
+            if (_batch != null)
+            {
+                return _batch;
+            }
+
             _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
             Listeners.Add(_batch);
 
