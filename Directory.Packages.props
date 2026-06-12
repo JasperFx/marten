@@ -48,14 +48,20 @@
          single-consumer command loop. It previously ran inline inside that loop while the
          replay posted RangeCompleted commands back into the same bounded (10k) command
          channel, so the only reader was blocked awaiting its own posts — the shard silently
-         wedged at a batch boundary under UseTenantPartitionedEvents once the channel filled. -->
-    <PackageVersion Include="JasperFx" Version="2.9.9" />
-    <PackageVersion Include="JasperFx.Events" Version="2.9.9" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.9">
+         wedged at a batch boundary under UseTenantPartitionedEvents once the channel filled.
+         JasperFx 2.9.10: jasperfx#444 (marten#4730) — the in-memory aggregate cache is OFF by
+         default again (CacheLimitPerTenant 1000 → 0) and, when enabled, only populates after the
+         owning batch commits. Previously the cache was written during batch build before commit,
+         so a failed/retried batch (e.g. an out-of-order Update-before-Create stream throwing)
+         re-applied events on top of the already-mutated cached aggregate, double-applying to
+         unrelated, correctly-ordered streams in the same page. -->
+    <PackageVersion Include="JasperFx" Version="2.9.10" />
+    <PackageVersion Include="JasperFx.Events" Version="2.9.10" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.9" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.10" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
