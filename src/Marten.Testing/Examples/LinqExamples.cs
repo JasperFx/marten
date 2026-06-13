@@ -160,10 +160,10 @@ public class LinqExamples
         session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).First();
         session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).FirstOrDefault();
 
-        session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).Last();
-        session.Query<Target>().Where(x => x.Number == 5).OrderBy(x => x.Date).LastOrDefault();
+        // Marten does not support Last()/LastOrDefault(). Reverse the ordering
+        // and use First()/FirstOrDefault() instead.
 
-        // Using the query inside of Single/Last/First is supported as well
+        // Using the query predicate inside of Single/First is supported as well
         session.Query<Target>().Single(x => x.Number == 5);
     }
 

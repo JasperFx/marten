@@ -16,10 +16,10 @@ to do this generation by doing a single `CREATE TABLE IF NOT EXISTS` statement. 
 ```cs
 var store = DocumentStore.For(_ =>
 {
+    // This is the default
     _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
 
-    // or the default
-
+    // or, to drop and recreate the table on each schema migration
     _.Advanced.Migrator.TableCreation = CreationStyle.DropThenCreate;
 });
 ```

@@ -39,7 +39,8 @@ modes of event appending you can use with Marten:
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
     {
-        // This is the default Marten behavior from 4.0 on
+        // "Rich" was the default behavior through Marten 8. As of Marten 9
+        // the default is EventAppendMode.QuickWithServerTimestamps.
         opts.Events.AppendMode = EventAppendMode.Rich;
 
         // Lighter weight mode that should result in better
@@ -49,7 +50,7 @@ builder.Services.AddMarten(opts =>
     })
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L13-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The classic `Rich` mode will append events in a two step process where the local session will first determine all possible
