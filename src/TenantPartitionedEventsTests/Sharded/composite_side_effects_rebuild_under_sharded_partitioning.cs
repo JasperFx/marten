@@ -32,11 +32,13 @@ namespace TenantPartitionedEventsTests.Sharded;
 /// (<c>RaiseSideEffects</c> -&gt; <c>slice.PublishMessage(...)</c>), driven through an optimized
 /// composite rebuild.
 ///
-/// The optimized composite rebuild runs in <c>ShardExecutionMode.Continuous</c>, so stage-2 side
-/// effects fire and the parallel event slices all call
-/// <c>ProjectionUpdateBatch.CurrentMessageBatch</c> concurrently. Before the #4727 fix that leaked
-/// the batch semaphore and the rebuild deadlocked forever; this test pins that the rebuild
-/// completes and every tenant's documents on the multi-tenant shard materialize.
+/// When this test was written the optimized composite rebuild ran its members in
+/// <c>ShardExecutionMode.Continuous</c>, so stage-2 side effects fired and the parallel event slices
+/// all called <c>ProjectionUpdateBatch.CurrentMessageBatch</c> concurrently — that leaked the batch
+/// semaphore and the rebuild deadlocked forever (#4727). As of marten#4729 (JasperFx 2.9.12) the
+/// composite propagates its Mode to the members, so side effects are now SUPPRESSED during a rebuild
+/// and that concurrency window is closed; this test remains a guard that the optimized composite
+/// rebuild completes (no deadlock) and every tenant's documents on the multi-tenant shard materialize.
 /// </summary>
 [Collection("sharded-tenant-partitioned")]
 public partial class composite_side_effects_rebuild_under_sharded_partitioning: IAsyncLifetime
