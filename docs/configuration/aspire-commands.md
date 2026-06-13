@@ -100,7 +100,7 @@ override the dashboard presentation per verb:
 | `IconName`            | Fluent UI icon name; sensible defaults per verb.                                                                                                                        |
 | `ConfirmationMessage` | Required for mutating verbs; setting this opts a non-mutating verb into confirmation too.                                                                               |
 | `IsHighlighted`       | Pins the button to the front of the strip.                                                                                                                              |
-| `IsEnabled`           | Predicate over the resource's current `ResourceState` — useful for gating verbs to `Running` (or `Running` + the migration-resource-completed state for `projections`). |
+| `UpdateState`         | Callback (`Func<UpdateCommandStateContext, ResourceCommandState>`) that controls the dashboard enabled/disabled state — useful for gating verbs to `Running` (or `Running` + the migration-resource-completed state for `projections`). |
 
 ## Adding a single verb
 

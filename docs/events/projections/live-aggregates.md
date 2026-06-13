@@ -418,7 +418,7 @@ var currentState = await repository.Get(financialAccountId);
 ## Live Aggregation from Linq Queries
 
 Marten V4 introduces a mechanism to run a live aggregation to any arbitrary segment of events through
-a Linq operator in Marten called `AggregateTo()` or `AggregateToAsync()` as shown below:
+a Linq operator in Marten called `AggregateToAsync()` as shown below:
 
 <!-- snippet: sample_aggregateto_async_usage_with_linq -->
 <a id='snippet-sample_aggregateto_async_usage_with_linq'></a>
@@ -435,4 +435,4 @@ var questParty = await theSession.Events
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/aggregateto_linq_operator_tests.cs#L29-L40' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_aggregateto_async_usage_with_linq' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-These methods are extension methods in the `Marten.Events` namespace.
+This method is an extension method in the `Marten.Events` namespace.

@@ -233,7 +233,7 @@ Furthermore, `StreamState` contains metadata for when the stream was created, `S
 
 ## Fetch a Single Event
 
-You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.Load()` as shown below:
+You can fetch the information for a single event by id, including its version number within the stream, by using `IEventStore.LoadAsync()` as shown below:
 
 <!-- snippet: sample_load-a-single-event -->
 <a id='snippet-sample_load-a-single-event'></a>

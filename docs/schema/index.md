@@ -65,8 +65,6 @@ If you wish to assign certain document tables to different (new or existing) sch
 ```cs
 StoreOptions.Schema.For<User>().DatabaseSchemaName("other");
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Schema.Testing/DocumentSchemaTests.cs#L154-L167' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_override_schema_per_table' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 This will create the following tables in your database: `other.mt_doc_user`, `overriden.mt_doc_issue` and `public.mt_doc_company`. When a schema doesn't exist it will be generated in the database.
 
@@ -78,7 +76,7 @@ The EventStore database object are by default created in the document store Data
 StoreOptions.Events.DatabaseSchemaName = "event_store";
 ```
 
-This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions (mt_apply_transform, mt_apply_aggregation, ...) are created in the `event_store` schema.
+This will ensure that all EventStore tables (mt_stream, mt_events, ...) and functions are created in the `event_store` schema.
 
 ## Create Database
 

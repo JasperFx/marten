@@ -181,8 +181,8 @@ The valid return types are:
 
 ## Deleting the Aggregate Document
 
-::: warning Removed in Marten 9.0
-The `DeleteEvent<T>(...)` / `DeleteEventAsync<T>(...)` constructor-registration helpers are removed in Marten 9.0. Use the `ShouldDelete` method convention on a `partial` projection class instead — see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal). The conditional-delete and async-delete shapes both have direct method-convention equivalents.
+::: warning Partially Removed in Marten 9.0
+The **lambda-taking** overloads of `DeleteEvent<TEvent>(Func<...>)` are removed in Marten 9.0. The **parameterless** `DeleteEvent<T>()` (shown in the sample below) is still supported. Use the `ShouldDelete` method convention on a `partial` projection class for conditional deletes — see [Inline-lambda projection registration removed](/migration-guide#inline-lambda-projection-removal). The conditional-delete and async-delete shapes both have direct method-convention equivalents.
 :::
 
 In asynchronous or inline projections, receiving a certain event may signal that the projected document is now obsolete and should be deleted from

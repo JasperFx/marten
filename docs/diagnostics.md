@@ -6,9 +6,8 @@ For information on accessing and previewing the database schema objects generate
 
 ## Disabling Npgsql Logging <Badge type="tip" text="7.0" />
 
-The built in Npgsql logging is turned on by default in Marten, so to disable that logging so you
-can actually glean some value from your logs without blowing up the storage costs for your logging
-provider, use this flag:
+As of Marten 9, Npgsql logging is **disabled** by default. If you need to enable it, or if you are
+running an earlier version where it was on by default, use this flag to control it:
 
 <!-- snippet: sample_disabling_npgsql_logging -->
 <a id='snippet-sample_disabling_npgsql_logging'></a>
@@ -33,7 +32,7 @@ builder.ConfigureServices(services =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventAppenderPerfTester/Program.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disabling_npgsql_logging' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The Marten team will be considering reversing the default for this behavior in Marten 8.
+As of Marten 9, this default has been reversed: `DisableNpgsqlLogging` now defaults to `true`, so Npgsql logging is off unless you explicitly set it to `false`.
 
 ## Listening for Document Store Events
 
@@ -488,7 +487,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
 
 ## Accessing Diagnostics
 
-All the diagnostics are going to be exposed off of the `IDocumentStore.Diagnostics` property. Today, the only capabilities are to get a preview of the generated storage code or a preview of the ADO.NET code that will be generated for a LINQ query.
+All the diagnostics are going to be exposed off of the `IDocumentStore.Diagnostics` property. The current capabilities are to preview the ADO.NET command that will be generated for a compiled LINQ query, fetch the PostgreSQL server version, and retrieve the EXPLAIN plan for a compiled query.
 
 ## Previewing LINQ Queries
 

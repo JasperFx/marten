@@ -176,7 +176,7 @@ in PostgreSQL and is streamed directly to the HTTP response with **zero deserial
 For `Async` projections that are caught up, the same optimization applies. Only when the async daemon
 is behind does Marten fall back to rebuilding the aggregate in memory.
 
-This is built on top of `FetchLatest<T>()` — see [Reading Aggregates](/events/projections/read-aggregates#fetchlatest)
+Internally this delegates to `StreamLatestJson<T>()`, which streams raw JSONB bytes from PostgreSQL without deserializing to a .NET object. See [Reading Aggregates](/events/projections/read-aggregates#fetchlatest)
 for details on how each projection lifecycle is handled.
 
 Usage with a `Guid`-identified stream:

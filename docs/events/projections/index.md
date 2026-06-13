@@ -109,7 +109,7 @@ Now, let's move on to *how* you build projections in Marten with a discussion of
 Do note that all the various types of aggregated projections inherit from a common base type and have the same core set of conventions. The aggregation conventions are best explained in the [Aggregate Projections](/events/projections/aggregate-projections) page.
 :::
 
-Marten supplies X main recipes for constructing projections.
+Marten supplies 5 main recipes for constructing projections.
 
 1. [Single Stream Projections](/events/projections/aggregate-projections) combine events from a single stream into a single view.
 2. [Multi Stream Projections](/events/projections/multi-stream-projections) are a specialized form of projection that allows you to aggregate a view against arbitrary groupings of events across streams.
