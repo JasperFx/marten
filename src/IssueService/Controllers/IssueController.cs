@@ -72,10 +72,8 @@ namespace IssueService.Controllers
         public Task Get3(Guid issueId, [FromServices] IQuerySession session, [FromQuery] string? sc = null)
         {
             return sc is null
-                ? session.Query<Issue>().Where(x => x.Id == issueId)
-                    .WriteSingle(HttpContext)
-                : session.Query<Issue>().Where(x => x.Id == issueId)
-                    .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
+                ? session.WriteOne(new IssueById { Id = issueId }, HttpContext)
+                : session.WriteOne(new IssueById { Id = issueId }, HttpContext, onFoundStatus: int.Parse(sc));
         }
 
         #endregion

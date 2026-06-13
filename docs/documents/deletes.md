@@ -482,22 +482,10 @@ public async Task query_is_soft_deleted_since_docs()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Deleting/soft_deletes.cs#L1074-L1098' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_query_soft_deleted_since-1' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-_Neither `DeletedSince` nor `DeletedBefore` are inclusive searches as shown_below:
-
-<!-- snippet: sample_alldocumenttypesshouldbesoftdeleted -->
-<a id='snippet-sample_alldocumenttypesshouldbesoftdeleted'></a>
-```cs
-internal void AllDocumentTypesShouldBeSoftDeleted()
-{
-    using var store = DocumentStore.For(opts =>
-    {
-        opts.Connection("some connection string");
-        opts.Policies.AllDocumentsSoftDeleted();
-    });
-}
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/Marten.Testing/Examples/Deletes.cs#L36-L47' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_alldocumenttypesshouldbesoftdeleted' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
+::: tip
+Neither `DeletedSince` nor `DeletedBefore` are inclusive searches — the supplied boundary
+timestamp itself is excluded from the results.
+:::
 
 ### Undoing Soft-Deleted Documents
 

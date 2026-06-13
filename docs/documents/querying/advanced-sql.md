@@ -141,15 +141,24 @@ results[1].detail.Detail.ShouldBe("Likes to cook");
 
 All `AdvancedSql` methods also support parameters:
 
-<!-- snippet: sample_document_schema_resolver_resolve_schemas -->
-<a id='snippet-sample_document_schema_resolver_resolve_schemas'></a>
+<!-- snippet: sample_advanced_sql_query_parameters -->
+<a id='snippet-sample_advanced_sql_query_parameters'></a>
 ```cs
-var schema = theSession.DocumentStore.Options.Schema;
+var schema = session.DocumentStore.Options.Schema;
 
-schema.DatabaseSchemaName.ShouldBe("public");
-schema.EventsSchemaName.ShouldBe("public");
+var name = (await session.AdvancedSql.QueryAsync<string>(
+    $"select data ->> ? from {schema.For<DocWithMeta>()} limit 1",
+    CancellationToken.None,
+    "Name")).First();
+
+// Use ^ as the parameter placeholder
+var name2 = (await session.AdvancedSql.QueryAsync<string>(
+    '^',
+    $"select data ->> ^ from {schema.For<DocWithMeta>()} limit 1",
+    CancellationToken.None,
+    "Name")).First();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L25-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/advanced_sql_query.cs#L151-L166' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_advanced_sql_query_parameters' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 For sync queries you can use the `AdvancedSql.Query<T>(...)` overloads.

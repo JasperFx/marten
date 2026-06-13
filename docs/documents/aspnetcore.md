@@ -86,7 +86,7 @@ public Task OpenIssues([FromServices] IQuerySession session, [FromQuery] string?
             .WriteArray(HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L84-L99' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_multiple_documents_to_httpcontext' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L82-L97' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_writing_multiple_documents_to_httpcontext' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Compiled Query Support
@@ -107,7 +107,7 @@ public class OpenIssues: ICompiledListQuery<Issue>
     }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L114-L124' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_openissues' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L112-L122' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_openissues' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And use that in an MVC Controller method like this:
@@ -123,7 +123,7 @@ public Task OpenIssues2([FromServices] IQuerySession session, [FromQuery] string
         : session.WriteArray(new OpenIssues(), HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L101-L111' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_compiled_query_with_json_streaming' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L99-L109' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_compiled_query_with_json_streaming' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Likewise, you _could_ use a compiled query to write a single document. As a contrived
@@ -143,7 +143,7 @@ public class IssueById: ICompiledQuery<Issue, Issue>
     public Guid Id { get; set; }
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L126-L138' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issuebyid' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L124-L136' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_issuebyid' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 And the usage of that to write JSON directly to the `HttpContext` in a controller method:
@@ -155,13 +155,11 @@ And the usage of that to write JSON directly to the `HttpContext` in a controlle
 public Task Get3(Guid issueId, [FromServices] IQuerySession session, [FromQuery] string? sc = null)
 {
     return sc is null
-        ? session.Query<Issue>().Where(x => x.Id == issueId)
-            .WriteSingle(HttpContext)
-        : session.Query<Issue>().Where(x => x.Id == issueId)
-            .WriteSingle(HttpContext, onFoundStatus: int.Parse(sc));
+        ? session.WriteOne(new IssueById { Id = issueId }, HttpContext)
+        : session.WriteOne(new IssueById { Id = issueId }, HttpContext, onFoundStatus: int.Parse(sc));
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L69-L81' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/IssueService/Controllers/IssueController.cs#L69-L79' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_write_single_document_to_httpcontext_with_compiled_query' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Writing Event Sourcing Aggregates
