@@ -32,18 +32,18 @@ IDocumentSession <|.. DirtyCheckingDocumentSession
 While there are sections below describing each session in more detail, at a high level the different
 types of sessions are:
 
-| **Creation**                                            | **Read/Write** | **Identity Map** | **Dirty Checking** |
-| ------------------------------------------------------- | -------------- | ---------------- | ------------------ |
-| `IDocumentStore.QuerySession()`                         | Read Only      | No               | No                 |
-| `IDocumentStore.QuerySerializableSessionAsync()`        | Read Only      | No               | No                 |
-| `IDocumentStore.LightweightSession()`                   | Read/Write     | No               | No                 |
-| `IDocumentStore.LightweightSerializableSessionAsync()`  | Read/Write     | No               | No                 |
-| `IDocumentStore.IdentitySession()`                      | Read/Write     | Yes              | No                 |
-| `IDocumentStore.IdentitySerializableSessionAsync()`     | Read/Write     | Yes              | No                 |
-| `IDocumentStore.DirtyTrackedSession()`                  | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.DirtyTrackedSerializableSessionAsync()` | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.OpenSession(SessionOptions)`            | Read/Write     | Yes              | No                 |
-| `IDocumentStore.OpenSerializableSessionAsync(SessionOptions)` | Read/Write | Yes             | No                 |
+| **Creation**                                                  | **Read/Write** | **Identity Map** | **Dirty Checking** |
+| ------------------------------------------------------------- | -------------- | ---------------- | ------------------ |
+| `IDocumentStore.QuerySession()`                               | Read Only      | No               | No                 |
+| `IDocumentStore.QuerySerializableSessionAsync()`              | Read Only      | No               | No                 |
+| `IDocumentStore.LightweightSession()`                         | Read/Write     | No               | No                 |
+| `IDocumentStore.LightweightSerializableSessionAsync()`        | Read/Write     | No               | No                 |
+| `IDocumentStore.IdentitySession()`                            | Read/Write     | Yes              | No                 |
+| `IDocumentStore.IdentitySerializableSessionAsync()`           | Read/Write     | Yes              | No                 |
+| `IDocumentStore.DirtyTrackedSession()`                        | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.DirtyTrackedSerializableSessionAsync()`       | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.OpenSession(SessionOptions)`                  | Read/Write     | Yes              | No                 |
+| `IDocumentStore.OpenSerializableSessionAsync(SessionOptions)` | Read/Write     | Yes              | No                 |
 
 ::: tip INFO
 The recommended session type for read/write operations is `LightweightSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.

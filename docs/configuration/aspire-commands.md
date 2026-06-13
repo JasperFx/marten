@@ -93,13 +93,13 @@ builder.AddProject<Projects.MartenApi>("api")
 `opts.For("verb")` returns a `JasperFxCommandRegistration` that lets you
 override the dashboard presentation per verb:
 
-| Property              | Use                                                                                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DisplayName`         | Button label (defaults to a humanized verb name).                                                                                                                       |
-| `DisplayDescription`  | Tooltip / extended description.                                                                                                                                         |
-| `IconName`            | Fluent UI icon name; sensible defaults per verb.                                                                                                                        |
-| `ConfirmationMessage` | Required for mutating verbs; setting this opts a non-mutating verb into confirmation too.                                                                               |
-| `IsHighlighted`       | Pins the button to the front of the strip.                                                                                                                              |
+| Property              | Use                                                                                                                                                                                                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DisplayName`         | Button label (defaults to a humanized verb name).                                                                                                                                                                                       |
+| `DisplayDescription`  | Tooltip / extended description.                                                                                                                                                                                                         |
+| `IconName`            | Fluent UI icon name; sensible defaults per verb.                                                                                                                                                                                        |
+| `ConfirmationMessage` | Required for mutating verbs; setting this opts a non-mutating verb into confirmation too.                                                                                                                                               |
+| `IsHighlighted`       | Pins the button to the front of the strip.                                                                                                                                                                                              |
 | `UpdateState`         | Callback (`Func<UpdateCommandStateContext, ResourceCommandState>`) that controls the dashboard enabled/disabled state — useful for gating verbs to `Running` (or `Running` + the migration-resource-completed state for `projections`). |
 
 ## Adding a single verb
