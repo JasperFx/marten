@@ -54,14 +54,25 @@
          owning batch commits. Previously the cache was written during batch build before commit,
          so a failed/retried batch (e.g. an out-of-order Update-before-Create stream throwing)
          re-applied events on top of the already-mutated cached aggregate, double-applying to
-         unrelated, correctly-ordered streams in the same page. -->
-    <PackageVersion Include="JasperFx" Version="2.9.10" />
-    <PackageVersion Include="JasperFx.Events" Version="2.9.10" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.10">
+         unrelated, correctly-ordered streams in the same page.
+         JasperFx 2.9.13: marten#4729 (two parts) — the optimized composite rebuild now propagates
+         the composite's ShardExecutionMode down to its member executions (jasperfx#447). Member
+         executions defaulted to ShardExecutionMode.Continuous (CompositeReplayExecutor only set the
+         parent's Mode), so during a composite rebuild the stage members fired their RaiseSideEffects
+         (PublishMessage/AppendEvent) — unlike the classic single-stream rebuild, which is pinned by
+         side_effects_do_not_happen_in_rebuilds. Members now inherit CatchUp/Rebuild and suppress
+         side effects during a rebuild. The follow-up (jasperfx#448) decouples slice.Snapshot
+         assignment from side-effect publishing in AggregationRunner so multi-stage composites still
+         fan the upstream Updated<TDoc> events to downstream stages during a rebuild (previously the
+         snapshot was only set on the Continuous path, so post-#447 a rebuild produced no upstream
+         snapshot and downstream stages threw NREs). 2.9.12 shipped only #447 and is incomplete. -->
+    <PackageVersion Include="JasperFx" Version="2.9.13" />
+    <PackageVersion Include="JasperFx.Events" Version="2.9.13" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.9.13">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.10" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.9.13" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
