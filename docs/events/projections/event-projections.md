@@ -252,18 +252,15 @@ now extended to `EventProjection`.
 Override `EnrichEventsAsync` in your `EventProjection` subclass:
 
 ```cs
-public class TaskSummaryProjection : EventProjection
+public partial class TaskSummaryProjection : EventProjection
 {
-    public TaskSummaryProjection()
+    // The Project handler reads UserName that was set by EnrichEventsAsync
+    public void Project(TaskAssigned e, IDocumentOperations ops)
     {
-        // The Project handler reads UserName that was set by EnrichEventsAsync
-        Project<TaskAssigned>((e, ops) =>
+        ops.Store(new TaskSummary
         {
-            ops.Store(new TaskSummary
-            {
-                Id = e.TaskId,
-                AssignedUserName = e.UserName
-            });
+            Id = e.TaskId,
+            AssignedUserName = e.UserName
         });
     }
 
