@@ -345,7 +345,93 @@ public class jasper_fx_mechanics
         result2.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task enable_advanced_tracking_propagates_to_main_document_store()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddJasperFx(o => o.EnableAdvancedTracking = true);
 
+                services.AddMarten(m =>
+                {
+                    m.Connection(ConnectionSource.ConnectionString);
+                    m.DatabaseSchemaName = "advanced_tracking_main";
+                });
+            }).StartAsync();
+
+        var store = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+        store.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task enable_advanced_tracking_propagates_to_ancillary_document_stores()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddJasperFx(o => o.EnableAdvancedTracking = true);
+
+                services.AddMarten(m =>
+                {
+                    m.Connection(ConnectionSource.ConnectionString);
+                    m.DatabaseSchemaName = "advanced_tracking_main";
+                });
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "advanced_tracking_first";
+                });
+
+                services.AddMartenStore<ISecondStore>(services =>
+                {
+                    var opts = new StoreOptions();
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "advanced_tracking_second";
+                    return opts;
+                });
+            }).StartAsync();
+
+        var main = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+
+        var first = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+
+        var second = host.Services.GetRequiredService<ISecondStore>().As<DocumentStore>();
+        second.Options.Events.EnableExtendedProgressionTracking.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task advanced_tracking_off_leaves_extended_progression_tracking_at_default()
+    {
+        // Sanity: when EnableAdvancedTracking is not set (default false), we do NOT
+        // flip EnableExtendedProgressionTracking on. Per-store opt-in is preserved.
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddJasperFx();
+
+                services.AddMarten(m =>
+                {
+                    m.Connection(ConnectionSource.ConnectionString);
+                    m.DatabaseSchemaName = "advanced_tracking_off_main";
+                });
+
+                services.AddMartenStore<IFirstStore>(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "advanced_tracking_off_first";
+                });
+            }).StartAsync();
+
+        var main = host.Services.GetRequiredService<IDocumentStore>().As<DocumentStore>();
+        main.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+
+        var first = host.Services.GetRequiredService<IFirstStore>().As<DocumentStore>();
+        first.Options.Events.EnableExtendedProgressionTracking.ShouldBeFalse();
+    }
 }
 
 public interface IFirstStore : IDocumentStore{}

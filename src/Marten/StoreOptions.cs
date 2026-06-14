@@ -320,6 +320,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         ApplicationAssembly ??= options.ApplicationAssembly;
         _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
+
+        // CritterWatch / advanced-tooling opt-in: when the JasperFx host turns on
+        // EnableAdvancedTracking, every Marten DocumentStore in the container
+        // (main + ancillary) opts into extended progression tracking so downstream
+        // tools (CritterWatch in particular) see the richer per-shard state.
+        if (options.EnableAdvancedTracking)
+        {
+            Events.EnableExtendedProgressionTracking = true;
+        }
     }
 
     /// <summary>
