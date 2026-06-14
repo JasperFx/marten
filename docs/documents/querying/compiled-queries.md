@@ -537,7 +537,7 @@ public class FindJsonOrderedUsersByUsername: ICompiledListQuery<User>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/LinqTests/Compiled/compiled_queries.cs#L409-L423' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_compiledtojsonarray' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Note that the result has the documents comma separated and wrapped in angle brackets (as per the Json notation).
+Note that the result has the documents comma separated and wrapped in square brackets (as per the JSON array notation).
 
 ## Querying for a Single Document as JSON
 

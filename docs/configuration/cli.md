@@ -159,27 +159,27 @@ All the example above does is delegate any arguments to your console application
 Assert that the database matches the current database. This command will fail if there are differences
 
 ```bash
-marten marten-assert --log log.txt
+marten db-assert --log log.txt
 ```
 
 This command tries to update the database to reflect the application configuration
 
 ```bash
-marten marten-apply --log log.txt
+marten db-apply --log log.txt
 ```
 
 This dumps a single file named "database.sql" with all the DDL necessary to build the database to
 match the application configuration
 
 ```bash
-marten marten-dump database.sql
+marten db-dump database.sql
 ```
 
 This dumps the DDL to separate files per document
 type to a folder named "scripts"
 
 ```bash
-marten marten-dump scripts --by-type
+marten db-dump scripts --by-type
 ```
 
 Create a patch file called "patch1.sql" and
@@ -188,7 +188,7 @@ differences are found between the application configuration
 and the database
 
 ```bash
-marten marten-patch patch1.sql --drop patch1.drop.sql
+marten db-patch patch1.sql --drop patch1.drop.sql
 ```
 
 In all cases, the commands expose usage help through "marten help [command]." Each of the commands also exposes a "--conn" (or "-c" if you prefer) flag to override the database connection string and a "--log" flag to record all the command output to a file.

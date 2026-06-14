@@ -8,7 +8,7 @@ Databases, tables, fields and column names are case-independent, unless created 
 
 ## Case-Insensitivity & Marten Internals
 
-Marten query parser recognizes case-insensitive comparisons from the use of `StringComparison.CurrentCultureIgnoreCase`. Such comparisons are translated to use the `ILIKE` (or its equivalent operator `~~*`) PostgreSQL extension that matches strings independent of case.
+Marten query parser recognizes case-insensitive comparisons from the use of `StringComparison.CurrentCultureIgnoreCase`, `StringComparison.InvariantCultureIgnoreCase`, or `StringComparison.OrdinalIgnoreCase`. Such comparisons are translated to use the `ILIKE` (or its equivalent operator `~~*`) PostgreSQL extension that matches strings independent of case.
 
 The use of `ILIKE` pattern match in place of equality comparison has the consequence that matching on *%* wildcard literal needs to be escaped as *\\%*, e.g. *abc%* would match on *abc* followed by any characters, whereas *abc\\%* would only match the exact string of *abc%*.
 

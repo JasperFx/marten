@@ -152,8 +152,6 @@ schema.EventsSchemaName.ShouldBe("public");
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/DocumentSchemaResolverTests.cs#L25-L30' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_document_schema_resolver_resolve_schemas' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-For sync queries you can use the `AdvancedSql.Query<T>(...)` overloads.
-
 When you need to query for large datasets, the `AdvancedSql.StreamAsync<>(...)` methods can be used. They will return
 an IAsyncEnumerable<>, which you can use to iterate over the result set. See:
 

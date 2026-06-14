@@ -386,7 +386,7 @@ builder.Services.AddMarten(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/OptimizedCommandHandling.cs#L210-L231' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_order_as_inline' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-You can potentially gain some significant performance optimization by using the `UseIdentityMapForInlineAggregates` flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:
+You can potentially gain some significant performance optimization by using the `UseIdentityMapForAggregates` flag shown above. To be clear, this optimization mostly helps when you have the combination in a command handler that:
 
 1. Uses `FetchForWriting` for an aggregate type
 2. That aggregate type is updated or built through an `Inline` projection or snapshot

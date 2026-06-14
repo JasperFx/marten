@@ -147,9 +147,11 @@ The created table has the shape:
 `VectorProjectionSearchAsync` runs the canonical ordered-by-distance query against the projection table and returns the `Guid` id, distance, and the original content text:
 
 ```csharp
+var queryEmbedding = (await myEmbeddingProvider.GenerateEmbeddingsAsync(["red running shoes"]))[0];
+
 var results = await q.VectorProjectionSearchAsync(
     "product_search_vectors",
-    myEmbeddingProvider.Embed("red running shoes"),
+    queryEmbedding,
     limit: 10,
     distance: DistanceFunction.Cosine);
 

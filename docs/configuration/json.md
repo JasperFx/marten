@@ -500,7 +500,28 @@ public class JilSerializer : ISerializer
 
     public EnumStorage EnumStorage => EnumStorage.AsString;
     public Casing Casing => Casing.Default;
+
+    public void WriteTo(IBufferWriter<byte> writer, object? value)
+    {
+        throw new NotSupportedException();
+    }
+
+    public void WriteToParameter(NpgsqlParameter parameter, object? value)
+    {
+        throw new NotSupportedException();
+    }
+
+    public void WriteToCleanJson(IBufferWriter<byte> writer, object? value)
+    {
+        throw new NotSupportedException();
+    }
+
     public string ToJsonWithTypes(object document)
+    {
+        throw new NotSupportedException();
+    }
+
+    public void WriteToJsonWithTypes(IBufferWriter<byte> writer, object value)
     {
         throw new NotSupportedException();
     }

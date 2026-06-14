@@ -37,7 +37,7 @@ At this point, Marten's Linq support has been tested against these .Net types:
 
 1. `String`
 1. `Int32` & `Int64` (`int` and `long`)
-1. `Decimal` (float)
+1. `Decimal`
 1. `DateTime` and `DateTimeOffset`
 1. `Enum` values
 1. `Nullable<T>` of all of the above types

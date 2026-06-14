@@ -152,9 +152,9 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DaemonTests/TestingSupport/TripProjectionWithCustomName.cs#L20-L33' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_registering_an_aggregate_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-Do notice the usage of the `DeleteEvent<T>()` method in the constructor function of `TripProjection`. You can also tell
-Marten that you're deleting the projected document by just returning `null` from an `Evolve()` method, but the `DeleteEvent<T>()`
-marker is a little bit of an optimization that short circuits the projection processing.
+Do notice the usage of the `ShouldDelete` method conventions in `TripProjection`. These methods let you tell
+Marten that it should delete the projected document based on a given event. You can also trigger deletion by returning `null`
+from an `Evolve()` method override.
 
 Or finally, you can use [explicit code](/events/projections/explicit) to define your single stream projection. You'll
 still inherit from `SingleStreamProjection<TDoc, TId>`, but this time override *one and only one* of these methods:

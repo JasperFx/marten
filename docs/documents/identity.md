@@ -3,7 +3,7 @@
 Besides being serializable, Marten's only other requirement for a .Net type to be a document is the existence of an identifier field or property that Marten can use as the primary key for the document type. The `Id` can be either a public field or property, and the name must be either `id` or `Id` or `ID`. As of this time, Marten supports these `Id` types:
 
 1. `String`. It might be valuable to use a [natural key](https://en.wikipedia.org/wiki/Natural_key) as the identifier, especially if it is valuable within the
-   [Identity Map](/documents/identity) feature of Marten Db. In this case, the user will
+   [Identity Map](/documents/sessions#identity-map-mechanics) feature of Marten Db. In this case, the user will
    be responsible for supplying the identifier.
 1. `Guid`. If the id is a Guid, Marten will assign a new value for you when you persist the document for the first time if the id is empty.
    _And for the record, it's pronounced "gwid"_.
@@ -83,7 +83,7 @@ As of Marten 1.0, the default Guid mechanism is a sequential or "Comb" Guid. Whi
 generate, this makes inserts into the underlying document tables more efficient.
 :::
 
-To use _CombGuid_ generation you should enable it when configuring the document store. This defines that the _CombGuid_ generation strategy will be used for all the documents types.
+Because _CombGuid_ is already the default, you only need to configure this explicitly if you want to ensure the strategy is applied uniformly as a policy across all document types:
 
 <!-- snippet: sample_configuring-global-sequentialguid -->
 <a id='snippet-sample_configuring-global-sequentialguid'></a>
@@ -264,8 +264,6 @@ public class CustomIdGeneration : IIdGeneration
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/Identity/Sequences/CustomKeyGenerationTests.cs#L11-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_custom-id-generation' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
-
-The `Build()` method should return the actual `IdGenerator<T>` for the document type, where `T` is the type of the Id field.
 
 For more advances examples you can have a look at existing ID generator: [HiloIdGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/HiloIdGeneration.cs), [CombGuidGenerator](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/CombGuidIdGeneration.cs) and the [IdentityKeyGeneration](https://github.com/JasperFx/marten/blob/master/src/Marten/Schema/Identity/Sequences/IdentityKeyGeneration.cs),
 

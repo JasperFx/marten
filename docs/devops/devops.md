@@ -90,7 +90,7 @@ Pre-Marten-9.0 versions of this guide ran `dotnet run -- codegen write` inside t
 :::
 
 ```dockerfile
-FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
 WORKDIR /src
 
 COPY ["Application/Application.csproj", "Application/"]
@@ -103,7 +103,7 @@ WORKDIR "/src/Application"
 
 RUN dotnet publish "Application.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
 ENV DOTNET_RUNNING_IN_CONTAINER=1
 ENV DOTNET_NOLOGO=1
 ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1

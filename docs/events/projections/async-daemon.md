@@ -508,17 +508,17 @@ them from existing runtime state and the shard-state selector reads them back
 into `ShardState` so monitoring tooling such as CritterWatch can display
 per-shard health.
 
-**Default: on** (#4687, Critter Stack 1.0 timing). The columns are useful for
+**Default: off**. The columns are useful for
 any stuck-shard diagnosis -- not just CritterWatch -- and the write-side cost is
-negligible because they're already-computed daemon-internal values. The next
-`ApplyAllConfiguredChangesToDatabaseAsync()` adds the columns to an existing
+negligible because they're already-computed daemon-internal values. When enabled,
+the next `ApplyAllConfiguredChangesToDatabaseAsync()` adds the columns to an existing
 database; they're nullable so no backfill is required.
 
-Opt out (e.g. you have your own monitoring story and don't want the columns)
-by setting the toggle to false explicitly:
+Opt in (e.g. for CritterWatch monitoring or your own shard health tooling)
+by setting the toggle to true explicitly:
 
 ```cs
-opts.Events.EnableExtendedProgressionTracking = false;
+opts.Events.EnableExtendedProgressionTracking = true;
 ```
 
 Marten implements the storage-agnostic
@@ -528,7 +528,7 @@ similar satellite packages can flip the same toggle via the interface without
 referencing Marten's concrete `EventGraph`:
 
 ```cs
-((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = false;
+((IEventStoreInstrumentation)opts.Events).ExtendedProgressionEnabled = true;
 ```
 
 Both names refer to the same underlying field. New code is encouraged to prefer

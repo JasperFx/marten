@@ -129,7 +129,7 @@ Note that `StartStream` checks for an existing stream and throws `ExistingStream
 ## Appending Events
 
 ::: tip
-`AppendEvent()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
+`Append()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
 :::
 
 If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
@@ -202,7 +202,7 @@ opts.Events.AppendMode = EventAppendMode.Rich;
 :::
 
 ::: tip
-**Strongly recommended:** use [`FetchForWriting`](/events/projections/aggregate-projections#fetchforwriting) instead of
+**Strongly recommended:** use [`FetchForWriting`](/scenarios/command_handler_workflow) instead of
 hand-rolling `Append(streamId, expectedVersion, events)`. `FetchForWriting` works in both Rich and
 Quick modes, takes a single round-trip lock on the stream, and gives you the optimistic-concurrency
 guard for free — without forcing your store off the V9 throughput-optimized default. The

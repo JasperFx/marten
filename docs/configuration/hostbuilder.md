@@ -36,7 +36,7 @@ builder.Services.AddMarten(options =>
 The `AddMarten()` method will add these service registrations to your application:
 
 1. `IDocumentStore` with a *Singleton* lifetime. The document store can be used to create sessions, query the configuration of Marten, generate schema migrations, and do bulk inserts.
-2. `IDocumentSession` with a *Scoped* lifetime for all read and write operations. **By default**, this is done with the `IDocumentStore.OpenSession()` method and the session created will have the identity map behavior
+2. `IDocumentSession` with a *Scoped* lifetime for all read and write operations. **By default** (as of Marten 9.0.3), sessions are lightweight with no identity map tracking (`DocumentTracking.None`)
 3. `IQuerySession` with a *Scoped* lifetime for all read operations against the document store.
 
 For more information, see:
@@ -376,11 +376,10 @@ services.ConfigureMartenWithServices<FeatureManagementUsingExtension>();
 Most usages of Marten should default to the lightweight sessions for better performance
 :::
 
-The default registration for `IDocumentSession` added by `AddMarten()` is a session with
-[identity map](/documents/sessions.html#identity-map-mechanics) mechanics. That might be unnecessary
-overhead in most cases where the sessions are short-lived, but we keep this behavior for backward
-compatibility with early Marten and RavenDb behavior before that. To opt into using lightweight sessions
-without the identity map behavior, use this syntax:
+As of Marten 9.0.3, the default registration for `IDocumentSession` added by `AddMarten()` is already
+a lightweight session with no [identity map](/documents/sessions.html#identity-map-mechanics) tracking
+(`DocumentTracking.None`). If you are explicitly calling `.UseLightweightSessions()`, that is the
+recommended approach to make the intent clear in your application bootstrapping, as shown below:
 
 <!-- snippet: sample_addmartenwithlightweightsessions -->
 <a id='snippet-sample_addmartenwithlightweightsessions'></a>
@@ -401,7 +400,7 @@ services.AddMarten(opts =>
 
 ## Customizing Session Creation Globally
 
-By default, Marten will create a document session with the basic identity map enabled and a [ReadCommitted](https://docs.microsoft.com/en-us/dotnet/api/system.transactions.isolationlevel?view=netcore-3.1) transaction isolation level. If you want to use a different configuration for sessions globally in your application, you can use a custom implementation of the `ISessionFactory` class
+By default (as of Marten 9.0.3), Marten creates a lightweight document session with no identity map tracking and a [ReadCommitted](https://docs.microsoft.com/en-us/dotnet/api/system.transactions.isolationlevel?view=netcore-3.1) transaction isolation level. If you want to use a different configuration for sessions globally in your application, you can use a custom implementation of the `ISessionFactory` class
 as shown in this example:
 
 <!-- snippet: sample_customsessionfactory -->

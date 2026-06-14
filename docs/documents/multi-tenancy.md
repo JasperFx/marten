@@ -1,6 +1,6 @@
 # Multi-Tenanted Documents
 
-Marten supports multi-tenancy to provide data isolation between tenants, aka groups of users. In effect, this allows scoping storage operations, such as persisting and loading data, so that no tenant can access data of others. Marten provides multi-tenancy at the logical level, by associating data records with a tenant identifier. In addition, multi-tenancy through separate databases or schemas is planned.
+Marten supports multi-tenancy to provide data isolation between tenants, aka groups of users. In effect, this allows scoping storage operations, such as persisting and loading data, so that no tenant can access data of others. Marten provides multi-tenancy at the logical level, by associating data records with a tenant identifier. In addition, multi-tenancy through separate databases is supported via separate database tenancy strategies.
 
 By default, Marten operates in single-tenancy mode (`TenancyStyle.Single`) with multi-tenancy disabled.
 
@@ -68,7 +68,7 @@ Lastly, unlike reading operations, `IDocumentSession.Store` offers an overload t
 
 ## Default Tenancy
 
-With multi-tenancy enabled, Marten associates each record with a tenancy. If no explicit tenancy is specified, either via policies, mappings, scoped sessions or overloads, Marten will default to `Tenancy.DefaultTenantId` with a constant value of `*DEFAULT*`.
+With multi-tenancy enabled, Marten associates each record with a tenancy. If no explicit tenancy is specified, either via policies, mappings, scoped sessions or overloads, Marten will default to `StorageConstants.DefaultTenantId` with a constant value of `*DEFAULT*`.
 
 The following sample demonstrates persisting documents as non-tenanted, under default tenant and other named tenants then querying them back in a session scoped to a specific named tenant and default tenant.
 
@@ -275,11 +275,12 @@ var actual =(await  query.Query<Target>().Where(x => x.AnyTenant() && x.Flag)
 
 ## Configuring Tenancy
 
-The three levels of tenancy that Marten supports are expressed in the enum `TenancyStyle` with effective values of:
+The two values of the `TenancyStyle` enum that Marten uses for logical (single-database) tenancy are:
 
 - `Single`, no multi-tenancy
 - `Conjoined`, multi-tenancy through tenant id
-- `Separate`, multi-tenancy through separate databases or schemas
+
+Multi-tenancy through separate databases is implemented via separate tenancy strategies (not a `TenancyStyle` enum value).
 
 Tenancy can be configured at the store level, applying to all documents or, at the most fine-grained level, on individual documents.
 
