@@ -274,7 +274,7 @@ public partial class DayProjection: MultiStreamProjection<Day, int>
 
         Name = "Day";
 
-        // Opt into 2nd level caching of up to 100
+        // Opt into 2nd level caching of up to 1000
         // most recently encountered aggregates as a
         // performance optimization
         Options.CacheLimitPerTenant = 1000;

@@ -55,8 +55,8 @@ public class DiagnosticsExamples: IntegrationContext
         using (var session = theStore.QuerySession())
         {
             var users = (await session.Query<User>().ToListAsync());
-            var count = session.Query<User>().Count();
-            var any = session.Query<User>().Any();
+            var count = await session.Query<User>().CountAsync();
+            var any = await session.Query<User>().AnyAsync();
 
             session.RequestCount.ShouldBe(3);
         }

@@ -364,7 +364,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L185-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L186-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -376,7 +376,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L194-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L195-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -584,8 +584,8 @@ just understand what kinds of operations are being chatty in the first place. To
 using (var session = theStore.QuerySession())
 {
     var users = (await session.Query<User>().ToListAsync());
-    var count = session.Query<User>().Count();
-    var any = session.Query<User>().Any();
+    var count = await session.Query<User>().CountAsync();
+    var any = await session.Query<User>().AnyAsync();
 
     session.RequestCount.ShouldBe(3);
 }
