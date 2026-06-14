@@ -140,6 +140,33 @@ public interface IEvent
     /// <param name="key"></param>
     /// <returns></returns>
     object? GetHeader(string key);
+
+    /// <summary>
+    ///     Optional user name captured for this event
+    /// </summary>
+    string? UserName { get; set; }
+
+    /// <summary>
+    ///     Has this event been marked as skipped and filtered out of
+    ///     projection and subscription processing
+    /// </summary>
+    bool IsSkipped { get; set; }
+
+    /// <summary>
+    ///     Strong-typed identifier values used for cross-stream querying
+    ///     and consistency (dynamic consistency boundaries). May be null.
+    /// </summary>
+    IReadOnlyList<EventTag>? Tags { get; }
+
+    /// <summary>
+    ///     Add a strong-typed tag value to this event
+    /// </summary>
+    void AddTag<TTag>(TTag tag) where TTag : notnull;
+
+    /// <summary>
+    ///     Add a tag value to this event
+    /// </summary>
+    void AddTag(EventTag tag);
 }
 ```
 
