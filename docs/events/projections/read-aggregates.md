@@ -104,7 +104,7 @@ builder.Services.AddMarten(opts =>
 <!-- endSnippet -->
 
 ::: warning
-That flag is `false` by default because it was introduced halfway through the 7.* version lifecycle,
+That flag is `true` by default in Marten 9 (it was `false` in earlier versions because it was introduced halfway through the 7.* version lifecycle),
 and can introduce subtle bugs in application code if you use some kind of `AggregateRoot` pattern where
 your application code mutates the aggregate projection objects outside of Marten control.
 
@@ -182,4 +182,4 @@ database.
 
 ## Live Aggregation
 
-Also see [/events/projections/live-aggregates]
+Also see [Live Aggregations](/events/projections/live-aggregates)

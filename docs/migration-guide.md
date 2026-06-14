@@ -45,7 +45,7 @@ Marten 9 is the Marten side of the [Critter Stack 2026](https://github.com/Jaspe
 | `JasperFx.Events` | 1.x | 2.0.0-alpha.x |
 | `JasperFx.RuntimeCompiler` | 1.x | *retired* |
 | `Weasel.Postgresql` | 8.x | 9.0.0-alpha.x |
-| `Npgsql` | 9.x | 10.x |
+| `Npgsql` | 9.x | 9.x |
 
 **For most consumers**, picking up the new packages happens transitively when you bump `Marten` — no explicit version pins are needed. If your application has explicit references to any of the packages above, bump them in lockstep.
 
@@ -66,7 +66,7 @@ Three types Marten core previously owned moved to the shared Weasel / JasperFx p
 
 * **`Marten.Internal.Operations.OperationRole` → `Weasel.Core.OperationRole`.** Third-party consumers that referenced the Marten-side type need to add `using Weasel.Core;` and drop the Marten-side `using` (or qualify inline). Tracked in [#4350](https://github.com/JasperFx/marten/issues/4350) / merged via [#4352](https://github.com/JasperFx/marten/pull/4352).
 * **`Marten.BulkInsertMode` → `Weasel.Core.BulkInsertMode`.** Same migration story — bare type name unchanged; `using` directives need to be updated. Audit row at [weasel#264](https://github.com/JasperFx/weasel/issues/264).
-* **`IStorageOperation` refactor.** Marten's `IStorageOperation` now `extends Weasel.Core.IStorageOperation` and the **synchronous `Postprocess(...)` overload has been removed** (Npgsql 10 no longer supports the synchronous path). Third-party implementers of `IStorageOperation` must drop their sync override and move that logic into `PostprocessAsync` — there is no rewrite-on-the-fly shim. Tracked in [#4351](https://github.com/JasperFx/marten/issues/4351) / PR [#4353](https://github.com/JasperFx/marten/pull/4353).
+* **`IStorageOperation` refactor.** Marten's `IStorageOperation` now `extends Weasel.Core.IStorageOperation` and the **synchronous `Postprocess(...)` overload has been removed** (Npgsql 9 no longer supports the synchronous path). Third-party implementers of `IStorageOperation` must drop their sync override and move that logic into `PostprocessAsync` — there is no rewrite-on-the-fly shim. Tracked in [#4351](https://github.com/JasperFx/marten/issues/4351) / PR [#4353](https://github.com/JasperFx/marten/pull/4353).
 
 ### Streams table cleanup
 

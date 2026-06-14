@@ -183,7 +183,6 @@ var results = (await query.Query<Target>()
 
 A few notes on the `SelectMany()` usage and limitations:
 
-* As of 1.2, you are only able to use a single `SelectMany()` operator in a single Linq query. That limitation will be removed in 1.3.
 * You can use any other Linq operator that Marten supports *after* the `SelectMany()` in a Linq query, including the `Stats()` and `Include()` operators
 * `Take()` and `Skip()` operators in a Linq query that contains a `SelectMany()` operator will always apply to the child collection database
   rather than the parent document regardless of the order in which the operators appear in the Linq query

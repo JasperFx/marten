@@ -6,9 +6,8 @@ For information on accessing and previewing the database schema objects generate
 
 ## Disabling Npgsql Logging <Badge type="tip" text="7.0" />
 
-The built in Npgsql logging is turned on by default in Marten, so to disable that logging so you
-can actually glean some value from your logs without blowing up the storage costs for your logging
-provider, use this flag:
+As of Marten 9, Npgsql logging is **disabled** by default. If you need to enable it, or if you are
+running an earlier version where it was on by default, use this flag to control it:
 
 <!-- snippet: sample_disabling_npgsql_logging -->
 <a id='snippet-sample_disabling_npgsql_logging'></a>
@@ -33,7 +32,7 @@ builder.ConfigureServices(services =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventAppenderPerfTester/Program.cs#L10-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_disabling_npgsql_logging' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The Marten team will be considering reversing the default for this behavior in Marten 8.
+As of Marten 9, this default has been reversed: `DisableNpgsqlLogging` now defaults to `true`, so Npgsql logging is off unless you explicitly set it to `false`.
 
 ## Listening for Document Store Events
 
@@ -365,7 +364,7 @@ var store = DocumentStore.For(_ =>
     _.Logger(new ConsoleMartenLogger());
 });
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L185-L192' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L186-L193' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-marten-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 You can also directly apply a session logger to any `IQuerySession` or `IDocumentSession` like this:
@@ -377,7 +376,7 @@ using var session = store.LightweightSession();
 // Replace the logger for only this one session
 session.Logger = new RecordingLogger();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L194-L200' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/StoreOptionsTests.cs#L195-L201' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_plugging-in-session-logger' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The session logging is a different abstraction specifically so that you _could_ track database commands issued per session. In effect, my own shop is going to use this capability to understand what HTTP endpoints or service bus message handlers are being unnecessarily chatty in their database interactions. We also hope that the contextual logging of commands per document session makes it easier to understand how our systems behave.
@@ -488,7 +487,7 @@ public class ConsoleMartenLogger: IMartenLogger, IMartenSessionLogger
 
 ## Accessing Diagnostics
 
-All the diagnostics are going to be exposed off of the `IDocumentStore.Diagnostics` property. Today, the only capabilities are to get a preview of the generated storage code or a preview of the ADO.NET code that will be generated for a LINQ query.
+All the diagnostics are going to be exposed off of the `IDocumentStore.Diagnostics` property. The current capabilities are to preview the ADO.NET command that will be generated for a compiled LINQ query, fetch the PostgreSQL server version, and retrieve the EXPLAIN plan for a compiled query.
 
 ## Previewing LINQ Queries
 
@@ -585,8 +584,8 @@ just understand what kinds of operations are being chatty in the first place. To
 using (var session = theStore.QuerySession())
 {
     var users = (await session.Query<User>().ToListAsync());
-    var count = session.Query<User>().Count();
-    var any = session.Query<User>().Any();
+    var count = await session.Query<User>().CountAsync();
+    var any = await session.Query<User>().AnyAsync();
 
     session.RequestCount.ShouldBe(3);
 }

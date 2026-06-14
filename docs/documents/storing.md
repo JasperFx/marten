@@ -81,7 +81,7 @@ using (var session = theStore.LightweightSession())
     await session.SaveChangesAsync();
 }
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L78-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/document_inserts.cs#L79-L87' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_sample-document-insertonly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Bulk Loading
@@ -104,30 +104,12 @@ await theStore.BulkInsertAsync(data, batchSize: 500);
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L94-L104' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsert()`.
-
-And new with Marten v4.0 is an asynchronous version:
+The bulk insert is done with a single transaction. For really large document collections, you may need to page the calls to `IDocumentStore.BulkInsertAsync()`.
 
 ::: tip
-If you are concerned with server resource utilization, you probably want to be using
-the asynchronous versions of Marten APIs.
+All bulk insert APIs are asynchronous. If you are concerned with server resource utilization,
+prefer the batched overloads shown above.
 :::
-
-<!-- snippet: sample_using_bulk_insert_async -->
-<a id='snippet-sample_using_bulk_insert_async'></a>
-```cs
-// This is just creating some randomized
-// document data
-var data = Target.GenerateRandomData(100).ToArray();
-
-// Load all of these into a Marten-ized database
-await theStore.BulkInsertAsync(data, batchSize: 500);
-
-// And just checking that the data is actually there;)
-(await theSession.Query<Target>().CountAsync()).ShouldBe(data.Length);
-```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Writing/bulk_loading.cs#L252-L262' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_using_bulk_insert_async' title='Start of snippet'>anchor</a></sup>
-<!-- endSnippet -->
 
 By default, bulk insert will fail if there are any duplicate id's between the documents being inserted and the existing database data. You can alter this behavior through the `BulkInsertMode` enumeration as shown below:
 

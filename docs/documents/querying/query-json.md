@@ -20,8 +20,6 @@ public async Task when_find_then_a_json_should_be_returned()
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/DocumentDbTests/Reading/Json/document_session_find_json_Tests.cs#L12-L25' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_find-json-by-id' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-There is also an asynchronous version:
-
 <!-- snippet: sample_find-json-by-id-async -->
 <a id='snippet-sample_find-json-by-id-async'></a>
 ```cs

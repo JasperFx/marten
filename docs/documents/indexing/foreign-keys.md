@@ -95,7 +95,7 @@ var store = DocumentStore
 <!-- endSnippet -->
 
 With the configuration above, Marten will generate a foreign key constraint from the `Issue` to a table in the
-`bug-tracker` schema called `bugs` on the `id` column.  The constraint would be defined as:
+`bugtracker` schema called `bugs` on the `id` column.  The constraint would be defined as:
 
 ```sql
 ALTER TABLE public.mt_doc_issue
@@ -105,8 +105,8 @@ REFERENCES bugtracker.bugs (id);
 
 ## Cascading deletes
 
-Marten can also cascade deletes on the foreign keys that it creates.  The `ForeignKeyDefinition` has a
-`CascadeDeletes` property that indicates whether the foreign key should enable cascading deletes.  One way
+Marten can also cascade deletes on the foreign keys that it creates.  The `DocumentForeignKey` has a
+`DeleteAction` property (of type `CascadeAction`) that indicates whether the foreign key should enable cascading deletes.  One way
 to enable this is to use a configuration function like:
 
 <!-- snippet: sample_cascade_deletes_with_config_func -->

@@ -345,7 +345,7 @@ services.AddMarten(sp =>
 Keep note that Marten can be configured to generate static code on startup that contains the scheme name, so it could be beneficial to keep that turned off in the tests.
 :::
 
-Alba hosts by default start with `ASPNETCORE_ENVIRONMENT=Development`, so the `AddMarten().OptimizeArtifactWorkflow()` option will not generate static code in that case as is explained here: [Development versus Production Usage](/configuration/optimized_artifact_workflow).
+Alba hosts by default start with `ASPNETCORE_ENVIRONMENT=Development`. Note that the `OptimizeArtifactWorkflow()` option was completely eliminated in Marten 8.0, as explained here: [Development versus Production Usage](/configuration/optimized_artifact_workflow).
 
 ## Integrating with Wolverine
 

@@ -80,7 +80,7 @@ public record CourseId(Guid Value);
 
 Supported inner value types: `Guid`, `string`, `int`, `long`, `short`.
 
-Tags work with both **Rich** (default) and **Quick** append modes. In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
+Tags work with both **Rich** and **Quick** append modes (the default in Marten 9 is `QuickWithServerTimestamps`). In Rich mode, tags are inserted using pre-assigned sequence numbers. In Quick mode, tags are inserted using a subquery that looks up the sequence from the event's id.
 
 ## Tagging Events
 

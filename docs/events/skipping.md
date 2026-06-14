@@ -45,3 +45,17 @@ flag alters Marten behavior by:
 
 To mark events as skipped, you can either use raw SQL against your `mt_events` table, or
 this helper API:
+
+<!-- snippet: sample_mark_events_as_skipped -->
+<a id='snippet-sample_mark_events_as_skipped'></a>
+```cs
+public static async Task mark_events_as_skipped(
+    IDocumentStore store,
+    long[] sequences,
+    CancellationToken cancellation)
+{
+    await store.Storage.Database.MarkEventsAsSkipped(sequences, cancellation);
+}
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/EventSkipping.cs#L30-L38' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_mark_events_as_skipped' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->

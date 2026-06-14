@@ -89,5 +89,4 @@ select d.data, d.id, count(*) OVER() as total_rows from public.mt_doc_target as 
 where CAST(d.data ->> 'Number' as integer) > :arg0 LIMIT 5
 ```
 
-The `Stats()` Linq operator can be used in conjunction with `Include()` and within batch queries. Marten does not yet
-support using `Stats()` within the compiled query.
+The `Stats()` Linq operator can be used in conjunction with `Include()` and within batch queries. Compiled queries also support `QueryStatistics` by declaring a `QueryStatistics Stats { get; } = new QueryStatistics()` property on the compiled query class.

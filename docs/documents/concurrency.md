@@ -181,16 +181,16 @@ public class Reservation: IRevisioned
 
 ::: tip
 If using the `IRevisioned` interface, or by mapping another property to the version metadata, Marten will pass the 
-version number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateVersion(entity, entity.Version)`
+version number from the document itself such that `IDocumentSession.Store()` is essentially `IDocumentSession.UpdateRevision(entity, entity.Version)`
 :::
 
 ::: warning
-Marten will not perfectly keep incrementing the IRevisioned.Revision number if the same document is repeatedly stored by the 
+Marten will not perfectly keep incrementing the IRevisioned.Version number if the same document is repeatedly stored by the 
 same session. Prefer using `UpdateRevision()` if you try to continuously update the same document from the same session!
 :::
 
 ::: tip `IRevisioned` (int) vs `ILongVersioned` (long)
-`IRevisioned.Version` is an `int` — the right choice for an ordinary per-document revision counter. For documents projected from a `MultiStreamProjection` whose `Version` is the global **event sequence number**, the value can exceed `Int32.MaxValue`; implement `ILongVersioned` (with a `long Version`) instead. Both opt the document into numeric revisioning and use the same `bigint` `mt_version` column; the only difference is the member width. A `MultiStreamProjection`-derived document that implements `IRevisioned` (int) will overflow on the `bigint → int` read once its version exceeds `Int32` — use `ILongVersioned` for those.
+`IRevisioned.Version` is an `int` — the right choice for an ordinary per-document revision counter. For documents projected from a `MultiStreamProjection` whose `Version` is the global **event sequence number**, the value can exceed `Int32.MaxValue`; implement `ILongVersioned` (with a `long Version`) instead. Both opt the document into numeric revisioning; the only difference is the column type and member width: `IRevisioned` stores its version in an `integer` (`mt_version`) column, while `ILongVersioned` uses a `bigint` column. A `MultiStreamProjection`-derived document that implements `IRevisioned` (int) will overflow on the `bigint → int` read once its version exceeds `Int32` — use `ILongVersioned` for those.
 :::
 
 or finally by adding the `[Version]` attribute to a public member on the document type to opt into the 
@@ -253,7 +253,7 @@ public static async Task try_revisioning(IDocumentSession session, Reservation r
 <!-- endSnippet -->
 
 ::: tip
-Not sure why you'd do this on purpose, but you can happily supply a version to `UpdateVersion()` or `TryUpdateVersion()`
+Not sure why you'd do this on purpose, but you can happily supply a version to `UpdateRevision()` or `TryUpdateRevision()`
 that is not the current version + 1 as long as that supplied version is greater than the current version, Marten will persist
 the document with that new version. This was done purposely to support projected aggregations in the event sourcing functionality.
 :::

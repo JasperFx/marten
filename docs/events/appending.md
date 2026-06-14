@@ -39,7 +39,8 @@ modes of event appending you can use with Marten:
 var builder = Host.CreateApplicationBuilder();
 builder.Services.AddMarten(opts =>
     {
-        // This is the default Marten behavior from 4.0 on
+        // "Rich" was the default behavior through Marten 8. As of Marten 9
+        // the default is EventAppendMode.QuickWithServerTimestamps.
         opts.Events.AppendMode = EventAppendMode.Rich;
 
         // Lighter weight mode that should result in better
@@ -49,7 +50,7 @@ builder.Services.AddMarten(opts =>
     })
     .UseNpgsqlDataSource();
 ```
-<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L13-L28' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/QuickAppend/Examples.cs#L13-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_event_append_mode' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 The classic `Rich` mode will append events in a two step process where the local session will first determine all possible
@@ -129,7 +130,7 @@ Note that `StartStream` checks for an existing stream and throws `ExistingStream
 ## Appending Events
 
 ::: tip
-`AppendEvent()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
+`Append()` will create a new stream for the stream id if it does not already exist at the time that `IDocumentSession.SaveChanges()` is called.
 :::
 
 If you have an existing stream, you can later append additional events with `IEventStore.Append()` as shown below:
@@ -202,7 +203,7 @@ opts.Events.AppendMode = EventAppendMode.Rich;
 :::
 
 ::: tip
-**Strongly recommended:** use [`FetchForWriting`](/events/projections/aggregate-projections#fetchforwriting) instead of
+**Strongly recommended:** use [`FetchForWriting`](/scenarios/command_handler_workflow) instead of
 hand-rolling `Append(streamId, expectedVersion, events)`. `FetchForWriting` works in both Rich and
 Quick modes, takes a single round-trip lock on the stream, and gives you the optimistic-concurrency
 guard for free — without forcing your store off the V9 throughput-optimized default. The

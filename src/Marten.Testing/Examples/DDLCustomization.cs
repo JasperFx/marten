@@ -11,10 +11,10 @@ public class DDLCustomization
         #region sample_customizing_table_creation
         var store = DocumentStore.For(_ =>
         {
+            // This is the default
             _.Advanced.Migrator.TableCreation = CreationStyle.CreateIfNotExists;
 
-            // or the default
-
+            // or, to drop and recreate the table on each schema migration
             _.Advanced.Migrator.TableCreation = CreationStyle.DropThenCreate;
         });
         #endregion

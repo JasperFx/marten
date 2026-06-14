@@ -4,7 +4,7 @@ Marten has a couple options for adding [environment checks](https://jeremydmille
 are in the correct state. The first way is to use the built in JasperFx command execution that comes with Marten as your command line parser for your application (which you are if you're using Marten's command line tooling) and take advantage
 of its built in environment check functionality.
 
-To add an environment check to assert that the actual Marten database matches the configured state, just use the `AddMarten().AddEnvironmentChecks()` extension method.
+To add an environment check to assert that the actual Marten database matches the configured state, just use the `AddMarten().AssertDatabaseMatchesConfigurationOnStartup()` extension method.
 
 Another option is this usage:
 

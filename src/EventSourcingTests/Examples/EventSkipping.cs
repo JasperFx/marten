@@ -27,6 +27,7 @@ public class EventSkipping
         #endregion
     }
 
+    #region sample_mark_events_as_skipped
     public static async Task mark_events_as_skipped(
         IDocumentStore store,
         long[] sequences,
@@ -34,6 +35,7 @@ public class EventSkipping
     {
         await store.Storage.Database.MarkEventsAsSkipped(sequences, cancellation);
     }
+    #endregion
 
     // If you're using multi-tenancy through separate databases,
     // you'll need to use the correct database

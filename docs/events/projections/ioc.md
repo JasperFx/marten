@@ -1,11 +1,5 @@
 # Projections and IoC Services
 
-::: warning
-This functionality will only work with projection types that directly implement that `IProjection`
-interface. So no usage of `EventProjection` or the `Single/MultiStreamProjection` base classes. Aggregation
-can still be done with `CustomAggregation<T, TId>` as your base class though.
-:::
-
 Many Marten users have had some reason to use services from the current application's Inversion of Control (IoC) container
 within their projections. While that's always been technically possible, Marten has not had explicit support for this
 until this feature introduced in 6.2.

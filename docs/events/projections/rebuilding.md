@@ -52,8 +52,7 @@ public async Task RunRebuildAsync()
 ## Optimized Projection Rebuilds <Badge type="tip" text="7.30" />
 
 ::: tip
-This optimization will be turned on by default in Marten 8, but we didn't want to force anyone using Marten 7 to have
-to upgrade their database without the explicit opt in configuration.
+This optimization must be explicitly opted into via `opts.Events.UseOptimizedProjectionRebuilds = true`. It is not enabled by default because it requires a database schema migration for users upgrading from earlier versions.
 :::
 
 ::: warning

@@ -54,7 +54,7 @@ public class MartenServices : ServiceRegistry
 
 There are really only two key points here:
 
-1. There should only be one `IDocumentStore` object instance created in your application, so I scoped it as a "Singleton" in the StructureMap container
+1. There should only be one `IDocumentStore` object instance created in your application, so I scoped it as a "Singleton" in the Lamar container
 1. The `IDocumentSession` service that you use to read and write documents should be scoped as "one per transaction." In typical usage, this
    ends up meaning that an `IDocumentSession` should be scoped to a single HTTP request in web applications or a single message being handled in service
    bus applications.

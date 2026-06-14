@@ -43,7 +43,7 @@ There are of course some restrictions:
 - The getter can be internal or private (but the mechanics are a tiny bit smoother with a public setter)
 - The version member can be either an `int` (Int32) or `long` (Int64)
 
-Marten determines whether a member is the version of the aggregate by first finding all public members
+Marten determines whether a member is the version of the aggregate by first finding all public and non-public members
 of either type `int` or `long`, then running down these rules:
 
 1. A member marked with the `[Version]` attribute will override the naming convention

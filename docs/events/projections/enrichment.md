@@ -168,7 +168,7 @@ public partial class UserTaskProjection: SingleStreamProjection<UserTask, Guid>
 
 Focus please on the `EnrichEventsAsync()` method above. That’s lets you define a step in asynchronous projection running to potentially do batched data lookups immediately after Marten has “sliced” and grouped a batch of events by each aggregate identity that is about to be updated, but before the actual updates are made to any of the `UserTask` snapshot documents.
 
-In the code above, we’re looking for all the unique user ids that are referenced by any `UserAssigned` events in this batch of events, and making one single call to Marten to fetch the matching User documents. Lastly, we’re looping around on the `AgentAssigned` objects and actually “enriching” the events by setting a User property on them with the data we just looked up.
+In the code above, we’re looking for all the unique user ids that are referenced by any `UserAssigned` events in this batch of events, and making one single call to Marten to fetch the matching User documents. Lastly, we’re looping around on the `UserAssigned` objects and actually “enriching” the events by setting a User property on them with the data we just looked up.
 
 A couple other things:
 

@@ -62,7 +62,7 @@ See the ["Rich" vs "Quick" Appends](/events/appending.html#rich-vs-quick-appends
 applicability and drawbacks of the "Quick" event appending.
 
 See [Optimizing FetchForWriting with Inline Aggregates](/scenarios/command_handler_workflow.html#optimizing-fetchforwriting-with-inline-aggregates) for more information
-about the `UseIdentityMapForInlineAggregates` option.
+about the `UseIdentityMapForAggregates` option.
 
 Lastly, check out [Optimized Projection Rebuilds](/events/projections/rebuilding.html#optimized-projection-rebuilds) for information about `UseOptimizedProjectionRebuilds`
 
@@ -94,7 +94,7 @@ public partial class DayProjection: MultiStreamProjection<Day, int>
 
         Name = "Day";
 
-        // Opt into 2nd level caching of up to 100
+        // Opt into 2nd level caching of up to 1000
         // most recently encountered aggregates as a
         // performance optimization
         Options.CacheLimitPerTenant = 1000;

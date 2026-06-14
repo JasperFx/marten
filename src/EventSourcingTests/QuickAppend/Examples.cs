@@ -15,7 +15,8 @@ public class Examples
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddMarten(opts =>
             {
-                // This is the default Marten behavior from 4.0 on
+                // "Rich" was the default behavior through Marten 8. As of Marten 9
+                // the default is EventAppendMode.QuickWithServerTimestamps.
                 opts.Events.AppendMode = EventAppendMode.Rich;
 
                 // Lighter weight mode that should result in better

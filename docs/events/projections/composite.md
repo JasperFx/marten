@@ -432,8 +432,8 @@ snapshot data for the current event range so the downstream projections can just
 any additional fetches. It also guarantees that the downstream projections are seeing the exact correct upstream projection
 data for that point of the event sequencing.
 
-Moreover, the composite "telehealth" projection is reading the event range *once* for all five constituent projections,
-and also applying the updates for all five projections at one time to guarantee consistency.
+Moreover, the composite "telehealth" projection is reading the event range *once* for all seven constituent projections,
+and also applying the updates for all seven projections at one time to guarantee consistency.
 
 ## Cross-stage document visibility
 

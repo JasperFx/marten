@@ -224,8 +224,8 @@ Marten can append either complex, value object values or primitives like numbers
 ### Insert an Element into a Child Collection
 
 Instead of appending an item to the end of a child collection, the `Patch.Insert()` operation allows you
-to insert a new item into a persisted collection with a given index -- with the default index
-being 0 so that a new item would be inserted at the beginning of the child collection.
+to insert a new item into a persisted collection at a given index -- with the default behavior (when no
+index is specified) being insertion at the end of the child collection.
 
 <!-- snippet: sample_patching_insert_first_complex_element -->
 <a id='snippet-sample_patching_insert_first_complex_element'></a>

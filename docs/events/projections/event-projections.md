@@ -112,8 +112,7 @@ var store = DocumentStore.For(opts =>
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/EventSourcingTests/Examples/SampleEventProjection.cs#L16-L29' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_register_event_projection' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
-The `EventProjection` supplies the `ProjectEvent()` and `ProjectEventAsync()` methods if you prefer to use inline Lambda methods to define the operations
-that way. Your other option is to use either the `Create()` or `Project()` method conventions.
+Use either the `Create()` or `Project()` method conventions to define event handlers on your `EventProjection` subclass.
 
 ## Create() Method Convention
 

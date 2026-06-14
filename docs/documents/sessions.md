@@ -32,18 +32,18 @@ IDocumentSession <|.. DirtyCheckingDocumentSession
 While there are sections below describing each session in more detail, at a high level the different
 types of sessions are:
 
-| **Creation**                                            | **Read/Write** | **Identity Map** | **Dirty Checking** |
-| ------------------------------------------------------- | -------------- | ---------------- | ------------------ |
-| `IDocumentStore.QuerySession()`                         | Read Only      | No               | No                 |
-| `IDocumentStore.QuerySessionAsync()`                    | Read Only      | No               | No                 |
-| `IDocumentStore.LightweightSession()`                   | Read/Write     | No               | No                 |
-| `IDocumentStore.LightweightSerializableSessionAsync()`  | Read/Write     | No               | No                 |
-| `IDocumentStore.IdentitySession()`                      | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.IdentitySerializableSessionAsync()`     | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.DirtyTrackedSession()`                  | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.DirtyTrackedSerializableSessionAsync()` | Read/Write     | Yes              | Yes                |
-| `IDocumentStore.OpenSession()`                          | Read/Write     | Yes              | No                 |
-| `IDocumentStore.OpenSerializableSessionAsync()`         | Read/Write     | Yes              | No                 |
+| **Creation**                                                  | **Read/Write** | **Identity Map** | **Dirty Checking** |
+| ------------------------------------------------------------- | -------------- | ---------------- | ------------------ |
+| `IDocumentStore.QuerySession()`                               | Read Only      | No               | No                 |
+| `IDocumentStore.QuerySerializableSessionAsync()`              | Read Only      | No               | No                 |
+| `IDocumentStore.LightweightSession()`                         | Read/Write     | No               | No                 |
+| `IDocumentStore.LightweightSerializableSessionAsync()`        | Read/Write     | No               | No                 |
+| `IDocumentStore.IdentitySession()`                            | Read/Write     | Yes              | No                 |
+| `IDocumentStore.IdentitySerializableSessionAsync()`           | Read/Write     | Yes              | No                 |
+| `IDocumentStore.DirtyTrackedSession()`                        | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.DirtyTrackedSerializableSessionAsync()`       | Read/Write     | Yes              | Yes                |
+| `IDocumentStore.OpenSession(SessionOptions)`                  | Read/Write     | Yes              | No                 |
+| `IDocumentStore.OpenSerializableSessionAsync(SessionOptions)` | Read/Write     | Yes              | No                 |
 
 ::: tip INFO
 The recommended session type for read/write operations is `LightweightSession`, which gives the best performance. It does not do change tracking, which may not be needed for most cases.
@@ -471,7 +471,7 @@ Do note that Marten's `Store()` method makes no distinctions between inserts and
 ## Automatic Dirty Checking Sessions
 
 In the case an `IDocumentSession` opened with the dirty checking enabled, the session will try to detect changes to any of the documents loaded by that
-session. The dirty checking is done by keeping the original JSON fetched from Postgresql and using Newtonsoft.Json to do a node by node comparison of the
+session. The dirty checking is done by keeping the original JSON fetched from Postgresql and using `System.Text.Json`'s `JsonNode.DeepEquals` to do a node by node comparison of the
 JSON representation of the document at the time that `IDocumentSession` is called.
 
 <!-- snippet: sample_tracking_document_session_uow -->

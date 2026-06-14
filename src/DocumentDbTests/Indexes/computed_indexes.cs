@@ -118,7 +118,7 @@ public class computed_indexes: OneOffConfigurationsContext
             // the sort order from the default of "ascending"
             _.Schema.For<User>().Index(x => x.LastName, x =>
             {
-                // Change the index method to "brin"
+                // Change the sort order to descending
                 x.SortOrder = SortOrder.Desc;
             });
         });

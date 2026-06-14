@@ -49,13 +49,14 @@ ValueTask<T?> ProjectLatest<T>(string id, CancellationToken cancellation = defau
 1. Loads the pre-projected document from the database
 2. Finds any pending events for that stream in the current session
 3. Applies the pending events on top using the aggregate's Apply/Create methods
-4. **Stores the updated document in the session** so it will be persisted on the next `SaveChangesAsync()`
+4. **Ejects the aggregate from the session identity map** so the inline projection can apply the
+   same pending events cleanly during `SaveChangesAsync()` without double-applying them
 5. Returns the result
 
 ### Async Projections
 
-Same behavior as inline: loads the stored document, applies pending events, stores the updated
-document in the session.
+Loads the stored document, applies pending events, and **stores the updated document in the
+session** so it will be persisted on the next `SaveChangesAsync()`.
 
 ## Example
 
