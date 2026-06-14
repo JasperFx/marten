@@ -349,6 +349,33 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
             .ToList();
     }
 
+    /// <summary>
+    ///     CritterWatch#369: fetch the stored dead-letter event rows for a single shard — the drill-in
+    ///     companion to <see cref="CountDeadLetterEventsAsync" />. Most recent failures first (by event
+    ///     sequence), paged. A null <paramref name="tenantId" /> spans every tenant sharing this database;
+    ///     under <c>UseTenantPartitionedEvents</c> pass a tenant to scope to one partition.
+    /// </summary>
+    public async Task<IReadOnlyList<DeadLetterEvent>> QueryDeadLetterEventsAsync(ShardName shard,
+        string? tenantId, int offset, int limit, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(DeadLetterEvent), token).ConfigureAwait(false);
+
+        await using var session = Options.EventGraph.Store.QuerySession(SessionOptions.ForDatabase(this));
+        var query = session.Query<DeadLetterEvent>()
+            .Where(x => x.ProjectionName == shard.Name && x.ShardName == shard.ShardKey);
+
+        if (tenantId != null)
+        {
+            query = query.Where(x => x.TenantId == tenantId);
+        }
+
+        return await query
+            .OrderByDescending(x => x.EventSequence)
+            .Skip(offset)
+            .Take(limit)
+            .ToListAsync(token).ConfigureAwait(false);
+    }
+
     public async Task<IReadOnlyList<ShardState>> FetchProjectionProgressFor(ShardName[] names, CancellationToken token = default)
     {
         await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
