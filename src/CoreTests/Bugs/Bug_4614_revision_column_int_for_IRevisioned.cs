@@ -134,7 +134,7 @@ public class Bug_4614_revision_column_int_for_IRevisioned: OneOffConfigurationsC
     }
 
     [Fact]
-    public async Task existing_9x_bigint_column_for_IRevisioned_is_tolerated_not_narrowed_migration_check()
+    public async Task existing_9x_bigint_column_for_IRevisioned_is_tolerated_not_narrowed_assert_check()
     {
         // The reverse-direction safety: a deployment that already migrated to V9-with-bigint
         // (before this fix) MUST NOT get force-narrowed to integer on the next apply — a
@@ -151,8 +151,7 @@ public class Bug_4614_revision_column_int_for_IRevisioned: OneOffConfigurationsC
                 .ExecuteNonQueryAsync();
         }
 
-        var migration = await theStore.Storage.CreateMigrationAsync();
-        migration.Difference.ShouldBe(SchemaPatchDifference.None);
+        await theStore.Storage.Database.AssertDatabaseMatchesConfigurationAsync().ShouldNotThrowAsync();
     }
 
     // ---- CRUD round-trip on both shapes ----
