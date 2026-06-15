@@ -133,6 +133,28 @@ public class Bug_4614_revision_column_int_for_IRevisioned: OneOffConfigurationsC
         (await readVersionColumnType(typeof(RevisionedDoc))).ShouldBe("bigint");
     }
 
+    [Fact]
+    public async Task existing_9x_bigint_column_for_IRevisioned_is_tolerated_not_narrowed_migration_check()
+    {
+        // The reverse-direction safety: a deployment that already migrated to V9-with-bigint
+        // (before this fix) MUST NOT get force-narrowed to integer on the next apply — a
+        // `USING mt_version::integer` cast would silently truncate any out-of-range value.
+        // The diff treats bigint-actual + integer-desired as compatible (no SQL emitted).
+        StoreOptions(opts => opts.Schema.For<RevisionedDoc>());
+        await theStore.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            await conn.CreateCommand(
+                    $"alter table {SchemaName}.mt_doc_revisioneddoc alter column mt_version type bigint")
+                .ExecuteNonQueryAsync();
+        }
+
+        var migration = await theStore.Storage.CreateMigrationAsync();
+        migration.Difference.ShouldBe(SchemaPatchDifference.None);
+    }
+
     // ---- CRUD round-trip on both shapes ----
 
     [Fact]
