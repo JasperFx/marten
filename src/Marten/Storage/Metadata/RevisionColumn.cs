@@ -133,6 +133,12 @@ internal class RevisionColumnInt32: MetadataColumn<int>, ISelectableColumn
         // legitimate IRevisioned data is comfortably in Int32 range, but Postgres
         // refuses to verify that without scanning the table and a forced narrow risks
         // silent data loss if anything slipped through. Tolerate => no-op.
+        //
+        // #4742: as of the Equals override below, a bigint actual now compares equal and
+        // is sorted into ItemDelta.Matched, so this branch is no longer hit on the normal
+        // path. Kept as intentional defense-in-depth — do NOT strip it as dead code: it
+        // guards the SQL surface should any other call site reach AlterColumnTypeSql with
+        // a bigint actual (or should the diff-side equality ever regress).
         if (changeActual.Type.EqualsIgnoreCase("bigint"))
         {
             return string.Empty;
@@ -144,9 +150,11 @@ internal class RevisionColumnInt32: MetadataColumn<int>, ISelectableColumn
 
     public override bool CanAlter(TableColumn actual)
     {
-        // bigint is reported as acceptable so the diff machinery routes it through
-        // AlterColumnTypeSql above (which then no-ops) rather than re-creating the
-        // column with potential constraint loss.
+        // uuid (Guid concurrency mode) routes through AlterColumnTypeSql's drop-and-recreate.
+        // bigint is also reported acceptable as defense-in-depth: the Equals override below
+        // normally matches a bigint actual before the diff ever asks CanAlter, but if it
+        // does reach here we want the no-op ALTER path, not a column re-create with
+        // potential constraint loss. See #4742.
         return actual.Type.EqualsIgnoreCase("uuid") || actual.Type.EqualsIgnoreCase("bigint");
     }
 
