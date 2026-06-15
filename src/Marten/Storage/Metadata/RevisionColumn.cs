@@ -88,6 +88,10 @@ internal class RevisionColumn: MetadataColumn<long>, ISelectableColumn
 /// <see cref="Metadata.IRevisioned"/>. Tolerates a pre-existing <c>bigint</c>
 /// column on disk (already-on-9.x deployments are not force-narrowed); the
 /// schema diff treats either width as acceptable to avoid lossy migrations.
+/// The tolerance lives on two surfaces that must agree: the SQL side
+/// (<see cref="AlterColumnTypeSql"/> no-ops a bigint actual) and the diff
+/// classification side (<see cref="Equals(object)"/> reports a bigint actual as
+/// a match so the column never lands in the delta) — see #4742.
 /// </summary>
 internal class RevisionColumnInt32: MetadataColumn<int>, ISelectableColumn
 {
@@ -145,6 +149,30 @@ internal class RevisionColumnInt32: MetadataColumn<int>, ISelectableColumn
         // column with potential constraint loss.
         return actual.Type.EqualsIgnoreCase("uuid") || actual.Type.EqualsIgnoreCase("bigint");
     }
+
+    // #4742: tolerating the wider bigint column means the schema *diff* must see it as a
+    // match, not merely suppress the ALTER. Weasel's ItemDelta compares columns via
+    // expected.Equals(actual) (expected being this Marten-owned column). Without this an
+    // on-disk bigint lands in TableDelta.Columns.Different, which keeps the empty
+    // AlterColumnTypeSql no-op for ApplyAllConfiguredChanges (fine) but classifies the
+    // table as SchemaPatchDifference.Update — so AssertDatabaseMatchesConfiguration
+    // (the db-assert CLI gate) throws with an empty change set. Treating a bigint actual
+    // as equal routes the column to ItemDelta.Matched and the two paths agree again.
+    // Deliberately asymmetric (integer tolerates bigint, not the reverse); safe because
+    // ItemDelta only ever evaluates expected.Equals(actual), never the other direction.
+    public override bool Equals(object? obj)
+    {
+        if (obj is TableColumn actual
+            && string.Equals(Name, actual.Name, StringComparison.OrdinalIgnoreCase)
+            && actual.RawType().EqualsIgnoreCase("bigint"))
+        {
+            return true;
+        }
+
+        return base.Equals(obj);
+    }
+
+    public override int GetHashCode() => base.GetHashCode();
 
     public override void WriteMetadataInUpdateStatement(ICommandBuilder builder, DocumentSessionBase session)
     {
