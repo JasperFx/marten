@@ -6,6 +6,7 @@ using JasperFx.Core;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten.Events.Archiving;
 using Marten.Exceptions;
 using Marten.Internal.Sessions;
 using Marten.Linq.Selectors;
@@ -100,6 +101,21 @@ internal sealed class EventLoader: IEventLoader
             builder.Append(" and d.tenant_id = s.tenant_id");
         }
 
+        if (_store.Options.Events.UseArchivedStreamPartitioning)
+        {
+            // #4745: when archived streams live in their own partition of mt_streams,
+            // constrain the join so the planner can partition-prune the archived
+            // mt_streams partition (the active partition is all the daemon needs).
+            // The event-row predicate (d.is_archived = false) only prunes the
+            // mt_events archived partition; without this the planner must scan both
+            // mt_streams partitions to resolve the join. Gated to the partitioned
+            // case only: unpartitioned, this predicate buys no pruning (the join
+            // already resolves each event to one stream row by primary key), so we
+            // keep the SQL minimal — mirroring the TenantFilterValue convention
+            // above of only injecting a literal predicate that earns its pruning.
+            builder.Append($" and s.{IsArchivedColumn.ColumnName} = FALSE");
+        }
+
         var parameters = builder.AppendWithParameters(" where d.seq_id > ? and d.seq_id <= ?");
         _floor = parameters[0];
         _ceiling = parameters[1];
@@ -131,6 +147,10 @@ internal sealed class EventLoader: IEventLoader
     }
 
     public IMartenDatabase Database { get; }
+
+    // Exposed for regression tests that assert the generated fetch SQL (e.g. the
+    // #4745 archived-stream-partition pruning predicate). Not used at runtime.
+    internal string CommandText => _command.CommandText;
 
     public async Task<EventPage> LoadAsync(EventRequest request, CancellationToken token)
     {
