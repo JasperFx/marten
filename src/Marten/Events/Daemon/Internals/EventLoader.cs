@@ -105,11 +105,14 @@ internal sealed class EventLoader: IEventLoader
         {
             // #4745: when archived streams live in their own partition of mt_streams,
             // constrain the join so the planner can partition-prune the archived
-            // mt_streams partition (the active partition is all the daemon needs),
-            // and so an archived stream's events are never surfaced to projections
-            // even if an event row's own is_archived flag is somehow out of sync
-            // with its stream. The event-row predicate (d.is_archived = false) only
-            // prunes the mt_events archived partition; it does nothing for mt_streams.
+            // mt_streams partition (the active partition is all the daemon needs).
+            // The event-row predicate (d.is_archived = false) only prunes the
+            // mt_events archived partition; without this the planner must scan both
+            // mt_streams partitions to resolve the join. Gated to the partitioned
+            // case only: unpartitioned, this predicate buys no pruning (the join
+            // already resolves each event to one stream row by primary key), so we
+            // keep the SQL minimal — mirroring the TenantFilterValue convention
+            // above of only injecting a literal predicate that earns its pruning.
             builder.Append($" and s.{IsArchivedColumn.ColumnName} = FALSE");
         }
 

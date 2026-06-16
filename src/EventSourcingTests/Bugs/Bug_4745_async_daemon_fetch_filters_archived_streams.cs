@@ -1,5 +1,6 @@
 using System;
 using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten;
 using Marten.Events.Daemon.Internals;
 using Marten.Storage;
