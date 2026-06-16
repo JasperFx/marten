@@ -286,6 +286,13 @@ internal sealed class EventLoader: IEventLoader
         return page;
     }
 
+    // #4744 test seam: drive the skip-ahead MIN probe directly so a regression test can prove
+    // its SQL is valid (the probe must join mt_streams whenever a filter references the s alias,
+    // e.g. AggregateTypeFilter's "s.type = ?") without having to provoke a real statement
+    // timeout. Not used at runtime.
+    internal Task<EventPage> LoadWithSkipAheadAsync(EventRequest request, CancellationToken token)
+        => loadWithSkipAheadAsync(request, token);
+
     /// <summary>
     /// Skip-ahead strategy: find the MIN(seq_id) matching the type filter after the floor,
     /// then run the normal query starting from there. Avoids scanning non-matching events.
@@ -294,9 +301,21 @@ internal sealed class EventLoader: IEventLoader
     {
         await using var session = (QuerySession)_store.QuerySession(SessionOptions.ForDatabase(Database));
 
-        // Build a MIN query to find the next matching event
+        // Build a MIN query to find the next matching event. #4744: this MUST mirror the normal
+        // query's FROM clause — including the join to mt_streams — because the same _filters are
+        // replayed below, and an AggregateTypeFilter (from a projection that filters on stream
+        // type) emits "s.type = ?". Without the join that predicate references a missing FROM-clause
+        // entry and Postgres throws 42P01. seq_id lives only on mt_events, so qualify it as d.seq_id.
         var minBuilder = new CommandBuilder();
-        minBuilder.Append($"select min(seq_id) from {_schemaName}.mt_events as d where d.seq_id > ");
+        minBuilder.Append(
+            $"select min(d.seq_id) from {_schemaName}.mt_events as d inner join {_schemaName}.mt_streams as s on d.stream_id = s.id");
+
+        if (_store.Options.Events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            minBuilder.Append(" and d.tenant_id = s.tenant_id");
+        }
+
+        minBuilder.Append(" where d.seq_id > ");
         minBuilder.AppendParameter(request.Floor, NpgsqlDbType.Bigint);
 
         if (TenantFilterValue != null)
