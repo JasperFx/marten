@@ -25,8 +25,14 @@ public partial class QuerySession
 
     public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout) where T : notnull
     {
+        return QueryForNonStaleData<T>(timeout, NonStaleDataTimeoutMode.ThrowException);
+    }
+
+    public IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout, NonStaleDataTimeoutMode timeoutMode)
+        where T : notnull
+    {
         var queryable = new MartenLinqQueryable<T>(this);
-        queryable.MartenProvider.Waiter = new WaitForAggregate(timeout);
+        queryable.MartenProvider.Waiter = new WaitForAggregate(timeout, timeoutMode);
 
         return queryable;
     }

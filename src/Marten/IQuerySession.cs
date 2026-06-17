@@ -192,6 +192,20 @@ public interface IQuerySession: IDisposable, IAsyncDisposable
     IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout) where T : notnull;
 
     /// <summary>
+    /// A variation of <see cref="QueryForNonStaleData{T}(TimeSpan)"/> that lets you control what happens
+    /// when the asynchronous projection cannot catch up to the current event store high-water mark within
+    /// the timeout. With <see cref="NonStaleDataTimeoutMode.ReturnStaleData"/> the query returns the latest
+    /// available data instead of throwing a <see cref="TimeoutException"/> — useful when an unreachable
+    /// high-water mark (e.g. a gap left in mt_events_sequence by a failed append) would otherwise make
+    /// every call throw.
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <param name="timeoutMode">What to do if the projection has not caught up within <paramref name="timeout"/></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    IMartenQueryable<T> QueryForNonStaleData<T>(TimeSpan timeout, NonStaleDataTimeoutMode timeoutMode) where T : notnull;
+
+    /// <summary>
     ///     Stream the results of a user-supplied query directly to a stream as a JSON array
     /// </summary>
     /// <param name="destination"></param>
