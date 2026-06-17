@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
@@ -76,11 +77,28 @@ internal class MartenActivator: IHostedService, IGlobalLock<NpgsqlConnection>
 
         if (Store.Options.ShouldApplyChangesOnStartup)
         {
+            var failureMode = Store.Options.ResourceMigrationFailureMode;
             foreach (PostgresqlDatabase database in databases)
             {
-                await database
-                    .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
-                    .ConfigureAwait(false);
+                // #4750: propagate the failure mode so Weasel's apply returns rather than throwing when it
+                // can't attain the global migration lock (e.g. a replica that loses the lock race during a
+                // multi-replica rolling deploy).
+                database.ResourceMigrationFailureMode = failureMode;
+
+                try
+                {
+                    await database
+                        .ApplyAllConfiguredChangesToDatabaseAsync(this, AutoCreate.CreateOrUpdate, ct: cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception e) when (failureMode == ResourceMigrationFailureMode.ContinueOnFailures)
+                {
+                    // Belt-and-suspenders for migration failures of any kind (not just the lock timeout):
+                    // log and keep starting up rather than crash-looping. FailFast (default) rethrows.
+                    _logger.LogError(e,
+                        "Failed to apply configured database changes to {Database} at startup. Continuing startup anyway because ResourceMigrationFailureMode is ContinueOnFailures.",
+                        database.Identifier);
+                }
             }
         }
 

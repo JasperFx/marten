@@ -69,6 +69,27 @@ public class bootstrapping_with_service_collection_extensions
     }
 
     [Fact]
+    public async Task use_jasper_fx_active_profile_for_resource_migration_failure_mode()
+    {
+        // #4750: the store inherits ResourceMigrationFailureMode from the active JasperFx profile so a
+        // failed startup migration (e.g. lock loss during a rolling deploy) can be made non-fatal.
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(ConnectionSource.ConnectionString);
+
+                services.AddJasperFx(opts =>
+                {
+                    opts.Development.ResourceMigrationFailureMode = ResourceMigrationFailureMode.ContinueOnFailures;
+                });
+            })
+            .UseEnvironment("Development").StartAsync();
+
+        var store = (DocumentStore)host.DocumentStore();
+        store.Options.ResourceMigrationFailureMode.ShouldBe(ResourceMigrationFailureMode.ContinueOnFailures);
+    }
+
+    [Fact]
     public void add_marten_by_store_options()
     {
         using var container = Container.For(x =>

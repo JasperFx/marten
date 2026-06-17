@@ -133,6 +133,8 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
     private AutoCreate? _autoCreate;
 
+    private ResourceMigrationFailureMode? _resourceMigrationFailureMode;
+
     /// <summary>
     ///     Whether or Marten should attempt to create any missing database schema objects at runtime. This
     ///     property is "CreateOrUpdate" by default for more efficient development, but can be set to lower values for production usage.
@@ -150,6 +152,22 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         {
             _autoCreate = value;
         }
+    }
+
+    /// <summary>
+    /// #4750: controls whether a failure to apply schema/migration changes at application startup
+    /// (e.g. losing the global migration advisory lock during a multi-replica rolling deploy) aborts
+    /// startup. Defaults to <see cref="JasperFx.ResourceMigrationFailureMode.FailFast"/> (throw). Set to
+    /// <see cref="JasperFx.ResourceMigrationFailureMode.ContinueOnFailures"/> to log and continue starting up.
+    /// If left unset it is inherited from the active JasperFx profile
+    /// (<c>JasperFxOptions.ActiveProfile.ResourceMigrationFailureMode</c>); set it explicitly to override
+    /// the profile for this store. You can also configure it globally for all Critter Stack tools via
+    /// <c>IServiceCollection.AddJasperFx()</c>.
+    /// </summary>
+    public ResourceMigrationFailureMode ResourceMigrationFailureMode
+    {
+        get => _resourceMigrationFailureMode ?? ResourceMigrationFailureMode.FailFast;
+        set => _resourceMigrationFailureMode = value;
     }
 
     public StoreOptions()
@@ -320,6 +338,7 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
 
         ApplicationAssembly ??= options.ApplicationAssembly;
         _autoCreate ??= options.ActiveProfile.ResourceAutoCreate;
+        _resourceMigrationFailureMode ??= options.ActiveProfile.ResourceMigrationFailureMode;
 
         // CritterWatch / advanced-tooling opt-in: when the JasperFx host turns on
         // EnableAdvancedTracking, every Marten DocumentStore in the container
