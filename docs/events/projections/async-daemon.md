@@ -607,6 +607,29 @@ var latest = await session.QueryForNonStaleData<Trip>(5.Seconds())
 Do note that this can time out if the projection just can't catch up to the latest event sequence in time. You may need to
 be both cautious with using this in general, and also cautious especially with the timeout setting. 
 
+### Returning stale data instead of throwing on timeout
+
+By default `QueryForNonStaleData` throws a `TimeoutException` if the asynchronous projection cannot catch up
+to the event store high water mark within the supplied timeout. In some scenarios — for example when a gap in
+the event sequence (left by a failed append) makes the high water mark effectively unreachable — that would
+make *every* call throw, even though the projection has perfectly usable, slightly stale data already
+materialized. If you would rather serve the latest available data than fail the request, use the overload that
+takes a `NonStaleDataTimeoutMode`:
+
+```csharp
+// Wait up to 5 seconds for the projection to catch up, but if it cannot,
+// return the latest available (possibly stale) data instead of throwing.
+var latest = await session
+    .QueryForNonStaleData<Trip>(5.Seconds(), NonStaleDataTimeoutMode.ReturnStaleData)
+    .OrderByDescending(x => x.Started)
+    .Take(10)
+    .ToListAsync();
+```
+
+`NonStaleDataTimeoutMode.ThrowException` is the default and matches the behavior of the single-argument
+`QueryForNonStaleData<T>(timeout)` overload, so existing usages are unaffected. Choose
+`NonStaleDataTimeoutMode.ReturnStaleData` only when serving slightly stale data is preferable to a failed query.
+
 ## Migrating a Projection from Inline to Async <Badge type="tip" text="7.35" />
 
 ::: warning
