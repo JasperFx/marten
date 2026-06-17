@@ -17,7 +17,7 @@ using Marten.Util;
 
 namespace Marten.Linq;
 
-internal record WaitForAggregate(TimeSpan Timeout);
+internal record WaitForAggregate(TimeSpan Timeout, NonStaleDataTimeoutMode TimeoutMode = NonStaleDataTimeoutMode.ThrowException);
 
 internal class MartenLinqQueryProvider: IQueryProvider
 {
@@ -65,7 +65,17 @@ internal class MartenLinqQueryProvider: IQueryProvider
 
         if (Waiter != null)
         {
-            await _session.Database.WaitForNonStaleProjectionDataAsync(SourceType, Waiter.Timeout, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await _session.Database.WaitForNonStaleProjectionDataAsync(SourceType, Waiter.Timeout, cancellationToken).ConfigureAwait(false);
+            }
+            catch (TimeoutException) when (Waiter.TimeoutMode == NonStaleDataTimeoutMode.ReturnStaleData)
+            {
+                // #4749: the caller opted to receive the latest available (possibly stale) data rather
+                // than fail when the projection cannot catch up within the timeout — e.g. when a gap in
+                // mt_events_sequence left by a failed append makes the high-water mark unreachable. Fall
+                // through to execute the query against whatever the projection has materialized so far.
+            }
         }
     }
 

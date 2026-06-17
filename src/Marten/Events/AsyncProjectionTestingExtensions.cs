@@ -280,23 +280,31 @@ public static class TestingExtensions
         using var cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(token);
         cancellationSource.CancelAfter(timeout);
 
-        while (!cancellationSource.Token.IsCancellationRequested)
+        try
         {
-            var current = await database.FetchProjectionProgressFor(shards, cancellationSource.Token).ConfigureAwait(false);
-            foreach (var state in current)
+            while (true)
             {
-                tracking[state.ShardName] = state.Sequence;
+                var current = await database.FetchProjectionProgressFor(shards, cancellationSource.Token).ConfigureAwait(false);
+                foreach (var state in current)
+                {
+                    tracking[state.ShardName] = state.Sequence;
+                }
+
+                if (tracking.isComplete(highWaterMark)) return;
+
+                await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
             }
-
-            if (tracking.isComplete(highWaterMark)) return;
-
-            await Task.Delay(100.Milliseconds(), cancellationSource.Token).ConfigureAwait(false);
         }
-
-        if (cancellationSource.IsCancellationRequested)
+        catch (OperationCanceledException)
         {
+            // #4749: distinguish the internal timeout from caller-initiated cancellation. The awaited
+            // operations above throw a TaskCanceledException/OperationCanceledException when EITHER token
+            // fires; previously that leaked out of this method, so a caller's `catch (TimeoutException)`
+            // never triggered and QueryForNonStaleData never "truly" timed out. Propagate genuine caller
+            // cancellation as-is; convert our own timeout into a clean TimeoutException.
+            token.ThrowIfCancellationRequested();
             throw new TimeoutException(
-                $"The projections timed out before reaching the initial sequence of {highWaterMark}");
+                $"The query for {aggregationType.FullNameInCode()} timed out after {timeout} while waiting for the projection to reach the event store high-water mark of {highWaterMark}");
         }
     }
 
