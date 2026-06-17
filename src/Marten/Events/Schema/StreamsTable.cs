@@ -78,6 +78,14 @@ internal class StreamsTable: Table
             var manager = events.Options.TenantPartitions!.Partitions;
             Partitioning = new ListPartitioning { Columns = [TenantIdColumn.Name] }
                 .UsePartitionManager(manager);
+
+            // #4753 (mirrors #4706 for DocumentTable): exempt this Marten-managed LIST partitioning
+            // from child-partition reconciliation in the generic schema diff. The per-tenant
+            // partitions are created out-of-band by AddMartenManagedTenantsAsync /
+            // AddTenantToShardAsync. Without this, re-applying an unchanged schema over existing data
+            // sees the live partitions as "unexpected" and destructively rebuilds mt_streams,
+            // failing with 23514 because the rebuilt parent has no partitions yet.
+            IgnorePartitionsInMigration = true;
         }
     }
 }
