@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Npgsql;
 using Weasel.Core;
 using Weasel.Postgresql;
 using DbCommandBuilder = Weasel.Core.DbCommandBuilder;
@@ -158,9 +159,24 @@ internal class PerTenantEventSequences: ISchemaObject
         foreach (var suffix in partitionSuffixes)
         {
             var sequenceName = $"\"{eventSchema}\".\"mt_events_sequence_{suffix}\"";
-            await conn
-                .CreateCommand($"create sequence if not exists {sequenceName} as bigint;")
-                .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            try
+            {
+                await conn
+                    .CreateCommand($"create sequence if not exists {sequenceName} as bigint;")
+                    .ExecuteNonQueryAsync(token).ConfigureAwait(false);
+            }
+            catch (PostgresException e) when (e.SqlState is PostgresErrorCodes.UniqueViolation
+                                                  or PostgresErrorCodes.DuplicateTable
+                                                  or PostgresErrorCodes.DuplicateObject)
+            {
+                // #4596/#4757: CREATE SEQUENCE IF NOT EXISTS is NOT atomic against a concurrent create.
+                // Two tasks registering the same tenant (e.g. concurrent AddMartenManagedTenantsAsync)
+                // can both pass the IF NOT EXISTS check and race the catalog insert; the loser gets
+                // 23505 on pg_class_relname_nsp_index (or 42P07 / 42710). The sequence now exists — which
+                // is precisely the idempotent outcome we want — so swallow the concurrent-create race.
+                // Each statement runs in its own implicit transaction (no outer transaction here), so the
+                // failure does not poison the connection for the remaining suffixes.
+            }
         }
         await conn.CloseAsync().ConfigureAwait(false);
     }

@@ -198,6 +198,16 @@ internal class EventsTable: Table
             var manager = events.Options.TenantPartitions!.Partitions;
             Partitioning = new ListPartitioning { Columns = [TenantIdColumn.Name] }
                 .UsePartitionManager(manager);
+
+            // #4753 (mirrors #4706 for DocumentTable): a Marten-managed LIST partitioning keeps its
+            // PARTITION BY clause but is exempt from child-partition reconciliation in the generic
+            // schema diff. The per-tenant partitions are created out-of-band by
+            // AddMartenManagedTenantsAsync / AddTenantToShardAsync (the additive path). Without this,
+            // re-applying an unchanged schema over existing data sees the live per-tenant partitions
+            // as "unexpected" and destructively rebuilds mt_events (CREATE _temp / DROP CASCADE /
+            // recreate parent / INSERT…SELECT), failing with 23514 because the rebuilt parent has no
+            // partitions yet. Setting this makes Weasel's destructive Rebuild path unreachable.
+            IgnorePartitionsInMigration = true;
         }
     }
 
