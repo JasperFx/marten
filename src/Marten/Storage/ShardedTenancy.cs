@@ -324,6 +324,15 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
 
         try
         {
+            // #4763: capture the tenant's current shard (if any) BEFORE the upsert so we can recompute the
+            // SOURCE shard's tenant_count when this is a re-assignment. Without this only the target shard
+            // is recomputed below, leaving the source shard's count permanently inflated and making
+            // UseSmallestDatabaseAssignment mis-rank it as fuller than it really is.
+            var previousDatabaseId = (await conn.CreateCommand(
+                    $"select database_id from {_schemaName}.{TenantAssignmentTable.TableName} where tenant_id = :tid")
+                .With("tid", tenantId)
+                .ExecuteScalarAsync(ct).ConfigureAwait(false)) as string;
+
             // #4607: explicit assignment also clears the disabled flag so re-assigning
             // a soft-deleted tenant via this API reactivates it. Pairs with the
             // tolerant DisableTenantAsync / EnableTenantAsync semantics — explicit
@@ -338,6 +347,16 @@ public class ShardedTenancy : ITenancy, ITenancyWithMasterDatabase, ITenantDatab
                     $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :did and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :did")
                 .With("did", databaseId)
                 .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+
+            // #4763: re-assignment moved the tenant off its previous shard — recompute that shard's
+            // tenant_count too so it reflects the tenant having left.
+            if (previousDatabaseId != null && !previousDatabaseId.EqualsIgnoreCase(databaseId))
+            {
+                await conn.CreateCommand(
+                        $"update {_schemaName}.{DatabasePoolTable.TableName} set tenant_count = (select count(*) from {_schemaName}.{TenantAssignmentTable.TableName} where database_id = :prev and {MartenTenantAssignmentTable.DisabledColumn} = false) where database_id = :prev")
+                    .With("prev", previousDatabaseId)
+                    .ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+            }
 
             // Create partition in the target database
             if (_databasesById.TryFind(databaseId, out var database))
