@@ -147,25 +147,42 @@ namespace Marten.Events.Schema;
                 sequencePickPerEvent = $"        seq := nextval('{databaseSchema}.mt_events_sequence');";
             }
 
-            // #4614 (#4596 Phase 1 Session 4): when partitioning is on, the bulk
-            // function is the only path for *every* event append — including the
-            // FetchForWriting / AppendOptimistic / AppendExclusive shapes that
-            // pass a caller-supplied ExpectedVersionOnServer. Take it as an
-            // optional trailing parameter, default NULL (no check) so previously
-            // generated call sites still match the signature, and raise MT003
-            // on mismatch so QuickAppendEventsOperationBase.TryTransform can
-            // surface it as EventStreamUnexpectedMaxEventIdException — the same
-            // exception type the rich path's UpdateStreamVersion already throws.
-            // Only emitted under partitioning because the non-partitioned bulk
-            // path is never reached with ExpectedVersionOnServer set (the
-            // QuickEventAppender takes the per-event InsertStream + atomic
-            // UpdateStreamVersion route instead).
-            var expectedVersionParameter = string.Empty;
-            var expectedVersionCheck = string.Empty;
-            if (_events.UseTenantPartitionedEvents)
-            {
-                expectedVersionParameter = $", expected_version {intType} DEFAULT NULL";
-                expectedVersionCheck = $@"
+            // #4614 (#4596 Phase 1 Session 4): the bulk function is the path for
+            // *every* event append — including the FetchForWriting /
+            // AppendOptimistic / AppendExclusive shapes that pass a
+            // caller-supplied ExpectedVersionOnServer. Take it as an optional
+            // trailing parameter, default NULL (no check) so previously generated
+            // call sites still match the signature, and raise MT003 on mismatch
+            // so QuickAppendEventsOperationBase.TryTransform can surface it as
+            // EventStreamUnexpectedMaxEventIdException — the same exception type
+            // the rich path's UpdateStreamVersion already throws.
+            //
+            // #4765: emitted unconditionally now (was gated on
+            // UseTenantPartitionedEvents). The non-partitioned Quick +
+            // ExpectedVersion path used to take a per-event UpdateStreamVersion +
+            // QuickAppendEventWithVersion route where the OCC check was C#-side
+            // (RecordsAffected). On a concurrent loser the per-event INSERT still
+            // fired nextval('mt_events_sequence') before the 23505 raised, and
+            // nextval is non-transactional — leaving a permanent gap that stalls
+            // the async daemon's high-water detector forever (#4749). Routing
+            // every Quick append through this function, which checks the version
+            // BEFORE any nextval, closes that gap for the non-partitioned store
+            // exactly as it already does for the partitioned one.
+            //
+            // Emit the parameter type + DEFAULT in PostgreSQL's already-canonical
+            // form. pg_get_functiondef (what Weasel's function-diff reads back)
+            // rewrites a declared `int` parameter to `integer` and renders a bare
+            // `DEFAULT NULL` as `DEFAULT NULL::<type>`. Weasel's CanonicizeSql does
+            // NOT normalize either, so emitting `int DEFAULT NULL` here would
+            // produce a perpetual "Update" delta (non-idempotent schema). Matching
+            // pg's rendering up front keeps the function idempotent. This also
+            // fixes the same latent non-idempotency the #4614 partitioned function
+            // carried (it emitted `{intType} DEFAULT NULL`); existing partitioned
+            // DBs converge cleanly because pg had already stored the canonical form.
+            var expectedVersionParamType = _events.EnableBigIntEvents ? "bigint" : "integer";
+            var expectedVersionParameter =
+                $", expected_version {expectedVersionParamType} DEFAULT NULL::{expectedVersionParamType}";
+            var expectedVersionCheck = $@"
     if expected_version IS NOT NULL then
         -- COALESCE turns the NULL we get for a brand-new stream into 0, so a
         -- FetchForWriting against a non-existent stream (which sets
@@ -176,7 +193,6 @@ namespace Marten.Events.Schema;
         end if;
     end if;
 ";
-            }
 
             writer.WriteLine($@"
 CREATE OR REPLACE FUNCTION {Identifier}(stream {streamIdType}, stream_type varchar, tenantid varchar, event_ids uuid[], event_types varchar[], dotnet_types varchar[], bodies jsonb[], bdatas bytea[]{metadataParameters}{tagParameters}{expectedVersionParameter}) RETURNS {returnType} AS $$
