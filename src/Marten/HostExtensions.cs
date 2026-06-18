@@ -124,6 +124,8 @@ public static class HostExtensions
     {
         services.AddSingleton<IConfigureMarten, OverrideDaemonModeToSolo>();
         services.AddSingleton<IProjectionCoordinator, ExplicitProjectionCoordinator>();
+        // jasperfx#430 — resolve the JasperFx.Events base interface from the Solo coordinator too.
+        services.AddSingleton<JasperFx.Events.Daemon.IProjectionCoordinator>(s => s.GetRequiredService<IProjectionCoordinator>());
 
         foreach (var descriptor in services.ToArray())
         {
