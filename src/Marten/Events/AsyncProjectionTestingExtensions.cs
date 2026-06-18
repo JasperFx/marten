@@ -188,15 +188,56 @@ public static class TestingExtensions
     public static async Task WaitForNonStaleDataAsync(this IMartenDatabase database, CancellationTokenSource cancellationSource,
         int projectionsCount, EventStoreStatistics initial)
     {
+        var options = database.As<MartenDatabase>().Options;
+        var perTenant = options.Events.UseTenantPartitionedEvents;
+        var shardIdentities = options.Projections.AllShards().Select(s => s.Name.Identity).ToArray();
+
+        bool isCaughtUp(IReadOnlyList<ShardState> rows)
+        {
+            if (!perTenant)
+            {
+                return rows.Count >= projectionsCount && rows.All(x => x.Sequence >= initial.EventSequenceNumber);
+            }
+
+            // #4761: under per-tenant event partitioning each tenant has its own mt_events_sequence, so a
+            // single store-global "initial" cannot be the bar for every progression row — a tenant with
+            // fewer events legitimately tops out below the global max, and comparing its rows against the
+            // global max makes the wait time out forever. Instead require each registered projection shard
+            // to have caught its OWN tenant up to that tenant's high-water mark.
+            const string hw = ShardState.HighWaterMark;
+            var tenantHighWater = rows
+                .Where(x => x.ShardName.StartsWith(hw + ":", StringComparison.Ordinal))
+                .ToDictionary(x => x.ShardName.Substring(hw.Length + 1), x => x.Sequence);
+
+            // Nothing established yet, or the leading tenant has not reached the store-wide high-water —
+            // keep waiting so we never report "caught up" before the daemon has actually done the work.
+            if (tenantHighWater.Count == 0 || tenantHighWater.Values.Max() < initial.EventSequenceNumber)
+            {
+                return false;
+            }
+
+            var byName = rows.ToDictionary(x => x.ShardName, x => x.Sequence);
+            foreach (var (tenant, highWater) in tenantHighWater)
+            {
+                foreach (var shard in shardIdentities)
+                {
+                    if (!byName.TryGetValue($"{shard}:{tenant}", out var seq) || seq < highWater)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
         IReadOnlyList<ShardState> projections = [];
         try
         {
             do
             {
                 projections = await database.AllProjectionProgress(cancellationSource.Token).ConfigureAwait(false);
-                if ((projections.Count >= projectionsCount &&
-                     projections.All(x => x.Sequence >= initial.EventSequenceNumber))
-                    || cancellationSource.IsCancellationRequested)
+                if (isCaughtUp(projections) || cancellationSource.IsCancellationRequested)
                 {
                     break;
                 }
