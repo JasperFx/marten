@@ -56,23 +56,27 @@ internal class QuickEventAppender: IEventAppender
 
             // #4596 Phase 1 Session 2 / #4614 Session 4: when per-tenant
             // partitioning is on, the per-event `QuickAppendEventWithVersion`
-            // INSERT (used by the Start and ExpectedVersionOnServer paths) would
-            // inline `nextval('mt_events_sequence')` — the *global* sequence —
-            // via SequenceColumn.ValueSql. Only the bulk
+            // INSERT would inline `nextval('mt_events_sequence')` — the *global*
+            // sequence — via SequenceColumn.ValueSql. Only the bulk
             // `mt_quick_append_events` function honors the per-tenant sequence
-            // pick. Route every per-tenant append through the bulk function so
-            // the seq_id always comes from the tenant's
-            // `mt_events_sequence_{suffix}`. The function handles new-stream
-            // creation internally, rejects unregistered tenants with SQLSTATE
-            // MT002, and (#4614) now enforces the optimistic version check via
-            // the trailing `expected_version` parameter, raising MT003 on
-            // mismatch — translated back to EventStreamUnexpectedMaxEventIdException
-            // by QuickAppendEventsOperationBase.TryTransform so the user-facing
-            // exception type matches the rich path's UpdateStreamVersion.
+            // pick, so partitioning forces the bulk function for every shape.
             var forceBulkFunction = eventGraph.UseTenantPartitionedEvents;
 
             if (!forceBulkFunction && stream.ActionType == StreamActionType.Start)
             {
+                // New-stream StartStream stays on the per-event InsertStream +
+                // QuickAppendEventWithVersion route. This is deliberate and NOT
+                // affected by #4765:
+                //   * The InsertStream's mt_streams PK violation is what surfaces
+                //     ExistingStreamIdCollisionException when an id is reused
+                //     (including reuse of a previously-archived stream id) — the
+                //     bulk function can't distinguish that case. It also routes
+                //     the insert to mt_streams_default so UseArchivedStreamPartitioning
+                //     reuse semantics are preserved.
+                //   * There is no deterministic sequence-gap hazard here: a
+                //     colliding StartStream fails on the InsertStream (queued
+                //     first in the batch) before any per-event nextval runs, so
+                //     the loser advances no sequence.
                 stream.PrepareEvents(0, eventGraph, sequences, metadataContext);
                 session.QueueOperation(storage.InsertStream(stream));
 
@@ -86,44 +90,51 @@ internal class QuickEventAppender: IEventAppender
             }
             else
             {
-                if (!forceBulkFunction && stream.ExpectedVersionOnServer.HasValue)
-                {
-                    // We can supply the version to the events going in
-                    stream.PrepareEvents(stream.ExpectedVersionOnServer.Value, eventGraph, sequences, metadataContext);
-                    session.QueueOperation(storage.UpdateStreamVersion(stream));
-                    foreach (var @event in stream.Events)
-                    {
-                        session.QueueOperation(storage.QuickAppendEventWithVersion(stream, @event));
-                    }
+                // #4765: everything else — plain appends AND the optimistic
+                // shapes (FetchForWriting / AppendOptimistic / AppendExclusive /
+                // expected-version Append) — routes through the bulk
+                // `mt_quick_append_events` function. This is the fix: the
+                // ExpectedVersionOnServer shape used to take a per-event
+                // UpdateStreamVersion + N × QuickAppendEventWithVersion route
+                // whose OCC check was C#-side (RecordsAffected). On a concurrent
+                // OCC loser, the per-event INSERT still fired
+                // nextval('mt_events_sequence') before raising 23505 on the
+                // events PK — and nextval is non-transactional, so the sequence
+                // stayed advanced past the highest committed seq_id, leaving a
+                // permanent gap that stalls the async daemon's high-water
+                // detector forever (#4749). The bulk function checks the version
+                // via the trailing `expected_version` parameter (MT003 on
+                // mismatch, translated to EventStreamUnexpectedMaxEventIdException
+                // by QuickAppendEventsOperationBase.TryTransform — the same
+                // exception type the rich path's UpdateStreamVersion throws)
+                // *before* the foreach that calls nextval, so an OCC loss
+                // advances no sequence.
+                //
+                // The per-event QuickAppendEventWithVersion op is NOT dead — the
+                // daemon's projection side-effect emission (JasperFx EventSlice ->
+                // IProjectionBatch.QuickAppendEventWithVersion, #4428) and the
+                // StartStream branch above both still use it.
+                //
+                // Tags in TagTables mode are written inside the PostgreSQL
+                // function via array parameters. In HStore mode the function
+                // signature is trimmed (no per-tag varchar[] params), so tags are
+                // written via a follow-up UPDATE keyed on the event's id.
+                //
+                // PrepareEvents gets ExpectedVersionOnServer (or 0) as the current
+                // version so the client-side optimistic-concurrency guard
+                // (StreamAction.PrepareEvents in jasperfx) doesn't false-positive
+                // on "expected N but was 0" — events get their server-bound
+                // versions from ExpectedVersionOnServer + 1. The authoritative
+                // version check still happens server-side.
+                var preparedFrom = stream.ExpectedVersionOnServer ?? 0L;
+                stream.PrepareEvents(preparedFrom, eventGraph, sequences, metadataContext);
+                var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
+                quickAppendEvents.Events = eventGraph;
+                session.QueueOperation(quickAppendEvents);
 
-                    // Individual inserts don't use the function, so queue separate tag operations
+                if (eventGraph.DcbStorageMode == DcbStorageMode.HStore)
+                {
                     EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
-                }
-                else
-                {
-                    // Tags in TagTables mode are handled inside the PostgreSQL function via
-                    // array parameters. In HStore mode the function signature is trimmed
-                    // (no per-tag varchar[] params), so tags are written via a follow-up
-                    // UPDATE keyed on the event's id after the bulk insert completes.
-                    // #4614: when ExpectedVersionOnServer is set (FetchForWriting,
-                    // AppendOptimistic, AppendExclusive, expected-version StartStream/
-                    // Append), pass it as the currentVersion to PrepareEvents so the
-                    // client-side optimistic-concurrency guard (StreamAction.PrepareEvents
-                    // lines 319-341 in jasperfx) doesn't false-positive on "expected N
-                    // but was 0" — events get their server-bound versions assigned from
-                    // ExpectedVersionOnServer + 1. The actual version check still happens
-                    // server-side in mt_quick_append_events via the trailing
-                    // expected_version parameter (MT003 on mismatch).
-                    var preparedFrom = stream.ExpectedVersionOnServer ?? 0L;
-                    stream.PrepareEvents(preparedFrom, eventGraph, sequences, metadataContext);
-                    var quickAppendEvents = (QuickAppendEventsOperationBase)storage.QuickAppendEvents(stream);
-                    quickAppendEvents.Events = eventGraph;
-                    session.QueueOperation(quickAppendEvents);
-
-                    if (eventGraph.DcbStorageMode == DcbStorageMode.HStore)
-                    {
-                        EventTagOperations.QueueTagOperationsByEventId(eventGraph, session, stream);
-                    }
                 }
             }
 
