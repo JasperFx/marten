@@ -43,7 +43,8 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
     }
 
     private async Task<DocumentStore> BuildStoreAsync(
-        string label, EventAppendMode mode, bool asyncSnapshot, TimeProvider timeProvider = null)
+        string label, EventAppendMode mode, bool asyncSnapshot, TimeProvider timeProvider = null,
+        bool exclusiveLock = false)
     {
         // Keep schema names well under PostgreSQL's 63-char identifier limit —
         // a too-long name gets silently truncated by PG, which then trips schema
@@ -63,6 +64,7 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
             opts.DatabaseSchemaName = schema;
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             opts.Events.AppendMode = mode;
+            opts.Events.UseExclusiveLockOnConcurrentAppends = exclusiveLock;
             if (timeProvider != null)
             {
                 opts.Events.TimeProvider = timeProvider;
@@ -232,7 +234,7 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
         // With FOR UPDATE on the version SELECT, losers block at the SELECT until the
         // winner commits, then read the updated version and raise MT003 before any
         // nextval — no gap.
-        using var store = await BuildStoreAsync("cc_gap", mode, asyncSnapshot: false);
+        using var store = await BuildStoreAsync("cc_gap", mode, asyncSnapshot: false, exclusiveLock: true);
 
         var streamId = Guid.NewGuid();
         await using (var seed = store.LightweightSession())

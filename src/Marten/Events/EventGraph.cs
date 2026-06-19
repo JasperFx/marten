@@ -247,6 +247,20 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     public bool UseListenNotifyForEventAppends { get; set; }
 
     /// <summary>
+    /// When enabled, adds FOR UPDATE to the stream version SELECT inside
+    /// mt_quick_append_events for OCC (optimistic concurrency) appends.
+    /// This prevents a READ COMMITTED race where two concurrent transactions
+    /// both pass the version check before either commits, both call nextval(),
+    /// and the loser fails with a 23505 duplicate key violation — leaving a
+    /// permanent gap in mt_events_sequence that stalls QueryForNonStaleData.
+    /// With this option the losing transaction blocks at the SELECT until the
+    /// winner commits, reads the updated version, and raises MT003 before any
+    /// nextval() call. Non-OCC appends are unaffected.
+    /// Defaults to false to preserve existing throughput characteristics.
+    /// </summary>
+    public bool UseExclusiveLockOnConcurrentAppends { get; set; }
+
+    /// <summary>
     /// Opt into a global, partition-spanning unique constraint on stream identity by
     /// also writing each new stream id (or key) into a non-partitioned
     /// <c>mt_streams_identity</c> tracking table at append time. Causes

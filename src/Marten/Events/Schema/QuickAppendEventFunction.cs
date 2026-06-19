@@ -182,16 +182,16 @@ namespace Marten.Events.Schema;
             var expectedVersionParamType = _events.EnableBigIntEvents ? "bigint" : "integer";
             var expectedVersionParameter =
                 $", expected_version {expectedVersionParamType} DEFAULT NULL::{expectedVersionParamType}";
+            var occVersionSelect = _events.UseExclusiveLockOnConcurrentAppends
+                ? $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} for update;"
+                : $"select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere};";
             var expectedVersionCheck = $@"
     if expected_version IS NOT NULL then
-        -- FOR UPDATE serialises concurrent OCC writers on the same stream: the loser
-        -- blocks until the winner commits, reads the updated version, and raises MT003
-        -- *before* nextval() fires -- closing the sequence gap that stalls the daemon.
-        select version, is_archived into event_version, stream_is_archived from {databaseSchema}.mt_streams where {streamsWhere} for update;
         -- COALESCE turns the NULL we get for a brand-new stream into 0, so a
         -- FetchForWriting against a non-existent stream (which sets
         -- ExpectedVersionOnServer = 0) and a StartStream(id, version: 0) both
         -- land on the new-stream branch instead of mis-firing the guard.
+        {occVersionSelect}
         if COALESCE(event_version, 0) != expected_version then
             RAISE EXCEPTION 'Stream version mismatch on ''%'': expected %, actual %', stream, expected_version, COALESCE(event_version, 0) USING ERRCODE = 'MT003';
         end if;
