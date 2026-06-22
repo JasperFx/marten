@@ -69,13 +69,17 @@
     <!-- JasperFx 2.12.0: dead-letter row drill-in (IEventDatabase.QueryDeadLetterEventsAsync) +
          DeadLetterEvent.TenantId + tenant-aware daemon PauseShardAsync/rebuild fan-out (jasperfx#453).
          Marten implements QueryDeadLetterEventsAsync + per-tenant FetchDeadLetterCountsAsync below. -->
-    <PackageVersion Include="JasperFx" Version="2.13.1" />
-    <PackageVersion Include="JasperFx.Events" Version="2.13.1" />
-    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.13.1">
+    <!-- JasperFx 2.13.2: jasperfx#464 — SubscriptionDescriptor carries ImplementationType +
+         AggregateType (TypeDescriptor), populated in the shared
+         SubscriptionDescriptor(ISubscriptionSource, IEventStore) ctor that Marten's projections
+         funnel through via ProjectionGraph.Describe. See marten#4772. -->
+    <PackageVersion Include="JasperFx" Version="2.13.2" />
+    <PackageVersion Include="JasperFx.Events" Version="2.13.2" />
+    <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.13.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageVersion>
-    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.13.1" />
+    <PackageVersion Include="JasperFx.SourceGenerator" Version="2.13.2" />
     <PackageVersion Include="Jil" Version="3.0.0-alpha2" />
     <PackageVersion Include="Lamar" Version="7.1.1" />
     <PackageVersion Include="Lamar.Microsoft.DependencyInjection" Version="15.0.0" />
