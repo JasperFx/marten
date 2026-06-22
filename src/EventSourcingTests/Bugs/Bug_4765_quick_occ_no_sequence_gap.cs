@@ -5,7 +5,6 @@ using EventSourcingTests.FetchForWriting;
 using JasperFx;
 using JasperFx.Core;
 using JasperFx.Events;
-using JasperFx.Events.Projections;
 using Marten;
 using Marten.Testing.Harness;
 using Npgsql;
@@ -44,7 +43,8 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
     }
 
     private async Task<DocumentStore> BuildStoreAsync(
-        string label, EventAppendMode mode, bool asyncSnapshot, TimeProvider timeProvider = null)
+        string label, EventAppendMode mode, bool asyncSnapshot, TimeProvider timeProvider = null,
+        bool exclusiveLock = false)
     {
         // Keep schema names well under PostgreSQL's 63-char identifier limit —
         // a too-long name gets silently truncated by PG, which then trips schema
@@ -64,6 +64,7 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
             opts.DatabaseSchemaName = schema;
             opts.AutoCreateSchemaObjects = AutoCreate.All;
             opts.Events.AppendMode = mode;
+            opts.Events.UseExclusiveLockOnConcurrentAppends = exclusiveLock;
             if (timeProvider != null)
             {
                 opts.Events.TimeProvider = timeProvider;
@@ -215,6 +216,91 @@ public class Bug_4765_quick_occ_no_sequence_gap: OneOffConfigurationsContext
         private readonly DateTimeOffset _now;
         public FixedTimeProvider(DateTimeOffset now) => _now = now;
         public override DateTimeOffset GetUtcNow() => _now;
+    }
+
+    [Theory]
+    [InlineData(EventAppendMode.Quick)]
+    [InlineData(EventAppendMode.QuickWithServerTimestamps)]
+    public async Task concurrent_occ_appends_to_same_stream_leave_no_sequence_gap(EventAppendMode mode)
+    {
+        // Regression for the race NOT covered by occ_loser_leaves_no_sequence_gap:
+        // that test is sequential (s1 commits, then s2 runs). Here ALL three sessions
+        // fetch the same stream version BEFORE any of them commits, then all three
+        // SaveChanges calls are released at exactly the same moment via a Barrier on
+        // dedicated threads. Under READ COMMITTED, two losers can both pass the
+        // mt_quick_append_events version SELECT before the winner commits, reach
+        // nextval(), and fail on the mt_events PK (23505). nextval is non-transactional
+        // so the sequence stays advanced, stalling the async daemon.
+        // With FOR UPDATE on the version SELECT, losers block at the SELECT until the
+        // winner commits, then read the updated version and raise MT003 before any
+        // nextval — no gap.
+        using var store = await BuildStoreAsync("cc_gap", mode, asyncSnapshot: false, exclusiveLock: true);
+
+        var streamId = Guid.NewGuid();
+        await using (var seed = store.LightweightSession())
+        {
+            seed.Events.StartStream<SimpleAggregate>(streamId, new AEvent(), new BEvent());
+            await seed.SaveChangesAsync();
+        }
+
+        // All three sessions fetch the same version BEFORE any commits.
+        await using var s1 = store.LightweightSession();
+        await using var s2 = store.LightweightSession();
+        await using var s3 = store.LightweightSession();
+
+        var w1 = await s1.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var w2 = await s2.Events.FetchForWriting<SimpleAggregate>(streamId);
+        var w3 = await s3.Events.FetchForWriting<SimpleAggregate>(streamId);
+
+        w1.AppendOne(new CEvent());
+        w2.AppendOne(new DEvent());
+        w3.AppendOne(new EEvent());
+
+        // Use a Barrier to release all three SaveChanges calls at exactly the same
+        // instant from dedicated OS threads — this maximises the chance that all three
+        // PG connections are inside mt_quick_append_events simultaneously, triggering
+        // the TOCTOU race between the version SELECT and the nextval/INSERT.
+        var barrier = new System.Threading.Barrier(participantCount: 3);
+        var exceptions = new Exception?[3];
+
+        void SaveSync(int idx, IDocumentSession session)
+        {
+            barrier.SignalAndWait(TimeSpan.FromSeconds(10));
+            try
+            { session.SaveChangesAsync().GetAwaiter().GetResult(); }
+            catch (Exception e) { exceptions[idx] = e; }
+        }
+
+        var threads = new[]
+        {
+            new System.Threading.Thread(() => SaveSync(0, s1)),
+            new System.Threading.Thread(() => SaveSync(1, s2)),
+            new System.Threading.Thread(() => SaveSync(2, s3)),
+        };
+
+        foreach (var t in threads)
+            t.Start();
+        foreach (var t in threads)
+            t.Join();
+
+        var successes = Array.FindAll(exceptions, static e => e is null).Length;
+        var failures = Array.FindAll(exceptions, static e => e is ConcurrencyException).Length;
+        _output.WriteLine($"successes={successes}, concurrency failures={failures}");
+        for (var i = 0; i < exceptions.Length; i++)
+            if (exceptions[i] != null)
+                _output.WriteLine($"  thread[{i}]: {exceptions[i]!.GetType().Name} — {exceptions[i]!.Message}");
+
+        successes.ShouldBe(1, "exactly one concurrent writer should win");
+        failures.ShouldBe(2, "the other two should get ConcurrencyException");
+
+        // The critical assertion: sequence must equal the highest committed seq_id.
+        // A gap means nextval() fired for a losing transaction — the daemon stalls.
+        var (lastValue, maxSeq, rowCount) = await ReadSequenceStateAsync(store);
+        _output.WriteLine($"last_value={lastValue}, max seq_id={maxSeq}, rows={rowCount}");
+        lastValue.ShouldBe(maxSeq, $"sequence gap: last_value={lastValue} > max committed seq_id={maxSeq}");
+
+        // 2 seed + 1 winner; both losers must have rolled back cleanly.
+        rowCount.ShouldBe(3);
     }
 
     [Fact]

@@ -183,6 +183,17 @@ namespace Marten.Events
         public bool UseListenNotifyForEventAppends { get; set; }
 
         /// <summary>
+        /// When enabled, adds FOR UPDATE to the stream version SELECT inside
+        /// mt_quick_append_events for OCC (optimistic concurrency) appends.
+        /// This prevents a READ COMMITTED race where two concurrent transactions
+        /// both pass the version check before either commits, both call nextval(),
+        /// and the loser fails with a 23505 — leaving a permanent gap in
+        /// mt_events_sequence that stalls QueryForNonStaleData.
+        /// Defaults to false to preserve existing throughput characteristics.
+        /// </summary>
+        public bool UseExclusiveLockOnConcurrentAppends { get; set; }
+
+        /// <summary>
         ///     Directs the schema migration functionality to ignore the presence of the named index
         ///     on the event-store tables (<c>mt_events</c>, <c>mt_streams</c>, <c>mt_event_progression</c>).
         ///     Use this when an external mechanism (e.g. a custom <c>IFeatureSchema</c>) declares an index
