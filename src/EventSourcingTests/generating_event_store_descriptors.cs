@@ -2,11 +2,14 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using EventSourcingTests.Aggregation;
 using EventSourcingTests.FetchForWriting;
 using EventSourcingTests.Projections;
+using JasperFx.Descriptors;
 using JasperFx.Events;
 using JasperFx.Events.Projections;
 using Marten;
+using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
@@ -46,6 +49,48 @@ public class generating_event_store_descriptors
 
         usage.Subscriptions.Count.ShouldBe(4);
         usage.Events.Any().ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task subscription_descriptors_carry_implementation_and_aggregate_types()
+    {
+        using var host = await Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddMarten(opts =>
+                {
+                    opts.Connection(ConnectionSource.ConnectionString);
+                    opts.DatabaseSchemaName = "descriptor_enrichment";
+
+                    opts.Projections.Snapshot<SimpleAggregate>(SnapshotLifecycle.Async);
+                    opts.Projections.Add<LapMultiStreamProjection>(ProjectionLifecycle.Inline);
+                    opts.Projections.Add<MyAggregateProjection>(ProjectionLifecycle.Inline);
+                });
+            }).StartAsync();
+
+        var capability = host.Services.GetRequiredService<IEventStore>();
+        var usage = await capability.TryCreateUsage(CancellationToken.None);
+
+        usage.ShouldNotBeNull();
+
+        // A registered multi-stream projection carries the concrete projection type as
+        // ImplementationType, plus the aggregate/document type it projects into.
+        var multiStream = usage.Subscriptions.Single(x =>
+            x.ImplementationType == TypeDescriptor.For(typeof(LapMultiStreamProjection)));
+        multiStream.AggregateType.ShouldBe(TypeDescriptor.For(typeof(Lap)));
+
+        // A user-defined SingleStreamProjection<T> subclass carries its own type as the
+        // ImplementationType and the aggregate type T as AggregateType.
+        var singleStream = usage.Subscriptions.Single(x =>
+            x.ImplementationType == TypeDescriptor.For(typeof(MyAggregateProjection)));
+        singleStream.AggregateType.ShouldBe(TypeDescriptor.For(typeof(MyAggregate)));
+
+        // A Snapshot<T> is implemented by Marten's SingleStreamProjection<T, TId> and carries
+        // the aggregate type T as AggregateType.
+        var snapshot = usage.Subscriptions.Single(x =>
+            x.AggregateType == TypeDescriptor.For(typeof(SimpleAggregate)));
+        snapshot.ImplementationType.ShouldBe(
+            TypeDescriptor.For(typeof(SingleStreamProjection<SimpleAggregate, Guid>)));
     }
 
     [Fact]
