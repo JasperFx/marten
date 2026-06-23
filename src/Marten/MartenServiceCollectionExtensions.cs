@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx;
+using JasperFx.Documents;
 using JasperFx.MultiTenancy;
 using JasperFx.CommandLine;
 using JasperFx.CommandLine.Descriptions;
@@ -215,6 +216,8 @@ public static class MartenServiceCollectionExtensions
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<IDocumentStore>());
         services.AddSingleton<IDocumentStoreUsageSource>(s =>
             (IDocumentStoreUsageSource)s.GetRequiredService<IDocumentStore>());
+        services.AddSingleton<IDocumentStoreDiagnostics>(s =>
+            (IDocumentStoreDiagnostics)s.GetRequiredService<IDocumentStore>());
 
         var instrument = new SetEventStoreInstrumentation();
         services.AddSingleton<IConfigureMarten>(instrument);
@@ -332,6 +335,7 @@ public static class MartenServiceCollectionExtensions
 
         services.AddSingleton<IEventStore>(s => (IEventStore)s.GetRequiredService<T>());
         services.AddSingleton<IDocumentStoreUsageSource>(s => (IDocumentStoreUsageSource)s.GetRequiredService<T>());
+        services.AddSingleton<IDocumentStoreDiagnostics>(s => (IDocumentStoreDiagnostics)s.GetRequiredService<T>());
 
         var instrument = new SetEventStoreInstrumentation<T>();
         services.AddSingleton<IConfigureMarten<T>>(instrument);

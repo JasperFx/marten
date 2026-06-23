@@ -73,8 +73,8 @@
          AggregateType (TypeDescriptor), populated in the shared
          SubscriptionDescriptor(ISubscriptionSource, IEventStore) ctor that Marten's projections
          funnel through via ProjectionGraph.Describe. See marten#4772. -->
-    <PackageVersion Include="JasperFx" Version="2.13.2" />
-    <PackageVersion Include="JasperFx.Events" Version="2.13.2" />
+    <PackageVersion Include="JasperFx" Version="2.13.4-cwdocs" />
+    <PackageVersion Include="JasperFx.Events" Version="2.13.4-cwdocs" />
     <PackageVersion Include="JasperFx.Events.SourceGenerator" Version="2.13.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
