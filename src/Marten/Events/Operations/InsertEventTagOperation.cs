@@ -9,9 +9,11 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
-internal class InsertEventTagOperation: IStorageOperation
+internal class InsertEventTagOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly ITagTypeRegistration _registration;

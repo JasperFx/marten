@@ -9,13 +9,15 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
 /// <summary>
 /// Inserts a tag row by looking up seq_id from the event's id.
 /// Used in Quick append mode where sequences aren't pre-assigned.
 /// </summary>
-internal class InsertEventTagByEventIdOperation: IStorageOperation
+internal class InsertEventTagByEventIdOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly ITagTypeRegistration _registration;

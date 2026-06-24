@@ -8,9 +8,11 @@ using Marten.Internal;
 using Marten.Internal.Operations;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
-internal class IncrementStreamVersionById: IStorageOperation
+internal class IncrementStreamVersionById: IStorageOperation, NoDataReturnedCall
 {
     private readonly EventGraph _events;
 

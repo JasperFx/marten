@@ -9,6 +9,8 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
 /// <summary>
@@ -17,7 +19,7 @@ namespace Marten.Events.Operations;
 /// <c>hstore || hstore</c> concatenation operator so multiple tag writes on the same
 /// event compose correctly.
 /// </summary>
-internal class SetEventTagsHstoreOperation: IStorageOperation
+internal class SetEventTagsHstoreOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly long _seqId;

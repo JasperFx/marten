@@ -10,6 +10,8 @@ using Marten.Internal.Operations;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
 /// <summary>
@@ -18,7 +20,7 @@ namespace Marten.Events.Operations;
 ///            SELECT @value, d.seq_id FROM schema.mt_events as d WHERE {where}
 ///            ON CONFLICT DO NOTHING
 /// </summary>
-internal class AssignTagWhereOperation: IStorageOperation
+internal class AssignTagWhereOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly ITagTypeRegistration _registration;
