@@ -1105,9 +1105,11 @@ internal class SetEventStoreInstrumentation: IConfigureMarten, IEventStoreInstru
     public void Configure(IServiceProvider services, StoreOptions options)
     {
         options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
+        options.EventGraph.AppendObserver = AppendObserver;
     }
 
     public bool ExtendedProgressionEnabled { get; set; }
+    public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 }
 
 internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStoreInstrumentation where T : IDocumentStore
@@ -1115,7 +1117,9 @@ internal class SetEventStoreInstrumentation<T>: IConfigureMarten<T>, IEventStore
     public void Configure(IServiceProvider services, StoreOptions options)
     {
         options.EventGraph.EnableExtendedProgressionTracking = ExtendedProgressionEnabled;
+        options.EventGraph.AppendObserver = AppendObserver;
     }
 
     public bool ExtendedProgressionEnabled { get; set; }
+    public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
 }
