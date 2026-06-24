@@ -8,6 +8,7 @@ using JasperFx.Descriptors;
 using JasperFx.Events;
 using Marten.Schema;
 using Weasel.Core.Migrations;
+using Weasel.Postgresql.Tables.Partitioning;
 
 namespace Marten;
 
@@ -74,9 +75,32 @@ public partial class DocumentStore : IDocumentStoreUsageSource
             UseOptimisticConcurrency = mapping.UseOptimisticConcurrency,
             UseNumericRevisions = mapping.UseNumericRevisions,
             SubClassCount = mapping.SubClasses.Count(),
+            SubClasses = mapping.SubClasses.Select(x => TypeDescriptor.For(x.DocumentType)).ToArray(),
             PartitioningStrategy = mapping.Partitioning?.GetType().Name,
+            Partitioning = BuildPartitioning(mapping.Partitioning),
             Ddl = ddl,
         };
+    }
+
+    private static PartitioningDescriptor? BuildPartitioning(IPartitionStrategy? partitioning)
+    {
+        if (partitioning == null)
+        {
+            return null;
+        }
+
+        // "ListPartitioning" -> "List", "HashPartitioning" -> "Hash", etc.
+        var strategy = partitioning.GetType().Name.Replace("Partitioning", "");
+
+        var names = partitioning switch
+        {
+            ListPartitioning list => list.Partitions.Select(x => x.Suffix).ToArray(),
+            RangePartitioning range => range.Ranges.Select(x => x.Suffix).ToArray(),
+            HashPartitioning hash => hash.Suffixes,
+            _ => Array.Empty<string>()
+        };
+
+        return new PartitioningDescriptor { Strategy = strategy, PartitionNames = names };
     }
 
     private string WriteSchemaCreationDdl(DocumentMapping mapping)
