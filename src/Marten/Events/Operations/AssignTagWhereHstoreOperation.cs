@@ -10,6 +10,8 @@ using NpgsqlTypes;
 using Weasel.Postgresql;
 using Weasel.Postgresql.SqlGeneration;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
 /// <summary>
@@ -18,7 +20,7 @@ namespace Marten.Events.Operations;
 /// a user-supplied WHERE clause. Uses the <c>hstore || hstore</c> concatenation
 /// operator so existing tags on the row are preserved.
 /// </summary>
-internal class AssignTagWhereHstoreOperation: IStorageOperation
+internal class AssignTagWhereHstoreOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly Dictionary<string, string> _tags;

@@ -18,6 +18,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events;
 
 internal partial class EventStore
@@ -183,7 +185,7 @@ public sealed class SampleArchiverDocumentation : IEventsArchiver<IDocumentOpera
 
 #endregion
 
-internal class DeleteEventsOperation: IStorageOperation
+internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly long[] _sequences;
 

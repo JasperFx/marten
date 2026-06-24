@@ -10,9 +10,11 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Protected;
 
-internal class OverwriteEventOperation : IStorageOperation
+internal class OverwriteEventOperation : IStorageOperation, NoDataReturnedCall
 {
     private readonly EventGraph _graph;
     private readonly IEvent _e;

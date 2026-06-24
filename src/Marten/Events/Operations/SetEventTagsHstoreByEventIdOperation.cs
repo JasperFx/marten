@@ -9,6 +9,8 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Operations;
 
 /// <summary>
@@ -17,7 +19,7 @@ namespace Marten.Events.Operations;
 /// Mirrors <see cref="InsertEventTagByEventIdOperation"/> but writes the tags as a
 /// single hstore concatenation against the existing row.
 /// </summary>
-internal class SetEventTagsHstoreByEventIdOperation: IStorageOperation
+internal class SetEventTagsHstoreByEventIdOperation: IStorageOperation, NoDataReturnedCall
 {
     private readonly string _schemaName;
     private readonly Guid _eventId;

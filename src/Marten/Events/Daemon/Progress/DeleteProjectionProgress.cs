@@ -9,9 +9,11 @@ using Marten.Internal.Operations;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
+using Marten.Services;
+
 namespace Marten.Events.Daemon.Progress;
 
-internal class DeleteProjectionProgress: IStorageOperation
+internal class DeleteProjectionProgress: IStorageOperation, NoDataReturnedCall
 {
     private readonly EventGraph _events;
     private readonly string _shardName;
