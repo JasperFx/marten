@@ -15,6 +15,10 @@
 - **Test framework:** xUnit + Shouldly
 - **Docs:** VitePress (`docs/`)
 
+## Coding Conventions
+
+- **Naming:** Use PascalCasing for all `public` or `internal` members (types, methods, properties, fields, events). Use camelCasing for all `protected` and `private` members. (Private fields keep the conventional leading underscore, e.g. `_workTracker`.)
+
 ## Project Structure
 
 ```

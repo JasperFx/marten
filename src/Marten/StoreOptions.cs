@@ -347,6 +347,15 @@ public partial class StoreOptions: IReadOnlyStoreOptions, IMigrationLogger, IDoc
         if (options.EnableAdvancedTracking)
         {
             Events.EnableExtendedProgressionTracking = true;
+
+            // Forward each committed unit of work's appended events to the storage-agnostic
+            // IEventStoreInstrumentation.AppendObserver so CritterWatch can record runtime-observed
+            // "appends" edges (#4782). Applied to every store in the container (main + ancillary),
+            // since ReadJasperFxOptions runs for both.
+            if (!Listeners.OfType<AppendEventObservationListener>().Any())
+            {
+                Listeners.Add(new AppendEventObservationListener(EventGraph));
+            }
         }
     }
 

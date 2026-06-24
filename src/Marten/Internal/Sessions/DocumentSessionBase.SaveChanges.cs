@@ -76,39 +76,8 @@ public abstract partial class DocumentSessionBase
             await listener.AfterCommitAsync(this, _workTracker, token).ConfigureAwait(false);
         }
 
-        notifyAppendObserver();
-
         // Need to clear the unit of work here
         _workTracker.Reset();
-    }
-
-    // Best-effort notification of the storage-agnostic append observer (JasperFx.Events
-    // IEventStoreInstrumentation.AppendObserver) with the events committed in this unit of work,
-    // so lifecycle tooling such as CritterWatch can record runtime-observed "appends" edges (#4782).
-    // Runs after a successful commit and must never disrupt the unit of work, so any observer
-    // failure is logged and swallowed. _workTracker still holds the events; Reset() follows.
-    private void notifyAppendObserver()
-    {
-        var observer = Options.EventGraph.AppendObserver;
-        if (observer is null)
-        {
-            return;
-        }
-
-        var events = _workTracker.GetEvents().ToList();
-        if (events.Count == 0)
-        {
-            return;
-        }
-
-        try
-        {
-            observer(events);
-        }
-        catch (Exception e)
-        {
-            Logger.LogFailure(new NpgsqlCommand(), e);
-        }
     }
 
     private IMessageBatch? _messageBatch;
