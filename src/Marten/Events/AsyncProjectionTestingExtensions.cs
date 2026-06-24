@@ -194,11 +194,6 @@ public static class TestingExtensions
 
         bool isCaughtUp(IReadOnlyList<ShardState> rows)
         {
-            if (!perTenant)
-            {
-                return rows.Count >= projectionsCount && rows.All(x => x.Sequence >= initial.EventSequenceNumber);
-            }
-
             // #4761: under per-tenant event partitioning each tenant has its own mt_events_sequence, so a
             // single store-global "initial" cannot be the bar for every progression row — a tenant with
             // fewer events legitimately tops out below the global max, and comparing its rows against the
@@ -209,9 +204,21 @@ public static class TestingExtensions
                 .Where(x => x.ShardName.StartsWith(hw + ":", StringComparison.Ordinal))
                 .ToDictionary(x => x.ShardName.Substring(hw.Length + 1), x => x.Sequence);
 
-            // Nothing established yet, or the leading tenant has not reached the store-wide high-water —
-            // keep waiting so we never report "caught up" before the daemon has actually done the work.
-            if (tenantHighWater.Count == 0 || tenantHighWater.Values.Max() < initial.EventSequenceNumber)
+            // The per-tenant bar only applies when the daemon actually distributes a shard PER TENANT and
+            // therefore records per-tenant high-water rows (HighWaterMark:<tenant>). A single agent that
+            // spans every tenant partition — the common "<shard>:All" case, including Wolverine-managed
+            // event-subscription distribution — records ONE global HighWaterMark plus one global
+            // shard-progress row and no per-tenant rows. #4761's bar then has no high-water rows to check
+            // and waits forever (#4761 follow-up). Fall back to the store-global check, which is exactly
+            // the pre-#4761 behaviour for that shape.
+            if (!perTenant || tenantHighWater.Count == 0)
+            {
+                return rows.Count >= projectionsCount && rows.All(x => x.Sequence >= initial.EventSequenceNumber);
+            }
+
+            // The leading tenant has not reached the store-wide high-water yet — keep waiting so we never
+            // report "caught up" before the daemon has actually done the work.
+            if (tenantHighWater.Values.Max() < initial.EventSequenceNumber)
             {
                 return false;
             }
