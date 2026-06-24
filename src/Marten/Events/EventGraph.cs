@@ -242,6 +242,16 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
         set;
     }
 
+    /// <summary>
+    /// Optional best-effort observer invoked after each successful <c>SaveChangesAsync</c> with the
+    /// events that were appended in that unit of work. Backs
+    /// <see cref="JasperFx.Events.IEventStoreInstrumentation.AppendObserver"/> so storage-agnostic
+    /// lifecycle tooling (CritterWatch) can record runtime-observed "appends" edges. Each
+    /// <see cref="IEvent"/> carries its event type, stream id/key, aggregate type, tenant id, and
+    /// timestamp. See #4782.
+    /// </summary>
+    public Action<IReadOnlyList<IEvent>>? AppendObserver { get; set; }
+
 
     public bool UseArchivedStreamPartitioning { get; set; }
     public bool UseListenNotifyForEventAppends { get; set; }
