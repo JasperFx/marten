@@ -169,3 +169,53 @@ var store = DocumentStore.For(opts =>
 ```
 <sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/partitioning_documents_on_duplicate_fields.cs#L35-L86' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_configuring_partitioning_by_document_member' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
+
+### Time-based Retention with Date Range Partitioning
+
+A common use case is a high volume, append-only document table — think metrics, telemetry, or audit
+samples — where retention is time based. By range-partitioning the table on a duplicated `DateTime` or
+`DateTimeOffset` member, you turn "delete everything older than N months" into an instant
+`DROP TABLE partition` instead of a large `DELETE` that bloats the table and forces vacuum churn.
+
+Declare the monthly (or daily, weekly, etc.) partitions up front and let Marten manage them:
+
+<!-- snippet: sample_partitioning_document_by_date_range -->
+<a id='snippet-sample_partitioning_document_by_date_range'></a>
+```cs
+opts.Schema.For<MetricsSample>()
+    .Duplicate(x => x.BucketEnd)
+    .PartitionOn(x => x.BucketEnd, x =>
+    {
+        x.ByRange()
+            .AddRange("2026_01",
+                new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero))
+            .AddRange("2026_02",
+                new DateTimeOffset(2026, 2, 1, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2026, 3, 1, 0, 0, 0, TimeSpan.Zero));
+    });
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/Bug_4779_partition_document_by_date.cs#L53-L68' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partitioning_document_by_date_range' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
+
+::: tip
+Because PostgreSQL renders `timestamptz` partition bounds in the session time zone, always express your
+range boundaries as explicit instants (use `DateTimeOffset` values, or UTC `DateTime` values). Marten and
+Weasel compare the declared bounds against the database by instant, so the partitions stay stable across
+deployments and across servers configured with different time zones.
+:::
+
+More commonly for time-series data, teams roll partitions forward with a scheduler or
+[pg_partman](https://github.com/pgpartman/pg_partman) rather than declaring every partition up front. Use
+the externally managed variant so Marten creates the partitioned parent table but leaves the individual
+partitions alone:
+
+<!-- snippet: sample_partitioning_document_by_date_externally_managed -->
+<a id='snippet-sample_partitioning_document_by_date_externally_managed'></a>
+```cs
+opts.Schema.For<MetricsSample>()
+    .Duplicate(x => x.BucketEnd)
+    .PartitionOn(x => x.BucketEnd, x => x.ByExternallyManagedRangePartitions());
+```
+<sup><a href='https://github.com/JasperFx/marten/blob/master/src/CoreTests/Partitioning/Bug_4779_partition_document_by_date.cs#L76-L82' title='Snippet source file'>snippet source</a> | <a href='#snippet-sample_partitioning_document_by_date_externally_managed' title='Start of snippet'>anchor</a></sup>
+<!-- endSnippet -->
