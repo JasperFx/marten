@@ -280,6 +280,33 @@ select count(*) from {Options.Events.DatabaseSchemaName}.mt_streams;
     }
 
     /// <summary>
+    /// #4785 / jasperfx#473 — Marten override of the store-agnostic
+    /// <see cref="IEventDatabase.DeleteProjectionProgressByShardNameAsync"/>
+    /// (default impl throws). Drops the single <c>mt_event_progression</c> row
+    /// whose <c>name</c> matches the raw <see cref="ShardName.Identity"/> verbatim
+    /// — bypassing the registered-projection lookup that the
+    /// <c>IEventStore&lt;,&gt;.DeleteProjectionProgressAsync</c> path goes through
+    /// (and that throws <see cref="ArgumentOutOfRangeException"/> for an
+    /// unregistered name). This is the eject path for an orphan shard whose
+    /// projection has been renamed/versioned/removed since the row was written.
+    /// A non-existent identity is a clean no-op (zero rows affected, no throw).
+    /// Per-tenant scoping flows through the identity itself: a
+    /// <c>{Name}:{ShardKey}:{tenantId}</c> identity deletes only that tenant's row.
+    /// </summary>
+    public async Task DeleteProjectionProgressByShardNameAsync(string shardIdentity, CancellationToken token = default)
+    {
+        await EnsureStorageExistsAsync(typeof(IEvent), token).ConfigureAwait(false);
+
+        var sessionOptions = SessionOptions.ForDatabase(this);
+        sessionOptions.AllowAnyTenant = true;
+        await using var session = Options.EventGraph.Store.LightweightSession(sessionOptions);
+
+        session.QueueOperation(new DeleteProjectionProgress(Options.EventGraph, shardIdentity));
+
+        await session.SaveChangesAsync(token).ConfigureAwait(false);
+    }
+
+    /// <summary>
     ///     marten#4546 / jasperfx#356: count the stored projection/subscription dead letter
     ///     events for a single shard. With SkipApplyErrors on (the JasperFx.Events 2.0 default)
     ///     a failed Apply is recorded as a <see cref="DeadLetterEvent" />, so the accumulation is
