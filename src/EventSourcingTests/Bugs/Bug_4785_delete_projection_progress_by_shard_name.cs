@@ -2,6 +2,8 @@ using System.Threading.Tasks;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
 using JasperFx.Events.Projections;
+using Marten;
+using Marten.Services;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
@@ -173,6 +175,111 @@ public class Bug_4785_delete_projection_progress_by_shard_name: BugIntegrationCo
             ShardState.HighWaterMark, default);
 
         (await readSequenceFor(ShardState.HighWaterMark)).ShouldBeNull();
+    }
+
+    /// <summary>
+    /// Pins the per-axis selectivity of the WHERE name = ? clause: when two
+    /// shards differ on EXACTLY one of {version, tenantId, shardKey, name},
+    /// deleting one must not touch the sibling. The version+tenant case is
+    /// the one most likely to surface a bug because the 4-segment grammar
+    /// concatenates BOTH axes into Identity (Name:V{n}:ShardKey:tenant) — if
+    /// any normalization, prefix-match, or LIKE crept into the delete path,
+    /// the off-by-version or off-by-tenant sibling would be a false-positive.
+    /// </summary>
+    [Theory]
+    [InlineData(
+        "Orders", "All", 1u, "alpha",
+        "Orders", "All", 2u, "alpha")]   // differ only by version (3-seg vs 4-seg)
+    [InlineData(
+        "Orders", "All", 3u, "alpha",
+        "Orders", "All", 4u, "alpha")]   // differ only by version (both 4-seg)
+    [InlineData(
+        "Orders", "All", 1u, "alpha",
+        "Orders", "All", 1u, "bravo")]   // differ only by tenant
+    [InlineData(
+        "Orders", "All", 3u, "alpha",
+        "Orders", "All", 3u, "bravo")]   // differ only by tenant (both 4-seg)
+    [InlineData(
+        "Orders", "All", 3u, "alpha",
+        "Orders", "All", 4u, "bravo")]   // differ by BOTH version AND tenant
+    [InlineData(
+        "Orders", "All", 1u, null,
+        "Orders", "events", 1u, null)]   // differ only by shardKey
+    [InlineData(
+        "Orders", "All", 1u, null,
+        "Invoices", "All", 1u, null)]    // differ only by name
+    [InlineData(
+        "Orders", "All", 3u, "alpha",
+        "Orders", "events", 3u, "alpha")] // differ only by shardKey, with V+tenant
+    public async Task deleting_one_does_not_touch_a_sibling_that_differs_by_one_axis(
+        string nameA, string keyA, uint verA, string? tenantA,
+        string nameB, string keyB, uint verB, string? tenantB)
+    {
+        var shardA = new ShardName(nameA, keyA, verA, tenantA);
+        var shardB = new ShardName(nameB, keyB, verB, tenantB);
+
+        // Sanity: the two are not the same Identity (otherwise the test
+        // tautologically asserts row-A is gone after row-A is deleted).
+        shardA.Identity.ShouldNotBe(shardB.Identity);
+
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        await seedProgressionRow(shardA.Identity, 11);
+        await seedProgressionRow(shardB.Identity, 22);
+
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(shardA.Identity, default);
+
+        (await readSequenceFor(shardA.Identity)).ShouldBeNull();
+        (await readSequenceFor(shardB.Identity)).ShouldBe(22);
+
+        // And the reverse: delete B (which is still there), confirm A stays
+        // gone (no resurrection) and B leaves cleanly too.
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(shardB.Identity, default);
+
+        (await readSequenceFor(shardA.Identity)).ShouldBeNull();
+        (await readSequenceFor(shardB.Identity)).ShouldBeNull();
+    }
+
+    /// <summary>
+    /// End-to-end via the real Marten writer (<c>InsertProjectionProgress</c>):
+    /// proves that what Marten's daemon actually writes for a shard with
+    /// version>1 AND tenant set is byte-for-byte the same identity the
+    /// override deletes. This closes the loop on the user's worry that the
+    /// delete contract might silently diverge from the write contract when
+    /// both knobs are on at once.
+    /// </summary>
+    [Fact]
+    public async Task writer_and_deleter_agree_on_identity_for_versioned_per_tenant_shard()
+    {
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        // 4-segment grammar — the most concatenated shape, where a writer/
+        // deleter mismatch would be most likely to slip through.
+        var shard = ShardName.Compose("Audit", "events", "tenant-7", 4);
+        shard.Identity.ShouldBe("Audit:V4:events:tenant-7");
+
+        // Drive an InsertProjectionProgress through a real lightweight
+        // session — same path the async daemon takes when a shard first
+        // checkpoints. This proves the writer stores ShardName.Identity
+        // verbatim into name.
+        var sessionOptions = SessionOptions.ForDatabase(database);
+        sessionOptions.AllowAnyTenant = true;
+        await using (var writeSession = theStore.LightweightSession(sessionOptions))
+        {
+            var range = new EventRange(shard, 500);
+            writeSession.QueueOperation(new Marten.Events.Daemon.Progress.InsertProjectionProgress(
+                theStore.Events, range));
+            await writeSession.SaveChangesAsync();
+        }
+
+        (await readSequenceFor(shard.Identity)).ShouldBe(500);
+
+        // Now the operator-facing override deletes it by the same identity.
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(shard.Identity, default);
+
+        (await readSequenceFor(shard.Identity)).ShouldBeNull();
     }
 
     [Fact]
