@@ -1,5 +1,7 @@
 using System.Threading.Tasks;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
+using JasperFx.Events.Projections;
 using Marten.Storage;
 using Marten.Testing.Harness;
 using NpgsqlTypes;
@@ -91,6 +93,132 @@ public class Bug_4785_delete_projection_progress_by_shard_name: BugIntegrationCo
 
         (await readSequenceFor("PerTenantProj:All:alpha")).ShouldBeNull();
         (await readSequenceFor("PerTenantProj:All:bravo")).ShouldBe(20);
+    }
+
+    /// <summary>
+    /// Walks every distinct <see cref="ShardName.Identity"/> grammar that the
+    /// constructor / <see cref="ShardName.Compose"/> can produce, and confirms
+    /// the override deletes the row keyed by that exact Identity. Pins both:
+    /// (a) the expected Identity literal for each input combination — a
+    /// regression guard if the JasperFx grammar drifts — and (b) the
+    /// exact-match WHERE clause in <c>DeleteProjectionProgress</c>.
+    /// </summary>
+    [Theory]
+    [InlineData("Bare",         "All",        1u, null,     "Bare:All")]                  // 2-segment
+    [InlineData("WithKey",      "events",     1u, null,     "WithKey:events")]            // 2-segment, custom key
+    [InlineData("V2",           "All",        2u, null,     "V2:V2:All")]                 // 3-segment, V-marker
+    [InlineData("V7",           "events",     7u, null,     "V7:V7:events")]              // 3-segment, V-marker + custom key
+    [InlineData("TenantOnly",   "All",        1u, "alpha",  "TenantOnly:All:alpha")]      // 3-segment, no V-marker
+    [InlineData("TenantOnly",   "events",     1u, "bravo",  "TenantOnly:events:bravo")]   // 3-segment, no V-marker + custom key
+    [InlineData("V2T",          "All",        3u, "delta",  "V2T:V3:All:delta")]          // 4-segment, version + tenant
+    [InlineData("V2T",          "events",     5u, "echo",   "V2T:V5:events:echo")]        // 4-segment, version + tenant + custom key
+    public async Task deletes_row_for_every_shard_name_identity_permutation(
+        string name, string shardKey, uint version, string? tenantId, string expectedIdentity)
+    {
+        // Pin the grammar contract first — if JasperFx ever changes Identity
+        // composition, this assertion catches it before the delete claim.
+        var shard = new ShardName(name, shardKey, version, tenantId);
+        shard.Identity.ShouldBe(expectedIdentity);
+
+        // And confirm Compose produces the same Identity (round-trip both
+        // construction paths).
+        ShardName.Compose(name, shardKey, tenantId, version).Identity.ShouldBe(expectedIdentity);
+
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        await seedProgressionRow(shard.Identity, 42);
+        (await readSequenceFor(shard.Identity)).ShouldBe(42);
+
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(shard.Identity, default);
+
+        (await readSequenceFor(shard.Identity)).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task default_shardkey_constructor_produces_All_and_deletes()
+    {
+        // The convenience ctor `new ShardName(name)` fills shardKey="All",
+        // version=1, tenant=null — distinct entry point from the 4-arg ctor
+        // even though Identity collapses into the 2-segment grammar.
+        var shard = new ShardName("DefaultCtor");
+        shard.Identity.ShouldBe("DefaultCtor:All");
+
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        await seedProgressionRow(shard.Identity, 7);
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(shard.Identity, default);
+
+        (await readSequenceFor(shard.Identity)).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task high_water_mark_identity_is_the_literal_constant_and_is_deletable_by_it()
+    {
+        // The HighWaterMark name is a special case inside the ShardName ctor —
+        // Identity is overwritten to the literal "HighWaterMark" regardless of
+        // the shardKey/version/tenant arguments. The override matches on the
+        // exact name column, so deleting via this literal works the same as
+        // any other identity. (Operational note: HighWaterMark is not an
+        // orphan — only delete it deliberately.)
+        var shard = new ShardName(ShardState.HighWaterMark, "ignored", 9, "ignored");
+        shard.Identity.ShouldBe(ShardState.HighWaterMark);
+
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        await seedProgressionRow(ShardState.HighWaterMark, 999);
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(
+            ShardState.HighWaterMark, default);
+
+        (await readSequenceFor(ShardState.HighWaterMark)).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task deleting_one_permutation_leaves_every_other_grammar_intact()
+    {
+        // Sanity check: seed every distinct Identity grammar at once and
+        // delete one — the exact-match WHERE clause must touch ONLY that row
+        // and leave the rest of the grammar set untouched.
+        var database = (MartenDatabase)theStore.Storage.Database;
+        await database.EnsureStorageExistsAsync(typeof(IEvent));
+
+        var identities = new[]
+        {
+            new ShardName("P", "All", 1, null).Identity,            // P:All
+            new ShardName("P", "events", 1, null).Identity,         // P:events
+            new ShardName("P", "All", 2, null).Identity,            // P:V2:All
+            new ShardName("P", "events", 2, null).Identity,         // P:V2:events
+            new ShardName("P", "All", 1, "alpha").Identity,         // P:All:alpha
+            new ShardName("P", "events", 1, "bravo").Identity,      // P:events:bravo
+            new ShardName("P", "All", 2, "delta").Identity,         // P:V2:All:delta
+            new ShardName("P", "events", 2, "echo").Identity,       // P:V2:events:echo
+            ShardState.HighWaterMark                                  // HighWaterMark
+        };
+
+        for (var i = 0; i < identities.Length; i++)
+        {
+            await seedProgressionRow(identities[i], 100 + i);
+        }
+
+        // Delete the 4-segment versioned+tenant identity (the most specific
+        // grammar) and assert every sibling survives.
+        var target = new ShardName("P", "events", 2, "echo").Identity;
+        await ((IEventDatabase)database).DeleteProjectionProgressByShardNameAsync(target, default);
+
+        for (var i = 0; i < identities.Length; i++)
+        {
+            var actual = await readSequenceFor(identities[i]);
+            if (identities[i] == target)
+            {
+                actual.ShouldBeNull();
+            }
+            else
+            {
+                actual.ShouldBe(100 + i);
+            }
+        }
     }
 
     private async Task seedProgressionRow(string name, long seq)
