@@ -12,9 +12,9 @@ using Xunit;
 
 namespace EventSourcingTests.Bugs;
 
-public class Bug_xxxx_natrual_key_table_not_populated_on_rebuild: OneOffConfigurationsContext
+public class Bug_4788_natrual_key_table_not_populated_on_rebuild: OneOffConfigurationsContext
 {
-    private const string schemaName = "bug_xxxx";
+    private const string schemaName = "bug_4788";
 
     public sealed record OrderNumber(string Value);
 
@@ -94,6 +94,11 @@ public class Bug_xxxx_natrual_key_table_not_populated_on_rebuild: OneOffConfigur
         session.Events.StartStream<Order>(streamId, new OrderPlaced(streamId, "12345"));
         await session.SaveChangesAsync();
 
+        var anotherStore = SeparateStore(ConfigureStore);
+        var anotherSession = anotherStore.LightweightSession();
+        var order1 = await anotherSession.Events.FetchLatest<Order, OrderNumber>(new OrderNumber("12345"));
+        order1.ShouldNotBeNull();
+
         var naturalKeyTableName = $"{schemaName}.mt_natural_key_order";
         var natrualKeys = await GetData($"SELECT * FROM {naturalKeyTableName}");
         natrualKeys.Rows.Count.ShouldBe(1);
@@ -102,13 +107,17 @@ public class Bug_xxxx_natrual_key_table_not_populated_on_rebuild: OneOffConfigur
         natrualKeys = await GetData($"SELECT * FROM {naturalKeyTableName}");
         natrualKeys.Rows.Count.ShouldBe(0);
 
-        // Query pg_indexes to verify the index exists
         await using var conn = theStore.Storage.Database.CreateConnection();
         await conn.OpenAsync();
 
         var daemon = await SeparateStore(ConfigureStore).BuildProjectionDaemonAsync();
         await daemon.PrepareForRebuildsAsync();
-        await daemon.RebuildProjectionAsync($"{nameof(Bug_xxxx_natrual_key_table_not_populated_on_rebuild)}.order", CancellationToken.None);
+        await daemon.RebuildProjectionAsync($"{nameof(Bug_4788_natrual_key_table_not_populated_on_rebuild)}.order", CancellationToken.None);
+
+        var afterRebuildStore = SeparateStore(ConfigureStore);
+        var afterRebuildSession = afterRebuildStore.LightweightSession();
+        var order2 = await afterRebuildSession.Events.FetchLatest<Order, OrderNumber>(new OrderNumber("12345"));
+        order2.ShouldNotBeNull();
 
         natrualKeys = await GetData($"SELECT * FROM {naturalKeyTableName}");
         natrualKeys.Rows.Count.ShouldBe(1);
