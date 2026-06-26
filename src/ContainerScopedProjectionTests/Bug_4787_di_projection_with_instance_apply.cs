@@ -20,42 +20,103 @@ namespace ContainerScopedProjectionTests;
 /// Repro for https://github.com/JasperFx/marten/issues/4787. A
 /// <see cref="SingleStreamProjection{T,TId}"/> registered via
 /// <c>AddProjectionWithServices</c> with constructor-injected dependencies
-/// and an instance <c>Apply(aggregate, event)</c> method has its dependencies
-/// silently NULL inside Apply on Marten 9.11+ / JasperFx.Events 2.14.x+.
-/// The reporter's original symptom ("silent zero events") was their own
-/// null-conditional <c>_sender?.SendAsync(...)</c> masking the bug; this
-/// test dereferences the injected service directly so it surfaces
-/// deterministically as a <c>NullReferenceException</c>.
+/// and conventional instance methods (<c>Create</c> / <c>Apply</c> /
+/// <c>ShouldDelete</c>) has its dependencies silently NULL inside every
+/// convention method on Marten 9.11+ / JasperFx.Events 2.14.x+. The
+/// reporter's original "silent zero events" symptom came from a downstream
+/// null-conditional masking the NRE; these tests deref the injected
+/// service directly so the failure surfaces deterministically.
 ///
-/// Root cause is visible in the generated Evolver
-/// (<c>obj/.../OrderProjection.Evolver.g.cs</c>), which builds its private
-/// shadow projection instance via:
+/// Root cause is visible in the generated Evolver (file is in
+/// <c>obj/.../OrderProjection.Evolver.g.cs</c>):
 /// <code>
 /// _projection => _projectionInstance ??= (OrderProjection)
 ///     RuntimeHelpers.GetUninitializedObject(typeof(OrderProjection));
 /// </code>
-/// That bypasses the constructor entirely — see jasperfx#470 / JasperFx
-/// 2.14.1 commit 1b728d1 (<c>EvolverCodeEmitter.cs:152-163</c>), added to
-/// make DI-only ctor projections compile (previously CS7036). The fallback
-/// fixed compilation but introduced this runtime regression: the
+/// That bypasses the constructor entirely — added in jasperfx#470 /
+/// JasperFx 2.14.1 commit <c>1b728d1</c>
+/// (<c>EvolverCodeEmitter.cs:152-163</c>) to make DI-only-ctor projections
+/// compile (previously CS7036). It fixed compilation but introduced this
+/// runtime regression: <c>tryUseAssemblyRegisteredEvolver</c>
+/// (<c>JasperFxAggregationProjectionBase.cs:222</c>) routes every Apply /
+/// Create / ShouldDelete through the uninitialized shadow, so the
 /// DI-resolved projection that <c>AddProjectionWithServices</c> supplied
-/// is never used for event dispatch — the assembly-registered Evolver
-/// (selected by <c>JasperFxAggregationProjectionBase.tryUseAssemblyRegisteredEvolver</c>,
-/// frame 222) routes every Apply through the uninitialized shadow.
+/// is never used for event dispatch.
 ///
-/// Expected when fixed: the injected <c>IOrderEventRecorder</c> sees both
-/// events, the test passes.
+/// Coverage matrix: 3 convention methods × 3 <see cref="ServiceLifetime"/>
+/// values = 9 cases, all expected to fail today the same way and to pass
+/// once the dispatcher routes through the DI-built instance.
+///
+/// Note that <c>AddProjectionWithServices</c> documents Transient as
+/// "treated as Scoped" — we still parameterize over all three so any
+/// future per-lifetime divergence is captured.
 /// </summary>
 [Collection("ioc")]
 public class Bug_4787_di_projection_with_instance_apply
 {
-    [Fact]
-    public async Task instance_apply_should_see_injected_dependency_when_registered_via_AddProjectionWithServices()
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public async Task Create_convention_sees_injected_dependency(ServiceLifetime lifetime)
     {
+        var recorder = await runScenario("create", lifetime, append =>
+        {
+            // Stream-start event triggers the Create convention.
+            append(new OrderCreatedEvent { OrderNumber = "X", Version = 1 });
+        });
+
+        recorder.Created.Count.ShouldBe(1);
+        recorder.Created[0].ShouldBeOfType<OrderCreatedEvent>();
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public async Task Apply_convention_sees_injected_dependency(ServiceLifetime lifetime)
+    {
+        var recorder = await runScenario("apply", lifetime, append =>
+        {
+            // Create first to materialize the snapshot, then Apply runs for
+            // the second event.
+            append(new OrderCreatedEvent { OrderNumber = "X", Version = 1 });
+            append(new OrderUpdatedEvent { OrderNumber = "X", Version = 2, Total = 42m });
+        });
+
+        recorder.Applied.Count.ShouldBe(1);
+        recorder.Applied[0].ShouldBeOfType<OrderUpdatedEvent>();
+    }
+
+    [Theory]
+    [InlineData(ServiceLifetime.Singleton)]
+    [InlineData(ServiceLifetime.Scoped)]
+    [InlineData(ServiceLifetime.Transient)]
+    public async Task ShouldDelete_convention_sees_injected_dependency(ServiceLifetime lifetime)
+    {
+        var recorder = await runScenario("delete", lifetime, append =>
+        {
+            // Create + Closed sequence — ShouldDelete is the predicate that
+            // tombstones the aggregate when a Closed event arrives.
+            append(new OrderCreatedEvent { OrderNumber = "X", Version = 1 });
+            append(new OrderClosedEvent { OrderNumber = "X", Version = 2 });
+        });
+
+        recorder.ShouldDeleteChecked.Count.ShouldBe(1);
+        recorder.ShouldDeleteChecked[0].ShouldBeOfType<OrderClosedEvent>();
+    }
+
+    private static async Task<OrderEventRecorder> runScenario(
+        string scenario, ServiceLifetime lifetime, Action<Action<OrderEvent>> arrange)
+    {
+        // Per-scenario, per-lifetime schema so test cases don't collide.
+        // Compact name to stay well under PostgreSQL's 63-char identifier limit.
+        var schema = $"b4787_{scenario}_{lifetime.ToString().ToLowerInvariant()}";
+
         await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
         {
             await conn.OpenAsync();
-            await conn.DropSchemaAsync("bug4787");
+            await conn.DropSchemaAsync(schema);
             await conn.CloseAsync();
         }
 
@@ -69,65 +130,52 @@ public class Bug_4787_di_projection_with_instance_apply
                 services.AddMarten(opts =>
                     {
                         opts.Connection(ConnectionSource.ConnectionString);
-                        opts.DatabaseSchemaName = "bug4787";
+                        opts.DatabaseSchemaName = schema;
                         opts.Events.StreamIdentity = StreamIdentity.AsString;
                         opts.Schema.For<OrderAggregate>().Identity(x => x.OrderNumber);
                     })
-                    .AddProjectionWithServices<OrderProjection>(ProjectionLifecycle.Inline, ServiceLifetime.Scoped);
+                    .AddProjectionWithServices<OrderProjection>(ProjectionLifecycle.Inline, lifetime);
             })
             .StartAsync();
 
         var store = host.Services.GetRequiredService<IDocumentStore>();
 
-        const string orderNumber = "ORDER-1";
+        var events = new List<OrderEvent>();
+        arrange(events.Add);
 
         await using (var session = store.LightweightSession())
         {
-            session.Events.StartStream<OrderAggregate>(orderNumber,
-                new OrderCreatedEvent { OrderNumber = orderNumber, Version = 1 });
+            session.Events.StartStream<OrderAggregate>("X", events.Cast<object>().ToArray());
             await session.SaveChangesAsync();
         }
 
-        await using (var session = store.LightweightSession())
-        {
-            session.Events.Append(orderNumber,
-                new OrderUpdatedEvent { OrderNumber = orderNumber, Version = 2, Total = 42m });
-            await session.SaveChangesAsync();
-        }
-
-        // The projected document updates correctly — this proves Apply fired.
-        await using (var query = store.QuerySession())
-        {
-            var aggregate = await query.LoadAsync<OrderAggregate>(orderNumber);
-            aggregate.ShouldNotBeNull();
-            aggregate.OrderNumber.ShouldBe(orderNumber);
-            aggregate.Versions.Count.ShouldBe(2);
-            aggregate.Versions[1].Total.ShouldBe(42m);
-        }
-
-        // ...but the injected recorder must have seen each event.
-        // If 4787 is live, the recorder's count is 0 (or the projection's
-        // _recorder field was null inside Apply, NRE'd, and the test threw
-        // before reaching here).
-        recorder.RecordedEvents.Count.ShouldBe(2);
-        recorder.RecordedEvents[0].ShouldBeOfType<OrderCreatedEvent>();
-        recorder.RecordedEvents[1].ShouldBeOfType<OrderUpdatedEvent>();
+        return recorder;
     }
 }
 
 public interface IOrderEventRecorder
 {
-    void Record(OrderEvent @event);
-    IReadOnlyList<OrderEvent> RecordedEvents { get; }
+    void RecordCreate(OrderEvent @event);
+    void RecordApply(OrderEvent @event);
+    void RecordShouldDelete(OrderEvent @event);
+    IReadOnlyList<OrderEvent> Created { get; }
+    IReadOnlyList<OrderEvent> Applied { get; }
+    IReadOnlyList<OrderEvent> ShouldDeleteChecked { get; }
 }
 
 public class OrderEventRecorder: IOrderEventRecorder
 {
-    private readonly List<OrderEvent> _events = new();
+    private readonly List<OrderEvent> _created = new();
+    private readonly List<OrderEvent> _applied = new();
+    private readonly List<OrderEvent> _shouldDelete = new();
 
-    public void Record(OrderEvent @event) => _events.Add(@event);
+    public void RecordCreate(OrderEvent @event) => _created.Add(@event);
+    public void RecordApply(OrderEvent @event) => _applied.Add(@event);
+    public void RecordShouldDelete(OrderEvent @event) => _shouldDelete.Add(@event);
 
-    public IReadOnlyList<OrderEvent> RecordedEvents => _events;
+    public IReadOnlyList<OrderEvent> Created => _created;
+    public IReadOnlyList<OrderEvent> Applied => _applied;
+    public IReadOnlyList<OrderEvent> ShouldDeleteChecked => _shouldDelete;
 }
 
 public abstract class OrderEvent
@@ -145,6 +193,10 @@ public class OrderUpdatedEvent: OrderEvent
     public required decimal Total { get; init; }
 }
 
+public class OrderClosedEvent: OrderEvent
+{
+}
+
 public record OrderAggregate
 {
     public string OrderNumber { get; init; } = string.Empty;
@@ -160,9 +212,11 @@ public record OrderLine
 
 /// <summary>
 /// Mirrors the reporter's shape: partial projection class, instance
-/// <c>Apply</c> methods, constructor-injected dependencies. The Apply
-/// methods use the injected recorder so a null-injection bug surfaces
-/// either as an NRE (loud) or as zero recorded events (quiet).
+/// convention methods (<c>Create</c>, <c>Apply</c>, <c>ShouldDelete</c>),
+/// constructor-injected dependency. Every convention method dereferences
+/// the injected recorder so a null-injection bug surfaces deterministically
+/// (rather than silently as in the reporter's original null-conditional
+/// masking).
 /// </summary>
 public partial class OrderProjection: SingleStreamProjection<OrderAggregate, string>
 {
@@ -173,14 +227,11 @@ public partial class OrderProjection: SingleStreamProjection<OrderAggregate, str
         _recorder = recorder;
     }
 
-    public OrderAggregate Apply(OrderAggregate aggregate, OrderCreatedEvent @event)
+    public OrderAggregate Create(OrderCreatedEvent @event)
     {
-        // Deref the injected dep on every event so a null _recorder
-        // surfaces deterministically (rather than silently as in the
-        // reporter's original null-conditional masking).
-        _recorder.Record(@event);
+        _recorder.RecordCreate(@event);
 
-        return aggregate with
+        return new OrderAggregate
         {
             OrderNumber = @event.OrderNumber,
             Versions = new List<OrderLine>
@@ -190,27 +241,24 @@ public partial class OrderProjection: SingleStreamProjection<OrderAggregate, str
         };
     }
 
-    public OrderAggregate Apply(OrderAggregate aggregate, OrderUpdatedEvent @event)
+    public OrderAggregate Apply(OrderAggregate snapshot, OrderUpdatedEvent @event)
     {
-        _recorder.Record(@event);
+        _recorder.RecordApply(@event);
 
-        var versions = aggregate.Versions.ToList();
-        // 1-based version index per the reporter's shape
-        var idx = @event.Version - 1;
-        if (idx < versions.Count)
+        var versions = snapshot.Versions.ToList();
+        versions.Add(new OrderLine
         {
-            versions[idx] = versions[idx] with { Total = @event.Total };
-        }
-        else
-        {
-            versions.Add(new OrderLine
-            {
-                OrderNumber = @event.OrderNumber,
-                Version = @event.Version,
-                Total = @event.Total
-            });
-        }
+            OrderNumber = @event.OrderNumber,
+            Version = @event.Version,
+            Total = @event.Total
+        });
 
-        return aggregate with { Versions = versions.AsReadOnly() };
+        return snapshot with { Versions = versions.AsReadOnly() };
+    }
+
+    public bool ShouldDelete(OrderAggregate snapshot, OrderClosedEvent @event)
+    {
+        _recorder.RecordShouldDelete(@event);
+        return true;
     }
 }
