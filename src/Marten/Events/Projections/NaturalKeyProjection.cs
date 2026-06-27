@@ -52,7 +52,7 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
                         var innerValue = _naturalKey.Unwrap(rawValue);
                         if (innerValue != null)
                         {
-                            queueUpsertSql(operations, stream, innerValue);
+                            queueUpsertSql(operations, stream.Id, stream.Key, stream.TenantId, innerValue);
                         }
                     }
                 }
@@ -62,10 +62,41 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
         return Task.CompletedTask;
     }
 
-    private void queueUpsertSql(IDocumentOperations operations, StreamAction stream, object innerValue)
+    /// <summary>
+    /// #4788: rebuild-time counterpart to <see cref="ApplyAsync"/>. The async-daemon rebuild path
+    /// replays already-persisted events without appending streams, so <c>ApplyAsync</c>'s
+    /// stream-driven dispatch never fires and the <c>mt_natural_key_X</c> table stays empty after
+    /// teardown. This entry-point feeds raw <see cref="IEvent"/>s straight through the same
+    /// upsert SQL builder, pulling stream id/key + tenant id off the event itself (events written
+    /// to <c>mt_events</c> always carry these). Called from <c>StartProjectionBatchAsync</c> per
+    /// rebuild page, with <paramref name="operations"/> routed through
+    /// <see cref="ProjectionBatch.SessionForTenant"/> so the SQL flushes into the projection batch
+    /// rather than the bare session's unit-of-work.
+    /// </summary>
+    internal void QueueUpsertsForEvents(IDocumentOperations operations, IEnumerable<IEvent> events)
+    {
+        foreach (var @event in events)
+        {
+            foreach (var mapping in _naturalKey.EventMappings)
+            {
+                if (mapping.EventType.IsAssignableFrom(@event.Data.GetType()))
+                {
+                    var rawValue = mapping.Extractor(@event.Data);
+                    var innerValue = _naturalKey.Unwrap(rawValue);
+                    if (innerValue != null)
+                    {
+                        queueUpsertSql(operations, @event.StreamId, @event.StreamKey, @event.TenantId, innerValue);
+                    }
+                }
+            }
+        }
+    }
+
+    private void queueUpsertSql(IDocumentOperations operations, Guid streamId, string? streamKey,
+        string tenantId, object innerValue)
     {
         var streamCol = _isGuid ? "stream_id" : "stream_key";
-        object streamId = _isGuid ? (object)stream.Id : stream.Key!;
+        object streamIdValue = _isGuid ? (object)streamId : streamKey!;
 
         // When UseArchivedStreamPartitioning is on, is_archived is part of the PK
         // and must be included in the ON CONFLICT clause
@@ -74,28 +105,28 @@ internal class NaturalKeyProjection: IInlineProjection<IDocumentOperations>, IPr
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, tenant_id, is_archived) " +
                       $"VALUES (?, ?, ?, false) " +
                       $"ON CONFLICT (natural_key_value, tenant_id, is_archived) DO UPDATE SET {streamCol} = ?";
-            operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId, streamId);
+            operations.QueueSqlCommand(sql, innerValue, streamIdValue, tenantId, streamIdValue);
         }
         else if (_isConjoined)
         {
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, tenant_id, is_archived) " +
                       $"VALUES (?, ?, ?, false) " +
                       $"ON CONFLICT (natural_key_value, tenant_id) DO UPDATE SET {streamCol} = ?, is_archived = false";
-            operations.QueueSqlCommand(sql, innerValue, streamId, stream.TenantId, streamId);
+            operations.QueueSqlCommand(sql, innerValue, streamIdValue, tenantId, streamIdValue);
         }
         else if (_useArchivedPartitioning)
         {
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, is_archived) " +
                       $"VALUES (?, ?, false) " +
                       $"ON CONFLICT (natural_key_value, is_archived) DO UPDATE SET {streamCol} = ?";
-            operations.QueueSqlCommand(sql, innerValue, streamId, streamId);
+            operations.QueueSqlCommand(sql, innerValue, streamIdValue, streamIdValue);
         }
         else
         {
             var sql = $"INSERT INTO {_tableName} (natural_key_value, {streamCol}, is_archived) " +
                       $"VALUES (?, ?, false) " +
                       $"ON CONFLICT (natural_key_value) DO UPDATE SET {streamCol} = ?, is_archived = false";
-            operations.QueueSqlCommand(sql, innerValue, streamId, streamId);
+            operations.QueueSqlCommand(sql, innerValue, streamIdValue, streamIdValue);
         }
     }
 
