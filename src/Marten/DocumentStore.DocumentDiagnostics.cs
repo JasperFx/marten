@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
+using JasperFx.Descriptors;
 using JasperFx.Documents;
+using JasperFx.MultiTenancy;
 using Marten.Schema;
 
 namespace Marten;
@@ -44,13 +46,27 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         }
 
         var table = mapping.TableName.QualifiedName;
-        var where = options.IdEquals != null ? " where id::text = @id" : "";
 
         var pageNumber = Math.Max(1, options.PageNumber);
         var pageSize = Math.Max(1, options.PageSize);
         var offset = (pageNumber - 1) * pageSize;
 
-        await using var conn = Tenancy.Default.Database.CreateConnection();
+        // Tenant scoping (#475 / EVENT_STORE_EXPLORER_PLAN §3.1): a database-per-tenant
+        // store selects the tenant's physical database; conjoined tenancy keeps every
+        // tenant in one database with a tenant_id column we filter on.
+        var database = options.TenantId != null && Tenancy.Cardinality != DatabaseCardinality.Single
+            ? await Tenancy.FindOrCreateDatabase(options.TenantId).ConfigureAwait(false)
+            : Tenancy.Default.Database;
+        var filterByTenant = options.TenantId != null
+            && Tenancy.Cardinality == DatabaseCardinality.Single
+            && mapping.TenancyStyle == TenancyStyle.Conjoined;
+
+        var conditions = new List<string>();
+        if (options.IdEquals != null) conditions.Add("id::text = @id");
+        if (filterByTenant) conditions.Add("tenant_id = @tenant");
+        var where = conditions.Count > 0 ? " where " + string.Join(" and ", conditions) : "";
+
+        await using var conn = database.CreateConnection();
         await conn.OpenAsync(token).ConfigureAwait(false);
 
         long total;
@@ -60,6 +76,10 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             if (options.IdEquals != null)
             {
                 countCmd.Parameters.AddWithValue("id", options.IdEquals);
+            }
+            if (filterByTenant)
+            {
+                countCmd.Parameters.AddWithValue("tenant", options.TenantId!);
             }
 
             total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(token).ConfigureAwait(false));
@@ -73,6 +93,10 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
             if (options.IdEquals != null)
             {
                 cmd.Parameters.AddWithValue("id", options.IdEquals);
+            }
+            if (filterByTenant)
+            {
+                cmd.Parameters.AddWithValue("tenant", options.TenantId!);
             }
 
             await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
