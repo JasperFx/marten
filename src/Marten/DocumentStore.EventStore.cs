@@ -565,6 +565,23 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
             usage.GlobalAggregates.Add(TypeDescriptor.For(aggregateType));
         }
 
+        // jasperfx#475 — advertise WHICH event/stream metadata this store captures
+        // so store-aware consumers (CritterWatch) can gate query facets by what is
+        // actually persisted, rather than sniffing Marten's MetadataConfig directly.
+        // The event flags are opt-in columns and map straight off MetadataConfig.
+        // The stream flags are universal in Marten (mt_streams always exposes the
+        // aggregate-type / version / created+updated / tenant / archived columns),
+        // so they keep the EventMetadataCapabilities defaults of true.
+        var metadata = Options.EventGraph.MetadataConfig;
+        usage.EventMetadata = new EventMetadataCapabilities
+        {
+            StoreType = "Marten",
+            CorrelationId = metadata.CorrelationIdEnabled,
+            CausationId = metadata.CausationIdEnabled,
+            Headers = metadata.HeadersEnabled,
+            UserName = metadata.UserNameEnabled
+        };
+
         return usage;
     }
 

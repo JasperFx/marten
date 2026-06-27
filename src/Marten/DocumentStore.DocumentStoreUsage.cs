@@ -57,6 +57,21 @@ public partial class DocumentStore : IDocumentStoreUsageSource
         // Configured/Default masking, etc.).
         ApplyFlatOptionValues(usage);
 
+        // jasperfx#475 — advertise which document metadata Marten captures so
+        // store-aware consumers (CritterWatch) gate document-query facets by what is
+        // actually persisted. Version / last-modified / tenant / soft-delete are
+        // universal facets in Marten and keep the descriptor's default of true; the
+        // opt-in columns (correlation/causation/last-modified-by) are only queryable
+        // where some document mapping has enabled them.
+        var mappings = Options.Storage.DocumentMappingsWithSchema.ToList();
+        usage.DocumentMetadata = new DocumentMetadataCapabilities
+        {
+            StoreType = "Marten",
+            CorrelationId = mappings.Any(m => m.Metadata.CorrelationId.Enabled),
+            CausationId = mappings.Any(m => m.Metadata.CausationId.Enabled),
+            LastModifiedBy = mappings.Any(m => m.Metadata.LastModifiedBy.Enabled)
+        };
+
         return usage;
     }
 
