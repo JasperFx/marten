@@ -9,6 +9,7 @@ using JasperFx.Descriptors;
 using JasperFx.Documents;
 using JasperFx.MultiTenancy;
 using Marten.Schema;
+using Marten.Storage.Metadata;
 
 namespace Marten;
 
@@ -64,6 +65,21 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         var conditions = new List<string>();
         if (options.IdEquals != null) conditions.Add("id::text = @id");
         if (filterByTenant) conditions.Add("tenant_id = @tenant");
+
+        // #4791 / CritterWatch #629: exact-match filters on the document's metadata columns
+        // (correlation_id, causation_id, last_modified_by). A filter is honored only when both
+        // the option is set AND the document mapping has the corresponding metadata column
+        // enabled — emitting a WHERE on a column the table doesn't have would throw
+        // 42703 (undefined_column). When the option is set but the column is disabled we
+        // silently skip the filter (per the JasperFx DocumentQueryOptions contract: "Only honored
+        // when the store advertises and captures the metadata column; otherwise ignored").
+        var filterByCorrelationId = options.CorrelationId != null && mapping.Metadata.CorrelationId.Enabled;
+        var filterByCausationId = options.CausationId != null && mapping.Metadata.CausationId.Enabled;
+        var filterByLastModifiedBy = options.LastModifiedBy != null && mapping.Metadata.LastModifiedBy.Enabled;
+        if (filterByCorrelationId) conditions.Add($"{CorrelationIdColumn.ColumnName} = @corr");
+        if (filterByCausationId) conditions.Add($"{CausationIdColumn.ColumnName} = @caus");
+        if (filterByLastModifiedBy) conditions.Add($"{LastModifiedByColumn.ColumnName} = @lmb");
+
         var where = conditions.Count > 0 ? " where " + string.Join(" and ", conditions) : "";
 
         await using var conn = database.CreateConnection();
@@ -73,14 +89,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         await using (var countCmd = conn.CreateCommand())
         {
             countCmd.CommandText = $"select count(*) from {table}{where}";
-            if (options.IdEquals != null)
-            {
-                countCmd.Parameters.AddWithValue("id", options.IdEquals);
-            }
-            if (filterByTenant)
-            {
-                countCmd.Parameters.AddWithValue("tenant", options.TenantId!);
-            }
+            bindFilterParameters(countCmd);
 
             total = Convert.ToInt64(await countCmd.ExecuteScalarAsync(token).ConfigureAwait(false));
         }
@@ -90,14 +99,7 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         {
             // data::text guarantees the jsonb column comes back as JSON text.
             cmd.CommandText = $"select data::text from {table}{where} order by id limit {pageSize} offset {offset}";
-            if (options.IdEquals != null)
-            {
-                cmd.Parameters.AddWithValue("id", options.IdEquals);
-            }
-            if (filterByTenant)
-            {
-                cmd.Parameters.AddWithValue("tenant", options.TenantId!);
-            }
+            bindFilterParameters(cmd);
 
             await using var reader = await cmd.ExecuteReaderAsync(token).ConfigureAwait(false);
             while (await reader.ReadAsync(token).ConfigureAwait(false))
@@ -107,6 +109,15 @@ public partial class DocumentStore : IDocumentStoreDiagnostics
         }
 
         return new DocumentQueryResult(rows, total, pageNumber, pageSize);
+
+        void bindFilterParameters(Npgsql.NpgsqlCommand cmd)
+        {
+            if (options.IdEquals != null) cmd.Parameters.AddWithValue("id", options.IdEquals);
+            if (filterByTenant) cmd.Parameters.AddWithValue("tenant", options.TenantId!);
+            if (filterByCorrelationId) cmd.Parameters.AddWithValue("corr", options.CorrelationId!);
+            if (filterByCausationId) cmd.Parameters.AddWithValue("caus", options.CausationId!);
+            if (filterByLastModifiedBy) cmd.Parameters.AddWithValue("lmb", options.LastModifiedBy!);
+        }
     }
 
     async Task<string?> IDocumentStoreDiagnostics.LoadDocumentJsonAsync(

@@ -267,6 +267,30 @@ internal class QueryEventStore: IQueryEventStore, IReadOnlyEventStore
             }
         }
 
+        // #4791 / CritterWatch #629: exact-match filters on the event's metadata columns
+        // (correlation_id, causation_id, user_name). A filter is honored only when both the
+        // EventQuery option is set AND the event store has the corresponding metadata column
+        // enabled — the LINQ member registration in EventQueryMapping is itself gated by the
+        // Metadata.X.Enabled flag (see EventQueryMapping.cs:46-59), so a Where on a disabled
+        // member would fail to translate. We mirror that gate here to silently skip the filter
+        // (per the JasperFx EventQuery contract: "Only honored when the store advertises and
+        // captures the metadata column").
+        var eventMetadata = _store.Events.Metadata;
+        if (query.CorrelationId != null && eventMetadata.CorrelationId.Enabled)
+        {
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.CorrelationId == query.CorrelationId);
+        }
+
+        if (query.CausationId != null && eventMetadata.CausationId.Enabled)
+        {
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.CausationId == query.CausationId);
+        }
+
+        if (query.UserName != null && eventMetadata.UserName.Enabled)
+        {
+            queryable = (IMartenQueryable<IEvent>)queryable.Where(e => e.UserName == query.UserName);
+        }
+
         var totalCount = await queryable.CountAsync(token).ConfigureAwait(false);
 
         var pageNumber = query.PageNumber <= 0 ? 1 : query.PageNumber;
