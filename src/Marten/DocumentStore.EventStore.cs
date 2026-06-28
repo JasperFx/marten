@@ -228,6 +228,17 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
 
         // Rewind previous DeadLetterEvents because you're going to replay them all anyway
         session.DeleteWhere<DeadLetterEvent>(x => x.ProjectionName == source.Name);
+
+        // #4788: a [NaturalKey] aggregate maintains its mt_natural_key_X lookup table via the
+        // auto-registered NaturalKeyProjection on the inline-append path. Teardown of the parent
+        // projection must also wipe the natural-key table so the rebuild path repopulates it from
+        // scratch (the rebuild itself re-emits the upserts via StartProjectionBatchAsync).
+        if (source is IAggregateProjection aggregateSource && aggregateSource.NaturalKeyDefinition != null)
+        {
+            var naturalKeyTable =
+                $"{Events.DatabaseSchemaName}.mt_natural_key_{aggregateSource.NaturalKeyDefinition.AggregateType.Name.ToLowerInvariant()}";
+            session.QueueSqlCommand($"delete from {naturalKeyTable}");
+        }
     }
 
     public async ValueTask<IProjectionBatch<IDocumentOperations, IQuerySession>> StartProjectionBatchAsync(
@@ -265,6 +276,34 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         var projectionBatch = new ProjectionBatch(session, batch, mode);
 
         await projectionBatch.RecordProgress(range).ConfigureAwait(false);
+
+        // #4788: when rebuilding a snapshot whose aggregate has a [NaturalKey], re-emit the
+        // natural-key upserts for this page's events. ApplyAsync on the inline path drives off
+        // newly-appended StreamActions and never fires during rebuild — without this hook the
+        // mt_natural_key_X table stays empty after teardown. Routing the upsert SQL through
+        // ProjectionBatch.SessionForTenant returns a ProjectionDocumentSession whose work-tracker
+        // IS the ProjectionUpdateBatch, so the operations flush alongside the rebuilt snapshots
+        // inside the same batch transaction.
+        if (mode == ShardExecutionMode.Rebuild && range.Events.Any())
+        {
+            var naturalKeySource = Options.Projections.All
+                .FirstOrDefault(s => s.Name.EqualsIgnoreCase(range.ShardName.Name))
+                as IAggregateProjection;
+            if (naturalKeySource?.NaturalKeyDefinition == null)
+            {
+                naturalKeySource = null;
+            }
+
+            if (naturalKeySource != null)
+            {
+                var naturalKeyProjection = new NaturalKeyProjection(Options.EventGraph, naturalKeySource.NaturalKeyDefinition!);
+                foreach (var byTenant in range.Events.GroupBy(e => e.TenantId ?? StorageConstants.DefaultTenantId))
+                {
+                    var ops = projectionBatch.SessionForTenant(byTenant.Key);
+                    naturalKeyProjection.QueueUpsertsForEvents(ops, byTenant);
+                }
+            }
+        }
 
         return projectionBatch;
     }
