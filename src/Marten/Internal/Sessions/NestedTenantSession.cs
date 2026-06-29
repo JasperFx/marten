@@ -24,6 +24,10 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
 
     public IDocumentSession Parent => _parent;
 
+    // #4685 PR 2 — a nested tenant session shares the parent's work tracker / batch, so it
+    // inherits the parent's rebuild-vs-continuous execution mode.
+    internal override JasperFx.Events.Daemon.ShardExecutionMode ExecutionMode => _parent.ExecutionMode;
+
     protected internal override void ejectById<T>(long id)
     {
         _parent.ejectById<T>(id);

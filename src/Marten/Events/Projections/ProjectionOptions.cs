@@ -73,6 +73,23 @@ public class ProjectionOptions: ProjectionGraph<IProjection, IDocumentOperations
     /// </summary>
     public bool DiscoverGeneratedEvolversOnStartup { get; set; } = true;
 
+    /// <summary>
+    /// #4685 PR 2 — EXPERIMENTAL, default <see langword="false"/>. When enabled, a projection
+    /// rebuild replay routes its aggregate writes through INSERT-only operations (the seam the
+    /// BulkWriter binary <c>COPY</c> flush in PR 3 dispatches on) instead of UPSERT/OVERWRITE.
+    /// <para>
+    /// This is correct ONLY once each aggregate id is written exactly once across the whole
+    /// rebuild. Marten's rebuild flushes page-by-page (one <c>ProjectionUpdateBatch</c> per
+    /// <c>EventPage</c>), so any stream whose events span more than one page has its aggregate
+    /// re-stored once per page — and a second INSERT of the same id throws
+    /// <c>23505 / DocumentAlreadyExistsException</c>. The single-flush guarantee that makes this
+    /// safe is CritterWatch#208 Phase 4 (deferred flush via identity-map accumulation), which
+    /// must land first. Until then this flag is for the proving test only.
+    /// See <c>Bug_4685_rebuild_insert_only_multipage</c>.
+    /// </para>
+    /// </summary>
+    internal bool RebuildWithInsertOnly { get; set; }
+
     // Snapshot of AppDomain.CurrentDomain.GetAssemblies() taken on first construction
     // of any DocumentStore in the process. The audit row #4294/Lens-1/#1 calls this out
     // as a top-fix candidate — multiple DocumentStore instances (multi-database tenancy)

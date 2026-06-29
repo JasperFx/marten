@@ -5,6 +5,7 @@ using System.Linq;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using JasperFx.Events;
+using JasperFx.Events.Daemon;
 using Marten.Events;
 using Marten.Exceptions;
 using Marten.Internal.Operations;
@@ -64,6 +65,17 @@ public abstract partial class DocumentSessionBase: QuerySession, IDocumentSessio
         _workTracker.EjectAll();
         ChangeTrackers.Clear();
     }
+
+    /// <summary>
+    /// #4685 PR 2 (proving the blocker): the shard execution mode this session is operating
+    /// under when it backs an async projection / subscription apply. Defaults to
+    /// <see cref="ShardExecutionMode.Continuous"/> for ordinary sessions;
+    /// <see cref="Marten.Events.Daemon.Internals.ProjectionDocumentSession"/> overrides it with the
+    /// daemon's per-shard mode, and <see cref="NestedTenantSession"/> delegates to its parent.
+    /// <see cref="ProjectionStorage{TDoc,TId}"/> reads it to decide whether a post-teardown rebuild
+    /// replay can be routed through INSERT-only operations (the BulkWriter COPY win) instead of UPSERT.
+    /// </summary>
+    internal virtual ShardExecutionMode ExecutionMode => ShardExecutionMode.Continuous;
 
     public void Store<T>(IEnumerable<T> entities) where T : notnull
     {
