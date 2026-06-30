@@ -65,6 +65,14 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         }
     }
 
+    // wolverine#3280: under sharded databases + per-tenant event partitioning, multiple tenants are
+    // co-located in one shard database and each draws its own mt_events_sequence_<tenant> (independent,
+    // overlapping). A single store-global high-water cannot track them, so node-distributed daemons must
+    // fan out one agent per (shard, tenant). Single-database partitioning and database-per-tenant do NOT
+    // need this (one agent per database already covers a single tenant or the single partitioned table).
+    bool IEventStore.DistributesAgentsPerTenant
+        => Options.Events.UseTenantPartitionedEvents && Options.Tenancy is Storage.ShardedTenancy;
+
     async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
     {
         // Straight delegation to ITenancy, mirroring IMartenStorage.AllDatabases(). The IMartenDatabase
