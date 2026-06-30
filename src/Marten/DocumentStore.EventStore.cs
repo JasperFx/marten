@@ -407,7 +407,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions)
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
-        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters);
+        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
+            filtering.IncludeArchivedEvents);
         return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
     }
 
@@ -428,7 +429,8 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
         ILogger loggerFactory, EventFilterable filtering, AsyncOptions shardOptions, ShardName shardName)
     {
         var filters = buildEventLoaderFilters(filtering).ToArray();
-        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters, shardName);
+        var inner = new EventLoader(this, (MartenDatabase)database, shardOptions, filters,
+            filtering.IncludeArchivedEvents, shardName);
         return new ResilientEventLoader(Options.ResiliencePipeline, inner, database);
     }
 
