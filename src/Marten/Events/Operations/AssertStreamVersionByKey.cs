@@ -28,6 +28,12 @@ internal class AssertStreamVersionByKey: IStorageOperation
         builder.Append(_events.DatabaseSchemaName);
         builder.Append(".mt_streams where id = ");
         builder.AppendParameter(Stream.Key!);
+
+        if (_events.TenancyStyle == TenancyStyle.Conjoined)
+        {
+            builder.Append(" and tenant_id = ");
+            builder.AppendParameter(Stream.TenantId);
+        }
     }
 
     public Type DocumentType => typeof(IEvent);
