@@ -5,7 +5,9 @@ using JasperFx.Events.Daemon;
 using JasperFx.Events.Daemon.HighWater;
 using Marten.Events.Daemon.HighWater;
 using Marten.Storage;
+using Marten.Testing.Harness;
 using Microsoft.Extensions.Logging.Abstractions;
+using Npgsql;
 using Shouldly;
 using TenantPartitionedEventsTests.Fixtures;
 using Xunit;
@@ -157,6 +159,40 @@ public class vectorized_high_water_detection
 
         var next = await monitor.PollAsync(CancellationToken.None);
         next.Select(r => r.TenantId).ShouldBe(new[] { beta });
+    }
+
+    [Fact]
+    public async Task per_tenant_high_water_comes_from_max_seq_id_not_the_tenant_sequence()
+    {
+        // Same bug class as the store-global #4712 fix, but for the per-tenant reading: under sharded
+        // tenancy the append path does NOT advance the per-tenant mt_events_sequence_{suffix} (events draw
+        // their seq_id from the shared sequence, and BulkInsertEventsAsync reassigns per-tenant ranges
+        // directly), so the sequence reports a stale value while the tenant's true height lives in
+        // mt_events. DetectForTenantsAsync must derive HighestSequence from max(seq_id), NOT the sequence,
+        // otherwise a fully-populated tenant reads as high-water 0 and its per-tenant projections never
+        // start. Reproduce the stale sequence by force-resetting it after the append.
+        var tenant = PartitionedFixtureBase.NewTenant();
+        await _fixture.Store.Advanced.AddMartenManagedTenantsAsync(CancellationToken.None, tenant);
+        await _fixture.AppendNEventsAsync(tenant, 7);
+
+        await using (var conn = new NpgsqlConnection(ConnectionSource.ConnectionString))
+        {
+            await conn.OpenAsync();
+            // last_value → 1 (is_called=false): what the sharded/global-sequence/bulk path leaves behind.
+            await using var reset = new NpgsqlCommand(
+                $"select setval('{_fixture.SchemaName}.mt_events_sequence_{tenant}', 1, false)", conn);
+            await reset.ExecuteScalarAsync();
+        }
+
+        var detector = new HighWaterDetector(
+            (MartenDatabase)_fixture.Store.Storage.Database, _fixture.Store.Options.EventGraph, NullLogger.Instance);
+
+        var vector = await ((IHighWaterDetector)detector).DetectForTenantsAsync(
+            new[] { tenant }, CancellationToken.None);
+
+        vector.TryGetStatistics(tenant, out var stat).ShouldBeTrue();
+        // Before the fix this read the stale sequence value (1); after it, the real committed height (7).
+        stat.HighestSequence.ShouldBe(7);
     }
 
     // ---- ICrossTenantRebuildSource ----

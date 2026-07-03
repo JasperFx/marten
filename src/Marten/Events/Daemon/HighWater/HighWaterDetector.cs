@@ -194,7 +194,6 @@ internal class HighWaterDetector: IHighWaterDetector
     private async Task<IReadOnlyList<HighWaterStatistics>> loadPerTenantStatistics(
         IReadOnlyCollection<string> tenantIds, CancellationToken token)
     {
-        var tenantsTable = _graph.Options.TenantPartitions!.TenantsTableName;
         var schema = _graph.DatabaseSchemaName;
         // #4681: the per-tenant high-water identity prefix is produced by
         // HighWaterShardIdentity rather than hand-rolled here, so any future
@@ -202,27 +201,31 @@ internal class HighWaterDetector: IHighWaterDetector
         // rule) only needs to land in one place.
         var highWaterPrefix = HighWaterShardIdentity.PerTenantPrefix;
 
-        // Single round-trip: for each requested tenant, join (mt_tenant_partitions
-        // → pg_sequences for that partition's mt_events_sequence_{suffix} →
-        // mt_event_progression for the per-tenant high-water row keyed by
-        // `'{HighWaterMark}:{tenantId}'`, matching Session 3's per-tenant naming
-        // convention for the high-water shard). LEFT JOINs preserve a row per
-        // input tenant even when the partition / sequence / progression row
-        // hasn't been created yet (returns null → treated as zero downstream).
+        // This method only runs under per-tenant event partitioning (the caller collapses to the
+        // store-global reading when the flag is off), so read each tenant's height from max(seq_id) of its
+        // own mt_events partition — NOT from the per-tenant sequence. Same reasoning as the store-global
+        // #4712 fix in HighWaterStatisticsDetector: under partitioning the per-tenant sequence
+        // (mt_events_sequence_{suffix}) is left at its initial value (last_value=1, is_called=false) for
+        // events appended via the shared sequence or reassigned by BulkInsertEventsAsync, so reading it
+        // reports a high-water of 0 for a fully-populated tenant and its projections never start. max(seq_id)
+        // is the authoritative committed height regardless of how the events were inserted, so a tenant with
+        // no persisted progression row yet still gets its true high-water and its per-tenant agent advances.
+        // The LEFT JOINs preserve a row per input tenant even when its partition / progression row does not
+        // exist yet (returns null → treated as zero downstream).
         var sql = $@"
 with inputs(tenant_id) as (select unnest(:tenants))
 select
     i.tenant_id,
-    coalesce(seq.last_value, 0)        as last_value,
+    coalesce(ev.max_seq_id, 0)         as last_value,
     coalesce(prog.last_seq_id, 0)      as last_seq_id,
     prog.last_updated                  as last_updated,
     transaction_timestamp()            as ""timestamp""
 from inputs i
-left join {tenantsTable} p
-    on p.partition_value = i.tenant_id
-left join pg_sequences seq
-    on seq.schemaname = '{schema}'
-    and seq.sequencename = 'mt_events_sequence_' || p.partition_suffix
+left join lateral (
+    select max(e.seq_id) as max_seq_id
+    from {schema}.mt_events e
+    where e.tenant_id = i.tenant_id
+) ev on true
 left join {schema}.mt_event_progression prog
     on prog.name = :prefix || i.tenant_id;";
 
