@@ -291,6 +291,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool UseTenantPartitionedEvents { get; set; }
 
+    /// <summary>
+    /// Opt-in (default false): when a node-distributed async daemon fans agents out per (shard, tenant)
+    /// under sharded tenancy, assign them with database affinity — every agent for the same shard database
+    /// runs on the same node — instead of spreading individual agents evenly. This bounds each node to the
+    /// shard databases it owns, so connection pools scale with the number of shard databases rather than
+    /// nodes × databases (which otherwise exhausts a shared server's max_connections). Only takes effect
+    /// with <see cref="UseTenantPartitionedEvents"/> + sharded-database tenancy + a distribution-aware host
+    /// (e.g. Wolverine-managed event-subscription distribution). See JasperFx/marten#4806.
+    /// </summary>
+    public bool UseDatabaseAffineAgentAssignment { get; set; }
+
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 

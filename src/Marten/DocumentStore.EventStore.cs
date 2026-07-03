@@ -73,6 +73,15 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
     bool IEventStore.DistributesAgentsPerTenant
         => Options.Events.UseTenantPartitionedEvents && Options.Tenancy is Storage.ShardedTenancy;
 
+    // JasperFx/marten#4806 (opt-in, default off): with per-tenant agents scattered across many shard
+    // databases, group each database's agents onto one node so a node opens pools only to the databases it
+    // owns (pools scale with databases, not nodes×databases). Only meaningful for the sharded per-tenant
+    // store this fans agents out on.
+    bool IEventStore.GroupAgentAssignmentsByDatabase
+        => Options.Events.UseDatabaseAffineAgentAssignment
+           && Options.Events.UseTenantPartitionedEvents
+           && Options.Tenancy is Storage.ShardedTenancy;
+
     async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
     {
         // Straight delegation to ITenancy, mirroring IMartenStorage.AllDatabases(). The IMartenDatabase

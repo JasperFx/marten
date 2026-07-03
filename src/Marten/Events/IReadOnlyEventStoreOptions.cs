@@ -86,6 +86,13 @@ public interface IReadOnlyEventStoreOptions
     bool UseTenantPartitionedEvents { get; set; }
 
     /// <summary>
+    /// Opt-in (default false): assign per-(shard, tenant) daemon agents with database affinity under
+    /// sharded tenancy — see <see cref="IEventStoreOptions.UseDatabaseAffineAgentAssignment"/> on the
+    /// writable interface for the full contract. See JasperFx/marten#4806.
+    /// </summary>
+    bool UseDatabaseAffineAgentAssignment { get; set; }
+
+    /// <summary>
     /// Optional extension point to receive published messages as a side effect from
     /// aggregation projections
     /// </summary>

@@ -130,6 +130,17 @@ namespace Marten.Events
         public bool UseTenantPartitionedEvents { get; set; }
 
         /// <summary>
+        /// Opt-in (default false): when a node-distributed async daemon fans agents out per (shard, tenant)
+        /// under sharded tenancy, assign them with database affinity — every agent for one shard database on
+        /// the same node — so a node opens connection pools only to the databases it owns and pool count
+        /// scales with shard databases rather than nodes × databases (which otherwise exhausts a shared
+        /// server's max_connections). Only takes effect with <see cref="UseTenantPartitionedEvents"/> +
+        /// sharded-database tenancy + a distribution-aware host (e.g. Wolverine-managed event-subscription
+        /// distribution). See JasperFx/marten#4806.
+        /// </summary>
+        public bool UseDatabaseAffineAgentAssignment { get; set; }
+
+        /// <summary>
         /// Optional extension point to receive published messages as a side effect from
         /// aggregation projections
         /// </summary>
