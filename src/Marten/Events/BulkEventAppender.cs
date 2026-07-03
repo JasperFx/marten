@@ -442,19 +442,49 @@ internal class BulkEventAppender
         IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
     {
+        // #4681: the 'HighWaterMark' name(s) are produced by HighWaterShardIdentity so any future change
+        // to the grammar lands in one place rather than in scattered SQL. The name is parameterized so the
+        // same upsert serves both the store-global row and the per-tenant rows below.
+        var sql = $@"
+INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
+VALUES (@name, @seq)
+ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
+
+        if (_events.UseTenantPartitionedEvents)
+        {
+            // With per-tenant partitioning the high-water is tracked per tenant ("HighWaterMark:<tenant>"):
+            // the async daemon's per-tenant coordinators only ever read those rows, never the store-global
+            // one. A bulk insert may span multiple tenants (each StreamAction carries its own TenantId), so
+            // advance each tenant's own high-water row to that tenant's max sequence. Writing the store-global
+            // row here would be useless (no per-tenant coordinator reads it) and misleading (it would hold the
+            // max sequence across every tenant on the shard). Pre-setting the per-tenant mark also lets the
+            // daemon start that tenant's projection catch-up immediately, rather than waiting for the next
+            // high-water detection poll to discover the bulk-loaded events.
+            var maxByTenant = streams
+                .SelectMany(s => s.Events.Select(e =>
+                    (Tenant: e.TenantId ?? s.TenantId ?? StorageConstants.DefaultTenantId, e.Sequence)))
+                .GroupBy(x => x.Tenant)
+                .Select(g => (Tenant: g.Key, Max: g.Max(x => x.Sequence)));
+
+            foreach (var (tenant, max) in maxByTenant)
+            {
+                await using var tenantCmd = conn.CreateCommand();
+                tenantCmd.CommandText = sql;
+                tenantCmd.Parameters.AddWithValue("name", HighWaterShardIdentity.PerTenant(tenant));
+                tenantCmd.Parameters.AddWithValue("seq", max);
+                await tenantCmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+            }
+
+            return;
+        }
+
         var maxSequence = streams
             .SelectMany(s => s.Events)
             .Max(e => e.Sequence);
 
-        // #4681: the literal 'HighWaterMark' name is produced by HighWaterShardIdentity so
-        // any future change to the grammar lands in one place rather than in scattered SQL.
-        var sql = $@"
-INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
-VALUES ('{HighWaterShardIdentity.StoreGlobal}', @seq)
-ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
-
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
+        cmd.Parameters.AddWithValue("name", HighWaterShardIdentity.StoreGlobal);
         cmd.Parameters.AddWithValue("seq", maxSequence);
         await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }
