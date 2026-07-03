@@ -142,8 +142,8 @@ public class row_level_security_unit_tests
         createSql.ShouldContain("ALTER TABLE public.mt_doc_target FORCE ROW LEVEL SECURITY;");
         createSql.ShouldContain("DROP POLICY IF EXISTS marten_tenant_isolation ON public.mt_doc_target;");
         createSql.ShouldContain("CREATE POLICY marten_tenant_isolation ON public.mt_doc_target");
-        createSql.ShouldContain("USING (tenant_id = current_setting('app.tenant_id'))");
-        createSql.ShouldContain("WITH CHECK (tenant_id = current_setting('app.tenant_id'));");
+        createSql.ShouldContain("USING (tenant_id = (select current_setting('app.tenant_id')))");
+        createSql.ShouldContain("WITH CHECK (tenant_id = (select current_setting('app.tenant_id')));");
 
         var dropWriter = new StringWriter();
         schemaObject.WriteDropStatement(new PostgresqlMigrator(), dropWriter);
