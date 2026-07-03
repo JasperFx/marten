@@ -50,8 +50,8 @@ internal class RlsPolicySchemaObject: ISchemaObject
             writer.WriteLine($"ALTER TABLE {qualifiedTable} FORCE ROW LEVEL SECURITY;");
             writer.WriteLine($"DROP POLICY IF EXISTS {PolicyName} ON {qualifiedTable};");
             writer.WriteLine($"CREATE POLICY {PolicyName} ON {qualifiedTable}");
-            writer.WriteLine($"    USING (tenant_id = current_setting('{_settingName}'))");
-            writer.WriteLine($"    WITH CHECK (tenant_id = current_setting('{_settingName}'));");
+            writer.WriteLine($"    USING (tenant_id = (select current_setting('{_settingName}')))");
+            writer.WriteLine($"    WITH CHECK (tenant_id = (select current_setting('{_settingName}')));");
         }
         else
         {
