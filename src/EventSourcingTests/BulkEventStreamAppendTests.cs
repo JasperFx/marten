@@ -131,6 +131,41 @@ public class BulkEventStreamAppendTests : OneOffConfigurationsContext
     }
 
     [Fact]
+    public async Task streaming_import_refills_sequences_across_multiple_blocks()
+    {
+        // Regression for JasperFx/marten#4806: sequences are fetched one block (batchSize) at a time, so a
+        // tenant with more events than batchSize empties the queue mid-stream and must refill. The refill runs
+        // a nextval SELECT, which must NOT happen while the mt_events COPY is open on the same connection —
+        // Npgsql rejects that with "connection is already in state 'Copy'". batchSize 2 with 7 events forces
+        // several block boundaries + refills; the import must still complete with cross-stream order intact.
+        var store = StringIdentityStore();
+
+        var ordered = new[]
+        {
+            EventFor("A", 1, new Started("A1")),
+            EventFor("B", 1, new Started("B1")),
+            EventFor("A", 2, new Progressed(2)),
+            EventFor("B", 2, new Progressed(2)),
+            EventFor("A", 3, new Progressed(3)),
+            EventFor("B", 3, new Ended("B3")),
+            EventFor("A", 4, new Ended("A4"))
+        };
+
+        var headers = new List<BulkEventStreamHeader>
+        {
+            new() { Key = "A", Version = 4 },
+            new() { Key = "B", Version = 3 }
+        };
+
+        await store.BulkInsertEventStreamAsync(StorageConstants.DefaultTenantId, headers, Stream(ordered),
+            batchSize: 2, cancellation: CancellationToken.None);
+
+        (await StreamIdsBySeqAsync(store)).ShouldBe(new[] { "A", "B", "A", "B", "A", "B", "A" });
+        (await VersionsForStreamAsync(store, "A")).ShouldBe(new long[] { 1, 2, 3, 4 });
+        (await VersionsForStreamAsync(store, "B")).ShouldBe(new long[] { 1, 2, 3 });
+    }
+
+    [Fact]
     public async Task batch_import_assigns_seq_ids_in_source_order_across_streams()
     {
         var store = StringIdentityStore();

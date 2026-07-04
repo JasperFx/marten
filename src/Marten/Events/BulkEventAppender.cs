@@ -82,10 +82,13 @@ internal class BulkEventAppender
         var columns = buildEventColumns();
         var copySql = $"COPY {schema}.mt_events({string.Join(", ", columns.Select(c => $"\"{c}\""))}) FROM STDIN BINARY";
 
-        // Sequences are pulled a block at a time (not the whole tenant up front) so memory stays bounded even
-        // when the total event count is unknown. Blocks of max(batchSize, 1000) keep the round-trips low.
-        var sequenceBlock = Math.Max(batchSize, 1000);
-        var sequences = new Queue<long>(sequenceBlock);
+        // Sequences are pulled one block (batchSize) at a time — not the whole tenant up front — so memory
+        // stays bounded when the total event count is unknown. The COPY writer is (re)opened per block, and a
+        // block boundary is the ONLY place the nextval SELECT runs. That matters: a regular command cannot run
+        // on a connection that is mid-COPY (Npgsql throws "connection is already in state 'Copy'"), so the
+        // writer is always CLOSED before refillSequences and reopened afterwards. Same single connection, so
+        // no extra connection is taken from the tight per-shard pool.
+        var sequences = new Queue<long>(batchSize);
         long maxSequence = 0;
         var count = 0;
         NpgsqlBinaryImporter? writer = null;
@@ -96,9 +99,18 @@ internal class BulkEventAppender
             {
                 if (sequences.Count == 0)
                 {
-                    await refillSequences(conn, schema, sequences, sequenceBlock, cancellation)
-                        .ConfigureAwait(false);
+                    // Close the open COPY before the sequence SELECT, then start a fresh one for the next block.
+                    if (writer != null)
+                    {
+                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+                        await writer.DisposeAsync().ConfigureAwait(false);
+                        writer = null;
+                    }
+
+                    await refillSequences(conn, schema, sequences, batchSize, cancellation).ConfigureAwait(false);
                 }
+
+                writer ??= await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
 
                 var seq = sequences.Dequeue();
                 e.Sequence = seq;
@@ -116,18 +128,7 @@ internal class BulkEventAppender
                     e.DotNetTypeName = mapping.DotNetTypeName;
                 }
 
-                if (count % batchSize == 0)
-                {
-                    if (writer != null)
-                    {
-                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
-                        await writer.DisposeAsync().ConfigureAwait(false);
-                    }
-
-                    writer = await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
-                }
-
-                await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
+                await writer.StartRowAsync(cancellation).ConfigureAwait(false);
                 await writeEventRow(writer, e, e.StreamId, e.StreamKey, e.TenantId ?? tenantId, cancellation)
                     .ConfigureAwait(false);
                 count++;
