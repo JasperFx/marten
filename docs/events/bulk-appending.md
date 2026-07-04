@@ -20,7 +20,10 @@ The bulk append API:
 1. Pre-allocates event sequence numbers from the `mt_events_sequence`
 2. Uses `NpgsqlBinaryImporter` to COPY stream records into `mt_streams`
 3. Uses `NpgsqlBinaryImporter` to COPY event records into `mt_events`
-4. Updates the high water mark in `mt_event_progression` so the async daemon knows where to start
+4. Updates the high water mark in `mt_event_progression` so the async daemon knows where to start. On a
+   [per-tenant-partitioned store](/events/multitenancy#per-tenant-event-partitioning) it advances each affected
+   tenant's own `HighWaterMark:{tenant}` row (to that tenant's `max(seq_id)`) — the row the per-tenant daemon actually
+   reads — instead of the store-global `HighWaterMark`
 
 This approach is significantly faster than the normal append path because it avoids per-row function
 calls, version checking, and individual INSERT statements.

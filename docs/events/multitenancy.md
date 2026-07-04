@@ -170,6 +170,12 @@ When `UseTenantPartitionedEvents` is enabled, Marten:
 * **Runs the async daemon with a vectorized per-tenant high-water mark** — one query per database reports the high-water
   position for every active tenant in a single round trip — plus **per-tenant rebuild isolation**, so a projection can
   be rebuilt for a single tenant without tearing down or replaying every other tenant's progress.
+* **Fans daemon agents out per tenant under a node-distributed host.** Because each tenant draws its own event sequence,
+  a store-global agent cannot track them; Marten reports `IEventStore.DistributesAgentsPerTenant` so a distribution-aware
+  host (e.g. Wolverine-managed distribution) runs one agent per `(shard, tenant)`. For sharded stores with many tenants,
+  see [database-affine agent assignment](/configuration/multitenancy#node-distributed-daemons-and-connection-fan-out)
+  (`Events.UseDatabaseAffineAgentAssignment` / `Events.DatabaseAffineAgentFanout`) to keep the resulting connection
+  fan-out bounded.
 
 ### Constraints
 

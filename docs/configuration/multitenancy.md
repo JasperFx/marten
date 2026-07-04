@@ -449,6 +449,34 @@ runs asynchronous projections across all of them. When new databases or tenants 
 the daemon's periodic health check picks them up and starts projection processing without any
 downtime or reconfiguration.
 
+#### Node-Distributed Daemons and Connection Fan-out
+
+When the sharded model is combined with [per-tenant event partitioning](/events/multitenancy#per-tenant-event-partitioning)
+and a node-distributed async daemon (e.g. [Wolverine-managed event subscription distribution](https://wolverinefx.net/guide/durability/marten/distribution.html)),
+the daemon fans agents out one-per-`(shard, tenant)` — a single store-global high-water mark cannot track tenants whose
+independent sequences overlap. Marten reports this to the host through `IEventStore.DistributesAgentsPerTenant`.
+
+With many tenants spread across many shard databases, distributing those per-tenant agents *evenly* by count makes every
+node open a connection pool to nearly every shard database, so the pool count grows as `nodes × databases` and can exhaust
+a shared server's `max_connections`. Opt into **database-affine assignment** so a host keeps a shard database's agents
+together on one node — each node then only connects to the databases it owns, and pools scale with the number of shard
+databases rather than `nodes × databases`:
+
+```cs
+opts.Events.UseTenantPartitionedEvents = true;
+
+// Group a shard database's per-tenant agents onto a single node (opt-in, default off).
+opts.Events.UseDatabaseAffineAgentAssignment = true;
+
+// Bounded fan-out ("the mix"): let one shard database's agents spread across up to N nodes for
+// more parallelism (default 1 = strict affinity). Choose N so databases × N × pool stays under
+// the server's max_connections. Surfaced as IEventStore.MaxNodesPerDatabaseForAgents (clamped to >= 1).
+opts.Events.DatabaseAffineAgentFanout = 2;
+```
+
+These options only take effect for a sharded, per-tenant-partitioned store driven by a distribution-aware host; on any
+other store `IEventStore.GroupAgentAssignmentsByDatabase` stays `false` and distribution is unchanged.
+
 ## Dynamically applying changes to tenants databases
 
 If you didn't call the `ApplyAllDatabaseChangesOnStartup` method, Marten would still try to create a database [upon the session creation](/documents/sessions). This action is invasive and can cause issues like timeouts, cold starts, or deadlocks. It also won't apply all defined changes upfront (so, e.g. [indexes](/documents/indexing/), [custom schema extensions](/schema/extensions)).

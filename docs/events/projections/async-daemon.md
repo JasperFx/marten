@@ -105,6 +105,10 @@ If your Marten store is only using a single database, Marten will distribute pro
 [separate databases for multi-tenancy](/configuration/multitenancy), the async daemon will group all projections for a single
 database on the same executing node as a purposeful strategy to reduce the total number of connections to the databases.
 
+For a [sharded store with per-tenant event partitioning](/configuration/multitenancy#sharded-multi-tenancy-with-database-pooling),
+a node-distributed host runs one agent per `(shard, tenant)`, and you can keep the resulting connection fan-out bounded with
+[database-affine agent assignment](/configuration/multitenancy#node-distributed-daemons-and-connection-fan-out).
+
 ::: tip
 The built in capability of Marten to distribute projections is somewhat limited, and it's still likely that all projections
 will end up running on the first process to start up. If your system requires better load distribution for increased scalability,
