@@ -302,6 +302,17 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     /// </summary>
     public bool UseDatabaseAffineAgentAssignment { get; set; }
 
+    /// <summary>
+    /// When <see cref="UseDatabaseAffineAgentAssignment"/> is on, the maximum number of nodes a single
+    /// shard database's agents may be spread across (the "mix" between strict affinity and even spreading).
+    /// 1 = strict affinity (a database pinned to one node — fewest connections, but a heavy database is
+    /// serialized on that node's pool). A higher value lets a database's per-tenant agents fan out across up
+    /// to N least-loaded nodes for more parallelism, at the cost of that database being reachable from up to
+    /// N nodes (server-side connection ceiling per database ≈ N × per-node pool). Set N so
+    /// databases × N × pool stays under the server's max_connections. Default 1. See JasperFx/marten#4806.
+    /// </summary>
+    public int DatabaseAffineAgentFanout { get; set; } = 1;
+
     public IMessageOutbox MessageOutbox { get; set; } = new NulloMessageOutbox();
 
 
