@@ -58,9 +58,206 @@ internal class BulkEventAppender
         await updateHighWaterMark(conn, schema, streams, cancellation).ConfigureAwait(false);
     }
 
-    private async Task<Queue<long>> fetchSequences(
+    /// <summary>
+    /// Streaming, order-preserving bulk import for a single tenant — see
+    /// <see cref="Marten.DocumentStore.BulkInsertEventStreamAsync" />. Consumes <paramref name="orderedEvents" />
+    /// lazily in batches (bounded memory), assigning each event the next ascending sequence in arrival order
+    /// (so cross-stream ordering is preserved) and taking per-stream versions from the events themselves.
+    /// <paramref name="streamHeaders" /> seed mt_streams first so the mt_events foreign key holds.
+    /// </summary>
+    public async Task BulkInsertEventStreamAsync(
+        NpgsqlConnection conn,
+        string tenantId,
+        IReadOnlyList<BulkEventStreamHeader> streamHeaders,
+        IAsyncEnumerable<IEvent> orderedEvents,
+        int batchSize,
+        CancellationToken cancellation)
+    {
+        var schema = _events.DatabaseSchemaName;
+
+        // mt_streams first — it is the foreign-key target for mt_events. Bounded: one row per stream.
+        await copyStreamHeaders(conn, schema, tenantId, streamHeaders, batchSize, cancellation)
+            .ConfigureAwait(false);
+
+        var columns = buildEventColumns();
+        var copySql = $"COPY {schema}.mt_events({string.Join(", ", columns.Select(c => $"\"{c}\""))}) FROM STDIN BINARY";
+
+        // Sequences are pulled a block at a time (not the whole tenant up front) so memory stays bounded even
+        // when the total event count is unknown. Blocks of max(batchSize, 1000) keep the round-trips low.
+        var sequenceBlock = Math.Max(batchSize, 1000);
+        var sequences = new Queue<long>(sequenceBlock);
+        long maxSequence = 0;
+        var count = 0;
+        NpgsqlBinaryImporter? writer = null;
+
+        try
+        {
+            await foreach (var e in orderedEvents.WithCancellation(cancellation).ConfigureAwait(false))
+            {
+                if (sequences.Count == 0)
+                {
+                    await refillSequences(conn, schema, sequences, sequenceBlock, cancellation)
+                        .ConfigureAwait(false);
+                }
+
+                var seq = sequences.Dequeue();
+                e.Sequence = seq;
+                if (seq > maxSequence)
+                {
+                    maxSequence = seq;
+                }
+
+                // Ensure event type metadata is populated (a migration may clear it so the current alias is
+                // re-derived from the upcasted CLR type).
+                if (string.IsNullOrEmpty(e.EventTypeName))
+                {
+                    var mapping = _events.EventMappingFor(e.EventType);
+                    e.EventTypeName = mapping.EventTypeName;
+                    e.DotNetTypeName = mapping.DotNetTypeName;
+                }
+
+                if (count % batchSize == 0)
+                {
+                    if (writer != null)
+                    {
+                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+                        await writer.DisposeAsync().ConfigureAwait(false);
+                    }
+
+                    writer = await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
+                }
+
+                await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
+                await writeEventRow(writer, e, e.StreamId, e.StreamKey, e.TenantId ?? tenantId, cancellation)
+                    .ConfigureAwait(false);
+                count++;
+            }
+
+            if (writer != null)
+            {
+                await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            if (writer != null)
+            {
+                await writer.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+
+        if (count == 0)
+        {
+            return;
+        }
+
+        var name = _events.UseTenantPartitionedEvents
+            ? HighWaterShardIdentity.PerTenant(tenantId)
+            : HighWaterShardIdentity.StoreGlobal;
+        await upsertHighWaterMark(conn, schema, name, maxSequence, cancellation).ConfigureAwait(false);
+    }
+
+    private async Task copyStreamHeaders(
         NpgsqlConnection conn,
         string schema,
+        string tenantId,
+        IReadOnlyList<BulkEventStreamHeader> headers,
+        int batchSize,
+        CancellationToken cancellation)
+    {
+        if (headers.Count == 0)
+        {
+            return;
+        }
+
+        var columns = buildStreamColumns();
+        var copySql = $"COPY {schema}.mt_streams({string.Join(", ", columns.Select(c => $"\"{c}\""))}) FROM STDIN BINARY";
+
+        var batch = 0;
+        NpgsqlBinaryImporter? writer = null;
+
+        try
+        {
+            foreach (var header in headers)
+            {
+                if (batch % batchSize == 0)
+                {
+                    if (writer != null)
+                    {
+                        await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+                        await writer.DisposeAsync().ConfigureAwait(false);
+                    }
+
+                    writer = await conn.BeginBinaryImportAsync(copySql, cancellation).ConfigureAwait(false);
+                }
+
+                await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
+
+                if (_events.TenancyStyle == TenancyStyle.Conjoined)
+                {
+                    await writer.WriteAsync(tenantId, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
+                }
+
+                if (_events.StreamIdentity == StreamIdentity.AsGuid)
+                {
+                    await writer.WriteAsync(header.Id, NpgsqlDbType.Uuid, cancellation).ConfigureAwait(false);
+                }
+                else
+                {
+                    await writer.WriteAsync(header.Key!, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
+                }
+
+                var aggregateTypeName = header.AggregateTypeName
+                                        ?? (header.AggregateType != null
+                                            ? _events.AggregateAliasFor(header.AggregateType)
+                                            : null);
+                if (aggregateTypeName != null)
+                {
+                    await writer.WriteAsync(aggregateTypeName, NpgsqlDbType.Varchar, cancellation)
+                        .ConfigureAwait(false);
+                }
+                else
+                {
+                    await writer.WriteNullAsync(cancellation).ConfigureAwait(false);
+                }
+
+                await writer.WriteAsync(header.Version, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
+                await writer.WriteAsync(false, NpgsqlDbType.Boolean, cancellation).ConfigureAwait(false);
+
+                batch++;
+            }
+
+            if (writer != null)
+            {
+                await writer.CompleteAsync(cancellation).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            if (writer != null)
+            {
+                await writer.DisposeAsync().ConfigureAwait(false);
+            }
+        }
+    }
+
+    private static async Task<Queue<long>> fetchSequences(
+        NpgsqlConnection conn,
+        string schema,
+        int count,
+        CancellationToken cancellation)
+    {
+        var queue = new Queue<long>(count);
+        await refillSequences(conn, schema, queue, count, cancellation).ConfigureAwait(false);
+        return queue;
+    }
+
+    // Pull a block of freshly allocated sequence numbers into the queue. Used by the streaming import to
+    // top up lazily (block by block) instead of pre-allocating the whole tenant's range up front.
+    private static async Task refillSequences(
+        NpgsqlConnection conn,
+        string schema,
+        Queue<long> queue,
         int count,
         CancellationToken cancellation)
     {
@@ -69,17 +266,15 @@ internal class BulkEventAppender
         cmd.CommandText = sql;
         await using var reader = await cmd.ExecuteReaderAsync(cancellation).ConfigureAwait(false);
 
-        var queue = new Queue<long>(count);
         while (await reader.ReadAsync(cancellation).ConfigureAwait(false))
         {
             queue.Enqueue(reader.GetInt64(0));
         }
-
-        return queue;
     }
 
     private void assignVersionsAndSequences(IReadOnlyList<StreamAction> streams, Queue<long> sequences)
     {
+        // Version is per-stream (1..N in the stream's own event order).
         foreach (var stream in streams)
         {
             long version = 0;
@@ -87,7 +282,6 @@ internal class BulkEventAppender
             {
                 version++;
                 e.Version = version;
-                e.Sequence = sequences.Dequeue();
 
                 // Ensure event type metadata is populated
                 if (string.IsNullOrEmpty(e.EventTypeName))
@@ -99,6 +293,18 @@ internal class BulkEventAppender
             }
 
             stream.Version = version;
+        }
+
+        // seq_id is assigned GLOBALLY across all streams, honoring the order the events already carry in
+        // their Sequence — so a caller that supplies events in their original global order (e.g. a migration
+        // reading source events by seq_id) keeps cross-stream ordering in the target, instead of each stream
+        // getting a contiguous seq_id block that flattens the interleaving. That matters for multi-stream
+        // projections / subscriptions that compare Sequence across streams. LINQ OrderBy is stable, so events
+        // with no meaningful pre-set Sequence (fresh seeding, all 0) keep the per-stream order the caller
+        // passed — identical to the previous behavior. See JasperFx/marten#4806.
+        foreach (var e in streams.SelectMany(s => s.Events).OrderBy(e => e.Sequence))
+        {
+            e.Sequence = sequences.Dequeue();
         }
     }
 
@@ -252,7 +458,9 @@ internal class BulkEventAppender
                     }
 
                     await writer!.StartRowAsync(cancellation).ConfigureAwait(false);
-                    await writeEventRow(writer, stream, e, cancellation).ConfigureAwait(false);
+                    await writeEventRow(writer, e, stream.Id, stream.Key,
+                        e.TenantId ?? stream.TenantId ?? StorageConstants.DefaultTenantId, cancellation)
+                        .ConfigureAwait(false);
                     batch++;
                 }
             }
@@ -315,8 +523,8 @@ internal class BulkEventAppender
         return columns;
     }
 
-    private async Task writeEventRow(NpgsqlBinaryImporter writer, StreamAction stream, IEvent e,
-        CancellationToken cancellation)
+    private async Task writeEventRow(NpgsqlBinaryImporter writer, IEvent e, Guid streamId, string? streamKey,
+        string tenantId, CancellationToken cancellation)
     {
         // seq_id
         await writer.WriteAsync(e.Sequence, NpgsqlDbType.Bigint, cancellation).ConfigureAwait(false);
@@ -327,11 +535,11 @@ internal class BulkEventAppender
         // stream_id
         if (_events.StreamIdentity == StreamIdentity.AsGuid)
         {
-            await writer.WriteAsync(stream.Id, NpgsqlDbType.Uuid, cancellation).ConfigureAwait(false);
+            await writer.WriteAsync(streamId, NpgsqlDbType.Uuid, cancellation).ConfigureAwait(false);
         }
         else
         {
-            await writer.WriteAsync(stream.Key!, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
+            await writer.WriteAsync(streamKey!, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
         }
 
         // version
@@ -369,8 +577,7 @@ internal class BulkEventAppender
             NpgsqlDbType.TimestampTz, cancellation).ConfigureAwait(false);
 
         // tenant_id
-        await writer.WriteAsync(e.TenantId ?? stream.TenantId ?? StorageConstants.DefaultTenantId,
-            NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
+        await writer.WriteAsync(tenantId, NpgsqlDbType.Varchar, cancellation).ConfigureAwait(false);
 
         // mt_dotnet_type
         if (!string.IsNullOrEmpty(e.DotNetTypeName))
@@ -442,14 +649,6 @@ internal class BulkEventAppender
         IReadOnlyList<StreamAction> streams,
         CancellationToken cancellation)
     {
-        // #4681: the 'HighWaterMark' name(s) are produced by HighWaterShardIdentity so any future change
-        // to the grammar lands in one place rather than in scattered SQL. The name is parameterized so the
-        // same upsert serves both the store-global row and the per-tenant rows below.
-        var sql = $@"
-INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
-VALUES (@name, @seq)
-ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
-
         if (_events.UseTenantPartitionedEvents)
         {
             // With per-tenant partitioning the high-water is tracked per tenant ("HighWaterMark:<tenant>"):
@@ -468,11 +667,8 @@ ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progre
 
             foreach (var (tenant, max) in maxByTenant)
             {
-                await using var tenantCmd = conn.CreateCommand();
-                tenantCmd.CommandText = sql;
-                tenantCmd.Parameters.AddWithValue("name", HighWaterShardIdentity.PerTenant(tenant));
-                tenantCmd.Parameters.AddWithValue("seq", max);
-                await tenantCmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
+                await upsertHighWaterMark(conn, schema, HighWaterShardIdentity.PerTenant(tenant), max, cancellation)
+                    .ConfigureAwait(false);
             }
 
             return;
@@ -482,10 +678,29 @@ ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progre
             .SelectMany(s => s.Events)
             .Max(e => e.Sequence);
 
+        await upsertHighWaterMark(conn, schema, HighWaterShardIdentity.StoreGlobal, maxSequence, cancellation)
+            .ConfigureAwait(false);
+    }
+
+    // #4681: the 'HighWaterMark' name(s) are produced by HighWaterShardIdentity so any future change to the
+    // grammar lands in one place rather than in scattered SQL. The name is parameterized so the same upsert
+    // serves both the store-global row and the per-tenant rows.
+    private static async Task upsertHighWaterMark(
+        NpgsqlConnection conn,
+        string schema,
+        string name,
+        long seq,
+        CancellationToken cancellation)
+    {
+        var sql = $@"
+INSERT INTO {schema}.mt_event_progression (name, last_seq_id)
+VALUES (@name, @seq)
+ON CONFLICT (name) DO UPDATE SET last_seq_id = GREATEST({schema}.mt_event_progression.last_seq_id, @seq)";
+
         await using var cmd = conn.CreateCommand();
         cmd.CommandText = sql;
-        cmd.Parameters.AddWithValue("name", HighWaterShardIdentity.StoreGlobal);
-        cmd.Parameters.AddWithValue("seq", maxSequence);
+        cmd.Parameters.AddWithValue("name", name);
+        cmd.Parameters.AddWithValue("seq", seq);
         await cmd.ExecuteNonQueryAsync(cancellation).ConfigureAwait(false);
     }
 

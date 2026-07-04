@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx.Events;
 using JasperFx.Events.Daemon;
+using Marten.Events;
 using Marten.Events.Daemon;
 using Marten.Services;
 using Microsoft.Extensions.Logging;
@@ -324,6 +325,23 @@ public interface IDocumentStore: IDisposable, IAsyncDisposable
     /// <param name="cancellation"></param>
     Task BulkInsertEventsAsync(string tenantId, IReadOnlyList<StreamAction> streams, int batchSize = 1000,
         CancellationToken cancellation = default);
+
+    /// <summary>
+    ///     Streaming, order-preserving bulk import of an existing event log for a single tenant. Consumes
+    ///     <paramref name="orderedEvents" /> lazily in batches (bounded memory), so a tenant with millions of
+    ///     events imports without materializing them all. Events MUST be supplied in the order their
+    ///     <c>seq_id</c>s should be assigned (the source log's global order): each gets the next ascending
+    ///     sequence in arrival order, preserving cross-stream ordering. Per-stream versions are taken from the
+    ///     events; <paramref name="streamHeaders" /> seed <c>mt_streams</c> first (for the foreign key). One
+    ///     transaction per tenant. Intended for migrating an existing event store.
+    /// </summary>
+    /// <param name="tenantId">The tenant to insert events for</param>
+    /// <param name="streamHeaders">One header per stream, to seed mt_streams</param>
+    /// <param name="orderedEvents">The tenant's events, in the order seq_ids should be assigned</param>
+    /// <param name="batchSize">Number of rows per COPY batch and sequence-allocation block</param>
+    /// <param name="cancellation"></param>
+    Task BulkInsertEventStreamAsync(string tenantId, IReadOnlyList<BulkEventStreamHeader> streamHeaders,
+        IAsyncEnumerable<IEvent> orderedEvents, int batchSize = 1000, CancellationToken cancellation = default);
 
     /// <summary>
     ///     Build a new instance of the asynchronous projection daemon to use interactively
