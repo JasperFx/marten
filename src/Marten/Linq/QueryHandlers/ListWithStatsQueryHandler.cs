@@ -40,21 +40,21 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
         return _selector is IDocumentSelector;
     }
 
-    public IQueryHandler CloneForSession(IMartenSession session, QueryStatistics statistics)
+    public IQueryHandler CloneForSession(IStorageSession session, QueryStatistics statistics)
     {
         var selector = (ISelector<T>)session.StorageFor<T>().BuildSelector(session);
 
         return new ListWithStatsQueryHandler<T>(_countIndex, null, selector, statistics);
     }
 
-    async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session,
+    async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = await HandleAsync(reader, session, token).ConfigureAwait(false);
         return list;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _statement?.Apply(builder);
     }
@@ -89,7 +89,7 @@ internal class ListWithStatsQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQ
         return count;
     }
 
-    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<T>();

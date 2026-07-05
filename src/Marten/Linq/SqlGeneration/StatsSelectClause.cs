@@ -48,12 +48,12 @@ internal class StatsSelectClause<T>: ISelectClause, IModifyableFromObject, IStat
         return Inner.SelectFields().Concat(new[] { LinqConstants.StatsColumn }).ToArray();
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return Inner.BuildSelector(session);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where TResult: notnull
     {
         var selector = (ISelector<T>)Inner.BuildSelector(session);

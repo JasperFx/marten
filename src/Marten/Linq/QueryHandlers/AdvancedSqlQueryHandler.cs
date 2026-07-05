@@ -103,7 +103,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
 
     public List<Type> DocumentTypes { get; } = new();
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var firstParameter = Parameters.FirstOrDefault();
 
@@ -184,7 +184,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         throw new NotImplementedException();
     }
 
-    public async Task<IReadOnlyList<TResult>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IReadOnlyList<TResult>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<TResult>();

@@ -31,12 +31,12 @@ internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject wh
     public Type SelectedType => typeof(T);
     public string[] SelectFields() => ["d.data", "d.id"];
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return _inner.BuildSelector(session);
     }
 
-    public IQueryHandler<T1> BuildHandler<T1>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T1 : notnull
+    public IQueryHandler<T1> BuildHandler<T1>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T1 : notnull
     {
         return _inner.BuildHandler<T1>(session, topStatement, currentStatement);
     }

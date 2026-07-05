@@ -41,7 +41,7 @@ internal sealed class RichAppendEventOperation: AppendEventOperationBase
         _descriptor = descriptor;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_descriptor.AppendEventSqlPrefix);
 

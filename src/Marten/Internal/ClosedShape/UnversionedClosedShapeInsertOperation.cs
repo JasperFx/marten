@@ -32,7 +32,7 @@ internal sealed class UnversionedClosedShapeInsertOperation<TDoc, TId>: ClosedSh
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.InsertSql, '?');
         var slot = BindLeadingParameters(parameters, session);

@@ -112,7 +112,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             _version = version;
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
             builder.StartNewCommand();
@@ -124,7 +124,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             throw new NotImplementedException();
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             return _parent.ReadIntoStreamWithExpectedVersion((DocumentSessionBase)session, _id, _version, token, reader, _handler);
         }

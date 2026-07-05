@@ -35,7 +35,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         _query = query;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var storage = (EventDocumentStorage)((DocumentSessionBase)session).EventStorage();
         var selectFields = storage.SelectFields();
@@ -134,7 +134,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
         // SELECTs the current version for each (tag_table, tag_value) in the
         // query so the captured version flows into DcbTagVersionAssertion's
         // INSERT … ON CONFLICT DO UPDATE WHERE at SaveChangesAsync time.
-        AppendVersionCapture(builder, session);
+        AppendVersionCapture(builder, (IMartenSession)session);
     }
 
     private void AppendVersionCapture(ICommandBuilder builder, IMartenSession session)
@@ -216,7 +216,7 @@ internal class FetchForWritingByTagsHandler<T>: IQueryHandler<IEventBoundary<T>>
             .ToArray();
     }
 
-    public async Task<IEventBoundary<T>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IEventBoundary<T>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var docSession = (DocumentSessionBase)session;

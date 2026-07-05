@@ -71,14 +71,14 @@ internal class DataSelectClause<T>: ISelectClause, IScalarSelectClause, IModifya
         return new[] { MemberName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         if (typeof(T) == typeof(TimeSpan)) return new TimeSpanSelector();
 
         return new SerializationSelector<T>(session.Serializer);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = typeof(T) == typeof(TimeSpan) ? (ISelector<T>)new TimeSpanSelector() : new SerializationSelector<T>(session.Serializer);

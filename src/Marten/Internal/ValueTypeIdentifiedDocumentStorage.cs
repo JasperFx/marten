@@ -82,9 +82,9 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Type SelectedType => Inner.SelectedType;
     public string[] SelectFields() => Inner.SelectFields();
 
-    public ISelector BuildSelector(IMartenSession session) => Inner.BuildSelector(session);
+    public ISelector BuildSelector(IStorageSession session) => Inner.BuildSelector(session);
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where T : notnull => Inner.BuildHandler<T>(session, topStatement, currentStatement);
 
     public ISelectClause UseStatistics(QueryStatistics statistics)

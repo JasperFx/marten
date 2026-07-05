@@ -24,7 +24,7 @@ internal class InsertProjectionProgress: IStorageOperation, AssertsOnCallback, N
         _progress = progress;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         // #4596 Session 3: per-tenant progression keying flows naturally
         // through ShardName.Identity. When the per-tenant daemon (Phase 2)

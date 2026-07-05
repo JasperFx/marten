@@ -43,7 +43,7 @@ internal sealed class OptimisticClosedShapeUpsertOperation<TDoc, TId>: ClosedSha
         _newVersion = CombGuidIdGeneration.NewGuid();
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
         var slot = BindPreOnConflictParameters(parameters, session);

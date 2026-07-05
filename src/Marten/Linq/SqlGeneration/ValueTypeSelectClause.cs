@@ -66,12 +66,12 @@ public class ValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarSelect
         return new[] { MemberName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult: notnull
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())
@@ -178,12 +178,12 @@ public class ClassValueTypeSelectClause<TOuter, TInner>: ISelectClause, IScalarS
         return [MemberName];
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement)
     {
         if (typeof(TResult).CanBeCastTo<IEnumerable<TOuter>>())

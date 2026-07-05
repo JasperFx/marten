@@ -47,7 +47,7 @@ public class retry_mechanism : OneOffConfigurationsContext
 
 public class SometimesFailingOperation: IStorageOperation
 {
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("select 1");
     }

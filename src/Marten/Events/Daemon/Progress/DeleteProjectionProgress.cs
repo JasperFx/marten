@@ -24,7 +24,7 @@ internal class DeleteProjectionProgress: IStorageOperation, NoDataReturnedCall
         _shardName = shardName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         // #4596 Session 3: per-tenant scoping flows through the shard name
         // itself. Callers wanting to delete one tenant's progression pass the

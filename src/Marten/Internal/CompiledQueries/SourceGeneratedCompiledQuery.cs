@@ -56,7 +56,7 @@ internal abstract class SourceGeneratedCompiledQueryHandlerBase<TOut>: IQueryHan
         _enumAsString = enumAsString;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var first = true;
         foreach (var command in _plan.Commands)
@@ -110,7 +110,7 @@ internal abstract class SourceGeneratedCompiledQueryHandlerBase<TOut>: IQueryHan
         }
     }
 
-    public abstract Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token);
+    public abstract Task<TOut> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token);
 
     public abstract Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token);
 }
@@ -135,7 +135,7 @@ internal sealed class SourceGeneratedStatelessHandler<TOut>: SourceGeneratedComp
         _inner = inner;
     }
 
-    public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public override Task<TOut> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         => _inner.HandleAsync(reader, session, token);
 
     public override Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
@@ -165,7 +165,7 @@ internal sealed class SourceGeneratedClonedHandler<TOut>: SourceGeneratedCompile
         _statistics = statistics;
     }
 
-    public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public override Task<TOut> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         var inner = (IQueryHandler<TOut>)_statefulInner.CloneForSession(session, _statistics!);
         return inner.HandleAsync(reader, session, token);
@@ -226,8 +226,8 @@ internal sealed class SourceGeneratedComplexHandler<TOut>: SourceGeneratedCompil
         return new IncludeQueryHandler<TOut>(inner, readers);
     }
 
-    public override Task<TOut> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
-        => BuildIncludingHandler(session).HandleAsync(reader, session, token);
+    public override Task<TOut> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
+        => BuildIncludingHandler((IMartenSession)session).HandleAsync(reader, session, token);
 
     public override Task<int> StreamJson(Stream stream, DbDataReader reader, CancellationToken token)
         => throw new NotSupportedException(

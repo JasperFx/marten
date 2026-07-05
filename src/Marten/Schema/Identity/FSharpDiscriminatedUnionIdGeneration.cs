@@ -198,12 +198,12 @@ internal class FSharpDiscriminatedUnionIdSelectClause<TOuter, TInner>: ISelectCl
         return new[] { MemberName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         return (IQueryHandler<TResult>)new ListQueryHandler<TOuter>(statement, this);

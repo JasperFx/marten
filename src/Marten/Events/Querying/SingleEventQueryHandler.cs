@@ -22,7 +22,7 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         _selector = selector;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IStorageSession session)
     {
         _selector.Apply(sql);
 
@@ -30,7 +30,7 @@ internal class SingleEventQueryHandler: IQueryHandler<IEvent>
         sql.AppendParameter(_id);
     }
 
-    public async Task<IEvent> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IEvent> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         return await reader.ReadAsync(token).ConfigureAwait(false)

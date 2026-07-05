@@ -43,7 +43,7 @@ internal sealed class NumericIdentityMapClosedShapeStorage<TDoc, TId>: IdentityM
     public override IStorageOperation UpdateProjected(TDoc document, string tenant)
         => new NumericClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
-    public override ISelector BuildSelector(IMartenSession session)
+    public override ISelector BuildSelector(IStorageSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalNumericClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor)
             : new FlatNumericClosedShapeIdentityMapSelector<TDoc, TId>(session, _descriptor);

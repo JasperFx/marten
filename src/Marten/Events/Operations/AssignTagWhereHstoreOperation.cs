@@ -36,7 +36,7 @@ internal class AssignTagWhereHstoreOperation: IStorageOperation, NoDataReturnedC
         _isConjoined = isConjoined;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("update ");
         builder.Append(_schemaName);

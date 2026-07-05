@@ -40,7 +40,7 @@ internal sealed class QuickAppendEventsOperation: QuickAppendEventsOperationBase
         _descriptor = descriptor;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_descriptor.QuickAppendEventsSql);
 

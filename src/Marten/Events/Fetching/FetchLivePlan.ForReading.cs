@@ -93,12 +93,12 @@ internal partial class FetchLivePlan<TDoc, TId>
             _handler = parent._identityStrategy.BuildEventQueryHandler(parent.IsGlobal, id);
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             _handler.ConfigureCommand(builder, session);
         }
 
-        public async Task<TDoc?> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+        public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var events = await _handler.HandleAsync(reader, session, token).ConfigureAwait(false);
             return await _parent._aggregator.BuildAsync(events, (QuerySession)session, default, _id, _parent._documentStorage, token).ConfigureAwait(false);

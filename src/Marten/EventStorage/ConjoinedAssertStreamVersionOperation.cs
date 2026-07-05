@@ -23,7 +23,7 @@ internal sealed class ConjoinedAssertStreamVersionOperation<TId>: AssertStreamVe
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(SelectVersionByIdPrefix);
         var idParam = builder.AppendParameter(StreamIdentity);

@@ -590,13 +590,13 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             _checkVersion = checkVersion;
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             var innerValue = _parent._naturalKey.Unwrap(_id)!;
             _parent.BuildNaturalKeyToStreamQuery((BatchBuilder)builder, innerValue, _forUpdate);
         }
 
-        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IMartenSession session,
+        public async Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session,
             CancellationToken token)
         {
             var documentSession = (DocumentSessionBase)session;
@@ -659,13 +659,13 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             _id = id;
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             var innerValue = _parent._naturalKey.Unwrap(_id)!;
             _parent.BuildNaturalKeyToStreamQuery((BatchBuilder)builder, innerValue, false);
         }
 
-        public async Task<TDoc?> HandleAsync(DbDataReader reader, IMartenSession session,
+        public async Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session,
             CancellationToken token)
         {
             var documentSession = (DocumentSessionBase)session;

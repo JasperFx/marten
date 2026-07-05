@@ -37,7 +37,7 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
         _revisions = revisions;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
         var slot = BindPreConcurrencyParameters(parameters, session);

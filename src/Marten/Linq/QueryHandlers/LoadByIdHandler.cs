@@ -35,7 +35,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
         _id = id;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IStorageSession session)
     {
         sql.Append("select ");
 
@@ -69,7 +69,7 @@ internal class LoadByIdHandler<T, TId>: IQueryHandler<T> where T : notnull where
 
 
 
-    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<T> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         var selector = (ISelector<T>)storage.BuildSelector(session);
         if (await reader.ReadAsync(token).ConfigureAwait(false))

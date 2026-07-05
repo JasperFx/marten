@@ -80,7 +80,7 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<TDoc>> LoadManyProjectedAsync(TId[] ids, IMartenDatabase database, string tenantId, System.Threading.CancellationToken token)
         => throw new NotSupportedException("QueryOnly storage doesn't support LoadManyProjectedAsync.");
 
-    public override ISelector BuildSelector(IMartenSession session)
+    public override ISelector BuildSelector(IStorageSession session)
         // #4659 Phase 2: pick the Flat / Hierarchical selector ONCE per
         // query — neither selector class branches on HierarchyMapping per
         // row.

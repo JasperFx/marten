@@ -128,12 +128,12 @@ public abstract class EventDocumentStorage: IEventStorage
         return _fields;
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where T : notnull
     {
         return LinqQueryParser.BuildHandler<IEvent, T>(this, topStatement);

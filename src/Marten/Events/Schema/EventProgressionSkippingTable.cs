@@ -40,7 +40,7 @@ internal class EventProgressionSkipsHandler : ISingleQueryHandler<IReadOnlyList<
         _limit = limit;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("");
         builder.AppendParameter(_limit);

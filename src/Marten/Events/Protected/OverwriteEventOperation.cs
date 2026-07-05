@@ -25,7 +25,7 @@ internal class OverwriteEventOperation : IStorageOperation, NoDataReturnedCall
         _e = e;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         // Bind both data and headers as direct UTF-8 bytes via WriteToParameter so we
         // skip the intermediate string allocations Serializer.ToJson would produce.

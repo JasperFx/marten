@@ -54,7 +54,7 @@ internal class DcbTagVersionBumpOperation: IStorageOperation, NoDataReturnedCall
         _orderedEntries = sorted;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var schema = _events.DatabaseSchemaName;
         var tenantId = session.TenantId;

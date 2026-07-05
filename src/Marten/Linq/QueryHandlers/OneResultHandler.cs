@@ -40,18 +40,18 @@ internal class OneResultHandler<T>: IQueryHandler<T>, IMaybeStatefulHandler
         return _selector is IDocumentSelector;
     }
 
-    public IQueryHandler CloneForSession(IMartenSession session, QueryStatistics statistics)
+    public IQueryHandler CloneForSession(IStorageSession session, QueryStatistics statistics)
     {
         var selector = (ISelector<T>)session.StorageFor<T>().BuildSelector(session);
         return new OneResultHandler<T>(null, selector, _canBeNull, _canBeMultiples);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _statement?.Apply(builder);
     }
 
-    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<T> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var hasResult = await reader.ReadAsync(token).ConfigureAwait(false);

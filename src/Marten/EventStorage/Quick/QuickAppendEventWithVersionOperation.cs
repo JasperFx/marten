@@ -63,7 +63,7 @@ internal sealed class QuickAppendEventWithVersionOperation: AppendEventOperation
         _serializeEventBdata = serializeEventBdata;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_appendEventSqlPrefix);
 

@@ -32,7 +32,7 @@ internal class CheckExistsByIdHandler<T, TId>: IQueryHandler<bool> where T : not
         _id = id;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IStorageSession session)
     {
         sql.Append("select exists(select 1 from ");
         sql.Append(storage.FromObject);
@@ -53,7 +53,7 @@ internal class CheckExistsByIdHandler<T, TId>: IQueryHandler<bool> where T : not
         sql.Append(")");
     }
 
-    public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<bool> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         if (await reader.ReadAsync(token).ConfigureAwait(false))
         {

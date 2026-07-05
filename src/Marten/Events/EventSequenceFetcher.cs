@@ -22,12 +22,12 @@ internal class EventSequenceFetcher: IQueryHandler<Queue<long>>
         _sql = $"select nextval('{graph.DatabaseSchemaName}.mt_events_sequence') from generate_series(1,{number})";
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_sql);
     }
 
-    public async Task<Queue<long>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<Queue<long>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         var queue = new Queue<long>();
 

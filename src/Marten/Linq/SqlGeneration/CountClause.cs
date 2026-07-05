@@ -31,12 +31,12 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
         FromObject = parent.ExportName;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _topStatement.Apply(builder);
     }
 
-    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<T> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         var hasNext = await reader.ReadAsync(token).ConfigureAwait(false);
         return hasNext && !await reader.IsDBNullAsync(0, token).ConfigureAwait(false)
@@ -66,12 +66,12 @@ public class CountClause<T>: IQueryHandler<T>, ICountClause
         throw new NotSupportedException();
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         throw new NotSupportedException();
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where TResult: notnull
     {
         _topStatement = topStatement;

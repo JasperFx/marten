@@ -199,7 +199,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             _loadHandler = new LoadByIdHandler<TDoc, TId>(parent._storage, id);
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             _loadHandler.ConfigureCommand(builder, session);
 
@@ -208,7 +208,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             _parent.writeEventFetchStatement(_id, builder);
         }
 
-        public Task<TDoc?> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+        public Task<TDoc?> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
             var eventStorage = documentSessionBase.EventStorage();

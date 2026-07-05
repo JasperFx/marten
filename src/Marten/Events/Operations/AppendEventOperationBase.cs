@@ -28,7 +28,7 @@ public abstract class AppendEventOperationBase: IStorageOperation, NoDataReturne
     public StreamAction Stream { get; }
     public IEvent Event { get; }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     public Type DocumentType => typeof(IEvent);
 

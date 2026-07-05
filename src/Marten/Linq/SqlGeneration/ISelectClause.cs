@@ -37,9 +37,9 @@ public interface ISelectClause: ISqlFragment
 
     string[] SelectFields();
 
-    ISelector BuildSelector(IMartenSession session);
+    ISelector BuildSelector(IStorageSession session);
 
-    IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
         where T : notnull;
     ISelectClause UseStatistics(QueryStatistics statistics);
 }

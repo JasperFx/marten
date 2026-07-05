@@ -43,7 +43,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
 
     public bool SqlContainsCustomSelect { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         if (!SqlContainsCustomSelect)
         {
@@ -91,7 +91,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
         }
     }
 
-    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<T>();

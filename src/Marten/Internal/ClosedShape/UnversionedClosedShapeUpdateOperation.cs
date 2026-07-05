@@ -30,7 +30,7 @@ internal sealed class UnversionedClosedShapeUpdateOperation<TDoc, TId>: ClosedSh
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
         // Off mode has no trailing concurrency-guard slot — we just consume

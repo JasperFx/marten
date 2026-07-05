@@ -64,12 +64,12 @@ internal class ScalarStringSelectClause: ISelectClause, IScalarSelectClause, ISe
         return new[] { MemberName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         return LinqQueryParser.BuildHandler<string, TResult>(this, statement);

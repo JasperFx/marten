@@ -36,7 +36,7 @@ internal class ReplaceEventOperation<T> : IStorageOperation, NoDataReturnedCall 
 
     public Guid Id { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append($"update {_graph.DatabaseSchemaName}.mt_events set data = ");
         using (var buffer = new Services.PooledByteBufferWriter())

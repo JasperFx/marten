@@ -63,7 +63,7 @@ internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageO
 
     public OperationRole Role() => _role;
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     public abstract Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);
 

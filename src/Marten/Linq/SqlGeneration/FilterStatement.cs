@@ -31,12 +31,12 @@ internal class SelectCtidSelectClause: ISelectClause
         return new[] { "ctid" };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         throw new NotSupportedException();
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where T: notnull
     {
         throw new NotSupportedException();

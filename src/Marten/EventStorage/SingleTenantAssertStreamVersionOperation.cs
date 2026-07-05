@@ -19,7 +19,7 @@ internal sealed class SingleTenantAssertStreamVersionOperation<TId>: AssertStrea
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(SelectVersionByIdPrefix);
         var idParam = builder.AppendParameter(StreamIdentity);

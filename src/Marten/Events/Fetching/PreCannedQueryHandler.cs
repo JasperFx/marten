@@ -18,12 +18,12 @@ internal class PreCannedQueryHandler<T>: IQueryHandler<T>
         _value = value;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("select 1");
     }
 
-    public Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public Task<T> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         return Task.FromResult(_value);
     }

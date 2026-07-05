@@ -33,7 +33,7 @@ internal sealed class UnversionedClosedShapeUpsertOperation<TDoc, TId>: ClosedSh
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.UpsertSql, '?');
         BindPreOnConflictParameters(parameters, session);

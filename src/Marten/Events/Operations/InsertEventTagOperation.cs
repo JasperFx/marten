@@ -33,7 +33,7 @@ internal class InsertEventTagOperation: IStorageOperation, NoDataReturnedCall
         _useArchivedPartitioning = useArchivedPartitioning;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("insert into ");
         builder.Append(_schemaName);
