@@ -14,7 +14,7 @@ internal class ExplodeCollectionStatement: Statement
     private readonly string _locator;
     private readonly string _sourceTable;
 
-    public ExplodeCollectionStatement(Statement parent, string locator, IMartenSession session)
+    public ExplodeCollectionStatement(Statement parent, string locator, IStorageSession session)
     {
         _locator = locator;
         _sourceTable = parent.ExportName;
@@ -22,7 +22,7 @@ internal class ExplodeCollectionStatement: Statement
         ConvertToCommonTableExpression(session);
     }
 
-    public ExplodeCollectionStatement(IMartenSession session, SelectorStatement selectorStatement,
+    public ExplodeCollectionStatement(IStorageSession session, SelectorStatement selectorStatement,
         string locator)
     {
         _locator = locator;

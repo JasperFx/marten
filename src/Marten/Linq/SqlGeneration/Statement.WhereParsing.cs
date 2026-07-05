@@ -39,7 +39,7 @@ public abstract partial class Statement: IWhereFragmentHolder
         }
     }
 
-    public void ParseWhereClause(IReadOnlyList<Expression> wheres, IMartenSession session,
+    public void ParseWhereClause(IReadOnlyList<Expression> wheres, IStorageSession session,
         IQueryableMemberCollection collection,
         IDocumentStorage? storage = null)
     {
@@ -80,7 +80,7 @@ public abstract partial class Statement: IWhereFragmentHolder
         }
     }
 
-    protected virtual void compileAnySubQueries(IMartenSession session)
+    protected virtual void compileAnySubQueries(IStorageSession session)
     {
         if (Wheres.OfType<ISubQueryFilter>().Any() ||
             Wheres.OfType<CompoundWhereFragment>().Any(x => x.Children.OfType<ISubQueryFilter>().Any()))

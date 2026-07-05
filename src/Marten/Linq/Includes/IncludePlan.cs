@@ -38,7 +38,7 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
     public Type DocumentType => typeof(T);
     public Expression? Where { get; set; }
 
-    public IIncludeReader BuildReader(IMartenSession session)
+    public IIncludeReader BuildReader(IStorageSession session)
     {
         var selector = (ISelector<T>)_storage.BuildSelector(session);
         return new IncludeReader<T>(_callback, selector);
@@ -53,7 +53,7 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
             Wheres.Add(fragment);
         }
 
-        public ISqlFragment BuildWrappedFilter(IDocumentStorage<T> storage, IMartenSession session)
+        public ISqlFragment BuildWrappedFilter(IDocumentStorage<T> storage, IStorageSession session)
         {
             return Wheres.Count switch
             {
@@ -64,7 +64,7 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
         }
     }
 
-    public void AppendStatement(TemporaryTableStatement tempTable, IMartenSession martenSession,
+    public void AppendStatement(TemporaryTableStatement tempTable, IStorageSession martenSession,
         ITenantFilter tenantFilter)
     {
         var filters = new WhereFragmentHolder();

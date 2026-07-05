@@ -82,7 +82,7 @@ public class ChildCollectionMember: QueryableMember, ICollectionMember, IQueryab
         dict[MemberName] = new[] { constant.Value };
     }
 
-    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var selectClause =
@@ -210,7 +210,7 @@ internal class AllCollectionConditionFilter: ISubQueryFilter, IWhereFragmentHold
         return this;
     }
 
-    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement, ISqlFragment? topLevelWhere = null)
+    public void PlaceUnnestAbove(IStorageSession session, SelectorStatement statement, ISqlFragment? topLevelWhere = null)
     {
         // First need to unnest the collection into its own recordset
         var unnest = new ExplodeCollectionStatement(session, statement, Member.ArrayLocator) { Where = topLevelWhere };

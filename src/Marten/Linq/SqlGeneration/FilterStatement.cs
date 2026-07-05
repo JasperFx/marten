@@ -53,7 +53,7 @@ internal class SelectCtidSelectClause: ISelectClause
 /// </summary>
 internal class FilterStatement: SelectorStatement
 {
-    public FilterStatement(IMartenSession session, Statement parent, ISqlFragment where)
+    public FilterStatement(IStorageSession session, Statement parent, ISqlFragment where)
     {
         ArgumentNullException.ThrowIfNull(where);
 

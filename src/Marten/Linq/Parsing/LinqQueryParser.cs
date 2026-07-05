@@ -20,7 +20,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
 
     private bool _hasParsedIncludes;
 
-    public LinqQueryParser(MartenLinqQueryProvider provider, IMartenSession session,
+    public LinqQueryParser(MartenLinqQueryProvider provider, IStorageSession session,
         Expression expression, SingleValueMode? valueMode = null)
     {
         ValueMode = valueMode;
@@ -32,7 +32,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
 
     public SingleValueMode? ValueMode { get; }
 
-    public IMartenSession Session { get; }
+    public IStorageSession Session { get; }
 
     public CollectionUsage CollectionUsageFor(MethodCallExpression expression)
     {

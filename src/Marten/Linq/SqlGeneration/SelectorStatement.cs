@@ -127,7 +127,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         }
     }
 
-    public IQueryHandler<TResult> BuildSingleResultHandler<TResult>(IMartenSession session, Statement topStatement)
+    public IQueryHandler<TResult> BuildSingleResultHandler<TResult>(IStorageSession session, Statement topStatement)
     {
         var selector = (ISelector<TResult>)SelectClause.BuildSelector(session);
         return new OneResultHandler<TResult>(topStatement, selector, ReturnDefaultWhenEmpty, CanBeMultiples);
@@ -138,7 +138,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         return $"Selector statement: {SelectClause}";
     }
 
-    private void processCompoundRecurcively(CompoundWhereFragment compound, IMartenSession session){
+    private void processCompoundRecurcively(CompoundWhereFragment compound, IStorageSession session){
         // See https://github.com/JasperFx/marten/issues/3025
         foreach (var deepCompound in compound.Children.OfType<CompoundWhereFragment>())
         {
@@ -150,7 +150,7 @@ public class SelectorStatement: Statement, IWhereFragmentHolder
         }
     }
 
-    protected override void compileAnySubQueries(IMartenSession session)
+    protected override void compileAnySubQueries(IStorageSession session)
     {
         if (Wheres[0] is CompoundWhereFragment compound)
         {

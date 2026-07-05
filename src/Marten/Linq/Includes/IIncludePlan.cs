@@ -10,8 +10,8 @@ public interface IIncludePlan
 {
     Type DocumentType { get; }
     Expression Where { get; set; }
-    IIncludeReader BuildReader(IMartenSession session);
+    IIncludeReader BuildReader(IStorageSession session);
 
-    void AppendStatement(TemporaryTableStatement tempTable, IMartenSession martenSession,
+    void AppendStatement(TemporaryTableStatement tempTable, IStorageSession martenSession,
         ITenantFilter tenantFilter);
 }

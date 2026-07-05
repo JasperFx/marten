@@ -18,7 +18,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToAction<T>(IMartenSession session, Action<T> action) where T : notnull
+    public static IIncludeReader ReaderToAction<T>(IStorageSession session, Action<T> action) where T : notnull
     {
         var storage = session.StorageFor<T>();
 
@@ -30,7 +30,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToList<T>(IMartenSession session, IList<T> list) where T : notnull
+    public static IIncludeReader ReaderToList<T>(IStorageSession session, IList<T> list) where T : notnull
     {
         return ReaderToAction<T>(session, list.Add);
     }
@@ -39,7 +39,7 @@ public static class Include
     ///     Used internally to process Include() operations
     ///     in the Linq support
     /// </summary>
-    public static IIncludeReader ReaderToDictionary<T, TId>(IMartenSession session, IDictionary<TId, T> dictionary) where T : notnull where TId : notnull
+    public static IIncludeReader ReaderToDictionary<T, TId>(IStorageSession session, IDictionary<TId, T> dictionary) where T : notnull where TId : notnull
     {
         var storage = session.StorageFor<T>();
         if (storage is IDocumentStorage<T, TId> s)

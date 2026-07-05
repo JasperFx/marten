@@ -28,7 +28,7 @@ public partial class CollectionUsage
 {
     private bool _hasCompiledMany;
 
-    public Statement BuildTopStatement(IMartenSession session, IQueryableMemberCollection collection,
+    public Statement BuildTopStatement(IStorageSession session, IQueryableMemberCollection collection,
         IDocumentStorage storage, QueryStatistics? statistics)
     {
         Statement top;
@@ -167,7 +167,7 @@ public partial class CollectionUsage
     }
 
 
-    public Statement BuildSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
+    public Statement BuildSelectManyStatement(IStorageSession session, IQueryableMemberCollection collection,
         ISelectClause selectClause, QueryStatistics? statistics, SelectorStatement parentStatement)
     {
         var statement = new SelectorStatement
@@ -191,7 +191,7 @@ public partial class CollectionUsage
         return statement;
     }
 
-    internal Statement ConfigureSelectManyStatement(IMartenSession session, IQueryableMemberCollection collection,
+    internal Statement ConfigureSelectManyStatement(IStorageSession session, IQueryableMemberCollection collection,
         SelectorStatement statement, QueryStatistics? statistics)
     {
         Statement top = statement.Top();
@@ -263,7 +263,7 @@ public partial class CollectionUsage
     }
 
 
-    private Statement compileNext(IMartenSession session, IQueryableMemberCollection collection,
+    private Statement compileNext(IStorageSession session, IQueryableMemberCollection collection,
         SelectorStatement statement, QueryStatistics? statistics)
     {
         if (GroupJoinData != null)
@@ -320,7 +320,7 @@ public partial class CollectionUsage
         return statement;
     }
 
-    public Statement CompileGroupJoin(IMartenSession session,
+    public Statement CompileGroupJoin(IStorageSession session,
         SelectorStatement outerStatement, QueryStatistics? statistics)
     {
         var groupJoin = GroupJoinData!;
@@ -611,7 +611,7 @@ public partial class CollectionUsage
         return joinStatement;
     }
 
-    public Statement CompileGroupBy(IMartenSession session,
+    public Statement CompileGroupBy(IStorageSession session,
         SelectorStatement statement, IQueryableMemberCollection collection, QueryStatistics? statistics)
     {
         var groupBy = GroupByData!;
@@ -773,7 +773,7 @@ public partial class CollectionUsage
         }
     }
 
-    public Statement CompileSelectMany(IMartenSession session,
+    public Statement CompileSelectMany(IStorageSession session,
         SelectorStatement parentStatement, ICollectionMember collectionMember, QueryStatistics? statistics)
     {
         if (_hasCompiledMany)
@@ -808,7 +808,7 @@ public partial class CollectionUsage
         }
     }
 
-    internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IMartenSession session,
+    internal void ProcessSingleValueModeIfAny(SelectorStatement statement, IStorageSession session,
         IQueryableMemberCollection? members, QueryStatistics? statistics)
     {
         if (IsAny || SingleValueMode == Marten.Linq.Parsing.SingleValueMode.Any)
