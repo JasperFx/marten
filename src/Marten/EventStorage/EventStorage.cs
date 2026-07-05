@@ -75,6 +75,15 @@ public abstract class EventStorage<TId>
     /// <summary>Increments the <c>mt_streams</c> version with an expected-version guard.</summary>
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
 
+    /// <summary>
+    /// Asserts the expected <c>mt_streams</c> version without appending events
+    /// (the <c>AlwaysEnforceConsistency</c> zero-events path). The concrete
+    /// storage selects the single-tenant or conjoined operation variant once,
+    /// from its descriptor's tenancy style — the tenancy branch lives here in
+    /// the storage layer, not in the operation's per-call command build.
+    /// </summary>
+    public abstract IStorageOperation AssertStreamVersion(StreamAction stream);
+
     /// <summary>Stream-state lookup query handler.</summary>
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
 }

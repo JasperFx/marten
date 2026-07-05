@@ -80,6 +80,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
             metadataBinders: metadataBinders)
         {
             IsTenancyConjoined = isConjoined,
+            AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             IsGuidStreamIdentity = isGuid,
             AppendEventQuickWithVersionSqlSuffix = quickWithVersionSuffix,
             MetadataBindersWithoutSequence = metadataBindersWithoutSequence,
@@ -313,6 +314,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,
+            AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             HasCausationId = hasCausation,
             HasCorrelationId = hasCorrelation,
             HasHeaders = hasHeaders,
@@ -370,6 +372,7 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
         {
             IsGuidStreamIdentity = isGuid,
             IsTenancyConjoined = isConjoined,
+            AssertStreamVersionSql = BuildAssertStreamVersionSql(graph),
             HasCausationId = hasCausation,
             HasCorrelationId = hasCorrelation,
             HasHeaders = hasHeaders,
@@ -627,4 +630,13 @@ internal sealed class PostgresEventStoreDialect: IEventStoreSqlDialect
     /// </summary>
     private static string BuildUpdateStreamVersionSql(EventGraph graph) =>
         $"update {graph.DatabaseSchemaName}.{StreamsTable.TableName} set version = ... where ... returning version";
+
+    /// <summary>
+    /// The <c>select version from {schema}.mt_streams where id = </c> prefix used by the
+    /// AssertStreamVersion (AlwaysEnforceConsistency, zero-events) path. The
+    /// AssertStreamVersion operation appends the identity parameter, and — for the
+    /// conjoined variant — the trailing <c>and tenant_id = $N</c> predicate (#4803).
+    /// </summary>
+    private static string BuildAssertStreamVersionSql(EventGraph graph) =>
+        $"select version from {graph.DatabaseSchemaName}.{StreamsTable.TableName} where id = ";
 }

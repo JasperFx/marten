@@ -79,14 +79,10 @@ internal class RichEventAppender: IEventAppender
         {
             stream.TenantId ??= session.TenantId;
 
-            if (stream.Key != null)
-            {
-                session.QueueOperation(new AssertStreamVersionByKey(eventGraph, stream));
-            }
-            else
-            {
-                session.QueueOperation(new AssertStreamVersionById(eventGraph, stream));
-            }
+            // The closed-shape storage picks the single-tenant vs conjoined
+            // (and Guid vs string identity) operation variant — no per-op
+            // tenancy/identity branching here. See #4803.
+            session.QueueOperation(storage.AssertStreamVersion(stream));
         }
 
         // TODO -- look for opportunities to batch up the requests here too!

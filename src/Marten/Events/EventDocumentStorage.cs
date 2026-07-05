@@ -250,6 +250,7 @@ public abstract class EventDocumentStorage: IEventStorage
     public abstract IStorageOperation InsertStream(StreamAction stream);
     public abstract IQueryHandler<StreamState> QueryForStream(StreamAction stream);
     public abstract IStorageOperation UpdateStreamVersion(StreamAction stream);
+    public abstract IStorageOperation AssertStreamVersion(StreamAction stream);
 
     public string StreamStateSelectSql => Marten.EventStorage.StreamStateSql.Build(Events);
 

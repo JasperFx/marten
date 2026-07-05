@@ -5,7 +5,7 @@ using JasperFx;
 using JasperFx.Events;
 using Marten;
 using Marten.Events;
-using Marten.Events.Operations;
+using Marten.Internal.Sessions;
 using Marten.Testing.Harness;
 using Shouldly;
 using Xunit;
@@ -38,7 +38,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregate)
         };
 
-        var operation = new AssertStreamVersionById(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         // Execute in a batch - should not throw
         theSession.QueueOperation(operation);
@@ -62,7 +62,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregateAsString)
         };
 
-        var operation = new AssertStreamVersionByKey(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         // Execute in a batch - should not throw
         theSession.QueueOperation(operation);
@@ -84,7 +84,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregate)
         };
 
-        var operation = new AssertStreamVersionById(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         theSession.QueueOperation(operation);
 
@@ -116,7 +116,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregateAsString)
         };
 
-        var operation = new AssertStreamVersionByKey(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         theSession.QueueOperation(operation);
 
@@ -143,7 +143,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregate)
         };
 
-        var operation = new AssertStreamVersionById(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         theSession.QueueOperation(operation);
 
@@ -169,7 +169,7 @@ public class assert_stream_version: IntegrationContext
             AggregateType = typeof(SimpleAggregateAsString)
         };
 
-        var operation = new AssertStreamVersionByKey(theStore.Options.EventGraph, stream);
+        var operation = ((DocumentSessionBase)theSession).EventStorage().AssertStreamVersion(stream);
 
         theSession.QueueOperation(operation);
 
