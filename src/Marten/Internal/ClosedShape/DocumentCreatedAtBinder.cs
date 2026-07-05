@@ -64,7 +64,7 @@ internal sealed class DocumentCreatedAtBinder<TDoc>: IDocumentMetadataBinder<TDo
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
         => throw new NotSupportedException(
             "mt_created_at is filled by the column DEFAULT during bulk load; this binder is read-only.");
 }

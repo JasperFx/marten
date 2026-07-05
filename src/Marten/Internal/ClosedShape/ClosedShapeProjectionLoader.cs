@@ -51,7 +51,7 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     public static async Task<TDoc?> LoadAsync(
         NpgsqlCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        ISerializer serializer,
+        IStorageSerializer serializer,
         IMartenDatabase database,
         CancellationToken token)
     {
@@ -77,7 +77,7 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     public static async Task<IReadOnlyList<TDoc>> LoadManyAsync(
         NpgsqlCommand command,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        ISerializer serializer,
+        IStorageSerializer serializer,
         IMartenDatabase database,
         CancellationToken token)
     {
@@ -107,7 +107,7 @@ internal static class ClosedShapeProjectionLoader<TDoc, TId>
     private static async ValueTask<TDoc> readOneAsync(
         DbDataReader reader,
         DocumentStorageDescriptor<TDoc, TId> descriptor,
-        ISerializer serializer,
+        IStorageSerializer serializer,
         CancellationToken token)
     {
         // Hierarchical: dispatch via mt_doc_type alias just like

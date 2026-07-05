@@ -56,6 +56,6 @@ internal sealed class DocumentSoftDeletedAtBinder<TDoc>: IDocumentMetadataBinder
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
         => writer.WriteNullAsync(cancellation);
 }

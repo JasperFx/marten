@@ -273,13 +273,13 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     ISelector ISelectClause.BuildSelector(IStorageSession session)
     {
-        return new EventSelector<T>(session.Serializer);
+        return new EventSelector<T>((ISerializer)session.Serializer);
     }
 
     IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement)
     {
-        var selector = new EventSelector<T>(session.Serializer);
+        var selector = new EventSelector<T>((ISerializer)session.Serializer);
 
         return LinqQueryParser.BuildHandler<T, TResult>(selector, topStatement);
     }

@@ -52,7 +52,7 @@ internal sealed class DocumentTenantIdBinder<TDoc>: IDocumentMetadataBinder<TDoc
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
         => throw new NotSupportedException(
             "tenant_id is handled directly by the bulk loader; this binder is read-only.");
 }

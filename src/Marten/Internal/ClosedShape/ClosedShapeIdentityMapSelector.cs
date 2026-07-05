@@ -27,7 +27,7 @@ internal abstract class ClosedShapeIdentityMapSelector<T, TId>: ISelector<T>, ID
     protected const int FirstMetadataColumn = 2;
 
     protected readonly IStorageSession _session;
-    protected readonly ISerializer _serializer;
+    protected readonly IStorageSerializer _serializer;
     protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
     protected readonly Dictionary<TId, T> _identityMap;
 

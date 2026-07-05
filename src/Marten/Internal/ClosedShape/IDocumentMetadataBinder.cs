@@ -102,5 +102,5 @@ public interface IDocumentMetadataBinder<TDoc>
     /// LastModified case.
     /// </summary>
     Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation);
+        IStorageSerializer serializer, CancellationToken cancellation);
 }

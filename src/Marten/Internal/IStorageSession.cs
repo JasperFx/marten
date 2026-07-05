@@ -31,7 +31,7 @@ namespace Marten.Internal;
 /// </remarks>
 public interface IStorageSession: IMetadataContext
 {
-    ISerializer Serializer { get; }
+    IStorageSerializer Serializer { get; }
 
     IMartenDatabase Database { get; }
 

@@ -103,7 +103,7 @@ internal sealed class DocumentRevisionBinder<TDoc>: IDocumentMetadataBinder<TDoc
         => _setter?.Invoke(document, revision);
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
     {
         // Bulk path defaults to revision 1 — matches the codegen
         // BulkLoader.GenerateBulkWriterCodeAsync's hard-coded "write

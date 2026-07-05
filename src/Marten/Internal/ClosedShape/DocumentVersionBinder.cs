@@ -72,7 +72,7 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         => _setter?.Invoke(document, version);
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
     {
         var newVersion = CombGuidIdGeneration.NewGuid();
         _setter?.Invoke(document, newVersion);
