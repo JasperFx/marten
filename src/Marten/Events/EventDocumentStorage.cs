@@ -90,12 +90,12 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
-    public void EjectById(IMartenSession session, object id)
+    public void EjectById(IStorageSession session, object id)
     {
         // Nothing
     }
 
-    public void RemoveDirtyTracker(IMartenSession session, object id)
+    public void RemoveDirtyTracker(IStorageSession session, object id)
     {
         // Nothing
     }
@@ -178,47 +178,47 @@ public abstract class EventDocumentStorage: IEventStorage
 
     public Type IdType { get; }
 
-    public Guid? VersionFor(IEvent document, IMartenSession session)
+    public Guid? VersionFor(IEvent document, IStorageSession session)
     {
         return null;
     }
 
-    public void Store(IMartenSession session, IEvent document)
+    public void Store(IStorageSession session, IEvent document)
     {
         // Nothing
     }
 
-    public void Store(IMartenSession session, IEvent document, Guid? version)
+    public void Store(IStorageSession session, IEvent document, Guid? version)
     {
         // Nothing
     }
 
-    public void Store(IMartenSession session, IEvent document, long revision)
+    public void Store(IStorageSession session, IEvent document, long revision)
     {
         // Nothing
     }
 
-    public void Eject(IMartenSession session, IEvent document)
+    public void Eject(IStorageSession session, IEvent document)
     {
         // Nothing
     }
 
-    public IStorageOperation Update(IEvent document, IMartenSession session, string tenant)
+    public IStorageOperation Update(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Insert(IEvent document, IMartenSession session, string tenant)
+    public IStorageOperation Insert(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Upsert(IEvent document, IMartenSession session, string tenant)
+    public IStorageOperation Upsert(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Overwrite(IEvent document, IMartenSession session, string tenant)
+    public IStorageOperation Overwrite(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }

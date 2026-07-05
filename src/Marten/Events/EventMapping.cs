@@ -298,47 +298,47 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
 
     Type IDocumentStorage.IdType => _idType;
 
-    Guid? IDocumentStorage<T>.VersionFor(T document, IMartenSession session)
+    Guid? IDocumentStorage<T>.VersionFor(T document, IStorageSession session)
     {
         throw new NotSupportedException();
     }
 
-    void IDocumentStorage<T>.Store(IMartenSession session, T document)
+    void IDocumentStorage<T>.Store(IStorageSession session, T document)
     {
         throw new NotSupportedException();
     }
 
-    void IDocumentStorage<T>.Store(IMartenSession session, T document, Guid? version)
+    void IDocumentStorage<T>.Store(IStorageSession session, T document, Guid? version)
     {
         throw new NotSupportedException();
     }
 
-    public void Store(IMartenSession session, T document, long revision)
+    public void Store(IStorageSession session, T document, long revision)
     {
         throw new NotSupportedException();
     }
 
-    void IDocumentStorage<T>.Eject(IMartenSession session, T document)
+    void IDocumentStorage<T>.Eject(IStorageSession session, T document)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Update(T document, IMartenSession session, string tenant)
+    IStorageOperation IDocumentStorage<T>.Update(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Insert(T document, IMartenSession session, string tenant)
+    IStorageOperation IDocumentStorage<T>.Insert(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Upsert(T document, IMartenSession session, string tenant)
+    IStorageOperation IDocumentStorage<T>.Upsert(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Overwrite(T document, IMartenSession session, string tenant)
+    IStorageOperation IDocumentStorage<T>.Overwrite(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
@@ -369,12 +369,12 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         throw new NotSupportedException();
     }
 
-    void IDocumentStorage<T>.EjectById(IMartenSession session, object id)
+    void IDocumentStorage<T>.EjectById(IStorageSession session, object id)
     {
         // Nothing
     }
 
-    void IDocumentStorage<T>.RemoveDirtyTracker(IMartenSession session, object id)
+    void IDocumentStorage<T>.RemoveDirtyTracker(IStorageSession session, object id)
     {
         // Nothing
     }
