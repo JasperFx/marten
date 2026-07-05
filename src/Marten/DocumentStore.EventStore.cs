@@ -82,11 +82,6 @@ public partial class DocumentStore: IEventStore<IDocumentOperations, IQuerySessi
            && Options.Events.UseTenantPartitionedEvents
            && Options.Tenancy is Storage.ShardedTenancy;
 
-    // JasperFx/marten#4806: bounded fan-out ("mix") — how many nodes a shard database's agents may spread
-    // across when database-affine assignment is on. 1 = strict affinity. Clamped to >= 1.
-    int IEventStore.MaxNodesPerDatabaseForAgents
-        => Math.Max(1, Options.Events.DatabaseAffineAgentFanout);
-
     async ValueTask<IReadOnlyList<IEventDatabase>> IEventStore.AllDatabases()
     {
         // Straight delegation to ITenancy, mirroring IMartenStorage.AllDatabases(). The IMartenDatabase

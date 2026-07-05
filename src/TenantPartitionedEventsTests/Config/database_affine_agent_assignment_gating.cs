@@ -9,12 +9,12 @@ using Xunit;
 namespace TenantPartitionedEventsTests.Config;
 
 /// <summary>
-/// JasperFx/marten#4806 — the opt-in database-affine agent-assignment knobs and how the
-/// <see cref="IEventStore"/> members they drive are gated. <c>UseDatabaseAffineAgentAssignment</c> only
+/// JasperFx/marten#4806 — the opt-in database-affine agent-assignment flag and how the
+/// <see cref="IEventStore"/> member it drives is gated. <c>UseDatabaseAffineAgentAssignment</c> only
 /// takes effect for a sharded per-tenant-partitioned store (the one tenancy where daemons fan agents out
 /// per (shard, tenant)); everywhere else <c>GroupAgentAssignmentsByDatabase</c> stays false so distribution
-/// behaves exactly as before. <c>MaxNodesPerDatabaseForAgents</c> mirrors the fan-out knob, clamped to >= 1.
-/// These are pure configuration assertions — building the store never opens a connection.
+/// behaves exactly as before. These are pure configuration assertions — building the store never opens a
+/// connection.
 /// </summary>
 public class database_affine_agent_assignment_gating
 {
@@ -22,12 +22,6 @@ public class database_affine_agent_assignment_gating
     public void use_database_affine_agent_assignment_defaults_to_false()
     {
         new StoreOptions().Events.UseDatabaseAffineAgentAssignment.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void database_affine_agent_fanout_defaults_to_one()
-    {
-        new StoreOptions().Events.DatabaseAffineAgentFanout.ShouldBe(1);
     }
 
     [Fact]
@@ -64,21 +58,6 @@ public class database_affine_agent_assignment_gating
         var eventStore = (IEventStore)store;
         eventStore.DistributesAgentsPerTenant.ShouldBeTrue("per-tenant fan-out does not depend on the affinity flag");
         eventStore.GroupAgentAssignmentsByDatabase.ShouldBeFalse("affinity must be explicitly opted into");
-    }
-
-    [Theory]
-    [InlineData(0, 1)]  // clamped up — a fan-out below 1 makes no sense
-    [InlineData(1, 1)]
-    [InlineData(4, 4)]
-    public void max_nodes_per_database_clamps_the_fanout_to_at_least_one(int configured, int expected)
-    {
-        using var store = DocumentStore.For(opts =>
-        {
-            opts.Connection(ConnectionSource.ConnectionString);
-            opts.Events.DatabaseAffineAgentFanout = configured;
-        });
-
-        ((IEventStore)store).MaxNodesPerDatabaseForAgents.ShouldBe(expected);
     }
 
     // A sharded, per-tenant-partitioned store with two databases. Dummy connection strings — the assertions

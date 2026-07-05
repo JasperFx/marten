@@ -467,14 +467,9 @@ opts.Events.UseTenantPartitionedEvents = true;
 
 // Group a shard database's per-tenant agents onto a single node (opt-in, default off).
 opts.Events.UseDatabaseAffineAgentAssignment = true;
-
-// Bounded fan-out ("the mix"): let one shard database's agents spread across up to N nodes for
-// more parallelism (default 1 = strict affinity). Choose N so databases × N × pool stays under
-// the server's max_connections. Surfaced as IEventStore.MaxNodesPerDatabaseForAgents (clamped to >= 1).
-opts.Events.DatabaseAffineAgentFanout = 2;
 ```
 
-These options only take effect for a sharded, per-tenant-partitioned store driven by a distribution-aware host; on any
+This option only takes effect for a sharded, per-tenant-partitioned store driven by a distribution-aware host; on any
 other store `IEventStore.GroupAgentAssignmentsByDatabase` stays `false` and distribution is unchanged.
 
 ## Dynamically applying changes to tenants databases

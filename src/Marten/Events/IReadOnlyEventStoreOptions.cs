@@ -93,12 +93,6 @@ public interface IReadOnlyEventStoreOptions
     bool UseDatabaseAffineAgentAssignment { get; set; }
 
     /// <summary>
-    /// Max nodes a single shard database's agents may fan out across when database-affine assignment is on
-    /// (the "mix"; 1 = strict affinity). See IEventStoreOptions.DatabaseAffineAgentFanout. JasperFx/marten#4806.
-    /// </summary>
-    int DatabaseAffineAgentFanout { get; set; }
-
-    /// <summary>
     /// Optional extension point to receive published messages as a side effect from
     /// aggregation projections
     /// </summary>

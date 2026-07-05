@@ -141,17 +141,6 @@ namespace Marten.Events
         public bool UseDatabaseAffineAgentAssignment { get; set; }
 
         /// <summary>
-        /// When <see cref="UseDatabaseAffineAgentAssignment"/> is on, the max nodes a single shard database's
-        /// agents may fan out across — the "mix" between strict affinity and even spreading. 1 = strict
-        /// affinity (pin a database to one node: fewest connections, but a heavy database is serialized on
-        /// that node's pool). Higher = a database's per-tenant agents fan out across up to N least-loaded
-        /// nodes for more parallelism, so it is reachable from up to N nodes (server connection ceiling per
-        /// database ≈ N × per-node pool). Pick N so databases × N × pool stays under max_connections.
-        /// Default 1. See JasperFx/marten#4806.
-        /// </summary>
-        public int DatabaseAffineAgentFanout { get; set; }
-
-        /// <summary>
         /// Optional extension point to receive published messages as a side effect from
         /// aggregation projections
         /// </summary>

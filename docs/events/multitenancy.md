@@ -174,8 +174,7 @@ When `UseTenantPartitionedEvents` is enabled, Marten:
   a store-global agent cannot track them; Marten reports `IEventStore.DistributesAgentsPerTenant` so a distribution-aware
   host (e.g. Wolverine-managed distribution) runs one agent per `(shard, tenant)`. For sharded stores with many tenants,
   see [database-affine agent assignment](/configuration/multitenancy#node-distributed-daemons-and-connection-fan-out)
-  (`Events.UseDatabaseAffineAgentAssignment` / `Events.DatabaseAffineAgentFanout`) to keep the resulting connection
-  fan-out bounded.
+  (`Events.UseDatabaseAffineAgentAssignment`) to keep the resulting connection fan-out bounded.
 
 ### Constraints
 
