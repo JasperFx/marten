@@ -10,7 +10,7 @@ namespace Marten.Linq.SqlGeneration.Filters;
 
 internal interface ISubQueryFilter : IReversibleWhereFragment
 {
-    void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement,
+    void PlaceUnnestAbove(IStorageSession session, SelectorStatement statement,
         ISqlFragment? topLevelWhere = null);
 }
 
@@ -71,7 +71,7 @@ internal class SubQueryFilter: ISubQueryFilter
         }
     }
 
-    public void PlaceUnnestAbove(IMartenSession session, SelectorStatement statement,
+    public void PlaceUnnestAbove(IStorageSession session, SelectorStatement statement,
         ISqlFragment? topLevelWhere = null)
     {
         // First need to unnest the collection into its own recordset

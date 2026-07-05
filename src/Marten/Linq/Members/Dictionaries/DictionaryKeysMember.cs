@@ -54,7 +54,7 @@ internal class DictionaryKeysMember: QueryableMember, ICollectionMember, IValueC
 
     public override string LocatorForIncludedDocumentId { get; }
 
-    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)

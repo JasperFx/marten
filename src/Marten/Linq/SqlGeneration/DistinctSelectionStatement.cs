@@ -6,7 +6,7 @@ namespace Marten.Linq.SqlGeneration;
 
 internal class DistinctSelectionStatement: Statement
 {
-    public DistinctSelectionStatement(SelectorStatement parent, ICountClause selectClause, IMartenSession session)
+    public DistinctSelectionStatement(SelectorStatement parent, ICountClause selectClause, IStorageSession session)
     {
         parent.ConvertToCommonTableExpression(session);
 

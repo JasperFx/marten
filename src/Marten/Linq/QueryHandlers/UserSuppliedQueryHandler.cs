@@ -29,7 +29,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     private readonly ISelector<T> _selector;
     private readonly string _sql;
 
-    public UserSuppliedQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters)
+    public UserSuppliedQueryHandler(IStorageSession session, char placeholder, string sql, object[] parameters)
     {
         _sql = sql.TrimStart();
         _placeholder = placeholder;
@@ -111,7 +111,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
     }
 
 
-    private ISelectClause GetSelectClause(IMartenSession session)
+    private ISelectClause GetSelectClause(IStorageSession session)
     {
         if (typeof(T) == typeof(string))
         {

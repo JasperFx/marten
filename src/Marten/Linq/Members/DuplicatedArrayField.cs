@@ -60,7 +60,7 @@ internal class DuplicatedArrayField: DuplicatedField, ICollectionMember, IQuerya
     public string ArrayLocator => TypedLocator;
     public IQueryableMember Element { get; }
 
-    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)

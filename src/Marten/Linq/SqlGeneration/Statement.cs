@@ -102,7 +102,7 @@ public abstract partial class Statement: ISqlFragment
         return (Next == null ? this : Next.SelectorStatement()).As<SelectorStatement>();
     }
 
-    public void ConvertToCommonTableExpression(IMartenSession session)
+    public void ConvertToCommonTableExpression(IStorageSession session)
     {
         ExportName ??= session.NextTempTableName() + "CTE";
         Mode = StatementMode.CommonTableExpression;
@@ -143,7 +143,7 @@ public abstract partial class Statement: ISqlFragment
         }
     }
 
-    public NpgsqlCommand BuildCommand(IMartenSession session)
+    public NpgsqlCommand BuildCommand(IStorageSession session)
     {
         var builder = new CommandBuilder(){TenantId = session.TenantId};
         Apply(builder);

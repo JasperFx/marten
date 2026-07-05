@@ -25,7 +25,7 @@ public partial class CollectionUsage
 
     private bool _hasParsedIncludes = false;
 
-    public void ParseIncludes(IQueryableMemberCollection collection, IMartenSession session)
+    public void ParseIncludes(IQueryableMemberCollection collection, IStorageSession session)
     {
         if (_hasParsedIncludes) return;
 

@@ -119,7 +119,7 @@ public class ValueCollectionMember: QueryableMember, ICollectionMember, IValueCo
         return whereClause.CompileFragment(this, options.Serializer());
     }
 
-    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    public Statement AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         var statement = ElementType == typeof(string)

@@ -25,7 +25,7 @@ namespace Marten.Linq.QueryHandlers;
     Justification = "Class-level: uses Type.MakeGenericType / MethodInfo.MakeGenericMethod / Activator.CreateInstance / FastExpressionCompiler — runtime code generation. AOT consumers pre-generate codegen artifacts (codegen write) and supply source-generator-backed serializer impls per the AOT publishing guide.")]
 internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQueryHandler<IReadOnlyList<T>>
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters): base(placeholder, sql, parameters)
+    public AdvancedSqlQueryHandler(IStorageSession session, char placeholder, string sql, object[] parameters): base(placeholder, sql, parameters)
     {
         RegisterResultType<T>(session);
     }
@@ -42,7 +42,7 @@ internal class AdvancedSqlQueryHandler<T>: AdvancedSqlQueryHandlerBase<T>, IQuer
 
 internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1, T2)>, IQueryHandler<IReadOnlyList<(T1, T2)>> where T2 : notnull where T1 : notnull
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
+    public AdvancedSqlQueryHandler(IStorageSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
         RegisterResultType<T1>(session);
         RegisterResultType<T2>(session);
@@ -61,7 +61,7 @@ internal class AdvancedSqlQueryHandler<T1, T2>: AdvancedSqlQueryHandlerBase<(T1,
 }
 internal class AdvancedSqlQueryHandler<T1, T2, T3>: AdvancedSqlQueryHandlerBase<(T1, T2, T3)>, IQueryHandler<IReadOnlyList<(T1, T2, T3)>> where T1 : notnull where T2 : notnull where T3 : notnull
 {
-    public AdvancedSqlQueryHandler(IMartenSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
+    public AdvancedSqlQueryHandler(IStorageSession session, char placeholder, string sql, object[] parameters) : base(placeholder, sql, parameters)
     {
         RegisterResultType<T1>(session);
         RegisterResultType<T2>(session);
@@ -150,7 +150,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return default;
     }
 
-    protected ISelectClause GetSelectClause<T>(IMartenSession session) where T : notnull
+    protected ISelectClause GetSelectClause<T>(IStorageSession session) where T : notnull
     {
         if (typeof(T) == typeof(string))
         {
@@ -169,7 +169,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         return session.StorageFor<T>();
     }
 
-    protected void RegisterResultType<T>(IMartenSession session) where T : notnull
+    protected void RegisterResultType<T>(IStorageSession session) where T : notnull
     {
         var selectClause = GetSelectClause<T>(session);
         Selectors.Add(selectClause.BuildSelector(session));

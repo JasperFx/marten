@@ -101,7 +101,7 @@ internal class DictionaryMember<TKey, TValue>: QueryableMember, IComparableMembe
 
     string ICollectionMember.ArrayLocator => throw new NotImplementedException();
 
-    Statement ICollectionMember.AttachSelectManyStatement(CollectionUsage collectionUsage, IMartenSession session,
+    Statement ICollectionMember.AttachSelectManyStatement(CollectionUsage collectionUsage, IStorageSession session,
         SelectorStatement parentStatement, QueryStatistics statistics)
     {
         throw new BadLinqExpressionException(

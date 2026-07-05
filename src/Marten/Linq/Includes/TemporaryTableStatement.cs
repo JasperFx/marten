@@ -8,7 +8,7 @@ namespace Marten.Linq.Includes;
 
 public class TemporaryTableStatement: Statement
 {
-    public TemporaryTableStatement(Statement inner, IMartenSession session)
+    public TemporaryTableStatement(Statement inner, IStorageSession session)
     {
         Inner = inner;
         var selectorStatement = Inner.SelectorStatement();
