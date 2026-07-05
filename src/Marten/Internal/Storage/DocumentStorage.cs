@@ -216,7 +216,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return new Deletion(this, HardDeleteFragment, ByIdFilter(id)) { Id = id };
     }
 
-    public void EjectById(IMartenSession session, object id)
+    public void EjectById(IStorageSession session, object id)
     {
         var typedId = (TId)id;
 
@@ -229,7 +229,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         }
     }
 
-    public void RemoveDirtyTracker(IMartenSession session, object id)
+    public void RemoveDirtyTracker(IStorageSession session, object id)
     {
         session.ChangeTrackers.RemoveAll(x =>
         {
@@ -272,7 +272,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public Type IdType => typeof(TId);
 
-    public Guid? VersionFor(T document, IMartenSession session)
+    public Guid? VersionFor(T document, IStorageSession session)
     {
         if (document == null)
         {
@@ -282,15 +282,15 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return session.Versions.VersionFor<T, TId>(Identity(document));
     }
 
-    public abstract void Store(IMartenSession session, T document);
-    public abstract void Store(IMartenSession session, T document, Guid? version);
-    public abstract void Store(IMartenSession session, T document, long revision);
-    public abstract void Eject(IMartenSession session, T document);
-    public abstract IStorageOperation Update(T document, IMartenSession session, string tenant);
-    public abstract IStorageOperation Insert(T document, IMartenSession session, string tenant);
-    public abstract IStorageOperation Upsert(T document, IMartenSession session, string tenant);
+    public abstract void Store(IStorageSession session, T document);
+    public abstract void Store(IStorageSession session, T document, Guid? version);
+    public abstract void Store(IStorageSession session, T document, long revision);
+    public abstract void Eject(IStorageSession session, T document);
+    public abstract IStorageOperation Update(T document, IStorageSession session, string tenant);
+    public abstract IStorageOperation Insert(T document, IStorageSession session, string tenant);
+    public abstract IStorageOperation Upsert(T document, IStorageSession session, string tenant);
 
-    public abstract IStorageOperation Overwrite(T document, IMartenSession session, string tenant);
+    public abstract IStorageOperation Overwrite(T document, IStorageSession session, string tenant);
 
     /// <inheritdoc />
     public abstract IStorageOperation OverwriteProjected(T document, string tenant);

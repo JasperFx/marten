@@ -18,16 +18,16 @@ internal sealed class OptimisticDirtyCheckedClosedShapeStorage<TDoc, TId>: Dirty
     {
     }
 
-    public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)

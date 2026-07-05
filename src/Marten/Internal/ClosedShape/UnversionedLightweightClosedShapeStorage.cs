@@ -21,16 +21,16 @@ internal sealed class UnversionedLightweightClosedShapeStorage<TDoc, TId>: Light
     {
     }
 
-    public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
         => new UnversionedClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
-    public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
         => new UnversionedClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
-    public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
         => new UnversionedClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert);
 
-    public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
         => new UnversionedClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor);
 
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)

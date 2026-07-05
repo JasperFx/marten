@@ -95,19 +95,19 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     object IdentityFor(T document);
 
 
-    Guid? VersionFor(T document, IMartenSession session);
+    Guid? VersionFor(T document, IStorageSession session);
 
-    void Store(IMartenSession session, T document);
-    void Store(IMartenSession session, T document, Guid? version);
-    void Store(IMartenSession session, T document, long revision);
+    void Store(IStorageSession session, T document);
+    void Store(IStorageSession session, T document, Guid? version);
+    void Store(IStorageSession session, T document, long revision);
 
-    void Eject(IMartenSession session, T document);
+    void Eject(IStorageSession session, T document);
 
-    IStorageOperation Update(T document, IMartenSession session, string tenantId);
-    IStorageOperation Insert(T document, IMartenSession session, string tenantId);
-    IStorageOperation Upsert(T document, IMartenSession session, string tenantId);
+    IStorageOperation Update(T document, IStorageSession session, string tenantId);
+    IStorageOperation Insert(T document, IStorageSession session, string tenantId);
+    IStorageOperation Upsert(T document, IStorageSession session, string tenantId);
 
-    IStorageOperation Overwrite(T document, IMartenSession session, string tenantId);
+    IStorageOperation Overwrite(T document, IStorageSession session, string tenantId);
 
     /// <summary>
     /// Lighter-weight overwrite for projection storage. Builds the same Overwrite operation
@@ -143,8 +143,8 @@ public interface IDocumentStorage<T>: IDocumentStorage where T : notnull
     IDeletion DeleteForDocument(T document, string tenantId);
 
 
-    void EjectById(IMartenSession session, object id);
-    void RemoveDirtyTracker(IMartenSession session, object id);
+    void EjectById(IStorageSession session, object id);
+    void RemoveDirtyTracker(IStorageSession session, object id);
     IDeletion HardDeleteForDocument(T document, string tenantId);
 
     void SetIdentityFromString(T document, string identityString);

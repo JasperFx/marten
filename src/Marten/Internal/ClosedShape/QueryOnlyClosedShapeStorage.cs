@@ -46,16 +46,16 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
     public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
         => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
 
-    public override IStorageOperation Insert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Insert.");
 
-    public override IStorageOperation Update(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Update.");
 
-    public override IStorageOperation Upsert(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Upsert.");
 
-    public override IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenant)
+    public override IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Overwrite.");
 
     public override IStorageOperation OverwriteProjected(TDoc document, string tenant)

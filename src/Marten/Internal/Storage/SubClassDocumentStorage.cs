@@ -122,47 +122,47 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
 
     public Type IdType => typeof(TId);
 
-    public Guid? VersionFor(T document, IMartenSession session)
+    public Guid? VersionFor(T document, IStorageSession session)
     {
         return _parent.VersionFor(document, session);
     }
 
-    public void Store(IMartenSession session, T document)
+    public void Store(IStorageSession session, T document)
     {
         _parent.Store(session, document);
     }
 
-    public void Store(IMartenSession session, T document, Guid? version)
+    public void Store(IStorageSession session, T document, Guid? version)
     {
         _parent.Store(session, document, version);
     }
 
-    public void Store(IMartenSession session, T document, long revision)
+    public void Store(IStorageSession session, T document, long revision)
     {
         _parent.Store(session, document, revision);
     }
 
-    public void Eject(IMartenSession session, T document)
+    public void Eject(IStorageSession session, T document)
     {
         _parent.Eject(session, document);
     }
 
-    public IStorageOperation Update(T document, IMartenSession session, string tenant)
+    public IStorageOperation Update(T document, IStorageSession session, string tenant)
     {
         return _parent.Update(document, session, tenant);
     }
 
-    public IStorageOperation Insert(T document, IMartenSession session, string tenant)
+    public IStorageOperation Insert(T document, IStorageSession session, string tenant)
     {
         return _parent.Insert(document, session, tenant);
     }
 
-    public IStorageOperation Upsert(T document, IMartenSession session, string tenant)
+    public IStorageOperation Upsert(T document, IStorageSession session, string tenant)
     {
         return _parent.Upsert(document, session, tenant);
     }
 
-    public IStorageOperation Overwrite(T document, IMartenSession session, string tenant)
+    public IStorageOperation Overwrite(T document, IStorageSession session, string tenant)
     {
         return _parent.Overwrite(document, session, tenant);
     }
@@ -269,12 +269,12 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.RawIdentityValue(id);
     }
 
-    public void EjectById(IMartenSession session, object id)
+    public void EjectById(IStorageSession session, object id)
     {
         _parent.EjectById(session, id);
     }
 
-    public void RemoveDirtyTracker(IMartenSession session, object id)
+    public void RemoveDirtyTracker(IStorageSession session, object id)
     {
         _parent.RemoveDirtyTracker(session, id);
     }

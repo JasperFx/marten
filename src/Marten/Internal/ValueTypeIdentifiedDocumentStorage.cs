@@ -116,26 +116,26 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
     public object IdentityFor(TDoc document) => Inner.IdentityFor(document);
 
-    public Guid? VersionFor(TDoc document, IMartenSession session) => Inner.VersionFor(document, session);
+    public Guid? VersionFor(TDoc document, IStorageSession session) => Inner.VersionFor(document, session);
 
-    public void Store(IMartenSession session, TDoc document) => Inner.Store(session, document);
+    public void Store(IStorageSession session, TDoc document) => Inner.Store(session, document);
 
-    public void Store(IMartenSession session, TDoc document, Guid? version) => Inner.Store(session, document, version);
+    public void Store(IStorageSession session, TDoc document, Guid? version) => Inner.Store(session, document, version);
 
-    public void Store(IMartenSession session, TDoc document, long revision) => Inner.Store(session, document, revision);
+    public void Store(IStorageSession session, TDoc document, long revision) => Inner.Store(session, document, revision);
 
-    public void Eject(IMartenSession session, TDoc document) => Inner.Eject(session, document);
+    public void Eject(IStorageSession session, TDoc document) => Inner.Eject(session, document);
 
-    public IStorageOperation Update(TDoc document, IMartenSession session, string tenantId) =>
+    public IStorageOperation Update(TDoc document, IStorageSession session, string tenantId) =>
         Inner.Update(document, session, tenantId);
 
-    public IStorageOperation Insert(TDoc document, IMartenSession session, string tenantId)
+    public IStorageOperation Insert(TDoc document, IStorageSession session, string tenantId)
         => Inner.Insert(document, session, tenantId);
 
-    public IStorageOperation Upsert(TDoc document, IMartenSession session, string tenantId)
+    public IStorageOperation Upsert(TDoc document, IStorageSession session, string tenantId)
         => Inner.Upsert(document, session, tenantId);
 
-    public IStorageOperation Overwrite(TDoc document, IMartenSession session, string tenantId)
+    public IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenantId)
         => Inner.Overwrite(document, session, tenantId);
 
     public IStorageOperation OverwriteProjected(TDoc document, string tenantId)
@@ -154,10 +154,10 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion DeleteForDocument(TDoc document, string tenantId)
         => Inner.DeleteForDocument(document, tenantId);
 
-    public void EjectById(IMartenSession session, object id)
+    public void EjectById(IStorageSession session, object id)
         => Inner.EjectById(session, id);
 
-    public void RemoveDirtyTracker(IMartenSession session, object id)
+    public void RemoveDirtyTracker(IStorageSession session, object id)
         => Inner.RemoveDirtyTracker(session, id);
 
     public IDeletion HardDeleteForDocument(TDoc document, string tenantId)

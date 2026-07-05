@@ -22,7 +22,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
     {
     }
 
-    public sealed override void Eject(IMartenSession session, T document)
+    public sealed override void Eject(IStorageSession session, T document)
     {
         var id = Identity(document);
         if (session.ItemMap.TryGetValue(typeof(T), out var items))
@@ -34,12 +34,12 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Store(IMartenSession session, T document)
+    public sealed override void Store(IStorageSession session, T document)
     {
         store(session, document, out var id);
     }
 
-    private void store(IMartenSession session, T document, out TId id)
+    private void store(IStorageSession session, T document, out TId id)
     {
         id = AssignIdentity(document, session.TenantId, session.Database);
         session.MarkAsAddedForStorage(id, document);
@@ -71,7 +71,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Store(IMartenSession session, T document, Guid? version)
+    public sealed override void Store(IStorageSession session, T document, Guid? version)
     {
         store(session, document, out var id);
 
@@ -85,7 +85,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Store(IMartenSession session, T document, long revision)
+    public sealed override void Store(IStorageSession session, T document, long revision)
     {
         store(session, document, out var id);
 

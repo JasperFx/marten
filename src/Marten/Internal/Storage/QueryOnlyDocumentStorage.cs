@@ -25,19 +25,19 @@ public abstract class QueryOnlyDocumentStorage<T, TId>: DocumentStorage<T, TId>,
         return new DataAndIdSelectClause<T>(this);
     }
 
-    public sealed override void Store(IMartenSession session, T document)
+    public sealed override void Store(IStorageSession session, T document)
     {
     }
 
-    public sealed override void Store(IMartenSession session, T document, Guid? version)
+    public sealed override void Store(IStorageSession session, T document, Guid? version)
     {
     }
 
-    public sealed override void Store(IMartenSession session, T document, long revision)
+    public sealed override void Store(IStorageSession session, T document, long revision)
     {
     }
 
-    public sealed override void Eject(IMartenSession session, T document)
+    public sealed override void Eject(IStorageSession session, T document)
     {
     }
 

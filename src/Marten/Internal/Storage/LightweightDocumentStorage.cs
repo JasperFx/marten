@@ -15,13 +15,13 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
     {
     }
 
-    public sealed override void Store(IMartenSession session, T document)
+    public sealed override void Store(IStorageSession session, T document)
     {
         var id = AssignIdentity(document, session.TenantId, session.Database);
         session.MarkAsAddedForStorage(id, document);
     }
 
-    public sealed override void Store(IMartenSession session, T document, Guid? version)
+    public sealed override void Store(IStorageSession session, T document, Guid? version)
     {
         var id = AssignIdentity(document, session.TenantId, session.Database);
         session.MarkAsAddedForStorage(id, document);
@@ -36,7 +36,7 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Store(IMartenSession session, T document, long revision)
+    public sealed override void Store(IStorageSession session, T document, long revision)
     {
         var id = AssignIdentity(document, session.TenantId, session.Database);
         session.MarkAsAddedForStorage(id, document);
@@ -51,7 +51,7 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    public sealed override void Eject(IMartenSession session, T document)
+    public sealed override void Eject(IStorageSession session, T document)
     {
         // Nothing!
     }
