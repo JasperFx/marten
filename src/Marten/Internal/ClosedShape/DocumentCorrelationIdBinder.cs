@@ -15,7 +15,7 @@ namespace Marten.Internal.ClosedShape;
 /// <summary>
 /// <see cref="IDocumentMetadataBinder{TDoc}"/> for the
 /// <c>correlation_id</c> column. The value comes from
-/// <see cref="IMartenSession.CorrelationId"/> on every write — not from
+/// <see cref="IStorageSession.CorrelationId"/> on every write — not from
 /// the document — mirroring the codegen path's
 /// <c>setStringParameter(_, session.CorrelationId)</c> emit. On read the
 /// stored value is projected back onto the document's
@@ -38,16 +38,16 @@ internal sealed class DocumentCorrelationIdBinder<TDoc>: IDocumentMetadataBinder
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         parameter.Value = (object?)session.CorrelationId ?? DBNull.Value;
     }
 
-    public void ApplyToDocument(TDoc document, IMartenSession session)
+    public void ApplyToDocument(TDoc document, IStorageSession session)
         => _setter?.Invoke(document, session.CorrelationId);
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

@@ -12,7 +12,7 @@ internal sealed class FlatUnversionedClosedShapeIdentityMapSelector<T, TId>: Unv
     where T : notnull
     where TId : notnull
 {
-    public FlatUnversionedClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatUnversionedClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

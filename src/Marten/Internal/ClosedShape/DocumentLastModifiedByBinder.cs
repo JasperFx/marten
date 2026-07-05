@@ -15,7 +15,7 @@ namespace Marten.Internal.ClosedShape;
 /// <summary>
 /// <see cref="IDocumentMetadataBinder{TDoc}"/> for the
 /// <c>last_modified_by</c> column. Value comes from
-/// <see cref="IMartenSession.LastModifiedBy"/> (alias of
+/// <see cref="IStorageSession.LastModifiedBy"/> (alias of
 /// <c>CurrentUserName</c>) on every write; read path projects the stored
 /// value onto the document's <c>[LastModifiedBy]</c>-annotated member
 /// when one exists.
@@ -37,7 +37,7 @@ internal sealed class DocumentLastModifiedByBinder<TDoc>: IDocumentMetadataBinde
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
         // IMetadataContext.LastModifiedBy is the alias of CurrentUserName;
@@ -45,10 +45,10 @@ internal sealed class DocumentLastModifiedByBinder<TDoc>: IDocumentMetadataBinde
         parameter.Value = (object?)session.CurrentUserName ?? DBNull.Value;
     }
 
-    public void ApplyToDocument(TDoc document, IMartenSession session)
+    public void ApplyToDocument(TDoc document, IStorageSession session)
         => _setter?.Invoke(document, session.CurrentUserName);
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

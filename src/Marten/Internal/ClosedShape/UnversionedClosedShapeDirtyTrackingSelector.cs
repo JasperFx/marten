@@ -12,7 +12,7 @@ internal abstract class UnversionedClosedShapeDirtyTrackingSelector<T, TId>: Clo
     where T : notnull
     where TId : notnull
 {
-    protected UnversionedClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected UnversionedClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

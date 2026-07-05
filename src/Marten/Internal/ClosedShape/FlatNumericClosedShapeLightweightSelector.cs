@@ -12,7 +12,7 @@ internal sealed class FlatNumericClosedShapeLightweightSelector<T, TId>: Numeric
     where T : notnull
     where TId : notnull
 {
-    public FlatNumericClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatNumericClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

@@ -12,7 +12,7 @@ internal sealed class FlatNumericClosedShapeDirtyTrackingSelector<T, TId>: Numer
     where T : notnull
     where TId : notnull
 {
-    public FlatNumericClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatNumericClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

@@ -13,7 +13,7 @@ internal sealed class FlatUnversionedClosedShapeLightweightSelector<T, TId>: Unv
     where T : notnull
     where TId : notnull
 {
-    public FlatUnversionedClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatUnversionedClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

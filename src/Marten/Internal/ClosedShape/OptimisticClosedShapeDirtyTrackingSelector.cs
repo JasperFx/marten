@@ -17,7 +17,7 @@ internal abstract class OptimisticClosedShapeDirtyTrackingSelector<T, TId>: Clos
 {
     private readonly Dictionary<TId, Guid> _versions;
 
-    protected OptimisticClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected OptimisticClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _versions = session.Versions.ForType<T, TId>();

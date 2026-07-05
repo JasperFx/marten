@@ -39,10 +39,10 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
 
     public string ValueSql => "?";
 
-    public void ApplyToDocument(TDoc document, IMartenSession session)
+    public void ApplyToDocument(TDoc document, IStorageSession session)
         => _setter?.Invoke(document, session.Headers);
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         // Mirror the codegen path's setHeaderParameter: use the session's
         // cached UTF-8 byte[] when available (DocumentSessionBase
@@ -76,7 +76,7 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         }
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

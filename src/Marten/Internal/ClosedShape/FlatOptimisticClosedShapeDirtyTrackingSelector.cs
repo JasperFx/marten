@@ -12,7 +12,7 @@ internal sealed class FlatOptimisticClosedShapeDirtyTrackingSelector<T, TId>: Op
     where T : notnull
     where TId : notnull
 {
-    public FlatOptimisticClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatOptimisticClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

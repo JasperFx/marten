@@ -62,7 +62,7 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.NpgsqlDbType = _field.DbType;
 
@@ -100,7 +100,7 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
         parameter.Value = current;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         // No-op — duplicated columns aren't in the document SELECT.
         // The canonical value is deserialized from the data column.

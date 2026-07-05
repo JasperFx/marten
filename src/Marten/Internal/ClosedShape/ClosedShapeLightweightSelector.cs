@@ -28,11 +28,11 @@ internal abstract class ClosedShapeLightweightSelector<T, TId>: ISelector<T>, ID
     protected const int DataColumn = 1;
     protected const int FirstMetadataColumn = 2;
 
-    protected readonly IMartenSession _session;
+    protected readonly IStorageSession _session;
     protected readonly ISerializer _serializer;
     protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
-    protected ClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected ClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _session = session;
         _serializer = session.Serializer;

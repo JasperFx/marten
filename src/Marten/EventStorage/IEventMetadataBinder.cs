@@ -57,7 +57,7 @@ public interface IEventMetadataBinder
     /// server-side-constant binders (timestamp / sequence under the
     /// quick-append paths).
     /// </summary>
-    void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session);
+    void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session);
 
     /// <summary>
     /// Per-event read-back hook called from the operation's

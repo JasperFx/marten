@@ -41,13 +41,13 @@ internal sealed class DocumentSoftDeletedBinder<TDoc>: IDocumentMetadataBinder<T
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.Value = false;
         parameter.NpgsqlDbType = NpgsqlDbType.Boolean;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

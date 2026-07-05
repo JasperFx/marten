@@ -12,7 +12,7 @@ internal sealed class FlatOptimisticClosedShapeIdentityMapSelector<T, TId>: Opti
     where T : notnull
     where TId : notnull
 {
-    public FlatOptimisticClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatOptimisticClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

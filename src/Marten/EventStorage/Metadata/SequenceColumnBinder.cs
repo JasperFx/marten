@@ -32,7 +32,7 @@ internal sealed class SequenceColumnBinder: IEventMetadataBinder
     public string ColumnName => "seq_id";
     public string ValueSql => "?";
 
-    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
+    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
         pb.AppendParameter(@event.Sequence, NpgsqlDbType.Bigint);
     }
