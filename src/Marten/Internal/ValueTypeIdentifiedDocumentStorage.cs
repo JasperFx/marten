@@ -175,10 +175,10 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public IDeletion DeleteForId(TSimple id, string tenantId)
         => Inner.DeleteForId(_converter(id), tenantId);
 
-    public Task<TDoc?> LoadAsync(TSimple id, IMartenSession session, CancellationToken token)
+    public Task<TDoc?> LoadAsync(TSimple id, IStorageSession session, CancellationToken token)
         => Inner.LoadAsync(_converter(id), session, token);
 
-    public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IMartenSession session, CancellationToken token)
+    public Task<IReadOnlyList<TDoc>> LoadManyAsync(TSimple[] ids, IStorageSession session, CancellationToken token)
         => Inner.LoadManyAsync(ids.Select(_converter).ToArray(), session, token);
 
     // #4667 Phase 2 — delegate to inner with the unwrapped id like the session-aware path.

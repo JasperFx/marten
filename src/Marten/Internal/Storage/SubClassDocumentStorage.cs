@@ -204,7 +204,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.DeleteForId(id, tenant);
     }
 
-    public async Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public async Task<T?> LoadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         var doc = await _parent.LoadAsync(id, session, token).ConfigureAwait(false);
 
@@ -216,7 +216,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return default;
     }
 
-    public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token)
+    public async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session, CancellationToken token)
     {
         return (await _parent.LoadManyAsync(ids, session, token).ConfigureAwait(false)).OfType<T>().ToList();
     }
