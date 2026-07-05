@@ -70,12 +70,24 @@ internal sealed class EventLoader: IEventLoader
     public string? TenantFilterValue { get; }
 
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters)
-        : this(store, database, options, filters, shardName: null)
+        : this(store, database, options, filters, includeArchivedEvents: false, shardName: null)
+    {
+    }
+
+    public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters,
+        bool includeArchivedEvents)
+        : this(store, database, options, filters, includeArchivedEvents, shardName: null)
     {
     }
 
     public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters,
         ShardName? shardName)
+        : this(store, database, options, filters, includeArchivedEvents: false, shardName)
+    {
+    }
+
+    public EventLoader(DocumentStore store, MartenDatabase database, AsyncOptions options, ISqlFragment[] filters,
+        bool includeArchivedEvents, ShardName? shardName)
     {
         _store = store;
         Database = database;
@@ -101,11 +113,13 @@ internal sealed class EventLoader: IEventLoader
             builder.Append(" and d.tenant_id = s.tenant_id");
         }
 
-        if (_store.Options.Events.UseArchivedStreamPartitioning)
+        if (_store.Options.Events.UseArchivedStreamPartitioning && !includeArchivedEvents)
         {
             // #4745: when archived streams live in their own partition of mt_streams,
             // constrain the join so the planner can partition-prune the archived
             // mt_streams partition (the active partition is all the daemon needs).
+            // When IncludeArchivedEvents is true, the daemon explicitly needs both
+            // active and archived stream partitions, so do not add this predicate.
             // The event-row predicate (d.is_archived = false) only prunes the
             // mt_events archived partition; without this the planner must scan both
             // mt_streams partitions to resolve the join. Gated to the partitioned
