@@ -12,7 +12,7 @@ internal abstract class UnversionedClosedShapeIdentityMapSelector<T, TId>: Close
     where T : notnull
     where TId : notnull
 {
-    protected UnversionedClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected UnversionedClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

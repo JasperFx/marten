@@ -17,7 +17,7 @@ internal sealed class HierarchicalOptimisticClosedShapeIdentityMapSelector<T, TI
     private readonly DocumentMapping _hierarchy;
     private readonly int _docTypeOrdinal;
 
-    public HierarchicalOptimisticClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public HierarchicalOptimisticClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _hierarchy = descriptor.HierarchyMapping

@@ -12,7 +12,7 @@ internal sealed class FlatOptimisticClosedShapeLightweightSelector<T, TId>: Opti
     where T : notnull
     where TId : notnull
 {
-    public FlatOptimisticClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatOptimisticClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

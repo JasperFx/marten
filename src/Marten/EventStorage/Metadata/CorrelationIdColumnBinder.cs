@@ -15,7 +15,7 @@ internal sealed class CorrelationIdColumnBinder: IEventMetadataBinder
     public string ColumnName => "correlation_id";
     public string ValueSql => "?";
 
-    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
+    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
         pb.AppendParameter(@event.CorrelationId, NpgsqlDbType.Varchar);
     }

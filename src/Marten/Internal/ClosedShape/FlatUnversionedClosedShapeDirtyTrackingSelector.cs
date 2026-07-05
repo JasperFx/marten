@@ -12,7 +12,7 @@ internal sealed class FlatUnversionedClosedShapeDirtyTrackingSelector<T, TId>: U
     where T : notnull
     where TId : notnull
 {
-    public FlatUnversionedClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatUnversionedClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

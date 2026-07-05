@@ -17,7 +17,7 @@ internal abstract class NumericClosedShapeLightweightSelector<T, TId>: ClosedSha
 {
     private readonly Dictionary<TId, long> _revisions;
 
-    protected NumericClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected NumericClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _revisions = session.Versions.RevisionsFor<T, TId>();

@@ -17,7 +17,7 @@ internal abstract class OptimisticClosedShapeIdentityMapSelector<T, TId>: Closed
 {
     private readonly Dictionary<TId, Guid> _versions;
 
-    protected OptimisticClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected OptimisticClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _versions = session.Versions.ForType<T, TId>();

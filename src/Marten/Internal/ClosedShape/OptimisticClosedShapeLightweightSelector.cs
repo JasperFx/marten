@@ -18,7 +18,7 @@ internal abstract class OptimisticClosedShapeLightweightSelector<T, TId>: Closed
 {
     private readonly Dictionary<TId, Guid> _versions;
 
-    protected OptimisticClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected OptimisticClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _versions = session.Versions.ForType<T, TId>();

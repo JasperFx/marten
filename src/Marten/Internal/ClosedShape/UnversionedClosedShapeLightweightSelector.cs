@@ -13,7 +13,7 @@ internal abstract class UnversionedClosedShapeLightweightSelector<T, TId>: Close
     where T : notnull
     where TId : notnull
 {
-    protected UnversionedClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected UnversionedClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

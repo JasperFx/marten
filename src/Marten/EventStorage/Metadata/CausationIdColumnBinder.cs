@@ -23,7 +23,7 @@ internal sealed class CausationIdColumnBinder: IEventMetadataBinder
     public string ColumnName => "causation_id";
     public string ValueSql => "?";
 
-    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
+    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
         pb.AppendParameter(@event.CausationId, NpgsqlDbType.Varchar);
     }

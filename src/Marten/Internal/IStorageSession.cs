@@ -1,0 +1,55 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using JasperFx;
+using Marten.Internal.DirtyTracking;
+using Marten.Internal.Storage;
+using Marten.Services;
+using Marten.Storage;
+
+namespace Marten.Internal;
+
+/// <summary>
+///     Database-neutral operation/session context that Marten's closed-shape storage,
+///     operation, and selector code targets instead of <see cref="IMartenSession"/>.
+///     This is the gating seam (#4810) for extracting the closed-shape storage runtime
+///     into a shared package so alternate dialects (e.g. Polecat/SQL Server) can reuse it.
+/// </summary>
+/// <remarks>
+///     Deliberately exposes only the subset of members the closed-shape document + event
+///     storage code actually consumes. The unit-of-work metadata seam is the shared
+///     <see cref="IMetadataContext"/> (TenantId / correlation / causation / user name /
+///     headers) — the JasperFx interface Marten's session already implements.
+///     Members that are still Marten-typed (<see cref="ISerializer"/>,
+///     <see cref="IMartenDatabase"/>, <see cref="StoreOptions"/>) are intentionally left as
+///     the Marten types for now — a serializer seam and a database/sequence seam are tracked
+///     as separate W2 tasks. This interface only makes the code <em>targetable</em>; the
+///     physical move to a shared package is a later step.
+/// </remarks>
+public interface IStorageSession: IMetadataContext
+{
+    ISerializer Serializer { get; }
+
+    IMartenDatabase Database { get; }
+
+    StoreOptions Options { get; }
+
+    VersionTracker Versions { get; }
+
+    IList<IChangeTracker> ChangeTrackers { get; }
+
+    Dictionary<Type, object> ItemMap { get; }
+
+    /// <summary>
+    ///     Override whether or not this session honors optimistic concurrency checks
+    /// </summary>
+    ConcurrencyChecks Concurrency { get; }
+
+    IDocumentStorage StorageFor(Type documentType);
+
+    IDocumentStorage<T> StorageFor<T>() where T : notnull;
+
+    void MarkAsAddedForStorage(object id, object document);
+
+    void MarkAsDocumentLoaded(object id, object document);
+}

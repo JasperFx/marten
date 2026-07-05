@@ -64,7 +64,7 @@ public interface IDocumentMetadataBinder<TDoc>
     /// binders don't get called here — their <see cref="ValueSql"/>
     /// fragment is in the SQL directly.
     /// </summary>
-    void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session);
+    void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session);
 
     /// <summary>
     /// Optional pre-serialization hook. Called once per write before the
@@ -75,7 +75,7 @@ public interface IDocumentMetadataBinder<TDoc>
     /// Default no-op; binders whose value isn't session-derived (Version,
     /// LastModified, soft-delete, etc.) don't override.
     /// </summary>
-    void ApplyToDocument(TDoc document, IMartenSession session) { }
+    void ApplyToDocument(TDoc document, IStorageSession session) { }
 
     /// <summary>
     /// Per-row read hook on the SELECT path. Called from the selector
@@ -89,7 +89,7 @@ public interface IDocumentMetadataBinder<TDoc>
     /// need to deserialize JSON values (e.g. Headers) via the configured
     /// <see cref="ISerializer"/>.
     /// </summary>
-    void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session);
+    void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session);
 
     /// <summary>
     /// W3 spike (M16): per-row write hook on the COPY (bulk) path. Each

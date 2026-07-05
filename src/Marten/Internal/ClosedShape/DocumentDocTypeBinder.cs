@@ -41,14 +41,14 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         var alias = _aliasCache.GetOrAdd(document.GetType(), t => _mapping.AliasFor(t));
         parameter.Value = alias;
         parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         // No-op — the alias is read directly by the selector to dispatch
         // deserialization to the right subclass type, not projected onto

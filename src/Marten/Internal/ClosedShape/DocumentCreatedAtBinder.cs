@@ -50,11 +50,11 @@ internal sealed class DocumentCreatedAtBinder<TDoc>: IDocumentMetadataBinder<TDo
     // "never written client-side" invariant honest.
     public string ValueSql => "transaction_timestamp()";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
         => throw new NotSupportedException(
             "mt_created_at has a server-side DEFAULT and is never written through this binder.");
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

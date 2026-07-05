@@ -25,7 +25,7 @@ internal sealed class HeadersColumnBinder: IEventMetadataBinder
 
     public string ValueSql => "?";
 
-    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
+    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
         // Mirrors the codegen path's emitted shape for the headers column:
         //

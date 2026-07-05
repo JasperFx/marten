@@ -12,7 +12,7 @@ internal sealed class FlatNumericClosedShapeIdentityMapSelector<T, TId>: Numeric
     where T : notnull
     where TId : notnull
 {
-    public FlatNumericClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatNumericClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

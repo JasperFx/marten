@@ -11,7 +11,7 @@ namespace Marten.EventStorage.Metadata;
 /// varchar column. Binds <see cref="IEvent.UserName"/> as a string parameter.
 /// </summary>
 /// <remarks>
-/// The session-level "user name" lives on <see cref="IMartenSession.LastModifiedBy"/>,
+/// The session-level "user name" lives on <see cref="IStorageSession.LastModifiedBy"/>,
 /// but the event appender plumbs that into the per-event
 /// <see cref="IEvent.UserName"/> before queuing the operation, and we bind
 /// off the event so the SQL stays self-contained.
@@ -21,7 +21,7 @@ internal sealed class UserNameColumnBinder: IEventMetadataBinder
     public string ColumnName => "user_name";
     public string ValueSql => "?";
 
-    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IMartenSession session)
+    public void Bind(IGroupedParameterBuilder pb, StreamAction stream, IEvent @event, IStorageSession session)
     {
         pb.AppendParameter(@event.UserName, NpgsqlDbType.Varchar);
     }

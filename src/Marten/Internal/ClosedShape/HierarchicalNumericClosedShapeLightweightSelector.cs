@@ -17,7 +17,7 @@ internal sealed class HierarchicalNumericClosedShapeLightweightSelector<T, TId>:
     private readonly DocumentMapping _hierarchy;
     private readonly int _docTypeOrdinal;
 
-    public HierarchicalNumericClosedShapeLightweightSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public HierarchicalNumericClosedShapeLightweightSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _hierarchy = descriptor.HierarchyMapping

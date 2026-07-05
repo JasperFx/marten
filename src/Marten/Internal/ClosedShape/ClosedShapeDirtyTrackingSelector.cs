@@ -28,12 +28,12 @@ internal abstract class ClosedShapeDirtyTrackingSelector<T, TId>: ISelector<T>, 
     protected const int DataColumn = 1;
     protected const int FirstMetadataColumn = 2;
 
-    protected readonly IMartenSession _session;
+    protected readonly IStorageSession _session;
     protected readonly ISerializer _serializer;
     protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
     protected readonly Dictionary<TId, T> _identityMap;
 
-    protected ClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected ClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
     {
         _session = session;
         _serializer = session.Serializer;

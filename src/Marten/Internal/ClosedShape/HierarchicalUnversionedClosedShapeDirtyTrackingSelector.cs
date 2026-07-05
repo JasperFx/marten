@@ -17,7 +17,7 @@ internal sealed class HierarchicalUnversionedClosedShapeDirtyTrackingSelector<T,
     private readonly DocumentMapping _hierarchy;
     private readonly int _docTypeOrdinal;
 
-    public HierarchicalUnversionedClosedShapeDirtyTrackingSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public HierarchicalUnversionedClosedShapeDirtyTrackingSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _hierarchy = descriptor.HierarchyMapping

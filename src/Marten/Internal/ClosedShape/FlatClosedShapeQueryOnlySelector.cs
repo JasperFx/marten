@@ -14,7 +14,7 @@ internal sealed class FlatClosedShapeQueryOnlySelector<T, TId>: ClosedShapeQuery
     where T : notnull
     where TId : notnull
 {
-    public FlatClosedShapeQueryOnlySelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public FlatClosedShapeQueryOnlySelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
     }

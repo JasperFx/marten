@@ -22,7 +22,7 @@ internal sealed class HierarchicalClosedShapeQueryOnlySelector<T, TId>: ClosedSh
     private readonly DocumentMapping _hierarchy;
     private readonly int _docTypeOrdinal;
 
-    public HierarchicalClosedShapeQueryOnlySelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public HierarchicalClosedShapeQueryOnlySelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         // The factory only constructs this leaf when HierarchyMapping is

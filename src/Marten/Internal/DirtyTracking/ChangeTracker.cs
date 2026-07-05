@@ -11,7 +11,7 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
     private readonly T _document;
     private string _json;
 
-    public ChangeTracker(IMartenSession session, T document)
+    public ChangeTracker(IStorageSession session, T document)
     {
         _document = document;
         _json = session.Serializer.ToCleanJson(document);

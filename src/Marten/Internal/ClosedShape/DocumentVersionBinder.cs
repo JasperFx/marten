@@ -44,7 +44,7 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IMartenSession session)
+    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
     {
         var newVersion = CombGuidIdGeneration.NewGuid();
         _setter?.Invoke(document, newVersion);
@@ -53,7 +53,7 @@ internal sealed class DocumentVersionBinder<TDoc>: IDocumentMetadataBinder<TDoc>
         parameter.NpgsqlDbType = NpgsqlDbType.Uuid;
     }
 
-    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IMartenSession session)
+    public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)
     {
         if (_setter is null) return;
         if (reader.IsDBNull(columnOrdinal)) return;

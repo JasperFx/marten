@@ -16,7 +16,7 @@ internal abstract class NumericClosedShapeIdentityMapSelector<T, TId>: ClosedSha
 {
     private readonly Dictionary<TId, long> _revisions;
 
-    protected NumericClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    protected NumericClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _revisions = session.Versions.RevisionsFor<T, TId>();

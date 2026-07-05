@@ -17,7 +17,7 @@ internal sealed class HierarchicalUnversionedClosedShapeIdentityMapSelector<T, T
     private readonly DocumentMapping _hierarchy;
     private readonly int _docTypeOrdinal;
 
-    public HierarchicalUnversionedClosedShapeIdentityMapSelector(IMartenSession session, DocumentStorageDescriptor<T, TId> descriptor)
+    public HierarchicalUnversionedClosedShapeIdentityMapSelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)
         : base(session, descriptor)
     {
         _hierarchy = descriptor.HierarchyMapping
