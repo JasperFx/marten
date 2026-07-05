@@ -20,12 +20,17 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
         _parent = parent;
         Versions = parent.Versions;
 
-        // #4801 — Do NOT share the parent's identity map. Under conjoined tenancy the
-        // same id maps to a different document per tenant, so a shared, tenant-blind
-        // ItemMap would return one tenant's cached instance for another tenant. ForTenant
-        // caches one nested session per tenant, so each tenant keeps its own map across
-        // repeated ForTenant(tenant) calls. The base session already initializes ItemMap
-        // to a fresh dictionary, so we simply leave it un-shared here.
+        // #4801 — Under conjoined tenancy the same id maps to a different document per
+        // tenant, so a shared, tenant-blind ItemMap would return one tenant's cached
+        // instance for another tenant. Only share the parent's identity map when this
+        // nested session targets the parent's own tenant (so ForTenant(sameTenant) stays
+        // consistent with direct session access); otherwise keep the base session's fresh,
+        // tenant-isolated map. ForTenant caches one nested session per tenant, so each
+        // tenant's map persists across repeated ForTenant(tenant) calls.
+        if (tenant.TenantId == parent.TenantId)
+        {
+            ItemMap = parent.ItemMap;
+        }
     }
 
     public IDocumentSession Parent => _parent;

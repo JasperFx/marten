@@ -15,9 +15,13 @@ internal class NestedTenantQuerySession: QuerySession, ITenantQueryOperations
         _parent = parent;
         Versions = parent.Versions;
 
-        // #4801 — Do NOT share the parent's identity map; keep it tenant-scoped. See
-        // NestedTenantSession for the full rationale. The base session already initializes
-        // ItemMap to a fresh dictionary, so leaving it un-shared is all that's needed.
+        // #4801 — Keep the identity map tenant-scoped; only share the parent's map when
+        // this nested session targets the parent's own tenant. See NestedTenantSession for
+        // the full rationale.
+        if (tenant.TenantId == parent.TenantId)
+        {
+            ItemMap = parent.ItemMap;
+        }
     }
 
     public IQuerySession Parent => _parent;

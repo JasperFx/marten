@@ -111,6 +111,29 @@ public class Bug_4801_identity_map_cross_tenant_load: BugIntegrationContext
     }
 
     [Fact]
+    public async Task for_tenant_matching_the_sessions_own_tenant_shares_the_identity_map()
+    {
+        await configure();
+
+        var id = Guid.NewGuid();
+
+        await using (var seed = theStore.LightweightSession("A"))
+        {
+            seed.Store(new Doc { Id = id, Name = "tenant-A" });
+            await seed.SaveChangesAsync();
+        }
+
+        await using var session = theStore.DirtyTrackedSession("A");
+
+        // Loading through the session and through ForTenant for the SAME tenant must
+        // resolve to the same tracked instance (shared identity map).
+        var direct = await session.LoadAsync<Doc>(id);
+        var viaForTenant = await session.ForTenant("A").LoadAsync<Doc>(id);
+
+        viaForTenant.ShouldBeSameAs(direct);
+    }
+
+    [Fact]
     public async Task load_across_tenants_via_for_tenant_identity_only()
     {
         await configure();
