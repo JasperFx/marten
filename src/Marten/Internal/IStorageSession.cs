@@ -1,6 +1,9 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
+using System.Threading;
+using System.Threading.Tasks;
 using JasperFx;
 using Marten.Internal.DirtyTracking;
 using Marten.Internal.Storage;
@@ -52,4 +55,14 @@ public interface IStorageSession: IMetadataContext
     void MarkAsAddedForStorage(object id, object document);
 
     void MarkAsDocumentLoaded(object id, object document);
+
+    /// <summary>
+    ///     Execute a single command against this session's connection and return the results.
+    ///     Db-neutral execution seam (#4810): the closed-shape read path (document LoadAsync /
+    ///     LoadManyAsync) targets <see cref="System.Data.Common.DbCommand"/> here instead of the
+    ///     Npgsql-typed <see cref="IMartenSession.ExecuteReaderAsync(Npgsql.NpgsqlCommand, CancellationToken)"/>.
+    ///     Marten's session implements this over its Npgsql connection lifetime; this is the
+    ///     interim seam until a Weasel.Core execution abstraction lands.
+    /// </summary>
+    Task<DbDataReader> ExecuteReaderAsync(DbCommand command, CancellationToken token = default);
 }

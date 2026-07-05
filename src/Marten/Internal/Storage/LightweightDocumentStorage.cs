@@ -56,13 +56,13 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         // Nothing!
     }
 
-    public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session,
+    public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<T>();
 
         var command = BuildLoadManyCommand(ids, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector(session);
+        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
 
         await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try
@@ -81,7 +81,7 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         return loadAsync(id, session, token);
     }

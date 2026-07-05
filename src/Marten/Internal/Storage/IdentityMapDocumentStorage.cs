@@ -99,7 +99,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         }
     }
 
-    private List<T> preselectLoadedDocuments(TId[] ids, IMartenSession session, out NpgsqlCommand command)
+    private List<T> preselectLoadedDocuments(TId[] ids, IStorageSession session, out NpgsqlCommand command)
     {
         var list = new List<T>();
 
@@ -131,11 +131,11 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session,
+    public sealed override async Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session,
         CancellationToken token)
     {
         var list = preselectLoadedDocuments(ids, session, out var command);
-        var selector = (ISelector<T>)BuildSelector(session);
+        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
 
         await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try
@@ -154,7 +154,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         return list;
     }
 
-    public sealed override Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token)
+    public sealed override Task<T?> LoadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         if (session.ItemMap.TryGetValue(typeof(T), out var items))
         {

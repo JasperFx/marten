@@ -155,9 +155,9 @@ public interface IDocumentStorage<T, TId>: IDocumentStorage<T>, IIdentitySetter<
 {
     IDeletion DeleteForId(TId id, string tenantId);
 
-    Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+    Task<T?> LoadAsync(TId id, IStorageSession session, CancellationToken token);
 
-    Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
+    Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session, CancellationToken token);
 
     /// <summary>
     /// Session-free Load for projection storage (#4667 Phase 2). Opens a fresh

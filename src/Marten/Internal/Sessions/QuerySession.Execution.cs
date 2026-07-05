@@ -31,6 +31,12 @@ public partial class QuerySession
         return _resilience.ExecuteAsync(static (e, t) => new ValueTask<DbDataReader>(e.Lifetime.ExecuteReaderAsync(e.Command, t)), new CommandExecution(command, _connection), token).AsTask();
     }
 
+    // #4810: IStorageSession db-neutral execution seam. The closed-shape read path builds an
+    // NpgsqlCommand (BuildLoadCommand / BuildLoadManyCommand) and hands it to the storage session
+    // as a DbCommand; Marten's session is Npgsql-backed, so it downcasts to the concrete path.
+    public Task<DbDataReader> ExecuteReaderAsync(DbCommand command, CancellationToken token = default)
+        => ExecuteReaderAsync((NpgsqlCommand)command, token);
+
     internal record BatchExecution(NpgsqlBatch Batch, IConnectionLifetime Lifetime);
 
     public DbDataReader ExecuteReader(NpgsqlBatch batch)

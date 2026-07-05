@@ -352,9 +352,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _defaultWhere;
     }
 
-    public abstract Task<T?> LoadAsync(TId id, IMartenSession session, CancellationToken token);
+    public abstract Task<T?> LoadAsync(TId id, IStorageSession session, CancellationToken token);
 
-    public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IMartenSession session, CancellationToken token);
+    public abstract Task<IReadOnlyList<T>> LoadManyAsync(TId[] ids, IStorageSession session, CancellationToken token);
 
     /// <inheritdoc />
     /// <remarks>
@@ -391,7 +391,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
-        var selector = (ISelector<T>)BuildSelector(session);
+        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
 
         return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
@@ -482,10 +482,13 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         }
     }
 
-    protected Task<T?> loadAsync(TId id, IMartenSession session, CancellationToken token)
+    protected Task<T?> loadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         var command = BuildLoadCommand(id, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector(session);
+        // #4810: BuildSelector is ISelectClause.BuildSelector(IMartenSession), shared with the LINQ
+        // pipeline; retargeting it is a separate pass. Bridge the agnostic IStorageSession back to
+        // IMartenSession here until then — every storage session is a Marten session at runtime.
+        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
 
         // TODO -- eliminate the downcast here!
         return session.As<QuerySession>().LoadOneAsync(command, selector, token);
