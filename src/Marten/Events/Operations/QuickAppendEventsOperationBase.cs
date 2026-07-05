@@ -196,7 +196,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
     /// <see cref="ISerializer.WriteTo"/> + a pooled staging buffer. Avoids the intermediate
     /// <see cref="string"/> allocation that <see cref="ISerializer.ToJson"/> produces.
     /// </summary>
-    private static byte[] SerializeToUtf8(ISerializer serializer, object? value)
+    private static byte[] SerializeToUtf8(IStorageSerializer serializer, object? value)
     {
         using var buffer = new Services.PooledByteBufferWriter();
         serializer.WriteTo(buffer, value);

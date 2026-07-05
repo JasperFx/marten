@@ -7,9 +7,9 @@ namespace Marten.Linq.Selectors;
 
 internal class SerializationSelector<T>: ISelector<T>
 {
-    private readonly ISerializer _serializer;
+    private readonly IStorageSerializer _serializer;
 
-    public SerializationSelector(ISerializer serializer)
+    public SerializationSelector(IStorageSerializer serializer)
     {
         _serializer = serializer;
     }

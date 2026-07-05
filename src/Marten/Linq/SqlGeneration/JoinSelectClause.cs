@@ -101,9 +101,9 @@ internal class JoinSelectClause<T>: ISelectClause, IScalarSelectClause where T :
     // throw "Column 'data' is null".
     private sealed class JoinDataSelector: ISelector<T>
     {
-        private readonly ISerializer _serializer;
+        private readonly IStorageSerializer _serializer;
 
-        public JoinDataSelector(ISerializer serializer)
+        public JoinDataSelector(IStorageSerializer serializer)
         {
             _serializer = serializer;
         }

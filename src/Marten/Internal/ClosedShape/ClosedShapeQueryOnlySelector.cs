@@ -24,7 +24,7 @@ internal abstract class ClosedShapeQueryOnlySelector<T, TId>: ISelector<T>
     protected const int FirstMetadataColumn = 1;
 
     protected readonly IStorageSession _session;
-    protected readonly ISerializer _serializer;
+    protected readonly IStorageSerializer _serializer;
     protected readonly DocumentStorageDescriptor<T, TId> _descriptor;
 
     protected ClosedShapeQueryOnlySelector(IStorageSession session, DocumentStorageDescriptor<T, TId> descriptor)

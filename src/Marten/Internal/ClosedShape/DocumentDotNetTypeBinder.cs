@@ -38,7 +38,7 @@ internal sealed class DocumentDotNetTypeBinder<TDoc>: IDocumentMetadataBinder<TD
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
         => writer.WriteAsync(ResolveTypeName(document), NpgsqlDbType.Varchar, cancellation);
 
     private static string ResolveTypeName(TDoc document)

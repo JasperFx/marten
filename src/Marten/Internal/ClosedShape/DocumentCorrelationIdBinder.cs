@@ -57,7 +57,7 @@ internal sealed class DocumentCorrelationIdBinder<TDoc>: IDocumentMetadataBinder
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
     {
         // Bulk loader has no session — no source for a correlation id.
         // Write null; mirrors the codegen path's bulk emit which writes a

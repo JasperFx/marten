@@ -86,6 +86,6 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
         => writer.WriteAsync<object>(DBNull.Value, NpgsqlDbType.Jsonb, cancellation);
 }

@@ -32,8 +32,14 @@ public enum ValueCasting
     Relaxed
 }
 
-public interface ISerializer
+public interface ISerializer: IStorageSerializer
 {
+    // #4819: the db-neutral WriteToParameter(DbParameter) from IStorageSerializer bridges to
+    // Marten's Npgsql-typed WriteToParameter below. Every Marten serializer is Npgsql-backed, so
+    // the parameter is always an NpgsqlParameter at runtime.
+    void IStorageSerializer.WriteToParameter(DbParameter parameter, object? value)
+        => WriteToParameter((NpgsqlParameter)parameter, value);
+
     /// <summary>
     ///     Just gotta tell Marten if enum's are stored
     ///     as int's or string's in the JSON
@@ -51,25 +57,7 @@ public interface ISerializer
     ValueCasting ValueCasting { get; }
 
     /// <summary>
-    ///     Serialize the document object into a JSON string
-    /// </summary>
-    /// <param name="document"></param>
-    /// <returns></returns>
-    string ToJson(object? document);
-
-    /// <summary>
-    ///     Serialize <paramref name="value"/> directly into the supplied buffer writer as UTF-8 JSON.
-    ///     Skips the intermediate string materialization that <see cref="ToJson"/> round-trips through —
-    ///     prefer this on append / write hot paths.
-    /// </summary>
-    /// <remarks>
-    ///     Implementations must produce identical bytes to what <c>Encoding.UTF8.GetBytes(ToJson(value))</c>
-    ///     would emit, modulo whitespace/formatting decisions already baked into the serializer's options.
-    /// </remarks>
-    void WriteTo(IBufferWriter<byte> writer, object? value);
-
-    /// <summary>
-    ///     Convenience for the most common append-path use of <see cref="WriteTo"/>: serialize
+    ///     Convenience for the most common append-path use of <see cref="IStorageSerializer.WriteTo"/>: serialize
     ///     <paramref name="value"/> as UTF-8 JSON and bind the resulting bytes to <paramref name="parameter"/>
     ///     with <c>NpgsqlDbType.Jsonb</c>. Skips the round-trip through a .NET <see cref="string"/> that
     ///     <c>AppendParameter(ToJson(value))</c> incurs.
@@ -78,54 +66,8 @@ public interface ISerializer
     /// <param name="value">The value to serialize; <c>null</c> binds <see cref="DBNull"/>.</param>
     void WriteToParameter(NpgsqlParameter parameter, object? value);
 
-    /// <summary>
-    ///     Deserialize a JSON string stream into an object of type T
-    /// </summary>
-    T FromJson<T>(Stream stream);
-
-    /// <summary>
-    ///     Deserialize a JSON string into an object of type T
-    /// </summary>
-    T FromJson<T>(DbDataReader reader, int index);
-
-    /// <summary>
-    ///     Deserialize a JSON string stream into an object of type T
-    /// </summary>
-    ValueTask<T> FromJsonAsync<T>(Stream stream, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Deserialize a JSON string into an object of type T
-    /// </summary>
-    ValueTask<T> FromJsonAsync<T>(DbDataReader reader, int index, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Deserialize a JSON string stream into an object of type T
-    /// </summary>
-    object FromJson(Type type, Stream stream);
-
-    /// <summary>
-    ///     Deserialize a JSON string into the supplied Type
-    /// </summary>
-    object FromJson(Type type, DbDataReader reader, int index);
-
-    /// <summary>
-    ///     Deserialize a JSON string stream into an object of type T
-    /// </summary>
-    ValueTask<object> FromJsonAsync(Type type, Stream stream, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Deserialize a JSON string into the supplied Type
-    /// </summary>
-    ValueTask<object> FromJsonAsync(Type type, DbDataReader reader, int index,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    ///     Serialize a document without any extra
-    ///     type handling metadata
-    /// </summary>
-    /// <param name="document"></param>
-    /// <returns></returns>
-    string ToCleanJson(object? document);
+    // #4819: ToJson / ToCleanJson / the FromJson + FromJsonAsync family moved to the db-neutral
+    // IStorageSerializer base (they were already Npgsql-free — Stream / DbDataReader / Type).
 
     /// <summary>
     ///     UTF-8 / buffer-writer counterpart to <see cref="ToCleanJson"/>. Skips the

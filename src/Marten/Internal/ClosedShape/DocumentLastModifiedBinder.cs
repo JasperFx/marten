@@ -51,7 +51,7 @@ internal sealed class DocumentLastModifiedBinder<TDoc>: IDocumentMetadataBinder<
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
     {
         // COPY can't run transaction_timestamp() — compute client-side.
         // Slight skew vs. SQL writes that get the transaction's

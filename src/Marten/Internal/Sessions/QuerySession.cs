@@ -32,6 +32,11 @@ public partial class QuerySession: IMartenSession, IQuerySession, ITenantedQuery
 
     public ISerializer Serializer { get; }
 
+    // #4819: the public ISerializer satisfies IMartenSession.Serializer (new ISerializer); this
+    // explicit impl satisfies the narrower IStorageSession.Serializer (IStorageSerializer) — C#
+    // interface implementation needs an exact return type, and ISerializer : IStorageSerializer.
+    IStorageSerializer IStorageSession.Serializer => Serializer;
+
     public StoreOptions Options { get; }
     public IQueryEventStore Events { get; }
 

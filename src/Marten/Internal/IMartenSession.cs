@@ -11,6 +11,12 @@ namespace Marten.Internal;
 
 public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
 {
+    // #4819: closed-shape storage sees the db-neutral IStorageSerializer via IStorageSession;
+    // Marten's own code keeps the full ISerializer here (ValueCasting, ToJsonWithTypes, the
+    // buffer-writer overloads, etc.). Every Marten session returns an ISerializer, which satisfies
+    // both since ISerializer : IStorageSerializer.
+    new ISerializer Serializer { get; }
+
     IEventStorage EventStorage();
 
     /// <summary>

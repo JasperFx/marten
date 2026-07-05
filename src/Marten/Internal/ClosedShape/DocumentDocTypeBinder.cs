@@ -56,7 +56,7 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
     }
 
     public Task WriteToBulkAsync(NpgsqlBinaryImporter writer, TDoc document,
-        ISerializer serializer, CancellationToken cancellation)
+        IStorageSerializer serializer, CancellationToken cancellation)
     {
         var alias = _aliasCache.GetOrAdd(document.GetType(), t => _mapping.AliasFor(t));
         return writer.WriteAsync(alias, NpgsqlDbType.Varchar, cancellation);
