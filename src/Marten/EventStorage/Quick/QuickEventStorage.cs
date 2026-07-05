@@ -59,6 +59,11 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
     public override IStorageOperation UpdateStreamVersion(StreamAction stream)
         => new QuickUpdateStreamVersionOperation(_descriptor, stream);
 
+    public override IStorageOperation AssertStreamVersion(StreamAction stream)
+        => _descriptor.IsTenancyConjoined
+            ? new ConjoinedAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream)
+            : new SingleTenantAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream);
+
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
     {
         object streamIdentity = typeof(TId) == typeof(Guid)

@@ -59,6 +59,11 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
     public override IStorageOperation UpdateStreamVersion(StreamAction stream)
         => new RichUpdateStreamVersionOperation(_descriptor, stream);
 
+    public override IStorageOperation AssertStreamVersion(StreamAction stream)
+        => _descriptor.IsTenancyConjoined
+            ? new ConjoinedAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream)
+            : new SingleTenantAssertStreamVersionOperation<TId>(_descriptor.AssertStreamVersionSql, stream);
+
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
     {
         // Pick the per-call streamId — Guid streams use stream.Id; string

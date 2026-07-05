@@ -108,6 +108,12 @@ public sealed class RichEventStorageDescriptor
     public bool IsTenancyConjoined { get; init; }
 
     /// <summary>
+    /// The <c>select version from {schema}.mt_streams where id = </c> prefix for the
+    /// AssertStreamVersion (AlwaysEnforceConsistency, zero-events) path. Built once by the dialect.
+    /// </summary>
+    public string AssertStreamVersionSql { get; init; } = string.Empty;
+
+    /// <summary>
     /// Whether streams are identified by <see cref="System.Guid"/> (true) or
     /// <see cref="string"/> (false). The Rich AppendEvent operation reads
     /// <c>Stream.Id</c> vs <c>Stream.Key</c> based on this flag.

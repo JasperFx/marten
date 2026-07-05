@@ -55,6 +55,15 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     IStorageOperation UpdateStreamVersion(StreamAction stream);
 
     /// <summary>
+    ///     Create a storage operation that asserts a stream's expected version
+    ///     without appending events (the <c>AlwaysEnforceConsistency</c>
+    ///     zero-events path).
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    IStorageOperation AssertStreamVersion(StreamAction stream);
+
+    /// <summary>
     /// Create a storage operation to just increment the existing stream
     /// based on the number of the events being appended
     /// </summary>

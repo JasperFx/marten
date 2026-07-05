@@ -82,6 +82,12 @@ public sealed class QuickEventStorageDescriptor
     /// <summary>Conjoined-tenant — affects per-stream ops (InsertStream / UpdateStreamVersion / StreamState).</summary>
     public bool IsTenancyConjoined { get; init; }
 
+    /// <summary>
+    /// The <c>select version from {schema}.mt_streams where id = </c> prefix for the
+    /// AssertStreamVersion (AlwaysEnforceConsistency, zero-events) path. Built once by the dialect.
+    /// </summary>
+    public string AssertStreamVersionSql { get; init; } = string.Empty;
+
     /// <summary>Whether the events table has the <c>causation_id</c> column.</summary>
     public bool HasCausationId { get; init; }
 

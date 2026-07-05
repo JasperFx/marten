@@ -117,6 +117,13 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
             : StringStorage.UpdateStreamVersion(stream);
     }
 
+    public override IStorageOperation AssertStreamVersion(StreamAction stream)
+    {
+        return Events.StreamIdentity == StreamIdentity.AsGuid
+            ? GuidStorage.AssertStreamVersion(stream)
+            : StringStorage.AssertStreamVersion(stream);
+    }
+
     public override IQueryHandler<StreamState> QueryForStream(StreamAction stream)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
