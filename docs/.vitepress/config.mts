@@ -242,6 +242,7 @@ const config: UserConfig<DefaultTheme.Config> = {
                     ]
                 },
                 { text: 'Event Projections', link: '/events/projections/event-projections' },
+                { text: 'Projections with F#', link: '/events/projections/fsharp' },
                 { text: 'Custom Projections', link: '/events/projections/custom' },
                 { text: 'Inline Projections', link: '/events/projections/inline' },
                 { text: 'Flat Table Projections', link: '/events/projections/flat' },

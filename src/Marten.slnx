@@ -66,6 +66,7 @@
     <Project Path="DaemonTests/DaemonTests.csproj" />
     <Project Path="DocumentDbTests/DocumentDbTests.csproj" />
     <Project Path="EventSourcingTests/EventSourcingTests.csproj" />
+    <Project Path="FSharpProjections/FSharpProjections.fsproj" />
     <Project Path="FSharpTypes/FSharpTypes.fsproj" />
     <Project Path="LinqTests/LinqTests.csproj" />
     <Project Path="LinqTestsTypes/LinqTestsTypes.csproj" />

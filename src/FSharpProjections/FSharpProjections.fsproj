@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+      #4796: F# projection fixtures referenced by EventSourcingTests. Because F# supports
+      neither partial classes nor Roslyn source generators, F# projections must override the
+      explicit Evolve / EvolveAsync / ApplyAsync methods instead of the conventional
+      Apply/Create methods. This project exists so those authoring paths stay compiling and
+      are exercised by the test suite against every change.
+    -->
+
+    <PropertyGroup>
+        <!-- Directory.Build.props sets LangVersion=13.0 (a C# value); clear it for F#. -->
+        <LangVersion></LangVersion>
+        <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="Projections.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Marten\Marten.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Update="FSharp.Core" />
+    </ItemGroup>
+
+</Project>

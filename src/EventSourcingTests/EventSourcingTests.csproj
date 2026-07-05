@@ -4,6 +4,7 @@
         <ProjectReference Include="..\Marten.Newtonsoft\Marten.Newtonsoft.csproj" />
         <ProjectReference Include="..\Marten.Testing.OtherAssembly\Marten.Testing.OtherAssembly.csproj" />
         <ProjectReference Include="..\Marten.Testing.ThirdAssembly\Marten.Testing.ThirdAssembly.csproj" />
+        <ProjectReference Include="..\FSharpProjections\FSharpProjections.fsproj" />
         <PackageReference Include="JasperFx.Events.SourceGenerator" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
