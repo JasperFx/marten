@@ -100,7 +100,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
 
     public Type SourceType => typeof(TRoot);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
     {
         var extras = extraFilters(query, session).ToArray();
 
@@ -294,7 +294,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         _parent.SetIdentityFromGuid(document, identityGuid);
     }
 
-    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
+    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IStorageSession session)
     {
         yield return toBasicWhere();
 

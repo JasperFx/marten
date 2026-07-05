@@ -24,7 +24,7 @@ internal sealed class QuickWithServerTimestampsEventStorage<TId>: EventStorage<T
         _descriptor = descriptor;
     }
 
-    public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
+    public override IStorageOperation AppendEvent(IStorageSession session, StreamAction stream, IEvent @event)
         // Full-mode per-event INSERT for the tombstone / direct-AppendEvent
         // code paths that bypass the bulk function call.
         => new Quick.QuickAppendEventWithVersionOperation(

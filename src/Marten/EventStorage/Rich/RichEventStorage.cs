@@ -27,7 +27,7 @@ internal sealed class RichEventStorage<TId>: EventStorage<TId>
         _descriptor = descriptor;
     }
 
-    public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
+    public override IStorageOperation AppendEvent(IStorageSession session, StreamAction stream, IEvent @event)
         => new RichAppendEventOperation(_descriptor, stream, @event);
 
     // #4428: invoked by JasperFx.Events EventSlice.BuildOperations during

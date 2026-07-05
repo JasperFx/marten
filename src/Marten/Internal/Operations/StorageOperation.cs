@@ -62,7 +62,7 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
 
     public object Document => _document;
 
-    public IChangeTracker ToTracker(IMartenSession session)
+    public IChangeTracker ToTracker(IStorageSession session)
     {
         return new ChangeTracker<T>(session, _document);
     }

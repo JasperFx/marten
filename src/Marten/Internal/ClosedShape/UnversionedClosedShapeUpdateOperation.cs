@@ -49,7 +49,7 @@ internal sealed class UnversionedClosedShapeUpdateOperation<TDoc, TId>: ClosedSh
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         binder.BindParameter(parameters[slot], _document, session);
         return slot + 1;

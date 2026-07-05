@@ -61,7 +61,7 @@ internal abstract class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageO
 
     public object Document => _document;
 
-    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IMartenSession session)
+    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IStorageSession session)
         => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
 
     public OperationRole Role() => OperationRole.Update;
@@ -82,7 +82,7 @@ internal abstract class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageO
     /// partition column. Without this we'd update every row matching
     /// <c>id = ?</c> across partitions.
     /// </remarks>
-    protected int BindPreConcurrencyParameters(NpgsqlParameter[] parameters, IMartenSession session)
+    protected int BindPreConcurrencyParameters(NpgsqlParameter[] parameters, IStorageSession session)
     {
         foreach (var binder in _descriptor.WriteBinders)
         {
@@ -122,7 +122,7 @@ internal abstract class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageO
     /// subclasses override this to special-case the VersionBinder /
     /// RevisionBinder.
     /// </summary>
-    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session);
+    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session);
 
     public bool TryTransform(System.Exception original, out System.Exception? transformed)
         => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);

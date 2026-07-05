@@ -31,7 +31,7 @@ public interface IEventStorage: ISelector<IEvent>, ISelector<StreamState>, IDocu
     /// <param name="stream"></param>
     /// <param name="e"></param>
     /// <returns></returns>
-    IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream, IEvent e);
+    IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e);
 
     /// <summary>
     ///     Create a storage operation to insert a single event stream record

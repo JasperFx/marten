@@ -49,7 +49,7 @@ public abstract class EventStorage<TId>
     /// Only <see cref="Rich.RichEventStorage{TId}"/> implements this.
     /// </summary>
     public abstract IStorageOperation AppendEvent(
-        IMartenSession session, StreamAction stream, IEvent @event);
+        IStorageSession session, StreamAction stream, IEvent @event);
 
     /// <summary>
     /// Per-event append for the QuickWithVersion mode — same per-event shape

@@ -82,7 +82,7 @@ internal sealed class ClosedShapeEventDocumentStorage: EventDocumentStorage
     private EventStorage<Guid> GuidStorage => (EventStorage<Guid>)_storage;
     private EventStorage<string> StringStorage => (EventStorage<string>)_storage;
 
-    public override IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream, IEvent e)
+    public override IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream, IEvent e)
     {
         return Events.StreamIdentity == StreamIdentity.AsGuid
             ? GuidStorage.AppendEvent(session, stream, e)

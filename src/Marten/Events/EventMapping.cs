@@ -139,7 +139,7 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         return new[] { "id", "data" };
     }
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession martenSession)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession martenSession)
     {
         var extras = extraFilters(query).ToList();
 

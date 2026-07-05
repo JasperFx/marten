@@ -43,7 +43,7 @@ public interface IDocumentStorage: ISelectClause
     TenancyStyle TenancyStyle { get; }
     Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default);
 
-    ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session);
+    ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session);
 
     ISqlFragment? DefaultWhereFragment();
 
