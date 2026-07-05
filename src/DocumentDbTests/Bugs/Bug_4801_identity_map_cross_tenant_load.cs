@@ -24,6 +24,46 @@ public class Bug_4801_identity_map_cross_tenant_load: BugIntegrationContext
     }
 
     [Fact]
+    public async Task optimistic_concurrency_version_tracking_is_tenant_scoped()
+    {
+        StoreOptions(opts =>
+        {
+            opts.Policies.AllDocumentsAreMultiTenanted();
+            opts.Schema.For<Doc>().UseOptimisticConcurrency(true);
+        });
+
+        var id = Guid.NewGuid();
+
+        await using (var seed = theStore.LightweightSession("A"))
+        {
+            seed.Store(new Doc { Id = id, Name = "tenant-A" });
+            await seed.SaveChangesAsync();
+        }
+
+        await using (var seed = theStore.LightweightSession("B"))
+        {
+            // Independent inserts under conjoined tenancy produce different mt_version
+            // values for the same id per tenant.
+            seed.Store(new Doc { Id = id, Name = "tenant-B" });
+            await seed.SaveChangesAsync();
+        }
+
+        await using var session = theStore.DirtyTrackedSession("A");
+
+        var a = await session.ForTenant("A").LoadAsync<Doc>(id);
+        // Loading B into the same (previously shared) version tracker overwrote A's
+        // tracked version keyed by id.
+        await session.ForTenant("B").LoadAsync<Doc>(id);
+
+        a.Name = "tenant-A-updated";
+        session.ForTenant("A").Update(a);
+
+        // With a tenant-blind shared version tracker this asserts B's version and throws
+        // a spurious ConcurrencyException.
+        await Should.NotThrowAsync(() => session.SaveChangesAsync());
+    }
+
+    [Fact]
     public async Task load_across_tenants_via_for_tenant_dirty_tracking()
     {
         await configure();

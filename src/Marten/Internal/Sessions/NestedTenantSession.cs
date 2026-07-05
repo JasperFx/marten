@@ -18,18 +18,18 @@ internal class NestedTenantSession: DocumentSessionBase, ITenantOperations
     {
         Listeners.AddRange(parent.Listeners);
         _parent = parent;
-        Versions = parent.Versions;
 
         // #4801 — Under conjoined tenancy the same id maps to a different document per
-        // tenant, so a shared, tenant-blind ItemMap would return one tenant's cached
-        // instance for another tenant. Only share the parent's identity map when this
-        // nested session targets the parent's own tenant (so ForTenant(sameTenant) stays
-        // consistent with direct session access); otherwise keep the base session's fresh,
-        // tenant-isolated map. ForTenant caches one nested session per tenant, so each
-        // tenant's map persists across repeated ForTenant(tenant) calls.
+        // tenant, so tenant-blind identity/version state keyed only by id would return or
+        // assert one tenant's state for another tenant. Only share the parent's identity
+        // map and version tracker when this nested session targets the parent's own tenant
+        // (so ForTenant(sameTenant) stays consistent with direct session access); otherwise
+        // keep the base session's fresh, tenant-isolated state. ForTenant caches one nested
+        // session per tenant, so that state persists across repeated ForTenant(tenant) calls.
         if (tenant.TenantId == parent.TenantId)
         {
             ItemMap = parent.ItemMap;
+            Versions = parent.Versions;
         }
     }
 
