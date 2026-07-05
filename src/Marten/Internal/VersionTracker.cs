@@ -4,7 +4,7 @@ using Marten.Exceptions;
 
 namespace Marten.Internal;
 
-public class VersionTracker
+public class VersionTracker: IVersionTracker
 {
     private readonly Dictionary<Type, object> _byType = new();
 

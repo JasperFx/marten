@@ -37,7 +37,7 @@ public interface IStorageSession: IMetadataContext
 
     StoreOptions Options { get; }
 
-    VersionTracker Versions { get; }
+    IVersionTracker Versions { get; }
 
     IList<IChangeTracker> ChangeTrackers { get; }
 
