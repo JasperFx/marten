@@ -25,7 +25,7 @@ internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> wh
         _ids = ids;
     }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IStorageSession session)
     {
         sql.Append("select ");
 
@@ -49,7 +49,7 @@ internal class LoadByIdArrayHandler<T, TKey>: IQueryHandler<IReadOnlyList<T>> wh
         storage.AddTenancyFilter(sql, session.TenantId);
     }
 
-    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<T>();

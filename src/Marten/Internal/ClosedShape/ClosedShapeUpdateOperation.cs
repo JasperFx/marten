@@ -66,7 +66,7 @@ internal abstract class ClosedShapeUpdateOperation<TDoc, TId>: IDocumentStorageO
 
     public OperationRole Role() => OperationRole.Update;
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     public abstract Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token);
 

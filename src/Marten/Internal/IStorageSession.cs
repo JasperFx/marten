@@ -65,4 +65,11 @@ public interface IStorageSession: IMetadataContext
     ///     interim seam until a Weasel.Core execution abstraction lands.
     /// </summary>
     Task<DbDataReader> ExecuteReaderAsync(DbCommand command, CancellationToken token = default);
+
+    /// <summary>
+    ///     Generates a unique temporary-table / CTE name scoped to this session. Used by the LINQ
+    ///     statement compiler for include queries and chained sub-selects (#4810). A session-scoped
+    ///     concern any dialect performing include/CTE queries needs.
+    /// </summary>
+    string NextTempTableName();
 }

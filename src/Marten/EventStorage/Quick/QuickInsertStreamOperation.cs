@@ -22,7 +22,7 @@ internal sealed class QuickInsertStreamOperation: InsertStreamBase
         _descriptor = descriptor;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _descriptor.ConfigureInsertStreamCommand(builder, Stream);
     }

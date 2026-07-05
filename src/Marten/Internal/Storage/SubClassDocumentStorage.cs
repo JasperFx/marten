@@ -79,13 +79,13 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _fields;
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         var inner = _parent.BuildSelector(session);
         return new CastingSelector<T, TRoot>((ISelector<TRoot>)inner);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);

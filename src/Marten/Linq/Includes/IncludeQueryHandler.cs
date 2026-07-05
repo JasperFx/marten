@@ -31,7 +31,7 @@ public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
 
     public IQueryHandler<T> Inner { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         Inner.ConfigureCommand(builder, session);
     }
@@ -41,7 +41,7 @@ public class IncludeQueryHandler<T>: IQueryHandler<T>, IIncludeQueryHandler<T>
         throw new NotSupportedException("JSON streaming is not supported in combination with Include() operations");
     }
 
-    public async Task<T> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<T> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         foreach (var includeReader in _readers)
         {

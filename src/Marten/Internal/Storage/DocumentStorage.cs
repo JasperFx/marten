@@ -386,12 +386,12 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         return _selectFields;
     }
 
-    public abstract ISelector BuildSelector(IMartenSession session);
+    public abstract ISelector BuildSelector(IStorageSession session);
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
-        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
+        var selector = (ISelector<T>)BuildSelector(session);
 
         return LinqQueryParser.BuildHandler<T, TResult>(selector, statement);
     }
@@ -485,10 +485,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     protected Task<T?> loadAsync(TId id, IStorageSession session, CancellationToken token)
     {
         var command = BuildLoadCommand(id, session.TenantId);
-        // #4810: BuildSelector is ISelectClause.BuildSelector(IMartenSession), shared with the LINQ
-        // pipeline; retargeting it is a separate pass. Bridge the agnostic IStorageSession back to
-        // IMartenSession here until then — every storage session is a Marten session at runtime.
-        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
+        var selector = (ISelector<T>)BuildSelector(session);
 
         // TODO -- eliminate the downcast here!
         return session.As<QuerySession>().LoadOneAsync(command, selector, token);
@@ -544,12 +541,12 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
         return _selectFields;
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return _parent.BuildSelector(session);
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
+    public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
     {
         return _parent.BuildHandler<T>(session, topStatement, currentStatement);
     }

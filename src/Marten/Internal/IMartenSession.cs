@@ -13,8 +13,6 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
 {
     IEventStorage EventStorage();
 
-    string NextTempTableName();
-
     /// <summary>
     ///     Execute a single command against the database with this session's connection and return the results
     /// </summary>

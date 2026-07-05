@@ -36,7 +36,7 @@ internal sealed class NumericClosedShapeOverwriteOperation<TDoc, TId>: ClosedSha
         _revisions = revisions;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
         var slot = BindPreOnConflictParameters(parameters, session);

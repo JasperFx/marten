@@ -30,7 +30,7 @@ internal sealed class RichUpdateStreamVersionOperation: UpdateStreamVersion
         _descriptor = descriptor;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _descriptor.ConfigureUpdateStreamVersionCommand(builder, Stream);
     }

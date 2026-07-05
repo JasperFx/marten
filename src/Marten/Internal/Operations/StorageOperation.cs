@@ -67,11 +67,11 @@ public abstract class StorageOperation<T, TId>: IDocumentStorageOperation, IExce
         return new ChangeTracker<T>(session, _document);
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var groupedParameters = builder.CreateGroupedParameterBuilder(',');
         // this is gross
-        ConfigureParameters(groupedParameters, builder, _document, session);
+        ConfigureParameters(groupedParameters, builder, _document, (IMartenSession)session);
     }
 
     public Type DocumentType => typeof(T);

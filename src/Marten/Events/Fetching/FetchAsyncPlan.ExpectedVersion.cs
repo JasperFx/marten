@@ -139,7 +139,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             _loadHandler = new LoadByIdHandler<TDoc, TId>(_parent._storage, id);
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, false);
 
@@ -152,7 +152,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
             _parent.writeEventFetchStatement(_id, builder);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             var documentSessionBase = (DocumentSessionBase)session;
             return _parent.ReadIntoStream(documentSessionBase, _id, _expectedStartingVersion, token, reader,

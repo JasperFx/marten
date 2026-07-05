@@ -37,7 +37,7 @@ internal sealed class ClosedShapeStreamStateQueryHandler<TId>: StreamStateQueryH
         _idDbType = typeof(TId) == typeof(Guid) ? DbType.Guid : DbType.String;
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(_selectSql);
         builder.Append(" where id = ");

@@ -82,12 +82,12 @@ internal class JoinSelectClause<T>: ISelectClause, IScalarSelectClause where T :
         return new[] { "data" };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return new JoinDataSelector(session.Serializer);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = new JoinDataSelector(session.Serializer);

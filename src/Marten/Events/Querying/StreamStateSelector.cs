@@ -22,12 +22,12 @@ namespace Marten.Events.Querying;
 /// </summary>
 public abstract class StreamStateQueryHandler: IQueryHandler<StreamState>
 {
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
-    public async Task<StreamState> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<StreamState> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         if (!await reader.ReadAsync(token).ConfigureAwait(false)) return null;
-        var selector = (ISelector<StreamState>)session.EventStorage();
+        var selector = (ISelector<StreamState>)((IMartenSession)session).EventStorage();
         return await selector.ResolveAsync(reader, token).ConfigureAwait(false);
     }
 

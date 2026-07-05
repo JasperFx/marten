@@ -127,7 +127,7 @@ internal partial class FetchLivePlan<TDoc, TId>
             _handler = _parent._identityStrategy.BuildEventQueryHandler(_parent.IsGlobal, _id);
         }
 
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             _parent._identityStrategy.BuildCommandForReadingVersionForStream(_parent.IsGlobal, builder, _id, _forUpdate);
 
@@ -136,7 +136,7 @@ internal partial class FetchLivePlan<TDoc, TId>
             _handler.ConfigureCommand(builder, session);
         }
 
-        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+        public Task<IEventStream<TDoc>> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
         {
             return _parent.ReadIntoStream((DocumentSessionBase)session, _id, token, reader, _handler);
         }

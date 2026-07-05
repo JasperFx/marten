@@ -135,7 +135,7 @@ public abstract class IdentityMapDocumentStorage<T, TId>: DocumentStorage<T, TId
         CancellationToken token)
     {
         var list = preselectLoadedDocuments(ids, session, out var command);
-        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
+        var selector = (ISelector<T>)BuildSelector(session);
 
         await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try

@@ -67,12 +67,12 @@ internal class NewScalarSelectClause<T>: ISelectClause, ISelector<T>, IScalarSel
         return new[] { MemberName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return this;
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = (ISelector<T>)BuildSelector(session);

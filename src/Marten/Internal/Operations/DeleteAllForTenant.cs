@@ -37,7 +37,7 @@ internal class DeleteAllForTenant: IStorageOperation
         _tenantId = tenantId;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var name = _tableName ?? session.StorageFor(DocumentType).TableName.QualifiedName;
         builder.Append($"delete from {name} where tenant_id = '");

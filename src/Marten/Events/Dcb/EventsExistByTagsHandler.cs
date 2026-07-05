@@ -26,7 +26,7 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
         _query = query;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var conditions = _query.Conditions;
         if (conditions.Count == 0)
@@ -140,7 +140,7 @@ internal class EventsExistByTagsHandler: IQueryHandler<bool>
         builder.Append(" limit 1)");
     }
 
-    public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<bool> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         return await reader.ReadAsync(token).ConfigureAwait(false) &&
                await reader.GetFieldValueAsync<bool>(0, token).ConfigureAwait(false);

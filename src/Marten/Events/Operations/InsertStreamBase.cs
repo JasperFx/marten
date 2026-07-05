@@ -25,7 +25,7 @@ public abstract class InsertStreamBase: IStorageOperation, IExceptionTransform, 
 
     public StreamAction Stream { get; }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     public Type DocumentType => typeof(IEvent);
 

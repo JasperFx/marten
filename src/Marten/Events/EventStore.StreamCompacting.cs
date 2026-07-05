@@ -194,7 +194,7 @@ internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
         _sequences = sequences;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append($"delete from {session.Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
         builder.AppendParameter(_sequences);

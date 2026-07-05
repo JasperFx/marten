@@ -37,21 +37,21 @@ internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandl
         return Selector is IDocumentSelector;
     }
 
-    public IQueryHandler CloneForSession(IMartenSession session, QueryStatistics statistics)
+    public IQueryHandler CloneForSession(IStorageSession session, QueryStatistics statistics)
     {
         var selector = (ISelector<T>)session.StorageFor<T>().BuildSelector(session);
 
         return new ListQueryHandler<T>(null, selector);
     }
 
-    async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IMartenSession session,
+    async Task<IEnumerable<T>> IQueryHandler<IEnumerable<T>>.HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = await HandleAsync(reader, session, token).ConfigureAwait(false);
         return list;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _statement?.Apply(builder);
     }
@@ -61,7 +61,7 @@ internal class ListQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>, IQueryHandl
         return reader.As<NpgsqlDataReader>().StreamMany(stream, token);
     }
 
-    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<IReadOnlyList<T>> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var list = new List<T>();

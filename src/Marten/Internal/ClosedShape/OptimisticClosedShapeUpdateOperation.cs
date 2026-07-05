@@ -41,7 +41,7 @@ internal sealed class OptimisticClosedShapeUpdateOperation<TDoc, TId>: ClosedSha
         _newVersion = CombGuidIdGeneration.NewGuid();
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.UpdateSql, '?');
         var slot = BindPreConcurrencyParameters(parameters, session);

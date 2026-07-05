@@ -51,7 +51,7 @@ internal sealed class NumericLightweightClosedShapeStorage<TDoc, TId>: Lightweig
     public override IStorageOperation UpdateProjected(TDoc document, string tenant)
         => new NumericClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
-    public override ISelector BuildSelector(IMartenSession session)
+    public override ISelector BuildSelector(IStorageSession session)
         => _descriptor.HierarchyMapping is not null
             ? new HierarchicalNumericClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor)
             : new FlatNumericClosedShapeLightweightSelector<TDoc, TId>(session, _descriptor);

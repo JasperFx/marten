@@ -57,7 +57,7 @@ internal abstract class AssertStreamVersionOperation<TId>: IStorageOperation whe
     /// </summary>
     protected static readonly DbType IdDbType = typeof(TId) == typeof(Guid) ? DbType.Guid : DbType.String;
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     public Type DocumentType => typeof(IEvent);
 

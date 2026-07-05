@@ -21,12 +21,12 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         FromObject = from;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         _topStatement.Apply(builder);
     }
 
-    public async Task<bool> HandleAsync(DbDataReader reader, IMartenSession session, CancellationToken token)
+    public async Task<bool> HandleAsync(DbDataReader reader, IStorageSession session, CancellationToken token)
     {
         var hasRow = await reader.ReadAsync(token).ConfigureAwait(false);
 
@@ -56,12 +56,12 @@ public class AnySelectClause: ISelectClause, IQueryHandler<bool>
         throw new NotSupportedException();
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         throw new NotSupportedException();
     }
 
-    public IQueryHandler<T> BuildHandler<T>(IMartenSession session, ISqlFragment topStatement,
+    public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement) where T: notnull
     {
         _topStatement = topStatement;

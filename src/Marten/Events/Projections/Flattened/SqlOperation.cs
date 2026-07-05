@@ -24,7 +24,7 @@ internal class SqlOperation: IStorageOperation
         _parameterSetters = parameterSetters;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_sql);
         for (int i = 0; i < _parameterSetters.Length; i++)

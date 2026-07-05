@@ -16,7 +16,7 @@ internal class NotifyEventAppendedOperation: IStorageOperation, NoDataReturnedCa
 {
     private static readonly string Sql = $"select pg_notify('{PostgresqlListenWakeup.DefaultChannel}', '')";
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append(Sql);
     }

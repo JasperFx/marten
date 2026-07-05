@@ -66,12 +66,12 @@ internal class SelectDataSelectClause<T>: ISelectClause, IScalarSelectClause, IM
         return new[] { fieldName };
     }
 
-    public ISelector BuildSelector(IMartenSession session)
+    public ISelector BuildSelector(IStorageSession session)
     {
         return new SerializationSelector<T>(session.Serializer);
     }
 
-    public IQueryHandler<TResult> BuildHandler<TResult>(IMartenSession session, ISqlFragment statement,
+    public IQueryHandler<TResult> BuildHandler<TResult>(IStorageSession session, ISqlFragment statement,
         ISqlFragment currentStatement) where TResult : notnull
     {
         var selector = new SerializationSelector<T>(session.Serializer);

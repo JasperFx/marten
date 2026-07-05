@@ -28,7 +28,7 @@ internal class UpdateProjectionProgress: IStorageOperation, AssertsOnCallback, N
 
     public EventRange Range { get; }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         // #4596 Session 3: per-tenant progression keying flows naturally
         // through ShardName.Identity — per-tenant shards (Phase 2) get a

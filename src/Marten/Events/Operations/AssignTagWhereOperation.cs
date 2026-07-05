@@ -38,7 +38,7 @@ internal class AssignTagWhereOperation: IStorageOperation, NoDataReturnedCall
         _isConjoined = isConjoined;
     }
 
-    public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         builder.Append("insert into ");
         builder.Append(_schemaName);

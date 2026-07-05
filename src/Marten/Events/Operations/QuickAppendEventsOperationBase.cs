@@ -85,7 +85,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         return $"Append {Stream.Events.Select(x => x.EventTypeName).Join(", ")} to event stream {Stream}";
     }
 
-    public abstract void ConfigureCommand(ICommandBuilder builder, IMartenSession session);
+    public abstract void ConfigureCommand(ICommandBuilder builder, IStorageSession session);
 
     private PooledList<T> rentColumn<T>(int count)
     {
@@ -122,7 +122,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
 
     protected void writeBasicParameters(
         IGroupedParameterBuilder builder,
-        IMartenSession session,
+        IStorageSession session,
         Func<IEvent, byte[]?>? serializeEventBdata = null)
     {
         var param1 = Stream.AggregateTypeName.IsEmpty() ? builder.AppendParameter<object>(DBNull.Value) :  builder.AppendParameter(Stream.AggregateTypeName);
@@ -225,7 +225,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Varchar;
     }
 
-    protected void writeHeaders(IGroupedParameterBuilder builder, IMartenSession session)
+    protected void writeHeaders(IGroupedParameterBuilder builder, IStorageSession session)
     {
         var events = Stream.Events;
         var count = events.Count;
@@ -236,7 +236,7 @@ public abstract class QuickAppendEventsOperationBase : IStorageOperation, IExcep
         param.NpgsqlDbType = NpgsqlDbType.Array | NpgsqlDbType.Jsonb;
     }
 
-    protected void writeUserNames(IGroupedParameterBuilder builder, IMartenSession session)
+    protected void writeUserNames(IGroupedParameterBuilder builder, IStorageSession session)
     {
         var events = Stream.Events;
         var count = events.Count;

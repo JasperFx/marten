@@ -62,7 +62,7 @@ public abstract class LightweightDocumentStorage<T, TId>: DocumentStorage<T, TId
         var list = new List<T>();
 
         var command = BuildLoadManyCommand(ids, session.TenantId);
-        var selector = (ISelector<T>)BuildSelector((IMartenSession)session);
+        var selector = (ISelector<T>)BuildSelector(session);
 
         await using var reader = await session.ExecuteReaderAsync(command, token).ConfigureAwait(false);
         try

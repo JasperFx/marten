@@ -38,7 +38,7 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
     public Type SourceType { get; }
 
-    public void ConfigureCommand(ICommandBuilder sql, IMartenSession session)
+    public void ConfigureCommand(ICommandBuilder sql, IStorageSession session)
     {
         sql.Append("select id, ");
 
@@ -52,7 +52,7 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
         sql.AppendParameter(_id);
     }
 
-    public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IMartenSession session,
+    public async Task<DocumentMetadata> HandleAsync(DbDataReader reader, IStorageSession session,
         CancellationToken token)
     {
         var hasAny = await reader.ReadAsync(token).ConfigureAwait(false);
@@ -66,7 +66,7 @@ internal class EntityMetadataQueryHandler: IQueryHandler<DocumentMetadata>
 
         for (var i = 0; i < _columns.Length; i++)
         {
-            await _columns[i].ApplyAsync(session, metadata, i + 1, reader, token).ConfigureAwait(false);
+            await _columns[i].ApplyAsync((IMartenSession)session, metadata, i + 1, reader, token).ConfigureAwait(false);
         }
 
         return metadata;

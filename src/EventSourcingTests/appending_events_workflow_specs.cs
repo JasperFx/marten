@@ -362,7 +362,7 @@ public class appending_events_workflow_specs
 
     public class FailingOperation: IStorageOperation
     {
-        public void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+        public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
         {
             builder.Append("select 1");
         }

@@ -271,12 +271,12 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T> where T : class
         sql.Append(" as d");
     }
 
-    ISelector ISelectClause.BuildSelector(IMartenSession session)
+    ISelector ISelectClause.BuildSelector(IStorageSession session)
     {
         return new EventSelector<T>(session.Serializer);
     }
 
-    IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IMartenSession session, ISqlFragment topStatement,
+    IQueryHandler<TResult> ISelectClause.BuildHandler<TResult>(IStorageSession session, ISqlFragment topStatement,
         ISqlFragment currentStatement)
     {
         var selector = new EventSelector<T>(session.Serializer);

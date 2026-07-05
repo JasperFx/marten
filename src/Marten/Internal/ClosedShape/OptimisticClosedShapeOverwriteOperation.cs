@@ -41,7 +41,7 @@ internal sealed class OptimisticClosedShapeOverwriteOperation<TDoc, TId>: Closed
         _newVersion = CombGuidIdGeneration.NewGuid();
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
         BindPreOnConflictParameters(parameters, session);

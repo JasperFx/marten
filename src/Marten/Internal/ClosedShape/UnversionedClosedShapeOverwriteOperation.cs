@@ -29,7 +29,7 @@ internal sealed class UnversionedClosedShapeOverwriteOperation<TDoc, TId>: Close
     {
     }
 
-    public override void ConfigureCommand(ICommandBuilder builder, IMartenSession session)
+    public override void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
         var parameters = builder.AppendWithParameters(_descriptor.OverwriteSql, '?');
         BindPreOnConflictParameters(parameters, session);
