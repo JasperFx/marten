@@ -5,6 +5,8 @@ using JasperFx.Core;
 using Marten.Schema;
 using Marten.Storage;
 
+using Weasel.Core.Identity;
+
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>

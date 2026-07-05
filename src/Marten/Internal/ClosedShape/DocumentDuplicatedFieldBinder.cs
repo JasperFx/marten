@@ -10,6 +10,8 @@ using Marten.Linq.Members;
 using Npgsql;
 using Weasel.Core;
 
+using Weasel.Core.Identity;
+
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>

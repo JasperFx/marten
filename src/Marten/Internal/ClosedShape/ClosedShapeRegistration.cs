@@ -8,6 +8,8 @@ using Marten.Schema;
 using Marten.Schema.Identity;
 using Marten.Schema.Identity.Sequences;
 
+using Weasel.Core.Identity;
+
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>

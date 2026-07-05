@@ -1,18 +1,17 @@
 using System;
-using Marten.Schema.Identity.Sequences;
-using Marten.Storage;
-using Marten.Internal.ClosedShape;
 using NSubstitute;
 using Shouldly;
+using Weasel.Core.Identity;
+using Weasel.Core.Sequences;
 using Xunit;
 
 namespace CoreTests.Storage.Identification;
 
 /// <summary>
-/// Spike tests for the W3 <see cref="IIdentification{TDoc, TId}"/> contract.
-/// Exercises each sample strategy against a substituted
-/// <see cref="IMartenDatabase"/> so the shape is testable without a real
-/// Postgres roundtrip. Tracking: jasperfx/marten#4404 (W3).
+/// Tests for the <see cref="IIdentification{TDoc, TId}"/> contract now shared out of
+/// Weasel.Core.Identity (#4811). Exercises each strategy against a substituted
+/// <see cref="ISequenceSource"/> so the shape is testable without a real Postgres
+/// roundtrip. Tracking: jasperfx/marten#4404 (W3), marten#4811.
 /// </summary>
 public class identification_strategy_tests
 {
@@ -36,9 +35,9 @@ public class identification_strategy_tests
     {
         var strategy = NewSequentialGuid();
         var doc = new GuidDoc(); // Id == Guid.Empty
-        var database = Substitute.For<IMartenDatabase>();
+        var sequences = Substitute.For<ISequenceSource>();
 
-        var assigned = strategy.AssignIfMissing(doc, database);
+        var assigned = strategy.AssignIfMissing(doc, sequences);
 
         assigned.ShouldNotBe(Guid.Empty);
         doc.Id.ShouldBe(assigned);
@@ -50,24 +49,24 @@ public class identification_strategy_tests
         var strategy = NewSequentialGuid();
         var pre = Guid.NewGuid();
         var doc = new GuidDoc { Id = pre };
-        var database = Substitute.For<IMartenDatabase>();
+        var sequences = Substitute.For<ISequenceSource>();
 
-        strategy.AssignIfMissing(doc, database).ShouldBe(pre);
+        strategy.AssignIfMissing(doc, sequences).ShouldBe(pre);
         doc.Id.ShouldBe(pre);
     }
 
     [Fact]
-    public void sequential_guid__does_not_touch_the_database()
+    public void sequential_guid__does_not_touch_the_sequence_source()
     {
         // No round-trip — sequential-GUID generation is client-side. The
-        // strategy must not even read database.Sequences.
+        // strategy must not resolve a sequence.
         var strategy = NewSequentialGuid();
         var doc = new GuidDoc();
-        var database = Substitute.For<IMartenDatabase>();
+        var sequences = Substitute.For<ISequenceSource>();
 
-        strategy.AssignIfMissing(doc, database);
+        strategy.AssignIfMissing(doc, sequences);
 
-        _ = database.DidNotReceive().Sequences;
+        sequences.DidNotReceive().SequenceFor(Arg.Any<Type>());
     }
 
     // ─────────────────────────── HiloInt ───────────────────────────
@@ -84,14 +83,14 @@ public class identification_strategy_tests
     {
         var strategy = NewHiloInt();
         var doc = new IntDoc();
-        var (database, sequence) = NewDatabaseWithSequence(typeof(IntDoc));
+        var (sequences, sequence) = NewSequenceSource(typeof(IntDoc));
         sequence.NextInt().Returns(7);
 
-        var assigned = strategy.AssignIfMissing(doc, database);
+        var assigned = strategy.AssignIfMissing(doc, sequences);
 
         assigned.ShouldBe(7);
         doc.Id.ShouldBe(7);
-        database.Sequences.Received().SequenceFor(typeof(IntDoc));
+        sequences.Received().SequenceFor(typeof(IntDoc));
         sequence.Received().NextInt();
     }
 
@@ -100,9 +99,9 @@ public class identification_strategy_tests
     {
         var strategy = NewHiloInt();
         var doc = new IntDoc { Id = 99 };
-        var (database, sequence) = NewDatabaseWithSequence(typeof(IntDoc));
+        var (sequences, sequence) = NewSequenceSource(typeof(IntDoc));
 
-        strategy.AssignIfMissing(doc, database).ShouldBe(99);
+        strategy.AssignIfMissing(doc, sequences).ShouldBe(99);
         doc.Id.ShouldBe(99);
         sequence.DidNotReceive().NextInt();
     }
@@ -121,14 +120,14 @@ public class identification_strategy_tests
     {
         var strategy = NewHiloLong();
         var doc = new LongDoc();
-        var (database, sequence) = NewDatabaseWithSequence(typeof(LongDoc));
+        var (sequences, sequence) = NewSequenceSource(typeof(LongDoc));
         sequence.NextLong().Returns(123_456_789L);
 
-        var assigned = strategy.AssignIfMissing(doc, database);
+        var assigned = strategy.AssignIfMissing(doc, sequences);
 
         assigned.ShouldBe(123_456_789L);
         doc.Id.ShouldBe(123_456_789L);
-        database.Sequences.Received().SequenceFor(typeof(LongDoc));
+        sequences.Received().SequenceFor(typeof(LongDoc));
         sequence.Received().NextLong();
     }
 
@@ -137,9 +136,9 @@ public class identification_strategy_tests
     {
         var strategy = NewHiloLong();
         var doc = new LongDoc { Id = 99L };
-        var (database, sequence) = NewDatabaseWithSequence(typeof(LongDoc));
+        var (sequences, sequence) = NewSequenceSource(typeof(LongDoc));
 
-        strategy.AssignIfMissing(doc, database).ShouldBe(99L);
+        strategy.AssignIfMissing(doc, sequences).ShouldBe(99L);
         doc.Id.ShouldBe(99L);
         sequence.DidNotReceive().NextLong();
     }
@@ -147,8 +146,8 @@ public class identification_strategy_tests
     // ─────────────────────────── helpers ───────────────────────────
 
     // Accessor delegates inside each strategy are built via JasperFx's
-    // LambdaBuilder (FEC-compiled). Spike tests pass the MemberInfo
-    // directly — exactly the way DocumentStorage<T, TId> wires it today.
+    // LambdaBuilder (FEC-compiled). Tests pass the MemberInfo directly —
+    // exactly the way DocumentStorage<T, TId> wires it today.
 
     private static SequentialGuidIdentification<GuidDoc> NewSequentialGuid()
         => new(typeof(GuidDoc).GetProperty(nameof(GuidDoc.Id))!);
@@ -159,13 +158,11 @@ public class identification_strategy_tests
     private static HiloLongIdentification<LongDoc> NewHiloLong()
         => new(typeof(LongDoc).GetProperty(nameof(LongDoc.Id))!, typeof(LongDoc));
 
-    private static (IMartenDatabase Database, ISequence Sequence) NewDatabaseWithSequence(Type docType)
+    private static (ISequenceSource Sequences, ISequence Sequence) NewSequenceSource(Type docType)
     {
         var sequence = Substitute.For<ISequence>();
-        var sequences = Substitute.For<ISequences>();
+        var sequences = Substitute.For<ISequenceSource>();
         sequences.SequenceFor(docType).Returns(sequence);
-        var database = Substitute.For<IMartenDatabase>();
-        database.Sequences.Returns(sequences);
-        return (database, sequence);
+        return (sequences, sequence);
     }
 }

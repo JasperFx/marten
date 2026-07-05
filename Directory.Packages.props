@@ -142,7 +142,10 @@
          tenant provisioning stays idempotent (no 42P07 / no rebuild). -->
     <!-- 9.3.0 (marten#4779 / weasel#318): RANGE partition bound round-trip fix so date-keyed (and
          quoted/integer) partitions no longer drift into a destructive rebuild on every migration. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.3.0" />
+    <!-- 9.4.0 (marten#4811 / weasel#321 + #322): lifts the closed-shape IIdentification identity
+         family into Weasel.Core.Identity (with the ISequenceSource sequence seam) so Marten and
+         Polecat share it; Weasel.Core 9.4.0 flows in transitively. -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.4.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
