@@ -103,7 +103,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
         => Inner.TruncateDocumentStorageAsync(database, ct);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
         => Inner.FilterDocuments(query, session);
 
     public ISqlFragment DefaultWhereFragment()

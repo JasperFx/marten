@@ -58,7 +58,7 @@ internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageO
 
     public object Document => _document;
 
-    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IMartenSession session)
+    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IStorageSession session)
         => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
 
     public OperationRole Role() => _role;
@@ -72,7 +72,7 @@ internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageO
     /// up to (not including) the trailing ON CONFLICT concurrency-extras
     /// slots. Returns the next free parameter slot.
     /// </summary>
-    protected int BindPreOnConflictParameters(NpgsqlParameter[] parameters, IMartenSession session)
+    protected int BindPreOnConflictParameters(NpgsqlParameter[] parameters, IStorageSession session)
     {
         var slot = 0;
         if (_descriptor.IsConjoined)
@@ -127,7 +127,7 @@ internal abstract class ClosedShapeUpsertOperation<TDoc, TId>: IDocumentStorageO
     /// Concurrency-aware subclasses override to special-case the
     /// VersionBinder / RevisionBinder.
     /// </summary>
-    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session);
+    protected abstract int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session);
 
     public bool TryTransform(System.Exception original, out System.Exception? transformed)
         => ClosedShapeOperationExceptionTransform.TryTransform(original, _descriptor.TableName, typeof(TDoc), _id!, out transformed);

@@ -24,7 +24,7 @@ internal sealed class QuickEventStorage<TId>: EventStorage<TId>
         _descriptor = descriptor;
     }
 
-    public override IStorageOperation AppendEvent(IMartenSession session, StreamAction stream, IEvent @event)
+    public override IStorageOperation AppendEvent(IStorageSession session, StreamAction stream, IEvent @event)
         // Full-mode per-event INSERT — seq_id is a bound parameter. The
         // tombstone batch (and a few other code paths) call AppendEvent
         // directly regardless of AppendMode, with sequences pre-assigned

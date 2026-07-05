@@ -66,7 +66,7 @@ internal abstract class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageO
 
     public object Document => _document;
 
-    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IMartenSession session)
+    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IStorageSession session)
         => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
 
     public OperationRole Role() => OperationRole.Insert;
@@ -85,7 +85,7 @@ internal abstract class ClosedShapeInsertOperation<TDoc, TId>: IDocumentStorageO
     /// Correlation / Causation / Headers / LastModifiedBy etc. land on
     /// the document so they flow into the JSON data column too.
     /// </remarks>
-    protected int BindLeadingParameters(NpgsqlParameter[] parameters, IMartenSession session)
+    protected int BindLeadingParameters(NpgsqlParameter[] parameters, IStorageSession session)
     {
         var slot = 0;
         if (_descriptor.IsConjoined)

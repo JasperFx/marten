@@ -39,7 +39,7 @@ internal sealed class UnversionedClosedShapeOverwriteOperation<TDoc, TId>: Close
     public override Task PostprocessAsync(DbDataReader reader, IList<Exception> exceptions, CancellationToken token)
         => Task.CompletedTask;
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         binder.BindParameter(parameters[slot], _document, session);
         return slot + 1;

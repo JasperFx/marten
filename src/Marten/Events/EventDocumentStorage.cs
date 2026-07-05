@@ -146,7 +146,7 @@ public abstract class EventDocumentStorage: IEventStorage
 
     public Type SourceType => typeof(IEvent);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
     {
         var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
         if (shouldBeTenanted)
@@ -244,7 +244,7 @@ public abstract class EventDocumentStorage: IEventStorage
         throw new NotSupportedException();
     }
 
-    public abstract IStorageOperation AppendEvent(EventGraph events, IMartenSession session, StreamAction stream,
+    public abstract IStorageOperation AppendEvent(EventGraph events, IStorageSession session, StreamAction stream,
         IEvent e);
 
     public abstract IStorageOperation InsertStream(StreamAction stream);

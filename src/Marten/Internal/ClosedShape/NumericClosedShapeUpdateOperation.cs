@@ -76,7 +76,7 @@ internal sealed class NumericClosedShapeUpdateOperation<TDoc, TId>: ClosedShapeU
         _descriptor.RevisionBinder!.ApplyRevisionTo(_document, newRevision);
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.RevisionBinder))
         {

@@ -334,7 +334,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public IOperationFragment HardDeleteFragment { get; }
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IMartenSession session)
+    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
     {
         var extras = extraFilters(query, session).ToList();
 
@@ -456,7 +456,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         };
     }
 
-    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IMartenSession session)
+    private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IStorageSession session)
     {
         if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
         {

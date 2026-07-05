@@ -84,7 +84,7 @@ internal sealed class OptimisticClosedShapeUpsertOperation<TDoc, TId>: ClosedSha
         }
     }
 
-    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IMartenSession session)
+    protected override int BindClientSideBinder(NpgsqlParameter[] parameters, int slot, IDocumentMetadataBinder<TDoc> binder, IStorageSession session)
     {
         if (ReferenceEquals(binder, _descriptor.VersionBinder))
         {
