@@ -1,6 +1,8 @@
 #nullable enable
 using Marten.Schema;
 
+using Weasel.Core.Identity;
+
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>

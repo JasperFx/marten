@@ -4,6 +4,8 @@ using Npgsql;
 using NpgsqlTypes;
 using Weasel.Postgresql;
 
+using Weasel.Core.Identity;
+
 namespace Marten.Internal.ClosedShape;
 
 /// <summary>

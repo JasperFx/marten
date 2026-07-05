@@ -13,6 +13,7 @@ using Marten.Schema.Identity.Sequences;
 using Npgsql;
 using Weasel.Core;
 using Weasel.Core.Migrations;
+using Weasel.Core.Sequences;
 using Weasel.Postgresql.Tables;
 
 namespace Marten.Storage;
@@ -20,12 +21,21 @@ namespace Marten.Storage;
 /// <summary>
 ///     Governs the database structure and migration path for a single Marten database
 /// </summary>
-public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IDisposable
+public interface IMartenDatabase: IDatabase, IConnectionSource<NpgsqlConnection>, IDocumentCleaner, IDisposable,
+    ISequenceSource
 {
     /// <summary>
     ///     Used to create new Hilo sequences
     /// </summary>
     ISequences Sequences { get; }
+
+    // #4811: satisfy Weasel.Core.Sequences.ISequenceSource so the shared Weasel.Core.Identity
+    // strategies can be handed the database directly as their sequence seam. Deferring to
+    // Sequences.SequenceFor keeps the sequence-feature Lazy (which runs a schema migration on
+    // first access) cold until a Hi-Lo/sequence strategy actually needs a sequence — passing
+    // `database.Sequences` eagerly would trigger that migration on every id assignment,
+    // including Guid/String ids that never touch a sequence.
+    ISequence ISequenceSource.SequenceFor(Type documentType) => Sequences.SequenceFor(documentType);
 
 
     IProviderGraph Providers { get; }
