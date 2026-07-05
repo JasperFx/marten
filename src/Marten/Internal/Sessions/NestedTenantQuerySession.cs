@@ -13,8 +13,15 @@ internal class NestedTenantQuerySession: QuerySession, ITenantQueryOperations
     {
         Listeners.AddRange(parent.Listeners);
         _parent = parent;
-        Versions = parent.Versions;
-        ItemMap = parent.ItemMap;
+
+        // #4801 — Keep identity-map and version state tenant-scoped; only share the
+        // parent's when this nested session targets the parent's own tenant. See
+        // NestedTenantSession for the full rationale.
+        if (tenant.TenantId == parent.TenantId)
+        {
+            ItemMap = parent.ItemMap;
+            Versions = parent.Versions;
+        }
     }
 
     public IQuerySession Parent => _parent;
