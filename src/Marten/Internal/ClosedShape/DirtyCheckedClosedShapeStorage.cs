@@ -38,8 +38,10 @@ public abstract class DirtyCheckedClosedShapeStorage<TDoc, TId>: DirtyCheckedDoc
     public override object RawIdentityValue(TId id)
         => _descriptor.Identification.ToRawSqlValue(id);
 
-    public override Npgsql.NpgsqlParameter BuildManyIdParameter(TId[] ids)
-        => ClosedShapeIdHelpers.BuildManyIdParameter(ids, _descriptor.Identification);
+    public override System.Data.Common.DbParameter BuildManyIdParameter(TId[] ids)
+        => Dialect.CreateIdArrayParameter(
+            System.Array.ConvertAll(ids, id => _descriptor.Identification.ToRawSqlValue(id)),
+            _descriptor.Identification.RawSqlType);
 
     // #4667 Phase 2 — session-free projection load; see Lightweight peer.
     public override Task<TDoc?> LoadProjectedAsync(TId id, IMartenDatabase database, string tenantId, CancellationToken token)
