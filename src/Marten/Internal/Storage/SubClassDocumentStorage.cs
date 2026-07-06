@@ -117,7 +117,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     public bool UseOptimisticConcurrency => _parent.UseOptimisticConcurrency;
     public IOperationFragment DeleteFragment => _parent.DeleteFragment;
     public IOperationFragment HardDeleteFragment { get; }
-    public IReadOnlyList<DuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
+    public IReadOnlyList<IDuplicatedField> DuplicatedFields => _parent.DuplicatedFields;
     public DbObjectName TableName => _parent.TableName;
     public Type DocumentType => typeof(T);
 

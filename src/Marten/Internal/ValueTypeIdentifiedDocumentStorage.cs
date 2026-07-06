@@ -96,7 +96,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public bool UseOptimisticConcurrency => Inner.UseOptimisticConcurrency;
     public IOperationFragment DeleteFragment => Inner.DeleteFragment;
     public IOperationFragment HardDeleteFragment => Inner.HardDeleteFragment;
-    public IReadOnlyList<DuplicatedField> DuplicatedFields => Inner.DuplicatedFields;
+    public IReadOnlyList<IDuplicatedField> DuplicatedFields => Inner.DuplicatedFields;
     public DbObjectName TableName => Inner.TableName;
     public Type DocumentType => Inner.DocumentType;
     public TenancyStyle TenancyStyle => Inner.TenancyStyle;

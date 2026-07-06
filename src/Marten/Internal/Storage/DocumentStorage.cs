@@ -201,7 +201,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public Type DocumentType { get; }
 
-    public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
+    public IReadOnlyList<IDuplicatedField> DuplicatedFields { get; }
 
     public ISqlFragment ByIdFilter(TId id)
     {

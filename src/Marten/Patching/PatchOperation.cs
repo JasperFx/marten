@@ -225,7 +225,7 @@ internal class PatchOperation: StatementOperation, NoDataReturnedCall
         writeWhereClause(builder);
     }
 
-    private bool IsFieldAffectedByPatchPath(DuplicatedField field, HashSet<string> modifiedPaths)
+    private bool IsFieldAffectedByPatchPath(IDuplicatedField field, HashSet<string> modifiedPaths)
     {
         // get the dot seperated path derived from field Members info
         var path = string.Join('.', field.Members.Select(x => x.Name.FormatCase(_serializer.Casing)));

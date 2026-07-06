@@ -7,6 +7,7 @@ using System.Reflection;
 using JasperFx.Core;
 using JasperFx.Core.Reflection;
 using Marten.Exceptions;
+using Marten.Internal.Storage;
 using Marten.Linq.Parsing;
 using Marten.Linq.Parsing.Operators;
 using Marten.Linq.SqlGeneration.Filters;
@@ -21,7 +22,7 @@ using Weasel.Postgresql.Tables;
 
 namespace Marten.Linq.Members;
 
-public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenMembers
+public class DuplicatedField: IQueryableMember, IComparableMember, IHasChildrenMembers, IDuplicatedField
 {
     private readonly Func<object, object> _parseObject = o => o;
     private readonly bool useTimestampWithoutTimeZoneForDateTime;

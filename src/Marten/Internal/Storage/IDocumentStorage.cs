@@ -37,7 +37,7 @@ public interface IDocumentStorage: ISelectClause
     bool UseOptimisticConcurrency { get; }
     IOperationFragment DeleteFragment { get; }
     IOperationFragment HardDeleteFragment { get; }
-    IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
+    IReadOnlyList<IDuplicatedField> DuplicatedFields { get; }
     DbObjectName TableName { get; }
     Type DocumentType { get; }
 
