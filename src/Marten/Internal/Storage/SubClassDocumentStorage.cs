@@ -46,7 +46,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
     }
 
     public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
-    public ISelectClause SelectClauseWithDuplicatedFields => _parent.SelectClauseWithDuplicatedFields;
+    public ISelectClause SelectClauseWithDuplicatedFields => ((ILinqDocumentStorage)_parent).SelectClauseWithDuplicatedFields;
     public bool UseNumericRevisions { get; } = false;
     public object RawIdentityValue(object id)
     {
@@ -101,14 +101,15 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
 
     public Type SourceType => typeof(TRoot);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
+    public Weasel.Core.SqlGeneration.ISqlFragment FilterDocuments(Weasel.Core.SqlGeneration.ISqlFragment query, IStorageSession session)
     {
-        var extras = extraFilters(query, session).ToArray();
+        var pgQuery = (ISqlFragment)query;
+        var extras = extraFilters(pgQuery, session).ToArray();
 
-        return query.CombineAnd(extras);
+        return pgQuery.CombineAnd(extras);
     }
 
-    public ISqlFragment? DefaultWhereFragment()
+    public Weasel.Core.SqlGeneration.ISqlFragment? DefaultWhereFragment()
     {
         return _defaultWhere;
     }
@@ -148,44 +149,44 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         _parent.Eject(session, document);
     }
 
-    public IStorageOperation Update(T document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Update(T document, IStorageSession session, string tenant)
     {
         return _parent.Update(document, session, tenant);
     }
 
-    public IStorageOperation Insert(T document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Insert(T document, IStorageSession session, string tenant)
     {
         return _parent.Insert(document, session, tenant);
     }
 
-    public IStorageOperation Upsert(T document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Upsert(T document, IStorageSession session, string tenant)
     {
         return _parent.Upsert(document, session, tenant);
     }
 
-    public IStorageOperation Overwrite(T document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Overwrite(T document, IStorageSession session, string tenant)
     {
         return _parent.Overwrite(document, session, tenant);
     }
 
-    public IStorageOperation OverwriteProjected(T document, string tenant)
+    public Weasel.Storage.IStorageOperation OverwriteProjected(T document, string tenant)
     {
         return _parent.OverwriteProjected(document, tenant);
     }
 
     // #4667 — delegate the new projection write entry points to the parent
     // hierarchy storage just like Overwrite/OverwriteProjected do.
-    public IStorageOperation UpsertProjected(T document, string tenant)
+    public Weasel.Storage.IStorageOperation UpsertProjected(T document, string tenant)
     {
         return _parent.UpsertProjected(document, tenant);
     }
 
-    public IStorageOperation InsertProjected(T document, string tenant)
+    public Weasel.Storage.IStorageOperation InsertProjected(T document, string tenant)
     {
         return _parent.InsertProjected(document, tenant);
     }
 
-    public IStorageOperation UpdateProjected(T document, string tenant)
+    public Weasel.Storage.IStorageOperation UpdateProjected(T document, string tenant)
     {
         return _parent.UpdateProjected(document, tenant);
     }
@@ -245,7 +246,7 @@ internal class SubClassDocumentStorage<T, TRoot, TId>: IDocumentStorage<T, TId>,
         return _parent.Identity(document);
     }
 
-    public ISqlFragment ByIdFilter(TId id)
+    public Weasel.Core.SqlGeneration.ISqlFragment ByIdFilter(TId id)
     {
         return _parent.ByIdFilter(id);
     }

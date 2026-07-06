@@ -147,20 +147,21 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
 
     public Type SourceType => typeof(IEvent);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
+    public Weasel.Core.SqlGeneration.ISqlFragment FilterDocuments(Weasel.Core.SqlGeneration.ISqlFragment query, IStorageSession session)
     {
-        var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !query.SpecifiesTenant();
+        var pgQuery = (ISqlFragment)query;
+        var shouldBeTenanted = Events.TenancyStyle == TenancyStyle.Conjoined && !pgQuery.SpecifiesTenant();
         if (shouldBeTenanted)
         {
-            query = query.CombineAnd(CurrentTenantFilter.Instance);
+            pgQuery = pgQuery.CombineAnd(CurrentTenantFilter.Instance);
         }
 
-        return query.SpecifiesEventArchivalStatus()
-            ? query
-            : query.CombineAnd(IsNotArchivedFilter.Instance);
+        return pgQuery.SpecifiesEventArchivalStatus()
+            ? pgQuery
+            : pgQuery.CombineAnd(IsNotArchivedFilter.Instance);
     }
 
-    public ISqlFragment DefaultWhereFragment()
+    public Weasel.Core.SqlGeneration.ISqlFragment DefaultWhereFragment()
     {
         return _defaultWhere;
     }
@@ -204,43 +205,43 @@ public abstract class EventDocumentStorage: IEventStorage, ILinqDocumentStorage
         // Nothing
     }
 
-    public IStorageOperation Update(IEvent document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Update(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Insert(IEvent document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Insert(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Upsert(IEvent document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Upsert(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation Overwrite(IEvent document, IStorageSession session, string tenant)
+    public Weasel.Storage.IStorageOperation Overwrite(IEvent document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation OverwriteProjected(IEvent document, string tenant)
+    public Weasel.Storage.IStorageOperation OverwriteProjected(IEvent document, string tenant)
     {
         throw new NotSupportedException();
     }
 
     // #4667 — events aren't projected through the document write path.
-    public IStorageOperation UpsertProjected(IEvent document, string tenant)
+    public Weasel.Storage.IStorageOperation UpsertProjected(IEvent document, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation InsertProjected(IEvent document, string tenant)
+    public Weasel.Storage.IStorageOperation InsertProjected(IEvent document, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    public IStorageOperation UpdateProjected(IEvent document, string tenant)
+    public Weasel.Storage.IStorageOperation UpdateProjected(IEvent document, string tenant)
     {
         throw new NotSupportedException();
     }

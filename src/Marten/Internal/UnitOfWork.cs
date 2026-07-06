@@ -15,8 +15,8 @@ namespace Marten.Internal;
 
 internal class UnitOfWork: ISessionWorkTracker
 {
-    private readonly List<IStorageOperation> _eventOperations = new();
-    private readonly List<IStorageOperation> _operations = new();
+    private readonly List<Weasel.Storage.IStorageOperation> _eventOperations = new();
+    private readonly List<Weasel.Storage.IStorageOperation> _operations = new();
     private readonly IMartenSession _parent;
 
     public UnitOfWork(IMartenSession parent)
@@ -24,7 +24,7 @@ internal class UnitOfWork: ISessionWorkTracker
         _parent = parent;
     }
 
-    internal UnitOfWork(IEnumerable<IStorageOperation> operations)
+    internal UnitOfWork(IEnumerable<Weasel.Storage.IStorageOperation> operations)
     {
         _operations.AddRange(operations);
     }
@@ -36,7 +36,7 @@ internal class UnitOfWork: ISessionWorkTracker
         Streams.Clear();
     }
 
-    public void Add(IStorageOperation operation)
+    public void Add(Weasel.Storage.IStorageOperation operation)
     {
         if (operation is IDocumentStorageOperation o)
         {
@@ -54,14 +54,14 @@ internal class UnitOfWork: ISessionWorkTracker
         }
     }
 
-    public IReadOnlyList<IStorageOperation> AllOperations
+    public IReadOnlyList<Weasel.Storage.IStorageOperation> AllOperations
     {
         get
         {
             if (_eventOperations.Count == 0) return _operations;
             if (_operations.Count == 0) return _eventOperations;
 
-            var combined = new List<IStorageOperation>(_eventOperations.Count + _operations.Count);
+            var combined = new List<Weasel.Storage.IStorageOperation>(_eventOperations.Count + _operations.Count);
             combined.AddRange(_eventOperations);
             combined.AddRange(_operations);
             return combined;
@@ -163,19 +163,22 @@ internal class UnitOfWork: ISessionWorkTracker
         return Streams;
     }
 
+    // IUnitOfWork (public PendingChanges surface) stays Marten-typed; the internal queue is the
+    // neutral Weasel.Storage.IStorageOperation (#4821), and every Marten-built operation
+    // implements the Marten interface, so the filtered casts below are total.
     IEnumerable<IStorageOperation> IUnitOfWork.Operations()
     {
-        return _operations;
+        return _operations.OfType<IStorageOperation>();
     }
 
     IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor<T>()
     {
-        return _operations.Where(x => x.DocumentType.CanBeCastTo<T>());
+        return _operations.OfType<IStorageOperation>().Where(x => x.DocumentType.CanBeCastTo<T>());
     }
 
     IEnumerable<IStorageOperation> IUnitOfWork.OperationsFor(Type documentType)
     {
-        return _operations.Where(x => x.DocumentType.CanBeCastTo(documentType));
+        return _operations.OfType<IStorageOperation>().Where(x => x.DocumentType.CanBeCastTo(documentType));
     }
 
     IEnumerable<object> IChangeSet.Updated => _operations.OfType<IDocumentStorageOperation>()
@@ -259,7 +262,7 @@ internal class UnitOfWork: ISessionWorkTracker
         return stream != null;
     }
 
-    private bool shouldSort(StoreOptions options, [NotNullWhen(true)]out IComparer<IStorageOperation>? comparer)
+    private bool shouldSort(StoreOptions options, [NotNullWhen(true)]out IComparer<Weasel.Storage.IStorageOperation>? comparer)
     {
         comparer = null;
         if (_operations.Count <= 1)
@@ -295,12 +298,12 @@ internal class UnitOfWork: ISessionWorkTracker
         return true;
     }
 
-    private IEnumerable<IStorageOperation> operationsFor(Type documentType)
+    private IEnumerable<Weasel.Storage.IStorageOperation> operationsFor(Type documentType)
     {
         return _operations.Where(x => x.DocumentType == documentType);
     }
 
-    private class StorageOperationWithDeletionsComparer: IComparer<IStorageOperation>
+    private class StorageOperationWithDeletionsComparer: IComparer<Weasel.Storage.IStorageOperation>
     {
         private readonly Type[] _topologicallyOrderedTypes;
 
@@ -309,7 +312,7 @@ internal class UnitOfWork: ISessionWorkTracker
             _topologicallyOrderedTypes = topologicallyOrderedTypes;
         }
 
-        public int Compare(IStorageOperation? x, IStorageOperation? y)
+        public int Compare(Weasel.Storage.IStorageOperation? x, Weasel.Storage.IStorageOperation? y)
         {
             if (ReferenceEquals(x, y))
             {
@@ -350,7 +353,7 @@ internal class UnitOfWork: ISessionWorkTracker
             return xIndex.CompareTo(yIndex);
         }
 
-        private int FindIndex(IStorageOperation x)
+        private int FindIndex(Weasel.Storage.IStorageOperation x)
         {
             // Will loop through up the inheritance chain until reaches the end or the index is found, used
             // to handle inheritance as topologically sorted array may not have the subclasses listed
@@ -367,7 +370,7 @@ internal class UnitOfWork: ISessionWorkTracker
         }
     }
 
-    private class StorageOperationByTypeComparer: IComparer<IStorageOperation>
+    private class StorageOperationByTypeComparer: IComparer<Weasel.Storage.IStorageOperation>
     {
         private readonly Type[] _topologicallyOrderedTypes;
 
@@ -376,7 +379,7 @@ internal class UnitOfWork: ISessionWorkTracker
             _topologicallyOrderedTypes = topologicallyOrderedTypes;
         }
 
-        public int Compare(IStorageOperation? x, IStorageOperation? y)
+        public int Compare(Weasel.Storage.IStorageOperation? x, Weasel.Storage.IStorageOperation? y)
         {
             if (ReferenceEquals(x, y))
             {
@@ -399,7 +402,7 @@ internal class UnitOfWork: ISessionWorkTracker
             return xIndex.CompareTo(yIndex);
         }
 
-        private int FindIndex(IStorageOperation x)
+        private int FindIndex(Weasel.Storage.IStorageOperation x)
         {
             // Will loop through up the inheritance chain until reaches the end or the index is found, used
             // to handle inheritance as topologically sorted array may not have the subclasses listed

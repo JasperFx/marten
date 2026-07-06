@@ -139,11 +139,12 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         return new[] { "id", "data" };
     }
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession martenSession)
+    public Weasel.Core.SqlGeneration.ISqlFragment FilterDocuments(Weasel.Core.SqlGeneration.ISqlFragment query, IStorageSession martenSession)
     {
-        var extras = extraFilters(query).ToList();
+        var pgQuery = (ISqlFragment)query;
+        var extras = extraFilters(pgQuery).ToList();
 
-        return query.CombineAnd(extras);
+        return pgQuery.CombineAnd(extras);
     }
 
     private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query)
@@ -161,7 +162,7 @@ public abstract class EventMapping: EventTypeData, IDocumentMapping, IEventType
         }
     }
 
-    public ISqlFragment DefaultWhereFragment()
+    public Weasel.Core.SqlGeneration.ISqlFragment DefaultWhereFragment()
     {
         return _defaultWhereFragment;
     }
@@ -264,9 +265,9 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T>, ILinqDocumentSt
     public IOperationFragment HardDeleteFragment { get; }
 
     [IgnoreDescription]
-    string ISelectClause.FromObject => _tableName;
+    string Weasel.Storage.ISelectClause.FromObject => _tableName;
 
-    Type ISelectClause.SelectedType => typeof(T);
+    Type Weasel.Storage.ISelectClause.SelectedType => typeof(T);
 
     void ISqlFragment.Apply(ICommandBuilder sql)
     {
@@ -275,7 +276,7 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T>, ILinqDocumentSt
         sql.Append(" as d");
     }
 
-    ISelector ISelectClause.BuildSelector(IStorageSession session)
+    ISelector Weasel.Storage.ISelectClause.BuildSelector(IStorageSession session)
     {
         return new EventSelector<T>((ISerializer)session.Serializer);
     }
@@ -327,43 +328,43 @@ public class EventMapping<T>: EventMapping, IDocumentStorage<T>, ILinqDocumentSt
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Update(T document, IStorageSession session, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.Update(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Insert(T document, IStorageSession session, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.Insert(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Upsert(T document, IStorageSession session, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.Upsert(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.Overwrite(T document, IStorageSession session, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.Overwrite(T document, IStorageSession session, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.OverwriteProjected(T document, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.OverwriteProjected(T document, string tenant)
     {
         throw new NotSupportedException();
     }
 
     // #4667 — events aren't projected through the document write path.
-    IStorageOperation IDocumentStorage<T>.UpsertProjected(T document, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.UpsertProjected(T document, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.InsertProjected(T document, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.InsertProjected(T document, string tenant)
     {
         throw new NotSupportedException();
     }
 
-    IStorageOperation IDocumentStorage<T>.UpdateProjected(T document, string tenant)
+    Weasel.Storage.IStorageOperation IDocumentStorage<T>.UpdateProjected(T document, string tenant)
     {
         throw new NotSupportedException();
     }

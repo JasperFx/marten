@@ -183,9 +183,9 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         throw new NotSupportedException();
     }
 
-    void ISessionWorkTracker.Add(IStorageOperation operation)
+    void ISessionWorkTracker.Add(Weasel.Storage.IStorageOperation operation)
     {
-        Queue.Post(operation);
+        Queue.Post((IStorageOperation)operation);
     }
 
     void ISessionWorkTracker.Sort(StoreOptions options)
@@ -198,7 +198,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
     List<StreamAction> ISessionWorkTracker.Streams => _streams;
 
 
-    IReadOnlyList<IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
+    IReadOnlyList<Weasel.Storage.IStorageOperation> ISessionWorkTracker.AllOperations => throw new NotSupportedException();
 
     void ISessionWorkTracker.Eject<T>(T document)
     {

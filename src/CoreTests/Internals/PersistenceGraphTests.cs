@@ -36,7 +36,8 @@ public class PersistenceGraphTests
         persistence.QueryOnly.ShouldBeOfType<SubClassDocumentStorage<AdminUser, User, Guid>>();
         persistence.IdentityMap.ShouldBeOfType<SubClassDocumentStorage<AdminUser, User, Guid>>();
         persistence.DirtyTracking.ShouldBeOfType<SubClassDocumentStorage<AdminUser, User, Guid>>();
-        persistence.BulkLoader.ShouldBeOfType<SubClassBulkLoader<AdminUser, User>>();
+        persistence.ShouldBeOfType<MartenDocumentProvider<AdminUser>>()
+            .BulkLoader.ShouldBeOfType<SubClassBulkLoader<AdminUser, User>>();
     }
 
 }

@@ -48,7 +48,7 @@ public abstract partial class Statement: IWhereFragmentHolder
             var filter = storage?.DefaultWhereFragment();
             if (filter != null)
             {
-                Wheres.Add(filter);
+                Wheres.Add((ISqlFragment)filter);
             }
 
             return;
@@ -61,14 +61,14 @@ public abstract partial class Statement: IWhereFragmentHolder
         {
             if (Wheres.Count == 1)
             {
-                var combinedWhere = storage.FilterDocuments(Wheres.Single(), session);
+                var combinedWhere = (ISqlFragment)storage.FilterDocuments(Wheres.Single(), session);
                 Wheres.Clear();
                 Wheres.Add(combinedWhere);
             }
             else
             {
                 var combined = CompoundWhereFragment.And(Wheres);
-                var combinedWhere = storage.FilterDocuments(combined, session);
+                var combinedWhere = (ISqlFragment)storage.FilterDocuments(combined, session);
                 Wheres.Clear();
                 Wheres.Add(combinedWhere);
             }

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using JasperFx.Core.Reflection;
 using Marten.Internal;
+using Marten.Internal.Storage;
 using Marten.Linq.Selectors;
 using Marten.Linq.SqlGeneration;
 using Marten.Services;
@@ -129,7 +130,7 @@ internal class UserSuppliedQueryHandler<T>: IQueryHandler<IReadOnlyList<T>>
             return new DataSelectClause<T>(string.Empty, string.Empty);
         }
 
-        return session.StorageFor(typeof(T));
+        return (ILinqDocumentStorage)session.StorageFor(typeof(T));
     }
 
     private static bool IsWithFollowedBySelect(string sql)

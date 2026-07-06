@@ -10,6 +10,16 @@
 // <Using> items don't apply — a linked C# global-using file is used instead).
 
 global using IStorageOperation = Marten.Internal.Operations.IStorageOperation;
+// #4821: the dialect-neutral closed-shape storage contracts (IStorageSession, IStorageDatabase,
+// IProviderGraph, IDocumentStorage family, DocumentProvider<T>, IChangeTracker, IDuplicatedField,
+// ConcurrencyChecks, IDeletion, NoDataReturnedCall, IOperationFragment, ISelector, and the neutral
+// IStorageOperation/ISelectClause bases) moved to the shared Weasel.Storage library. The simple
+// names keep resolving everywhere via this namespace import; the Marten-side derived interfaces
+// that keep the same simple names are pinned by aliases (IStorageOperation above, ISelectClause below).
+global using Weasel.Storage;
+// Marten's LINQ select clause derives from the neutral Weasel.Storage.ISelectClause (#4821);
+// unqualified usage keeps meaning the Marten interface.
+global using ISelectClause = Marten.Linq.SqlGeneration.ISelectClause;
 // OperationRole -> Weasel.Core (#4350 / pillar #214)
 global using OperationRole = Weasel.Core.OperationRole;
 // SnapshotLifecycle -> JasperFx.Events (jasperfx#220 / pillar #214)

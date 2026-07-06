@@ -10,9 +10,9 @@ namespace Marten.Services;
 internal interface ISessionWorkTracker: IUnitOfWork, IChangeSet
 {
     new List<StreamAction> Streams { get; }
-    IReadOnlyList<IStorageOperation> AllOperations { get; }
+    IReadOnlyList<Weasel.Storage.IStorageOperation> AllOperations { get; }
     void Reset();
-    void Add(IStorageOperation operation);
+    void Add(Weasel.Storage.IStorageOperation operation);
     void Sort(StoreOptions options);
     void Eject<T>(T document) where T : notnull;
     void EjectAllOfType(Type type);

@@ -51,29 +51,29 @@ public sealed class QueryOnlyClosedShapeStorage<TDoc, TId>: QueryOnlyDocumentSto
             System.Array.ConvertAll(ids, id => _descriptor.Identification.ToRawSqlValue(id)),
             _descriptor.Identification.RawSqlType);
 
-    public override IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Insert.");
 
-    public override IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Update.");
 
-    public override IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Upsert.");
 
-    public override IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support Overwrite.");
 
-    public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation OverwriteProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support OverwriteProjected.");
 
     // #4667 — projection write paths aren't reachable from query sessions.
-    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation UpsertProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support UpsertProjected.");
 
-    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation InsertProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support InsertProjected.");
 
-    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation UpdateProjected(TDoc document, string tenant)
         => throw new NotSupportedException("QueryOnly storage doesn't support UpdateProjected.");
 
     // #4667 Phase 2 — QueryOnly storages aren't used by the projection read

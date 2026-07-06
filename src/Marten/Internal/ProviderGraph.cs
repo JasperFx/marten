@@ -120,7 +120,9 @@ public class ProviderGraph: IProviderGraph
             case EventMapping em:
             {
                 var storage = (IDocumentStorage<T>)em;
-                var slot = new DocumentProvider<T>(null, storage, storage, storage, storage);
+                // Event mappings never had a bulk loader (was a null slot pre-#4821) — the neutral
+                // DocumentProvider suffices here.
+                var slot = new DocumentProvider<T>(storage, storage, storage, storage);
                 _storage = _storage.AddOrUpdate(documentType, slot);
 
                 return slot;
@@ -152,8 +154,8 @@ public class ProviderGraph: IProviderGraph
             var dirtyTracking =
                 new SubClassDocumentStorage<T, TRoot, TId>((IDocumentStorage<TRoot, TId>)inner.DirtyTracking, mapping);
 
-            var bulkLoader = new SubClassBulkLoader<T, TRoot>(inner.BulkLoader);
-            return new DocumentProvider<T>(bulkLoader, queryOnly, lightweight, identityMap, dirtyTracking);
+            var bulkLoader = new SubClassBulkLoader<T, TRoot>(((MartenDocumentProvider<TRoot>)inner).BulkLoader);
+            return new MartenDocumentProvider<T>(bulkLoader, queryOnly, lightweight, identityMap, dirtyTracking);
         }
     }
 }

@@ -1,8 +1,6 @@
 #nullable enable
-using System;
 using Marten.Internal;
 using Marten.Linq.QueryHandlers;
-using Marten.Linq.Selectors;
 using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Linq.SqlGeneration;
@@ -27,20 +25,18 @@ internal interface IDistinctOnSelectClause
 }
 
 /// <summary>
-///     Internal interface for the Linq subsystem
+///     Internal interface for the Linq subsystem. #4821: the dialect-neutral subset
+///     (FromObject / SelectedType / SelectFields / BuildSelector) moved to
+///     <see cref="Weasel.Storage.ISelectClause"/>; this Marten interface derives from it and
+///     keeps the Postgres/LINQ-typed members (query handlers, statistics). Implementors'
+///     existing members satisfy the neutral base slots unchanged; their Postgres
+///     <c>Apply(ICommandBuilder)</c> satisfies the neutral fragment via the dialect DIM.
 /// </summary>
-public interface ISelectClause: ISqlFragment
+public interface ISelectClause: Weasel.Storage.ISelectClause, ISqlFragment
 {
-    string FromObject { get; }
-
-    Type SelectedType { get; }
-
-    string[] SelectFields();
-
-    ISelector BuildSelector(IStorageSession session);
-
-    IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement)
+    IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
+        ISqlFragment currentStatement)
         where T : notnull;
+
     ISelectClause UseStatistics(QueryStatistics statistics);
 }
-

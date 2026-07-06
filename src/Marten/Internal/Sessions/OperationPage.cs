@@ -18,7 +18,7 @@ public class OperationPage
 {
     private IMartenSession _session;
     private readonly BatchBuilder _builder;
-    private readonly List<IStorageOperation> _operations = new();
+    private readonly List<Weasel.Storage.IStorageOperation> _operations = new();
 
     public OperationPage(IMartenSession session)
     {
@@ -26,7 +26,7 @@ public class OperationPage
         _builder = new BatchBuilder();
     }
 
-    public OperationPage(IMartenSession session, IReadOnlyList<IStorageOperation> operations) : this(session)
+    public OperationPage(IMartenSession session, IReadOnlyList<Weasel.Storage.IStorageOperation> operations) : this(session)
     {
         _operations.AddRange(operations);
         foreach (var operation in operations)
@@ -39,9 +39,9 @@ public class OperationPage
     }
 
     public int Count { get; private set; }
-    public IReadOnlyList<IStorageOperation> Operations => _operations;
+    public IReadOnlyList<Weasel.Storage.IStorageOperation> Operations => _operations;
 
-    public void Append(IStorageOperation operation)
+    public void Append(Weasel.Storage.IStorageOperation operation)
     {
         if (_session == null) return;
 

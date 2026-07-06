@@ -57,9 +57,9 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
         {
             return Wheres.Count switch
             {
-                0 => storage.DefaultWhereFragment(),
-                1 => storage.FilterDocuments(Wheres.Single(), session),
-                _ => storage.FilterDocuments(CompoundWhereFragment.And(Wheres), session),
+                0 => (ISqlFragment)storage.DefaultWhereFragment(),
+                1 => (ISqlFragment)storage.FilterDocuments(Wheres.Single(), session),
+                _ => (ISqlFragment)storage.FilterDocuments(CompoundWhereFragment.And(Wheres), session),
             };
         }
     }
@@ -86,7 +86,7 @@ internal class IncludePlan<T>: IIncludePlan where T : notnull
             parser.Visit(body);
         }
 
-        var selector = new SelectorStatement { SelectClause = _storage };
+        var selector = new SelectorStatement { SelectClause = (ILinqDocumentStorage)_storage };
         filters.Wheres.Insert(0, new IdInIncludedDocumentIdentifierFilter(tempTable.ExportName, _connectingMember, _mappingMember));
 
         if (tenantFilter != null)

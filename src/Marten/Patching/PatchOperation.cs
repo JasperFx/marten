@@ -16,7 +16,7 @@ using Weasel.Postgresql.SqlGeneration;
 
 namespace Marten.Patching;
 
-internal class PatchFragment: IOperationFragment
+internal class PatchFragment: IOperationFragment, ISqlFragment
 {
     // 9.0 (#4384): the sentinel byte pattern that ISerializer emits for the string
     // VALUE_LOOKUP when serializing the wrapper dictionary. We splice the pre-serialized
