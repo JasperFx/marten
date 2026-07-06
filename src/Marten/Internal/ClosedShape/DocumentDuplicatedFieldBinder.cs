@@ -65,9 +65,9 @@ internal sealed class DocumentDuplicatedFieldBinder<TDoc>: IDocumentMetadataBind
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
-        parameter.NpgsqlDbType = _field.DbType;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = _field.DbType;
 
         object? current = document;
         foreach (var member in _members)

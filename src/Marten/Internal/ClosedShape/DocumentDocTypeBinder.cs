@@ -43,11 +43,11 @@ internal sealed class DocumentDocTypeBinder<TDoc>: IDocumentMetadataBinder<TDoc>
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         var alias = _aliasCache.GetOrAdd(document.GetType(), t => _resolveAlias(t));
         parameter.Value = alias;
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Varchar;
     }
 
     public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)

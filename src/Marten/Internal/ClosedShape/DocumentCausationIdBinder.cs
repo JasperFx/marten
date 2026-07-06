@@ -36,9 +36,9 @@ internal sealed class DocumentCausationIdBinder<TDoc>: IDocumentMetadataBinder<T
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Varchar;
         parameter.Value = (object?)session.CausationId ?? DBNull.Value;
     }
 

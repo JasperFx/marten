@@ -43,7 +43,7 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
     public void ApplyToDocument(TDoc document, IStorageSession session)
         => _setter?.Invoke(document, session.Headers);
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         // Mirror the codegen path's setHeaderParameter: use the session's
         // cached UTF-8 byte[] when available (DocumentSessionBase
@@ -55,12 +55,12 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
             var cachedBytes = docSession.GetCachedSerializedHeaders();
             if (cachedBytes is null)
             {
-                parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+                ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Jsonb;
                 parameter.Value = DBNull.Value;
             }
             else
             {
-                parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+                ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Jsonb;
                 parameter.Value = cachedBytes;
             }
             return;
@@ -68,7 +68,7 @@ internal sealed class DocumentHeadersBinder<TDoc>: IDocumentMetadataBinder<TDoc>
 
         if (session.Headers is null)
         {
-            parameter.NpgsqlDbType = NpgsqlDbType.Jsonb;
+            ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Jsonb;
             parameter.Value = DBNull.Value;
         }
         else

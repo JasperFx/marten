@@ -38,9 +38,9 @@ internal sealed class DocumentLastModifiedByBinder<TDoc>: IDocumentMetadataBinde
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
-        parameter.NpgsqlDbType = NpgsqlDbType.Varchar;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.Varchar;
         // IMetadataContext.LastModifiedBy is the alias of CurrentUserName;
         // prefer CurrentUserName since the former is marked [Obsolete].
         parameter.Value = (object?)session.CurrentUserName ?? DBNull.Value;

@@ -37,10 +37,10 @@ internal sealed class DocumentSoftDeletedAtBinder<TDoc>: IDocumentMetadataBinder
 
     public string ValueSql => "?";
 
-    public void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session)
+    public void BindParameter(DbParameter parameter, TDoc document, IStorageSession session)
     {
         parameter.Value = DBNull.Value;
-        parameter.NpgsqlDbType = NpgsqlDbType.TimestampTz;
+        ((NpgsqlParameter)parameter).NpgsqlDbType = NpgsqlDbType.TimestampTz;
     }
 
     public void Apply(DbDataReader reader, int columnOrdinal, TDoc document, IStorageSession session)

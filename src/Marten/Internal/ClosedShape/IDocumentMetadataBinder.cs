@@ -2,7 +2,6 @@
 using System.Data.Common;
 using Marten.Internal;
 using Marten.Internal.Storage;
-using Npgsql;
 
 namespace Marten.Internal.ClosedShape;
 
@@ -56,14 +55,14 @@ public interface IDocumentMetadataBinder<TDoc>
     bool IsServerSide => ValueSql != "?";
 
     /// <summary>
-    /// Per-row write hook on the INSERT / UPSERT path. The storage
-    /// operation pre-allocates the <see cref="NpgsqlParameter"/> via
-    /// <c>ICommandBuilder.AppendWithParameters("…, ?, …", '?')</c> and
-    /// hands the parameter to each client-side binder in order. Server-side
-    /// binders don't get called here — their <see cref="ValueSql"/>
-    /// fragment is in the SQL directly.
+    /// Per-row write hook on the INSERT / UPSERT path. The storage operation pre-allocates the
+    /// parameter via <c>ICommandBuilder.AppendWithParameters("…, ?, …", '?')</c> and hands it to each
+    /// client-side binder in order. Server-side binders don't get called here — their
+    /// <see cref="ValueSql"/> fragment is in the SQL directly. #4828: the parameter is typed as the
+    /// db-neutral <see cref="DbParameter"/> so the binder contract no longer names Npgsql; the
+    /// concrete (Postgres) binders set the provider type on the underlying <c>NpgsqlParameter</c>.
     /// </summary>
-    void BindParameter(NpgsqlParameter parameter, TDoc document, IStorageSession session);
+    void BindParameter(DbParameter parameter, TDoc document, IStorageSession session);
 
     /// <summary>
     /// Optional pre-serialization hook. Called once per write before the
