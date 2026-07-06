@@ -150,7 +150,10 @@
     <!-- 9.6.0 (weasel#324): adds DbParameter[]-returning AppendWithDbParameters to the non-generic
          ICommandBuilder, unblocking the closed-shape operation param path (#4821/#4828). Weasel.Core
          9.6.0 flows in transitively. -->
-    <PackageVersion Include="Weasel.Postgresql" Version="9.6.0" />
+    <!-- 9.7.0 (weasel#327): shared Weasel.Core SQL-gen contract (neutral ICommandBuilder +
+         ISqlFragment) that the Postgres/SqlServer ones derive from. Marten disambiguates the new
+         simple-name collision via a GlobalUsings alias to the Weasel.Postgresql types (API-preserving). -->
+    <PackageVersion Include="Weasel.Postgresql" Version="9.7.0" />
     <PackageVersion Include="WolverineFx.Marten" Version="4.2.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
