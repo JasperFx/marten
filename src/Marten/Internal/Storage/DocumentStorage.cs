@@ -48,37 +48,44 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     protected readonly string _loadArraySql;
     protected readonly string _loaderSql;
-    protected readonly DocumentMapping _mapping;
     private readonly string _selectClause;
     private readonly string[] _selectFields;
     private ISqlFragment? _defaultWhere;
-    private MetadataColumn[]? _metadataColumns;
+    // #4828: computed once in the ctor from the mapping's schema table instead of
+    // lazily re-reading the mapping, so no DocumentMapping is retained on the base.
+    private readonly MetadataColumn[] _metadataColumns;
     protected Action<T, TId> _setter;
     protected Action<T, string> _setFromString = (_, _) => throw new NotSupportedException();
     protected Action<T, Guid> _setFromGuid = (_, _) => throw new NotSupportedException();
 
-
-    private readonly DocumentMapping _document;
+    // #4828: the DeleteStyle drives the soft-delete WHERE filters + the delete
+    // fragment. Stored so the base no longer reads DocumentMapping post-construction.
+    private readonly DeleteStyle _deleteStyle;
 
     public DocumentStorage(StorageStyle storageStyle, DocumentMapping document)
     {
-        _mapping = document;
-
+        // #4828: read everything the base needs off the mapping here, in the ctor,
+        // and store it in fields — so no DocumentMapping is retained. The closed-shape
+        // storages (the only concrete storages) never read the mapping themselves; this
+        // makes the base a self-contained, DocumentMapping-free hierarchy.
         TableName = document.TableName;
+        TenancyStyle = document.TenancyStyle;
+        DocumentType = document.DocumentType;
+        QueryMembers = document.QueryMembers;
+        _deleteStyle = document.DeleteStyle;
+        _metadataColumns = document.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
 
         determineDefaultWhereFragment();
 
         _idType = PostgresqlProvider.Instance.ToParameterType(typeof(TId));
 
-        var table = _mapping.Schema.Table;
+        var table = document.Schema.Table;
 
-        DuplicatedFields = _mapping.DuplicatedFields;
+        DuplicatedFields = document.DuplicatedFields;
 
         _selectFields = table.SelectColumns(storageStyle).Select(x => $"d.{x.Name}").ToArray();
         var fieldSelector = _selectFields.Join(", ");
         _selectClause = $"select {fieldSelector} from {document.TableName.QualifiedName} as d";
-
-        _document = document;
 
         _loaderSql =
             $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = $1";
@@ -86,7 +93,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
         _loadArraySql =
             $"select {fieldSelector} from {document.TableName.QualifiedName} as d where id = ANY($1)";
 
-        if (document.TenancyStyle == TenancyStyle.Conjoined)
+        if (TenancyStyle == TenancyStyle.Conjoined)
         {
             _loaderSql += $" and d.{TenantIdColumn.Name} = $2";
             _loadArraySql += $" and d.{TenantIdColumn.Name} = $2";
@@ -118,7 +125,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             }
         }
 
-        DeleteFragment = _mapping.DeleteStyle == DeleteStyle.Remove
+        DeleteFragment = _deleteStyle == DeleteStyle.Remove
             ? new HardDelete(this)
             : new SoftDelete(this);
 
@@ -143,7 +150,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
             {
                 var duplicatedFields = DuplicatedFields.Select(x => "d." + x.ColumnName).Where(x => !_selectFields.Contains(x));
                 var allFields = _selectFields.Concat(duplicatedFields).ToArray();
-                return new DuplicatedFieldSelectClause(TableName.QualifiedName, $"select {allFields.Join(", ")} from {_document.TableName.QualifiedName} as d",
+                return new DuplicatedFieldSelectClause(TableName.QualifiedName, $"select {allFields.Join(", ")} from {TableName.QualifiedName} as d",
                     allFields, typeof(T), this);
             }
             else
@@ -155,10 +162,10 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     MetadataColumn[] IHaveMetadataColumns.MetadataColumns()
     {
-        return _metadataColumns ??= _mapping.Schema.Table.Columns.OfType<MetadataColumn>().ToArray();
+        return _metadataColumns;
     }
 
-    public IQueryableMemberCollection QueryMembers => _mapping.QueryMembers;
+    public IQueryableMemberCollection QueryMembers { get; }
 
     public async Task TruncateDocumentStorageAsync(IMartenDatabase database, CancellationToken ct = default)
     {
@@ -192,9 +199,9 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     }
 
 
-    public TenancyStyle TenancyStyle => _mapping.TenancyStyle;
+    public TenancyStyle TenancyStyle { get; }
 
-    public Type DocumentType => _mapping.DocumentType;
+    public Type DocumentType { get; }
 
     public IReadOnlyList<DuplicatedField> DuplicatedFields { get; }
 
@@ -409,7 +416,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NpgsqlCommand BuildLoadCommand(TId id, string tenant)
     {
-        return _mapping.TenancyStyle == TenancyStyle.Conjoined
+        return TenancyStyle == TenancyStyle.Conjoined
             ? new NpgsqlCommand(_loaderSql) {
                 Parameters = {
                     ParameterForId(id),
@@ -429,7 +436,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     public NpgsqlCommand BuildLoadManyCommand(TId[] ids, string tenant)
     {
-        return _mapping.TenancyStyle == TenancyStyle.Conjoined
+        return TenancyStyle == TenancyStyle.Conjoined
             ? new NpgsqlCommand(_loadArraySql) {
                 Parameters = {
                     BuildManyIdParameter(ids),
@@ -458,7 +465,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     private IEnumerable<ISqlFragment> extraFilters(ISqlFragment query, IStorageSession session)
     {
-        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
+        if (_deleteStyle == DeleteStyle.SoftDelete && !query.ContainsAny<ISoftDeletedFilter>())
         {
             yield return ExcludeSoftDeletedFilter.Instance;
         }
@@ -471,7 +478,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, IHaveMe
 
     private IEnumerable<ISqlFragment> defaultFilters()
     {
-        if (_mapping.DeleteStyle == DeleteStyle.SoftDelete)
+        if (_deleteStyle == DeleteStyle.SoftDelete)
         {
             yield return ExcludeSoftDeletedFilter.Instance;
         }
