@@ -19,7 +19,7 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
 
     public object Document => _document;
 
-    public bool DetectChanges(IMartenSession session, [NotNullWhen(true)]out IStorageOperation? operation)
+    public bool DetectChanges(IStorageSession session, [NotNullWhen(true)]out IStorageOperation? operation)
     {
         var newJson = session.Serializer.ToCleanJson(_document);
 
@@ -54,7 +54,7 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
         return true;
     }
 
-    public void Reset(IMartenSession session)
+    public void Reset(IStorageSession session)
     {
         _json = session.Serializer.ToCleanJson(_document);
     }
