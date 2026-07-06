@@ -11,6 +11,8 @@ using Marten.Events.Daemon.Progress;
 using Marten.Internal.Sessions;
 using Marten.Services;
 
+using Marten.Internal;
+
 namespace Marten.Events.Daemon.Internals;
 
 internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySession>
@@ -32,11 +34,11 @@ internal class ProjectionBatch: IProjectionBatch<IDocumentOperations, IQuerySess
     {
         if (range.SequenceFloor == 0)
         {
-            await _batch.Queue.PostAsync(new InsertProjectionProgress(_session.Options.EventGraph, range)).ConfigureAwait(false);
+            await _batch.Queue.PostAsync(new InsertProjectionProgress(((IMartenSession)_session).Options.EventGraph, range)).ConfigureAwait(false);
         }
         else
         {
-            await _batch.Queue.PostAsync(new UpdateProjectionProgress(_session.Options.EventGraph, range)).ConfigureAwait(false);
+            await _batch.Queue.PostAsync(new UpdateProjectionProgress(((IMartenSession)_session).Options.EventGraph, range)).ConfigureAwait(false);
         }
     }
 

@@ -90,7 +90,7 @@ internal partial class FetchAsyncPlan<TDoc, TId>
                 : _identityStrategy.AppendToStream(document, session, id, version, cancellation);
 
             // This is an optimization for calling FetchForWriting, then immediately calling FetchLatest
-            if (session.Options.Events.UseIdentityMapForAggregates)
+            if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
             {
                 session.StoreDocumentInItemMap(id, stream);
             }

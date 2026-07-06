@@ -45,7 +45,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
         var elementType = argument.Type.GetGenericArguments()[0];
         if (CurrentUsage == null || CurrentUsage.ElementType != elementType)
         {
-            CurrentUsage = new CollectionUsage(Session.Options, elementType);
+            CurrentUsage = new CollectionUsage(((IMartenSession)Session).Options, elementType);
             _collectionUsages.Insert(0, CurrentUsage);
 
             return CurrentUsage;
@@ -57,7 +57,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
     public CollectionUsage StartNewCollectionUsageFor(MethodCallExpression expression)
     {
         var elementType = expression.Arguments[0].Type.GetGenericArguments()[0];
-        CurrentUsage = new CollectionUsage(Session.Options, elementType);
+        CurrentUsage = new CollectionUsage(((IMartenSession)Session).Options, elementType);
         _collectionUsages.Insert(0, CurrentUsage);
 
         return CurrentUsage;
@@ -67,7 +67,7 @@ internal partial class LinqQueryParser: ExpressionVisitor, ILinqQuery
     {
         if (CurrentUsage == null || CurrentUsage.ElementType != elementType)
         {
-            CurrentUsage = new CollectionUsage(Session.Options, elementType);
+            CurrentUsage = new CollectionUsage(((IMartenSession)Session).Options, elementType);
             _collectionUsages.Insert(0, CurrentUsage);
 
             return CurrentUsage;

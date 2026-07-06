@@ -325,7 +325,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
             var eventStorage = _session.EventStorage();
             foreach (var stream in _streams)
             {
-                stream.PrepareEvents(0, _session.Options.EventGraph, new Queue<long>(), _session);
+                stream.PrepareEvents(0, ((IMartenSession)_session).Options.EventGraph, new Queue<long>(), _session);
 
                 var op = stream.ActionType == StreamActionType.Start ? eventStorage.InsertStream(stream) : eventStorage.QuickAppendEvents(stream);
                 applyOperation(op);
@@ -373,7 +373,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
         // Subsequent PRs dispatch the BulkWriter (binary COPY) path on this signal.
         FlushMode = BatchFlushModeClassifier.WithOperation(FlushMode, operation.Role());
 
-        if (_session != null && !_token.IsCancellationRequested && _current.Count >= Session.Options.UpdateBatchSize)
+        if (_session != null && !_token.IsCancellationRequested && _current.Count >= ((IMartenSession)Session).Options.UpdateBatchSize)
         {
             startNewPage(Session);
         }
@@ -421,7 +421,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
                 return _batch;
             }
 
-            _batch = await _session.Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
+            _batch = await ((IMartenSession)_session).Options.Events.MessageOutbox.CreateBatch(session).ConfigureAwait(false);
             Listeners.Add(_batch);
 
             return _batch;
@@ -439,7 +439,7 @@ public class ProjectionUpdateBatch: IUpdateBatch, IAsyncDisposable, IDisposable,
 
         var projectionSession = new ProjectionDocumentSession((DocumentStore)_session.DocumentStore, this, sessionOptions,
             ShardExecutionMode.Continuous);
-        _batch = await _session.Options.Events.MessageOutbox.CreateBatch(projectionSession).ConfigureAwait(false);
+        _batch = await ((IMartenSession)_session).Options.Events.MessageOutbox.CreateBatch(projectionSession).ConfigureAwait(false);
         Listeners.Add(_batch);
     }
 }

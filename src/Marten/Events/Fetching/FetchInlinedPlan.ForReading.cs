@@ -10,6 +10,8 @@ using Marten.Linq.QueryHandlers;
 using Weasel.Postgresql;
 using System.Diagnostics.CodeAnalysis;
 
+using Marten.Internal;
+
 namespace Marten.Events.Fetching;
 
 [UnconditionalSuppressMessage("Trimming", "IL2026",
@@ -51,7 +53,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
         if (pendingEvents is not { Count: > 0 }) return snapshot;
 
         // Build the aggregator on demand
-        var raw = session.Options.Projections.AggregatorFor<TDoc>();
+        var raw = ((IMartenSession)session).Options.Projections.AggregatorFor<TDoc>();
         var storage = findDocumentStorage(session);
         var aggregator = raw as IAggregator<TDoc, TId, IQuerySession>
                          ?? typeof(IdentityForwardingAggregator<,,,>)

@@ -21,6 +21,10 @@ public interface IMartenSession: IDisposable, IAsyncDisposable, IStorageSession
     // own code keeps the concrete VersionTracker here.
     new VersionTracker Versions { get; }
 
+    // #4826: the closed-shape storage runtime never reads StoreOptions off the session, so Options
+    // stays on IMartenSession, not the agnostic IStorageSession contract (LINQ reads it via IMartenSession).
+    StoreOptions Options { get; }
+
     IEventStorage EventStorage();
 
     /// <summary>

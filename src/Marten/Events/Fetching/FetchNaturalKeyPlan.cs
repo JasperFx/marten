@@ -431,7 +431,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
     private async Task<TDoc?> LoadDocumentById(DocumentSessionBase session, Guid streamId, CancellationToken cancellation)
     {
         IDocumentStorage<TDoc, Guid> storage;
-        if (session.Options.Events.UseIdentityMapForAggregates)
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
             storage = _options.ResolveCorrectedDocumentStorage<TDoc, Guid>(DocumentTracking.IdentityOnly);
             session.UseIdentityMapFor<TDoc>();
@@ -450,7 +450,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             await session.ExecuteReaderAsync(docBuilder.Compile(), cancellation).ConfigureAwait(false);
         var document = await handler.HandleAsync(docReader, session, cancellation).ConfigureAwait(false);
 
-        if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+        if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
             session.StoreDocumentInItemMap(streamId, document);
         }
@@ -498,7 +498,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
     private async Task<TDoc?> LoadDocumentByKey(DocumentSessionBase session, string streamKey, CancellationToken cancellation)
     {
         IDocumentStorage<TDoc, string> storage;
-        if (session.Options.Events.UseIdentityMapForAggregates)
+        if (((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
             storage = _options.ResolveCorrectedDocumentStorage<TDoc, string>(DocumentTracking.IdentityOnly);
             session.UseIdentityMapFor<TDoc>();
@@ -517,7 +517,7 @@ internal class FetchNaturalKeyPlan<TDoc, TNaturalKey>: IAggregateFetchPlan<TDoc,
             await session.ExecuteReaderAsync(docBuilder.Compile(), cancellation).ConfigureAwait(false);
         var document = await handler.HandleAsync(docReader, session, cancellation).ConfigureAwait(false);
 
-        if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+        if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
         {
             session.StoreDocumentInItemMap(streamKey, document);
         }

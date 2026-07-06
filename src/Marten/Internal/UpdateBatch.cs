@@ -45,7 +45,7 @@ public class UpdateBatch: IUpdateBatch
             return Array.Empty<OperationPage>();
         }
 
-        if (_operations.Count < session.Options.UpdateBatchSize)
+        if (_operations.Count < ((IMartenSession)session).Options.UpdateBatchSize)
         {
             return new[] { new OperationPage(session, _operations) };
         }
@@ -55,7 +55,7 @@ public class UpdateBatch: IUpdateBatch
 
     private List<OperationPage> buildMultiplePages(IMartenSession session)
     {
-        var batchSize = session.Options.UpdateBatchSize;
+        var batchSize = ((IMartenSession)session).Options.UpdateBatchSize;
         var pageCount = (_operations.Count + batchSize - 1) / batchSize;
         var pages = new List<OperationPage>(pageCount);
 

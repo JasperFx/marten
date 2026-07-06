@@ -71,15 +71,15 @@ internal static class StreamCompactingExecution
     internal static async Task ExecuteAsync<T>(this StreamCompactingRequest<T> request, DocumentSessionBase session)
         where T : class
     {
-        var logger = session.Options.LogFactory?.CreateLogger<StreamCompactingRequest<T>>() ??
-                     session.Options.DotNetLogger ?? NullLogger<StreamCompactingRequest<T>>.Instance;
+        var logger = ((IMartenSession)session).Options.LogFactory?.CreateLogger<StreamCompactingRequest<T>>() ??
+                     ((IMartenSession)session).Options.DotNetLogger ?? NullLogger<StreamCompactingRequest<T>>.Instance;
 
         // 1. Find the aggregator
         var aggregator = FindAggregator<T>(session);
 
         // 2. Find the events
         IReadOnlyList<IEvent> events;
-        if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
             events = await session.Events.FetchStreamAsync(request.StreamId!.Value, request.Version,
                 request.Timestamp, token: request.CancellationToken).ConfigureAwait(false);
@@ -112,7 +112,7 @@ internal static class StreamCompactingExecution
                 .ConfigureAwait(false);
         }
 
-        if (session.Options.Events.StreamIdentity == StreamIdentity.AsGuid)
+        if (((IMartenSession)session).Options.Events.StreamIdentity == StreamIdentity.AsGuid)
         {
             logger.LogInformation("Successfully archived events for Stream {Id} from Version {Version} and down",
                 request.StreamId, request.Version);
@@ -133,7 +133,7 @@ internal static class StreamCompactingExecution
 
     private static IAggregator<T, IQuerySession> FindAggregator<T>(DocumentSessionBase session) where T : class
     {
-        if (!session.Options.Projections.TryFindAggregate(typeof(T), out var projection))
+        if (!((IMartenSession)session).Options.Projections.TryFindAggregate(typeof(T), out var projection))
         {
             throw new InvalidOperationException("Unable to find an Aggregation Projection for type " +
                                                 typeof(T).FullNameInCode());
@@ -196,7 +196,7 @@ internal class DeleteEventsOperation: IStorageOperation, NoDataReturnedCall
 
     public void ConfigureCommand(ICommandBuilder builder, IStorageSession session)
     {
-        builder.Append($"delete from {session.Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
+        builder.Append($"delete from {((IMartenSession)session).Options.Events.DatabaseSchemaName}.mt_events where seq_id = ANY(");
         builder.AppendParameter(_sequences);
         builder.Append(")");
     }

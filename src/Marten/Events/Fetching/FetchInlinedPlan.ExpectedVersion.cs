@@ -63,7 +63,7 @@ internal partial class FetchInlinedPlan<TDoc, TId>
             var document = await handler.HandleAsync(reader, session, cancellation).ConfigureAwait(false);
 
             // As an optimization, put the document in the identity map for later
-            if (document != null && session.Options.Events.UseIdentityMapForAggregates)
+            if (document != null && ((IMartenSession)session).Options.Events.UseIdentityMapForAggregates)
             {
                 session.StoreDocumentInItemMap(id, document);
             }

@@ -2,6 +2,8 @@
 using System.Linq;
 using Marten.Linq.SqlGeneration;
 
+using Marten.Internal;
+
 namespace Marten.Linq.Parsing;
 
 internal partial class LinqQueryParser
@@ -10,7 +12,7 @@ internal partial class LinqQueryParser
     {
         if (!_collectionUsages.Any())
         {
-            var usage = new CollectionUsage(Session.Options, _provider.SourceType);
+            var usage = new CollectionUsage(((IMartenSession)Session).Options, _provider.SourceType);
             _collectionUsages.Insert(0, usage);
         }
 

@@ -261,11 +261,11 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
     {
         if (typeof(TId) == typeof(Guid))
         {
-            _session.Options.EventGraph.EnsureAsGuidStorage(_session);
+            ((IMartenSession)_session).Options.EventGraph.EnsureAsGuidStorage(_session);
         }
         else if (typeof(TId) == typeof(string))
         {
-            _session.Options.EventGraph.EnsureAsStringStorage(_session);
+            ((IMartenSession)_session).Options.EventGraph.EnsureAsStringStorage(_session);
         }
         // else: natural key type — event storage initialization deferred to the plan
 
@@ -276,7 +276,7 @@ internal partial class EventStore: IEventIdentityStrategy<Guid>, IEventIdentityS
             return (IAggregateFetchPlan<TDoc, TId>)stored;
         }
 
-        var plan = determineFetchPlan<TDoc, TId>(_session.Options);
+        var plan = determineFetchPlan<TDoc, TId>(((IMartenSession)_session).Options);
 
         _fetchStrategies = _fetchStrategies.AddOrUpdate(cacheKey, plan);
 
