@@ -1,11 +1,5 @@
 namespace Marten.Services;
 
-/// <summary>
-///     Marker interface telling Marten not
-///     to advance the results for callbacks
-/// </summary>
-public interface NoDataReturnedCall
-{
-}
-
+// NoDataReturnedCall moved to Weasel.Storage (#4821); AssertsOnCallback is a
+// Marten-side unit-of-work callback marker and stays here.
 public interface AssertsOnCallback{}

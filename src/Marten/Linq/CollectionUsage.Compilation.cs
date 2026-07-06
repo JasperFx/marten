@@ -29,7 +29,7 @@ public partial class CollectionUsage
     private bool _hasCompiledMany;
 
     public Statement BuildTopStatement(IStorageSession session, IQueryableMemberCollection collection,
-        IDocumentStorage storage, QueryStatistics? statistics)
+        ILinqDocumentStorage storage, QueryStatistics? statistics)
     {
         Statement top;
 

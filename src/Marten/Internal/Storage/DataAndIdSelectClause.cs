@@ -38,11 +38,11 @@ internal class DataAndIdSelectClause<T>: ISelectClause, IModifyableFromObject wh
 
     public IQueryHandler<T1> BuildHandler<T1>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T1 : notnull
     {
-        return _inner.BuildHandler<T1>(session, topStatement, currentStatement);
+        return ((ISelectClause)_inner).BuildHandler<T1>(session, topStatement, currentStatement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
     {
-        return _inner.UseStatistics(statistics);
+        return ((ISelectClause)_inner).UseStatistics(statistics);
     }
 }

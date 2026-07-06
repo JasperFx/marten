@@ -21,19 +21,19 @@ internal sealed class OptimisticLightweightClosedShapeStorage<TDoc, TId>: Lightw
     {
     }
 
-    public override IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Insert(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Update(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Upsert(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
+    public override Weasel.Storage.IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenant)
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, session.Versions.ForType<TDoc, TId>());
 
-    public override IStorageOperation OverwriteProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation OverwriteProjected(TDoc document, string tenant)
         // #4658: projection path passes null tracker so it doesn't poison
         // the session's optimistic-version map for the projected doc.
         => new OptimisticClosedShapeOverwriteOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
@@ -44,13 +44,13 @@ internal sealed class OptimisticLightweightClosedShapeStorage<TDoc, TId>: Lightw
     // branch. Callers in the projection runtime set IgnoreConcurrencyViolation
     // = true (see ProjectionStorage.StoreProjection / Store flows) to suppress
     // the resulting "no row" exception.
-    public override IStorageOperation UpsertProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation UpsertProjected(TDoc document, string tenant)
         => new OptimisticClosedShapeUpsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, OperationRole.Upsert, null);
 
-    public override IStorageOperation InsertProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation InsertProjected(TDoc document, string tenant)
         => new OptimisticClosedShapeInsertOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
-    public override IStorageOperation UpdateProjected(TDoc document, string tenant)
+    public override Weasel.Storage.IStorageOperation UpdateProjected(TDoc document, string tenant)
         => new OptimisticClosedShapeUpdateOperation<TDoc, TId>(document, Identity(document), tenant, _descriptor, null);
 
     public override ISelector BuildSelector(IStorageSession session)

@@ -33,11 +33,11 @@ internal class PatchExpression<T>: IPatchExpression<T>
         var operation = new PatchOperation(session, PatchFunction, storage, _patchSet, _session.Serializer);
         if (filter != null)
         {
-            operation.Wheres.Add(storage.FilterDocuments(filter, _session));
+            operation.Wheres.Add((ISqlFragment)storage.FilterDocuments(filter, _session));
         }
         else
         {
-            operation.Wheres.Add(storage.DefaultWhereFragment());
+            operation.Wheres.Add((ISqlFragment)storage.DefaultWhereFragment());
         }
         _session.QueueOperation(operation);
     }
@@ -53,7 +53,7 @@ internal class PatchExpression<T>: IPatchExpression<T>
         }
         else
         {
-            operation.Wheres.Add(storage.DefaultWhereFragment());
+            operation.Wheres.Add((ISqlFragment)storage.DefaultWhereFragment());
         }
         _session.QueueOperation(operation);
     }

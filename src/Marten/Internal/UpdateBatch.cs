@@ -10,9 +10,9 @@ namespace Marten.Internal;
 public class UpdateBatch: IUpdateBatch
 {
     private readonly IList<Exception> _exceptions = new List<Exception>();
-    private readonly IReadOnlyList<IStorageOperation> _operations;
+    private readonly IReadOnlyList<Weasel.Storage.IStorageOperation> _operations;
 
-    public UpdateBatch(IReadOnlyList<IStorageOperation> operations)
+    public UpdateBatch(IReadOnlyList<Weasel.Storage.IStorageOperation> operations)
     {
         _operations = operations;
     }
@@ -63,7 +63,7 @@ public class UpdateBatch: IUpdateBatch
         while (count < _operations.Count)
         {
             var remaining = Math.Min(batchSize, _operations.Count - count);
-            var operations = new IStorageOperation[remaining];
+            var operations = new Weasel.Storage.IStorageOperation[remaining];
             for (int i = 0; i < remaining; i++)
             {
                 operations[i] = _operations[count + i];

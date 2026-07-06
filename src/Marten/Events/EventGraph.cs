@@ -893,7 +893,7 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
 
     public List<Type> GlobalAggregates { get; } = new();
 
-    internal Marten.Internal.Storage.DocumentProvider<IEvent>? Provider { get; private set; }
+    internal DocumentProvider<IEvent>? Provider { get; private set; }
 
     /// <summary>
     ///     Constructs the closed-shape event document storage adapter for this
@@ -904,6 +904,6 @@ public partial class EventGraph: EventRegistry, IEventStoreOptions, IReadOnlyEve
     internal void AttachTypesSynchronously()
     {
         var closedShape = new Marten.EventStorage.ClosedShapeEventDocumentStorage(Options);
-        Provider = new Marten.Internal.Storage.DocumentProvider<IEvent>(null!, closedShape, closedShape, closedShape, closedShape);
+        Provider = new DocumentProvider<IEvent>(closedShape, closedShape, closedShape, closedShape);
     }
 }

@@ -64,13 +64,13 @@ public class Bug_3083_concurrent_type_generation: BugIntegrationContext
 
     public class MockDocumentProvider<T>: DocumentProvider<T> where T : notnull
     {
-        public MockDocumentProvider(): this(null, null, null, null, null)
+        public MockDocumentProvider(): this(null, null, null, null)
         {
         }
 
-        public MockDocumentProvider(IBulkLoader<T> bulkLoader, IDocumentStorage<T> queryOnly,
+        public MockDocumentProvider(IDocumentStorage<T> queryOnly,
             IDocumentStorage<T> lightweight, IDocumentStorage<T> identityMap, IDocumentStorage<T> dirtyTracking): base(
-            bulkLoader, queryOnly, lightweight, identityMap, dirtyTracking)
+            queryOnly, lightweight, identityMap, dirtyTracking)
         {
         }
     }

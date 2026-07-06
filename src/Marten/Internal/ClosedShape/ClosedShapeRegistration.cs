@@ -193,7 +193,7 @@ public static class ClosedShapeRegistration
         // here since BulkLoader<T, TId> only calls IDocumentStorage's
         // AssignIdentity / Identity through it.
         var bulkLoader = new ClosedShapeBulkLoader<TDoc, TId>(lightweight, descriptor, mapping);
-        return new DocumentProvider<TDoc>(
+        return new MartenDocumentProvider<TDoc>(
             bulkLoader,
             queryOnly: queryOnly,
             lightweight: lightweight,

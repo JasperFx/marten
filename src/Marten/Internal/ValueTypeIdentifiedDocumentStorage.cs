@@ -86,10 +86,10 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public ISelector BuildSelector(IStorageSession session) => Inner.BuildSelector(session);
 
     public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement,
-        ISqlFragment currentStatement) where T : notnull => Inner.BuildHandler<T>(session, topStatement, currentStatement);
+        ISqlFragment currentStatement) where T : notnull => ((ISelectClause)Inner).BuildHandler<T>(session, topStatement, currentStatement);
 
     public ISelectClause UseStatistics(QueryStatistics statistics)
-        => Inner.UseStatistics(statistics);
+        => ((ISelectClause)Inner).UseStatistics(statistics);
 
     public Type SourceType => Inner.SourceType;
     public Type IdType => Inner.IdType;
@@ -104,14 +104,14 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
     public Task TruncateDocumentStorageAsync(IStorageDatabase database, CancellationToken ct = default)
         => Inner.TruncateDocumentStorageAsync(database, ct);
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
+    public Weasel.Core.SqlGeneration.ISqlFragment FilterDocuments(Weasel.Core.SqlGeneration.ISqlFragment query, IStorageSession session)
         => Inner.FilterDocuments(query, session);
 
-    public ISqlFragment DefaultWhereFragment()
+    public Weasel.Core.SqlGeneration.ISqlFragment? DefaultWhereFragment()
         => Inner.DefaultWhereFragment();
 
     public IQueryableMemberCollection QueryMembers => ((ILinqDocumentStorage)Inner).QueryMembers;
-    public ISelectClause SelectClauseWithDuplicatedFields => Inner.SelectClauseWithDuplicatedFields;
+    public ISelectClause SelectClauseWithDuplicatedFields => ((ILinqDocumentStorage)Inner).SelectClauseWithDuplicatedFields;
     public bool UseNumericRevisions => Inner.UseNumericRevisions;
     public object RawIdentityValue(object id) => Inner.RawIdentityValue(id);
 
@@ -127,29 +127,29 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
     public void Eject(IStorageSession session, TDoc document) => Inner.Eject(session, document);
 
-    public IStorageOperation Update(TDoc document, IStorageSession session, string tenantId) =>
+    public Weasel.Storage.IStorageOperation Update(TDoc document, IStorageSession session, string tenantId) =>
         Inner.Update(document, session, tenantId);
 
-    public IStorageOperation Insert(TDoc document, IStorageSession session, string tenantId)
+    public Weasel.Storage.IStorageOperation Insert(TDoc document, IStorageSession session, string tenantId)
         => Inner.Insert(document, session, tenantId);
 
-    public IStorageOperation Upsert(TDoc document, IStorageSession session, string tenantId)
+    public Weasel.Storage.IStorageOperation Upsert(TDoc document, IStorageSession session, string tenantId)
         => Inner.Upsert(document, session, tenantId);
 
-    public IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenantId)
+    public Weasel.Storage.IStorageOperation Overwrite(TDoc document, IStorageSession session, string tenantId)
         => Inner.Overwrite(document, session, tenantId);
 
-    public IStorageOperation OverwriteProjected(TDoc document, string tenantId)
+    public Weasel.Storage.IStorageOperation OverwriteProjected(TDoc document, string tenantId)
         => Inner.OverwriteProjected(document, tenantId);
 
     // #4667 — delegate the projection write entry points.
-    public IStorageOperation UpsertProjected(TDoc document, string tenantId)
+    public Weasel.Storage.IStorageOperation UpsertProjected(TDoc document, string tenantId)
         => Inner.UpsertProjected(document, tenantId);
 
-    public IStorageOperation InsertProjected(TDoc document, string tenantId)
+    public Weasel.Storage.IStorageOperation InsertProjected(TDoc document, string tenantId)
         => Inner.InsertProjected(document, tenantId);
 
-    public IStorageOperation UpdateProjected(TDoc document, string tenantId)
+    public Weasel.Storage.IStorageOperation UpdateProjected(TDoc document, string tenantId)
         => Inner.UpdateProjected(document, tenantId);
 
     public IDeletion DeleteForDocument(TDoc document, string tenantId)
@@ -194,7 +194,7 @@ internal class ValueTypeIdentifiedDocumentStorage<TDoc, TSimple, TValueType>: ID
 
     public TSimple Identity(TDoc document) => _unwrapper(Inner.Identity(document));
 
-    public ISqlFragment ByIdFilter(TSimple id) => Inner.ByIdFilter(_converter(id));
+    public Weasel.Core.SqlGeneration.ISqlFragment ByIdFilter(TSimple id) => Inner.ByIdFilter(_converter(id));
 
     public IDeletion HardDeleteForId(TSimple id, string tenantId)
         => Inner.HardDeleteForId(_converter(id), tenantId);

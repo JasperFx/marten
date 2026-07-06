@@ -70,15 +70,15 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
     public void HardDelete(TDoc snapshot)
     {
         var deletion = _storage.HardDeleteForDocument(snapshot, TenantId);
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public void UnDelete(TDoc snapshot)
     {
         var deletion = new StatementOperation(_storage, new UnSoftDelete(_storage));
-        var where = _storage.ByIdFilter(_storage.Identity(snapshot));
+        var where = (ISqlFragment)_storage.ByIdFilter(_storage.Identity(snapshot));
         deletion.Wheres.Add(where);
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public void Store(TDoc snapshot)
@@ -87,25 +87,25 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         // _session.Versions / _session.Revisions from a daemon worker. The
         // projection runtime is by-contract not session-state-aware.
         var upsert = _storage.UpsertProjected(snapshot, TenantId);
-        _session.QueueOperation(upsert);
+        _session.QueueOperation((IStorageOperation)upsert);
     }
 
     public void Delete(TId identity)
     {
         var deletion = _storage.DeleteForId(identity, TenantId);
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public void HardDelete(TDoc snapshot, string tenantId)
     {
         var deletion = _storage.HardDeleteForDocument(snapshot, TenantId);
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public void UnDelete(TDoc snapshot, string tenantId)
     {
         var deletion = new StatementOperation(_storage, new UnSoftDelete(_storage));
-        var where1 = _storage.ByIdFilter(_storage.Identity(snapshot));
+        var where1 = (ISqlFragment)_storage.ByIdFilter(_storage.Identity(snapshot));
         deletion.Wheres.Add(where1);
 
         if (_storage.TenancyStyle == TenancyStyle.Conjoined)
@@ -114,7 +114,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             deletion.Wheres.Add(tenantFilter);
         }
 
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public void Store(TDoc snapshot, TId id, string tenantId)
@@ -150,13 +150,13 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         }
 
         var upsert = _storage.UpsertProjected(snapshot, tenantId);
-        _session.QueueOperation(upsert);
+        _session.QueueOperation((IStorageOperation)upsert);
     }
 
     public void Delete(TId identity, string tenantId)
     {
         var deletion = _storage.DeleteForId(identity, tenantId);
-        _session.QueueOperation(deletion);
+        _session.QueueOperation((IStorageOperation)deletion);
     }
 
     public async Task<IReadOnlyDictionary<TId, TDoc>> LoadManyAsync(TId[] identities, CancellationToken cancellationToken)
@@ -195,7 +195,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
             r.IgnoreConcurrencyViolation = true;
         }
 
-        _session.QueueOperation(op);
+        _session.QueueOperation((IStorageOperation)op);
     }
 
     public void ArchiveStream(TId sliceId, string tenantId)
@@ -203,7 +203,7 @@ internal class ProjectionStorage<TDoc, TId>: IProjectionStorage<TDoc, TId> where
         var op = archiveOperationBuilderFor<TId>()(sliceId);
         op.TenantId = tenantId;
 
-        _session.QueueOperation(op);
+        _session.QueueOperation((IStorageOperation)op);
     }
 
     private static ImHashMap<Type, object> _archiveBuilders = ImHashMap<Type, object>.Empty;

@@ -203,24 +203,24 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
 
     public IReadOnlyList<IDuplicatedField> DuplicatedFields { get; }
 
-    public ISqlFragment ByIdFilter(TId id)
+    public Weasel.Core.SqlGeneration.ISqlFragment ByIdFilter(TId id)
     {
-        // IDocumentStorage.ByIdFilter keeps its Weasel.Postgresql return type (public); the dialect's
-        // neutral Weasel.Core fragment is always a Marten (Postgres) ByIdFilter, so the cast is safe.
-        return (ISqlFragment)Dialect.ByIdFilter(RawIdentityValue(id));
+        // The moved IDocumentStorage contract is Weasel.Core-typed (#4821); the dialect's neutral
+        // fragment is always a Marten (Postgres) ByIdFilter underneath.
+        return Dialect.ByIdFilter(RawIdentityValue(id));
     }
 
     public IDeletion HardDeleteForId(TId id, string tenant)
     {
         if (TenancyStyle == TenancyStyle.Conjoined)
         {
-            return new Deletion(this, HardDeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)))
+            return new Deletion(this, HardDeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), (ISqlFragment)ByIdFilter(id)))
             {
                 Id = id
             };
         }
 
-        return new Deletion(this, HardDeleteFragment, ByIdFilter(id)) { Id = id };
+        return new Deletion(this, HardDeleteFragment, (ISqlFragment)ByIdFilter(id)) { Id = id };
     }
 
     public void EjectById(IStorageSession session, object id)
@@ -275,7 +275,7 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
 
     public DbObjectName TableName { get; }
 
-    string ISelectClause.FromObject => TableName.QualifiedName;
+    string Weasel.Storage.ISelectClause.FromObject => TableName.QualifiedName;
 
     public Type IdType => typeof(TId);
 
@@ -293,23 +293,23 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
     public abstract void Store(IStorageSession session, T document, Guid? version);
     public abstract void Store(IStorageSession session, T document, long revision);
     public abstract void Eject(IStorageSession session, T document);
-    public abstract IStorageOperation Update(T document, IStorageSession session, string tenant);
-    public abstract IStorageOperation Insert(T document, IStorageSession session, string tenant);
-    public abstract IStorageOperation Upsert(T document, IStorageSession session, string tenant);
+    public abstract Weasel.Storage.IStorageOperation Update(T document, IStorageSession session, string tenant);
+    public abstract Weasel.Storage.IStorageOperation Insert(T document, IStorageSession session, string tenant);
+    public abstract Weasel.Storage.IStorageOperation Upsert(T document, IStorageSession session, string tenant);
 
-    public abstract IStorageOperation Overwrite(T document, IStorageSession session, string tenant);
-
-    /// <inheritdoc />
-    public abstract IStorageOperation OverwriteProjected(T document, string tenant);
+    public abstract Weasel.Storage.IStorageOperation Overwrite(T document, IStorageSession session, string tenant);
 
     /// <inheritdoc />
-    public abstract IStorageOperation UpsertProjected(T document, string tenant);
+    public abstract Weasel.Storage.IStorageOperation OverwriteProjected(T document, string tenant);
 
     /// <inheritdoc />
-    public abstract IStorageOperation InsertProjected(T document, string tenant);
+    public abstract Weasel.Storage.IStorageOperation UpsertProjected(T document, string tenant);
 
     /// <inheritdoc />
-    public abstract IStorageOperation UpdateProjected(T document, string tenant);
+    public abstract Weasel.Storage.IStorageOperation InsertProjected(T document, string tenant);
+
+    /// <inheritdoc />
+    public abstract Weasel.Storage.IStorageOperation UpdateProjected(T document, string tenant);
 
     public IDeletion DeleteForDocument(T document, string tenant)
     {
@@ -325,13 +325,13 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
     {
         if (TenancyStyle == TenancyStyle.Conjoined)
         {
-            return new Deletion(this, DeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), ByIdFilter(id)))
+            return new Deletion(this, DeleteFragment, CompoundWhereFragment.And(new SpecificTenantFilter(tenant), (ISqlFragment)ByIdFilter(id)))
             {
                 Id = id
             };
         }
 
-        return new Deletion(this, DeleteFragment, ByIdFilter(id))
+        return new Deletion(this, DeleteFragment, (ISqlFragment)ByIdFilter(id))
         {
             Id = id
         };
@@ -341,20 +341,22 @@ public abstract class DocumentStorage<T, TId>: IDocumentStorage<T, TId>, ILinqDo
 
     public IOperationFragment HardDeleteFragment { get; }
 
-    public ISqlFragment FilterDocuments(ISqlFragment query, IStorageSession session)
+    public Weasel.Core.SqlGeneration.ISqlFragment FilterDocuments(Weasel.Core.SqlGeneration.ISqlFragment query, IStorageSession session)
     {
-        var extras = extraFilters(query, session).ToList();
+        // Neutral (Weasel.Core) contract; Marten's filters are always Postgres fragments underneath.
+        var pgQuery = (ISqlFragment)query;
+        var extras = extraFilters(pgQuery, session).ToList();
 
         if (extras.Count > 0)
         {
-            extras.Add(query);
+            extras.Add(pgQuery);
             return CompoundWhereFragment.And(extras);
         }
 
-        return query;
+        return pgQuery;
     }
 
-    public ISqlFragment? DefaultWhereFragment()
+    public Weasel.Core.SqlGeneration.ISqlFragment? DefaultWhereFragment()
     {
         return _defaultWhere;
     }
@@ -547,7 +549,7 @@ internal class DuplicatedFieldSelectClause: ISelectClause, IModifyableFromObject
 
     public IQueryHandler<T> BuildHandler<T>(IStorageSession session, ISqlFragment topStatement, ISqlFragment currentStatement) where T : notnull
     {
-        return _parent.BuildHandler<T>(session, topStatement, currentStatement);
+        return ((ISelectClause)_parent).BuildHandler<T>(session, topStatement, currentStatement);
     }
 
     public ISelectClause UseStatistics(QueryStatistics statistics)

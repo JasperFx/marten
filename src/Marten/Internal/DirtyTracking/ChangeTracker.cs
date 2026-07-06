@@ -19,7 +19,7 @@ public class ChangeTracker<T>: IChangeTracker where T : notnull
 
     public object Document => _document;
 
-    public bool DetectChanges(IStorageSession session, [NotNullWhen(true)]out IStorageOperation? operation)
+    public bool DetectChanges(IStorageSession session, [NotNullWhen(true)]out Weasel.Storage.IStorageOperation? operation)
     {
         var newJson = session.Serializer.ToCleanJson(_document);
 

@@ -54,7 +54,7 @@ internal abstract class ClosedShapeOverwriteOperation<TDoc, TId>: IDocumentStora
 
     public object Document => _document;
 
-    public Marten.Internal.DirtyTracking.IChangeTracker ToTracker(IStorageSession session)
+    public IChangeTracker ToTracker(IStorageSession session)
         => new Marten.Internal.DirtyTracking.ChangeTracker<TDoc>(session, _document);
 
     public OperationRole Role() => OperationRole.Update;

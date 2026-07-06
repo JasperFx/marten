@@ -419,15 +419,3 @@ public sealed class SessionOptions
     }
 }
 
-public enum ConcurrencyChecks
-{
-    /// <summary>
-    ///     Optimistic concurrency checks are enforced (Default)
-    /// </summary>
-    Enabled,
-
-    /// <summary>
-    ///     Optimistic concurrency checks are disabled for this session
-    /// </summary>
-    Disabled
-}

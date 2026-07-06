@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using JasperFx.Core.Reflection;
 using Marten.Internal.Sessions.Rls;
+using Marten.Internal.Storage;
 using Marten.Schema.BulkLoading;
 using Npgsql;
 using Weasel.Postgresql;
@@ -163,7 +164,8 @@ internal class BulkInsertion: IDisposable
     {
         await _tenant.Database.EnsureStorageExistsAsync(typeof(T), cancellation).ConfigureAwait(false);
 
-        var provider = _tenant.Database.Providers.StorageFor<T>();
+        // Bulk loading is Marten/Postgres-specific (#4821): the neutral provider carries no loader.
+        var provider = (MartenDocumentProvider<T>)_tenant.Database.Providers.StorageFor<T>();
         var loader = provider.BulkLoader;
 
         if (mode != BulkInsertMode.InsertsOnly)

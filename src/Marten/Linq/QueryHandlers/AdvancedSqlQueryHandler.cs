@@ -166,7 +166,7 @@ internal abstract class AdvancedSqlQueryHandlerBase<TResult>
         {
             return new DataSelectClause<T>(string.Empty, string.Empty);
         }
-        return session.StorageFor<T>();
+        return (ILinqDocumentStorage)session.StorageFor<T>();
     }
 
     protected void RegisterResultType<T>(IStorageSession session) where T : notnull

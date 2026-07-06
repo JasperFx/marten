@@ -6,7 +6,7 @@ using Weasel.Postgresql;
 
 namespace Marten.Linq.SqlGeneration;
 
-internal class SoftDelete: IOperationFragment
+internal class SoftDelete: IOperationFragment, ISqlFragment
 {
     private readonly string _sql;
 
